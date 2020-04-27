@@ -1,0 +1,17 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Type
+metadata:
+  name: example-type
+spec:
+  openAPIV3Schema:
+    type: object
+    properties:
+      spec:
+        type: object
+        properties:
+          cronSpec:
+            type: string
+          image:
+            type: string
+          replicas:
+            type: integer

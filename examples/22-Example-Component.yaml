@@ -1,0 +1,156 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Component
+metadata:
+  name: virtual-cluster
+spec:
+
+  definitionRef: virtual-cluster
+
+  imports:
+  - from: .kubeconfigs.base
+    type: kubeconfig
+    to: .kubeconfig
+
+  - from: .dep.helmchart.etcd
+    type: helmchart
+    to: .helmchart.etcd
+  - from: .dep.helmchart.kube-apiserver-controllermanager
+    type: helmchart
+    to: .helmchart.kube-apiserver-controllermanager
+  - from: .dep.image.etcd
+    type: image
+    to: .images.etcd
+  - from: .dep.image.etcdbr
+    type: image
+    to: .images.etcdbr
+  - from: .dep.image.kube-apiserver
+    type: image
+    to: .images.kube-apiserver
+  - from: .dep.image.kube-controllermanager
+    type: image
+    to: .images.kube-controllermanager
+
+  - from: .common.namespace
+    type: string
+    to: .namespace
+
+  - from: .virtual.etcd.backup.active
+    type: bool
+    required: false
+    default:
+      value: true
+    to: .backup.active
+    # conditional import (only when backup.active=true)
+    imports:
+    - from: .virtual.etcd.backup.bucketPrefix
+      type: string
+      to: .backup.bucketPrefix
+      required: false # defaults to some generated prefix
+    - from: .blobstore.credentials # from techincal-users
+      type: credentials
+      to: .backup.blobstore.credentials
+    - from: .virtual.etcd.backup.blobstore.credentialRef # one pointer in the above credentials
+      type: string
+      to: .backup.blobstore.credentialRef
+    - from: .virtual.etcd.backup.blobstore.region
+      type: string
+      to: .backup.blobstore.region
+      # TODO: define default only if this region can be used by other components
+    - from: .virtual.etcd.backup.blobstore.providerConfig # (i.e. resourcegroup on az)
+      type: object
+      required: false
+      to: .backup.blobstore.providerConfig
+
+  ###  kube-apiserver
+  - from: .dns.domains.gardenSystem.virtual.domain
+    type: domain # or string
+    default:
+      ref: dns.domains.gardenSystem.defaultBase.domain
+    to: .base.domain
+
+  - from: .dns.domainPrefixes.virtual-apiserver
+    type: domain # or string
+    default:
+      value: "api"
+    to: .prefix.domain
+
+  - from: .networkpolicies.active
+    type: bool
+    required: false
+    default:
+      value: false
+    to: .networkpolicies.active
+
+  - from: .dns.class # used to register the kube-apiserver domain, exported from dns component
+    type: string
+    to: .dnsClass
+
+  - from: .virtual.vpa.active
+    required: false
+    type: bool
+    default:
+      value: false
+    to: .vpaActive
+    # TODO: provide imports for vpa config + what about hvpa?
+
+  - from: .auditlog.active
+    type: bool
+    required: false
+    default:
+      value: false
+    to: .auditlog.active
+    imports:
+    - from: .auditlog.kubeconfig # i.e. from sap-auditlog component
+      type: kubeconfig
+      to: .auditlog.kubeconfig
+    - from: .virtual.auditlog.policy
+      type: policies.audit.k8s.io
+      required: false
+      # default defined internally
+      to: .policy
+
+  - from: .identity.active # from static export of identity component
+    type: bool
+    required: false
+    default:
+      value: false
+    to: .identity.active
+    imports:
+    - from: .identity.issuerURL # for dashboard/api-server auth callbacks
+      type: url # or string
+      to: .identity.issuerURL
+    - from: .identity.api.endpoint # for dashboard/api-server doing grcp to add themself
+      type: url # or string
+      to: .identity.api.endpoint
+    - from: .identity.api.caPrivatefrom # clients to api.endpoint will need to have a client cert signed by this caPrivatefrom
+      type: string
+      to: .identity.api.caPrivatefrom
+    - from: .identity.cert # identity server side cert (chain)
+      type: certificate
+      required: false
+      to: .identity.cert
+
+  exports:
+  - to: .virtual.etcd.endpoints.main
+    type: url
+    from: .etcd.endpoints.main
+
+  - to: .virtual.etcd.endpoints.events
+    type: url
+    from: .etcd.endpoints.events
+
+  - to: .virtual.etcd.cert # server cert
+    type: certificate
+    from: .etcd.cert
+
+  - to: .virtual.apiserver.cert # server cert
+    type: certificate
+    from: .apiserver.cert
+
+  - to: .virtual.apiserver.endpoint.internal
+    type: url
+    from: .apiserver.endpoint.internal
+
+  - to: .kubeconfigs.virtual # an external reachable "kubeconfig"
+    type: kubeconfig
+    from: .virtualAdminKubeconfig

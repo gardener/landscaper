@@ -1,0 +1,72 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Definition
+metadata:
+  name: my-component-definition
+spec:
+
+  import: {}
+
+  export: {}
+
+  executor: # has to be idempotent
+  - type: container # also extensions resource
+    config:
+      image: my-custom-image:version
+      command: ["run-component"]
+      args: []
+  - type: script
+    config:
+      mount:
+        artifact: xyz
+        path: /repo
+      script: |
+        #!/bin/python3
+
+        import os
+
+        sh /repo/my-script
+      image: ubuntu:latest
+  - type: template
+    config:
+      apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: DeployItem
+      spec:
+        type: helm
+        providerConfig:
+          chartRepository: my-repo
+          version: 1.0.0
+          values: {{ .Values.String }}
+          valueRef:
+            secretRef: abc
+  - type: template
+    config:
+      template:
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: DeployItem
+        metadata:
+          annotaion:
+            class: x
+        spec:
+          type: helm
+          providerConfig:
+            chartRepository: my-repo/dns-controller
+            version: 1.0.0
+            values:
+              instanceID: {{ .imports.dnsController }}
+            valueRef:
+              secretRef: abc
+  - type: template
+      config:
+        template:
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: DeployItem
+          spec:
+            type: manifest
+            providerConfig:
+            - apiVersion: v1
+              kind: Secret
+              metdata:
+                name: abc
+              data:
+                value1: {{ .import.my-import.value1 }}
+                value2: (( .import.my-import.value2 ))
