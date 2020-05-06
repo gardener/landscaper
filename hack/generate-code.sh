@@ -18,8 +18,6 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-rm -f $GOPATH/bin/*-gen
-
 PROJECT_MOD_ROOT="github.com/gardener/landscaper"
 
 CURRENT_DIR=$(dirname $0)

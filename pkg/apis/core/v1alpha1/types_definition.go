@@ -72,8 +72,9 @@ type DefinitionStatus struct {
 	// Shoot's generation, which is updated on mutation by the landscaper.
 	ObservedGeneration int64 `json:"observedGeneration"`
 
-	// Conditions contains the last observed conditions of the type.
-	TypeConditions []DefinitionTypeCondition `json:"typeConditions,omitempty"`
+	// Conditions contains the last observed conditions of the component definition.
+	// +optional
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 type CustomType struct {
@@ -133,10 +134,4 @@ type ScriptConfig struct {
 type TemplateConfig struct {
 	Type string `json:"type"` // e.g. helm
 	Config string `json:"config"`
-}
-
-// DefinitionTypeCondition contains details about state of the types created by the definition.
-type DefinitionTypeCondition struct {
-	TypeName string `json:"name"`
-	TypeCondition `json:"-"`
 }

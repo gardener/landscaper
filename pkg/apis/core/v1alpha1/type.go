@@ -19,15 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DefinitionConditionType is the type of the definition condition
-type TypeConditionType string
-
-const (
-	// TypeEstablished means that the type has become active. A type is established when all schemes are
-	// accepted without a conflict for the first time.
-	TypeEstablished TypeConditionType = "TypeEstablished"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TypeList contains a list of Types
@@ -59,19 +50,6 @@ type TypeStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration"`
 
 	// Conditions contains the last observed conditions of the type.
-	Conditions []TypeCondition `json:"conditions"`
-}
-
-// DefinitionCondition contains details about state of the definition.
-type TypeCondition struct {
-	// Type of definition condition.
-	Type TypeConditionType `json:"type"`
-	// Status of the condition, one of True, False, Unknown.
-	Status metav1.ConditionStatus `json:"status"`
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty" `
-	// +optional
-	Reason string `json:"reason,omitempty"`
-	// +optional
-	Message string `json:"message,omitempty"`
+	Conditions []Condition `json:"conditions,omitempty"`
 }

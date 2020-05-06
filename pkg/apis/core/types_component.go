@@ -60,7 +60,6 @@ type ComponentSpec struct {
 type ComponentStatus struct {
 	Phase     ComponentPhase  `json:"phase,omitempty"`
 	Executors []ExecutorState `json:"executors,omitempty"`
-	Exports   []ExportStatus        `json:"exports,omitempty"`
 }
 
 type Import struct {
@@ -85,12 +84,8 @@ type Default struct {
 // ExecutorState tracks the state of a executor
 type ExecutorState struct {
 	Phase ComponentPhase `json:"phase"`
-}
 
-// ExportStatus is the status of exported field
-type ExportStatus struct {
-	To         string          `json:"to"`
-	Type       string          `json:"type"`
-	Generation int64           `json:"generation"`
-	Value      json.RawMessage `json:"value"`
+	// Conditions contains the last observed conditions of the component.
+	// +optional
+	Conditions []Condition `json:"conditions,omitempty"`
 }

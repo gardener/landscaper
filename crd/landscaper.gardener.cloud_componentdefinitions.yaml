@@ -335,25 +335,57 @@ spec:
             type: object
           status:
             properties:
+              conditions:
+                description: Conditions contains the last observed conditions of the
+                  component definition.
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed
                   for this Type. It corresponds to the Shoot's generation, which is
                   updated on mutation by the landscaper.
                 format: int64
                 type: integer
-              typeConditions:
-                description: Conditions contains the last observed conditions of the
-                  type.
-                items:
-                  description: DefinitionTypeCondition contains details about state
-                    of the types created by the definition.
-                  properties:
-                    name:
-                      type: string
-                  required:
-                  - name
-                  type: object
-                type: array
             required:
             - observedGeneration
             type: object

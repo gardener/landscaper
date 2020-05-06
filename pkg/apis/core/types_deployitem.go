@@ -15,14 +15,14 @@
 package core
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"encoding/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// TypeList contains a list of Types
-type TypeList struct {
+// DeployItemList contains a list of DeployItems
+type DeployItemList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Type `json:"items"`
@@ -31,8 +31,8 @@ type TypeList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Type defines a new type that can be used for component configurations
-type Type struct {
+// DeployItem defines a DeployItem that should be processed by a external deployer
+type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -40,16 +40,37 @@ type Type struct {
 	Status TypeStatus `json:"status"`
 }
 
-type TypeSpec struct {
-	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
+type DeployItemSpec struct {
+	Type string `json:"type"`
+	DeployConfig json.RawMessage `json:"deployConfig"`
 }
 
-type TypeStatus struct {
-	// ObservedGeneration is the most recent generation observed for this Type. It corresponds to the
-	// Shoot's generation, which is updated on mutation by the landscaper.
-	ObservedGeneration int64 `json:"observedGeneration"`
+type DeployItemStatus struct {
+	Phase ComponentPhase `json:"phase,omitempty"`
 
-	// Conditions contains the last observed conditions of the type.
 	// +optional
-	Conditions []Condition `json:"conditions,omitempty"`
+	ExportGeneration int64 `json:"exportGeneration,omitempty"`
+
+	// +optional
+	Export *DeployItemExport `json:"export,omitempty"`
 }
+
+type DeployItemExport struct {
+	// +optional
+	Value string `json:"value,omitempty"`
+
+	// +optional
+	ValueRef *ConfigMapOrSecretRef `json:"valueRef,omitempty"`
+}
+
+type ConfigMapOrSecretRef struct {
+	// +optional
+	SecretRef *SecretRef `json:"secretRef"`
+	// +optional
+	ConfigMapRef *NamespacedName `json:"configMapRef"`
+}
+
+type SecretRef struct {
+	Name string `json:"name"`
+}
+

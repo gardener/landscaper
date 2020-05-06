@@ -6,20 +6,21 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: types.landscaper.gardener.cloud
+  name: deployitems.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
-    kind: Type
-    listKind: TypeList
-    plural: types
-    singular: type
+    kind: DeployItem
+    listKind: DeployItemList
+    plural: deployitems
+    singular: deployitem
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Type defines a new type that can be used for component configurations
+        description: DeployItem defines a DeployItem that should be processed by a
+          external deployer
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
