@@ -1,0 +1,28 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-component-definition
+spec:
+
+  type: container | helm | manifest
+
+  providerConfig:
+    xxx: abc
+
+status:
+  phase: Reconciled
+  conditions:
+  - condition1: healthy
+    message: testing
+
+  exportGeneration: 2
+#  exports:
+#  - key: .etcd.endpoints.main
+#    value: rawValue
+#    valueRef:
+#      secretRef: xxx
+#      configmapRef: xxx
+
+  exports:
+    value: xxx
+    secretRef: abc

@@ -24,8 +24,22 @@ spec:
 
         import os
 
-        sh /repo/my-script
+        yaml.load(os.genenv('IMPORT_CONFIG'))
+
+        doStuff()
+
+        yaml.dump(export)
       image: ubuntu:latest
+  - type: template
+      config:
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: DeployItem
+        spec:
+          type: container
+          providerConfig:
+            image: my-custom-image:version
+            command: ["run-component"]
+            args: []
   - type: template
     config:
       apiVersion: landscaper.gardener.cloud/v1alpha1

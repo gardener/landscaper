@@ -2,6 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Component
 metadata:
   name: virtual-cluster
+  generation: 6
 spec:
 
   definitionRef: virtual-cluster
@@ -154,3 +155,8 @@ spec:
   - to: .kubeconfigs.virtual # an external reachable "kubeconfig"
     type: kubeconfig
     from: .virtualAdminKubeconfig
+
+status:
+  phase: Progressing | Pending | Completed
+  executors:
+  - deployItemRef: abc
