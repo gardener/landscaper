@@ -318,7 +318,7 @@ spec:
                       - script
                       type: object
                     type:
-                      description: ExecutorType defines the type of the execution
+                      description: ExecutionType defines the type of the execution
                       type: string
                   required:
                   - type

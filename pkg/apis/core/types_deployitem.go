@@ -42,6 +42,7 @@ type DeployItem struct {
 
 type DeployItemSpec struct {
 	Type string `json:"type"`
+	Import SecretRef `json:"import,omitempty"`
 	DeployConfig json.RawMessage `json:"deployConfig"`
 }
 
@@ -60,17 +61,6 @@ type DeployItemExport struct {
 	Value string `json:"value,omitempty"`
 
 	// +optional
-	ValueRef *ConfigMapOrSecretRef `json:"valueRef,omitempty"`
-}
-
-type ConfigMapOrSecretRef struct {
-	// +optional
-	SecretRef *SecretRef `json:"secretRef"`
-	// +optional
-	ConfigMapRef *NamespacedName `json:"configMapRef"`
-}
-
-type SecretRef struct {
-	Name string `json:"name"`
+	ValueRef *SecretRef `json:"valueRef,omitempty"`
 }
 

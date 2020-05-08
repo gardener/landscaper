@@ -6,6 +6,11 @@ spec:
 
   type: container | helm | manifest
 
+  import:
+    secretRef:
+      name: secret-item1
+      key: key
+
   providerConfig:
     xxx: abc
 
@@ -15,13 +20,7 @@ status:
   - condition1: healthy
     message: testing
 
-  exportGeneration: 2
-#  exports:
-#  - key: .etcd.endpoints.main
-#    value: rawValue
-#    valueRef:
-#      secretRef: xxx
-#      configmapRef: xxx
+  configGeneration: 2
 
   exports:
     value: xxx

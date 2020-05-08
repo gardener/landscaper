@@ -158,5 +158,12 @@ spec:
 
 status:
   phase: Progressing | Pending | Completed
+
+  imports:
+  - from: .kubeconfigs.base
+    component: xyz
+    configGeneration: 2
+
+  configGeneration: 0
   executors:
   - deployItemRef: abc

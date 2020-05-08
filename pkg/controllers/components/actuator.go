@@ -75,7 +75,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 				executor := definition.Spec.Executors[i]
 
 				switch executor.Type {
-				case v1alpha1.ExecutorTypeScript:
+				case v1alpha1.ExecutionTypeScript:
 
 				default:
 					return reconcile.Result{}, errors.Errorf("unknown executor %s", executor.Type)

@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,10 +40,5 @@ type LandscapeConfiguration struct {
 }
 
 type LandscapeConfigurationSpec struct {
-	SecretReferences []NamespacedName `json:"secretRefs,omitempty"`
-}
-
-type NamespacedName struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
+	SecretReferences []corev1.LocalObjectReference `json:"secretRefs,omitempty"`
 }

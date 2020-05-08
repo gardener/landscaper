@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -84,6 +85,9 @@ type Default struct {
 // ExecutorState tracks the state of a executor
 type ExecutorState struct {
 	Phase ComponentPhase `json:"phase"`
+
+	// +optional
+	Resource *v1.ObjectReference `json:"resource"`
 
 	// Conditions contains the last observed conditions of the component.
 	// +optional

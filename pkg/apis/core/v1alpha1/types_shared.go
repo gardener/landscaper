@@ -14,7 +14,10 @@
 
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // ConditionStatus is the status of a condition.
 type ConditionStatus string
@@ -51,6 +54,19 @@ type Condition struct {
 	// Well-defined error codes in case the condition reports a problem.
 	// +optional
 	Codes []ErrorCode `json:"codes,omitempty" protobuf:"bytes,7,rep,name=codes,casttype=ErrorCode"`
+}
+
+// SecretRef references a secret value
+type SecretRef struct {
+	SecretRef SecretKeySelector `json:"secretRef"`
+}
+
+// SecretKeySelector selects a key of a Secret.
+type SecretKeySelector struct {
+	// The name of the secret in the pod's namespace to select from.
+	corev1.LocalObjectReference `json:",inline"`
+	// The key of the secret to select from.  Must be a valid secret key.
+	Key string `json:"key"`
 }
 
 

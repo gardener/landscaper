@@ -20,18 +20,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ExecutorType defines the type of the execution
-type ExecutorType string
+// ExecutionType defines the type of the execution
+type ExecutionType string
 
 const (
-	// ExecutorTypeContainer defines the container executor
-	ExecutorTypeContainer ExecutorType = "container"
+	// ExecutionTypeContainer defines the container executor
+	ExecutionTypeContainer ExecutionType = "container"
 
-	// ExecutorTypeScript defines the script executor
-	ExecutorTypeScript ExecutorType = "script"
+	// ExecutionTypeScript defines the script executor
+	ExecutionTypeScript ExecutionType = "script"
 
-	// ExecutorTypeTemplate defines the template executor
-	ExecutorTypeTemplate ExecutorType = "template"
+	// ExecutionTypeTemplate defines the template executor
+	ExecutionTypeTemplate ExecutionType = "template"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -64,7 +64,7 @@ type DefinitionSpec struct {
 	Export json.RawMessage `json:"import,omitempty"`
 
 	// Executors defines the executors that are sequentially executed by the landscaper
-	Executors []Executor `json:"executors"`
+	Executors []Execution `json:"executors"`
 }
 
 type DefinitionStatus struct {
@@ -82,8 +82,8 @@ type CustomType struct {
 	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }
 
-type Executor struct {
-	Type            ExecutorType     `json:"type"`
+type Execution struct {
+	Type ExecutionType `json:"type"`
 
 	// +optional
 	ContainerConfig *ContainerConfig `json:"containerConfig,omitempty"`
@@ -132,6 +132,5 @@ type ScriptConfig struct {
 }
 
 type TemplateConfig struct {
-	Type string `json:"type"` // e.g. helm
 	Config string `json:"config"`
 }
