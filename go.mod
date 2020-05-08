@@ -18,6 +18,7 @@ require (
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
 	github.com/onsi/ginkgo v1.12.0
+	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
@@ -46,4 +47,9 @@ require (
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/controller-tools v0.3.0
 	sigs.k8s.io/yaml v1.2.0
+)
+
+replace (
+	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/gomega => github.com/onsi/gomega v1.5.0
 )

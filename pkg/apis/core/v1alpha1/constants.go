@@ -14,9 +14,13 @@
 
 package v1alpha1
 
-
 const (
 	ImportConfigEnvVarName = "IMPORT_CONFIG"
 
 	ImportConfigPath = "/landscaper/import.yaml"
+
+	// Annotations
+
+	// OperationAnnotation is the annotation that specifies a operation for a component
+	OperationAnnotation = "landscaper.gardener.cloud/operation"
 )

@@ -56,6 +56,12 @@ type Condition struct {
 	Codes []ErrorCode `json:"codes,omitempty" protobuf:"bytes,7,rep,name=codes,casttype=ErrorCode"`
 }
 
+type Operation string
+
+const (
+	ReoncileOperation Operation = "reconcile"
+)
+
 // SecretRef references a secret value
 type SecretRef struct {
 	SecretRef SecretKeySelector `json:"secretRef"`
@@ -68,5 +74,3 @@ type SecretKeySelector struct {
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key"`
 }
-
-

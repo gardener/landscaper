@@ -23,24 +23,24 @@ import (
 )
 
 func (a *actuator) RunScript(ctx context.Context, namespace string, config *v1alpha1.ScriptConfig) error {
-	if config ==  nil {
+	if config == nil {
 		return errors.New("config has to be provided")
 	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-",
-			Namespace: namespace,
+			Namespace:    namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Image: config.Image,
+					Image:   config.Image,
 					Command: []string{"sh"},
-					Args: []string{"-c", config.Script},
+					Args:    []string{"-c", config.Script},
 					Env: []corev1.EnvVar{
 						{
-							Name: v1alpha1.ImportConfigEnvVarName,
+							Name:  v1alpha1.ImportConfigEnvVarName,
 							Value: v1alpha1.ImportConfigPath,
 						},
 					},

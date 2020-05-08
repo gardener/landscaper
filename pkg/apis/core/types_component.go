@@ -24,6 +24,7 @@ type ComponentPhase string
 
 const (
 	ComponentPhaseInit        ComponentPhase = "Init"
+	ComponentPhaseWaitingDeps ComponentPhase = "WaitingDependencies"
 	ComponentPhaseProgressing ComponentPhase = "Progressing"
 	ComponentPhaseCompleted   ComponentPhase = "Completed"
 	ComponentPhaseFailed      ComponentPhase = "Failed"
@@ -59,8 +60,10 @@ type ComponentSpec struct {
 }
 
 type ComponentStatus struct {
-	Phase     ComponentPhase  `json:"phase,omitempty"`
-	Executors []ExecutorState `json:"executors,omitempty"`
+	Phase            ComponentPhase  `json:"phase,omitempty"`
+	ConfigGeneration int64           `json:"configGeneration"`
+	Imports          []ImportState   `json:"imports,omitempty"`
+	Executors        []ExecutorState `json:"executors,omitempty"`
 }
 
 type Import struct {
@@ -92,4 +95,11 @@ type ExecutorState struct {
 	// Conditions contains the last observed conditions of the component.
 	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
+}
+
+// ImportState hold the state of a import
+type ImportState struct {
+	From             string `json:"from"`
+	Component        string `json:"component"`
+	ConfigGeneration int64  `json:"configGeneration"`
 }

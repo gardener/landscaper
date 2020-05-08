@@ -89,7 +89,7 @@ type Execution struct {
 	ContainerConfig *ContainerConfig `json:"containerConfig,omitempty"`
 
 	// +optional
-	ScriptConfig    *ScriptConfig    `json:"scriptConfig,omitempty"`
+	ScriptConfig *ScriptConfig `json:"scriptConfig,omitempty"`
 }
 
 type ContainerConfig struct {

@@ -26,9 +26,10 @@ PROJECT_ROOT="${CURRENT_DIR}"/..
 chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*
 
 echo "> Generating groups for Landscaper"
-bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-groups.sh \
-  deepcopy,defaulter \
+bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
+  deepcopy,defaulter,conversion \
   $PROJECT_MOD_ROOT/pkg/client \
+  $PROJECT_MOD_ROOT/pkg/apis \
   $PROJECT_MOD_ROOT/pkg/apis \
   "core:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
@@ -37,6 +38,7 @@ echo "> Generating conversion Landscaper"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-groups.sh \
   conversion \
   $PROJECT_MOD_ROOT/pkg/core \
+  $PROJECT_MOD_ROOT/pkg/apis \
   $PROJECT_MOD_ROOT/pkg/apis \
   core:v1alpha1 \
   --extra-peer-dirs=github.com/gardener/landscaper/pkg/apis/core,github.com/gardener/landscaper/pkg/apis/core/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \

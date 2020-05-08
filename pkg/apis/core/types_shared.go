@@ -68,5 +68,3 @@ type SecretKeySelector struct {
 	// The key of the secret to select from.  Must be a valid secret key.
 	Key string `json:"key"`
 }
-
-

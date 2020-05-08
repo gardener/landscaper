@@ -18,7 +18,6 @@ import (
 	"context"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -60,35 +59,72 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// Run component
-	if component.Status.Phase == "" || component.Status.Phase == v1alpha1.ComponentPhaseInit {
-		for i, executorState := range component.Status.Executors {
-			if executorState.Phase == "" || executorState.Phase == v1alpha1.ComponentPhaseInit {
-
-				// get definition
-				definition := &v1alpha1.ComponentDefinition{}
-				if err := a.c.Get(ctx, client.ObjectKey{Name: component.Spec.DefinitionRef, Namespace: component.Namespace}, definition); err != nil {
-					a.log.Error(err, "unable to get definition")
-					return reconcile.Result{}, err
-				}
-				// run executor
-				executor := definition.Spec.Executors[i]
-
-				switch executor.Type {
-				case v1alpha1.ExecutionTypeScript:
-
-				default:
-					return reconcile.Result{}, errors.Errorf("unknown executor %s", executor.Type)
-				}
-
-			}
-		}
+	// if the component has the reconcile annotation or if the component is waiting for dependencies
+	// we need to check if all required imports are satisfied
+	if !v1alpha1.HasOperation(component.ObjectMeta, v1alpha1.ReoncileOperation) && component.Status.Phase != v1alpha1.ComponentPhaseWaitingDeps {
+		return reconcile.Result{}, nil
 	}
 
-	// If state is progressing check executor
-	if component.Status.Phase == v1alpha1.ComponentPhaseProgressing {
+	ok, err := a.importsAreSatisfied(ctx, component)
+	if err != nil {
+		a.log.Error(err, "unable to check imports")
+		return reconcile.Result{}, err
+	}
+	if !ok {
+		a.log.V(2).Info("imports not satisfied")
+		return reconcile.Result{}, nil
+	}
 
+	// as all imports are satisfied we can collect and merge all imports
+	// and then start the executions
+
+	imports, err := a.collectImports(ctx, component)
+	if err != nil {
+		a.log.Error(err, "unable to collect imports")
+		return reconcile.Result{}, err
+	}
+
+	if err := a.runExecutions(ctx, component, imports); err != nil {
+		a.log.Error(err, "error during execution")
+		return reconcile.Result{}, err
+	}
+
+	// when all executions are finished and the exports are uploaded
+	// we have to validate the uploaded exports
+	if err := a.validateExports(ctx, component); err != nil {
+		a.log.Error(err, "error during export validation")
+		return reconcile.Result{}, err
+	}
+
+	// as all exports are validated, lets trigger dependant components
+	if err := a.triggerDependants(ctx, component); err != nil {
+		a.log.Error(err, "error during dependant trigger")
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (a *actuator) runExecutions(ctx context.Context, component *v1alpha1.Component, imports map[string]interface{}) error {
+	return nil
+}
+
+func (a *actuator) triggerDependants(ctx context.Context, component *v1alpha1.Component) error {
+	return nil
+}
+
+func (a *actuator) validateExports(ctx context.Context, component *v1alpha1.Component) error {
+	return nil
+}
+
+// importsAreSatisfied traverses through all components and validates if all imports are
+// satisfied with the correct version
+func (a *actuator) importsAreSatisfied(ctx context.Context, component *v1alpha1.Component) (bool, error) {
+	return true, nil
+}
+
+// getImports traverses through all components and
+// collects and merges the imports
+func (a *actuator) collectImports(ctx context.Context, component *v1alpha1.Component) (map[string]interface{}, error) {
+	return make(map[string]interface{}), nil
 }
