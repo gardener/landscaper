@@ -40,14 +40,12 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	SchemeBuilder      runtime.SchemeBuilder
+	// SchemeBuilder is a new Scheme Builder which registers our API.
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
 	localSchemeBuilder = &SchemeBuilder
-	AddToScheme        = SchemeBuilder.AddToScheme
+	// AddToScheme is a reference to the Scheme Builder's AddToScheme function.
+	AddToScheme = SchemeBuilder.AddToScheme
 )
-
-func init() {
-	localSchemeBuilder.Register(addKnownTypes)
-}
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {

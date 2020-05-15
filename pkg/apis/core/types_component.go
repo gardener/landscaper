@@ -70,7 +70,9 @@ type Import struct {
 	From     string  `json:"from"`
 	To       string  `json:"to"`
 	Type     string  `json:"type"`
-	Required bool    `json:"required"`
+
+	// +optional
+	Required *bool    `json:"required"`
 	Default  Default `json:"default"`
 }
 

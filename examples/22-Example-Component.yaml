@@ -7,6 +7,8 @@ spec:
 
   definitionRef: virtual-cluster
 
+  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
+
   imports:
   - from: .kubeconfigs.base
     type: kubeconfig

@@ -27,7 +27,7 @@ chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*
 
 echo "> Generating groups for Landscaper"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
-  deepcopy,defaulter,conversion \
+  deepcopy,defaulter \
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/pkg/apis \
   $PROJECT_MOD_ROOT/pkg/apis \

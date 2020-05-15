@@ -41,17 +41,17 @@ var _ = Describe("Import Dependencies tests", func() {
 		testComponent2, err := component.New(rawComponent2)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{testComponent2})
+		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{testComponent2}, nil)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("imports should be satisfied when nop imports are required", func() {
+	It("imports should be satisfied when no imports are required", func() {
 		rawComponent, err := utils.ReadComponentFromFile("./testdata/02-component.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		testComponent, err := component.New(rawComponent)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{})
+		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{}, nil)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -66,7 +66,26 @@ var _ = Describe("Import Dependencies tests", func() {
 		testComponent3, err := component.New(rawComponent3)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{testComponent3})
+		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{testComponent3}, nil)
 		Expect(err).To(HaveOccurred())
+	})
+
+	It("imports should be satisfied from landscape config", func() {
+		rawComponent, err := utils.ReadComponentFromFile("./testdata/01-component.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		testComponent, err := component.New(rawComponent)
+		Expect(err).ToNot(HaveOccurred())
+
+		rawComponent3, err := utils.ReadComponentFromFile("./testdata/03-component.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		testComponent3, err := component.New(rawComponent3)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = dependencies.CheckImportSatisfaction(testComponent, []*component.Component{testComponent3}, map[string]interface{}{
+			"test": map[string]interface{}{
+				"value1": true,
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
 	})
 })

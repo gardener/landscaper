@@ -15,34 +15,57 @@
 package jsonpath
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
 )
 
+func GetValue(text string, data interface{}, out interface{}) error {
+	jp := jsonpath.New("get")
+	if err := jp.Parse(fmt.Sprintf("{%s}", text)); err != nil {
+		return err
+	}
+
+	res := bytes.NewBuffer([]byte{})
+	if err := jp.Execute(res, data); err != nil {
+		return err
+	}
+
+	// do not try to marshal into nil
+	if out == nil {
+		return nil
+	}
+
+	return yaml.Unmarshal(res.Bytes(), out)
+}
+
 // Construct creates a map for the given jsonpath
-func Construct(text string) (map[string]interface{}, error) {
-	parser, err := jsonpath.Parse("construct", text)
+// the value if the resulting map is set to the given value paramter
+func Construct(text string, value interface{}) (map[string]interface{}, error) {
+	parser, err := jsonpath.Parse("construct", fmt.Sprintf("{%s}", text))
 	if err != nil {
 		return nil, err
 	}
 
 	out := make(map[string]interface{})
-	if _, err := constructWalk(out, parser.Root); err != nil {
+	if _, err := constructWalk(out, parser.Root, value); err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func constructWalk(input map[string]interface{}, nodes *jsonpath.ListNode) (map[string]interface{}, error) {
+func constructWalk(input map[string]interface{}, nodes *jsonpath.ListNode, value interface{}) (map[string]interface{}, error) {
 	var (
 		err     error
 		fldPath = field.NewPath("")
 	)
 	curValue := input
-	for _, node := range nodes.Nodes {
+	for i, node := range nodes.Nodes {
 		switch n := node.(type) {
 		case *jsonpath.ListNode:
-			curValue, err = constructWalk(curValue, n)
+			curValue, err = constructWalk(curValue, n, value)
 			if err != nil {
 				return curValue, err
 			}
@@ -50,10 +73,18 @@ func constructWalk(input map[string]interface{}, nodes *jsonpath.ListNode) (map[
 			newValue := make(map[string]interface{}, 0)
 			fldPath = fldPath.Child(n.Value)
 			curValue[n.Value] = newValue
+
+			// if the node is the last in the list we can add the value
+			if i == len(nodes.Nodes)-1 {
+				curValue[n.Value] = value
+				return curValue, nil
+			}
+
 			curValue = newValue
 		default:
 			return curValue, field.NotSupported(fldPath, node.Type(), []string{jsonpath.NodeTypeName[jsonpath.NodeList], jsonpath.NodeTypeName[jsonpath.NodeField]})
 		}
 	}
+
 	return curValue, nil
 }

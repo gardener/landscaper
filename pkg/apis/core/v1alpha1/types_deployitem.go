@@ -36,8 +36,8 @@ type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TypeSpec   `json:"spec"`
-	Status TypeStatus `json:"status"`
+	Spec   DeployItemSpec   `json:"spec"`
+	Status DeployItemStatus `json:"status"`
 }
 
 type DeployItemSpec struct {

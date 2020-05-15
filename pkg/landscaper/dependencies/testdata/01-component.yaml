@@ -4,10 +4,10 @@ metadata:
   name: test-1
 spec:
   imports:
-  - from: "test.value1"
+  - from: ".test.value1"
     type: "testtype1"
     required: true
 status:
   imports:
-  - from: "test.value1"
+  - from: ".test.value1"
     configGeneration: 3

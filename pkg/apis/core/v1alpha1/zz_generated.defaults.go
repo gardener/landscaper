@@ -27,5 +27,21 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&Component{}, func(obj interface{}) { SetObjectDefaults_Component(obj.(*Component)) })
+	scheme.AddTypeDefaultingFunc(&ComponentList{}, func(obj interface{}) { SetObjectDefaults_ComponentList(obj.(*ComponentList)) })
 	return nil
+}
+
+func SetObjectDefaults_Component(in *Component) {
+	for i := range in.Spec.Imports {
+		a := &in.Spec.Imports[i]
+		SetDefaults_Import(a)
+	}
+}
+
+func SetObjectDefaults_ComponentList(in *ComponentList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_Component(a)
+	}
 }

@@ -679,10 +679,10 @@ func Convert_core_DefinitionStatus_To_v1alpha1_DefinitionStatus(in *core.Definit
 
 func autoConvert_v1alpha1_DeployItem_To_core_DeployItem(in *DeployItem, out *core.DeployItem, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_TypeSpec_To_core_TypeSpec(&in.Spec, &out.Spec, s); err != nil {
+	if err := Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_TypeStatus_To_core_TypeStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -695,10 +695,10 @@ func Convert_v1alpha1_DeployItem_To_core_DeployItem(in *DeployItem, out *core.De
 
 func autoConvert_core_DeployItem_To_v1alpha1_DeployItem(in *core.DeployItem, out *DeployItem, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_TypeSpec_To_v1alpha1_TypeSpec(&in.Spec, &out.Spec, s); err != nil {
+	if err := Convert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_core_TypeStatus_To_v1alpha1_TypeStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
@@ -881,7 +881,7 @@ func autoConvert_v1alpha1_Import_To_core_Import(in *Import, out *core.Import, s 
 	out.From = in.From
 	out.To = in.To
 	out.Type = in.Type
-	out.Required = in.Required
+	out.Required = (*bool)(unsafe.Pointer(in.Required))
 	if err := Convert_v1alpha1_Default_To_core_Default(&in.Default, &out.Default, s); err != nil {
 		return err
 	}
@@ -897,7 +897,7 @@ func autoConvert_core_Import_To_v1alpha1_Import(in *core.Import, out *Import, s 
 	out.From = in.From
 	out.To = in.To
 	out.Type = in.Type
-	out.Required = in.Required
+	out.Required = (*bool)(unsafe.Pointer(in.Required))
 	if err := Convert_core_Default_To_v1alpha1_Default(&in.Default, &out.Default, s); err != nil {
 		return err
 	}

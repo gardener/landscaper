@@ -18,7 +18,6 @@ import (
 	"context"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -66,13 +65,8 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	customType.Status.ObservedGeneration = customType.Generation
 
-	customType.Status.Conditions = []v1alpha1.TypeCondition{
-		{
-			Type:               v1alpha1.TypeEstablished,
-			Status:             metav1.ConditionTrue,
-			LastTransitionTime: metav1.Now(),
-		},
-	}
+	customType.Status.Conditions = v1alpha1.CreateOrUpdateConditions(customType.Status.Conditions, v1alpha1.TypeEstablished,
+		v1alpha1.ConditionTrue, "", "")
 
 	if err := a.c.Status().Update(ctx, customType); err != nil {
 		a.log.Error(err, "unable to update status")

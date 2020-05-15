@@ -12,26 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package v1alpha1
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
-	}
+func addDefaultingFuncs(scheme *runtime.Scheme) error {
+	return RegisterDefaults(scheme)
+}
 
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentDefinition"), a); err != nil {
-		return err
+// SetDefaults_Import sets default values for the Import objects
+func SetDefaults_Import(obj *Import) {
+	if obj.Required == nil {
+		obj.Required = pointer.BoolPtr(true)
 	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Component{}).
-		Complete(a)
 }

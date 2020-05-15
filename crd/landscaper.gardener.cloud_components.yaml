@@ -80,7 +80,6 @@ spec:
                   required:
                   - default
                   - from
-                  - required
                   - to
                   - type
                   type: object
@@ -92,6 +91,9 @@ spec:
             type: object
           status:
             properties:
+              configGeneration:
+                format: int64
+                type: integer
               executors:
                 items:
                   description: ExecutorState tracks the state of a executor
@@ -210,8 +212,27 @@ spec:
                   - phase
                   type: object
                 type: array
+              imports:
+                items:
+                  description: ImportState hold the state of a import
+                  properties:
+                    component:
+                      type: string
+                    configGeneration:
+                      format: int64
+                      type: integer
+                    from:
+                      type: string
+                  required:
+                  - component
+                  - configGeneration
+                  - from
+                  type: object
+                type: array
               phase:
                 type: string
+            required:
+            - configGeneration
             type: object
         required:
         - spec

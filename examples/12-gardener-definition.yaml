@@ -1,0 +1,42 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+metadata:
+  name: nginx-ingress-controller
+spec:
+
+  imports:
+  - key: .kubeconfig
+    type: kubeconfig
+
+  - key: .helmchart.gardener-installer-controller
+    type: helmchart
+  - key: .images.gardener-installer-controller
+    type: image
+
+  - key: .dnsClass
+    type: string
+  - key: .resources
+    type: ResourceRequirements
+    required: false
+
+  exports:
+  - key: .ingressClass # from effective helm values as DeployItem's export
+    type: string
+
+  executor: # has to be idempotent
+  - type: DeployerInstallation
+    config:
+      template:
+        type: Helm
+        providerConfig:
+          chartRepository: {{ .imports.helmchart.gardener-installer-controller.chartRepository }}
+          version: {{ .imports.gardener-installer-controller.version }}
+          kubeconfig: {{ .imports.kubeconfig }}
+          values:
+            abc: ccc
+  - type: Template
+    config:
+      template:
+        type: Gardener
+        providerConfig:
+          values: abc

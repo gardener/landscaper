@@ -1,5 +1,5 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Definition
+kind: ComponentDefinition
 metadata:
   name: my-component-definition
 spec:
@@ -49,7 +49,7 @@ spec:
         providerConfig:
           chartRepository: my-repo
           version: 1.0.0
-          values: {{ .Values.String }}
+          values: {{ .exports.mykey.x }}
           valueRef:
             secretRef: abc
   - type: template
@@ -60,13 +60,14 @@ spec:
         metadata:
           annotaion:
             class: x
-        spec:
+        spec: |
           type: helm
           providerConfig:
             chartRepository: my-repo/dns-controller
             version: 1.0.0
             values:
               instanceID: {{ .imports.dnsController }}
+              ca: {{ state "key" function }}
             valueRef:
               secretRef: abc
   - type: template

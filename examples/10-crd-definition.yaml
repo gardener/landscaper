@@ -20,3 +20,6 @@ spec:
       openAPIV3Schema:
         type: object
         x-kubernetes-preserve-unknown-fields: true
+    subresources:
+      # status enables the status subresource.
+      status: {}

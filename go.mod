@@ -6,6 +6,7 @@ require (
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/Pallinder/go-randomdata v1.2.0 // indirect
 	github.com/cstockton/go-conv v0.0.0-20170524002450-66a2b2ba36e1 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/go-openapi/spec v0.19.3
@@ -43,7 +44,7 @@ require (
 	k8s.io/code-generator v0.18.2
 	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
 	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c
-	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
+	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/controller-tools v0.3.0
 	sigs.k8s.io/yaml v1.2.0

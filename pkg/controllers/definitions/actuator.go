@@ -16,6 +16,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,40 +97,22 @@ func (a *actuator) ensureCustomTypes(ctx context.Context, definition *v1alpha1.C
 			},
 		}
 
-		if err := controllerutil.SetOwnerReference(&datatype.ObjectMeta, definition, a.scheme); err != nil {
+		if err := controllerutil.SetOwnerReference(datatype, definition, a.scheme); err != nil {
 			return err
 		}
 
 		if _, err := controllerutil.CreateOrUpdate(ctx, a.c, datatype, func() error { return nil }); err != nil {
 			return err
 		}
-
-		createOrUpdateDefinitionTypeCondition(definition.Status.TypeConditions, v1alpha1.DefinitionTypeCondition{
-			TypeName: cType.Name,
-			TypeCondition: v1alpha1.TypeCondition{
-				Type:               v1alpha1.TypeEstablished,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-		})
 	}
+
+	definition.Status.Conditions = v1alpha1.CreateOrUpdateConditions(definition.Status.Conditions, "CustomDataTypes",
+		v1alpha1.ConditionTrue, "CustomDataTypesCreated",
+		fmt.Sprintf("%d custom data types were successfully created", len(definition.Spec.CustomTypes)))
 
 	if err := a.c.Status().Update(ctx, definition); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func createOrUpdateDefinitionTypeCondition(conditions []v1alpha1.DefinitionTypeCondition, cond v1alpha1.DefinitionTypeCondition) {
-	for i, foundCondition := range conditions {
-		if foundCondition.TypeName == cond.TypeName {
-			continue
-		}
-
-		conditions[i] = cond
-		return
-	}
-
-	conditions = append(conditions, cond)
 }

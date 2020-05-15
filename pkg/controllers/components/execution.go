@@ -15,23 +15,10 @@
 package components
 
 import (
+	"context"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
-	}
-
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentDefinition"), a); err != nil {
-		return err
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Component{}).
-		Complete(a)
+func (a *actuator) runExecutions(ctx context.Context, component *v1alpha1.Component, imports map[string]interface{}) error {
+	return nil
 }

@@ -175,16 +175,14 @@ func parseImports(component *core.Component) (map[string]interface{}, map[string
 	externalConfig := make(map[string]interface{})
 	for _, imp := range component.Spec.Imports {
 		// format the jsonpath to internal parsable path
-		toPath := fmt.Sprintf("{%s}", imp.To)
-		cfg, err := jsonpath.Construct(toPath)
+		cfg, err := jsonpath.Construct(imp.To, imp.Type)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.To)
 		}
 		internalConfig = utils.MergeMaps(internalConfig, cfg)
 
 		// format the jsonpath to internal parsable path
-		fromPath := fmt.Sprintf("{%s}", imp.From)
-		cfg, err = jsonpath.Construct(fromPath)
+		cfg, err = jsonpath.Construct(imp.From, imp.Type)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.From)
 		}
@@ -198,16 +196,14 @@ func parseExports(component *core.Component) (map[string]interface{}, map[string
 	externalConfig := make(map[string]interface{})
 	for _, exp := range component.Spec.Exports {
 		// format the jsonpath to internal parsable path
-		toPath := fmt.Sprintf("{%s}", exp.To)
-		cfg, err := jsonpath.Construct(toPath)
+		cfg, err := jsonpath.Construct(exp.To, exp.Type)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.To)
 		}
 		externalConfig = utils.MergeMaps(externalConfig, cfg)
 
 		// format the jsonpath to internal parsable path
-		fromPath := fmt.Sprintf("{%s}", exp.From)
-		cfg, err = jsonpath.Construct(fromPath)
+		cfg, err = jsonpath.Construct(exp.From, exp.Type)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.From)
 		}

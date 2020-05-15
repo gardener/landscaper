@@ -4,7 +4,7 @@ metadata:
   name: test-2
 spec:
   exports:
-  - to: "test.value1"
+  - to: ".test.value1"
     type: "testtype1"
 status:
   phase: Completed

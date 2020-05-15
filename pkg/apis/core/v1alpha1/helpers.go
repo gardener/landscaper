@@ -25,3 +25,65 @@ func HasOperation(obj metav1.ObjectMeta, op Operation) bool {
 
 	return Operation(currentOp) == op
 }
+
+
+// InitCondition initializes a new Condition with an Unknown status.
+func InitCondition(conditionType ConditionType) Condition {
+	return Condition{
+		Type:               conditionType,
+		Status:             ConditionUnknown,
+		Reason:             "ConditionInitialized",
+		Message:            "The condition has been initialized but its semantic check has not been performed yet.",
+		LastTransitionTime: metav1.Now(),
+	}
+}
+
+// GetCondition returns the condition with the given <conditionType> out of the list of <conditions>.
+// In case the required type could not be found, it returns nil.
+func GetCondition(conditions []Condition, conditionType ConditionType) *Condition {
+	for _, condition := range conditions {
+		if condition.Type == conditionType {
+			c := condition
+			return &c
+		}
+	}
+	return nil
+}
+
+// GetOrInitCondition tries to retrieve the condition with the given condition type from the given conditions.
+// If the condition could not be found, it returns an initialized condition of the given type.
+func GetOrInitCondition(conditions []Condition, conditionType ConditionType) Condition {
+	if condition := GetCondition(conditions, conditionType); condition != nil {
+		return *condition
+	}
+	return InitCondition(conditionType)
+}
+
+// UpdatedCondition updates the properties of one specific condition.
+func UpdatedCondition(condition Condition, status ConditionStatus, reason, message string, codes ...ErrorCode) Condition {
+	newCondition := Condition{
+		Type:               condition.Type,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: condition.LastTransitionTime,
+		LastUpdateTime:     metav1.Now(),
+		Codes:              codes,
+	}
+
+	if condition.Status != status {
+		newCondition.LastTransitionTime = metav1.Now()
+	}
+	return newCondition
+}
+
+func CreateOrUpdateConditions(conditions []Condition, condType ConditionType, status ConditionStatus, reason, message string, codes ...ErrorCode) []Condition {
+	for i, foundCondition := range conditions {
+		if foundCondition.Type == condType {
+			conditions[i] = UpdatedCondition(conditions[i], status, reason, message, codes...)
+			return conditions
+		}
+	}
+
+	return append(conditions, UpdatedCondition(InitCondition(condType), status, reason, message, codes...))
+}

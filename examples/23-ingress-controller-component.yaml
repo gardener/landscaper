@@ -1,0 +1,41 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Component
+metadata:
+  name: ingress-controller
+spec:
+  definitionRef: nginx-ingress-controller
+  imports:
+  - from: .kubeconfigs.base
+    type: kubeconfig
+    to: .kubeconfig
+
+  - from: .dep.helmchart.ingress-controller
+    type: helmchart
+    to: .helmchart.ingress-controller
+  - from: .dep.image.nginx-ingress-controller
+    type: image
+    to: .images.nginx-ingress-controller
+
+  - from: .dns.class
+    type: string
+    to: .dnsClass
+  - from: .ingress.resources
+    to: .resources
+    type: ResourceRequirements
+
+  exports:
+  - to: .ingress.class
+    type: string
+    from: .ingressClass
+
+status:
+  phase: Progressing | Pending | Completed
+
+  imports:
+  - from: .kubeconfigs.base
+    component: xyz
+    configGeneration: 2
+
+  configGeneration: 0
+  executors:
+  - deployItemRef: abc

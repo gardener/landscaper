@@ -16,21 +16,27 @@ package dependencies
 
 import (
 	"errors"
+	"github.com/gardener/landscaper/pkg/configuration/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/component"
 
 	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // CheckImportSatisfaction traverses all component and checks if the imports of the current component are all satisfied
-func CheckImportSatisfaction(current *component.Component, components []*component.Component) error {
-
+func CheckImportSatisfaction(current *component.Component, components []*component.Component, landscapeConfig map[string]interface{}) error {
 	// todo: schrodit - parallelize execution and catch multierror
 	for _, importSpec := range current.Info.Spec.Imports {
-		if !importSpec.Required {
+		if !*importSpec.Required {
 			continue
 		}
 
-		exportSpec, exportComponent, err := getExport(importSpec, components)
+		// check if the value can be found in the landscape config
+		if err := jsonpath.GetValue(importSpec.From, landscapeConfig, nil); err == nil {
+			// validate against type with openv3 value
+			continue
+		}
+
+		exportSpec, exportComponent, err := GetComponentForImport(importSpec, components)
 		if err != nil {
 			return err
 		}
@@ -47,6 +53,8 @@ func CheckImportSatisfaction(current *component.Component, components []*compone
 
 		// if the component already has a state for the import
 		// we have to check whether the generation has already changed
+
+		// todo: traverse through tree to root node
 		if importStatus.ConfigGeneration >= exportComponent.Info.Status.ConfigGeneration {
 			return errors.New("config has not been updated yet")
 		}
@@ -56,7 +64,7 @@ func CheckImportSatisfaction(current *component.Component, components []*compone
 	return nil
 }
 
-func getExport(importSpec corev1alpha1.Import, components []*component.Component) (*corev1alpha1.Export, *component.Component, error) {
+func GetComponentForImport(importSpec corev1alpha1.Import, components []*component.Component) (*corev1alpha1.Export, *component.Component, error) {
 	for _, component := range components {
 		if component.Info.Status.Phase != corev1alpha1.ComponentPhaseCompleted {
 			continue
