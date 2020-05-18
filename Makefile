@@ -23,14 +23,10 @@ revendor:
 	@GO111MODULE=on go mod vendor
     @GO111MODULE=on go mod tidy
 
-.PHONY: codegen
-codegen:
-	@$(REPO_ROOT)/hack/generate-code.sh
-
 .PHONY: generate
 generate:
+	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg...
 	@echo "CRD generator lacks support for openapi defs which should be fixed with this commit https://github.com/kubernetes-sigs/controller-tools/pull/427"
 	@controller-gen output:crd:artifacts:config=crd crd:crdVersions=v1 \
 		object:headerFile="$(REPO_ROOT)/hack/boilerplate.go.txt" \
 		paths="$(REPO_ROOT)/pkg/apis/core/v1alpha1"
-	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg...
