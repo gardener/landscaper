@@ -12,44 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package v1alpha1
 
 import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	TypeEstablished ConditionType = "TypeEstablished"
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// TypeList contains a list of Types
-type TypeList struct {
+// DataTypeList contains a list of DataTypes
+type DataTypeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Type `json:"items"`
+	Items           []DataType `json:"items"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Type defines a new type that can be used for component configurations
-type Type struct {
+// DataType defines a new type that can be used for component configurations
+// +kubebuilder:subresource:status
+type DataType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TypeSpec   `json:"spec"`
-	Status TypeStatus `json:"status"`
+	Scheme DataTypeScheme `json:"scheme"`
 }
 
-type TypeSpec struct {
+// DataTypeScheme specifies the scheme of the type.
+// +kubebuilder:validation:type=any
+type DataTypeScheme struct {
+	// OpenAPIV3Schema specified the openapiv3 scheme for the type.
 	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
-}
-
-type TypeStatus struct {
-	// ObservedGeneration is the most recent generation observed for this Type. It corresponds to the
-	// Shoot's generation, which is updated on mutation by the landscaper.
-	ObservedGeneration int64 `json:"observedGeneration"`
-
-	// Conditions contains the last observed conditions of the type.
-	// +optional
-	Conditions []Condition `json:"conditions,omitempty"`
 }

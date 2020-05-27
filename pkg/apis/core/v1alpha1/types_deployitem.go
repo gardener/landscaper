@@ -19,19 +19,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type DeployItemPhase string
+
+const (
+	DeployItemPhaseInit        DeployItemPhase = "Init"
+	DeployItemPhaseProgressing DeployItemPhase = "Progressing"
+	DeployItemPhaseCompleted   DeployItemPhase = "Completed"
+	DeployItemPhaseFailed      DeployItemPhase = "Failed"
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
 type DeployItemList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Type `json:"items"`
+	Items           []DeployItem `json:"items"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItem defines a DeployItem that should be processed by a external deployer
+// +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -40,26 +50,27 @@ type DeployItem struct {
 	Status DeployItemStatus `json:"status"`
 }
 
+// DeployItemSpec contains the definition of a deploy item.
 type DeployItemSpec struct {
-	Type         string          `json:"type"`
-	Import       SecretRef       `json:"import,omitempty"`
-	DeployConfig json.RawMessage `json:"deployConfig"`
+	// DataType is the type of the deployer that should handle the item.
+	Type string `json:"type"`
+
+	// ImportReferences is the reference to the object containing all imported values.
+	ImportReferences ObjectReference `json:"importRef,omitempty"`
+
+	// Configuration contains the deployer type specific configuration.
+	Configuration json.RawMessage `json:"config,omitempty"`
 }
 
+// DeployItemStatus contains the status of a deploy item
 type DeployItemStatus struct {
-	Phase ComponentPhase `json:"phase,omitempty"`
+	// Phase is the current phase of the DeployItem
+	Phase DeployItemPhase `json:"phase,omitempty"`
 
-	// +optional
-	ExportGeneration int64 `json:"exportGeneration,omitempty"`
+	// Conditions contains the actual condition of a deploy item
+	Conditions []Condition `json:"conditions,omitempty"`
 
+	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
-	Export *DeployItemExport `json:"export,omitempty"`
-}
-
-type DeployItemExport struct {
-	// +optional
-	Value string `json:"value,omitempty"`
-
-	// +optional
-	ValueRef *SecretRef `json:"valueRef,omitempty"`
+	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 }

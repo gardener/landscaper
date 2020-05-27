@@ -53,14 +53,12 @@ func init() {
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Type{},
-		&TypeList{},
+		&DataType{},
+		&DataTypeList{},
 		&ComponentDefinition{},
-		&ComponentDefinitionList{},
-		&Component{},
-		&ComponentList{},
+		&ComponentInstallation{},
+		&ComponentInstallationList{},
 		&LandscapeConfiguration{},
-		&LandscapeConfigurationList{},
 	)
 	return nil
 }

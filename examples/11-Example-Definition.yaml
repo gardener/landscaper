@@ -1,20 +1,55 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: ComponentDefinition
-metadata:
-  name: my-component-definition
-spec:
 
-  import: {}
+name: my-component-definition
+version: 1.0.0
 
-  export: {}
+blobRef:
+  url: https://myoci/co
+  path: /home/d123
 
-  executor: # has to be idempotent
-  - type: container # also extensions resource
+import:
+- key: dnsControllerClass | common.dnsControllerClass
+  type: string
+  default:
+    value: ""
+#      ref: common.dnsControllerClass # tbd
+- key: abc
+  type: number
+
+export:
+- key: a.b
+  type: mytype
+- key: ijk
+  type: string
+
+definitionRefs:
+- ref: my-sub-component:1.0.0
+  imports:
+  - from: abc
+    to: yxz
+    default: abc
+  exports:
+  - from: efg
+    to: ijk
+- ref: my-other-sub-component:0.0.5
+  imports:
+  - from: abc2
+    to: yxz2
+  exports:
+  - from: efg2
+    to: ijk2
+
+executors: | # has to be idempotent
+  - name: init
+    type: container # also extensions resource
     config:
       image: my-custom-image:version
       command: ["run-component"]
       args: []
-  - type: script
+  - name: my-script
+    type: script
+    environment: ls-abc
     config:
       mount:
         artifact: xyz
@@ -30,58 +65,37 @@ spec:
 
         yaml.dump(export)
       image: ubuntu:latest
-  - type: template
-      config:
-        apiVersion: landscaper.gardener.cloud/v1alpha1
-        kind: DeployItem
-        spec:
-          type: container
-          providerConfig:
-            image: my-custom-image:version
-            command: ["run-component"]
-            args: []
-  - type: template
+  - name: my-container
+    type: container
     config:
-      apiVersion: landscaper.gardener.cloud/v1alpha1
-      kind: DeployItem
-      spec:
-        type: helm
-        providerConfig:
-          chartRepository: my-repo
-          version: 1.0.0
-          values: {{ .exports.mykey.x }}
-          valueRef:
-            secretRef: abc
-  - type: template
+      image: my-custom-image:version
+      command: ["run-component"]
+      args: []
+  - name: deploy-chart
+    type: helm
     config:
-      template:
-        apiVersion: landscaper.gardener.cloud/v1alpha1
-        kind: DeployItem
-        metadata:
-          annotaion:
-            class: x
-        spec: |
-          type: helm
-          providerConfig:
-            chartRepository: my-repo/dns-controller
-            version: 1.0.0
-            values:
-              instanceID: {{ .imports.dnsController }}
-              ca: {{ state "key" function }}
-            valueRef:
-              secretRef: abc
-  - type: template
-      config:
-        template:
-          apiVersion: landscaper.gardener.cloud/v1alpha1
-          kind: DeployItem
-          spec:
-            type: manifest
-            providerConfig:
-            - apiVersion: v1
-              kind: Secret
-              metdata:
-                name: abc
-              data:
-                value1: {{ .import.my-import.value1 }}
-                value2: (( .import.my-import.value2 ))
+      chartRepository: my-repo
+      version: 1.0.0
+      values: {{ .exports.mykey.x }}
+      valueRef:
+        secretRef: abc
+  - name: deploy-other-chart
+    type: helm
+    config:
+      chartRepository: my-repo/dns-controller
+      version: 1.0.0
+      values:
+        instanceID: {{ .imports.dnsController }}
+        ca: {{ state "key" function }}
+      valueRef:
+        secretRef: abc
+  - name: deploy-manifest
+    type: manifest
+    config:
+    - apiVersion: v1
+      kind: Secret
+      metdata:
+        name: abc
+      data:
+        value1: {{ .import.my-import.value1 }}
+        value2: (( .import.my-import.value2 ))

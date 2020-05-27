@@ -469,7 +469,7 @@ func schema_pkg_apis_core_v1alpha1_DefinitionSpec(ref common.ReferenceCallback) 
 					},
 					"executors": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Executors defines the executors that are sequentially executed by the landscaper",
+							Description: "DeployItemReferences defines the executors that are sequentially executed by the landscaper",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{

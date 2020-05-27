@@ -53,7 +53,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	defer ctx.Done()
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
-	customType := &v1alpha1.Type{}
+	customType := &v1alpha1.DataType{}
 	if err := a.c.Get(ctx, req.NamespacedName, customType); err != nil {
 		a.log.Error(err, "unable to get resource")
 		return reconcile.Result{}, err

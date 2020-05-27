@@ -87,12 +87,12 @@ func (a *actuator) ensureCustomTypes(ctx context.Context, definition *v1alpha1.C
 	}
 
 	for _, cType := range definition.Spec.CustomTypes {
-		datatype := &v1alpha1.Type{
+		datatype := &v1alpha1.DataType{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cType.Name,
 				Namespace: definition.Namespace,
 			},
-			Spec: v1alpha1.TypeSpec{
+			Spec: v1alpha1.DataTypeScheme{
 				OpenAPIV3Schema: cType.OpenAPIV3Schema,
 			},
 		}

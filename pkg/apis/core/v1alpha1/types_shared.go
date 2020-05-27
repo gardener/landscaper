@@ -54,7 +54,7 @@ const (
 
 // Condition holds the information about the state of a resource.
 type Condition struct {
-	// Type of the Shoot condition.
+	// DataType of the Shoot condition.
 	Type ConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
 	// Status of the condition, one of True, False, Unknown.
 	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
@@ -76,6 +76,15 @@ type Operation string
 const (
 	ReoncileOperation Operation = "reconcile"
 )
+
+// ObjectReference is the reference to a kubernetes object.
+type ObjectReference struct {
+	// Name is the name of the kubernetes object.
+	Name string `json:"name"`
+
+	// Namespace is the namespace of kubernetes object.
+	Namespace string `json:"namespace"`
+}
 
 // SecretRef references a secret value
 type SecretRef struct {

@@ -1,5 +1,5 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Component
+kind: ComponentInstallation
 metadata:
   name: virtual-cluster
   generation: 6
@@ -7,11 +7,13 @@ spec:
 
   definitionRef: virtual-cluster
 
-  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
+#  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
 
-  imports:
+  imports: # generated from aggregated definition or default from definition with from = to
+  - from: .kubeconfig
+    to: .kubeconfig
+
   - from: .kubeconfigs.base
-    type: kubeconfig
     to: .kubeconfig
 
   - from: .dep.helmchart.etcd
@@ -163,9 +165,20 @@ status:
 
   imports:
   - from: .kubeconfigs.base
-    component: xyz
+    installationRef:
+      name: xyz
+      namespace: default
     configGeneration: 2
 
+  deployItemRefs:
+  - name: abc --> OwnerRef
+    namespace: default
+
+  installationRefs:
+  - name: Installation1 --> OwnerRef
+    namespace: default
+  - name: Installation2 --> OwnerRef
+    namespace: default
+
   configGeneration: 0
-  executors:
-  - deployItemRef: abc
+  exportRef: my-secret --> OwnerRef

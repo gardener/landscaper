@@ -23,8 +23,8 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
-// SetDefaults_Import sets default values for the Import objects
-func SetDefaults_Import(obj *Import) {
+// SetDefaults_DefinitionImport sets default values for the DefinitionImport objects
+func SetDefaults_DefinitionImport(obj *DefinitionImport) {
 	if obj.Required == nil {
 		obj.Required = pointer.BoolPtr(true)
 	}

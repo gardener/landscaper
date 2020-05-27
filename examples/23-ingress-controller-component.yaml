@@ -1,5 +1,5 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Component
+kind: ComponentInstallation
 metadata:
   name: ingress-controller
 spec:
@@ -36,6 +36,12 @@ status:
     component: xyz
     configGeneration: 2
 
-  configGeneration: 0
   executors:
-  - deployItemRef: abc
+  - deployItemRef: abc --> OwnerRef
+
+  installationRefs:
+  - ref: Installation1 --> OwnerRef
+  - ref: Installation2 --> OwnerRef
+
+  configGeneration: 0
+  exportRef: my-secret --> OwnerRef

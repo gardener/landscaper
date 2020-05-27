@@ -23,20 +23,35 @@ spec:
   - key: .ingressClass # from effective helm values as DeployItem's export
     type: string
 
-  executor: # has to be idempotent
-  - type: DeployerInstallation
-    config:
-      template:
-        type: Helm
-        providerConfig:
-          chartRepository: {{ .imports.helmchart.gardener-installer-controller.chartRepository }}
-          version: {{ .imports.gardener-installer-controller.version }}
-          kubeconfig: {{ .imports.kubeconfig }}
-          values:
-            abc: ccc
-  - type: Template
-    config:
-      template:
-        type: Gardener
-        providerConfig:
-          values: abc
+  executor: | # has to be idempotent
+    {{ if .abc }} # templating engine of choice => go template (sprig) | spiff++ | makorender | lua | velocity
+    - name: abc
+      type: DeployerInstallation
+      config:
+        template:
+          type: Helm
+          providerConfig:
+            chartRepository: {{ .imports.helmchart.gardener-installer-controller.chartRepository }}
+            version: {{ .imports.gardener-installer-controller.version }}
+            kubeconfig: {{ .imports.kubeconfig }}
+            values:
+              abc: ccc
+    {{ end }}
+
+    - name: stuff
+      type: Script
+      dependencies: ["abc"]
+      config:
+        script: |
+          doStuff()
+          createHelmDeployItem()
+          getExportsOfDeployItem()
+          createExport()
+
+    {{ const abc := range .imports.value }}
+    - name: gardener
+      type: gardener
+      depenencies: [ "stuff", "abc" ]
+      config:
+        values: abc
+    {{ end }}

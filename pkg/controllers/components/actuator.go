@@ -55,7 +55,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	defer ctx.Done()
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
-	component := &v1alpha1.Component{}
+	component := &v1alpha1.ComponentInstallation{}
 	if err := a.c.Get(ctx, req.NamespacedName, component); err != nil {
 		a.log.Error(err, "unable to get resource")
 		return reconcile.Result{}, err
@@ -112,10 +112,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) triggerDependants(ctx context.Context, component *v1alpha1.Component) error {
+func (a *actuator) triggerDependants(ctx context.Context, component *v1alpha1.ComponentInstallation) error {
 	return nil
 }
 
-func (a *actuator) validateExports(ctx context.Context, component *v1alpha1.Component) error {
+func (a *actuator) validateExports(ctx context.Context, component *v1alpha1.ComponentInstallation) error {
 	return nil
 }

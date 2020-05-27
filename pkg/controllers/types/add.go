@@ -27,11 +27,11 @@ func AddActuatorToManager(mgr manager.Manager) error {
 		return err
 	}
 
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("Type"), a); err != nil {
+	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("DataType"), a); err != nil {
 		return err
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Type{}).
+		For(&v1alpha1.DataType{}).
 		Complete(a)
 }

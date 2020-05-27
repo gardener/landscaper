@@ -6,12 +6,11 @@ spec:
 
   type: container | helm | manifest
 
-  import:
-    secretRef:
-      name: secret-item1
-      key: key
+  importRef:
+    name: secret-item1
+    key: key
 
-  providerConfig:
+  config:
     xxx: abc
 
 status:
@@ -19,8 +18,6 @@ status:
   conditions:
   - condition1: healthy
     message: testing
-
-  configGeneration: 2
 
   exports:
     value: xxx

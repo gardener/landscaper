@@ -4,22 +4,22 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
-  name: types.landscaper.gardener.cloud
+  name: datatypes.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
-    kind: Type
-    listKind: TypeList
-    plural: types
-    singular: type
+    kind: DataType
+    listKind: DataTypeList
+    plural: datatypes
+    singular: datatype
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Type defines a new type that can be used for component configurations
+        description: DataType defines a new type that can be used for component configurations
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,11 +33,12 @@ spec:
             type: string
           metadata:
             type: object
-          spec:
+          scheme:
+            description: DataTypeScheme specifies the scheme of the type.
             properties:
               openAPIV3Schema:
-                description: JSONSchemaProps is a JSON-Schema following Specification
-                  Draft 4 (http://json-schema.org/).
+                description: OpenAPIV3Schema specified the openapiv3 scheme for the
+                  type.
                 properties:
                   $ref:
                     type: string
@@ -45,13 +46,9 @@ spec:
                     description: JSONSchemaURL represents a schema url.
                     type: string
                   additionalItems:
-                    description: JSONSchemaPropsOrBool represents JSONSchemaProps
-                      or a boolean value. Defaults to true for the boolean property.
-                    type: object
+                    type: Any
                   additionalProperties:
-                    description: JSONSchemaPropsOrBool represents JSONSchemaProps
-                      or a boolean value. Defaults to true for the boolean property.
-                    type: object
+                    type: Any
                   allOf:
                     items: {}
                     type: array
@@ -71,9 +68,7 @@ spec:
                     type: object
                   dependencies:
                     additionalProperties:
-                      description: JSONSchemaPropsOrStringArray represents a JSONSchemaProps
-                        or a string array.
-                      type: object
+                      type: Any
                     description: JSONSchemaDependencies represent a dependencies property.
                     type: object
                   description:
@@ -134,10 +129,7 @@ spec:
                   id:
                     type: string
                   items:
-                    description: JSONSchemaPropsOrArray represents a value that can
-                      either be a JSONSchemaProps or an array of JSONSchemaProps.
-                      Mainly here for serialization purposes.
-                    type: object
+                    type: Any
                   maxItems:
                     format: int64
                     type: integer
@@ -250,71 +242,16 @@ spec:
                     type: boolean
                 type: object
             type: object
-          status:
-            properties:
-              conditions:
-                description: Conditions contains the last observed conditions of the
-                  type.
-                items:
-                  description: Condition holds the information about the state of
-                    a resource.
-                  properties:
-                    codes:
-                      description: Well-defined error codes in case the condition
-                        reports a problem.
-                      items:
-                        description: ErrorCode is a string alias.
-                        type: string
-                      type: array
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
-                      format: date-time
-                      type: string
-                    lastUpdateTime:
-                      description: Last time the condition was updated.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A human readable message indicating details about
-                        the transition.
-                      type: string
-                    reason:
-                      description: The reason for the condition's last transition.
-                      type: string
-                    status:
-                      description: Status of the condition, one of True, False, Unknown.
-                      type: string
-                    type:
-                      description: Type of the Shoot condition.
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - lastUpdateTime
-                  - message
-                  - reason
-                  - status
-                  - type
-                  type: object
-                type: array
-              observedGeneration:
-                description: ObservedGeneration is the most recent generation observed
-                  for this Type. It corresponds to the Shoot's generation, which is
-                  updated on mutation by the landscaper.
-                format: int64
-                type: integer
-            required:
-            - observedGeneration
-            type: object
         required:
-        - spec
-        - status
+        - scheme
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null

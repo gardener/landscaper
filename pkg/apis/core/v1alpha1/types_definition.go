@@ -23,114 +23,130 @@ import (
 // ExecutionType defines the type of the execution
 type ExecutionType string
 
-const (
-	// ExecutionTypeContainer defines the container executor
-	ExecutionTypeContainer ExecutionType = "container"
-
-	// ExecutionTypeScript defines the script executor
-	ExecutionTypeScript ExecutionType = "script"
-
-	// ExecutionTypeTemplate defines the template executor
-	ExecutionTypeTemplate ExecutionType = "template"
-)
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// ComponentDefinitionList contains a list of Definitions
-type ComponentDefinitionList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ComponentDefinition `json:"items"`
-}
-
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentDefinition contains the configuration of a component
-// +kubebuilder:subresource:status
 type ComponentDefinition struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	Spec DefinitionSpec `json:"spec"`
+	// Name is the name of the definition.
+	Name string `json:"name"`
 
-	Status DefinitionStatus `json:"status"`
-}
+	// Version is the semver version of the definition.
+	Version string `json:"version"`
 
-type DefinitionSpec struct {
+	// CustomTypes defines additional DataTypes
+	// +optional
 	CustomTypes []CustomType `json:"customTypes,omitempty"`
 
-	Import json.RawMessage `json:"import,omitempty"`
-	Export json.RawMessage `json:"import,omitempty"`
-
-	// Executors defines the executors that are sequentially executed by the landscaper
-	Executors []Execution `json:"executors"`
-}
-
-type DefinitionStatus struct {
-	// ObservedGeneration is the most recent generation observed for this Type. It corresponds to the
-	// Shoot's generation, which is updated on mutation by the landscaper.
-	ObservedGeneration int64 `json:"observedGeneration"`
-
-	// Conditions contains the last observed conditions of the component definition.
+	// Imports define the import values that are needed for the definition and its sub-definitions.
 	// +optional
-	Conditions []Condition `json:"conditions,omitempty"`
+	Imports []DefinitionImport `json:"imports,omitempty"`
+
+	// Exports define the exported values of the definition and its sub-definitions
+	// +optional
+	Exports []DefinitionExport `json:"exports,omitempty"`
+
+	// DefinitionReferences define all sub-definitions that are referenced.
+	// +optional
+	DefinitionReferences []DefinitionReference `json:"definitionRefs,omitempty"`
+
+	// DeployItemReferences defines the executors that are sequentially executed by the landscaper
+	// +optional
+	Executors string `json:"executors"`
 }
 
+// DefinitionImport defines a imported value
+type DefinitionImport struct {
+	DefinitionFieldValue `json:",inline"`
+
+	// Required specifies whether the import is required for the component to run.
+	// Defaults to true.
+	// +optional
+	Required *bool `json:"required"`
+
+	// Default sets a default value for the current import that is used if the key is not set.
+	Default Default `json:"default,omitempty"`
+
+	// ConditionalImports are Imports that are only valid if this imports is satisfied.
+	// Does only make sense for optional imports.
+	// todo: maybe restrict only for required=false
+	// todo: see if this works with recursion
+	// +optional
+	ConditionalImports []DefinitionImport `json:"imports,omitempty"`
+}
+
+// DefinitionExport defines a exported value
+type DefinitionExport struct {
+	DefinitionFieldValue `json:",inline"`
+}
+
+// DefinitionExport defines a exported value
+type DefinitionFieldValue struct {
+	// Key defines the field name to search for the value and map to exports.
+	// Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields
+	Key string `json:"key"`
+	// DataType is the data type of the imported value
+	Type string `json:"type"`
+}
+
+// Default defines a default value (future idea: also reference?).
+type Default struct {
+	Value json.RawMessage `json:"value"`
+}
+
+// DefinitionReference defines a referenced child component definition.
+type DefinitionReference struct {
+	// Reference defines a reference to a ComponentDefinition.
+	// The definition can reside in an OCI or other supported location.
+	Reference string `json:"ref"`
+
+	// Imports defines the import mappings for the referenced component definition.
+	Imports []DefinitionImportMapping `json:"imports,omitempty"`
+
+	// Exports defines the export mappings for the referenced component definition.
+	Exports []DefinitionExportMapping `json:"exports,omitempty"`
+}
+
+// DefinitionImportMapping defines the mapping of import value
+// to the import of the referenced definition.
+type DefinitionImportMapping struct {
+	DefinitionFieldMapping `json:",inline"`
+}
+
+// DefinitionExportMapping defines the mapping of export value of the referenced definition
+// to the export value of this definition.
+type DefinitionExportMapping struct {
+	DefinitionFieldMapping `json:",inline"`
+}
+
+// DefinitionFieldMapping defines a mapping of a field name to another.
+type DefinitionFieldMapping struct {
+	// From defines a field name to get a value from an import.
+	From string `json:"from"`
+
+	// To defines a field name to map the value from the "from" field.
+	To string `json:"to"`
+}
+
+// CustomType defines a custom datatype.
 type CustomType struct {
-	Name            string                          `json:"name"`
+	// Name is the unique name of the datatype
+	Name string `json:"name"`
+
+	// OpenAPIV3Schema defines the type as openapi v3 scheme.
 	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }
 
+// Execution defines a execution element that is translated into a deploy item.
 type Execution struct {
+	// Name is the unique name of the execution.
+	Name string `json:"name"`
+
+	// DataType is the DeployItem type of the execution
 	Type ExecutionType `json:"type"`
 
-	// +optional
-	ContainerConfig *ContainerConfig `json:"containerConfig,omitempty"`
-
-	// +optional
-	ScriptConfig *ScriptConfig `json:"scriptConfig,omitempty"`
-}
-
-type ContainerConfig struct {
-	// Docker image name.
-	// +optional
-	Image string `json:"image,omitempty"`
-	// Entrypoint array. Not executed within a shell.
-	// The docker image's ENTRYPOINT is used if this is not provided.
-	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
-	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
-	// regardless of whether the variable exists or not.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
-	// +optional
-	Command []string `json:"command,omitempty"`
-	// Arguments to the entrypoint.
-	// The docker image's CMD is used if this is not provided.
-	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
-	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
-	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
-	// regardless of whether the variable exists or not.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
-	// +optional
-	Args []string `json:"args,omitempty"`
-	// Container's working directory.
-	// If not specified, the container runtime's default will be used, which
-	// might be configured in the container image.
-	// Cannot be updated.
-	// +optional
-	WorkingDir string `json:"workingDir,omitempty"`
-}
-
-type ScriptConfig struct {
-	Script string `json:"script"`
-	// Docker image name.
-	// +optional
-	Image string `json:"image,omitempty"`
-}
-
-type TemplateConfig struct {
-	Config string `json:"config"`
+	// Configuration contains the type specific configuration for the execution.
+	Configuration json.RawMessage `json:"config"`
 }

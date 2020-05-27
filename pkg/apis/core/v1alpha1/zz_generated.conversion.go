@@ -36,13 +36,13 @@ func init() {
 // RegisterConversions adds conversion functions to the given scheme.
 // Public to allow building arbitrary schemes.
 func RegisterConversions(s *runtime.Scheme) error {
-	if err := s.AddGeneratedConversionFunc((*Component)(nil), (*core.Component)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_Component_To_core_Component(a.(*Component), b.(*core.Component), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentInstallation)(nil), (*core.Component)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Component_To_core_Component(a.(*ComponentInstallation), b.(*core.Component), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.Component)(nil), (*Component)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_Component_To_v1alpha1_Component(a.(*core.Component), b.(*Component), scope)
+	if err := s.AddGeneratedConversionFunc((*core.Component)(nil), (*ComponentInstallation)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Component_To_v1alpha1_Component(a.(*core.Component), b.(*ComponentInstallation), scope)
 	}); err != nil {
 		return err
 	}
@@ -66,33 +66,33 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentList)(nil), (*core.ComponentList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentList_To_core_ComponentList(a.(*ComponentList), b.(*core.ComponentList), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentInstallationList)(nil), (*core.ComponentList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentList_To_core_ComponentList(a.(*ComponentInstallationList), b.(*core.ComponentList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentList)(nil), (*ComponentList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentList_To_v1alpha1_ComponentList(a.(*core.ComponentList), b.(*ComponentList), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentList)(nil), (*ComponentInstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentList_To_v1alpha1_ComponentList(a.(*core.ComponentList), b.(*ComponentInstallationList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentSpec)(nil), (*core.ComponentSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec(a.(*ComponentSpec), b.(*core.ComponentSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentInstallationSpec)(nil), (*core.ComponentSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec(a.(*ComponentInstallationSpec), b.(*core.ComponentSpec), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentSpec)(nil), (*ComponentSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec(a.(*core.ComponentSpec), b.(*ComponentSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentSpec)(nil), (*ComponentInstallationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec(a.(*core.ComponentSpec), b.(*ComponentInstallationSpec), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentStatus)(nil), (*core.ComponentStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentStatus_To_core_ComponentStatus(a.(*ComponentStatus), b.(*core.ComponentStatus), scope)
+	if err := s.AddGeneratedConversionFunc((*ComponentInstallationStatus)(nil), (*core.ComponentStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentStatus_To_core_ComponentStatus(a.(*ComponentInstallationStatus), b.(*core.ComponentStatus), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentStatus)(nil), (*ComponentStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentStatus_To_v1alpha1_ComponentStatus(a.(*core.ComponentStatus), b.(*ComponentStatus), scope)
+	if err := s.AddGeneratedConversionFunc((*core.ComponentStatus)(nil), (*ComponentInstallationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ComponentStatus_To_v1alpha1_ComponentStatus(a.(*core.ComponentStatus), b.(*ComponentInstallationStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -326,33 +326,33 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*Type)(nil), (*core.Type)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_Type_To_core_Type(a.(*Type), b.(*core.Type), scope)
+	if err := s.AddGeneratedConversionFunc((*DataType)(nil), (*core.Type)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Type_To_core_Type(a.(*DataType), b.(*core.Type), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.Type)(nil), (*Type)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_Type_To_v1alpha1_Type(a.(*core.Type), b.(*Type), scope)
+	if err := s.AddGeneratedConversionFunc((*core.Type)(nil), (*DataType)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Type_To_v1alpha1_Type(a.(*core.Type), b.(*DataType), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*TypeList)(nil), (*core.TypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TypeList_To_core_TypeList(a.(*TypeList), b.(*core.TypeList), scope)
+	if err := s.AddGeneratedConversionFunc((*DataTypeList)(nil), (*core.TypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TypeList_To_core_TypeList(a.(*DataTypeList), b.(*core.TypeList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.TypeList)(nil), (*TypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_TypeList_To_v1alpha1_TypeList(a.(*core.TypeList), b.(*TypeList), scope)
+	if err := s.AddGeneratedConversionFunc((*core.TypeList)(nil), (*DataTypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_TypeList_To_v1alpha1_TypeList(a.(*core.TypeList), b.(*DataTypeList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*TypeSpec)(nil), (*core.TypeSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TypeSpec_To_core_TypeSpec(a.(*TypeSpec), b.(*core.TypeSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*DataTypeScheme)(nil), (*core.TypeSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TypeSpec_To_core_TypeSpec(a.(*DataTypeScheme), b.(*core.TypeSpec), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.TypeSpec)(nil), (*TypeSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_TypeSpec_To_v1alpha1_TypeSpec(a.(*core.TypeSpec), b.(*TypeSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*core.TypeSpec)(nil), (*DataTypeScheme)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_TypeSpec_To_v1alpha1_TypeSpec(a.(*core.TypeSpec), b.(*DataTypeScheme), scope)
 	}); err != nil {
 		return err
 	}
@@ -369,7 +369,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 	return nil
 }
 
-func autoConvert_v1alpha1_Component_To_core_Component(in *Component, out *core.Component, s conversion.Scope) error {
+func autoConvert_v1alpha1_Component_To_core_Component(in *ComponentInstallation, out *core.Component, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
@@ -381,11 +381,11 @@ func autoConvert_v1alpha1_Component_To_core_Component(in *Component, out *core.C
 }
 
 // Convert_v1alpha1_Component_To_core_Component is an autogenerated conversion function.
-func Convert_v1alpha1_Component_To_core_Component(in *Component, out *core.Component, s conversion.Scope) error {
+func Convert_v1alpha1_Component_To_core_Component(in *ComponentInstallation, out *core.Component, s conversion.Scope) error {
 	return autoConvert_v1alpha1_Component_To_core_Component(in, out, s)
 }
 
-func autoConvert_core_Component_To_v1alpha1_Component(in *core.Component, out *Component, s conversion.Scope) error {
+func autoConvert_core_Component_To_v1alpha1_Component(in *core.Component, out *ComponentInstallation, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
@@ -397,7 +397,7 @@ func autoConvert_core_Component_To_v1alpha1_Component(in *core.Component, out *C
 }
 
 // Convert_core_Component_To_v1alpha1_Component is an autogenerated conversion function.
-func Convert_core_Component_To_v1alpha1_Component(in *core.Component, out *Component, s conversion.Scope) error {
+func Convert_core_Component_To_v1alpha1_Component(in *core.Component, out *ComponentInstallation, s conversion.Scope) error {
 	return autoConvert_core_Component_To_v1alpha1_Component(in, out, s)
 }
 
@@ -455,29 +455,29 @@ func Convert_core_ComponentDefinitionList_To_v1alpha1_ComponentDefinitionList(in
 	return autoConvert_core_ComponentDefinitionList_To_v1alpha1_ComponentDefinitionList(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentList_To_core_ComponentList(in *ComponentList, out *core.ComponentList, s conversion.Scope) error {
+func autoConvert_v1alpha1_ComponentList_To_core_ComponentList(in *ComponentInstallationList, out *core.ComponentList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]core.Component)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
 // Convert_v1alpha1_ComponentList_To_core_ComponentList is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentList_To_core_ComponentList(in *ComponentList, out *core.ComponentList, s conversion.Scope) error {
+func Convert_v1alpha1_ComponentList_To_core_ComponentList(in *ComponentInstallationList, out *core.ComponentList, s conversion.Scope) error {
 	return autoConvert_v1alpha1_ComponentList_To_core_ComponentList(in, out, s)
 }
 
-func autoConvert_core_ComponentList_To_v1alpha1_ComponentList(in *core.ComponentList, out *ComponentList, s conversion.Scope) error {
+func autoConvert_core_ComponentList_To_v1alpha1_ComponentList(in *core.ComponentList, out *ComponentInstallationList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Component)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]ComponentInstallation)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
 // Convert_core_ComponentList_To_v1alpha1_ComponentList is an autogenerated conversion function.
-func Convert_core_ComponentList_To_v1alpha1_ComponentList(in *core.ComponentList, out *ComponentList, s conversion.Scope) error {
+func Convert_core_ComponentList_To_v1alpha1_ComponentList(in *core.ComponentList, out *ComponentInstallationList, s conversion.Scope) error {
 	return autoConvert_core_ComponentList_To_v1alpha1_ComponentList(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in *ComponentSpec, out *core.ComponentSpec, s conversion.Scope) error {
+func autoConvert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in *ComponentInstallationSpec, out *core.ComponentSpec, s conversion.Scope) error {
 	out.DefinitionRef = in.DefinitionRef
 	out.Imports = *(*[]core.Import)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]core.Export)(unsafe.Pointer(&in.Exports))
@@ -485,11 +485,11 @@ func autoConvert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in *ComponentSpec,
 }
 
 // Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in *ComponentSpec, out *core.ComponentSpec, s conversion.Scope) error {
+func Convert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in *ComponentInstallationSpec, out *core.ComponentSpec, s conversion.Scope) error {
 	return autoConvert_v1alpha1_ComponentSpec_To_core_ComponentSpec(in, out, s)
 }
 
-func autoConvert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in *core.ComponentSpec, out *ComponentSpec, s conversion.Scope) error {
+func autoConvert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in *core.ComponentSpec, out *ComponentInstallationSpec, s conversion.Scope) error {
 	out.DefinitionRef = in.DefinitionRef
 	out.Imports = *(*[]Import)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]Export)(unsafe.Pointer(&in.Exports))
@@ -497,33 +497,33 @@ func autoConvert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in *core.Component
 }
 
 // Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec is an autogenerated conversion function.
-func Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in *core.ComponentSpec, out *ComponentSpec, s conversion.Scope) error {
+func Convert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in *core.ComponentSpec, out *ComponentInstallationSpec, s conversion.Scope) error {
 	return autoConvert_core_ComponentSpec_To_v1alpha1_ComponentSpec(in, out, s)
 }
 
-func autoConvert_v1alpha1_ComponentStatus_To_core_ComponentStatus(in *ComponentStatus, out *core.ComponentStatus, s conversion.Scope) error {
+func autoConvert_v1alpha1_ComponentStatus_To_core_ComponentStatus(in *ComponentInstallationStatus, out *core.ComponentStatus, s conversion.Scope) error {
 	out.Phase = core.ComponentPhase(in.Phase)
 	out.ConfigGeneration = in.ConfigGeneration
 	out.Imports = *(*[]core.ImportState)(unsafe.Pointer(&in.Imports))
-	out.Executors = *(*[]core.ExecutorState)(unsafe.Pointer(&in.Executors))
+	out.Executors = *(*[]core.ExecutorState)(unsafe.Pointer(&in.DeployItemReferences))
 	return nil
 }
 
 // Convert_v1alpha1_ComponentStatus_To_core_ComponentStatus is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentStatus_To_core_ComponentStatus(in *ComponentStatus, out *core.ComponentStatus, s conversion.Scope) error {
+func Convert_v1alpha1_ComponentStatus_To_core_ComponentStatus(in *ComponentInstallationStatus, out *core.ComponentStatus, s conversion.Scope) error {
 	return autoConvert_v1alpha1_ComponentStatus_To_core_ComponentStatus(in, out, s)
 }
 
-func autoConvert_core_ComponentStatus_To_v1alpha1_ComponentStatus(in *core.ComponentStatus, out *ComponentStatus, s conversion.Scope) error {
-	out.Phase = ComponentPhase(in.Phase)
+func autoConvert_core_ComponentStatus_To_v1alpha1_ComponentStatus(in *core.ComponentStatus, out *ComponentInstallationStatus, s conversion.Scope) error {
+	out.Phase = ComponentInstallationPhase(in.Phase)
 	out.ConfigGeneration = in.ConfigGeneration
 	out.Imports = *(*[]ImportState)(unsafe.Pointer(&in.Imports))
-	out.Executors = *(*[]ExecutorState)(unsafe.Pointer(&in.Executors))
+	out.DeployItemReferences = *(*[]ExecutorState)(unsafe.Pointer(&in.Executors))
 	return nil
 }
 
 // Convert_core_ComponentStatus_To_v1alpha1_ComponentStatus is an autogenerated conversion function.
-func Convert_core_ComponentStatus_To_v1alpha1_ComponentStatus(in *core.ComponentStatus, out *ComponentStatus, s conversion.Scope) error {
+func Convert_core_ComponentStatus_To_v1alpha1_ComponentStatus(in *core.ComponentStatus, out *ComponentInstallationStatus, s conversion.Scope) error {
 	return autoConvert_core_ComponentStatus_To_v1alpha1_ComponentStatus(in, out, s)
 }
 
@@ -744,7 +744,7 @@ func Convert_v1alpha1_DeployItemList_To_core_DeployItemList(in *DeployItemList, 
 
 func autoConvert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemList, out *DeployItemList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Type)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]DataType)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -794,7 +794,7 @@ func Convert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployItemSt
 }
 
 func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.DeployItemStatus, out *DeployItemStatus, s conversion.Scope) error {
-	out.Phase = ComponentPhase(in.Phase)
+	out.Phase = ComponentInstallationPhase(in.Phase)
 	out.ExportGeneration = in.ExportGeneration
 	out.Export = (*DeployItemExport)(unsafe.Pointer(in.Export))
 	return nil
@@ -842,7 +842,7 @@ func Convert_v1alpha1_ExecutorState_To_core_ExecutorState(in *ExecutorState, out
 }
 
 func autoConvert_core_ExecutorState_To_v1alpha1_ExecutorState(in *core.ExecutorState, out *ExecutorState, s conversion.Scope) error {
-	out.Phase = ComponentPhase(in.Phase)
+	out.Phase = ComponentInstallationPhase(in.Phase)
 	out.Resource = (*v1.ObjectReference)(unsafe.Pointer(in.Resource))
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	return nil
@@ -972,7 +972,7 @@ func Convert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationL
 
 func autoConvert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList(in *core.LandscapeConfigurationList, out *LandscapeConfigurationList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Type)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]DataType)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -1089,7 +1089,7 @@ func Convert_core_TemplateConfig_To_v1alpha1_TemplateConfig(in *core.TemplateCon
 	return autoConvert_core_TemplateConfig_To_v1alpha1_TemplateConfig(in, out, s)
 }
 
-func autoConvert_v1alpha1_Type_To_core_Type(in *Type, out *core.Type, s conversion.Scope) error {
+func autoConvert_v1alpha1_Type_To_core_Type(in *DataType, out *core.Type, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha1_TypeSpec_To_core_TypeSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
@@ -1101,11 +1101,11 @@ func autoConvert_v1alpha1_Type_To_core_Type(in *Type, out *core.Type, s conversi
 }
 
 // Convert_v1alpha1_Type_To_core_Type is an autogenerated conversion function.
-func Convert_v1alpha1_Type_To_core_Type(in *Type, out *core.Type, s conversion.Scope) error {
+func Convert_v1alpha1_Type_To_core_Type(in *DataType, out *core.Type, s conversion.Scope) error {
 	return autoConvert_v1alpha1_Type_To_core_Type(in, out, s)
 }
 
-func autoConvert_core_Type_To_v1alpha1_Type(in *core.Type, out *Type, s conversion.Scope) error {
+func autoConvert_core_Type_To_v1alpha1_Type(in *core.Type, out *DataType, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_core_TypeSpec_To_v1alpha1_TypeSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
@@ -1117,49 +1117,49 @@ func autoConvert_core_Type_To_v1alpha1_Type(in *core.Type, out *Type, s conversi
 }
 
 // Convert_core_Type_To_v1alpha1_Type is an autogenerated conversion function.
-func Convert_core_Type_To_v1alpha1_Type(in *core.Type, out *Type, s conversion.Scope) error {
+func Convert_core_Type_To_v1alpha1_Type(in *core.Type, out *DataType, s conversion.Scope) error {
 	return autoConvert_core_Type_To_v1alpha1_Type(in, out, s)
 }
 
-func autoConvert_v1alpha1_TypeList_To_core_TypeList(in *TypeList, out *core.TypeList, s conversion.Scope) error {
+func autoConvert_v1alpha1_TypeList_To_core_TypeList(in *DataTypeList, out *core.TypeList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]core.Type)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
 // Convert_v1alpha1_TypeList_To_core_TypeList is an autogenerated conversion function.
-func Convert_v1alpha1_TypeList_To_core_TypeList(in *TypeList, out *core.TypeList, s conversion.Scope) error {
+func Convert_v1alpha1_TypeList_To_core_TypeList(in *DataTypeList, out *core.TypeList, s conversion.Scope) error {
 	return autoConvert_v1alpha1_TypeList_To_core_TypeList(in, out, s)
 }
 
-func autoConvert_core_TypeList_To_v1alpha1_TypeList(in *core.TypeList, out *TypeList, s conversion.Scope) error {
+func autoConvert_core_TypeList_To_v1alpha1_TypeList(in *core.TypeList, out *DataTypeList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Type)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]DataType)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
 // Convert_core_TypeList_To_v1alpha1_TypeList is an autogenerated conversion function.
-func Convert_core_TypeList_To_v1alpha1_TypeList(in *core.TypeList, out *TypeList, s conversion.Scope) error {
+func Convert_core_TypeList_To_v1alpha1_TypeList(in *core.TypeList, out *DataTypeList, s conversion.Scope) error {
 	return autoConvert_core_TypeList_To_v1alpha1_TypeList(in, out, s)
 }
 
-func autoConvert_v1alpha1_TypeSpec_To_core_TypeSpec(in *TypeSpec, out *core.TypeSpec, s conversion.Scope) error {
+func autoConvert_v1alpha1_TypeSpec_To_core_TypeSpec(in *DataTypeScheme, out *core.TypeSpec, s conversion.Scope) error {
 	out.OpenAPIV3Schema = in.OpenAPIV3Schema
 	return nil
 }
 
 // Convert_v1alpha1_TypeSpec_To_core_TypeSpec is an autogenerated conversion function.
-func Convert_v1alpha1_TypeSpec_To_core_TypeSpec(in *TypeSpec, out *core.TypeSpec, s conversion.Scope) error {
+func Convert_v1alpha1_TypeSpec_To_core_TypeSpec(in *DataTypeScheme, out *core.TypeSpec, s conversion.Scope) error {
 	return autoConvert_v1alpha1_TypeSpec_To_core_TypeSpec(in, out, s)
 }
 
-func autoConvert_core_TypeSpec_To_v1alpha1_TypeSpec(in *core.TypeSpec, out *TypeSpec, s conversion.Scope) error {
+func autoConvert_core_TypeSpec_To_v1alpha1_TypeSpec(in *core.TypeSpec, out *DataTypeScheme, s conversion.Scope) error {
 	out.OpenAPIV3Schema = in.OpenAPIV3Schema
 	return nil
 }
 
 // Convert_core_TypeSpec_To_v1alpha1_TypeSpec is an autogenerated conversion function.
-func Convert_core_TypeSpec_To_v1alpha1_TypeSpec(in *core.TypeSpec, out *TypeSpec, s conversion.Scope) error {
+func Convert_core_TypeSpec_To_v1alpha1_TypeSpec(in *core.TypeSpec, out *DataTypeScheme, s conversion.Scope) error {
 	return autoConvert_core_TypeSpec_To_v1alpha1_TypeSpec(in, out, s)
 }
 

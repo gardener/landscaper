@@ -19,6 +19,6 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-func (a *actuator) runExecutions(ctx context.Context, component *v1alpha1.Component, imports map[string]interface{}) error {
+func (a *actuator) runExecutions(ctx context.Context, component *v1alpha1.ComponentInstallation, imports map[string]interface{}) error {
 	return nil
 }

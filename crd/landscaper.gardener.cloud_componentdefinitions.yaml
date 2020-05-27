@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: componentdefinitions.landscaper.gardener.cloud
 spec:
@@ -50,13 +50,9 @@ spec:
                           description: JSONSchemaURL represents a schema url.
                           type: string
                         additionalItems:
-                          description: JSONSchemaPropsOrBool represents JSONSchemaProps
-                            or a boolean value. Defaults to true for the boolean property.
-                          type: object
+                          type: Any
                         additionalProperties:
-                          description: JSONSchemaPropsOrBool represents JSONSchemaProps
-                            or a boolean value. Defaults to true for the boolean property.
-                          type: object
+                          type: Any
                         allOf:
                           items: {}
                           type: array
@@ -76,9 +72,7 @@ spec:
                           type: object
                         dependencies:
                           additionalProperties:
-                            description: JSONSchemaPropsOrStringArray represents a
-                              JSONSchemaProps or a string array.
-                            type: object
+                            type: Any
                           description: JSONSchemaDependencies represent a dependencies
                             property.
                           type: object
@@ -143,10 +137,7 @@ spec:
                         id:
                           type: string
                         items:
-                          description: JSONSchemaPropsOrArray represents a value that
-                            can either be a JSONSchemaProps or an array of JSONSchemaProps.
-                            Mainly here for serialization purposes.
-                          type: object
+                          type: Any
                         maxItems:
                           format: int64
                           type: integer
@@ -325,11 +316,7 @@ spec:
                   type: object
                 type: array
               import:
-                description: RawMessage is a raw encoded JSON value. It implements
-                  Marshaler and Unmarshaler and can be used to delay JSON decoding
-                  or precompute a JSON encoding.
-                format: byte
-                type: string
+                type: Any
             required:
             - executors
             type: object
@@ -401,5 +388,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null

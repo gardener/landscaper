@@ -12,6 +12,10 @@ spec:
     singular: componentdefinition
     # kind is normally the CamelCased singular type. Your resource manifests use this.
     kind: ComponentDefinition
+
+    shortNames:
+    - cd
+    - cdef
   versions:
   - name: v1alpha1
     served: true

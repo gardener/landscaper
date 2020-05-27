@@ -26,7 +26,6 @@ func HasOperation(obj metav1.ObjectMeta, op Operation) bool {
 	return Operation(currentOp) == op
 }
 
-
 // InitCondition initializes a new Condition with an Unknown status.
 func InitCondition(conditionType ConditionType) Condition {
 	return Condition{

@@ -18,14 +18,14 @@ import (
 	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-// Component is the internal representation of a component
+// ComponentInstallation is the internal representation of a component
 type Component struct {
-	Info *corev1alpha1.Component
+	Info *corev1alpha1.ComponentInstallation
 
 	importStates map[string]*corev1alpha1.ImportState
 }
 
-func New(component *corev1alpha1.Component) (*Component, error) {
+func New(component *corev1alpha1.ComponentInstallation) (*Component, error) {
 
 	c := &Component{
 		Info:         component,

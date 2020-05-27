@@ -25,6 +25,21 @@ type ConditionStatus string
 // ConditionType is a string alias.
 type ConditionType string
 
+const (
+	// ConditionTrue means a resource is in the condition.
+	ConditionTrue ConditionStatus = "True"
+	// ConditionFalse means a resource is not in the condition.
+	ConditionFalse ConditionStatus = "False"
+	// ConditionUnknown means Gardener can't decide if a resource is in the condition or not.
+	ConditionUnknown ConditionStatus = "Unknown"
+	// ConditionProgressing means the condition was seen true, failed but stayed within a predefined failure threshold.
+	// In the future, we could add other intermediate conditions, e.g. ConditionDegraded.
+	ConditionProgressing ConditionStatus = "Progressing"
+
+	// ConditionCheckError is a constant for a reason in condition.
+	ConditionCheckError = "ConditionCheckError"
+)
+
 // ErrorCode is a string alias.
 type ErrorCode string
 
@@ -39,7 +54,7 @@ const (
 
 // Condition holds the information about the state of a resource.
 type Condition struct {
-	// Type of the Shoot condition.
+	// DataType of the Shoot condition.
 	Type ConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
 	// Status of the condition, one of True, False, Unknown.
 	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
@@ -54,6 +69,21 @@ type Condition struct {
 	// Well-defined error codes in case the condition reports a problem.
 	// +optional
 	Codes []ErrorCode `json:"codes,omitempty" protobuf:"bytes,7,rep,name=codes,casttype=ErrorCode"`
+}
+
+type Operation string
+
+const (
+	ReoncileOperation Operation = "reconcile"
+)
+
+// ObjectReference is the reference to a kubernetes object.
+type ObjectReference struct {
+	// Name is the name of the kubernetes object.
+	Name string `json:"name"`
+
+	// Namespace is the namespace of kubernetes object.
+	Namespace string `json:"namespace"`
 }
 
 // SecretRef references a secret value

@@ -24,8 +24,8 @@ import (
 	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-// ReadComponentFromFile reads a file and parses it to a Component
-func ReadComponentFromFile(testfile string) (*corev1alpha1.Component, error) {
+// ReadComponentFromFile reads a file and parses it to a ComponentInstallation
+func ReadComponentFromFile(testfile string) (*corev1alpha1.ComponentInstallation, error) {
 	data, err := ioutil.ReadFile(testfile)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func ReadComponentFromFile(testfile string) (*corev1alpha1.Component, error) {
 	install.Install(landscaperScheme)
 	decoder := serializer.NewCodecFactory(landscaperScheme).UniversalDecoder()
 
-	component := &corev1alpha1.Component{}
+	component := &corev1alpha1.ComponentInstallation{}
 	if _, _, err := decoder.Decode(data, nil, component); err != nil {
 		return nil, err
 	}

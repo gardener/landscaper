@@ -30,13 +30,13 @@ import (
 
 // importsAreSatisfied traverses through all components and validates if all imports are
 // satisfied with the correct version
-func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[string]interface{}, current *v1alpha1.Component) error {
+func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[string]interface{}, current *v1alpha1.ComponentInstallation) error {
 	internalComponent, err := component.New(current)
 	if err != nil {
 		return err
 	}
 
-	components := &v1alpha1.ComponentList{}
+	components := &v1alpha1.ComponentInstallationList{}
 	if err := a.c.List(ctx, components); err != nil {
 		return errors.Wrap(err, "unable to list components")
 	}
@@ -54,10 +54,10 @@ func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[
 
 // getImports traverses through all components and
 // collects and merges the imports
-func (a *actuator) collectImports(ctx context.Context, landscapeConfig map[string]interface{}, current *v1alpha1.Component) (map[string]interface{}, error) {
+func (a *actuator) collectImports(ctx context.Context, landscapeConfig map[string]interface{}, current *v1alpha1.ComponentInstallation) (map[string]interface{}, error) {
 	var err error
 
-	components := &v1alpha1.ComponentList{}
+	components := &v1alpha1.ComponentInstallationList{}
 	if err := a.c.List(ctx, components); err != nil {
 		return nil, errors.Wrap(err, "unable to list components")
 	}
@@ -83,7 +83,6 @@ func (a *actuator) collectImports(ctx context.Context, landscapeConfig map[strin
 			continue
 		}
 
-
 		exportSpec, exportComponent, err := dependencies.GetComponentForImport(importSpec, internalComponents)
 		if err != nil {
 			return nil, err
@@ -91,7 +90,7 @@ func (a *actuator) collectImports(ctx context.Context, landscapeConfig map[strin
 
 		// need to get all deployitems to get the export data
 		exportedConfig := make(map[string]interface{})
-		for _, executionState := range exportComponent.Info.Status.Executors {
+		for _, executionState := range exportComponent.Info.Status.DeployItemReferences {
 			deployItem := &v1alpha1.DeployItem{}
 			if err := a.c.Get(ctx, client.ObjectKey{Name: executionState.Resource.Name, Namespace: executionState.Resource.Namespace}, deployItem); err != nil {
 				return nil, err

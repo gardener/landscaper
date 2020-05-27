@@ -1,17 +1,21 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: components.landscaper.gardener.cloud
+  name: componentinstallations.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   scope: Namespaced
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
-    plural: components
+    plural: componentinstallations
     # singular name to be used as an alias on the CLI and for display
-    singular: component
+    singular: componentinstallation
     # kind is normally the CamelCased singular type. Your resource manifests use this.
-    kind: Component
+    kind: ComponentInstallation
+
+    shortNames:
+    - ci
+    - cinst
   versions:
   - name: v1alpha1
     served: true

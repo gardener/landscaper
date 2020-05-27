@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: deployitems.landscaper.gardener.cloud
 spec:
@@ -35,70 +35,96 @@ spec:
           metadata:
             type: object
           spec:
+            description: DeployItemSpec contains the definition of a deploy item.
             properties:
-              deployConfig:
-                description: RawMessage is a raw encoded JSON value. It implements
-                  Marshaler and Unmarshaler and can be used to delay JSON decoding
-                  or precompute a JSON encoding.
-                format: byte
-                type: string
-              import:
-                description: SecretRef references a secret value
+              config:
+                description: Configuration contains the deployer type specific configuration.
+                type: Any
+              importRef:
+                description: ImportReferences is the reference to the object containing
+                  all imported values.
                 properties:
-                  secretRef:
-                    description: SecretKeySelector selects a key of a Secret.
-                    properties:
-                      key:
-                        description: The key of the secret to select from.  Must be
-                          a valid secret key.
-                        type: string
-                      name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          TODO: Add other useful fields. apiVersion, kind, uid?'
-                        type: string
-                    required:
-                    - key
-                    type: object
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
                 required:
-                - secretRef
+                - name
+                - namespace
                 type: object
               type:
+                description: DataType is the type of the deployer that should handle
+                  the item.
                 type: string
             required:
-            - deployConfig
             - type
             type: object
           status:
+            description: DeployItemStatus contains the status of a deploy item
             properties:
-              export:
+              conditions:
+                description: Conditions contains the actual condition of a deploy
+                  item
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              exportRef:
+                description: ExportReference is the reference to the object that contains
+                  the exported values.
                 properties:
-                  value:
+                  name:
+                    description: Name is the name of the kubernetes object.
                     type: string
-                  valueRef:
-                    description: SecretRef references a secret value
-                    properties:
-                      secretRef:
-                        description: SecretKeySelector selects a key of a Secret.
-                        properties:
-                          key:
-                            description: The key of the secret to select from.  Must
-                              be a valid secret key.
-                            type: string
-                          name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                              TODO: Add other useful fields. apiVersion, kind, uid?'
-                            type: string
-                        required:
-                        - key
-                        type: object
-                    required:
-                    - secretRef
-                    type: object
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
                 type: object
-              exportGeneration:
-                format: int64
-                type: integer
               phase:
+                description: Phase is the current phase of the DeployItem
                 type: string
             type: object
         required:
@@ -107,9 +133,11 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null

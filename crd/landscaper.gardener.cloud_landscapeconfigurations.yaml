@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: landscapeconfigurations.landscaper.gardener.cloud
 spec:
@@ -20,7 +20,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: LandscapeConfiguration defines the landscape configuration that
-          consists of multiple secrets
+          consists of multiple secrets. Must be a singleton.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -57,5 +57,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null
