@@ -1,0 +1,44 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadta:
+  name: abc
+
+spec:
+  executors:  # has to be idempotent
+  - name: init
+    type: container # also extensions resource
+    config:
+      image: my-custom-image:version
+      command: ["run-component"]
+      args: []
+  - name: my-script
+    type: script
+    environment: ls-abc
+    config:
+      mount:
+        artifact: xyz
+        path: /repo
+      script: |
+        #!/bin/python3
+
+        import os
+
+        yaml.load(os.genenv('IMPORT_CONFIG'))
+
+        doStuff()
+
+        yaml.dump(export)
+      image: ubuntu:latest
+  - name: my-container
+    type: container
+    config:
+      image: my-custom-image:version
+      command: ["run-component"]
+      args: []
+status:
+  phase: Running
+  deployItemRefs:
+  - name: init
+    ref:
+      name: init-12334
+      namespace: default

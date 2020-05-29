@@ -75,7 +75,7 @@ type ComponentInstallationStatus struct {
 	// It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
 	ObservedGeneration int64 `json:"observedGeneration"`
 
-	// Conditions contains the actual condition of a deploy item
+	// Conditions contains the actual condition of a installation
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ConfigGeneration is the generation of the exported values.
@@ -91,8 +91,8 @@ type ComponentInstallationStatus struct {
 	// that are created based on the component definition.
 	InstallationReferences []ObjectReference `json:"installationRefs,omitempty"`
 
-	// DeployItemReferences contain the state of all deploy items
-	DeployItemReferences []ObjectReference `json:"deployItemRefs,omitempty"`
+	// ExecutionReference is the reference to the execution that schedules the templated execution items.
+	ExecutionReference ObjectReference `json:"executionRefs,omitempty"`
 }
 
 // ImportState hold the state of a import

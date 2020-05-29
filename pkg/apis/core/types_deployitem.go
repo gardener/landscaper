@@ -19,15 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type DeployItemPhase string
-
-const (
-	DeployItemPhaseInit        DeployItemPhase = "Init"
-	DeployItemPhaseProgressing DeployItemPhase = "Progressing"
-	DeployItemPhaseCompleted   DeployItemPhase = "Completed"
-	DeployItemPhaseFailed      DeployItemPhase = "Failed"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -65,7 +56,7 @@ type DeployItemSpec struct {
 // DeployItemStatus contains the status of a deploy item
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
-	Phase DeployItemPhase `json:"phase,omitempty"`
+	Phase ExecutionPhase `json:"phase,omitempty"`
 
 	// Conditions contains the actual condition of a deploy item
 	Conditions []Condition `json:"conditions,omitempty"`

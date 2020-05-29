@@ -1,0 +1,19 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: sub-definition-1
+version: 1.2.0
+
+import:
+- key: yxz
+  type: number
+
+export:
+- key: efg
+  type: string
+
+executors: |
+  - name: exec
+    type: helm
+    config:
+     testing: xyz

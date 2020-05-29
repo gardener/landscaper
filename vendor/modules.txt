@@ -19,6 +19,7 @@ github.com/fatih/color
 github.com/ghodss/yaml
 # github.com/go-logr/logr v0.1.0
 github.com/go-logr/logr
+github.com/go-logr/logr/testing
 # github.com/go-logr/zapr v0.1.1
 github.com/go-logr/zapr
 # github.com/go-openapi/jsonpointer v0.19.3

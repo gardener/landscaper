@@ -1,0 +1,169 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
+  creationTimestamp: null
+  name: executions.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: Execution
+    listKind: ExecutionList
+    plural: executions
+    singular: execution
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Execution contains the configuration of a execution and deploy
+          item
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExecutionSpec defines a execution plan.
+            properties:
+              executions:
+                description: Executions defines all execution items that need to be
+                  scheduled.
+                items:
+                  description: ExecutionItem defines a execution element that is translated
+                    into a deploy item.
+                  properties:
+                    config:
+                      description: Configuration contains the type specific configuration
+                        for the execution.
+                      type: Any
+                    name:
+                      description: Name is the unique name of the execution.
+                      type: string
+                    type:
+                      description: DataType is the DeployItem type of the execution
+                      type: string
+                  required:
+                  - config
+                  - name
+                  - type
+                  type: object
+                type: array
+            required:
+            - executions
+            type: object
+          status:
+            description: ExecutionStatus contains the current status of a execution.
+            properties:
+              conditions:
+                description: Conditions contains the actual condition of a execution
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              deployItemRefs:
+                description: DeployItemReferences contain the state of all deploy
+                  items
+                items:
+                  description: ObjectReference is the reference to a kubernetes object.
+                  properties:
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  - namespace
+                  type: object
+                type: array
+              exportReference:
+                description: ExportReference references the object that contains the
+                  exported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this Execution. It corresponds to the Execution generation,
+                  which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
+              phase:
+                description: Phase is the current phase of the execution .
+                type: string
+            required:
+            - observedGeneration
+            type: object
+        required:
+        - spec
+        - status
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

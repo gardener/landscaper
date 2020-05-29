@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,9 +27,16 @@ type LandscapeConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec LandscapeConfigurationSpec `json:"spec"`
+	Spec   LandscapeConfigurationSpec   `json:"spec"`
+	Status LandscapeConfigurationStatus `json:"status"`
 }
 
+// LandscapeConfigurationSpec contains the values for the Landscape generation
 type LandscapeConfigurationSpec struct {
-	SecretReferences []corev1.LocalObjectReference `json:"secretRefs,omitempty"`
+	SecretReferences []ObjectReference `json:"secretRefs,omitempty"`
+}
+
+// LandscapeConfigurationStatus contains the status of the landscape configuration
+type LandscapeConfigurationStatus struct {
+	ConfigGeneration int64 `json:"configGeneration"`
 }

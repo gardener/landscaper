@@ -17,11 +17,23 @@ REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_
 .PHONY: install-requirements
 install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
+	@curl -sfL "https://install.goreleaser.com/github.com/golangci/golangci-lint.sh" | sh -s -- -b $(go env GOPATH)/bin v1.24.0
 
 .PHONY: revendor
 revendor:
 	@GO111MODULE=on go mod vendor
     @GO111MODULE=on go mod tidy
+
+.PHONY: format
+format:
+	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/pkg
+
+.PHONY: check
+check:
+	@$(REPO_ROOT)/hack/check.sh
+
+.PHONY: verify
+verify: check format
 
 .PHONY: generate
 generate:

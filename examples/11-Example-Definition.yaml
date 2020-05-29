@@ -4,10 +4,6 @@ kind: ComponentDefinition
 name: my-component-definition
 version: 1.0.0
 
-blobRef:
-  url: https://myoci/co
-  path: /home/d123
-
 import:
 - key: dnsControllerClass | common.dnsControllerClass
   type: string
@@ -24,7 +20,7 @@ export:
   type: string
 
 definitionRefs:
-- ref: my-sub-component:1.0.0
+- ref: my-sub-component:1.0.0 # 1.0.0-dev-abcdefg # --> gitlink://my-sub-component --> gitlink://my-sub-component:1.0.0-dev
   imports:
   - from: abc
     to: yxz
@@ -99,3 +95,8 @@ executors: | # has to be idempotent
       data:
         value1: {{ .import.my-import.value1 }}
         value2: (( .import.my-import.value2 ))
+status:
+
+  executionRef:
+    name: abc
+    namespacE: default

@@ -1,0 +1,15 @@
+dev:
+  ls: 0.150.0
+
+ls: 0.150.0
+  gardener-aggregate: 0.0.2-abc
+  monitoring: 0.0.1
+
+community:
+  gardener-aggregate: 0.0.2
+
+gardener-aggregate: 0.0.2-abc
+  gardener-installer: 1.0.1-dev-abcabc
+    gardener: 1.5.1-dev-avc # component-descriptor
+  topology: 1.0.6
+  gardener-confg: 0.0.5

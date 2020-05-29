@@ -90,8 +90,7 @@ spec:
               a ComponentInstallation.
             properties:
               conditions:
-                description: Conditions contains the actual condition of a deploy
-                  item
+                description: Conditions contains the actual condition of a installation
                 items:
                   description: Condition holds the information about the state of
                     a resource.
@@ -138,23 +137,20 @@ spec:
                 description: ConfigGeneration is the generation of the exported values.
                 format: int64
                 type: integer
-              deployItemRefs:
-                description: DeployItemReferences contain the state of all deploy
-                  items
-                items:
-                  description: ObjectReference is the reference to a kubernetes object.
-                  properties:
-                    name:
-                      description: Name is the name of the kubernetes object.
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of kubernetes object.
-                      type: string
-                  required:
-                  - name
-                  - namespace
-                  type: object
-                type: array
+              executionRefs:
+                description: ExecutionReference is the reference to the execution
+                  that schedules the templated execution items.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               exportReference:
                 description: ExportReference references the object that contains the
                   exported values.

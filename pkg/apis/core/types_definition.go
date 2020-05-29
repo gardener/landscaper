@@ -138,15 +138,3 @@ type CustomType struct {
 	// OpenAPIV3Schema defines the type as openapi v3 scheme.
 	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }
-
-// Execution defines a execution element that is translated into a deploy item.
-type Execution struct {
-	// Name is the unique name of the execution.
-	Name string `json:"name"`
-
-	// DataType is the DeployItem type of the execution
-	Type ExecutionType `json:"type"`
-
-	// Configuration contains the type specific configuration for the execution.
-	Configuration json.RawMessage `json:"config"`
-}
