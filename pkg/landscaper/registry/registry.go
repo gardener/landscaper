@@ -14,7 +14,11 @@
 
 package registry
 
-import "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+import (
+	"github.com/spf13/afero"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+)
 
 // Registry is the interface for the landscaper to get component definitions and their blob data.
 type Registry interface {
@@ -22,7 +26,7 @@ type Registry interface {
 	GetDefinition(name, version string) (*v1alpha1.ComponentDefinition, error)
 
 	// GetBlob returns the blob for a component definition.
-	GetBlob(name, version string) ([]byte, error)
+	GetBlob(name, version string) (afero.Fs, error)
 
 	// GetVersions returns all available versions of a component definition.
 	GetVersions(name string) ([]string, error)

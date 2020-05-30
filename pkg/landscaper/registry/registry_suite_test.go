@@ -23,5 +23,5 @@ import "testing"
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Testmachinery Controller Suite")
+	RunSpecs(t, "Registry Test Suite")
 }

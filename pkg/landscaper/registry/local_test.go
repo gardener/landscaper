@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -107,7 +108,60 @@ var _ = Describe("Local Registry", func() {
 			_, err := reg.GetVersions("unkown-definition")
 			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
+	})
 
+	Context("GetBlob", func() {
+
+		var reg registry.Registry
+
+		BeforeEach(func() {
+			var err error
+			reg, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{localTestData1})
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return the blob for a component by name", func() {
+			_, err := reg.GetBlob("root-definition", "1.0.0")
+			Expect(err).ToNot(HaveOccurred())
+
+			_, err = reg.GetBlob("sub-definition-1", "1.1.0")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should be able to list all subcomponents as directories int he blob of the root component", func() {
+			fs, err := reg.GetBlob("root-definition", "1.0.0")
+			Expect(err).ToNot(HaveOccurred())
+
+			dirInfo, err := afero.ReadDir(fs, "/")
+			Expect(err).ToNot(HaveOccurred())
+
+			dirs := []string{}
+			for _, dir := range dirInfo {
+				dirs = append(dirs, dir.Name())
+			}
+
+			Expect(dirs).To(And(ContainElement("comp1"), ContainElement("comp1-1")))
+		})
+
+		It("should be able to read the test file of the subcomponent", func() {
+			fs, err := reg.GetBlob("sub-definition-1", "1.1.0")
+			Expect(err).ToNot(HaveOccurred())
+
+			data, err := afero.ReadFile(fs, "testdata.txt")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(string(data)).To(Equal("Test Data"))
+		})
+
+		It("should return an error if the name is incorrect", func() {
+			_, err := reg.GetBlob("unkown-definition", "1.0.0")
+			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
+		})
+
+		It("should return an error if the version is incorrect", func() {
+			_, err := reg.GetBlob("sub-definition-1", "1.0.0")
+			Expect(registry.IsVersionNotFoundError(err)).To(BeTrue())
+		})
 	})
 
 })

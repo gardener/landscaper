@@ -15,14 +15,17 @@
 package registry
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core/install"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/go-logr/logr"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"os"
 	"path/filepath"
+
+	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	"github.com/gardener/landscaper/pkg/apis/core/install"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 /**
@@ -121,8 +124,22 @@ func (r *localRegistry) GetDefinition(name, version string) (*v1alpha1.Component
 	return ref.Definition, nil
 }
 
-func (r *localRegistry) GetBlob(name, version string) ([]byte, error) {
-	return nil, nil
+// Maybe we should use a virtual filesystem instead of a blob
+// and let the registry handle all the blob downloading/compress etc..
+// e.g. https://github.com/blang/vfs or https://github.com/spf13/afero which would mean that we would return a vfs.filesystem instead of a byte array
+func (r *localRegistry) GetBlob(name, version string) (afero.Fs, error) {
+	if _, ok := r.index[name]; !ok {
+		return nil, NewComponentNotFoundError(name, nil)
+	}
+	ref, ok := r.index[name][version]
+	if !ok {
+		return nil, NewVersionNotFoundError(name, version, nil)
+	}
+
+	blobFS := afero.NewBasePathFs(afero.NewOsFs(), ref.blobPath)
+	roBlobFS := afero.NewReadOnlyFs(blobFS)
+
+	return roBlobFS, nil
 }
 
 func (r *localRegistry) GetVersions(name string) ([]string, error) {
