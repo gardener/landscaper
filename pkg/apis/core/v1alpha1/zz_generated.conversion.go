@@ -305,6 +305,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*ExternalDocumentation)(nil), (*core.ExternalDocumentation)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(a.(*ExternalDocumentation), b.(*core.ExternalDocumentation), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.ExternalDocumentation)(nil), (*ExternalDocumentation)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(a.(*core.ExternalDocumentation), b.(*ExternalDocumentation), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*ImportState)(nil), (*core.ImportState)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_ImportState_To_core_ImportState(a.(*ImportState), b.(*core.ImportState), scope)
 	}); err != nil {
@@ -312,6 +322,56 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ImportState)(nil), (*ImportState)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ImportState_To_v1alpha1_ImportState(a.(*core.ImportState), b.(*ImportState), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*JSON)(nil), (*core.JSON)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_JSON_To_core_JSON(a.(*JSON), b.(*core.JSON), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.JSON)(nil), (*JSON)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_JSON_To_v1alpha1_JSON(a.(*core.JSON), b.(*JSON), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*JSONSchemaProps)(nil), (*core.JSONSchemaProps)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(a.(*JSONSchemaProps), b.(*core.JSONSchemaProps), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.JSONSchemaProps)(nil), (*JSONSchemaProps)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(a.(*core.JSONSchemaProps), b.(*JSONSchemaProps), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*JSONSchemaPropsOrArray)(nil), (*core.JSONSchemaPropsOrArray)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_JSONSchemaPropsOrArray_To_core_JSONSchemaPropsOrArray(a.(*JSONSchemaPropsOrArray), b.(*core.JSONSchemaPropsOrArray), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.JSONSchemaPropsOrArray)(nil), (*JSONSchemaPropsOrArray)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_JSONSchemaPropsOrArray_To_v1alpha1_JSONSchemaPropsOrArray(a.(*core.JSONSchemaPropsOrArray), b.(*JSONSchemaPropsOrArray), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*JSONSchemaPropsOrBool)(nil), (*core.JSONSchemaPropsOrBool)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_JSONSchemaPropsOrBool_To_core_JSONSchemaPropsOrBool(a.(*JSONSchemaPropsOrBool), b.(*core.JSONSchemaPropsOrBool), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.JSONSchemaPropsOrBool)(nil), (*JSONSchemaPropsOrBool)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_JSONSchemaPropsOrBool_To_v1alpha1_JSONSchemaPropsOrBool(a.(*core.JSONSchemaPropsOrBool), b.(*JSONSchemaPropsOrBool), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*JSONSchemaPropsOrStringArray)(nil), (*core.JSONSchemaPropsOrStringArray)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_JSONSchemaPropsOrStringArray_To_core_JSONSchemaPropsOrStringArray(a.(*JSONSchemaPropsOrStringArray), b.(*core.JSONSchemaPropsOrStringArray), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.JSONSchemaPropsOrStringArray)(nil), (*JSONSchemaPropsOrStringArray)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray(a.(*core.JSONSchemaPropsOrStringArray), b.(*JSONSchemaPropsOrStringArray), scope)
 	}); err != nil {
 		return err
 	}
@@ -362,16 +422,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ObjectReference)(nil), (*ObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ObjectReference_To_v1alpha1_ObjectReference(a.(*core.ObjectReference), b.(*ObjectReference), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*OpenAPIV3Schema)(nil), (*core.OpenAPIV3Schema)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(a.(*OpenAPIV3Schema), b.(*core.OpenAPIV3Schema), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.OpenAPIV3Schema)(nil), (*OpenAPIV3Schema)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(a.(*core.OpenAPIV3Schema), b.(*OpenAPIV3Schema), scope)
 	}); err != nil {
 		return err
 	}
@@ -584,7 +634,7 @@ func Convert_core_Condition_To_v1alpha1_Condition(in *core.Condition, out *Condi
 
 func autoConvert_v1alpha1_CustomType_To_core_CustomType(in *CustomType, out *core.CustomType, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
+	if err := Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
 		return err
 	}
 	return nil
@@ -597,7 +647,7 @@ func Convert_v1alpha1_CustomType_To_core_CustomType(in *CustomType, out *core.Cu
 
 func autoConvert_core_CustomType_To_v1alpha1_CustomType(in *core.CustomType, out *CustomType, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
+	if err := Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
 		return err
 	}
 	return nil
@@ -657,7 +707,7 @@ func Convert_core_DataTypeList_To_v1alpha1_DataTypeList(in *core.DataTypeList, o
 }
 
 func autoConvert_v1alpha1_DataTypeScheme_To_core_DataTypeScheme(in *DataTypeScheme, out *core.DataTypeScheme, s conversion.Scope) error {
-	if err := Convert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
+	if err := Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
 		return err
 	}
 	return nil
@@ -669,7 +719,7 @@ func Convert_v1alpha1_DataTypeScheme_To_core_DataTypeScheme(in *DataTypeScheme, 
 }
 
 func autoConvert_core_DataTypeScheme_To_v1alpha1_DataTypeScheme(in *core.DataTypeScheme, out *DataTypeScheme, s conversion.Scope) error {
-	if err := Convert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
+	if err := Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
 		return err
 	}
 	return nil
@@ -1112,6 +1162,28 @@ func Convert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execution
 	return autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in, out, s)
 }
 
+func autoConvert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(in *ExternalDocumentation, out *core.ExternalDocumentation, s conversion.Scope) error {
+	out.Description = in.Description
+	out.URL = in.URL
+	return nil
+}
+
+// Convert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation is an autogenerated conversion function.
+func Convert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(in *ExternalDocumentation, out *core.ExternalDocumentation, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(in, out, s)
+}
+
+func autoConvert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in *core.ExternalDocumentation, out *ExternalDocumentation, s conversion.Scope) error {
+	out.Description = in.Description
+	out.URL = in.URL
+	return nil
+}
+
+// Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation is an autogenerated conversion function.
+func Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in *core.ExternalDocumentation, out *ExternalDocumentation, s conversion.Scope) error {
+	return autoConvert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in, out, s)
+}
+
 func autoConvert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core.ImportState, s conversion.Scope) error {
 	out.From = in.From
 	out.To = in.To
@@ -1140,6 +1212,184 @@ func autoConvert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, 
 // Convert_core_ImportState_To_v1alpha1_ImportState is an autogenerated conversion function.
 func Convert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, out *ImportState, s conversion.Scope) error {
 	return autoConvert_core_ImportState_To_v1alpha1_ImportState(in, out, s)
+}
+
+func autoConvert_v1alpha1_JSON_To_core_JSON(in *JSON, out *core.JSON, s conversion.Scope) error {
+	out.Raw = *(*[]byte)(unsafe.Pointer(&in.Raw))
+	return nil
+}
+
+// Convert_v1alpha1_JSON_To_core_JSON is an autogenerated conversion function.
+func Convert_v1alpha1_JSON_To_core_JSON(in *JSON, out *core.JSON, s conversion.Scope) error {
+	return autoConvert_v1alpha1_JSON_To_core_JSON(in, out, s)
+}
+
+func autoConvert_core_JSON_To_v1alpha1_JSON(in *core.JSON, out *JSON, s conversion.Scope) error {
+	out.Raw = *(*[]byte)(unsafe.Pointer(&in.Raw))
+	return nil
+}
+
+// Convert_core_JSON_To_v1alpha1_JSON is an autogenerated conversion function.
+func Convert_core_JSON_To_v1alpha1_JSON(in *core.JSON, out *JSON, s conversion.Scope) error {
+	return autoConvert_core_JSON_To_v1alpha1_JSON(in, out, s)
+}
+
+func autoConvert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(in *JSONSchemaProps, out *core.JSONSchemaProps, s conversion.Scope) error {
+	out.ID = in.ID
+	out.Schema = core.JSONSchemaURL(in.Schema)
+	out.Ref = (*string)(unsafe.Pointer(in.Ref))
+	out.Description = in.Description
+	out.Type = in.Type
+	out.Format = in.Format
+	out.Title = in.Title
+	out.Default = (*core.JSON)(unsafe.Pointer(in.Default))
+	out.Maximum = (*core.Decimal)(unsafe.Pointer(in.Maximum))
+	out.ExclusiveMaximum = in.ExclusiveMaximum
+	out.Minimum = (*core.Decimal)(unsafe.Pointer(in.Minimum))
+	out.ExclusiveMinimum = in.ExclusiveMinimum
+	out.MaxLength = (*int64)(unsafe.Pointer(in.MaxLength))
+	out.MinLength = (*int64)(unsafe.Pointer(in.MinLength))
+	out.Pattern = in.Pattern
+	out.MaxItems = (*int64)(unsafe.Pointer(in.MaxItems))
+	out.MinItems = (*int64)(unsafe.Pointer(in.MinItems))
+	out.UniqueItems = in.UniqueItems
+	out.MultipleOf = (*core.Decimal)(unsafe.Pointer(in.MultipleOf))
+	out.Enum = *(*[]core.JSON)(unsafe.Pointer(&in.Enum))
+	out.MaxProperties = (*int64)(unsafe.Pointer(in.MaxProperties))
+	out.MinProperties = (*int64)(unsafe.Pointer(in.MinProperties))
+	out.Required = *(*[]string)(unsafe.Pointer(&in.Required))
+	out.Items = (*core.JSONSchemaPropsOrArray)(unsafe.Pointer(in.Items))
+	out.AllOf = *(*[]core.JSONSchemaProps)(unsafe.Pointer(&in.AllOf))
+	out.OneOf = *(*[]core.JSONSchemaProps)(unsafe.Pointer(&in.OneOf))
+	out.AnyOf = *(*[]core.JSONSchemaProps)(unsafe.Pointer(&in.AnyOf))
+	out.Not = (*core.JSONSchemaProps)(unsafe.Pointer(in.Not))
+	out.Properties = *(*map[string]core.JSONSchemaProps)(unsafe.Pointer(&in.Properties))
+	out.AdditionalProperties = (*core.JSONSchemaPropsOrBool)(unsafe.Pointer(in.AdditionalProperties))
+	out.PatternProperties = *(*map[string]core.JSONSchemaProps)(unsafe.Pointer(&in.PatternProperties))
+	out.Dependencies = *(*core.JSONSchemaDependencies)(unsafe.Pointer(&in.Dependencies))
+	out.AdditionalItems = (*core.JSONSchemaPropsOrBool)(unsafe.Pointer(in.AdditionalItems))
+	out.Definitions = *(*core.JSONSchemaDefinitions)(unsafe.Pointer(&in.Definitions))
+	out.ExternalDocs = (*core.ExternalDocumentation)(unsafe.Pointer(in.ExternalDocs))
+	out.Example = (*core.JSON)(unsafe.Pointer(in.Example))
+	out.Nullable = in.Nullable
+	return nil
+}
+
+// Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps is an autogenerated conversion function.
+func Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(in *JSONSchemaProps, out *core.JSONSchemaProps, s conversion.Scope) error {
+	return autoConvert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(in, out, s)
+}
+
+func autoConvert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(in *core.JSONSchemaProps, out *JSONSchemaProps, s conversion.Scope) error {
+	out.ID = in.ID
+	out.Schema = JSONSchemaURL(in.Schema)
+	out.Ref = (*string)(unsafe.Pointer(in.Ref))
+	out.Description = in.Description
+	out.Type = in.Type
+	out.Format = in.Format
+	out.Title = in.Title
+	out.Default = (*JSON)(unsafe.Pointer(in.Default))
+	out.Maximum = (*Decimal)(unsafe.Pointer(in.Maximum))
+	out.ExclusiveMaximum = in.ExclusiveMaximum
+	out.Minimum = (*Decimal)(unsafe.Pointer(in.Minimum))
+	out.ExclusiveMinimum = in.ExclusiveMinimum
+	out.MaxLength = (*int64)(unsafe.Pointer(in.MaxLength))
+	out.MinLength = (*int64)(unsafe.Pointer(in.MinLength))
+	out.Pattern = in.Pattern
+	out.MaxItems = (*int64)(unsafe.Pointer(in.MaxItems))
+	out.MinItems = (*int64)(unsafe.Pointer(in.MinItems))
+	out.UniqueItems = in.UniqueItems
+	out.MultipleOf = (*Decimal)(unsafe.Pointer(in.MultipleOf))
+	out.Enum = *(*[]JSON)(unsafe.Pointer(&in.Enum))
+	out.MaxProperties = (*int64)(unsafe.Pointer(in.MaxProperties))
+	out.MinProperties = (*int64)(unsafe.Pointer(in.MinProperties))
+	out.Required = *(*[]string)(unsafe.Pointer(&in.Required))
+	out.Items = (*JSONSchemaPropsOrArray)(unsafe.Pointer(in.Items))
+	out.AllOf = *(*[]JSONSchemaProps)(unsafe.Pointer(&in.AllOf))
+	out.OneOf = *(*[]JSONSchemaProps)(unsafe.Pointer(&in.OneOf))
+	out.AnyOf = *(*[]JSONSchemaProps)(unsafe.Pointer(&in.AnyOf))
+	out.Not = (*JSONSchemaProps)(unsafe.Pointer(in.Not))
+	out.Properties = *(*map[string]JSONSchemaProps)(unsafe.Pointer(&in.Properties))
+	out.AdditionalProperties = (*JSONSchemaPropsOrBool)(unsafe.Pointer(in.AdditionalProperties))
+	out.PatternProperties = *(*map[string]JSONSchemaProps)(unsafe.Pointer(&in.PatternProperties))
+	out.Dependencies = *(*JSONSchemaDependencies)(unsafe.Pointer(&in.Dependencies))
+	out.AdditionalItems = (*JSONSchemaPropsOrBool)(unsafe.Pointer(in.AdditionalItems))
+	out.Definitions = *(*JSONSchemaDefinitions)(unsafe.Pointer(&in.Definitions))
+	out.ExternalDocs = (*ExternalDocumentation)(unsafe.Pointer(in.ExternalDocs))
+	out.Example = (*JSON)(unsafe.Pointer(in.Example))
+	out.Nullable = in.Nullable
+	return nil
+}
+
+// Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps is an autogenerated conversion function.
+func Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(in *core.JSONSchemaProps, out *JSONSchemaProps, s conversion.Scope) error {
+	return autoConvert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(in, out, s)
+}
+
+func autoConvert_v1alpha1_JSONSchemaPropsOrArray_To_core_JSONSchemaPropsOrArray(in *JSONSchemaPropsOrArray, out *core.JSONSchemaPropsOrArray, s conversion.Scope) error {
+	out.Schema = (*core.JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	out.JSONSchemas = *(*[]core.JSONSchemaProps)(unsafe.Pointer(&in.JSONSchemas))
+	return nil
+}
+
+// Convert_v1alpha1_JSONSchemaPropsOrArray_To_core_JSONSchemaPropsOrArray is an autogenerated conversion function.
+func Convert_v1alpha1_JSONSchemaPropsOrArray_To_core_JSONSchemaPropsOrArray(in *JSONSchemaPropsOrArray, out *core.JSONSchemaPropsOrArray, s conversion.Scope) error {
+	return autoConvert_v1alpha1_JSONSchemaPropsOrArray_To_core_JSONSchemaPropsOrArray(in, out, s)
+}
+
+func autoConvert_core_JSONSchemaPropsOrArray_To_v1alpha1_JSONSchemaPropsOrArray(in *core.JSONSchemaPropsOrArray, out *JSONSchemaPropsOrArray, s conversion.Scope) error {
+	out.Schema = (*JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	out.JSONSchemas = *(*[]JSONSchemaProps)(unsafe.Pointer(&in.JSONSchemas))
+	return nil
+}
+
+// Convert_core_JSONSchemaPropsOrArray_To_v1alpha1_JSONSchemaPropsOrArray is an autogenerated conversion function.
+func Convert_core_JSONSchemaPropsOrArray_To_v1alpha1_JSONSchemaPropsOrArray(in *core.JSONSchemaPropsOrArray, out *JSONSchemaPropsOrArray, s conversion.Scope) error {
+	return autoConvert_core_JSONSchemaPropsOrArray_To_v1alpha1_JSONSchemaPropsOrArray(in, out, s)
+}
+
+func autoConvert_v1alpha1_JSONSchemaPropsOrBool_To_core_JSONSchemaPropsOrBool(in *JSONSchemaPropsOrBool, out *core.JSONSchemaPropsOrBool, s conversion.Scope) error {
+	out.Allows = in.Allows
+	out.Schema = (*core.JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	return nil
+}
+
+// Convert_v1alpha1_JSONSchemaPropsOrBool_To_core_JSONSchemaPropsOrBool is an autogenerated conversion function.
+func Convert_v1alpha1_JSONSchemaPropsOrBool_To_core_JSONSchemaPropsOrBool(in *JSONSchemaPropsOrBool, out *core.JSONSchemaPropsOrBool, s conversion.Scope) error {
+	return autoConvert_v1alpha1_JSONSchemaPropsOrBool_To_core_JSONSchemaPropsOrBool(in, out, s)
+}
+
+func autoConvert_core_JSONSchemaPropsOrBool_To_v1alpha1_JSONSchemaPropsOrBool(in *core.JSONSchemaPropsOrBool, out *JSONSchemaPropsOrBool, s conversion.Scope) error {
+	out.Allows = in.Allows
+	out.Schema = (*JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	return nil
+}
+
+// Convert_core_JSONSchemaPropsOrBool_To_v1alpha1_JSONSchemaPropsOrBool is an autogenerated conversion function.
+func Convert_core_JSONSchemaPropsOrBool_To_v1alpha1_JSONSchemaPropsOrBool(in *core.JSONSchemaPropsOrBool, out *JSONSchemaPropsOrBool, s conversion.Scope) error {
+	return autoConvert_core_JSONSchemaPropsOrBool_To_v1alpha1_JSONSchemaPropsOrBool(in, out, s)
+}
+
+func autoConvert_v1alpha1_JSONSchemaPropsOrStringArray_To_core_JSONSchemaPropsOrStringArray(in *JSONSchemaPropsOrStringArray, out *core.JSONSchemaPropsOrStringArray, s conversion.Scope) error {
+	out.Schema = (*core.JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	out.Property = *(*[]string)(unsafe.Pointer(&in.Property))
+	return nil
+}
+
+// Convert_v1alpha1_JSONSchemaPropsOrStringArray_To_core_JSONSchemaPropsOrStringArray is an autogenerated conversion function.
+func Convert_v1alpha1_JSONSchemaPropsOrStringArray_To_core_JSONSchemaPropsOrStringArray(in *JSONSchemaPropsOrStringArray, out *core.JSONSchemaPropsOrStringArray, s conversion.Scope) error {
+	return autoConvert_v1alpha1_JSONSchemaPropsOrStringArray_To_core_JSONSchemaPropsOrStringArray(in, out, s)
+}
+
+func autoConvert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray(in *core.JSONSchemaPropsOrStringArray, out *JSONSchemaPropsOrStringArray, s conversion.Scope) error {
+	out.Schema = (*JSONSchemaProps)(unsafe.Pointer(in.Schema))
+	out.Property = *(*[]string)(unsafe.Pointer(&in.Property))
+	return nil
+}
+
+// Convert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray is an autogenerated conversion function.
+func Convert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray(in *core.JSONSchemaPropsOrStringArray, out *JSONSchemaPropsOrStringArray, s conversion.Scope) error {
+	return autoConvert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray(in, out, s)
 }
 
 func autoConvert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration(in *LandscapeConfiguration, out *core.LandscapeConfiguration, s conversion.Scope) error {
@@ -1266,26 +1516,6 @@ func autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.Objec
 // Convert_core_ObjectReference_To_v1alpha1_ObjectReference is an autogenerated conversion function.
 func Convert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.ObjectReference, out *ObjectReference, s conversion.Scope) error {
 	return autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in, out, s)
-}
-
-func autoConvert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(in *OpenAPIV3Schema, out *core.OpenAPIV3Schema, s conversion.Scope) error {
-	out.JSONSchemaProps = in.JSONSchemaProps
-	return nil
-}
-
-// Convert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema is an autogenerated conversion function.
-func Convert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(in *OpenAPIV3Schema, out *core.OpenAPIV3Schema, s conversion.Scope) error {
-	return autoConvert_v1alpha1_OpenAPIV3Schema_To_core_OpenAPIV3Schema(in, out, s)
-}
-
-func autoConvert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(in *core.OpenAPIV3Schema, out *OpenAPIV3Schema, s conversion.Scope) error {
-	out.JSONSchemaProps = in.JSONSchemaProps
-	return nil
-}
-
-// Convert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema is an autogenerated conversion function.
-func Convert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(in *core.OpenAPIV3Schema, out *OpenAPIV3Schema, s conversion.Scope) error {
-	return autoConvert_core_OpenAPIV3Schema_To_v1alpha1_OpenAPIV3Schema(in, out, s)
 }
 
 func autoConvert_v1alpha1_SecretKeySelector_To_core_SecretKeySelector(in *SecretKeySelector, out *core.SecretKeySelector, s conversion.Scope) error {

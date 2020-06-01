@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,11 +48,5 @@ type DataType struct {
 
 type DataTypeScheme struct {
 	// OpenAPIV3Schema specified the openapiv3 scheme for the type.
-	OpenAPIV3Schema OpenAPIV3Schema `json:"openAPIV3Schema,omitempty"`
-}
-
-// OpenAPIV3Schema specified the openapiv3 scheme for the type.
-// +kubebuilder:validation:Type=object
-type OpenAPIV3Schema struct {
-	apiextensionsv1.JSONSchemaProps `json:",inline"`
+	OpenAPIV3Schema JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }

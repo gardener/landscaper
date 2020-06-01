@@ -19,24 +19,21 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 	"github.com/hashicorp/go-multierror"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionsvalidation "k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 
 	landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // Validate validates data for a certain datatype
-func Validate(scheme landscaperv1alpha1.OpenAPIV3Schema, data interface{}) error {
+func Validate(scheme landscaperv1alpha1.JSONSchemaProps, data interface{}) error {
 
 	// convert versioned JSONSchemaProps to apiextensions internal version
-	internalscheme := &apiextensions.JSONSchemaProps{}
-	if err := apiextensionsv1.Convert_v1_JSONSchemaProps_To_apiextensions_JSONSchemaProps(&scheme.JSONSchemaProps, internalscheme, nil); err != nil {
-		return err
-	}
+	//internalscheme := &apiextensions.JSONSchemaProps{}
+	//if err := apiextensionsv1.Convert_v1_JSONSchemaProps_To_apiextensions_JSONSchemaProps(&scheme.JSONSchemaProps, internalscheme, nil); err != nil {
+	//	return err
+	//}
 
 	openAPITypes := &spec.Schema{}
-	if err := apiextensionsvalidation.ConvertJSONSchemaProps(internalscheme, openAPITypes); err != nil {
+	if err := ConvertJSONSchemaProps(&scheme, openAPITypes); err != nil {
 		return err
 	}
 

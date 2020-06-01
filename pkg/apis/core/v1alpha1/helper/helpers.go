@@ -15,6 +15,8 @@
 package helper
 
 import (
+	"strconv"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -114,4 +116,9 @@ func MergeConditions(oldConditions []v1alpha1.Condition, newConditions ...v1alph
 	}
 
 	return out
+}
+
+// DecimalToFloat64 converts a decimal to a float64.
+func DecimalToFloat64(dec v1alpha1.Decimal) (float64, error) {
+	return strconv.ParseFloat(string(dec), 64)
 }

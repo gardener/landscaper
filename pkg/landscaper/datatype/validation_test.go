@@ -34,7 +34,7 @@ const exampleDirPath = "./testdata/openapiv3"
 var _ = Describe("Validation", func() {
 
 	DescribeTable("OpenAPIV3Validations",
-		func(scheme landscaperv1alpha1.OpenAPIV3Schema, test Test) {
+		func(scheme landscaperv1alpha1.JSONSchemaProps, test Test) {
 			err := datatype.Validate(scheme, test.Data)
 			if test.Result {
 				Expect(err).ToNot(HaveOccurred(), "%v should have been correct", test.Data)
@@ -98,7 +98,7 @@ func readTests() ([]TestSuite, error) {
 
 type TestSuite struct {
 	Name            string                             `json:"name"`
-	OpenAPIV3Schema landscaperv1alpha1.OpenAPIV3Schema `json:"openAPIV3Schema"`
+	OpenAPIV3Schema landscaperv1alpha1.JSONSchemaProps `json:"openAPIV3Schema"`
 	Tests           []Test                             `json:"tests"`
 }
 
