@@ -33,10 +33,10 @@ type DataTypeList struct {
 }
 
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataType defines a new type that can be used for component configurations
-// +kubebuilder:subresource:status
 type DataType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -45,8 +45,13 @@ type DataType struct {
 }
 
 // DataTypeScheme specifies the scheme of the type.
-// +kubebuilder:validation:type=any
+
 type DataTypeScheme struct {
 	// OpenAPIV3Schema specified the openapiv3 scheme for the type.
-	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
+	OpenAPIV3Schema OpenAPIV3Schema `json:"openAPIV3Schema,omitempty"`
+}
+
+// OpenAPIV3Schema specified the openapiv3 scheme for the type.
+type OpenAPIV3Schema struct {
+	apiextensionsv1.JSONSchemaProps `json:",inline"`
 }

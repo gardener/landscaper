@@ -16,7 +16,6 @@ package v1alpha1
 
 import (
 	"encoding/json"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -136,5 +135,5 @@ type CustomType struct {
 	Name string `json:"name"`
 
 	// OpenAPIV3Schema defines the type as openapi v3 scheme.
-	OpenAPIV3Schema apiextensionsv1.JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
+	OpenAPIV3Schema OpenAPIV3Schema `json:"openAPIV3Schema,omitempty"`
 }

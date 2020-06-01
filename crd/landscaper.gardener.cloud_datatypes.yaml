@@ -34,7 +34,6 @@ spec:
           metadata:
             type: object
           scheme:
-            description: DataTypeScheme specifies the scheme of the type.
             properties:
               openAPIV3Schema:
                 description: OpenAPIV3Schema specified the openapiv3 scheme for the

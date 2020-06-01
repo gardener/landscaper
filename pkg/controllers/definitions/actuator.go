@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -106,7 +107,7 @@ func (a *actuator) ensureCustomTypes(ctx context.Context, definition *v1alpha1.C
 		}
 	}
 
-	definition.Status.Conditions = v1alpha1.CreateOrUpdateConditions(definition.Status.Conditions, "CustomDataTypes",
+	definition.Status.Conditions = helper.CreateOrUpdateConditions(definition.Status.Conditions, "CustomDataTypes",
 		v1alpha1.ConditionTrue, "CustomDataTypesCreated",
 		fmt.Sprintf("%d custom data types were successfully created", len(definition.Spec.CustomTypes)))
 

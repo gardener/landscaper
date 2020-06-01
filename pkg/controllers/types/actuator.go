@@ -17,6 +17,7 @@ package types
 import (
 	"context"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -65,7 +66,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	customType.Status.ObservedGeneration = customType.Generation
 
-	customType.Status.Conditions = v1alpha1.CreateOrUpdateConditions(customType.Status.Conditions, v1alpha1.TypeEstablished,
+	customType.Status.Conditions = helper.CreateOrUpdateConditions(customType.Status.Conditions, v1alpha1.TypeEstablished,
 		v1alpha1.ConditionTrue, "", "")
 
 	if err := a.c.Status().Update(ctx, customType); err != nil {

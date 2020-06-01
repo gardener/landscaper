@@ -11,10 +11,13 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/go-openapi/spec v0.19.3
+	github.com/go-openapi/strfmt v0.19.3
 	github.com/go-openapi/stubs v0.0.0-20170429194734-98bff229fc7b // indirect
+	github.com/go-openapi/validate v0.19.5
 	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/kr/pretty v0.2.0 // indirect

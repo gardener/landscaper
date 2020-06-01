@@ -12,25 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package helper
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // HasOperation checks if the obj has the given operation annotation
-func HasOperation(obj metav1.ObjectMeta, op Operation) bool {
-	currentOp, ok := obj.Annotations[OperationAnnotation]
+func HasOperation(obj metav1.ObjectMeta, op v1alpha1.Operation) bool {
+	currentOp, ok := obj.Annotations[v1alpha1.OperationAnnotation]
 	if !ok {
 		return false
 	}
 
-	return Operation(currentOp) == op
+	return v1alpha1.Operation(currentOp) == op
 }
 
 // InitCondition initializes a new Condition with an Unknown status.
-func InitCondition(conditionType ConditionType) Condition {
-	return Condition{
+func InitCondition(conditionType v1alpha1.ConditionType) v1alpha1.Condition {
+	return v1alpha1.Condition{
 		Type:               conditionType,
-		Status:             ConditionUnknown,
+		Status:             v1alpha1.ConditionUnknown,
 		Reason:             "ConditionInitialized",
 		Message:            "The condition has been initialized but its semantic check has not been performed yet.",
 		LastTransitionTime: metav1.Now(),
@@ -39,7 +42,7 @@ func InitCondition(conditionType ConditionType) Condition {
 
 // GetCondition returns the condition with the given <conditionType> out of the list of <conditions>.
 // In case the required type could not be found, it returns nil.
-func GetCondition(conditions []Condition, conditionType ConditionType) *Condition {
+func GetCondition(conditions []v1alpha1.Condition, conditionType v1alpha1.ConditionType) *v1alpha1.Condition {
 	for _, condition := range conditions {
 		if condition.Type == conditionType {
 			c := condition
@@ -51,7 +54,7 @@ func GetCondition(conditions []Condition, conditionType ConditionType) *Conditio
 
 // GetOrInitCondition tries to retrieve the condition with the given condition type from the given conditions.
 // If the condition could not be found, it returns an initialized condition of the given type.
-func GetOrInitCondition(conditions []Condition, conditionType ConditionType) Condition {
+func GetOrInitCondition(conditions []v1alpha1.Condition, conditionType v1alpha1.ConditionType) v1alpha1.Condition {
 	if condition := GetCondition(conditions, conditionType); condition != nil {
 		return *condition
 	}
@@ -59,8 +62,8 @@ func GetOrInitCondition(conditions []Condition, conditionType ConditionType) Con
 }
 
 // UpdatedCondition updates the properties of one specific condition.
-func UpdatedCondition(condition Condition, status ConditionStatus, reason, message string, codes ...ErrorCode) Condition {
-	newCondition := Condition{
+func UpdatedCondition(condition v1alpha1.Condition, status v1alpha1.ConditionStatus, reason, message string, codes ...v1alpha1.ErrorCode) v1alpha1.Condition {
+	newCondition := v1alpha1.Condition{
 		Type:               condition.Type,
 		Status:             status,
 		Reason:             reason,
@@ -76,7 +79,7 @@ func UpdatedCondition(condition Condition, status ConditionStatus, reason, messa
 	return newCondition
 }
 
-func CreateOrUpdateConditions(conditions []Condition, condType ConditionType, status ConditionStatus, reason, message string, codes ...ErrorCode) []Condition {
+func CreateOrUpdateConditions(conditions []v1alpha1.Condition, condType v1alpha1.ConditionType, status v1alpha1.ConditionStatus, reason, message string, codes ...v1alpha1.ErrorCode) []v1alpha1.Condition {
 	for i, foundCondition := range conditions {
 		if foundCondition.Type == condType {
 			conditions[i] = UpdatedCondition(conditions[i], status, reason, message, codes...)
