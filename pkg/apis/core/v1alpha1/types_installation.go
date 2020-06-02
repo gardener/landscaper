@@ -18,6 +18,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// EncompassedByLabel is the label that contains the name of the parent installation
+// that encompasses the current installation.
+// todo: add conversition
+const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
+
+// EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
+const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
+
 type ComponentInstallationPhase string
 
 const (
@@ -89,7 +97,7 @@ type ComponentInstallationStatus struct {
 
 	// InstallationReferences contain all references to sub-components
 	// that are created based on the component definition.
-	InstallationReferences []ObjectReference `json:"installationRefs,omitempty"`
+	InstallationReferences []NamedObjectReference `json:"installationRefs,omitempty"`
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
 	ExecutionReference ObjectReference `json:"executionRefs,omitempty"`

@@ -12,26 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+//go:generate mockgen -destination=./client/client_mock.go sigs.k8s.io/controller-runtime/pkg/client Client,StatusWriter
 
-import (
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-)
-
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
-	}
-
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentDefinition"), a); err != nil {
-		return err
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ComponentInstallation{}).
-		Complete(a)
-}
+package mocks

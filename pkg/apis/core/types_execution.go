@@ -72,7 +72,7 @@ type ExecutionStatus struct {
 	ExportReference ObjectReference `json:"exportReference,omitempty"`
 
 	// DeployItemReferences contain the state of all deploy items
-	DeployItemReferences []ObjectReference `json:"deployItemRefs,omitempty"`
+	DeployItemReferences []NamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 
 // ExecutionItem defines a execution element that is translated into a deploy item.

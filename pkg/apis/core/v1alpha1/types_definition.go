@@ -97,6 +97,9 @@ type Default struct {
 
 // DefinitionReference defines a referenced child component definition.
 type DefinitionReference struct {
+	// Name is the unique name of the step
+	Name string `json:"name"`
+
 	// Reference defines a reference to a ComponentDefinition.
 	// The definition can reside in an OCI or other supported location.
 	Reference string `json:"ref"`

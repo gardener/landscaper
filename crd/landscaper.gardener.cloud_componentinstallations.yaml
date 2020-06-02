@@ -202,17 +202,28 @@ spec:
                 description: InstallationReferences contain all references to sub-components
                   that are created based on the component definition.
                 items:
-                  description: ObjectReference is the reference to a kubernetes object.
+                  description: NamedObjectReference is a named reference to a specific
+                    resource.
                   properties:
                     name:
-                      description: Name is the name of the kubernetes object.
+                      description: Name is the unique name of the reference.
                       type: string
-                    namespace:
-                      description: Namespace is the namespace of kubernetes object.
-                      type: string
+                    ref:
+                      description: Reference is the reference to an object.
+                      properties:
+                        name:
+                          description: Name is the name of the kubernetes object.
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of kubernetes object.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
                   required:
                   - name
-                  - namespace
+                  - ref
                   type: object
                 type: array
               observedGeneration:

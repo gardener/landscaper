@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package installations
 
 import (
 	"context"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	landscaperv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/go-logr/logr"
 	"io/ioutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,15 +56,24 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	defer ctx.Done()
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
-	component := &v1alpha1.ComponentInstallation{}
-	if err := a.c.Get(ctx, req.NamespacedName, component); err != nil {
-		a.log.Error(err, "unable to get resource")
+	inst := &v1alpha1.ComponentInstallation{}
+	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
+		a.log.Error(err, "unable to get inst installation")
 		return reconcile.Result{}, err
 	}
 
-	// if the component has the reconcile annotation or if the component is waiting for dependencies
+	// todo: get definition from registry
+	definition := &v1alpha1.ComponentDefinition{}
+
+	// check that all referenced definitions have a corresponding installation
+	if err := a.EnsureSubInstallations(ctx, inst, definition); err != nil {
+		a.log.Error(err, "unable to ensure sub installations")
+		return reconcile.Result{}, err
+	}
+
+	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
 	// we need to check if all required imports are satisfied
-	//if !v1alpha1.HasOperation(component.ObjectMeta, v1alpha1.ReoncileOperation) && component.Status.Phase != v1alpha1.ComponentPhaseWaitingDeps {
+	//if !v1alpha1.HasOperation(inst.ObjectMeta, v1alpha1.ReoncileOperation) && inst.Status.Phase != v1alpha1.ComponentPhaseWaitingDeps {
 	//	return reconcile.Result{}, nil
 	//}
 
@@ -77,7 +87,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err := a.importsAreSatisfied(ctx, landscapeConfig, component); err != nil {
+	if err := a.importsAreSatisfied(ctx, landscapeConfig, inst); err != nil {
 		a.log.Error(err, "imports not satisfied")
 		return reconcile.Result{}, err
 	}
@@ -85,31 +95,41 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 
-	imports, err := a.collectImports(ctx, landscapeConfig, component)
+	imports, err := a.collectImports(ctx, landscapeConfig, inst)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")
 		return reconcile.Result{}, err
 	}
 
-	if err := a.runExecutions(ctx, component, imports); err != nil {
+	if err := a.runExecutions(ctx, inst, imports); err != nil {
 		a.log.Error(err, "error during execution")
 		return reconcile.Result{}, err
 	}
 
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
-	if err := a.validateExports(ctx, component); err != nil {
+	if err := a.validateExports(ctx, inst); err != nil {
 		a.log.Error(err, "error during export validation")
 		return reconcile.Result{}, err
 	}
 
 	// as all exports are validated, lets trigger dependant components
-	if err := a.triggerDependants(ctx, component); err != nil {
+	if err := a.triggerDependants(ctx, inst); err != nil {
 		a.log.Error(err, "error during dependant trigger")
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (a *actuator) updateInstallationStatus(ctx context.Context, inst *v1alpha1.ComponentInstallation, updatedConditions ...v1alpha1.Condition) error {
+	inst.Status.Conditions = landscaperv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
+	inst.Status.ObservedGeneration = inst.Generation
+	if err := a.c.Status().Update(ctx, inst); err != nil {
+		a.log.Error(err, "unable to update installation status")
+		return err
+	}
+	return nil
 }
 
 func (a *actuator) triggerDependants(ctx context.Context, component *v1alpha1.ComponentInstallation) error {

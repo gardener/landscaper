@@ -24,8 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
-	componentsactuator "github.com/gardener/landscaper/pkg/controllers/components"
-	definitionsactuator "github.com/gardener/landscaper/pkg/controllers/definitions"
+	installationsactuator "github.com/gardener/landscaper/pkg/controllers/installations"
 	typesactuator "github.com/gardener/landscaper/pkg/controllers/types"
 )
 
@@ -70,12 +69,7 @@ func (o *options) run(ctx context.Context) {
 		os.Exit(1)
 	}
 
-	if err := definitionsactuator.AddActuatorToManager(mgr); err != nil {
-		o.log.Error(err, "unable to setup controller")
-		os.Exit(1)
-	}
-
-	if err := componentsactuator.AddActuatorToManager(mgr); err != nil {
+	if err := installationsactuator.AddActuatorToManager(mgr); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

@@ -26,9 +26,6 @@ import (
 func CheckImportSatisfaction(current *component.Component, components []*component.Component, landscapeConfig map[string]interface{}) error {
 	// todo: schrodit - parallelize execution and catch multierror
 	for _, importSpec := range current.Info.Spec.Imports {
-		if !*importSpec.Required {
-			continue
-		}
 
 		// check if the value can be found in the landscape config
 		if err := jsonpath.GetValue(importSpec.From, landscapeConfig, nil); err == nil {
@@ -36,14 +33,14 @@ func CheckImportSatisfaction(current *component.Component, components []*compone
 			continue
 		}
 
-		exportSpec, exportComponent, err := GetComponentForImport(importSpec, components)
+		_, exportComponent, err := GetComponentForImport(importSpec, components)
 		if err != nil {
 			return err
 		}
 
-		if exportSpec.Type != importSpec.Type {
-			return errors.New("export type has to be of the same type as the import")
-		}
+		//if exportSpec.Type != importSpec.Type {
+		//	return errors.New("export type has to be of the same type as the import")
+		//}
 
 		importStatus, ok := current.GetImportStatus(importSpec.From)
 		if !ok {
@@ -64,7 +61,7 @@ func CheckImportSatisfaction(current *component.Component, components []*compone
 	return nil
 }
 
-func GetComponentForImport(importSpec corev1alpha1.Import, components []*component.Component) (*corev1alpha1.Export, *component.Component, error) {
+func GetComponentForImport(importSpec corev1alpha1.DefinitionImportMapping, components []*component.Component) (*corev1alpha1.DefinitionExportMapping, *component.Component, error) {
 	for _, component := range components {
 		if component.Info.Status.Phase != corev1alpha1.ComponentPhaseCompleted {
 			continue

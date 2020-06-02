@@ -12,45 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package installations
 
 import (
-	"context"
-	"errors"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
-func (a *actuator) RunScript(ctx context.Context, namespace string, config *v1alpha1.ScriptConfig) error {
-	if config == nil {
-		return errors.New("config has to be provided")
-	}
-
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-",
-			Namespace:    namespace,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Image:   config.Image,
-					Command: []string{"sh"},
-					Args:    []string{"-c", config.Script},
-					Env: []corev1.EnvVar{
-						{
-							Name:  v1alpha1.ImportConfigEnvVarName,
-							Value: v1alpha1.ImportConfigPath,
-						},
-					},
-				},
-			},
-		},
-	}
-	if err := a.c.Create(ctx, pod); err != nil {
+func AddActuatorToManager(mgr manager.Manager) error {
+	a, err := NewActuator()
+	if err != nil {
 		return err
 	}
 
-	return nil
+	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentInstallations"), a); err != nil {
+		return err
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.ComponentInstallation{}).
+		Complete(a)
 }

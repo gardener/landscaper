@@ -16,6 +16,7 @@ require (
 	github.com/go-openapi/validate v0.19.5
 	github.com/gobuffalo/flect v0.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect

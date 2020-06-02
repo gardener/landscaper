@@ -1,0 +1,11 @@
+name: container image object
+openAPIV3Schema:
+  type: string
+  format: uri
+tests:
+- data: "test"
+  result: false
+- data: "https://example.com"
+  result: true
+- data: "example.com"
+  result: false

@@ -35,7 +35,7 @@ bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh 
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
 echo "> Generating conversion Landscaper"
-bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-groups.sh \
+bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   conversion \
   $PROJECT_MOD_ROOT/pkg/core \
   $PROJECT_MOD_ROOT/pkg/apis \

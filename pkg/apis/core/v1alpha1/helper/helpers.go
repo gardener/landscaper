@@ -79,6 +79,7 @@ func UpdatedCondition(condition v1alpha1.Condition, status v1alpha1.ConditionSta
 	return newCondition
 }
 
+// CreateOrUpdateConditions creates or updates a condition in a condition list.
 func CreateOrUpdateConditions(conditions []v1alpha1.Condition, condType v1alpha1.ConditionType, status v1alpha1.ConditionStatus, reason, message string, codes ...v1alpha1.ErrorCode) []v1alpha1.Condition {
 	for i, foundCondition := range conditions {
 		if foundCondition.Type == condType {
@@ -88,4 +89,28 @@ func CreateOrUpdateConditions(conditions []v1alpha1.Condition, condType v1alpha1
 	}
 
 	return append(conditions, UpdatedCondition(InitCondition(condType), status, reason, message, codes...))
+}
+
+// MergeConditions merges the given <oldConditions> with the <newConditions>. Existing conditions are superseded by
+// the <newConditions> (depending on the condition type).
+func MergeConditions(oldConditions []v1alpha1.Condition, newConditions ...v1alpha1.Condition) []v1alpha1.Condition {
+	var (
+		out         = make([]v1alpha1.Condition, 0, len(oldConditions))
+		typeToIndex = make(map[v1alpha1.ConditionType]int, len(oldConditions))
+	)
+
+	for i, condition := range oldConditions {
+		out = append(out, condition)
+		typeToIndex[condition.Type] = i
+	}
+
+	for _, condition := range newConditions {
+		if index, ok := typeToIndex[condition.Type]; ok {
+			out[index] = condition
+			continue
+		}
+		out = append(out, condition)
+	}
+
+	return out
 }

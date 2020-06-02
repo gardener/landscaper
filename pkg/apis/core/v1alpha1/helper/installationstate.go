@@ -12,26 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package helper
 
-import (
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-)
+import landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
+// NewInstallationReferenceState creates a new installation reference state from a given installation
+func NewInstallationReferenceState(name string, inst *landscaperv1alpha1.ComponentInstallation) landscaperv1alpha1.NamedObjectReference {
+	return landscaperv1alpha1.NamedObjectReference{
+		Name: name,
+		Reference: landscaperv1alpha1.ObjectReference{
+			Name:      inst.Name,
+			Namespace: inst.Namespace,
+		},
 	}
-
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentDefinition"), a); err != nil {
-		return err
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ComponentDefinition{}).
-		Complete(a)
 }

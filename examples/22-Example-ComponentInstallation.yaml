@@ -171,14 +171,20 @@ status:
     configGeneration: 2
 
   deployItemRefs:
-  - name: abc --> OwnerRef
-    namespace: default
+  - name: my-step
+    ref:
+      name: abc --> OwnerRef
+      namespace: default
 
   installationRefs:
-  - name: Installation1 --> OwnerRef
-    namespace: default
-  - name: Installation2 --> OwnerRef
-    namespace: default
+  - name: my-sub-component
+    ref:
+      name: Installation1 --> OwnerRef
+      namespace: default
+  - name: my-other-sub
+    ref:
+      name: Installation2 --> OwnerRef
+      namespace: default
 
   configGeneration: 0
   exportRef: my-secret --> OwnerRef

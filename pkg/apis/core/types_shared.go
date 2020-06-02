@@ -17,6 +17,7 @@ package core
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // ConditionStatus is the status of a condition.
@@ -74,8 +75,17 @@ type Condition struct {
 type Operation string
 
 const (
-	ReoncileOperation Operation = "reconcile"
+	ReconcileOperation Operation = "reconcile"
 )
+
+// NamedObjectReference is a named reference to a specific resource.
+type NamedObjectReference struct {
+	// Name is the unique name of the reference.
+	Name string `json:"name"`
+
+	// Reference is the reference to an object.
+	Reference ObjectReference `json:"ref"`
+}
 
 // ObjectReference is the reference to a kubernetes object.
 type ObjectReference struct {
@@ -84,6 +94,14 @@ type ObjectReference struct {
 
 	// Namespace is the namespace of kubernetes object.
 	Namespace string `json:"namespace"`
+}
+
+// NamespacedName returns the namespaced name for the object reference
+func (r *ObjectReference) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Name: r.Name,
+		Namespace: r.Namespace,
+	}
 }
 
 // SecretRef references a secret value
