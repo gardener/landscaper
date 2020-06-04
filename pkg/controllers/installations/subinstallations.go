@@ -17,11 +17,11 @@ package installations
 import (
 	"context"
 	"fmt"
+
 	controllerruntime "sigs.k8s.io/controller-runtime"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	landscaperv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
@@ -58,13 +58,13 @@ func (a *actuator) EnsureSubInstallations(ctx context.Context, inst *landscaperv
 	}
 
 	cond = landscaperv1alpha1helper.UpdatedCondition(cond, landscaperv1alpha1.ConditionTrue,
-		"InstallationsInstalled","All Installations are successfully installed")
+		"InstallationsInstalled", "All Installations are successfully installed")
 	return a.updateInstallationStatus(ctx, inst, cond)
 }
 
 func (a *actuator) getSubInstallations(ctx context.Context, inst *landscaperv1alpha1.ComponentInstallation) (map[string]*landscaperv1alpha1.ComponentInstallation, error) {
 	var (
-		cond = landscaperv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, landscaperv1alpha1.EnsureSubInstallationsCondition)
+		cond             = landscaperv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, landscaperv1alpha1.EnsureSubInstallationsCondition)
 		subInstallations = map[string]*landscaperv1alpha1.ComponentInstallation{}
 
 		// track all found subinstallation to track if some installations were deleted
@@ -100,12 +100,10 @@ func (a *actuator) createNewInstallation(ctx context.Context, inst *landscaperv1
 	cond := landscaperv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, landscaperv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
-		subInst = &landscaperv1alpha1.ComponentInstallation{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name), // agg1-agg2-agg3-agg4-def
-				Namespace: inst.Namespace,
-			},
-		}
+		subInst = &landscaperv1alpha1.ComponentInstallation{}
+		subInst.Name = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
+		subInst.Namespace = inst.Namespace
+		subInst.Labels = map[string]string{landscaperv1alpha1.EncompassedByLabel: inst.Name}
 	}
 
 	_, err := controllerruntime.CreateOrUpdate(ctx, a.c, subInst, func() error {

@@ -16,11 +16,13 @@ package registry_test
 
 import (
 	"fmt"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
+
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
 const (

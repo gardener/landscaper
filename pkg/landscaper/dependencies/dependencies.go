@@ -16,6 +16,7 @@ package dependencies
 
 import (
 	"errors"
+
 	"github.com/gardener/landscaper/pkg/configuration/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/component"
 

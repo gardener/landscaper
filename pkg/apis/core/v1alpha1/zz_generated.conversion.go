@@ -23,9 +23,10 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
-	core "github.com/gardener/landscaper/pkg/apis/core"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	core "github.com/gardener/landscaper/pkg/apis/core"
 )
 
 func init() {

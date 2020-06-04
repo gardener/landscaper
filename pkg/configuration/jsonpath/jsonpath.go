@@ -17,6 +17,7 @@ package jsonpath
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"

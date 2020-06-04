@@ -15,10 +15,11 @@
 package install
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/gardener/landscaper/pkg/apis/core"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 var (

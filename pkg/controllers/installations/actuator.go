@@ -16,14 +16,16 @@ package installations
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	landscaperv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/go-logr/logr"
 	"io/ioutil"
+
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	landscaperv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {

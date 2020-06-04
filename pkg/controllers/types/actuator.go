@@ -16,12 +16,14 @@ package types
 
 import (
 	"context"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {

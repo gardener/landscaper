@@ -99,7 +99,7 @@ type ObjectReference struct {
 // NamespacedName returns the namespaced name for the object reference
 func (r *ObjectReference) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{
-		Name: r.Name,
+		Name:      r.Name,
 		Namespace: r.Namespace,
 	}
 }

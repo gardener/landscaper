@@ -15,10 +15,11 @@
 package installations
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 func AddActuatorToManager(mgr manager.Manager) error {

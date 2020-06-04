@@ -16,12 +16,13 @@ package datatype_test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
 
 	landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -67,7 +68,7 @@ func generateTests() []TableEntry {
 }
 
 func readTests() ([]TestSuite, error) {
-	suites   := []TestSuite{}
+	suites := []TestSuite{}
 	files, err := ioutil.ReadDir(exampleDirPath)
 	if err != nil {
 		return nil, err
@@ -96,12 +97,12 @@ func readTests() ([]TestSuite, error) {
 }
 
 type TestSuite struct {
-	Name string `json:"name"`
+	Name            string                             `json:"name"`
 	OpenAPIV3Schema landscaperv1alpha1.OpenAPIV3Schema `json:"openAPIV3Schema"`
-	Tests []Test `json:"tests"`
+	Tests           []Test                             `json:"tests"`
 }
 
 type Test struct {
-	Data interface{} `json:"data"`
-	Result bool `json:"result"`
+	Data   interface{} `json:"data"`
+	Result bool        `json:"result"`
 }

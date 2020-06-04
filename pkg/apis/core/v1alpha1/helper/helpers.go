@@ -15,8 +15,9 @@
 package helper
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // HasOperation checks if the obj has the given operation annotation

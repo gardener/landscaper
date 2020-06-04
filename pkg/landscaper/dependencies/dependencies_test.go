@@ -15,10 +15,11 @@
 package dependencies_test
 
 import (
+	"testing"
+
 	"github.com/gardener/landscaper/pkg/landscaper/component"
 	"github.com/gardener/landscaper/pkg/landscaper/dependencies"
 	"github.com/gardener/landscaper/test/utils"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
