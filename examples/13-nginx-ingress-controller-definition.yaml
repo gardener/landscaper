@@ -15,6 +15,10 @@ spec:
 
   - key: .dnsClass
     type: string
+    required: false
+    imports:
+      - abc: val
+
   - key: .resources
     type: ResourceRequirements
     required: false

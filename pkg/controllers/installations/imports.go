@@ -22,28 +22,31 @@ import (
 
 // importsAreSatisfied traverses through all components and validates if all imports are
 // satisfied with the correct version
-func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[string]interface{}, current *v1alpha1.ComponentInstallation) error {
-	//internalComponent, err := component.New(current)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//components := &v1alpha1.ComponentInstallationList{}
-	//if err := a.c.List(ctx, components); err != nil {
-	//	return errors.Wrap(err, "unable to list components")
-	//}
-	//
-	//internalComponents := make([]*component.Component, len(components.Items))
-	//for i, c := range components.Items {
-	//	internalComponents[i], err = component.New(c.DeepCopy())
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-	//
-	//return dependencies.CheckImportSatisfaction(internalComponent, internalComponents, landscapeConfig)
-	return nil
-}
+//func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[string]interface{}, inst *v1alpha1.ComponentInstallation) error {
+
+// only root installation are allowed to read from global landscape config
+
+//internalComponent, err := component.New(current)
+//if err != nil {
+//	return err
+//}
+//
+//components := &v1alpha1.ComponentInstallationList{}
+//if err := a.c.List(ctx, components); err != nil {
+//	return errors.Wrap(err, "unable to list components")
+//}
+//
+//internalComponents := make([]*component.Component, len(components.Items))
+//for i, c := range components.Items {
+//	internalComponents[i], err = component.New(c.DeepCopy())
+//	if err != nil {
+//		return err
+//	}
+//}
+//
+//return dependencies.CheckImportSatisfaction(internalComponent, internalComponents, landscapeConfig)
+//	return nil
+//}
 
 // getImports traverses through all components and
 // collects and merges the imports

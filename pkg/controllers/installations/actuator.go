@@ -17,6 +17,7 @@ package installations
 import (
 	"context"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	landscaperv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -33,13 +34,16 @@ func NewActuator() (reconcile.Reconciler, error) {
 }
 
 type actuator struct {
-	log logr.Logger
-	c   client.Client
+	log    logr.Logger
+	c      client.Client
+	scheme *runtime.Scheme
 }
 
 var _ inject.Client = &actuator{}
 
 var _ inject.Logger = &actuator{}
+
+var _ inject.Scheme = &actuator{}
 
 // InjectClients injects the current kubernetes client into the actuator
 func (a *actuator) InjectClient(c client.Client) error {
@@ -53,31 +57,25 @@ func (a *actuator) InjectLogger(log logr.Logger) error {
 	return nil
 }
 
+// InjectScheme injects the current scheme into the actuator
+func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
+	a.scheme = scheme
+	return nil
+}
+
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	ctx := context.Background()
 	defer ctx.Done()
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
-	inst := &v1alpha1.ComponentInstallation{}
+	inst := &lsv1alpha1.ComponentInstallation{}
 	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
 		a.log.Error(err, "unable to get inst installation")
 		return reconcile.Result{}, err
 	}
 
 	// todo: get definition from registry
-	definition := &v1alpha1.ComponentDefinition{}
-
-	// check that all referenced definitions have a corresponding installation
-	if err := a.EnsureSubInstallations(ctx, inst, definition); err != nil {
-		a.log.Error(err, "unable to ensure sub installations")
-		return reconcile.Result{}, err
-	}
-
-	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
-	// we need to check if all required imports are satisfied
-	//if !v1alpha1.HasOperation(inst.ObjectMeta, v1alpha1.ReoncileOperation) && inst.Status.Phase != v1alpha1.ComponentPhaseWaitingDeps {
-	//	return reconcile.Result{}, nil
-	//}
+	definition := &lsv1alpha1.ComponentDefinition{}
 
 	// for debugging read landscape from tmp file
 	landscapeConfig := make(map[string]interface{})
@@ -89,6 +87,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
+	// check that all referenced definitions have a corresponding installation
+	if err := a.EnsureSubInstallations(ctx, inst, definition); err != nil {
+		a.log.Error(err, "unable to ensure sub installations")
+		return reconcile.Result{}, err
+	}
+
+	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
+	// we need to check if all required imports are satisfied
+	if !lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) && inst.Status.Phase != lsv1alpha1.ComponentPhaseWaitingDeps {
+		return reconcile.Result{}, nil
+	}
+
 	if err := a.importsAreSatisfied(ctx, landscapeConfig, inst); err != nil {
 		a.log.Error(err, "imports not satisfied")
 		return reconcile.Result{}, err
@@ -97,6 +107,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 
+	// only needed if execution are processed
 	imports, err := a.collectImports(ctx, landscapeConfig, inst)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")
@@ -105,6 +116,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	if err := a.runExecutions(ctx, inst, imports); err != nil {
 		a.log.Error(err, "error during execution")
+		return reconcile.Result{}, err
+	}
+
+	if err := a.triggerSubInstallations(ctx, inst); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -124,8 +139,9 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) updateInstallationStatus(ctx context.Context, inst *v1alpha1.ComponentInstallation, updatedConditions ...v1alpha1.Condition) error {
-	inst.Status.Conditions = landscaperv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
+func (a *actuator) updateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+	inst.Status.Phase = phase
+	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	inst.Status.ObservedGeneration = inst.Generation
 	if err := a.c.Status().Update(ctx, inst); err != nil {
 		a.log.Error(err, "unable to update installation status")
@@ -134,10 +150,10 @@ func (a *actuator) updateInstallationStatus(ctx context.Context, inst *v1alpha1.
 	return nil
 }
 
-func (a *actuator) triggerDependants(ctx context.Context, component *v1alpha1.ComponentInstallation) error {
+func (a *actuator) triggerDependants(ctx context.Context, component *lsv1alpha1.ComponentInstallation) error {
 	return nil
 }
 
-func (a *actuator) validateExports(ctx context.Context, component *v1alpha1.ComponentInstallation) error {
+func (a *actuator) validateExports(ctx context.Context, component *lsv1alpha1.ComponentInstallation) error {
 	return nil
 }

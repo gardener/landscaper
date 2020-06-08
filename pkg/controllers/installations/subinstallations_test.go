@@ -16,7 +16,8 @@ package installations
 
 import (
 	"context"
-
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,7 +40,10 @@ var _ = Describe("SubInstallation", func() {
 	)
 
 	BeforeEach(func() {
-		a = &actuator{}
+		a = &actuator{
+			log:    testing.NullLogger{},
+			scheme: kubernetes.LandscaperScheme,
+		}
 		ctrl = gomock.NewController(GinkgoT())
 		mockClient = mock_client.NewMockClient(ctrl)
 		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
@@ -269,30 +273,69 @@ var _ = Describe("SubInstallation", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("should remove a subinstallation that def reference does not exist anymore", func() {
+	It("should remove a subinstallation that is not referenced anymore", func() {
 		mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-		mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-		inst := &landscaperv1alpha1.ComponentInstallation{
-			Status: landscaperv1alpha1.ComponentInstallationStatus{
-				InstallationReferences: []landscaperv1alpha1.NamedObjectReference{
-					{
-						Name: "def1",
-						Reference: landscaperv1alpha1.ObjectReference{
-							Name:      "inst-def1",
-							Namespace: "default",
-						},
-					},
+		inst := &landscaperv1alpha1.ComponentInstallation{}
+		inst.Status.InstallationReferences = []landscaperv1alpha1.NamedObjectReference{
+			{
+				Name: "def1",
+				Reference: landscaperv1alpha1.ObjectReference{
+					Name:      "inst-def1",
+					Namespace: "default",
 				},
 			},
 		}
 		def := &landscaperv1alpha1.ComponentDefinition{}
+		subinst := &landscaperv1alpha1.ComponentInstallation{}
+		subinst.Name = "inst-def1"
+
+		mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *landscaperv1alpha1.ComponentInstallation) {
+			Expect(key.Name).To(Equal("inst-def1"))
+			*obj = *subinst
+		})
+		mockClient.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 		err := a.EnsureSubInstallations(context.TODO(), inst, def)
 		Expect(err).ToNot(HaveOccurred())
+	})
 
-		Expect(inst.Status.InstallationReferences).To(HaveLen(0))
+	It("should wait until all subinstallations are not in progressing state", func() {
+		mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+		mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+		inst := &landscaperv1alpha1.ComponentInstallation{}
+		inst.Status.InstallationReferences = []landscaperv1alpha1.NamedObjectReference{
+			{
+				Name: "def1",
+				Reference: landscaperv1alpha1.ObjectReference{
+					Name:      "inst-def1",
+					Namespace: "default",
+				},
+			},
+		}
+		def := &landscaperv1alpha1.ComponentDefinition{
+			DefinitionReferences: []landscaperv1alpha1.DefinitionReference{
+				{
+					Name:      "def1",
+					Reference: "def1:1.1.0",
+				},
+			},
+		}
+		subinst := &landscaperv1alpha1.ComponentInstallation{}
+		subinst.Name = "inst-def1"
+		subinst.Status.Phase = landscaperv1alpha1.ComponentPhaseProgressing
+
+		mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *landscaperv1alpha1.ComponentInstallation) {
+			Expect(key.Name).To(Equal("inst-def1"))
+			*obj = *subinst
+		})
+
+		mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).Times(0)
+
+		err := a.EnsureSubInstallations(context.TODO(), inst, def)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 })

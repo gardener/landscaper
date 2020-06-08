@@ -20,7 +20,7 @@ import (
 
 // EncompassedByLabel is the label that contains the name of the parent installation
 // that encompasses the current installation.
-// todo: add conversition
+// todo: add conversion
 const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
 
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
