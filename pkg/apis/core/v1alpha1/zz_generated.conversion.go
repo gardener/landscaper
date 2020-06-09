@@ -23,10 +23,9 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
+	core "github.com/gardener/landscaper/pkg/apis/core"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-
-	core "github.com/gardener/landscaper/pkg/apis/core"
 )
 
 func init() {
@@ -1194,7 +1193,10 @@ func Convert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationS
 }
 
 func autoConvert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(in *LandscapeConfigurationStatus, out *core.LandscapeConfigurationStatus, s conversion.Scope) error {
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.ConfigGeneration = in.ConfigGeneration
+	out.ConfigReference = (*core.ObjectReference)(unsafe.Pointer(in.ConfigReference))
 	return nil
 }
 
@@ -1204,7 +1206,10 @@ func Convert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfiguratio
 }
 
 func autoConvert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(in *core.LandscapeConfigurationStatus, out *LandscapeConfigurationStatus, s conversion.Scope) error {
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.ConfigGeneration = in.ConfigGeneration
+	out.ConfigReference = (*ObjectReference)(unsafe.Pointer(in.ConfigReference))
 	return nil
 }
 

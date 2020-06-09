@@ -151,7 +151,7 @@ spec:
                 - name
                 - namespace
                 type: object
-              exportReference:
+              exportRef:
                 description: ExportReference references the object that contains the
                   exported values.
                 properties:

@@ -58,11 +58,78 @@ spec:
             description: LandscapeConfigurationStatus contains the status of the landscape
               configuration
             properties:
+              conditions:
+                description: Conditions contains the actual condition of a landsacpe
+                  config
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
               configGeneration:
+                description: ConfigGeneration is the generation of the exported values.
+                format: int64
+                type: integer
+              configRef:
+                description: ExportReference references the object that contains the
+                  exported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this landscapeConfiguration. It corresponds to the LandscapeConfig
+                  generation, which is updated on mutation.
                 format: int64
                 type: integer
             required:
             - configGeneration
+            - observedGeneration
             type: object
         required:
         - spec

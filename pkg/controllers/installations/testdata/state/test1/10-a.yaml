@@ -11,5 +11,21 @@ metadata:
     name: root
 spec:
 
-  definitionRef: a
+  definitionRef: a:1.0.0
+
+  imports:
+  - from: root.a
+    to: a.b
+
+  exports:
+  - from: a.x
+    to: a.z
+
+status:
+  phase: Progressing
+  configGeneration: 5
+
+  imports:
+  - from: root.a
+    configGeneration: 5
 

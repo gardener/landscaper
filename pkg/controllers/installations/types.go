@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package installations
 
-const (
-	ImportConfigEnvVarName = "IMPORT_CONFIG"
-
-	ImportConfigPath = "/landscaper/import.yaml"
-
-	// LandscapeConfigurationSecretDataKey is the key of the secret where the landscape stores its merged configuration.
-	LandscapeConfigurationSecretDataKey = "config"
-
-	// Annotations
-
-	// OperationAnnotation is the annotation that specifies a operation for a component
-	OperationAnnotation = "landscaper.gardener.cloud/operation"
+import (
+	"github.com/gardener/landscaper/pkg/landscaper/component"
 )
+
+// Context contains the visible installations of a specific installation.
+// This context is later used to validate and get import data
+type Context struct {
+	// Parent is the installation the installation is encompassed in.
+	// Parents are handled separately as installation have access to the same imports as their parent.
+	Parent *component.Installation
+
+	// Siblings are installations with the same parent.
+	// The installation has access to the exports of theses components
+	Siblings []*component.Installation
+}

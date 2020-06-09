@@ -17,6 +17,7 @@ package installations
 import (
 	"context"
 	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -73,12 +74,6 @@ func (a *actuator) EnsureSubInstallations(ctx context.Context, inst *landscaperv
 		subInst, err := a.createOrUpdateNewInstallation(ctx, inst, def, subDef, subInst)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create installation for %s", subDef.Name)
-		}
-
-		// add newly created installation to state
-		inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, landscaperv1alpha1helper.NewInstallationReferenceState(subDef.Name, subInst))
-		if err := a.c.Status().Update(ctx, inst); err != nil {
-			return errors.Wrapf(err, "unable to add new installation for %s to state", subDef.Name)
 		}
 	}
 

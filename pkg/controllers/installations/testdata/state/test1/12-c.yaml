@@ -11,5 +11,25 @@ metadata:
     name: root
 spec:
 
-  definitionRef: c
+  definitionRef: c:1.0.0
+
+  imports:
+  - from: a.z
+    to: c.a
+  - from: b.z
+    to: c.b
+
+  exports:
+  - from: c.y
+    to: c.z
+
+status:
+  phase: Init
+  configGeneration: 5
+
+  imports:
+  - from: a.z
+    configGeneration: 5
+  - from: b.z
+      configGeneration: 5
 

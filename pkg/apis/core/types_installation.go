@@ -90,7 +90,7 @@ type ComponentInstallationStatus struct {
 	ConfigGeneration int64 `json:"configGeneration"`
 
 	// ExportReference references the object that contains the exported values.
-	ExportReference ObjectReference `json:"exportReference,omitempty"`
+	ExportReference ObjectReference `json:"exportRef,omitempty"`
 
 	// Imports contain the state of the imported values.
 	Imports []ImportState `json:"imports,omitempty"`

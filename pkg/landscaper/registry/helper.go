@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package registry
 
-const (
-	ImportConfigEnvVarName = "IMPORT_CONFIG"
+import "strings"
 
-	ImportConfigPath = "/landscaper/import.yaml"
+// VersionedName represents a reference to a ComponentDefinition
+type VersionedName struct {
+	Name    string
+	Version string
+}
 
-	// LandscapeConfigurationSecretDataKey is the key of the secret where the landscape stores its merged configuration.
-	LandscapeConfigurationSecretDataKey = "config"
+// ParseDefinitionRef parses a Definition reference of the form "name:version"
+func ParseDefinitionRef(ref string) (VersionedName, error) {
+	splitName := strings.Split(ref, ":")
 
-	// Annotations
+	if len(splitName) < 2 {
+		return VersionedName{}, NewVersionParseError(ref, nil)
+	}
 
-	// OperationAnnotation is the annotation that specifies a operation for a component
-	OperationAnnotation = "landscaper.gardener.cloud/operation"
-)
+	return VersionedName{
+		Name:    strings.Join(splitName[:len(splitName)-1], ":"),
+		Version: splitName[len(splitName)-1],
+	}, nil
+}

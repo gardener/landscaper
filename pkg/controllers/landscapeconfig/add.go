@@ -12,18 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package types
 
-const (
-	ImportConfigEnvVarName = "IMPORT_CONFIG"
+import (
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	ImportConfigPath = "/landscaper/import.yaml"
-
-	// LandscapeConfigurationSecretDataKey is the key of the secret where the landscape stores its merged configuration.
-	LandscapeConfigurationSecretDataKey = "config"
-
-	// Annotations
-
-	// OperationAnnotation is the annotation that specifies a operation for a component
-	OperationAnnotation = "landscaper.gardener.cloud/operation"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
+
+func AddActuatorToManager(mgr manager.Manager) error {
+	a, err := NewActuator()
+	if err != nil {
+		return err
+	}
+
+	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("LandscapeConfiguration"), a); err != nil {
+		return err
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.LandscapeConfiguration{}).
+		Complete(a)
+}

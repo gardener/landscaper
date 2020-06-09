@@ -15,31 +15,55 @@
 package component
 
 import (
-	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"fmt"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-// ComponentInstallation is the internal representation of a component
-type Component struct {
-	Info *corev1alpha1.ComponentInstallation
+// Installation is the internal representation of a installation
+type Installation struct {
+	Info       *lsv1alpha1.ComponentInstallation
+	Definition *lsv1alpha1.ComponentDefinition
 
-	importStates map[string]*corev1alpha1.ImportState
+	imports map[string]lsv1alpha1.DefinitionImport
+	exports map[string]lsv1alpha1.DefinitionExport
 }
 
-func New(component *corev1alpha1.ComponentInstallation) (*Component, error) {
+// New creates a new internal representation of an installation
+func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
 
-	c := &Component{
-		Info:         component,
-		importStates: make(map[string]*corev1alpha1.ImportState, len(component.Status.Imports)),
+	internalInst := &Installation{
+		Info:       inst,
+		Definition: def,
+
+		imports: make(map[string]lsv1alpha1.DefinitionImport, len(def.Imports)),
+		exports: make(map[string]lsv1alpha1.DefinitionExport, len(def.Exports)),
 	}
 
-	for _, state := range component.Status.Imports {
-		c.importStates[state.From] = state.DeepCopy()
+	for _, importDef := range def.Imports {
+		internalInst.imports[importDef.Key] = importDef
+	}
+	for _, exportDef := range def.Exports {
+		internalInst.exports[exportDef.Key] = exportDef
 	}
 
-	return c, nil
+	return internalInst, nil
 }
 
-func (c *Component) GetImportStatus(from string) (*corev1alpha1.ImportState, bool) {
-	s, ok := c.importStates[from]
-	return s, ok
+// GetImportDefinition return the import for a given key
+func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.DefinitionImport, error) {
+	def, ok := i.imports[key]
+	if !ok {
+		return lsv1alpha1.DefinitionImport{}, fmt.Errorf("import with key %s not found", key)
+	}
+	return def, nil
+}
+
+// GetExportDefinition return the export definition for a given key
+func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExport, error) {
+	def, ok := i.exports[key]
+	if !ok {
+		return lsv1alpha1.DefinitionExport{}, fmt.Errorf("export with key %s not found", key)
+	}
+	return def, nil
 }

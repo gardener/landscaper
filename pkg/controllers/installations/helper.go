@@ -16,15 +16,19 @@ package installations
 
 import (
 	"context"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/component"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -66,4 +70,26 @@ func (a *actuator) GetRootInstallations(ctx context.Context, opts ...client.List
 		installations[i] = &inst
 	}
 	return installations, nil
+}
+
+// CreateInternalInstallations creates internal installations for a list of ComponentInstallations
+func CreateInternalInstallations(registry registry.Registry, installations ...*lsv1alpha1.ComponentInstallation) ([]*component.Installation, error) {
+	internalInstallations := make([]*component.Installation, len(installations))
+	for i, inst := range installations {
+		inInst, err := CreateInternalInstallation(registry, inst)
+		if err != nil {
+			return nil, err
+		}
+		internalInstallations[i] = inInst
+	}
+	return internalInstallations, nil
+}
+
+// CreateInternalInstallation creates an internal installation for a ComponentInstallation
+func CreateInternalInstallation(registry registry.Registry, inst *lsv1alpha1.ComponentInstallation) (*component.Installation, error) {
+	def, err := registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
+	if err != nil {
+		return nil, err
+	}
+	return component.New(inst, def)
 }

@@ -16,10 +16,13 @@ package installations
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/landscaper/component"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -42,28 +45,66 @@ func (a *actuator) triggerSubInstallations(ctx context.Context, inst *lsv1alpha1
 
 // importsAreSatisfied traverses through all components and validates if all imports are
 // satisfied with the correct version
-func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig map[string]interface{}, inst *lsv1alpha1.ComponentInstallation) error {
-	return nil
+func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig *lsv1alpha1.LandscapeConfiguration, def *lsv1alpha1.ComponentDefinition, inst *lsv1alpha1.ComponentInstallation, lsCtx *Context) (bool, error) {
+	var (
+		parent = lsCtx.Parent
+		//siblings = lsCtx.Siblings
+	)
+
+	inInst, err := component.New(inst, def)
+	if err != nil {
+		return false, err
+	}
+
+	for _, importMapping := range inst.Spec.Imports {
+		importDef, err := inInst.GetImportDefinition(importMapping.To)
+		// check landscape config if I'm a root installation
+
+		// check if the parent also imports my import
+		parentImport, err := parent.GetImportDefinition(importMapping.From)
+		if err != nil {
+			return false, err
+		}
+
+		// parent has to be progressing
+		if parent.Info.Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
+			return false, errors.New("Parent has to be progressing to get imports")
+		}
+
+		if parentImport.Type != importDef.Type {
+			return false, errors.New("abc")
+		}
+
+		// check if a siblings exports the given value
+
+	}
+
+	return false, nil
 }
 
-// determineInstallationContext determines the visible context of the current component.
+// determineInstallationContext determines the visible context of a installation.
 // The visible context consists of the installation's parent and siblings.
-func (a *actuator) determineInstallationContext(ctx context.Context, inst *lsv1alpha1.ComponentInstallation) (*lsv1alpha1.ComponentInstallation, []*lsv1alpha1.ComponentInstallation, error) {
+// The context is later used to validate and get imported data.
+func (a *actuator) determineInstallationContext(ctx context.Context, inst *lsv1alpha1.ComponentInstallation) (*Context, error) {
 	if IsRootInstallation(inst) {
 		// get all root object as siblings
 		ownInstSelector := client.MatchingFieldsSelector{Selector: fields.OneTermNotEqualSelector("metadata.name", inst.Name)}
 		installations, err := a.GetRootInstallations(ctx, client.InNamespace(inst.Namespace), ownInstSelector)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		return nil, installations, nil
+		intInstallations, err := CreateInternalInstallations(a.registry, installations...)
+		if err != nil {
+			return nil, err
+		}
+		return &Context{Siblings: intInstallations}, nil
 	}
 
 	// get the parent by owner reference
 	parentName := GetParentInstallationName(inst)
 	parent := &lsv1alpha1.ComponentInstallation{}
 	if err := a.c.Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Namespace}, parent); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// siblings are all encompassed installation of the parent installation
@@ -74,10 +115,20 @@ func (a *actuator) determineInstallationContext(ctx context.Context, inst *lsv1a
 		}
 		subInst := &lsv1alpha1.ComponentInstallation{}
 		if err := a.c.Get(ctx, installationRef.Reference.NamespacedName(), subInst); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	return parent, subInstallations, nil
+	intParent, err := CreateInternalInstallation(a.registry, parent)
+	if err != nil {
+		return nil, err
+	}
+
+	intSubInstallations, err := CreateInternalInstallations(a.registry, subInstallations...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Context{Parent: intParent, Siblings: intSubInstallations}, nil
 }

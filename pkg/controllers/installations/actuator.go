@@ -17,7 +17,10 @@ package installations
 import (
 	"context"
 	"io/ioutil"
+
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,9 +37,10 @@ func NewActuator() (reconcile.Reconciler, error) {
 }
 
 type actuator struct {
-	log    logr.Logger
-	c      client.Client
-	scheme *runtime.Scheme
+	log      logr.Logger
+	c        client.Client
+	scheme   *runtime.Scheme
+	registry registry.Registry
 }
 
 var _ inject.Client = &actuator{}
@@ -60,6 +64,12 @@ func (a *actuator) InjectLogger(log logr.Logger) error {
 // InjectScheme injects the current scheme into the actuator
 func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	a.scheme = scheme
+	return nil
+}
+
+// InjectRegistry injects a Registry into the actuator
+func (a *actuator) InjectRegistry(r registry.Registry) error {
+	a.registry = r
 	return nil
 }
 
@@ -99,8 +109,13 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if err := a.importsAreSatisfied(ctx, landscapeConfig, inst); err != nil {
-		a.log.Error(err, "imports not satisfied")
+	importsAreSatisfied, err := a.importsAreSatisfied(ctx, landscapeConfig, definition, inst, nil)
+	if err != nil {
+		a.log.Error(err, "unable to validate imports")
+		return reconcile.Result{}, err
+	}
+	if !importsAreSatisfied {
+		a.log.Error(nil, "imports not satisfied")
 		return reconcile.Result{}, err
 	}
 

@@ -23,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -61,15 +60,6 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		a.log.Error(err, "unable to get resource")
 		return reconcile.Result{}, err
 	}
-
-	if customType.Status.ObservedGeneration == customType.Generation {
-		return reconcile.Result{}, nil
-	}
-
-	customType.Status.ObservedGeneration = customType.Generation
-
-	customType.Status.Conditions = helper.CreateOrUpdateConditions(customType.Status.Conditions, v1alpha1.TypeEstablished,
-		v1alpha1.ConditionTrue, "", "")
 
 	if err := a.c.Status().Update(ctx, customType); err != nil {
 		a.log.Error(err, "unable to update status")

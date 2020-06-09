@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,8 +30,9 @@ import (
 )
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
-func NewFakeClientFromPath(path string) (client.Client, error) {
+func NewFakeClientFromPath(path string) (client.Client, map[string]*lsv1alpha1.ComponentInstallation, error) {
 	objects := []runtime.Object{}
+	installations := make(map[string]*lsv1alpha1.ComponentInstallation)
 	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
 	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -52,14 +54,15 @@ func NewFakeClientFromPath(path string) (client.Client, error) {
 		}
 
 		objects = append(objects, obj)
+		installations[types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}.String()] = obj
 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), nil
+	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), installations, nil
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient

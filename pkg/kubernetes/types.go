@@ -15,10 +15,11 @@
 package kubernetes
 
 import (
-	"github.com/gardener/landscaper/pkg/apis/core/install"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	corescheme "k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/gardener/landscaper/pkg/apis/core/install"
 )
 
 // LandscaperScheme ist the scheme used in the landscaper cluster

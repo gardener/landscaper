@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package types
 
-const (
-	ImportConfigEnvVarName = "IMPORT_CONFIG"
+import (
+	"testing"
 
-	ImportConfigPath = "/landscaper/import.yaml"
-
-	// LandscapeConfigurationSecretDataKey is the key of the secret where the landscape stores its merged configuration.
-	LandscapeConfigurationSecretDataKey = "config"
-
-	// Annotations
-
-	// OperationAnnotation is the annotation that specifies a operation for a component
-	OperationAnnotation = "landscaper.gardener.cloud/operation"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
+
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "LandscapeConfig Controller Test Suite")
+}

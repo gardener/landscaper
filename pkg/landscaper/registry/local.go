@@ -54,6 +54,7 @@ func NewLocalRegistry(log logr.Logger, paths []string) (Registry, error) {
 	}
 
 	r := &localRegistry{
+		log:     log,
 		paths:   paths,
 		decoder: serializer.NewCodecFactory(lsScheme).UniversalDecoder(),
 		index:   Index{},
@@ -111,6 +112,14 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 		return nil
 	})
 	return index, err
+}
+
+func (r *localRegistry) GetDefinitionByRef(ref string) (*v1alpha1.ComponentDefinition, error) {
+	vn, err := ParseDefinitionRef(ref)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetDefinition(vn.Name, vn.Version)
 }
 
 func (r *localRegistry) GetDefinition(name, version string) (*v1alpha1.ComponentDefinition, error) {

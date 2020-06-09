@@ -25,6 +25,11 @@ type Registry interface {
 	// GetDefinition returns the definition for a specific name and version.
 	GetDefinition(name, version string) (*v1alpha1.ComponentDefinition, error)
 
+	// GetDefinitionByRef returns the definition for a specific definition reference.
+	// The reference should be in the form of name:version
+	// todo: later support name@sha256:abcadsf
+	GetDefinitionByRef(ref string) (*v1alpha1.ComponentDefinition, error)
+
 	// GetBlob returns the blob for a component definition.
 	GetBlob(name, version string) (afero.Fs, error)
 

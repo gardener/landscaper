@@ -5,9 +5,26 @@ metadata:
   namespace: test1
 spec:
 
-  definitionRef: root
+  definitionRef: root:1.0.0
+
+  imports:
+  - from: ext.a
+    to: root.a
+
+  exports:
+  - from: c.z
+    to: root.y
+  - from: d.z
+    to: root.z
 
 status:
+  phase: Progressing
+  configGeneration: 5
+
+  imports:
+  - from: ext.a
+    configGeneration: 6
+
   installationRefs:
   - name: a
     ref:
@@ -20,4 +37,8 @@ status:
   - name: c
     ref:
       name: c
+      namespace: test1
+  - name: d
+    ref:
+      name: d
       namespace: test1

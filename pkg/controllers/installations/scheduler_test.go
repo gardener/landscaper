@@ -16,32 +16,38 @@ package installations
 
 import (
 	"context"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
-	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"sync"
+
 	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
+	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
-var _ = Describe("Scheduler", func() {
+var _ = g.Describe("Scheduler", func() {
 
 	var (
 		a                *actuator
 		ctrl             *gomock.Controller
 		mockClient       *mock_client.MockClient
 		mockStatusWriter *mock_client.MockStatusWriter
-		fakeClient       client.Client
+
+		installations map[string]*lsv1alpha1.ComponentInstallation
+		fakeClient    client.Client
+		fakeRegistry  *fake.FakeRegistry
 
 		once sync.Once
 	)
 
-	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
+	g.BeforeEach(func() {
+		ctrl = gomock.NewController(g.GinkgoT())
 		mockClient = mock_client.NewMockClient(ctrl)
 		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
@@ -53,21 +59,25 @@ var _ = Describe("Scheduler", func() {
 
 		once.Do(func() {
 			var err error
-			fakeClient, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			fakeClient, installations, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			Expect(err).ToNot(HaveOccurred())
+
+			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
-	AfterEach(func() {
+	g.AfterEach(func() {
 		ctrl.Finish()
 	})
 
-	Context("Context", func() {
-		BeforeEach(func() {
+	g.Context("Context", func() {
+		g.BeforeEach(func() {
 			a.c = fakeClient
+			a.registry = fakeRegistry
 		})
 
-		It("should show no parent nor siblings for the test1 root", func() {
+		g.It("should show no parent nor siblings for the test1 root", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -75,15 +85,15 @@ var _ = Describe("Scheduler", func() {
 			err := fakeClient.Get(ctx, client.ObjectKey{Name: "root", Namespace: "test1"}, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			parent, siblings, err := a.determineInstallationContext(ctx, inst)
+			lCtx, err := a.determineInstallationContext(ctx, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(parent).To(BeNil())
+			Expect(lCtx.Parent).To(BeNil())
 			// should be 0, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
-			Expect(siblings).To(HaveLen(1))
+			Expect(lCtx.Siblings).To(HaveLen(1))
 		})
 
-		It("should show no parent and one sibling for the test2 a installation", func() {
+		g.It("should show no parent and one sibling for the test2 a installation", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -91,16 +101,16 @@ var _ = Describe("Scheduler", func() {
 			err := fakeClient.Get(ctx, client.ObjectKey{Name: "a", Namespace: "test2"}, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			parent, siblings, err := a.determineInstallationContext(ctx, inst)
+			lCtx, err := a.determineInstallationContext(ctx, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(parent).To(BeNil())
+			Expect(lCtx.Parent).To(BeNil())
 			// should be 1, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
-			Expect(siblings).To(HaveLen(2))
+			Expect(lCtx.Siblings).To(HaveLen(2))
 			//Expect(siblings[0].Name).To(Equal("b"))
 		})
 
-		It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
+		g.It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
@@ -108,21 +118,77 @@ var _ = Describe("Scheduler", func() {
 			err := fakeClient.Get(ctx, client.ObjectKey{Name: "b", Namespace: "test1"}, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			parent, siblings, err := a.determineInstallationContext(ctx, inst)
+			lCtx, err := a.determineInstallationContext(ctx, inst)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(parent).ToNot(BeNil())
-			Expect(siblings).To(HaveLen(2))
+			Expect(lCtx.Parent).ToNot(BeNil())
+			Expect(lCtx.Siblings).To(HaveLen(2))
 
-			Expect(parent.Name).To(Equal("root"))
+			Expect(lCtx.Parent.Info.Name).To(Equal("root"))
 		})
 	})
 
-	Context("Imports", func() {
+	g.Context("Imports", func() {
 
-		Context("Satisfied", func() {
+		g.Context("Satisfied", func() {
+			g.BeforeEach(func() {
+				a.c = fakeClient
+				a.registry = fakeRegistry
+			})
 
-			It("should validate the import satisfaction based on a given context", func() {
+			g.It("should successfully validate when the import of a component is defined by its parent with the right version", func() {
+				ctx := context.Background()
+				defer ctx.Done()
+
+				instA := installations["test1/a"]
+				defA, err := fakeRegistry.GetDefinitionByRef(instA.Spec.DefinitionRef)
+				Expect(err).ToNot(HaveOccurred())
+
+				instRoot := installations["test1/root"]
+				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
+				Expect(err).ToNot(HaveOccurred())
+
+				ok, err := a.importsAreSatisfied(ctx, nil, defA, instA, &Context{Parent: inInstRoot})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(ok).To(BeTrue())
+			})
+
+			g.It("should reject the validation when the parent component is not progressing", func() {
+				ctx := context.Background()
+				defer ctx.Done()
+
+				instA := installations["test1/a"]
+				defA, err := fakeRegistry.GetDefinitionByRef(instA.Spec.DefinitionRef)
+				Expect(err).ToNot(HaveOccurred())
+
+				instRoot := installations["test1/root"]
+				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
+				Expect(err).ToNot(HaveOccurred())
+				instRoot.Status.Phase = lsv1alpha1.ComponentPhaseInit
+
+				ok, err := a.importsAreSatisfied(ctx, nil, defA, instA, &Context{Parent: inInstRoot})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(ok).To(BeFalse())
+			})
+
+			g.It("should reject when the import of a component is not yet ready", func() {
+				ctx := context.Background()
+				defer ctx.Done()
+
+				instD := installations["test1/d"]
+				defD, err := fakeRegistry.GetDefinitionByRef(instD.Spec.DefinitionRef)
+				Expect(err).ToNot(HaveOccurred())
+
+				instRoot := installations["test1/root"]
+				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
+				Expect(err).ToNot(HaveOccurred())
+
+				ok, err := a.importsAreSatisfied(ctx, nil, defD, instD, &Context{Parent: inInstRoot})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(ok).To(BeFalse())
+			})
+
+			g.It("should validate the import satisfaction based on a given context", func() {
 				Expect(true).To(BeTrue())
 			})
 

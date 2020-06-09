@@ -18,6 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// CollectReferencedConfiguration is the Conditions type to indicate the status of the LandscapeConfig referenced configs collection.
+const CollectReferencedConfiguration ConditionType = "CollectReferencedConfiguration"
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -38,5 +41,16 @@ type LandscapeConfigurationSpec struct {
 
 // LandscapeConfigurationStatus contains the status of the landscape configuration
 type LandscapeConfigurationStatus struct {
+	// ObservedGeneration is the most recent generation observed for this landscapeConfiguration.
+	// It corresponds to the LandscapeConfig generation, which is updated on mutation.
+	ObservedGeneration int64 `json:"observedGeneration"`
+
+	// Conditions contains the actual condition of a landsacpe config
+	Conditions []Condition `json:"conditions,omitempty"`
+
+	// ConfigGeneration is the generation of the exported values.
 	ConfigGeneration int64 `json:"configGeneration"`
+
+	// ExportReference references the object that contains the exported values.
+	ConfigReference *ObjectReference `json:"configRef,omitempty"`
 }
