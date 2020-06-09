@@ -18,9 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -150,18 +149,29 @@ func (a *actuator) createOrUpdateNewInstallation(ctx context.Context, inst *land
 		subInst = &landscaperv1alpha1.ComponentInstallation{}
 		subInst.Name = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
 		subInst.Namespace = inst.Namespace
-		subInst.Labels = map[string]string{landscaperv1alpha1.EncompassedByLabel: inst.Name}
-		if err := controllerutil.SetOwnerReference(inst, subInst, a.scheme); err != nil {
-			return nil, errors.Wrapf(err, "unable to set owner reference")
-		}
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, a.c, subInst, func() error {
+	subDef, err := a.registry.GetDefinitionByRef(subDefRef.Reference)
+	if err != nil {
+		cond = landscaperv1alpha1helper.UpdatedCondition(cond, landscaperv1alpha1.ConditionFalse,
+			"ComponentDefinitionNotFound",
+			fmt.Sprintf("ComponentDefinition %s for %s cannot be found", subDefRef.Reference, subDefRef.Name))
+		_ = a.updateInstallationStatus(ctx, inst, landscaperv1alpha1.ComponentPhaseFailed, cond)
+		return nil, errors.Wrapf(err, "unable to get definition %s for %s", subDefRef.Reference, subDefRef.Name)
+	}
+
+	_, err = controllerruntime.CreateOrUpdate(ctx, a.c, subInst, func() error {
+		subInst.Labels = map[string]string{landscaperv1alpha1.EncompassedByLabel: inst.Name}
+		if err := controllerutil.SetOwnerReference(inst, subInst, a.scheme); err != nil {
+			return errors.Wrapf(err, "unable to set owner reference")
+		}
 		subInst.Spec = landscaperv1alpha1.ComponentInstallationSpec{
 			DefinitionRef: subDefRef.Reference,
 			Imports:       subDefRef.Imports,
 			Exports:       subDefRef.Exports,
 		}
+
+		AddDefaultMappings(subInst, subDef)
 		return nil
 	})
 	if err != nil {

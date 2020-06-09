@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
@@ -92,4 +93,37 @@ func CreateInternalInstallation(registry registry.Registry, inst *lsv1alpha1.Com
 		return nil, err
 	}
 	return component.New(inst, def)
+}
+
+// AddDefaultMappings adds all default mappings of im and exports if they are not already defined
+func AddDefaultMappings(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) {
+	mappings := sets.NewString()
+	for _, mapping := range inst.Spec.Imports {
+		mappings.Insert(mapping.To)
+	}
+	for _, importDef := range def.Imports {
+		if !mappings.Has(importDef.Key) {
+			inst.Spec.Imports = append(inst.Spec.Imports, lsv1alpha1.DefinitionImportMapping{
+				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
+					From: importDef.Key,
+					To:   importDef.Key,
+				},
+			})
+		}
+	}
+
+	mappings = sets.NewString()
+	for _, mapping := range inst.Spec.Exports {
+		mappings.Insert(mapping.From)
+	}
+	for _, importDef := range def.Exports {
+		if !mappings.Has(importDef.Key) {
+			inst.Spec.Exports = append(inst.Spec.Exports, lsv1alpha1.DefinitionExportMapping{
+				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
+					From: importDef.Key,
+					To:   importDef.Key,
+				},
+			})
+		}
+	}
 }

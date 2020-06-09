@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -38,13 +39,12 @@ func NewActuator() (reconcile.Reconciler, error) {
 }
 
 type actuator struct {
-	log logr.Logger
-	c   client.Client
+	log    logr.Logger
+	c      client.Client
+	scheme *runtime.Scheme
 }
 
-var _ inject.Client = &actuator{}
-
-var _ inject.Logger = &actuator{}
+var _ inject.Scheme = &actuator{}
 
 // InjectClients injects the current kubernetes client into the actuator
 func (a *actuator) InjectClient(c client.Client) error {
@@ -55,6 +55,12 @@ func (a *actuator) InjectClient(c client.Client) error {
 // InjectLogger injects a logging instance into the actuator
 func (a *actuator) InjectLogger(log logr.Logger) error {
 	a.log = log
+	return nil
+}
+
+// InjectScheme injects the current scheme into the actuator
+func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
+	a.scheme = scheme
 	return nil
 }
 
@@ -69,14 +75,14 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err := a.Actuate(ctx, lsConfig); err != nil {
+	if err := a.Ensure(ctx, lsConfig); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) Actuate(ctx context.Context, lsConfig *lsv1alpha1.LandscapeConfiguration) error {
+func (a *actuator) Ensure(ctx context.Context, lsConfig *lsv1alpha1.LandscapeConfiguration) error {
 	lsConfigData, err := a.reloadConfiguration(ctx, lsConfig)
 	if err != nil {
 		return err
@@ -165,6 +171,9 @@ func (a *actuator) createOrUpdateConfigurationData(ctx context.Context, lsConfig
 	_, err := controllerutil.CreateOrUpdate(ctx, a.c, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.LandscapeConfigurationSecretDataKey: lsConfigData,
+		}
+		if err := controllerutil.SetControllerReference(lsConfig, secret, a.scheme); err != nil {
+			return err
 		}
 		return nil
 	})

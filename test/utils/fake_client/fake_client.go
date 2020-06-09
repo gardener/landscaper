@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -44,13 +45,13 @@ func NewFakeClientFromPath(path string) (client.Client, map[string]*lsv1alpha1.C
 
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "unable to read file %s", path)
 		}
 
 		// todo: add support for more types
 		obj := &lsv1alpha1.ComponentInstallation{}
 		if _, _, err := decoder.Decode(data, nil, obj); err != nil {
-			return err
+			return errors.Wrapf(err, "unable to decode file %s", path)
 		}
 
 		objects = append(objects, obj)

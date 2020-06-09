@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 )
 
@@ -48,8 +49,9 @@ var _ = Describe("Reconcile", func() {
 		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 		a = &actuator{
-			log: testing.NullLogger{},
-			c:   mockClient,
+			log:    testing.NullLogger{},
+			c:      mockClient,
+			scheme: kubernetes.LandscaperScheme,
 		}
 	})
 
@@ -92,7 +94,7 @@ var _ = Describe("Reconcile", func() {
 			return nil
 		})
 
-		err := a.Actuate(context.TODO(), lsConfig)
+		err := a.Ensure(context.TODO(), lsConfig)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(mergedSecret).ToNot(BeNil())
 
@@ -117,7 +119,7 @@ var _ = Describe("Reconcile", func() {
 		mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 		mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
-		err := a.Actuate(context.TODO(), lsConfig)
+		err := a.Ensure(context.TODO(), lsConfig)
 		Expect(err).To(HaveOccurred())
 
 		Expect(lsConfig.Status.Conditions).To(HaveLen(1))

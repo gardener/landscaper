@@ -80,12 +80,15 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	inst := &lsv1alpha1.ComponentInstallation{}
 	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
-		a.log.Error(err, "unable to get inst installation")
+		a.log.Error(err, "unable to get installation")
 		return reconcile.Result{}, err
 	}
 
-	// todo: get definition from registry
-	definition := &lsv1alpha1.ComponentDefinition{}
+	definition, err := a.registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
+	if err != nil {
+		a.log.Error(err, "unable to get definition")
+		return reconcile.Result{}, err
+	}
 
 	// for debugging read landscape from tmp file
 	landscapeConfig := make(map[string]interface{})
@@ -97,61 +100,68 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// check that all referenced definitions have a corresponding installation
-	if err := a.EnsureSubInstallations(ctx, inst, definition); err != nil {
-		a.log.Error(err, "unable to ensure sub installations")
+	if err := a.Ensure(ctx, inst, definition); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (a *actuator) Ensure(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) error {
+	// check that all referenced definitions have a corresponding installation
+	if err := a.EnsureSubInstallations(ctx, inst, def); err != nil {
+		a.log.Error(err, "unable to ensure sub installations")
+		return err
 	}
 
 	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
 	// we need to check if all required imports are satisfied
 	if !lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) && inst.Status.Phase != lsv1alpha1.ComponentPhaseWaitingDeps {
-		return reconcile.Result{}, nil
+		return nil
 	}
 
-	importsAreSatisfied, err := a.importsAreSatisfied(ctx, landscapeConfig, definition, inst, nil)
+	importsAreSatisfied, err := a.importsAreSatisfied(ctx, nil, def, inst, nil)
 	if err != nil {
 		a.log.Error(err, "unable to validate imports")
-		return reconcile.Result{}, err
+		return err
 	}
 	if !importsAreSatisfied {
 		a.log.Error(nil, "imports not satisfied")
-		return reconcile.Result{}, err
+		return err
 	}
 
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 
 	// only needed if execution are processed
-	imports, err := a.collectImports(ctx, landscapeConfig, inst)
+	imports, err := a.collectImports(ctx, nil, inst)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err := a.runExecutions(ctx, inst, imports); err != nil {
 		a.log.Error(err, "error during execution")
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err := a.triggerSubInstallations(ctx, inst); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
 	if err := a.validateExports(ctx, inst); err != nil {
 		a.log.Error(err, "error during export validation")
-		return reconcile.Result{}, err
+		return err
 	}
 
 	// as all exports are validated, lets trigger dependant components
 	if err := a.triggerDependants(ctx, inst); err != nil {
 		a.log.Error(err, "error during dependant trigger")
-		return reconcile.Result{}, err
+		return err
 	}
-
-	return reconcile.Result{}, nil
+	return nil
 }
 
 func (a *actuator) updateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {

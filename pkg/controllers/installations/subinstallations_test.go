@@ -16,6 +16,7 @@ package installations
 
 import (
 	"context"
+	"sync"
 
 	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
@@ -25,9 +26,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/kubernetes"
-
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 )
 
@@ -38,18 +39,29 @@ var _ = g.Describe("SubInstallation", func() {
 		ctrl             *gomock.Controller
 		mockClient       *mock_client.MockClient
 		mockStatusWriter *mock_client.MockStatusWriter
+		fakeRegistry     *fake.FakeRegistry
+
+		once sync.Once
 	)
 
 	g.BeforeEach(func() {
-		a = &actuator{
-			log:    testing.NullLogger{},
-			scheme: kubernetes.LandscaperScheme,
-		}
 		ctrl = gomock.NewController(g.GinkgoT())
 		mockClient = mock_client.NewMockClient(ctrl)
 		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
-		_ = a.InjectClient(mockClient)
+
+		once.Do(func() {
+			var err error
+			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		a = &actuator{
+			log:      testing.NullLogger{},
+			c:        mockClient,
+			scheme:   kubernetes.LandscaperScheme,
+			registry: fakeRegistry,
+		}
 	})
 
 	g.AfterEach(func() {
@@ -179,7 +191,7 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			}
 
-			_ = &lsv1alpha1.ComponentDefinition{
+			subdef := lsv1alpha1.ComponentDefinition{
 				Name:    "def1",
 				Version: "1.0.0",
 				Imports: []lsv1alpha1.DefinitionImport{
@@ -191,6 +203,7 @@ var _ = g.Describe("SubInstallation", func() {
 					{DefinitionFieldValue: lsv1alpha1.DefinitionFieldValue{Key: "z"}},
 				},
 			}
+			a.registry = fake.NewFakeRegistry(fake.DefinitionReference{Definition: subdef})
 
 			err := a.EnsureSubInstallations(context.TODO(), inst, def)
 			Expect(err).ToNot(HaveOccurred())

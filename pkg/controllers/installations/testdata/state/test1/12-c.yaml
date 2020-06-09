@@ -31,5 +31,5 @@ status:
   - from: a.z
     configGeneration: 5
   - from: b.z
-      configGeneration: 5
+    configGeneration: 5
 
