@@ -1114,6 +1114,7 @@ func Convert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execution
 
 func autoConvert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core.ImportState, s conversion.Scope) error {
 	out.From = in.From
+	out.To = in.To
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.InstallationRef, &out.InstallationRef, s); err != nil {
 		return err
 	}
@@ -1128,6 +1129,7 @@ func Convert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core
 
 func autoConvert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, out *ImportState, s conversion.Scope) error {
 	out.From = in.From
+	out.To = in.To
 	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.InstallationRef, &out.InstallationRef, s); err != nil {
 		return err
 	}

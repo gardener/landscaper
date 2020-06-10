@@ -22,8 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/landscaper/component"
-
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
@@ -41,45 +39,6 @@ func (a *actuator) triggerSubInstallations(ctx context.Context, inst *lsv1alpha1
 		}
 	}
 	return nil
-}
-
-// importsAreSatisfied traverses through all components and validates if all imports are
-// satisfied with the correct version
-func (a *actuator) importsAreSatisfied(ctx context.Context, landscapeConfig *lsv1alpha1.LandscapeConfiguration, def *lsv1alpha1.ComponentDefinition, inst *lsv1alpha1.ComponentInstallation, lsCtx *Context) (bool, error) {
-	var (
-		parent = lsCtx.Parent
-		//siblings = lsCtx.Siblings
-	)
-
-	inInst, err := component.New(inst, def)
-	if err != nil {
-		return false, err
-	}
-
-	for _, importMapping := range inst.Spec.Imports {
-		importDef, err := inInst.GetImportDefinition(importMapping.To)
-		// check landscape config if I'm a root installation
-
-		// check if the parent also imports my import
-		parentImport, err := parent.GetImportDefinition(importMapping.From)
-		if err != nil {
-			return false, err
-		}
-
-		// parent has to be progressing
-		if parent.Info.Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
-			return false, errors.New("Parent has to be progressing to get imports")
-		}
-
-		if parentImport.Type != importDef.Type {
-			return false, errors.New("abc")
-		}
-
-		// check if a siblings exports the given value
-
-	}
-
-	return false, nil
 }
 
 // determineInstallationContext determines the visible context of a installation.

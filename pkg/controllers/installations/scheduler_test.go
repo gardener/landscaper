@@ -39,9 +39,8 @@ var _ = g.Describe("Scheduler", func() {
 		mockClient       *mock_client.MockClient
 		mockStatusWriter *mock_client.MockStatusWriter
 
-		installations map[string]*lsv1alpha1.ComponentInstallation
-		fakeClient    client.Client
-		fakeRegistry  *fake.FakeRegistry
+		fakeClient   client.Client
+		fakeRegistry *fake.FakeRegistry
 
 		once sync.Once
 	)
@@ -59,7 +58,7 @@ var _ = g.Describe("Scheduler", func() {
 
 		once.Do(func() {
 			var err error
-			fakeClient, installations, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			fakeClient, _, err = fake_client.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
 
 			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
@@ -128,71 +127,4 @@ var _ = g.Describe("Scheduler", func() {
 		})
 	})
 
-	g.Context("Imports", func() {
-
-		g.Context("Satisfied", func() {
-			g.BeforeEach(func() {
-				a.c = fakeClient
-				a.registry = fakeRegistry
-			})
-
-			g.It("should successfully validate when the import of a component is defined by its parent with the right version", func() {
-				ctx := context.Background()
-				defer ctx.Done()
-
-				instA := installations["test1/a"]
-				defA, err := fakeRegistry.GetDefinitionByRef(instA.Spec.DefinitionRef)
-				Expect(err).ToNot(HaveOccurred())
-
-				instRoot := installations["test1/root"]
-				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
-				Expect(err).ToNot(HaveOccurred())
-
-				ok, err := a.importsAreSatisfied(ctx, nil, defA, instA, &Context{Parent: inInstRoot})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(ok).To(BeTrue())
-			})
-
-			g.It("should reject the validation when the parent component is not progressing", func() {
-				ctx := context.Background()
-				defer ctx.Done()
-
-				instA := installations["test1/a"]
-				defA, err := fakeRegistry.GetDefinitionByRef(instA.Spec.DefinitionRef)
-				Expect(err).ToNot(HaveOccurred())
-
-				instRoot := installations["test1/root"]
-				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
-				Expect(err).ToNot(HaveOccurred())
-				instRoot.Status.Phase = lsv1alpha1.ComponentPhaseInit
-
-				ok, err := a.importsAreSatisfied(ctx, nil, defA, instA, &Context{Parent: inInstRoot})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(ok).To(BeFalse())
-			})
-
-			g.It("should reject when the import of a component is not yet ready", func() {
-				ctx := context.Background()
-				defer ctx.Done()
-
-				instD := installations["test1/d"]
-				defD, err := fakeRegistry.GetDefinitionByRef(instD.Spec.DefinitionRef)
-				Expect(err).ToNot(HaveOccurred())
-
-				instRoot := installations["test1/root"]
-				inInstRoot, err := CreateInternalInstallation(fakeRegistry, instRoot)
-				Expect(err).ToNot(HaveOccurred())
-
-				ok, err := a.importsAreSatisfied(ctx, nil, defD, instD, &Context{Parent: inInstRoot})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(ok).To(BeFalse())
-			})
-
-			g.It("should validate the import satisfaction based on a given context", func() {
-				Expect(true).To(BeTrue())
-			})
-
-		})
-
-	})
 })

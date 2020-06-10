@@ -27,6 +27,9 @@ type Installation struct {
 
 	imports map[string]lsv1alpha1.DefinitionImport
 	exports map[string]lsv1alpha1.DefinitionExport
+
+	// indexes the import state with from/to as key
+	importsStatus ImportStatus
 }
 
 // New creates a new internal representation of an installation
@@ -38,6 +41,11 @@ func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefini
 
 		imports: make(map[string]lsv1alpha1.DefinitionImport, len(def.Imports)),
 		exports: make(map[string]lsv1alpha1.DefinitionExport, len(def.Exports)),
+
+		importsStatus: ImportStatus{
+			From: make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
+			To:   make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
+		},
 	}
 
 	for _, importDef := range def.Imports {
@@ -47,7 +55,16 @@ func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefini
 		internalInst.exports[exportDef.Key] = exportDef
 	}
 
+	for _, importStatus := range inst.Status.Imports {
+		internalInst.importsStatus.add(importStatus)
+	}
+
 	return internalInst, nil
+}
+
+// ImportStatus returns the internal representation of the internal import state
+func (i *Installation) ImportStatus() *ImportStatus {
+	return &i.importsStatus
 }
 
 // GetImportDefinition return the import for a given key

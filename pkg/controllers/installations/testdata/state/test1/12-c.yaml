@@ -29,7 +29,9 @@ status:
 
   imports:
   - from: a.z
+    to: c.a
     configGeneration: 5
   - from: b.z
+    to: c.b
     configGeneration: 5
 

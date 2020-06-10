@@ -192,10 +192,14 @@ spec:
                       - name
                       - namespace
                       type: object
+                    to:
+                      description: To is the to key of the import
+                      type: string
                   required:
                   - configGeneration
                   - from
                   - installationRef
+                  - to
                   type: object
                 type: array
               installationRefs:

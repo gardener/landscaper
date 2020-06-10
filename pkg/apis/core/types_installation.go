@@ -108,6 +108,9 @@ type ImportState struct {
 	// From is the from key of the import
 	From string `json:"from"`
 
+	// To is the to key of the import
+	To string `json:"to"`
+
 	// InstallationRef is the reference to the installation where the value is imported
 	InstallationRef ObjectReference `json:"installationRef"`
 
