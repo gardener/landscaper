@@ -27,6 +27,7 @@ type ExecutionType string
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentDefinition contains the configuration of a component
+// +kubebuilder:skip
 type ComponentDefinition struct {
 	metav1.TypeMeta `json:",inline"`
 

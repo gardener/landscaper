@@ -26,6 +26,7 @@ const CollectReferencedConfiguration ConditionType = "CollectReferencedConfigura
 
 // LandscapeConfiguration defines the landscape configuration that consists of multiple secrets.
 // Must be a singleton.
+// +kubebuilder:subresource:status
 type LandscapeConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -45,7 +46,7 @@ type LandscapeConfigurationStatus struct {
 	// It corresponds to the LandscapeConfig generation, which is updated on mutation.
 	ObservedGeneration int64 `json:"observedGeneration"`
 
-	// Conditions contains the actual condition of a landsacpe config
+	// Conditions contains the actual condition of a landscape config
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ConfigGeneration is the generation of the exported values.

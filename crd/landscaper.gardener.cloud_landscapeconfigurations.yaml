@@ -59,7 +59,7 @@ spec:
               configuration
             properties:
               conditions:
-                description: Conditions contains the actual condition of a landsacpe
+                description: Conditions contains the actual condition of a landscape
                   config
                 items:
                   description: Condition holds the information about the state of
@@ -137,6 +137,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

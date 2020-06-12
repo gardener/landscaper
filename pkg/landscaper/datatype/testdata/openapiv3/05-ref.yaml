@@ -1,0 +1,19 @@
+name: fail if referenced objects missing
+openAPIV3Schema:
+  type: object
+  properties:
+    name:
+      type: string
+    obj:
+      $ref: kubernetesreference
+tests:
+- data:
+    name: "test"
+    obj:
+      name: abc
+      namespace: default
+  result: false
+- data:
+    name: "test"
+    obj: test/default
+  result: false

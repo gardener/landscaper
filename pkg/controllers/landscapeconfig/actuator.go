@@ -170,7 +170,7 @@ func (a *actuator) createOrUpdateConfigurationData(ctx context.Context, lsConfig
 
 	_, err := controllerutil.CreateOrUpdate(ctx, a.c, secret, func() error {
 		secret.Data = map[string][]byte{
-			lsv1alpha1.LandscapeConfigurationSecretDataKey: lsConfigData,
+			lsv1alpha1.DataObjectSecretDataKey: lsConfigData,
 		}
 		if err := controllerutil.SetControllerReference(lsConfig, secret, a.scheme); err != nil {
 			return err

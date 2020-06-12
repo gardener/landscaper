@@ -18,15 +18,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/apis/core"
-	"github.com/gardener/landscaper/pkg/configuration/jsonpath"
-	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/pkg/apis/core"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 func NewConfigCommand(ctx context.Context) *cobra.Command {
@@ -55,20 +57,16 @@ func NewConfigCommand(ctx context.Context) *cobra.Command {
 func (o *options) run(args []string) error {
 
 	for _, c := range o.components {
-		importInternal, importExternal, err := parseImports(c)
+		importConfig, err := parseImports(c)
 		if err != nil {
 			return errors.Wrapf(err, "unable to parse imports for %s", c.Name)
 		}
-		importInternalYAML, err := formatConfiguration(o.outputFormat, importInternal)
+		importInternalYAML, err := formatConfiguration(o.outputFormat, importConfig)
 		if err != nil {
 			return errors.Wrapf(err, "unable to marshal imports internal config for %s", c.Name)
 		}
-		importExternalYAML, err := formatConfiguration(o.outputFormat, importExternal)
-		if err != nil {
-			return errors.Wrapf(err, "unable to marshal imports external config for %s", c.Name)
-		}
 
-		exportInternal, exportExternal, err := parseExports(c)
+		exportInternal, err := parseExports(c)
 		if err != nil {
 			return errors.Wrapf(err, "unable to parse imports for %s", c.Name)
 		}
@@ -76,12 +74,8 @@ func (o *options) run(args []string) error {
 		if err != nil {
 			return errors.Wrapf(err, "unable to marshal exports internal config for %s", c.Name)
 		}
-		exportExternalYAML, err := formatConfiguration(o.outputFormat, exportExternal)
-		if err != nil {
-			return errors.Wrapf(err, "unable to marshal exports external config for %s", c.Name)
-		}
 
-		if err := o.out(c.Name, importInternalYAML, importExternalYAML, exportInternalYAML, exportExternalYAML); err != nil {
+		if err := o.out(c.Name, importInternalYAML, exportInternalYAML); err != nil {
 			return err
 		}
 	}
@@ -89,19 +83,13 @@ func (o *options) run(args []string) error {
 	return nil
 }
 
-func (o *options) out(name string, importInternal, importExternal, exportInternal, exportExternal []byte) error {
+func (o *options) out(name string, importInternal, exportInternal []byte) error {
 	if len(o.OutputPath) == 0 {
 		fmt.Printf(":------Component %s ------:\n\n", name)
 		fmt.Print(":------ Imports ------:\n\n")
-		fmt.Print(":--- Internal ---:\n")
 		fmt.Print(string(importInternal))
-		fmt.Print(":--- External ---:\n")
-		fmt.Print(string(importExternal))
 		fmt.Print(":------ Exports ------:\n\n")
-		fmt.Print(":--- Internal ---:\n")
 		fmt.Print(string(exportInternal))
-		fmt.Print(":--- External ---:\n")
-		fmt.Print(string(exportExternal))
 	}
 
 	// write to file
@@ -113,27 +101,11 @@ func (o *options) out(name string, importInternal, importExternal, exportInterna
 		return err
 	}
 
-	importsExternalFileName, err := formatFileName(o.outputFormat, fmt.Sprintf("%s-imports-external", name))
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(path.Join(o.OutputPath, importsExternalFileName), importExternal, os.ModePerm); err != nil {
-		return err
-	}
-
 	exportsInternalFileName, err := formatFileName(o.outputFormat, fmt.Sprintf("%s-exports-internal", name))
 	if err != nil {
 		return err
 	}
 	if err := ioutil.WriteFile(path.Join(o.OutputPath, exportsInternalFileName), exportInternal, os.ModePerm); err != nil {
-		return err
-	}
-
-	exportsExternalFileName, err := formatFileName(o.outputFormat, fmt.Sprintf("%s-exports-external", name))
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(path.Join(o.OutputPath, exportsExternalFileName), importInternal, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -170,44 +142,28 @@ func formatConfiguration(format OutputFormat, obj interface{}) ([]byte, error) {
 	}
 }
 
-func parseImports(component *core.Component) (map[string]interface{}, map[string]interface{}, error) {
-	internalConfig := make(map[string]interface{})
-	externalConfig := make(map[string]interface{})
-	for _, imp := range component.Spec.Imports {
+func parseImports(component *core.ComponentDefinition) (map[string]interface{}, error) {
+	config := make(map[string]interface{})
+	for _, imp := range component.Imports {
 		// format the jsonpath to internal parsable path
-		cfg, err := jsonpath.Construct(imp.To, imp.Type)
+		cfg, err := jsonpath.Construct(imp.Key, imp.Type)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.To)
+			return nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.Key)
 		}
-		internalConfig = utils.MergeMaps(internalConfig, cfg)
-
-		// format the jsonpath to internal parsable path
-		cfg, err = jsonpath.Construct(imp.From, imp.Type)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.From)
-		}
-		externalConfig = utils.MergeMaps(externalConfig, cfg)
+		config = utils.MergeMaps(config, cfg)
 	}
-	return internalConfig, externalConfig, nil
+	return config, nil
 }
 
-func parseExports(component *core.Component) (map[string]interface{}, map[string]interface{}, error) {
-	internalConfig := make(map[string]interface{})
-	externalConfig := make(map[string]interface{})
-	for _, exp := range component.Spec.Exports {
+func parseExports(component *core.ComponentDefinition) (map[string]interface{}, error) {
+	config := make(map[string]interface{})
+	for _, exp := range component.Exports {
 		// format the jsonpath to internal parsable path
-		cfg, err := jsonpath.Construct(exp.To, exp.Type)
+		cfg, err := jsonpath.Construct(exp.Key, exp.Type)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.To)
+			return nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.Key)
 		}
-		externalConfig = utils.MergeMaps(externalConfig, cfg)
-
-		// format the jsonpath to internal parsable path
-		cfg, err = jsonpath.Construct(exp.From, exp.Type)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.From)
-		}
-		internalConfig = utils.MergeMaps(internalConfig, cfg)
+		config = utils.MergeMaps(config, cfg)
 	}
-	return internalConfig, externalConfig, nil
+	return config, nil
 }

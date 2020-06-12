@@ -1,0 +1,15 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: root
+version: 1.0.0
+
+imports:
+- key: root.a
+  type: string
+
+exports:
+- key: root.y
+  type: string
+- key: root.z
+  type: string

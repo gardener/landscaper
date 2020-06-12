@@ -1,0 +1,9 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentInstallation
+metadata:
+  name: b
+  namespace: test2
+spec:
+
+  definitionRef: b:1.0.0
+

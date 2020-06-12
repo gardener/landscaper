@@ -1,0 +1,5 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: def1
+version: 1.0.0

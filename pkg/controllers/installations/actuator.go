@@ -20,7 +20,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/gardener/landscaper/pkg/landscaper/component"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 
 	"github.com/go-logr/logr"
@@ -91,11 +93,13 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	internalInstallation, err := component.New(inst, definition)
+	internalInstallation, err := installations.New(inst, definition)
 	if err != nil {
 		a.log.Error(err, "unable to create internal representation of installation")
 		return reconcile.Result{}, err
 	}
+
+	op := installations.NewOperation(a.log, a.c, a.scheme, a.registry)
 
 	// for debugging read landscape from tmp file
 	landscapeConfig := make(map[string]interface{})
@@ -107,16 +111,17 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err := a.Ensure(ctx, internalInstallation); err != nil {
+	if err := a.Ensure(ctx, op, internalInstallation); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) Ensure(ctx context.Context, inst *component.Installation) error {
+func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst *installations.Installation) error {
 	// check that all referenced definitions have a corresponding installation
-	if err := a.EnsureSubInstallations(ctx, inst.Info, inst.Definition); err != nil {
+	subinstallation := subinstallations.New(op)
+	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
 		a.log.Error(err, "unable to ensure sub installations")
 		return err
 	}
@@ -127,13 +132,9 @@ func (a *actuator) Ensure(ctx context.Context, inst *component.Installation) err
 		return nil
 	}
 
-	importsAreSatisfied, err := a.importsAreSatisfied(ctx, nil, inst, nil)
-	if err != nil {
+	validator := imports.NewValidator(op, nil, nil, nil)
+	if err := validator.Validate(ctx, inst); err != nil {
 		a.log.Error(err, "unable to validate imports")
-		return err
-	}
-	if !importsAreSatisfied {
-		a.log.Error(nil, "imports not satisfied")
 		return err
 	}
 
@@ -141,18 +142,18 @@ func (a *actuator) Ensure(ctx context.Context, inst *component.Installation) err
 	// and then start the executions
 
 	// only needed if execution are processed
-	imports, err := a.collectImports(ctx, nil, inst.Info)
+	importedConfig, err := a.collectImports(ctx, nil, inst.Info)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")
 		return err
 	}
 
-	if err := a.runExecutions(ctx, inst.Info, imports); err != nil {
+	if err := a.runExecutions(ctx, inst.Info, importedConfig); err != nil {
 		a.log.Error(err, "error during execution")
 		return err
 	}
 
-	if err := a.triggerSubInstallations(ctx, inst.Info); err != nil {
+	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info); err != nil {
 		return err
 	}
 
@@ -166,17 +167,6 @@ func (a *actuator) Ensure(ctx context.Context, inst *component.Installation) err
 	// as all exports are validated, lets trigger dependant components
 	if err := a.triggerDependants(ctx, inst.Info); err != nil {
 		a.log.Error(err, "error during dependant trigger")
-		return err
-	}
-	return nil
-}
-
-func (a *actuator) updateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
-	inst.Status.Phase = phase
-	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
-	inst.Status.ObservedGeneration = inst.Generation
-	if err := a.c.Status().Update(ctx, inst); err != nil {
-		a.log.Error(err, "unable to update installation status")
 		return err
 	}
 	return nil

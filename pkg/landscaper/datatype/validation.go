@@ -24,20 +24,24 @@ import (
 )
 
 // Validate validates data for a certain datatype
-func Validate(scheme landscaperv1alpha1.JSONSchemaProps, data interface{}) error {
-
-	// convert versioned JSONSchemaProps to apiextensions internal version
-	//internalscheme := &apiextensions.JSONSchemaProps{}
-	//if err := apiextensionsv1.Convert_v1_JSONSchemaProps_To_apiextensions_JSONSchemaProps(&scheme.JSONSchemaProps, internalscheme, nil); err != nil {
-	//	return err
-	//}
-
+func Validate(dt Datatype, data interface{}) error {
 	openAPITypes := &spec.Schema{}
-	if err := ConvertJSONSchemaProps(&scheme, openAPITypes); err != nil {
+	if err := ConvertJSONSchemaProps(&dt.Info.Scheme.OpenAPIV3Schema, openAPITypes); err != nil {
 		return err
 	}
 
-	schemeValidator := validate.NewSchemaValidator(openAPITypes, nil, "", strfmt.Default)
+	// todo: add referenced types to root scheme
+	root, err := createRootSchemaFromReferencedTypes(dt.Referenced)
+	if err != nil {
+		return err
+	}
+
+	// we need to validate here as the NewSchemaValidator panics on a error
+	if err := spec.ExpandSchema(openAPITypes, root, nil); err != nil {
+		return err
+	}
+
+	schemeValidator := validate.NewSchemaValidator(openAPITypes, root, "", strfmt.Default)
 	res := schemeValidator.Validate(data)
 
 	if len(res.Errors) == 0 {
@@ -50,4 +54,16 @@ func Validate(scheme landscaperv1alpha1.JSONSchemaProps, data interface{}) error
 	}
 
 	return allErrs
+}
+
+func createRootSchemaFromReferencedTypes(types []*landscaperv1alpha1.DataType) (map[string]*spec.Schema, error) {
+	root := make(map[string]*spec.Schema)
+	for _, dt := range types {
+		openAPITypes := &spec.Schema{}
+		if err := ConvertJSONSchemaProps(&dt.Scheme.OpenAPIV3Schema, openAPITypes); err != nil {
+			return nil, err
+		}
+		root[dt.Name] = openAPITypes
+	}
+	return root, nil
 }

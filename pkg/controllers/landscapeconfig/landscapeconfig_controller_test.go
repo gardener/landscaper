@@ -99,7 +99,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(mergedSecret).ToNot(BeNil())
 
 		var res map[string]interface{}
-		err = yaml.Unmarshal(mergedSecret.Data[lsv1alpha1.LandscapeConfigurationSecretDataKey], &res)
+		err = yaml.Unmarshal(mergedSecret.Data[lsv1alpha1.DataObjectSecretDataKey], &res)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(lsConfig.Status.Conditions).To(HaveLen(1))
 		Expect(lsConfig.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))

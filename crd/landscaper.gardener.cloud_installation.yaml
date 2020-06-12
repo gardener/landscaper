@@ -1,0 +1,259 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
+  creationTimestamp: null
+  name: installation.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: ComponentInstallation
+    listKind: ComponentInstallationList
+    plural: installation
+    singular: installation
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComponentDefinition contains the configuration of a component
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ComponentInstallationSpec defines a component installation.
+            properties:
+              definitionRef:
+                description: DefinitionRef is a reference to the component definition.
+                type: string
+              exports:
+                description: Exports define the export mappings for the referenced
+                  definition. These values are by default auto generated from the
+                  parent definition.
+                items:
+                  description: DefinitionExportMapping defines the mapping of export
+                    value of the referenced definition to the export value of this
+                    definition.
+                  properties:
+                    from:
+                      description: From defines a field name to get a value from an
+                        import.
+                      type: string
+                    to:
+                      description: To defines a field name to map the value from the
+                        "from" field.
+                      type: string
+                  required:
+                  - from
+                  - to
+                  type: object
+                type: array
+              imports:
+                description: Imports define the import mapping for the referenced
+                  definition. These values are by default auto generated from the
+                  parent definition.
+                items:
+                  description: DefinitionImportMapping defines the mapping of import
+                    value to the import of the referenced definition.
+                  properties:
+                    from:
+                      description: From defines a field name to get a value from an
+                        import.
+                      type: string
+                    to:
+                      description: To defines a field name to map the value from the
+                        "from" field.
+                      type: string
+                  required:
+                  - from
+                  - to
+                  type: object
+                type: array
+            required:
+            - definitionRef
+            type: object
+          status:
+            description: ComponentInstallationStatus contains the current status of
+              a ComponentInstallation.
+            properties:
+              conditions:
+                description: Conditions contains the actual condition of a installation
+                items:
+                  description: Condition holds the information about the state of
+                    a resource.
+                  properties:
+                    codes:
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
+                      items:
+                        description: ErrorCode is a string alias.
+                        type: string
+                      type: array
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: Last time the condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: DataType of the Shoot condition.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - lastUpdateTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              configGeneration:
+                description: ConfigGeneration is the generation of the exported values.
+                format: int64
+                type: integer
+              executionRefs:
+                description: ExecutionReference is the reference to the execution
+                  that schedules the templated execution items.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              exportRef:
+                description: ExportReference references the object that contains the
+                  exported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              imports:
+                description: Imports contain the state of the imported values.
+                items:
+                  description: ImportState hold the state of a import
+                  properties:
+                    configGeneration:
+                      description: ConfigGeneration is the generation of the imported
+                        value.
+                      format: int64
+                      type: integer
+                    from:
+                      description: From is the from key of the import
+                      type: string
+                    installationRef:
+                      description: InstallationRef is the reference to the installation
+                        where the value is imported
+                      properties:
+                        name:
+                          description: Name is the name of the kubernetes object.
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of kubernetes object.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                    to:
+                      description: To is the to key of the import
+                      type: string
+                  required:
+                  - configGeneration
+                  - from
+                  - installationRef
+                  - to
+                  type: object
+                type: array
+              installationRefs:
+                description: InstallationReferences contain all references to sub-components
+                  that are created based on the component definition.
+                items:
+                  description: NamedObjectReference is a named reference to a specific
+                    resource.
+                  properties:
+                    name:
+                      description: Name is the unique name of the reference.
+                      type: string
+                    ref:
+                      description: Reference is the reference to an object.
+                      properties:
+                        name:
+                          description: Name is the name of the kubernetes object.
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of kubernetes object.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
+                  required:
+                  - name
+                  - ref
+                  type: object
+                type: array
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this ControllerInstallations. It corresponds to the ControllerInstallations
+                  generation, which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
+              phase:
+                description: Phase is the current phase of the installation.
+                type: string
+            required:
+            - configGeneration
+            - observedGeneration
+            type: object
+        required:
+        - spec
+        - status
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

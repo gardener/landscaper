@@ -1,0 +1,28 @@
+name: correctly identify referenced objects
+openAPIV3Schema:
+  type: object
+  properties:
+    name:
+      type: string
+    obj:
+      $ref: kubernetesreference
+additionalSchemes:
+  kubernetesreference:
+    type: object
+    properties:
+      name:
+        type: string
+      namespace:
+        type: string
+tests:
+- data:
+    name: "test"
+    obj:
+      name: abc
+      namespace: default
+  result: true
+#  focus: true
+- data:
+    name: "test"
+    obj: test/default
+  result: false

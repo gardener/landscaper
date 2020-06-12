@@ -15,6 +15,9 @@
 package datatype
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-openapi/spec"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -114,6 +117,12 @@ func ConvertJSONSchemaProps(in *lsv1alpha1.JSONSchemaProps, out *spec.Schema) er
 	}
 
 	if in.Ref != nil {
+
+		// add # to search in root element by defaukt
+		if !strings.HasPrefix(*in.Ref, "#/") {
+			*in.Ref = fmt.Sprintf("#/%s", *in.Ref)
+		}
+
 		out.Ref, err = spec.NewRef(*in.Ref)
 		if err != nil {
 			return err

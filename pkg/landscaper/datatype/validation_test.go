@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
 
-	landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 )
 
@@ -34,8 +34,8 @@ const exampleDirPath = "./testdata/openapiv3"
 var _ = Describe("Validation", func() {
 
 	DescribeTable("OpenAPIV3Validations",
-		func(scheme landscaperv1alpha1.JSONSchemaProps, test Test) {
-			err := datatype.Validate(scheme, test.Data)
+		func(dt datatype.Datatype, test Test) {
+			err := datatype.Validate(dt, test.Data)
 			if test.Result {
 				Expect(err).ToNot(HaveOccurred(), "%v should have been correct", test.Data)
 			} else {
@@ -55,12 +55,24 @@ func generateTests() []TableEntry {
 	}
 
 	for _, suite := range suites {
+		dt := datatype.Datatype{
+			Info:       &lsv1alpha1.DataType{Scheme: lsv1alpha1.DataTypeScheme{OpenAPIV3Schema: suite.OpenAPIV3Schema}},
+			Referenced: make([]*lsv1alpha1.DataType, 0),
+		}
+		for name, obj := range suite.AdditionalSchemes {
+			prop := obj
+			additionalDt := &lsv1alpha1.DataType{}
+			additionalDt.Name = name
+			additionalDt.Scheme.OpenAPIV3Schema = prop
+			dt.Referenced = append(dt.Referenced, additionalDt)
+		}
 		for i, test := range suite.Tests {
-			entries = append(entries, Entry(
-				fmt.Sprintf("should validate test %d of testsuite %s", i, suite.Name),
-				suite.OpenAPIV3Schema,
-				test,
-			))
+			entries = append(entries, TableEntry{
+				Description: fmt.Sprintf("should validate test %d of testsuite %s", i, suite.Name),
+				Parameters:  []interface{}{dt, test},
+				Pending:     false,
+				Focused:     test.Focus,
+			})
 		}
 	}
 
@@ -97,12 +109,14 @@ func readTests() ([]TestSuite, error) {
 }
 
 type TestSuite struct {
-	Name            string                             `json:"name"`
-	OpenAPIV3Schema landscaperv1alpha1.JSONSchemaProps `json:"openAPIV3Schema"`
-	Tests           []Test                             `json:"tests"`
+	Name              string                                `json:"name"`
+	OpenAPIV3Schema   lsv1alpha1.JSONSchemaProps            `json:"openAPIV3Schema"`
+	AdditionalSchemes map[string]lsv1alpha1.JSONSchemaProps `json:"additionalSchemes"`
+	Tests             []Test                                `json:"tests"`
 }
 
 type Test struct {
 	Data   interface{} `json:"data"`
 	Result bool        `json:"result"`
+	Focus  bool        `json:"focus,omitempty"`
 }

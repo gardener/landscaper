@@ -49,6 +49,10 @@ type ComponentInstallationList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentDefinition contains the configuration of a component
+// +kubebuilder:resource:path="installation"
+// +kubebuilder:resource:scope="Namespaced"
+// +kubebuilder:resource:shortName="inst"
+// +kubebuilder:resource:singular="installation"
 // +kubebuilder:subresource:status
 type ComponentInstallation struct {
 	metav1.TypeMeta   `json:",inline"`

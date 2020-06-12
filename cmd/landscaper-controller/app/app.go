@@ -25,7 +25,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	installationsactuator "github.com/gardener/landscaper/pkg/controllers/installations"
-	typesactuator "github.com/gardener/landscaper/pkg/controllers/types"
+	lscactuator "github.com/gardener/landscaper/pkg/controllers/landscapeconfig"
 )
 
 func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
@@ -64,7 +64,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := typesactuator.AddActuatorToManager(mgr); err != nil {
+	if err := lscactuator.AddActuatorToManager(mgr); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

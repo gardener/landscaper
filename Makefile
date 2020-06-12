@@ -33,6 +33,10 @@ format:
 check:
 	@$(REPO_ROOT)/hack/check.sh
 
+.PHONY: test
+test:
+	@go test $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/...
+
 .PHONY: verify
 verify: check format
 

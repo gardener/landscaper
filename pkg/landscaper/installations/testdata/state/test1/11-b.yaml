@@ -1,0 +1,32 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentInstallation
+metadata:
+  name: b
+  namespace: test1
+  labels:
+    "landscaper.gardener.cloud/encompassed-by": root
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: ComponentInstallation
+    name: root
+spec:
+
+  definitionRef: b:1.0.0
+
+  imports:
+  - from: a.z
+    to: b.a
+
+  exports:
+  - from: b.y
+    to: b.z
+
+status:
+  phase: Init
+  configGeneration: 5
+
+  imports:
+  - from: a.z
+    to: b.a
+    configGeneration: 5
+

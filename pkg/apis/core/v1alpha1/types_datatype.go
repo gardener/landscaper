@@ -36,7 +36,10 @@ type DataTypeList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataType defines a new type that can be used for component configurations
-// +kubebuilder:subresource:status
+// +kubebuilder:resource:path="datatypes"
+// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:resource:shortName="dt,type,types"
+// +kubebuilder:resource:singular="datatype"
 type DataType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -19,8 +19,8 @@ const (
 
 	ImportConfigPath = "/landscaper/import.yaml"
 
-	// LandscapeConfigurationSecretDataKey is the key of the secret where the landscape stores its merged configuration.
-	LandscapeConfigurationSecretDataKey = "config"
+	// DataObjectSecretDataKey is the key of the secret where the landscape and installations stores their merged configuration.
+	DataObjectSecretDataKey = "config"
 
 	// Annotations
 
