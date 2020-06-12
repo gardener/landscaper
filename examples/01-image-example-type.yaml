@@ -1,8 +1,9 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Type
+kind: DataType
 metadata:
   name: image
-spec:
+
+scheme:
   openAPIV3Schema:
     type: object
     properties:
