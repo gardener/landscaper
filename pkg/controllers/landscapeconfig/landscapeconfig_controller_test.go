@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -106,6 +107,49 @@ var _ = Describe("Reconcile", func() {
 
 		Expect(res["key1"]).To(Equal("value1"))
 		Expect(res["key2"]).To(Equal("value2"))
+	})
+
+	It("should update the last observed generation of the referenced secrets", func() {
+		orSecret1 := lsv1alpha1.ObjectReference{Name: "test-sec-1", Namespace: "default"}
+		secret1Data := `{ "key1": "value1" }`
+
+		lsConfig := &lsv1alpha1.LandscapeConfiguration{}
+		lsConfig.Spec.SecretReferences = []lsv1alpha1.ObjectReference{orSecret1}
+
+		mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+		mockClient.EXPECT().Get(gomock.Any(), types.NamespacedName{}, gomock.Any()).Times(1).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		mockClient.EXPECT().Get(gomock.Any(), orSecret1.NamespacedName(), gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context, key client.ObjectKey, secret *corev1.Secret) error {
+			*secret = corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 5,
+				},
+				Data: map[string][]byte{
+					"data": []byte(secret1Data),
+				},
+			}
+			return nil
+		})
+
+		var mergedSecret *corev1.Secret
+		mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(ctx context.Context, obj *corev1.Secret, opts ...client.CreateOption) error {
+			mergedSecret = obj
+			return nil
+		})
+
+		err := a.Ensure(context.TODO(), lsConfig)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(mergedSecret).ToNot(BeNil())
+
+		var res map[string]interface{}
+		err = yaml.Unmarshal(mergedSecret.Data[lsv1alpha1.DataObjectSecretDataKey], &res)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(lsConfig.Status.Conditions).To(HaveLen(1))
+		Expect(lsConfig.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))
+
+		Expect(lsConfig.Status.Secrets).To(ConsistOf(lsv1alpha1.VersionedObjectReference{
+			ObservedGeneration: 5,
+			ObjectReference:    orSecret1,
+		}))
 	})
 
 	It("should return and report an error in the condition if an error occurs", func() {

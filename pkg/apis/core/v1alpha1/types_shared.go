@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -78,15 +77,6 @@ const (
 	ReconcileOperation Operation = "reconcile"
 )
 
-// NamedObjectReference is a named reference to a specific resource.
-type NamedObjectReference struct {
-	// Name is the unique name of the reference.
-	Name string `json:"name"`
-
-	// Reference is the reference to an object.
-	Reference ObjectReference `json:"ref"`
-}
-
 // ObjectReference is the reference to a kubernetes object.
 type ObjectReference struct {
 	// Name is the name of the kubernetes object.
@@ -104,15 +94,20 @@ func (r *ObjectReference) NamespacedName() types.NamespacedName {
 	}
 }
 
-// SecretRef references a secret value
-type SecretRef struct {
-	SecretRef SecretKeySelector `json:"secretRef"`
+// NamedObjectReference is a named reference to a specific resource.
+type NamedObjectReference struct {
+	// Name is the unique name of the reference.
+	Name string `json:"name"`
+
+	// Reference is the reference to an object.
+	Reference ObjectReference `json:"ref"`
 }
 
-// SecretKeySelector selects a key of a Secret.
-type SecretKeySelector struct {
-	// The name of the secret in the pod's namespace to select from.
-	corev1.LocalObjectReference `json:",inline"`
-	// The key of the secret to select from.  Must be a valid secret key.
-	Key string `json:"key"`
+// VersionedObjectReference is a reference to a object with its last observed resource generation.
+// This struct is used by status fields.
+type VersionedObjectReference struct {
+	ObjectReference `json:"-"`
+
+	// ObservedGeneration defines the last observed generation of the referenced resource.
+	ObservedGeneration int64 `json:"observedGeneration"`
 }

@@ -50,4 +50,7 @@ type LandscapeConfigurationStatus struct {
 
 	// ExportReference references the object that contains the exported values.
 	ConfigReference *ObjectReference `json:"configRef,omitempty"`
+
+	// Secrets contains the status of the observed referenced secrets.
+	Secrets []VersionedObjectReference `json:"secrets"`
 }

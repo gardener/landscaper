@@ -140,6 +140,8 @@ func (a *actuator) reloadConfiguration(ctx context.Context, lsConfig *lsv1alpha1
 
 			lsConfigData = utils.MergeMaps(lsConfigData, config)
 		}
+
+		lsConfig.Status.Secrets = lsv1alpha1helper.CreateOrUpdateVersionedObjectReferences(lsConfig.Status.Secrets, ref, secret.Generation)
 	}
 
 	data, err := yaml.Marshal(lsConfigData)

@@ -122,3 +122,20 @@ func MergeConditions(oldConditions []v1alpha1.Condition, newConditions ...v1alph
 func DecimalToFloat64(dec v1alpha1.Decimal) (float64, error) {
 	return strconv.ParseFloat(string(dec), 64)
 }
+
+// CreateOrUpdateVersionedObjectReferences creates or updates a element in versioned objectReference slice.
+func CreateOrUpdateVersionedObjectReferences(refs []v1alpha1.VersionedObjectReference, ref v1alpha1.ObjectReference, gen int64) []v1alpha1.VersionedObjectReference {
+	for i, vref := range refs {
+		if vref.ObjectReference == ref {
+			refs[i] = v1alpha1.VersionedObjectReference{
+				ObjectReference:    ref,
+				ObservedGeneration: gen,
+			}
+			return refs
+		}
+	}
+	return append(refs, v1alpha1.VersionedObjectReference{
+		ObjectReference:    ref,
+		ObservedGeneration: gen,
+	})
+}

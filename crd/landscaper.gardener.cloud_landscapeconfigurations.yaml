@@ -127,9 +127,27 @@ spec:
                   generation, which is updated on mutation.
                 format: int64
                 type: integer
+              secrets:
+                description: Secrets contains the status of the observed referenced
+                  secrets.
+                items:
+                  description: VersionedObjectReference is a reference to a object
+                    with its last observed resource generation. This struct is used
+                    by status fields.
+                  properties:
+                    observedGeneration:
+                      description: ObservedGeneration defines the last observed generation
+                        of the referenced resource.
+                      format: int64
+                      type: integer
+                  required:
+                  - observedGeneration
+                  type: object
+                type: array
             required:
             - configGeneration
             - observedGeneration
+            - secrets
             type: object
         required:
         - spec
