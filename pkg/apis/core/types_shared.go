@@ -94,6 +94,18 @@ func (r *ObjectReference) NamespacedName() types.NamespacedName {
 	}
 }
 
+// TypedObjectReference is a reference to a typed kubernetes object.
+type TypedObjectReference struct {
+	// APIGroup is the group for the resource being referenced.
+	// If APIGroup is not specified, the specified Kind must be in the core API group.
+	// For any other third-party types, APIGroup is required.
+	APIGroup string `json:"apiGroup"`
+	// Kind is the type of resource being referenced
+	Kind string `json:"kind"`
+
+	ObjectReference `json:",inline"`
+}
+
 // NamedObjectReference is a named reference to a specific resource.
 type NamedObjectReference struct {
 	// Name is the unique name of the reference.

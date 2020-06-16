@@ -115,8 +115,8 @@ type ImportState struct {
 	// To is the to key of the import
 	To string `json:"to"`
 
-	// InstallationRef is the reference to the installation where the value is imported
-	InstallationRef ObjectReference `json:"installationRef"`
+	// SourceRef is the reference to the installation where the value is imported
+	SourceRef *TypedObjectReference `json:"sourceRef,omitempty"`
 
 	// ConfigGeneration is the generation of the imported value.
 	ConfigGeneration int64 `json:"configGeneration"`

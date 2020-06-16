@@ -45,7 +45,7 @@ func init() {
 	localSchemeBuilder.Register(addKnownTypes)
 }
 
-// Adds the list of known types to Scheme.
+// Adds the list of known types to Schema.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&DataType{},

@@ -26,6 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
@@ -39,6 +40,7 @@ var _ = g.Describe("Validation", func() {
 		op installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
+		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
 		fakeRegistry      *fake.FakeRegistry
 
@@ -47,14 +49,28 @@ var _ = g.Describe("Validation", func() {
 
 	g.BeforeEach(func() {
 		once.Do(func() {
-			var err error
-			fakeClient, fakeInstallations, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			var (
+				err   error
+				state *fake_client.State
+			)
+			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
+
+			fakeInstallations = state.Installations
+			fakeDataTypes = state.DataTypes
 
 			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
-		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
+
+		dtArr := make([]lsv1alpha1.DataType, 0)
+		for _, dt := range fakeDataTypes {
+			dtArr = append(dtArr, *dt)
+		}
+		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
+		Expect(err).ToNot(HaveOccurred())
+
+		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, internalDataTypes)
 	})
 
 	g.Context("root", func() {
@@ -62,16 +78,69 @@ var _ = g.Describe("Validation", func() {
 			inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
 
-			lsConfig, err := landscapeconfig.New(nil, &corev1.Secret{
-				Data: map[string][]byte{
-					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
+			lsConfig, err := landscapeconfig.New(
+				&lsv1alpha1.LandscapeConfiguration{
+					Status: lsv1alpha1.LandscapeConfigurationStatus{
+						ConfigGeneration: 8,
+					},
 				},
-			})
+				&corev1.Secret{
+					Data: map[string][]byte{
+						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
+					},
+				},
+			)
 			Expect(err).ToNot(HaveOccurred())
 
 			val := imports.NewValidator(op, lsConfig, nil)
 			err = val.Validate(context.TODO(), inInstRoot)
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		g.It("should reject the import from the landscape config if the import is of the wrong type", func() {
+			inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+			Expect(err).ToNot(HaveOccurred())
+
+			lsConfig, err := landscapeconfig.New(
+				&lsv1alpha1.LandscapeConfiguration{
+					Status: lsv1alpha1.LandscapeConfigurationStatus{
+						ConfigGeneration: 8,
+					},
+				},
+				&corev1.Secret{
+					Data: map[string][]byte{
+						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
+					},
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			val := imports.NewValidator(op, lsConfig, nil)
+			err = val.Validate(context.TODO(), inInstRoot)
+			Expect(err).To(HaveOccurred())
+		})
+
+		g.It("should reject when the imported data from the landscape config was already reconciled", func() {
+			inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+			Expect(err).ToNot(HaveOccurred())
+
+			lsConfig, err := landscapeconfig.New(
+				&lsv1alpha1.LandscapeConfiguration{
+					Status: lsv1alpha1.LandscapeConfigurationStatus{
+						ConfigGeneration: 5,
+					},
+				},
+				&corev1.Secret{
+					Data: map[string][]byte{
+						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
+					},
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			val := imports.NewValidator(op, lsConfig, nil)
+			err = val.Validate(context.TODO(), inInstRoot)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 

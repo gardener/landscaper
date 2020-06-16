@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 	"github.com/golang/mock/gomock"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,11 +31,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
+// State contains the state of initialized fake client
+type State struct {
+	DataTypes     map[string]*lsv1alpha1.DataType
+	Installations map[string]*lsv1alpha1.ComponentInstallation
+}
+
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
-func NewFakeClientFromPath(path string) (client.Client, map[string]*lsv1alpha1.ComponentInstallation, error) {
+func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	objects := []runtime.Object{}
-	installations := make(map[string]*lsv1alpha1.ComponentInstallation)
-	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
+	state := &State{
+		DataTypes:     make(map[string]*lsv1alpha1.DataType),
+		Installations: make(map[string]*lsv1alpha1.ComponentInstallation),
+	}
 	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -48,14 +57,10 @@ func NewFakeClientFromPath(path string) (client.Client, map[string]*lsv1alpha1.C
 			return errors.Wrapf(err, "unable to read file %s", path)
 		}
 
-		// todo: add support for more types
-		obj := &lsv1alpha1.ComponentInstallation{}
-		if _, _, err := decoder.Decode(data, nil, obj); err != nil {
+		objects, err = decodeAndAppendLSObject(data, objects, state)
+		if err != nil {
 			return errors.Wrapf(err, "unable to decode file %s", path)
 		}
-
-		objects = append(objects, obj)
-		installations[types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}.String()] = obj
 
 		return nil
 	})
@@ -63,7 +68,30 @@ func NewFakeClientFromPath(path string) (client.Client, map[string]*lsv1alpha1.C
 		return nil, nil, err
 	}
 
-	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), installations, nil
+	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), state, nil
+}
+
+func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State) ([]runtime.Object, error) {
+	var allErrors *multierror.Error
+	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
+
+	inst := &lsv1alpha1.ComponentInstallation{}
+	_, _, err := decoder.Decode(data, nil, inst)
+	if err == nil {
+		state.Installations[types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}.String()] = inst
+		return append(objects, inst), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode fil"))
+
+	dt := &lsv1alpha1.DataType{}
+	_, _, err = decoder.Decode(data, nil, dt)
+	if err == nil {
+		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
+		return append(objects, inst), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode fil"))
+
+	return nil, allErrors
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient

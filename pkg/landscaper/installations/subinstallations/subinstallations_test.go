@@ -58,7 +58,7 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeRegistry, nil)
 	})
 
 	g.AfterEach(func() {
@@ -204,7 +204,7 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			}
 
-			op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fake.NewFakeRegistry(fake.DefinitionReference{Definition: subdef}))
+			op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fake.NewFakeRegistry(fake.DefinitionReference{Definition: subdef}), nil)
 			si := subinstallations.New(op)
 			err := si.Ensure(context.TODO(), inst, def)
 			Expect(err).ToNot(HaveOccurred())

@@ -44,15 +44,19 @@ var _ = g.Describe("Context", func() {
 
 	g.BeforeEach(func() {
 		once.Do(func() {
-			var err error
-			fakeClient, fakeInstallations, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			var (
+				err   error
+				state *fake_client.State
+			)
+			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
+			fakeInstallations = state.Installations
 
 			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, nil)
 	})
 
 	g.It("should show no parent nor siblings for the test1 root", func() {

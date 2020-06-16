@@ -44,12 +44,12 @@ type DataType struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Scheme DataTypeScheme `json:"scheme"`
+	Schema DataTypeSchema `json:"schema"`
 }
 
-// DataTypeScheme specifies the scheme of the type.
+// DataTypeSchema specifies the scheme of the type.
 
-type DataTypeScheme struct {
+type DataTypeSchema struct {
 	// OpenAPIV3Schema specified the openapiv3 scheme for the type.
 	OpenAPIV3Schema JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }

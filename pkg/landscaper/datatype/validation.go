@@ -26,7 +26,7 @@ import (
 // Validate validates data for a certain datatype
 func Validate(dt Datatype, data interface{}) error {
 	openAPITypes := &spec.Schema{}
-	if err := ConvertJSONSchemaProps(&dt.Info.Scheme.OpenAPIV3Schema, openAPITypes); err != nil {
+	if err := ConvertJSONSchemaProps(&dt.Info.Schema.OpenAPIV3Schema, openAPITypes); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func createRootSchemaFromReferencedTypes(types []*landscaperv1alpha1.DataType) (
 	root := make(map[string]*spec.Schema)
 	for _, dt := range types {
 		openAPITypes := &spec.Schema{}
-		if err := ConvertJSONSchemaProps(&dt.Scheme.OpenAPIV3Schema, openAPITypes); err != nil {
+		if err := ConvertJSONSchemaProps(&dt.Schema.OpenAPIV3Schema, openAPITypes); err != nil {
 			return nil, err
 		}
 		root[dt.Name] = openAPITypes

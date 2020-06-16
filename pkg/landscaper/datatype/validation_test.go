@@ -56,14 +56,14 @@ func generateTests() []TableEntry {
 
 	for _, suite := range suites {
 		dt := datatype.Datatype{
-			Info:       &lsv1alpha1.DataType{Scheme: lsv1alpha1.DataTypeScheme{OpenAPIV3Schema: suite.OpenAPIV3Schema}},
+			Info:       &lsv1alpha1.DataType{Schema: lsv1alpha1.DataTypeSchema{OpenAPIV3Schema: suite.OpenAPIV3Schema}},
 			Referenced: make([]*lsv1alpha1.DataType, 0),
 		}
 		for name, obj := range suite.AdditionalSchemes {
 			prop := obj
 			additionalDt := &lsv1alpha1.DataType{}
 			additionalDt.Name = name
-			additionalDt.Scheme.OpenAPIV3Schema = prop
+			additionalDt.Schema.OpenAPIV3Schema = prop
 			dt.Referenced = append(dt.Referenced, additionalDt)
 		}
 		for i, test := range suite.Tests {

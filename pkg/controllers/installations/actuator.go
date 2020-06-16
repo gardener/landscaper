@@ -20,6 +20,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
@@ -99,7 +100,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	op := installations.NewOperation(a.log, a.c, a.scheme, a.registry)
+	datatypeList := &lsv1alpha1.DataTypeList{}
+	if err := a.c.List(ctx, datatypeList); err != nil {
+		a.log.Error(err, "unable to list all datatypes")
+		return reconcile.Result{}, err
+	}
+	datatypes, err := datatype.CreateDatatypesMap(datatypeList.Items)
+	if err != nil {
+		a.log.Error(err, "unable to parse datatypes")
+		return reconcile.Result{}, err
+	}
+
+	op := installations.NewOperation(a.log, a.c, a.scheme, a.registry, datatypes)
 
 	// for debugging read landscape from tmp file
 	landscapeConfig := make(map[string]interface{})

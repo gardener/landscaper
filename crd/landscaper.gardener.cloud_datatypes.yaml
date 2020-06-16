@@ -33,7 +33,7 @@ spec:
             type: string
           metadata:
             type: object
-          scheme:
+          schema:
             properties:
               openAPIV3Schema:
                 description: OpenAPIV3Schema specified the openapiv3 scheme for the
@@ -186,7 +186,7 @@ spec:
                 type: object
             type: object
         required:
-        - scheme
+        - schema
         type: object
     served: true
     storage: true

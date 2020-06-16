@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
@@ -40,8 +41,6 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	fldPath := field.NewPath(inst.Info.Name)
 	for i, importMapping := range inst.Info.Spec.Imports {
 		impPath := fldPath.Index(i)
-		// check landscape config if I'm a root installation
-
 		// check if the parent also imports my import
 		err := v.checkImportMappingIsSatisfied(impPath, inst, importMapping)
 		if err != nil {
@@ -54,18 +53,27 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 
 func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
 	// check landscape config if I'm v root installation
-
-	// check if the parent also imports my import
-	err := v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
-	if !IsImportNotFoundError(err) {
-		return err
-	}
-	if err == nil {
-		return nil
+	if v.IsRoot() {
+		err := v.checkIfLandscapeConfigForMapping(fldPath, inst, mapping)
+		if !IsImportNotFoundError(err) {
+			return err
+		}
+		if err == nil {
+			return nil
+		}
+	} else {
+		// check if the parent also imports my import
+		err := v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
+		if !IsImportNotFoundError(err) {
+			return err
+		}
+		if err == nil {
+			return nil
+		}
 	}
 
 	// check if a sibling exports the given value
-	err = v.checkIfSiblingsHaveImportForMapping(fldPath, inst, mapping)
+	err := v.checkIfSiblingsHaveImportForMapping(fldPath, inst, mapping)
 	if !IsImportNotFoundError(err) {
 		return err
 	}
@@ -74,6 +82,37 @@ func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *ins
 	}
 
 	return NewImportNotFoundError("No import found", nil)
+}
+
+func (v *Validator) checkIfLandscapeConfigForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+	importDef, err := inst.GetImportDefinition(mapping.To)
+	if err != nil {
+		return err
+	}
+	importState, err := inst.ImportStatus().GetTo(mapping.To)
+	if err != nil {
+		return err
+	}
+
+	var val interface{}
+	if err := v.lsConfig.Data.GetData(mapping.From, &val); err != nil {
+		return NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
+	}
+
+	if importState.ConfigGeneration >= v.lsConfig.Info.Status.ConfigGeneration {
+		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
+	}
+
+	// validate types
+	dt, ok := v.GetDataType(importDef.Type)
+	if !ok {
+		return NewImportNotSatisfiedErrorf(nil, "%s: datatype %s cannot be found", fldPath.String(), importDef.Type)
+	}
+	if err := datatype.Validate(*dt, val); err != nil {
+		return NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected type %s", fldPath.String(), importDef.Type)
+	}
+
+	return nil
 }
 
 func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
@@ -172,4 +211,9 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 	}
 
 	return nil
+}
+
+// IsRoot returns true if the current component is a root component
+func (v *Validator) IsRoot() bool {
+	return v.parent == nil
 }

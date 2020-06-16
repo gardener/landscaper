@@ -23,16 +23,17 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
-// Operation is the operation interface that is used to share common operational data across the installation reconciler
-//
+// Operation is the operation interface that is used to share common operational data across the installation reconciler.
 type Operation interface {
 	Log() logr.Logger
 	Client() client.Client
 	Scheme() *runtime.Scheme
 	Registry() registry.Registry
+	GetDataType(name string) (*datatype.Datatype, bool)
 	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
 }
 
@@ -41,15 +42,18 @@ type operation struct {
 	client   client.Client
 	scheme   *runtime.Scheme
 	registry registry.Registry
+
+	datatypes map[string]*datatype.Datatype
 }
 
 // NewOperation creates a new internal installation operation object.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry) Operation {
+func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, datatypes map[string]*datatype.Datatype) Operation {
 	return &operation{
-		log:      log,
-		client:   c,
-		scheme:   scheme,
-		registry: registry,
+		log:       log,
+		client:    c,
+		scheme:    scheme,
+		registry:  registry,
+		datatypes: datatypes,
 	}
 }
 
@@ -63,7 +67,7 @@ func (o *operation) Client() client.Client {
 	return o.client
 }
 
-// Scheme returns a kubernetes scheme
+// Schema returns a kubernetes scheme
 func (o *operation) Scheme() *runtime.Scheme {
 	return o.scheme
 }
@@ -71,6 +75,13 @@ func (o *operation) Scheme() *runtime.Scheme {
 // Registry returns a registry.Registry instance
 func (o *operation) Registry() registry.Registry {
 	return o.registry
+}
+
+// GetDataType returns the datatype with a specific name.
+// It returns ok = false if the datatype does not exist.
+func (o *operation) GetDataType(name string) (dt *datatype.Datatype, ok bool) {
+	dt, ok = o.datatypes[name]
+	return
 }
 
 // UpdateInstallationStatus updates the status of a installation

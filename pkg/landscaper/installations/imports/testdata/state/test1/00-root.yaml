@@ -19,12 +19,17 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 5
+  configGeneration: 7
 
   imports:
   - from: ext.a
     to: root.a
-    configGeneration: 6
+    configGeneration: 7
+    sourceRef:
+      apiGroup: landscaper.gardener.cloud/v1alpha1
+      kind: LandscapeConfiguration
+      name: default
+      namespace: test1
 
   installationRefs:
   - name: a
@@ -43,3 +48,5 @@ status:
     ref:
       name: d
       namespace: test1
+
+  observedGeneration: 0
