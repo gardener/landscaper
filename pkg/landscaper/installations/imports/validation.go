@@ -16,7 +16,8 @@ package imports
 
 import (
 	"context"
-	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -36,11 +37,13 @@ func NewValidator(op installations.Operation, landscapeConfig *landscapeconfig.L
 // Validate traverses through all components and validates if all imports are
 // satisfied with the correct version
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
-	for _, importMapping := range inst.Info.Spec.Imports {
-		// check landscape config if I'm v root installation
+	fldPath := field.NewPath(inst.Info.Name)
+	for i, importMapping := range inst.Info.Spec.Imports {
+		impPath := fldPath.Index(i)
+		// check landscape config if I'm a root installation
 
 		// check if the parent also imports my import
-		err := v.checkImportMappingIsSatisfied(inst, importMapping)
+		err := v.checkImportMappingIsSatisfied(impPath, inst, importMapping)
 		if err != nil {
 			return err
 		}
@@ -49,11 +52,11 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	return nil
 }
 
-func (v *Validator) checkImportMappingIsSatisfied(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
 	// check landscape config if I'm v root installation
 
 	// check if the parent also imports my import
-	err := v.checkIfParentHasImportForMapping(inst, mapping)
+	err := v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
 	if !IsImportNotFoundError(err) {
 		return err
 	}
@@ -62,7 +65,7 @@ func (v *Validator) checkImportMappingIsSatisfied(inst *installations.Installati
 	}
 
 	// check if a sibling exports the given value
-	err = v.checkIfSiblingsHaveImportForMapping(inst, mapping)
+	err = v.checkIfSiblingsHaveImportForMapping(fldPath, inst, mapping)
 	if !IsImportNotFoundError(err) {
 		return err
 	}
@@ -73,7 +76,7 @@ func (v *Validator) checkImportMappingIsSatisfied(inst *installations.Installati
 	return NewImportNotFoundError("No import found", nil)
 }
 
-func (v *Validator) checkIfParentHasImportForMapping(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
 	importDef, err := inst.GetImportDefinition(mapping.To)
 	if err != nil {
 		return err
@@ -86,34 +89,35 @@ func (v *Validator) checkIfParentHasImportForMapping(inst *installations.Install
 	// check if the parent also imports my import
 	parentImport, err := v.parent.GetImportDefinition(mapping.From)
 	if err != nil {
-		return NewImportNotFoundError("ImportDefinition not found", err)
+		return NewImportNotFoundErrorf(err, "%s: ImportDefinition not found", fldPath.String())
 	}
 	parentImportState, err := v.parent.ImportStatus().GetTo(mapping.From)
 	if err != nil {
-		return NewImportNotFoundError("Import state not found", err)
+		return NewImportNotFoundErrorf(err, "%s: Import state not found", fldPath.String())
 	}
 
 	// parent has to be progressing
 	if v.parent.Info.Status.Phase != v1alpha1.ComponentPhaseProgressing {
-		return NewImportNotSatisfiedError("Parent has to be progressing to get imports", nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
 	}
 
 	if parentImport.Type != importDef.Type {
-		return NewImportNotSatisfiedError(fmt.Sprintf("import type of parent is %s but expected %s", parentImport.Type, importDef.Type), nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: import type of parent is %s but expected %s", fldPath.String(), parentImport.Type, importDef.Type)
 	}
 
 	// check if the import of the parent is of v higher generation
 	if importState.ConfigGeneration >= parentImportState.ConfigGeneration {
-		return NewImportNotSatisfiedError("import has already run", nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
 	}
 
 	return nil
 }
 
-func (v *Validator) checkIfSiblingsHaveImportForMapping(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkIfSiblingsHaveImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
 
 	for _, sibling := range v.siblings {
-		err := v.checkIfSiblingHasImportForMapping(inst, mapping, sibling)
+		sPath := fldPath.Child(sibling.Info.Name)
+		err := v.checkIfSiblingHasImportForMapping(sPath, inst, mapping, sibling)
 		if !IsImportNotFoundError(err) {
 			return err
 		}
@@ -122,10 +126,10 @@ func (v *Validator) checkIfSiblingsHaveImportForMapping(inst *installations.Inst
 		}
 	}
 
-	return NewImportNotFoundError("no sibling installation found to satisfy the mapping", nil)
+	return NewImportNotFoundErrorf(nil, "%s: no sibling installation found to satisfy the mapping", fldPath.String())
 }
 
-func (v *Validator) checkIfSiblingHasImportForMapping(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping, sibling *installations.Installation) error {
+func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping, sibling *installations.Installation) error {
 	importDef, err := inst.GetImportDefinition(mapping.To)
 	if err != nil {
 		return err
@@ -138,29 +142,34 @@ func (v *Validator) checkIfSiblingHasImportForMapping(inst *installations.Instal
 	// search in the sibling for the export mapping where importmap.from == exportmap.to
 	exportMapping, err := sibling.GetExportMappingTo(mapping.From)
 	if err != nil {
-		return NewImportNotFoundError("ExportMapping not found in sibling", err)
+		return NewImportNotFoundErrorf(err, "%s: ExportMapping not found in sibling", fldPath.String())
 	}
 
 	// check if the sibling also imports my import
 	siblingExport, err := sibling.GetExportDefinition(exportMapping.To)
 	if err != nil {
-		return NewImportNotFoundError("ImportDefinition not found", err)
+		return NewImportNotFoundErrorf(err, "%s: ImportDefinition not found", fldPath.String())
 	}
 
 	if sibling.Info.Status.Phase != v1alpha1.ComponentPhaseCompleted {
-		return NewImportNotSatisfiedError("Sibling has to be completed to get exports", nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 
 	if siblingExport.Type != importDef.Type {
-		return NewImportNotSatisfiedError(fmt.Sprintf("export type of sibling is %s but expected %s", siblingExport.Type, importDef.Type), nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: export type of sibling is %s but expected %s", fldPath.String(), siblingExport.Type, importDef.Type)
 	}
 
 	// check if the import of the parent is of v higher generation
 	if importState.ConfigGeneration >= sibling.Info.Status.ConfigGeneration {
-		return NewImportNotSatisfiedError("import has already run", nil)
+		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
 	}
 
-	// todo: check generation of others components in the dependency tree
+	// todo: check generation of other components in the dependency tree
+	// we expect the parent's exported config generation to equal the highest among all subcomponents
+
+	if sibling.Info.Status.ConfigGeneration < v.parent.Info.Status.ConfigGeneration {
+		return NewImportNotSatisfiedError("parent has higher generation than the imported configuration", nil)
+	}
 
 	return nil
 }

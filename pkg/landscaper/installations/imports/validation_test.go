@@ -21,12 +21,14 @@ import (
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
+	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
@@ -55,6 +57,24 @@ var _ = g.Describe("Validation", func() {
 		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
 	})
 
+	g.Context("root", func() {
+		g.It("should import data from the landscape config", func() {
+			inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+			Expect(err).ToNot(HaveOccurred())
+
+			lsConfig, err := landscapeconfig.New(nil, &corev1.Secret{
+				Data: map[string][]byte{
+					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+
+			val := imports.NewValidator(op, lsConfig, nil)
+			err = val.Validate(context.TODO(), inInstRoot)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
 	g.It("should successfully validate when the import of a component is defined by its parent with the right version", func() {
 		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
@@ -71,9 +91,10 @@ var _ = g.Describe("Validation", func() {
 		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+		instRoot := fakeInstallations["test1/root"]
+		instRoot.Status.Imports[0].ConfigGeneration = 5
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, instRoot)
 		Expect(err).ToNot(HaveOccurred())
-		inInstRoot.Info.Status.Imports[0].ConfigGeneration = 5
 
 		val := imports.NewValidator(op, nil, inInstRoot)
 		err = val.Validate(context.TODO(), inInstA)

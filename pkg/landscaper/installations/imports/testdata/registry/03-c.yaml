@@ -8,7 +8,7 @@ imports:
 - key: c.a
   type: string
 - key: c.b
-  type: number
+  type: string
 
 exports:
 - key: c.z

@@ -22,7 +22,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // todo: add overwrites
 type ComponentList struct {
 	metav1.TypeMeta `json:",inline"`
-	Components []*Component `json:"components"`
+	Components      []*Component `json:"components"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

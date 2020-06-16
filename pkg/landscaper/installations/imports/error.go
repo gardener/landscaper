@@ -49,9 +49,23 @@ func NewError(reason ErrorReason, message string, err error) error {
 	}
 }
 
+// NewErrorf creates a new import error with a formated message
+func NewErrorf(reason ErrorReason, err error, format string, a ...interface{}) error {
+	return &Error{
+		Reason:  reason,
+		Message: fmt.Sprintf(format, a...),
+		Err:     err,
+	}
+}
+
 // NewImportNotFoundError creates a new error that indicates that a import was not found
 func NewImportNotFoundError(message string, err error) error {
 	return NewError(ImportNotFound, message, err)
+}
+
+// NewImportNotFoundErrorf creates a new error that indicates that a import was not found with a fromatted message
+func NewImportNotFoundErrorf(err error, format string, a ...interface{}) error {
+	return NewErrorf(ImportNotFound, err, format, a...)
 }
 
 // IsImportNotFoundError checks if the provided error is of type ImportNotFound
@@ -62,6 +76,11 @@ func IsImportNotFoundError(err error) bool {
 // NewImportNotFoundError creates a new error that indicates that a import is not satisfied yet
 func NewImportNotSatisfiedError(message string, err error) error {
 	return NewError(ImportNotSatisfied, message, err)
+}
+
+// NewImportNotSatisfiedErrorf creates a new error that indicates that a import was not found with a fromatted message
+func NewImportNotSatisfiedErrorf(err error, format string, a ...interface{}) error {
+	return NewErrorf(ImportNotSatisfied, err, format, a...)
 }
 
 // IsImportNotFoundError checks if the provided error is of type ImportNotSatisfied
