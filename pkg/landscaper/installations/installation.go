@@ -84,3 +84,14 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExp
 	}
 	return def, nil
 }
+
+// GetExportMappingTo returns the export mapping of the installation that exports to the fiven key
+func (i *Installation) GetExportMappingTo(key string) (lsv1alpha1.DefinitionExportMapping, error) {
+	for _, mapping := range i.Info.Spec.Exports {
+		if mapping.To == key {
+			return mapping, nil
+		}
+	}
+
+	return lsv1alpha1.DefinitionExportMapping{}, fmt.Errorf("export mapping for key %s not found", key)
+}

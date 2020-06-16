@@ -135,12 +135,20 @@ spec:
                     with its last observed resource generation. This struct is used
                     by status fields.
                   properties:
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
                     observedGeneration:
                       description: ObservedGeneration defines the last observed generation
                         of the referenced resource.
                       format: int64
                       type: integer
                   required:
+                  - name
+                  - namespace
                   - observedGeneration
                   type: object
                 type: array

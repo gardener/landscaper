@@ -103,6 +103,7 @@ func (a *actuator) Ensure(ctx context.Context, lsConfig *lsv1alpha1.LandscapeCon
 }
 
 func (a *actuator) updateInstallationStatus(ctx context.Context, lsConfig *lsv1alpha1.LandscapeConfiguration, updatedConditions ...lsv1alpha1.Condition) error {
+	// todo: set export generation
 	lsConfig.Status.Conditions = lsv1alpha1helper.MergeConditions(lsConfig.Status.Conditions, updatedConditions...)
 	lsConfig.Status.ObservedGeneration = lsConfig.Generation
 	if err := a.c.Status().Update(ctx, lsConfig); err != nil {

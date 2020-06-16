@@ -34,7 +34,7 @@ bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh 
   "core:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
-echo "> Generating conversion Landscaper"
+echo "> Generating Landscaper conversion"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   conversion \
   $PROJECT_MOD_ROOT/pkg/core \
@@ -42,4 +42,23 @@ bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh 
   $PROJECT_MOD_ROOT/pkg/apis \
   core:v1alpha1 \
   --extra-peer-dirs=github.com/gardener/landscaper/pkg/apis/core,github.com/gardener/landscaper/pkg/apis/core/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
+  --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
+
+echo "> Generating groups for Config"
+bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
+  deepcopy,defaulter \
+  $PROJECT_MOD_ROOT/pkg/client \
+  $PROJECT_MOD_ROOT/pkg/apis \
+  $PROJECT_MOD_ROOT/pkg/apis \
+  "config:v1alpha1" \
+  --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
+
+echo "> Generating Config conversion"
+bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
+  conversion \
+  $PROJECT_MOD_ROOT/pkg/core \
+  $PROJECT_MOD_ROOT/pkg/apis \
+  $PROJECT_MOD_ROOT/pkg/apis \
+  config:v1alpha1 \
+  --extra-peer-dirs=github.com/gardener/landscaper/pkg/apis/config,github.com/gardener/landscaper/pkg/apis/config/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"

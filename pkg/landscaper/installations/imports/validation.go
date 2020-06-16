@@ -44,8 +44,6 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 		if err != nil {
 			return err
 		}
-		// check if v siblings exports the given value
-
 	}
 
 	return nil
@@ -59,8 +57,19 @@ func (v *Validator) checkImportMappingIsSatisfied(inst *installations.Installati
 	if !IsImportNotFoundError(err) {
 		return err
 	}
+	if err == nil {
+		return nil
+	}
 
-	// check if v siblings exports the given value
+	// check if a sibling exports the given value
+	err = v.checkIfSiblingsHaveImportForMapping(inst, mapping)
+	if !IsImportNotFoundError(err) {
+		return err
+	}
+	if err == nil {
+		return nil
+	}
+
 	return NewImportNotFoundError("No import found", nil)
 }
 
@@ -97,6 +106,61 @@ func (v *Validator) checkIfParentHasImportForMapping(inst *installations.Install
 	if importState.ConfigGeneration >= parentImportState.ConfigGeneration {
 		return NewImportNotSatisfiedError("import has already run", nil)
 	}
+
+	return nil
+}
+
+func (v *Validator) checkIfSiblingsHaveImportForMapping(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+
+	for _, sibling := range v.siblings {
+		err := v.checkIfSiblingHasImportForMapping(inst, mapping, sibling)
+		if !IsImportNotFoundError(err) {
+			return err
+		}
+		if err == nil {
+			return nil
+		}
+	}
+
+	return NewImportNotFoundError("no sibling installation found to satisfy the mapping", nil)
+}
+
+func (v *Validator) checkIfSiblingHasImportForMapping(inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping, sibling *installations.Installation) error {
+	importDef, err := inst.GetImportDefinition(mapping.To)
+	if err != nil {
+		return err
+	}
+	importState, err := inst.ImportStatus().GetTo(mapping.To)
+	if err != nil {
+		return err
+	}
+
+	// search in the sibling for the export mapping where importmap.from == exportmap.to
+	exportMapping, err := sibling.GetExportMappingTo(mapping.From)
+	if err != nil {
+		return NewImportNotFoundError("ExportMapping not found in sibling", err)
+	}
+
+	// check if the sibling also imports my import
+	siblingExport, err := sibling.GetExportDefinition(exportMapping.To)
+	if err != nil {
+		return NewImportNotFoundError("ImportDefinition not found", err)
+	}
+
+	if sibling.Info.Status.Phase != v1alpha1.ComponentPhaseCompleted {
+		return NewImportNotSatisfiedError("Sibling has to be completed to get exports", nil)
+	}
+
+	if siblingExport.Type != importDef.Type {
+		return NewImportNotSatisfiedError(fmt.Sprintf("export type of sibling is %s but expected %s", siblingExport.Type, importDef.Type), nil)
+	}
+
+	// check if the import of the parent is of v higher generation
+	if importState.ConfigGeneration >= sibling.Info.Status.ConfigGeneration {
+		return NewImportNotSatisfiedError("import has already run", nil)
+	}
+
+	// todo: check generation of others components in the dependency tree
 
 	return nil
 }

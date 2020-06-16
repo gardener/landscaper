@@ -96,13 +96,22 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.It("should reject when the import of a component is not yet ready", func() {
+		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/b"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstC, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/c"])
+		Expect(err).ToNot(HaveOccurred())
+
 		inInstD, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/d"])
 		Expect(err).ToNot(HaveOccurred())
 
 		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		val := imports.NewValidator(op, nil, inInstRoot)
+		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB, inInstC)
 		err = val.Validate(context.TODO(), inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
