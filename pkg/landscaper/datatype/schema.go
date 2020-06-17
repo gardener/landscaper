@@ -17,6 +17,8 @@ package datatype
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
@@ -36,28 +38,51 @@ func New(dt *lsv1alpha1.DataType, refs []*lsv1alpha1.DataType) *Datatype {
 
 // CreateDatatypesMap creates a map to of datatype name -> internal datatype
 func CreateDatatypesMap(datatypes []lsv1alpha1.DataType) (map[string]*Datatype, error) {
-	rawDTMap := make(map[string]*lsv1alpha1.DataType, 0)
+	rawTypesMap := make(map[string]*lsv1alpha1.DataType, 0)
 	for _, obj := range datatypes {
 		dt := obj
-		rawDTMap[dt.Name] = &dt
+		rawTypesMap[dt.Name] = &dt
 	}
 
-	dtMap := make(map[string]*Datatype, 0)
+	typesMap := make(map[string]*Datatype, 0)
 	for _, obj := range datatypes {
 		dt := obj
-		usedReferences := lsv1alpha1helper.GetUsedReferencedSchemes(&dt.Schema.OpenAPIV3Schema)
+		// todo: recursively get used references
+		usedReferences, err := getUsedImageReferences(rawTypesMap, &dt)
+		if err != nil {
+			return nil, err
+		}
 
 		refs := make([]*lsv1alpha1.DataType, len(usedReferences))
 		for i, ref := range usedReferences.List() {
-			usedDT, ok := rawDTMap[ref]
+			usedDT, ok := rawTypesMap[ref]
 			if !ok {
 				return nil, fmt.Errorf("datatype %s is used but cannot be found", ref)
 			}
 			refs[i] = usedDT
 		}
 
-		dtMap[dt.Name] = New(&dt, refs)
+		typesMap[dt.Name] = New(&dt, refs)
 	}
 
-	return dtMap, nil
+	return typesMap, nil
+}
+
+// todo: remove cycling dependencies
+func getUsedImageReferences(types map[string]*lsv1alpha1.DataType, dt *lsv1alpha1.DataType) (sets.String, error) {
+	refs := lsv1alpha1helper.GetUsedReferencedSchemes(&dt.Schema.OpenAPIV3Schema)
+
+	for _, ref := range refs.List() {
+		usedDT, ok := types[ref]
+		if !ok {
+			return nil, fmt.Errorf("DataType %s not found", ref)
+		}
+		usedRefs, err := getUsedImageReferences(types, usedDT)
+		if err != nil {
+			return nil, err
+		}
+		refs = refs.Union(usedRefs)
+	}
+
+	return refs, nil
 }

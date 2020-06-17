@@ -145,7 +145,7 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst 
 	}
 
 	validator := imports.NewValidator(op, nil, nil, nil)
-	if err := validator.Validate(ctx, inst); err != nil {
+	if err := validator.Validate(inst); err != nil {
 		a.log.Error(err, "unable to validate imports")
 		return err
 	}

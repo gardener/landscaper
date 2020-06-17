@@ -92,6 +92,9 @@ type ComponentInstallationStatus struct {
 	// ExportReference references the object that contains the exported values.
 	ExportReference ObjectReference `json:"exportRef,omitempty"`
 
+	// ImportReference references the object that contains the temporary imported values.
+	ImportReference ObjectReference `json:"importRef,omitempty"`
+
 	// Imports contain the state of the imported values.
 	Imports []ImportState `json:"imports,omitempty"`
 

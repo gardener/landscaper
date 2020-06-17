@@ -566,6 +566,9 @@ func autoConvert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallat
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
 		return err
 	}
+	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
+		return err
+	}
 	out.Imports = *(*[]core.ImportState)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ExecutionReference, &out.ExecutionReference, s); err != nil {
@@ -585,6 +588,9 @@ func autoConvert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallat
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.ConfigGeneration = in.ConfigGeneration
 	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
+		return err
+	}
+	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
 		return err
 	}
 	out.Imports = *(*[]ImportState)(unsafe.Pointer(&in.Imports))

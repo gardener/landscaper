@@ -17,6 +17,12 @@ package utils
 // MergeMaps takes two maps <a>, <b> and merges them. If <b> defines a value with a key
 // already existing in the <a> map, the <a> value for that key will be overwritten.
 func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
 	var values = map[string]interface{}{}
 
 	for i, v := range b {

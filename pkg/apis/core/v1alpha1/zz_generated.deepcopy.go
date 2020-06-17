@@ -170,6 +170,7 @@ func (in *ComponentInstallationStatus) DeepCopyInto(out *ComponentInstallationSt
 		}
 	}
 	out.ExportReference = in.ExportReference
+	out.ImportReference = in.ImportReference
 	if in.Imports != nil {
 		in, out := &in.Imports, &out.Imports
 		*out = make([]ImportState, len(*in))

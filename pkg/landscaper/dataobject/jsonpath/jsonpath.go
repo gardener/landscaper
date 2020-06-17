@@ -17,6 +17,7 @@ package jsonpath
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -24,6 +25,9 @@ import (
 )
 
 func GetValue(text string, data interface{}, out interface{}) error {
+	if !strings.HasPrefix(text, ".") {
+		text = "." + text
+	}
 	jp := jsonpath.New("get")
 	if err := jp.Parse(fmt.Sprintf("{%s}", text)); err != nil {
 		return err
@@ -45,6 +49,9 @@ func GetValue(text string, data interface{}, out interface{}) error {
 // Construct creates a map for the given jsonpath
 // the value if the resulting map is set to the given value paramter
 func Construct(text string, value interface{}) (map[string]interface{}, error) {
+	if !strings.HasPrefix(text, ".") {
+		text = "." + text
+	}
 	parser, err := jsonpath.Parse("construct", fmt.Sprintf("{%s}", text))
 	if err != nil {
 		return nil, err

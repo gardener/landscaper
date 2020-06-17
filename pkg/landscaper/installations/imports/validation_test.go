@@ -15,7 +15,6 @@
 package imports_test
 
 import (
-	"context"
 	"sync"
 
 	"github.com/go-logr/logr/testing"
@@ -93,7 +92,7 @@ var _ = g.Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(context.TODO(), inInstRoot)
+			err = val.Validate(inInstRoot)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -116,7 +115,7 @@ var _ = g.Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(context.TODO(), inInstRoot)
+			err = val.Validate(inInstRoot)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -139,7 +138,7 @@ var _ = g.Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(context.TODO(), inInstRoot)
+			err = val.Validate(inInstRoot)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -152,7 +151,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(context.TODO(), inInstA)
+		err = val.Validate(inInstA)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -166,7 +165,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(context.TODO(), inInstA)
+		err = val.Validate(inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -180,7 +179,7 @@ var _ = g.Describe("Validation", func() {
 		inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
 
 		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(context.TODO(), inInstA)
+		err = val.Validate(inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -202,7 +201,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB, inInstC)
-		err = val.Validate(context.TODO(), inInstD)
+		err = val.Validate(inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -222,12 +221,9 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB)
-		err = val.Validate(context.TODO(), inInstC)
+		err = val.Validate(inInstC)
 		Expect(err).To(HaveOccurred())
 		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
 
-	g.It("should validate the import satisfaction based on a given context", func() {
-		Expect(true).To(BeTrue())
-	})
 })

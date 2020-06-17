@@ -15,8 +15,6 @@
 package imports
 
 import (
-	"context"
-
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -37,7 +35,7 @@ func NewValidator(op installations.Operation, landscapeConfig *landscapeconfig.L
 
 // Validate traverses through all components and validates if all imports are
 // satisfied with the correct version
-func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
+func (v *Validator) Validate(inst *installations.Installation) error {
 	fldPath := field.NewPath(inst.Info.Name)
 	for i, importMapping := range inst.Info.Spec.Imports {
 		impPath := fldPath.Index(i)

@@ -15,26 +15,30 @@
 package fake_client
 
 import (
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
-	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 )
 
 // State contains the state of initialized fake client
 type State struct {
 	DataTypes     map[string]*lsv1alpha1.DataType
 	Installations map[string]*lsv1alpha1.ComponentInstallation
+	Secrets       map[string]*corev1.Secret
 }
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
@@ -43,6 +47,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	state := &State{
 		DataTypes:     make(map[string]*lsv1alpha1.DataType),
 		Installations: make(map[string]*lsv1alpha1.ComponentInstallation),
+		Secrets:       make(map[string]*corev1.Secret),
 	}
 	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -81,7 +86,7 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 		state.Installations[types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}.String()] = inst
 		return append(objects, inst), nil
 	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode fil"))
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	dt := &lsv1alpha1.DataType{}
 	_, _, err = decoder.Decode(data, nil, dt)
@@ -89,7 +94,15 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
 		return append(objects, inst), nil
 	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode fil"))
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
+	secret := &corev1.Secret{}
+	_, _, err = decoder.Decode(data, nil, secret)
+	if err == nil {
+		state.Secrets[types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}.String()] = secret
+		return append(objects, inst), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	return nil, allErrors
 }

@@ -165,6 +165,20 @@ spec:
                 - name
                 - namespace
                 type: object
+              importRef:
+                description: ImportReference references the object that contains the
+                  temporary imported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
               imports:
                 description: Imports contain the state of the imported values.
                 items:

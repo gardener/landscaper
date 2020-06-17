@@ -30,7 +30,7 @@ func Validate(dt Datatype, data interface{}) error {
 		return err
 	}
 
-	// todo: add referenced types to root scheme
+	// adds referenced types to root scheme
 	root, err := createRootSchemaFromReferencedTypes(dt.Referenced)
 	if err != nil {
 		return err
