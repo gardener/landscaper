@@ -17,10 +17,8 @@ spec:
     to: .kubeconfig
 
   - from: .dep.helmchart.etcd
-    type: helmchart
     to: .helmchart.etcd
   - from: .dep.helmchart.kube-apiserver-controllermanager
-    type: helmchart
     to: .helmchart.kube-apiserver-controllermanager
   - from: .dep.image.etcd
     type: image

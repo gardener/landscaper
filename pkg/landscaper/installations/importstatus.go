@@ -26,9 +26,23 @@ type ImportStatus struct {
 	To   map[string]*lsv1alpha1.ImportState
 }
 
-func (s *ImportStatus) add(status lsv1alpha1.ImportState) {
+func (s *ImportStatus) set(status lsv1alpha1.ImportState) {
 	s.From[status.From] = &status
 	s.To[status.To] = &status
+}
+
+// Updates the internal import states
+func (s *ImportStatus) Update(state lsv1alpha1.ImportState) {
+	s.set(state)
+}
+
+// GetStates returns the import states of the installation.
+func (s *ImportStatus) GetStates() []lsv1alpha1.ImportState {
+	states := make([]lsv1alpha1.ImportState, 0)
+	for _, state := range s.To {
+		states = append(states, *state)
+	}
+	return states
 }
 
 // GetFrom returns the component state for the given From key.

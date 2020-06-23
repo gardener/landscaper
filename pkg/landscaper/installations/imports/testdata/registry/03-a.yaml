@@ -10,4 +10,4 @@ imports:
 
 exports:
 - key: a.z
-  type: number
+  type: string

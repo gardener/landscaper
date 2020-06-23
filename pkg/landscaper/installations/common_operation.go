@@ -90,7 +90,7 @@ func (o *operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	inst.Status.ObservedGeneration = inst.Generation
 	if err := o.client.Status().Update(ctx, inst); err != nil {
-		o.log.Error(err, "unable to update installation status")
+		o.log.Error(err, "unable to set installation status")
 		return err
 	}
 	return nil

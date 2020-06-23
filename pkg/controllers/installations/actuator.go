@@ -18,12 +18,16 @@ import (
 	"context"
 	"io/ioutil"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 
 	"github.com/go-logr/logr"
@@ -33,7 +37,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -88,6 +91,16 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
+	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
+	// we need to check if all required imports are satisfied.
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, inst); err != nil {
+			return reconcile.Result{Requeue: true}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
 	definition, err := a.registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
 	if err != nil {
 		a.log.Error(err, "unable to get definition")
@@ -123,14 +136,20 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err := a.Ensure(ctx, op, internalInstallation); err != nil {
+	// todo: get lsconfig
+	if err := a.Ensure(ctx, op, nil, internalInstallation); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst *installations.Installation) error {
+func (a *actuator) Ensure(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
+	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+		return err
+	}
+
 	// check that all referenced definitions have a corresponding installation
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
@@ -138,13 +157,13 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst 
 		return err
 	}
 
-	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
-	// we need to check if all required imports are satisfied
-	if !lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) && inst.Info.Status.Phase != lsv1alpha1.ComponentPhaseWaitingDeps {
-		return nil
+	// generate the current context for the installation.
+	instOp, err := installations.NewInstallationOperation(ctx, op, inst)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create installation context")
 	}
 
-	validator := imports.NewValidator(op, nil, nil, nil)
+	validator := imports.NewValidator(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
 	if err := validator.Validate(inst); err != nil {
 		a.log.Error(err, "unable to validate imports")
 		return err
@@ -153,15 +172,16 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst 
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 
-	// only needed if execution are processed
-	importedConfig, err := a.collectImports(ctx, nil, inst.Info)
-	if err != nil {
-		a.log.Error(err, "unable to collect imports")
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 		return err
 	}
 
-	if err := a.runExecutions(ctx, inst.Info, importedConfig); err != nil {
-		a.log.Error(err, "error during execution")
+	// only needed if execution are processed
+	constructor := imports.NewConstructor(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
+	_, err = constructor.Construct(ctx, inst)
+	if err != nil {
+		a.log.Error(err, "unable to collect imports")
 		return err
 	}
 
@@ -169,25 +189,30 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, inst 
 		return err
 	}
 
+	if err := a.runExecutions(ctx, inst.Info, nil); err != nil {
+		a.log.Error(err, "error during execution")
+		return err
+	}
+
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
-	if err := a.validateExports(ctx, inst.Info); err != nil {
+	if err := exports.NewValidator(op).Validate(ctx, inst); err != nil {
 		a.log.Error(err, "error during export validation")
 		return err
 	}
 
+	// update import status
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseCompleted
+	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
+	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+		return err
+	}
+
 	// as all exports are validated, lets trigger dependant components
-	if err := a.triggerDependants(ctx, inst.Info); err != nil {
+	// todo: check if this is a must, maybe track what we already successfully triggered
+	if err := instOp.TriggerDependants(ctx); err != nil {
 		a.log.Error(err, "error during dependant trigger")
 		return err
 	}
-	return nil
-}
-
-func (a *actuator) triggerDependants(ctx context.Context, component *lsv1alpha1.ComponentInstallation) error {
-	return nil
-}
-
-func (a *actuator) validateExports(ctx context.Context, component *lsv1alpha1.ComponentInstallation) error {
 	return nil
 }

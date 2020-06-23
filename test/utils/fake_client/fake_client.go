@@ -92,15 +92,24 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	_, _, err = decoder.Decode(data, nil, dt)
 	if err == nil {
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
-		return append(objects, inst), nil
+		return append(objects, dt), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	secret := &corev1.Secret{}
 	_, _, err = decoder.Decode(data, nil, secret)
 	if err == nil {
+
+		// add stringdata and data
+		if secret.Data == nil {
+			secret.Data = make(map[string][]byte)
+		}
+		for key, data := range secret.StringData {
+			secret.Data[key] = []byte(data)
+		}
+
 		state.Secrets[types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}.String()] = secret
-		return append(objects, inst), nil
+		return append(objects, secret), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 

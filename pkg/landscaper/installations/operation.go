@@ -17,6 +17,8 @@ package installations
 import (
 	"context"
 
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,4 +74,32 @@ func (o *InstallationOperation) GetRootInstallations(ctx context.Context, opts .
 		installations[i] = &inst
 	}
 	return installations, nil
+}
+
+// TriggerDependants triggers all installations that depend on the current installation.
+// These are most likely all installation that import a key which is exported by the current installation.
+func (o *InstallationOperation) TriggerDependants(ctx context.Context) error {
+
+	for _, sibling := range o.Context().Siblings {
+		if !importsAnyExport(o.Inst, sibling) {
+			continue
+		}
+
+		// todo: maybe use patch
+		metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		if err := o.Client().Update(ctx, sibling.Info); err != nil {
+			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
+		}
+	}
+
+	return nil
+}
+
+func importsAnyExport(exporter, importer *Installation) bool {
+	for _, export := range exporter.Info.Spec.Exports {
+		if _, err := importer.GetImportMappingFrom(export.To); err != nil {
+			return true
+		}
+	}
+	return false
 }

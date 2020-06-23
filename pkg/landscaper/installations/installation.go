@@ -56,7 +56,7 @@ func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefini
 	}
 
 	for _, importStatus := range inst.Status.Imports {
-		internalInst.importsStatus.add(importStatus)
+		internalInst.importsStatus.set(importStatus)
 	}
 
 	return internalInst, nil
@@ -76,6 +76,17 @@ func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.DefinitionImp
 	return def, nil
 }
 
+// GetImportMappingFrom returns the import mapping of the installation that imports data from the given key
+func (i *Installation) GetImportMappingFrom(key string) (lsv1alpha1.DefinitionImportMapping, error) {
+	for _, mapping := range i.Info.Spec.Imports {
+		if mapping.From == key {
+			return mapping, nil
+		}
+	}
+
+	return lsv1alpha1.DefinitionImportMapping{}, fmt.Errorf("import mapping for key %s not found", key)
+}
+
 // GetExportDefinition return the export definition for a given key
 func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExport, error) {
 	def, ok := i.exports[key]
@@ -85,7 +96,7 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExp
 	return def, nil
 }
 
-// GetExportMappingTo returns the export mapping of the installation that exports to the fiven key
+// GetExportMappingTo returns the export mapping of the installation that exports to the given key
 func (i *Installation) GetExportMappingTo(key string) (lsv1alpha1.DefinitionExportMapping, error) {
 	for _, mapping := range i.Info.Spec.Exports {
 		if mapping.To == key {

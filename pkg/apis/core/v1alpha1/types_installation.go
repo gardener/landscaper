@@ -26,11 +26,14 @@ const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
 const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
 
+// ValidateExportCondition is the Conditions type to indicate validation status of teh exported data.
+const ValidateExportCondition ConditionType = "ValidateExport"
+
 type ComponentInstallationPhase string
 
 const (
 	ComponentPhaseInit        ComponentInstallationPhase = "Init"
-	ComponentPhaseWaitingDeps ComponentInstallationPhase = "WaitingDependencies"
+	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
 	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
 	ComponentPhaseCompleted   ComponentInstallationPhase = "Completed"
 	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"

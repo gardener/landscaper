@@ -28,5 +28,5 @@ status:
   imports:
   - from: a.z
     to: b.a
-    configGeneration: 5
+    configGeneration: 4
 

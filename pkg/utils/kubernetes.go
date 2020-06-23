@@ -15,8 +15,13 @@
 package utils
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // OwnerOfGVK validates whether a instance of the given gvk is referenced
@@ -31,4 +36,26 @@ func OwnerOfGVK(ownerRefs []metav1.OwnerReference, gvk schema.GroupVersionKind) 
 		}
 	}
 	return "", false
+}
+
+// TypedObjectReferenceFromObject creates a typed object reference from a object.
+func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) (*lsv1alpha1.TypedObjectReference, error) {
+	metaObj, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return nil, err
+	}
+
+	return &lsv1alpha1.TypedObjectReference{
+		APIGroup: gvk.GroupVersion().String(),
+		Kind:     gvk.Kind,
+		ObjectReference: lsv1alpha1.ObjectReference{
+			Name:      metaObj.GetName(),
+			Namespace: metaObj.GetNamespace(),
+		},
+	}, nil
 }

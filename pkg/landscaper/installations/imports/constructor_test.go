@@ -91,6 +91,8 @@ var _ = g.Describe("Validation", func() {
 			},
 		)
 		Expect(err).ToNot(HaveOccurred())
+		lsConfig.Info.Name = "ls"
+		lsConfig.Info.Namespace = "default"
 
 		expectedConfig := map[string]interface{}{
 			"root": map[string]interface{}{
@@ -107,16 +109,29 @@ var _ = g.Describe("Validation", func() {
 		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
 
 		Expect(res).To(Equal(expectedConfig))
+		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(lsv1alpha1.ImportState{
+			From: "ext.a",
+			To:   "root.a",
+			SourceRef: &lsv1alpha1.TypedObjectReference{
+				APIGroup: "landscaper.gardener.cloud/v1alpha1",
+				Kind:     "LandscapeConfiguration",
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Name:      "ls",
+					Namespace: "default",
+				},
+			},
+			ConfigGeneration: 8,
+		}))
 	})
 
 	g.It("should construct the imported config from a sibling", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
+		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -131,7 +146,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(data).ToNot(BeNil())
 
 		res := make(map[string]interface{})
-		Expect(yaml.Unmarshal(data, &res)).To(HaveOccurred())
+		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
 
 		Expect(res).To(Equal(expectedConfig))
 	})
@@ -173,7 +188,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(data).ToNot(BeNil())
 
 		res := make(map[string]interface{})
-		Expect(yaml.Unmarshal(data, &res)).To(HaveOccurred())
+		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
 
 		Expect(res).To(Equal(expectedConfig))
 	})

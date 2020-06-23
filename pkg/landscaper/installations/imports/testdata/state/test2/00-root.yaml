@@ -19,7 +19,7 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: 5
 
   importRef:
     name: root-import-config
@@ -28,7 +28,7 @@ status:
   imports:
   - from: ext.a
     to: root.a
-    configGeneration: 7
+    configGeneration: 5
     sourceRef:
       apiGroup: landscaper.gardener.cloud/v1alpha1
       kind: LandscapeConfiguration

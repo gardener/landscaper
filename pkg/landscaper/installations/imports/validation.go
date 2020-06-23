@@ -23,6 +23,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
+// NewValidator creates new import validator.
+// It validates if all imports of a component are satisfied given a context.
 func NewValidator(op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
 	return &Validator{
 		Operation: op,
@@ -87,19 +89,19 @@ func (v *Validator) checkIfLandscapeConfigForMapping(fldPath *field.Path, inst *
 	if err != nil {
 		return err
 	}
-	importState, err := inst.ImportStatus().GetTo(mapping.To)
-	if err != nil {
-		return err
-	}
+	//importState, err := inst.ImportStatus().GetTo(mapping.To)
+	//if err != nil {
+	//	return err
+	//}
 
 	var val interface{}
 	if err := v.lsConfig.Data.GetData(mapping.From, &val); err != nil {
 		return NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
 	}
 
-	if importState.ConfigGeneration >= v.lsConfig.Info.Status.ConfigGeneration {
-		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
-	}
+	//if importState.ConfigGeneration >= v.lsConfig.Info.Status.ConfigGeneration {
+	//	return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
+	//}
 
 	// validate types
 	dt, ok := v.GetDataType(importDef.Type)
@@ -118,20 +120,20 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 	if err != nil {
 		return err
 	}
-	importState, err := inst.ImportStatus().GetTo(mapping.To)
-	if err != nil {
-		return err
-	}
+	//importState, err := inst.ImportStatus().GetTo(mapping.To)
+	//if err != nil {
+	//	return err
+	//}
 
 	// check if the parent also imports my import
 	parentImport, err := v.parent.GetImportDefinition(mapping.From)
 	if err != nil {
 		return NewImportNotFoundErrorf(err, "%s: ImportDefinition not found", fldPath.String())
 	}
-	parentImportState, err := v.parent.ImportStatus().GetTo(mapping.From)
-	if err != nil {
-		return NewImportNotFoundErrorf(err, "%s: Import state not found", fldPath.String())
-	}
+	//parentImportState, err := v.parent.ImportStatus().GetTo(mapping.From)
+	//if err != nil {
+	//	return NewImportNotFoundErrorf(err, "%s: Import state not found", fldPath.String())
+	//}
 
 	// parent has to be progressing
 	if v.parent.Info.Status.Phase != v1alpha1.ComponentPhaseProgressing {
@@ -143,9 +145,9 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 	}
 
 	// check if the import of the parent is of v higher generation
-	if importState.ConfigGeneration >= parentImportState.ConfigGeneration {
-		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
-	}
+	//if importState.ConfigGeneration >= parentImportState.ConfigGeneration {
+	//	return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
+	//}
 
 	return nil
 }
@@ -171,10 +173,10 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 	if err != nil {
 		return err
 	}
-	importState, err := inst.ImportStatus().GetTo(mapping.To)
-	if err != nil {
-		return err
-	}
+	//importState, err := inst.ImportStatus().GetTo(mapping.To)
+	//if err != nil {
+	//	return err
+	//}
 
 	// search in the sibling for the export mapping where importmap.from == exportmap.to
 	exportMapping, err := sibling.GetExportMappingTo(mapping.From)
@@ -197,9 +199,9 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 	}
 
 	// check if the import of the parent is of v higher generation
-	if importState.ConfigGeneration >= sibling.Info.Status.ConfigGeneration {
-		return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
-	}
+	//if importState.ConfigGeneration >= sibling.Info.Status.ConfigGeneration {
+	//	return NewImportNotSatisfiedErrorf(nil, "%s: import has already run", fldPath.String())
+	//}
 
 	// todo: check generation of other components in the dependency tree
 	// we expect the parent's exported config generation to equal the highest among all subcomponents

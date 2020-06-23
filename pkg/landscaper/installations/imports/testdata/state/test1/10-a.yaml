@@ -22,7 +22,7 @@ spec:
     to: a.z
 
 status:
-  phase: Progressing
+  phase: Completed
   configGeneration: 5
 
   exportRef:

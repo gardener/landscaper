@@ -155,20 +155,20 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	g.It("should reject when the import of a component is defined by its parent with a already reconciled version", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
-		Expect(err).ToNot(HaveOccurred())
-
-		instRoot := fakeInstallations["test1/root"]
-		instRoot.Status.Imports[0].ConfigGeneration = 5
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, instRoot)
-		Expect(err).ToNot(HaveOccurred())
-
-		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(inInstA)
-		Expect(err).To(HaveOccurred())
-		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
-	})
+	//g.It("should reject when the import of a component is defined by its parent with a already reconciled version", func() {
+	//	inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
+	//	Expect(err).ToNot(HaveOccurred())
+	//
+	//	instRoot := fakeInstallations["test1/root"]
+	//	instRoot.Status.Imports[0].ConfigGeneration = 5
+	//	inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, instRoot)
+	//	Expect(err).ToNot(HaveOccurred())
+	//
+	//	val := imports.NewValidator(op, nil, inInstRoot)
+	//	err = val.Validate(inInstA)
+	//	Expect(err).To(HaveOccurred())
+	//	Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
+	//})
 
 	g.It("should reject the validation when the parent component is not progressing", func() {
 		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
