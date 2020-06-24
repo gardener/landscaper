@@ -18,16 +18,11 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 
 	"github.com/go-logr/logr"
@@ -101,6 +96,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
+		// handle abort..
+	}
+
 	definition, err := a.registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
 	if err != nil {
 		a.log.Error(err, "unable to get definition")
@@ -142,77 +141,4 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func (a *actuator) Ensure(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
-
-	// check that all referenced definitions have a corresponding installation
-	subinstallation := subinstallations.New(op)
-	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
-		a.log.Error(err, "unable to ensure sub installations")
-		return err
-	}
-
-	// generate the current context for the installation.
-	instOp, err := installations.NewInstallationOperation(ctx, op, inst)
-	if err != nil {
-		return errors.Wrapf(err, "unable to create installation context")
-	}
-
-	validator := imports.NewValidator(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
-	if err := validator.Validate(inst); err != nil {
-		a.log.Error(err, "unable to validate imports")
-		return err
-	}
-
-	// as all imports are satisfied we can collect and merge all imports
-	// and then start the executions
-
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
-
-	// only needed if execution are processed
-	constructor := imports.NewConstructor(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
-	_, err = constructor.Construct(ctx, inst)
-	if err != nil {
-		a.log.Error(err, "unable to collect imports")
-		return err
-	}
-
-	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info); err != nil {
-		return err
-	}
-
-	if err := a.runExecutions(ctx, inst.Info, nil); err != nil {
-		a.log.Error(err, "error during execution")
-		return err
-	}
-
-	// when all executions are finished and the exports are uploaded
-	// we have to validate the uploaded exports
-	if err := exports.NewValidator(op).Validate(ctx, inst); err != nil {
-		a.log.Error(err, "error during export validation")
-		return err
-	}
-
-	// update import status
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseCompleted
-	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
-
-	// as all exports are validated, lets trigger dependant components
-	// todo: check if this is a must, maybe track what we already successfully triggered
-	if err := instOp.TriggerDependants(ctx); err != nil {
-		a.log.Error(err, "error during dependant trigger")
-		return err
-	}
-	return nil
 }

@@ -60,6 +60,20 @@ spec:
                   - type
                   type: object
                 type: array
+              importRef:
+                description: ImportReference is the reference to the object containing
+                  all imported values.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
             required:
             - executions
             type: object

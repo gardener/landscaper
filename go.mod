@@ -3,6 +3,8 @@ module github.com/gardener/landscaper
 go 1.13
 
 require (
+	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/Pallinder/go-randomdata v1.2.0 // indirect
 	github.com/cstockton/go-conv v0.0.0-20170524002450-66a2b2ba36e1 // indirect
@@ -20,9 +22,12 @@ require (
 	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
+	github.com/masterminds/sprig v2.22.0+incompatible
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1

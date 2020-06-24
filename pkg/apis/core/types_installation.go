@@ -90,10 +90,10 @@ type ComponentInstallationStatus struct {
 	ConfigGeneration int64 `json:"configGeneration"`
 
 	// ExportReference references the object that contains the exported values.
-	ExportReference ObjectReference `json:"exportRef,omitempty"`
+	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
 	// ImportReference references the object that contains the temporary imported values.
-	ImportReference ObjectReference `json:"importRef,omitempty"`
+	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Imports contain the state of the imported values.
 	Imports []ImportState `json:"imports,omitempty"`
@@ -103,7 +103,7 @@ type ComponentInstallationStatus struct {
 	InstallationReferences []NamedObjectReference `json:"installationRefs,omitempty"`
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
-	ExecutionReference ObjectReference `json:"executionRefs,omitempty"`
+	ExecutionReference *ObjectReference `json:"executionRefs,omitempty"`
 }
 
 // ImportState hold the state of a import

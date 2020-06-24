@@ -563,17 +563,11 @@ func autoConvert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallat
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.ConfigGeneration = in.ConfigGeneration
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
+	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
 	out.Imports = *(*[]core.ImportState)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ExecutionReference, &out.ExecutionReference, s); err != nil {
-		return err
-	}
+	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
 	return nil
 }
 
@@ -587,17 +581,11 @@ func autoConvert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallat
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.ConfigGeneration = in.ConfigGeneration
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
-		return err
-	}
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
+	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
 	out.Imports = *(*[]ImportState)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ExecutionReference, &out.ExecutionReference, s); err != nil {
-		return err
-	}
+	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
 	return nil
 }
 
@@ -988,7 +976,7 @@ func Convert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemL
 
 func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, out *core.DeployItemSpec, s conversion.Scope) error {
 	out.Type = in.Type
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReferences, &out.ImportReferences, s); err != nil {
+	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
 		return err
 	}
 	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
@@ -1002,7 +990,7 @@ func Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, 
 
 func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemSpec, out *DeployItemSpec, s conversion.Scope) error {
 	out.Type = in.Type
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReferences, &out.ImportReferences, s); err != nil {
+	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
 		return err
 	}
 	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
@@ -1117,6 +1105,9 @@ func Convert_core_ExecutionList_To_v1alpha1_ExecutionList(in *core.ExecutionList
 }
 
 func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out *core.ExecutionSpec, s conversion.Scope) error {
+	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
+		return err
+	}
 	out.Executions = *(*[]core.ExecutionItem)(unsafe.Pointer(&in.Executions))
 	return nil
 }
@@ -1127,6 +1118,9 @@ func Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out
 }
 
 func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.ExecutionSpec, out *ExecutionSpec, s conversion.Scope) error {
+	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
+		return err
+	}
 	out.Executions = *(*[]ExecutionItem)(unsafe.Pointer(&in.Executions))
 	return nil
 }

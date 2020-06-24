@@ -30,14 +30,14 @@ import (
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
-func (a *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.ComponentInstallation) error {
+func (a *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, operation lsv1alpha1.Operation) error {
 	for _, instRef := range inst.Status.InstallationReferences {
 		subInst := &lsv1alpha1.ComponentInstallation{}
 		if err := a.Client().Get(ctx, instRef.Reference.NamespacedName(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 
-		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(operation))
 		if err := a.Client().Update(ctx, subInst); err != nil {
 			return errors.Wrapf(err, "unable to update sub installation %s", instRef.Reference.NamespacedName().String())
 		}

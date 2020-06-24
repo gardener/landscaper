@@ -75,6 +75,7 @@ type Operation string
 
 const (
 	ReconcileOperation Operation = "reconcile"
+	AbortOperation Operation = "abort"
 )
 
 // ObjectReference is the reference to a kubernetes object.

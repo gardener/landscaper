@@ -16,12 +16,16 @@ package installations
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -92,6 +96,32 @@ func (o *InstallationOperation) TriggerDependants(ctx context.Context) error {
 		}
 	}
 
+	return nil
+}
+
+// UpdateImportReference updates the data object that holds the imported values
+func (o *InstallationOperation) UpdateImportReference(ctx context.Context, values interface{}) error {
+	obj := &corev1.Secret{}
+	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
+	obj.Namespace = o.Inst.Info.Namespace
+	if o.Inst.Info.Status.ImportReference != nil {
+		obj.Name = o.Inst.Info.Status.ImportReference.Name
+		obj.Namespace = o.Inst.Info.Status.ImportReference.Namespace
+	}
+
+	data, err := yaml.Marshal(values)
+	if err != nil {
+		return err
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
+		obj.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -57,6 +57,9 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
+	// ImportReference is the reference to the object containing all imported values.
+	ImportReference ObjectReference `json:"importRef,omitempty"`
+
 	// Executions defines all execution items that need to be scheduled.
 	Executions []ExecutionItem `json:"executions"`
 }

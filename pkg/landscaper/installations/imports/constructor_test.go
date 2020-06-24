@@ -23,7 +23,6 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
@@ -101,12 +100,9 @@ var _ = g.Describe("Validation", func() {
 		}
 
 		c := imports.NewConstructor(op, lsConfig, nil)
-		data, err := c.Construct(context.TODO(), inInstRoot)
+		res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(data).ToNot(BeNil())
-
-		res := make(map[string]interface{})
-		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
+		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
 		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(lsv1alpha1.ImportState{
@@ -141,12 +137,9 @@ var _ = g.Describe("Validation", func() {
 		}
 
 		c := imports.NewConstructor(op, nil, inInstRoot, inInstA)
-		data, err := c.Construct(context.TODO(), inInstB)
+		res, err := c.Construct(context.TODO(), inInstB)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(data).ToNot(BeNil())
-
-		res := make(map[string]interface{})
-		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
+		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
 	})
@@ -183,12 +176,9 @@ var _ = g.Describe("Validation", func() {
 		}
 
 		c := imports.NewConstructor(op, lsConfig, inInstRoot, inInstA)
-		data, err := c.Construct(context.TODO(), inInstC)
+		res, err := c.Construct(context.TODO(), inInstC)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(data).ToNot(BeNil())
-
-		res := make(map[string]interface{})
-		Expect(yaml.Unmarshal(data, &res)).ToNot(HaveOccurred())
+		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
 	})

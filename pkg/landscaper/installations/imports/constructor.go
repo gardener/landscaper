@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
@@ -44,7 +43,7 @@ func NewConstructor(op installations.Operation, landscapeConfig *landscapeconfig
 
 // Construct loads all imported data from the datasources (either installations or the landscape config)
 // and creates the imported configuration.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]byte, error) {
+func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (interface{}, error) {
 	var (
 		fldPath = field.NewPath(inst.Info.Name)
 		values  = make(map[string]interface{}, 0)
@@ -60,7 +59,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 		values = utils.MergeMaps(values, newValues)
 	}
 
-	return yaml.Marshal(values)
+	return values, nil
 }
 
 func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {

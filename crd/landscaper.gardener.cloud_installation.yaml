@@ -182,7 +182,7 @@ spec:
               imports:
                 description: Imports contain the state of the imported values.
                 items:
-                  description: ImportState hold the state of a import
+                  description: ImportState hold the state of a import.
                   properties:
                     configGeneration:
                       description: ConfigGeneration is the generation of the imported

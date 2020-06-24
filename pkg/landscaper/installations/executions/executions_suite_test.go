@@ -12,29 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package installations
+package executions
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	"testing"
 
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
-	}
-
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentInstallations"), a); err != nil {
-		return err
-	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ComponentInstallation{}).
-		Owns(&v1alpha1.Execution{}).
-		Owns(&v1alpha1.ComponentInstallation{}).
-		Complete(a)
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Installations Executions Test Suite")
 }

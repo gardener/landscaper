@@ -51,8 +51,8 @@ type DeployItemSpec struct {
 	// DataType is the type of the deployer that should handle the item.
 	Type string `json:"type"`
 
-	// ImportReferences is the reference to the object containing all imported values.
-	ImportReferences ObjectReference `json:"importRef,omitempty"`
+	// ImportReference is the reference to the object containing all imported values.
+	ImportReference ObjectReference `json:"importRef,omitempty"`
 
 	// Configuration contains the deployer type specific configuration.
 	Configuration json.RawMessage `json:"config,omitempty"`

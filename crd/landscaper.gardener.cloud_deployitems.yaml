@@ -41,7 +41,7 @@ spec:
                 description: Configuration contains the deployer type specific configuration.
                 type: Any
               importRef:
-                description: ImportReferences is the reference to the object containing
+                description: ImportReference is the reference to the object containing
                   all imported values.
                 properties:
                   name:
