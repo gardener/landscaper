@@ -44,7 +44,7 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		return err
 	}
 
-	subState, err := subinstallation.CombinedState(ctx) // tbd
+	subState, err := subinstallation.CombinedState(ctx, inst)
 	if err != nil {
 		return err
 	}

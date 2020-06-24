@@ -17,9 +17,24 @@ package subinstallations
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-func (o *Operation) CombinedState(ctx context.Context) (lsv1alpha1.ComponentInstallationPhase, error) {
-	return "", nil
+// CombinedState returns the combined state of all subinstallations
+func (o *Operation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ComponentInstallationPhase, error) {
+	subinsts, err := o.getSubInstallations(ctx, inst.Info)
+	if err != nil {
+		return lsv1alpha1.ComponentPhaseFailed, err
+	}
+
+	phases := make([]lsv1alpha1.ComponentInstallationPhase, len(subinsts))
+
+	for _, v := range subinsts {
+		phases = append(phases, v.Status.Phase)
+	}
+
+	return helper.CombinedInstallationPhase(phases...), nil
 }
