@@ -190,7 +190,7 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 		return NewImportNotFoundErrorf(err, "%s: ImportDefinition not found", fldPath.String())
 	}
 
-	if sibling.Info.Status.Phase != v1alpha1.ComponentPhaseCompleted {
+	if sibling.Info.Status.Phase != v1alpha1.ComponentPhaseSucceeded {
 		return NewImportNotSatisfiedErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 

@@ -71,9 +71,8 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		return err
 	}
 
-
 	inst.Info.Status.ExecutionReference = lsv1alpha1.ObjectReference{
-		Name: exec.Name,
+		Name:      exec.Name,
 		Namespace: exec.Namespace,
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,

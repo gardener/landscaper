@@ -14,8 +14,12 @@
 
 package subinstallations
 
-import "context"
+import (
+	"context"
 
-func (o *Operation) Completed(ctx context.Context) bool {
-	return false
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+)
+
+func (o *Operation) CombinedState(ctx context.Context) (lsv1alpha1.ComponentInstallationPhase, error) {
+	return "", nil
 }

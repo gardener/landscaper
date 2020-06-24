@@ -24,7 +24,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-
 var _ = Describe("Template", func() {
 
 	It("should return the raw template if no templating funcs are defined", func() {

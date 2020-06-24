@@ -39,7 +39,7 @@ const (
 	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
 	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
 	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
-	ComponentPhaseCompleted   ComponentInstallationPhase = "Completed"
+	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
 	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"
 )
 

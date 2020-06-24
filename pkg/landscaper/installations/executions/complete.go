@@ -21,16 +21,16 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
-func (o *ExecutionOperation) Completed(ctx context.Context, inst *installations.Installation) (bool, error) {
+func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ExecutionPhase, error) {
 	if inst.Info.Status.ExecutionReference == nil {
-		return true, nil
+		return "", nil
 	}
 
 	exec := &lsv1alpha1.Execution{}
 	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
-		return false, err
+		return "", err
 	}
-	return exec.Status.Phase == lsv1alpha1.ExecutionPhaseCompleted || exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed, nil
+	return exec.Status.Phase, nil
 }
 
 func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installations.Installation) error {

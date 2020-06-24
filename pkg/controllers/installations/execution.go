@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
@@ -38,41 +39,58 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 	subinstallation := subinstallations.New(op)
 	exec := executions.New(op)
 
-	execCompleted, err := exec.Completed(ctx, inst)
+	execState, err := exec.CombinedState(ctx, inst)
 	if err != nil {
 		return err
 	}
 
-	if !subinstallation.Completed(ctx) || !execCompleted {
+	subState, err := subinstallation.CombinedState(ctx) // tbd
+	if err != nil {
+		return err
+	}
+
+	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
+
+	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		// if subinstallations are completed and execution is completed
-		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
+		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 			return err
 		}
 
-		if inst.Info.Status.ObservedGeneration != inst.Info.Generation {
-			if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.AbortOperation); err != nil {
-				return err
-			}
-			return nil
-		}
-
-		// we were triggered by a child
-
-		// handle subinstallations update
-
+		// we have to wait until all children are finished
 		return nil
 	}
 
-	if inst.Info.Status.Phase == lsv1alpha1.ComponentPhaseCompleted || inst.Info.Status.Phase == lsv1alpha1.ComponentPhaseFailed {
+	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.AbortOperation) {
+		// todo: remove annotation
+		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseAborted
+		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// check if the spec has changed
+	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
 		if err := a.StartNewReconcile(ctx, op, landscapeConfig, inst); err != nil {
 			return err
 		}
 
 		inst.Info.Status.ObservedGeneration = inst.Info.Generation
+		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+			return err
+		}
+		return nil
 	}
 
-	// wait for subinstallations and executions
+	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
+		inst.Info.Status.Phase = combinedState
+		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+			return err
+		}
+		return nil
+	}
 
 	// generate the current context for the installation.
 	instOp, err := installations.NewInstallationOperation(ctx, op, inst)
@@ -86,37 +104,6 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		return err
 	}
 
-	// as all imports are satisfied we can collect and merge all imports
-	// and then start the executions
-
-	// only needed if execution are processed
-	constructor := imports.NewConstructor(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
-	importedValues, err := constructor.Construct(ctx, inst)
-	if err != nil {
-		a.log.Error(err, "unable to collect imports")
-		return err
-	}
-
-	if err := instOp.UpdateImportReference(ctx, importedValues); err != nil {
-		a.log.Error(err, "unable to update import objects")
-		return err
-	}
-
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
-
-	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
-		return err
-	}
-
-	exec := executions.New(op)
-	if err := exec.Ensure(ctx, inst, importedValues); err != nil {
-		a.log.Error(err, "unable to collect imports")
-		return err
-	}
-
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
 	if err := exports.NewValidator(op).Validate(ctx, inst); err != nil {
@@ -125,7 +112,7 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 	}
 
 	// update import status
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseCompleted
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
 	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 		return err
@@ -142,12 +129,7 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 
 func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
 	subinstallation := subinstallations.New(op)
-	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
-		a.log.Error(err, "unable to ensure sub installations")
-		return err
-	}
-
-	instOp, err := installations.NewInstallationOperation(ctx, op, inst) 	// generate the current context for the installation.
+	instOp, err := installations.NewInstallationOperation(ctx, op, inst) // generate the current context for the installation.
 	if err != nil {
 		return errors.Wrapf(err, "unable to create installation context")
 	}
@@ -176,6 +158,11 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Opera
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+		return err
+	}
+
+	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
+		a.log.Error(err, "unable to ensure sub installations")
 		return err
 	}
 

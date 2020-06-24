@@ -30,9 +30,10 @@ type ComponentInstallationPhase string
 
 const (
 	ComponentPhaseInit        ComponentInstallationPhase = "Init"
-	ComponentPhaseWaitingDeps ComponentInstallationPhase = "WaitingDependencies"
+	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
 	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
-	ComponentPhaseCompleted   ComponentInstallationPhase = "Completed"
+	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
+	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
 	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"
 )
 

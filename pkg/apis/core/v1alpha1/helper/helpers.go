@@ -139,3 +139,63 @@ func CreateOrUpdateVersionedObjectReferences(refs []v1alpha1.VersionedObjectRefe
 		ObservedGeneration: gen,
 	})
 }
+
+// IsCompletedInstallationPhase returns true if the phase indicates a final state.
+func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
+	return phase == v1alpha1.ComponentPhaseFailed || phase == v1alpha1.ComponentPhaseAborted || phase == v1alpha1.ComponentPhaseSucceeded
+}
+
+// CombinedInstallationPhase returns the combined phase of multiple installation's phases.
+func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1alpha1.ComponentInstallationPhase {
+	if len(phases) == 0 {
+		return v1alpha1.ComponentPhaseInit
+	}
+	var (
+		failed  bool
+		aborted bool
+		init    bool
+	)
+	for _, phase := range phases {
+		if phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending {
+			return v1alpha1.ComponentPhaseProgressing
+		}
+		switch phase {
+		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending:
+			return v1alpha1.ComponentPhaseProgressing
+		case v1alpha1.ComponentPhaseFailed:
+			failed = true
+		case v1alpha1.ComponentPhaseAborted:
+			aborted = true
+		case v1alpha1.ComponentPhaseInit:
+			init = true
+		}
+	}
+
+	if aborted {
+		return v1alpha1.ComponentPhaseAborted
+	}
+
+	if failed {
+		return v1alpha1.ComponentPhaseFailed
+	}
+
+	if init {
+		return v1alpha1.ComponentPhaseInit
+	}
+
+	return v1alpha1.ComponentPhaseSucceeded
+}
+
+// IsCompletedExecutionPhase returns true if the phase indicates a final state.
+func IsCompletedExecutionPhase(phase v1alpha1.ExecutionPhase) bool {
+	return IsCompletedInstallationPhase(v1alpha1.ComponentInstallationPhase(phase))
+}
+
+// CombinedExecutionPhase returns the combined phase of multiple execution's phases.
+func CombinedExecutionPhase(phases ...v1alpha1.ExecutionPhase) v1alpha1.ExecutionPhase {
+	intPhases := make([]v1alpha1.ComponentInstallationPhase, len(phases))
+	for i, p := range phases {
+		intPhases[i] = v1alpha1.ComponentInstallationPhase(p)
+	}
+	return v1alpha1.ExecutionPhase(CombinedInstallationPhase(intPhases...))
+}
