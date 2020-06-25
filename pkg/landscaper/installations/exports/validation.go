@@ -48,18 +48,11 @@ func NewValidator(op installations.Operation) *Validator {
 
 // Validate validates the exports of a installation and
 // checks if the config is of the configured form and type.
-func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
+func (v *Validator) Validate(ctx context.Context, inst *installations.Installation, values map[string]interface{}) error {
 	fldPath := field.NewPath(inst.Info.Name)
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateExportCondition)
 
-	// read the export from the referenced secret
-	do, err := v.getExportConfig(ctx, inst)
-	if err != nil {
-		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-			"NotFound", "Export configuration could not be found %s")
-		_ = v.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseFailed, cond)
-		return err
-	}
+	do := &dataobject.DataObject{Data: values}
 
 	if err := v.validateExports(ctx, fldPath, inst, do); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,

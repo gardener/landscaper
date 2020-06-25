@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package imports_test
+package exports_test
 
 import (
 	"context"
@@ -21,15 +21,13 @@ import (
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
@@ -73,110 +71,56 @@ var _ = g.Describe("Constructor", func() {
 		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, internalDataTypes)
 	})
 
-	g.It("should directly construct the data from the landscape config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+	g.It("should construct the exported config from its execution", func() {
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
-
-		lsConfig, err := landscapeconfig.New(
-			&lsv1alpha1.LandscapeConfiguration{
-				Status: lsv1alpha1.LandscapeConfigurationStatus{
-					ConfigGeneration: 8,
-				},
-			},
-			&corev1.Secret{
-				Data: map[string][]byte{
-					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
-				},
-			},
-		)
-		Expect(err).ToNot(HaveOccurred())
-		lsConfig.Info.Name = "ls"
-		lsConfig.Info.Namespace = "default"
 
 		expectedConfig := map[string]interface{}{
 			"root": map[string]interface{}{
-				"a": "val1",
+				"z": "val-exec",
 			},
 		}
 
-		c := imports.NewConstructor(op, lsConfig, nil)
+		c := exports.NewConstructor(op)
 		res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
-		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(lsv1alpha1.ImportState{
-			From: "ext.a",
-			To:   "root.a",
-			SourceRef: &lsv1alpha1.TypedObjectReference{
-				APIGroup: "landscaper.gardener.cloud/v1alpha1",
-				Kind:     "LandscapeConfiguration",
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      "ls",
-					Namespace: "default",
-				},
-			},
-			ConfigGeneration: 8,
-		}))
 	})
 
-	g.It("should construct the imported config from a sibling", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
-		Expect(err).ToNot(HaveOccurred())
-
-		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/b"])
-		Expect(err).ToNot(HaveOccurred())
-
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
+	g.It("should construct the exported config from a siblings", func() {
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
-			"b": map[string]interface{}{
-				"a": "val-a",
+			"root": map[string]interface{}{
+				"z": "val-b",
+				"y": "val-c",
 			},
 		}
 
-		c := imports.NewConstructor(op, nil, inInstRoot, inInstA)
-		res, err := c.Construct(context.TODO(), inInstB)
+		c := exports.NewConstructor(op)
+		res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
 	})
 
-	g.It("should construct the imported config from a sibling and the indirect parent import", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
-		Expect(err).ToNot(HaveOccurred())
-
-		inInstC, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/c"])
-		Expect(err).ToNot(HaveOccurred())
-
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
-		Expect(err).ToNot(HaveOccurred())
-
-		lsConfig, err := landscapeconfig.New(
-			&lsv1alpha1.LandscapeConfiguration{
-				Status: lsv1alpha1.LandscapeConfigurationStatus{
-					ConfigGeneration: 8,
-				},
-			},
-			&corev1.Secret{
-				Data: map[string][]byte{
-					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
-				},
-			},
-		)
+	g.It("should construct the exported config from a siblings and the execution config", func() {
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
-			"c": map[string]interface{}{
-				"a": "val-a",
-				"b": "val1",
+			"root": map[string]interface{}{
+				"z": "val-exec",
+				"x": "val-a",
 			},
 		}
 
-		c := imports.NewConstructor(op, lsConfig, inInstRoot, inInstA)
-		res, err := c.Construct(context.TODO(), inInstC)
+		c := exports.NewConstructor(op)
+		res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 

@@ -81,6 +81,8 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 			return err
 		}
+
+		// need to return and not continue with export validation
 		return nil
 	}
 
@@ -92,21 +94,25 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		return nil
 	}
 
-	// generate the current context for the installation.
-	instOp, err := installations.NewInstallationOperation(ctx, op, inst)
+	instOp, err := installations.NewInstallationOperation(ctx, op, inst) // generate the current context for the installation.
 	if err != nil {
 		return errors.Wrapf(err, "unable to create installation context")
 	}
 
-	validator := imports.NewValidator(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
-	if err := validator.Validate(inst); err != nil {
-		a.log.Error(err, "unable to validate imports")
+	exportedValues, err := exports.NewConstructor(op).Construct(ctx, inst)
+	if err != nil {
+		a.log.Error(err, "error during export construction")
 		return err
 	}
 
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
-	if err := exports.NewValidator(op).Validate(ctx, inst); err != nil {
+	if err := exports.NewValidator(op).Validate(ctx, inst, exportedValues); err != nil {
+		a.log.Error(err, "error during export validation")
+		return err
+	}
+
+	if err := instOp.UpdateExportReference(ctx, exportedValues); err != nil {
 		a.log.Error(err, "error during export validation")
 		return err
 	}
@@ -128,7 +134,6 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 }
 
 func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
-	subinstallation := subinstallations.New(op)
 	instOp, err := installations.NewInstallationOperation(ctx, op, inst) // generate the current context for the installation.
 	if err != nil {
 		return errors.Wrapf(err, "unable to create installation context")
@@ -161,6 +166,7 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Opera
 		return err
 	}
 
+	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
 		a.log.Error(err, "unable to ensure sub installations")
 		return err

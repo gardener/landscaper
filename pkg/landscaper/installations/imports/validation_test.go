@@ -181,7 +181,7 @@ var _ = g.Describe("Validation", func() {
 		val := imports.NewValidator(op, nil, inInstRoot)
 		err = val.Validate(inInstA)
 		Expect(err).To(HaveOccurred())
-		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
+		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
 
 	g.It("should reject when the import of a component is not yet ready", func() {
@@ -203,7 +203,7 @@ var _ = g.Describe("Validation", func() {
 		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB, inInstC)
 		err = val.Validate(inInstD)
 		Expect(err).To(HaveOccurred())
-		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
+		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
 
 	// that one fucked up scenario
@@ -223,7 +223,7 @@ var _ = g.Describe("Validation", func() {
 		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB)
 		err = val.Validate(inInstC)
 		Expect(err).To(HaveOccurred())
-		Expect(imports.IsImportNotSatisfiedError(err)).To(BeTrue())
+		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
 
 })

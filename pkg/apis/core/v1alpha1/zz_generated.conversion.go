@@ -1134,9 +1134,7 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.Phase = core.ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
-		return err
-	}
+	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	return nil
 }
@@ -1150,9 +1148,7 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.Phase = ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ExportReference, &out.ExportReference, s); err != nil {
-		return err
-	}
+	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	return nil
 }

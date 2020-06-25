@@ -99,6 +99,31 @@ func (o *InstallationOperation) TriggerDependants(ctx context.Context) error {
 	return nil
 }
 
+// UpdateExportReference updates the data object that holds the exported values of the installation.
+func (o *InstallationOperation) UpdateExportReference(ctx context.Context, values interface{}) error {
+	obj := &corev1.Secret{}
+	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
+	obj.Namespace = o.Inst.Info.Namespace
+	if o.Inst.Info.Status.ExportReference != nil {
+		obj.Name = o.Inst.Info.Status.ExportReference.Name
+		obj.Namespace = o.Inst.Info.Status.ExportReference.Namespace
+	}
+	data, err := yaml.Marshal(values)
+	if err != nil {
+		return err
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
+		obj.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpdateImportReference updates the data object that holds the imported values
 func (o *InstallationOperation) UpdateImportReference(ctx context.Context, values interface{}) error {
 	obj := &corev1.Secret{}

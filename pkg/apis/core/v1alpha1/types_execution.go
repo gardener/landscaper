@@ -77,7 +77,7 @@ type ExecutionStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ExportReference references the object that contains the exported values.
-	ExportReference ObjectReference `json:"exportReference,omitempty"`
+	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
 	// DeployItemReferences contain the state of all deploy items
 	DeployItemReferences []NamedObjectReference `json:"deployItemRefs,omitempty"`

@@ -34,7 +34,6 @@ type Installation struct {
 
 // New creates a new internal representation of an installation
 func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
-
 	internalInst := &Installation{
 		Info:       inst,
 		Definition: def,
@@ -100,6 +99,17 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExp
 func (i *Installation) GetExportMappingTo(key string) (lsv1alpha1.DefinitionExportMapping, error) {
 	for _, mapping := range i.Info.Spec.Exports {
 		if mapping.To == key {
+			return mapping, nil
+		}
+	}
+
+	return lsv1alpha1.DefinitionExportMapping{}, fmt.Errorf("export mapping for key %s not found", key)
+}
+
+// GetExportMappingFrom returns the export mapping of the installation that exports from the given key
+func (i *Installation) GetExportMappingFrom(key string) (lsv1alpha1.DefinitionExportMapping, error) {
+	for _, mapping := range i.Info.Spec.Exports {
+		if mapping.From == key {
 			return mapping, nil
 		}
 	}

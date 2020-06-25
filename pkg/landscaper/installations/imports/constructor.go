@@ -17,19 +17,18 @@ package imports
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
+// NewConstructor creates a new Import Contructor.
 func NewConstructor(op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
 	return &Constructor{
 		Operation: op,
@@ -68,7 +67,7 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 		if err == nil {
 			return values, nil
 		}
-		if !IsImportNotFoundError(err) {
+		if !installations.IsImportNotFoundError(err) {
 			return nil, err
 		}
 	} else {
@@ -76,7 +75,7 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 		if err == nil {
 			return values, nil
 		}
-		if !IsImportNotFoundError(err) {
+		if !installations.IsImportNotFoundError(err) {
 			return nil, err
 		}
 	}
@@ -92,7 +91,7 @@ func (c *Constructor) tryToConstructFromLandscapeConfig(ctx context.Context, fld
 	var val interface{}
 	if err := c.lsConfig.Data.GetData(mapping.From, &val); err != nil {
 		// can not happen as it is already checked in checkIfLandscapeConfigForMapping
-		return nil, NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
+		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
 	}
 
 	values, err := jsonpath.Construct(mapping.To, val)
@@ -145,12 +144,12 @@ func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *f
 		if err == nil {
 			return values, nil
 		}
-		if !IsImportNotFoundError(err) {
+		if !installations.IsImportNotFoundError(err) {
 			return nil, err
 		}
 	}
 
-	return nil, NewImportNotFoundError("no sibling installation found to satisfy import", nil)
+	return nil, installations.NewImportNotFoundError("no sibling installation found to satisfy import", nil)
 }
 
 func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping, sibling *installations.Installation) (map[string]interface{}, error) {
@@ -182,12 +181,7 @@ func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *fi
 }
 
 func (c *Constructor) constructValuesFromSecret(ctx context.Context, fldPath *field.Path, key types.NamespacedName, mapping lsv1alpha1.DefinitionFieldMapping) (map[string]interface{}, error) {
-	secret := &corev1.Secret{}
-	if err := c.Client().Get(ctx, key, secret); err != nil {
-		return nil, err
-	}
-
-	do, err := dataobject.New(secret)
+	do, err := c.GetDataObjectFromSecret(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +189,7 @@ func (c *Constructor) constructValuesFromSecret(ctx context.Context, fldPath *fi
 	var val interface{}
 	if err := do.GetData(mapping.From, &val); err != nil {
 		// can not happen as it is already checked in checkIfLandscapeConfigForMapping
-		return nil, NewImportNotFoundErrorf(err, "%s: import in config not found", fldPath.String())
+		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in config not found", fldPath.String())
 	}
 
 	return jsonpath.Construct(mapping.To, val)

@@ -152,7 +152,7 @@ spec:
                   - ref
                   type: object
                 type: array
-              exportReference:
+              exportRef:
                 description: ExportReference references the object that contains the
                   exported values.
                 properties:

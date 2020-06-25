@@ -18,6 +18,7 @@ import (
 	"context"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
@@ -49,4 +50,22 @@ func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installatio
 	}
 
 	return nil
+}
+
+// GetExportedValues resturns the exported values of the execution
+func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.Installation) (*dataobject.DataObject, error) {
+	if inst.Info.Status.ExecutionReference == nil {
+		return nil, nil
+	}
+
+	exec := &lsv1alpha1.Execution{}
+	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+		return nil, err
+	}
+
+	if exec.Status.ExportReference == nil {
+		return nil, nil
+	}
+
+	return o.GetDataObjectFromSecret(ctx, exec.Status.ExportReference.NamespacedName())
 }

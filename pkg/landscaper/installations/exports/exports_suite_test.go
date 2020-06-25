@@ -12,29 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package subinstallations
+package exports_test
 
 import (
-	"context"
+	"testing"
 
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// CombinedState returns the combined state of all subinstallations
-func (o *Operation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ComponentInstallationPhase, error) {
-	subinsts, err := o.GetSubInstallations(ctx, inst.Info)
-	if err != nil {
-		return "", err
-	}
-
-	phases := make([]lsv1alpha1.ComponentInstallationPhase, len(subinsts))
-
-	for _, v := range subinsts {
-		phases = append(phases, v.Status.Phase)
-	}
-
-	return helper.CombinedInstallationPhase(phases...), nil
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Installations Exports Test Suite")
 }

@@ -38,6 +38,7 @@ import (
 type State struct {
 	DataTypes     map[string]*lsv1alpha1.DataType
 	Installations map[string]*lsv1alpha1.ComponentInstallation
+	Executions    map[string]*lsv1alpha1.Execution
 	Secrets       map[string]*corev1.Secret
 }
 
@@ -47,6 +48,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	state := &State{
 		DataTypes:     make(map[string]*lsv1alpha1.DataType),
 		Installations: make(map[string]*lsv1alpha1.ComponentInstallation),
+		Executions:    make(map[string]*lsv1alpha1.Execution),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
 	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
@@ -93,6 +95,14 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	if err == nil {
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
 		return append(objects, dt), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
+	exec := &lsv1alpha1.Execution{}
+	_, _, err = decoder.Decode(data, nil, exec)
+	if err == nil {
+		state.Executions[types.NamespacedName{Name: exec.Name, Namespace: exec.Namespace}.String()] = exec
+		return append(objects, exec), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 

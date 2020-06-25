@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package imports
+package installations
 
 import "fmt"
 
@@ -22,6 +22,7 @@ type ErrorReason string
 const (
 	ImportNotFound     ErrorReason = "ImportNotFound"
 	ImportNotSatisfied ErrorReason = "ImportNotSatisfied"
+	ExportNotFound     ErrorReason = "ExportNotFound"
 )
 
 type Error struct {
@@ -63,7 +64,7 @@ func NewImportNotFoundError(message string, err error) error {
 	return NewError(ImportNotFound, message, err)
 }
 
-// NewImportNotFoundErrorf creates a new error that indicates that a import was not found with a fromatted message
+// NewImportNotFoundErrorf creates a new error that indicates that a import was not found with a formatted message
 func NewImportNotFoundErrorf(err error, format string, a ...interface{}) error {
 	return NewErrorf(ImportNotFound, err, format, a...)
 }
@@ -78,7 +79,7 @@ func NewImportNotSatisfiedError(message string, err error) error {
 	return NewError(ImportNotSatisfied, message, err)
 }
 
-// NewImportNotSatisfiedErrorf creates a new error that indicates that a import was not found with a fromatted message
+// NewImportNotSatisfiedErrorf creates a new error that indicates that a import was not found with a formatted message
 func NewImportNotSatisfiedErrorf(err error, format string, a ...interface{}) error {
 	return NewErrorf(ImportNotSatisfied, err, format, a...)
 }
@@ -86,6 +87,21 @@ func NewImportNotSatisfiedErrorf(err error, format string, a ...interface{}) err
 // IsImportNotFoundError checks if the provided error is of type ImportNotSatisfied
 func IsImportNotSatisfiedError(err error) bool {
 	return IsErrorForReason(err, ImportNotSatisfied)
+}
+
+// NewExportNotFoundError creates a new error that indicates that a export was not found
+func NewExportNotFoundError(message string, err error) error {
+	return NewError(ExportNotFound, message, err)
+}
+
+// NewExportNotFoundErrorf creates a new error that indicates that a import was not found with a formatted message
+func NewExportNotFoundErrorf(err error, format string, a ...interface{}) error {
+	return NewErrorf(ExportNotFound, err, format, a...)
+}
+
+// IsExportNotFoundError checks if the provided error is of type ExportNotFound
+func IsExportNotFoundError(err error) bool {
+	return IsErrorForReason(err, ExportNotFound)
 }
 
 // IsErrorForReason checks if the error is a registry error and of the givne reason.

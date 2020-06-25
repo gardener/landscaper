@@ -1,0 +1,44 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentInstallation
+metadata:
+  name: root
+  namespace: test3
+spec:
+
+  definitionRef: root:1.0.0
+
+  imports:
+  - from: ext.a
+    to: root.a
+
+  exports:
+  - from: a.z
+    to: root.x
+  - from: root.y
+    to: root.z
+
+status:
+  phase: Progressing
+  configGeneration: 7
+
+  imports:
+  - from: ext.a
+    to: root.a
+    configGeneration: 7
+    sourceRef:
+      apiGroup: landscaper.gardener.cloud/v1alpha1
+      kind: LandscapeConfiguration
+      name: default
+      namespace: test1
+
+  installationRefs:
+  - name: a
+    ref:
+      name: a
+      namespace: test1
+
+  executionRefs:
+    name: root
+    namespace: test2
+
+  observedGeneration: 0

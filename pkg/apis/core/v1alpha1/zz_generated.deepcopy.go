@@ -691,7 +691,11 @@ func (in *ExecutionStatus) DeepCopyInto(out *ExecutionStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.ExportReference = in.ExportReference
+	if in.ExportReference != nil {
+		in, out := &in.ExportReference, &out.ExportReference
+		*out = new(ObjectReference)
+		**out = **in
+	}
 	if in.DeployItemReferences != nil {
 		in, out := &in.DeployItemReferences, &out.DeployItemReferences
 		*out = make([]NamedObjectReference, len(*in))

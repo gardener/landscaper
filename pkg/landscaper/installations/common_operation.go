@@ -18,11 +18,14 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
@@ -34,6 +37,7 @@ type Operation interface {
 	Scheme() *runtime.Scheme
 	Registry() registry.Registry
 	GetDataType(name string) (*datatype.Datatype, bool)
+	GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error)
 	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
 }
 
@@ -93,4 +97,19 @@ func (o *operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 		return err
 	}
 	return nil
+}
+
+// GetDataObjectFromSecret creates a dataobject from a secret
+func (o *operation) GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error) {
+	secret := &corev1.Secret{}
+	if err := o.Client().Get(ctx, key, secret); err != nil {
+		return nil, err
+	}
+
+	do, err := dataobject.New(secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return do, nil
 }
