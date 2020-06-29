@@ -1,4 +1,4 @@
-### Executors
+# Executors
 
 There are 3 different execution types:
 - Container
@@ -46,11 +46,7 @@ status:
       key: abc
 ```
 
-#### State Handling
-
-- Each Deployer should be responsible by itself to persist the state of a DeployItem
-
-#### Container and Script Deployer
+## Container and Script Deployer
 
 The container/script deployer is a Deployer that handles DeployItems of type `container` and `script`.
 
@@ -64,3 +60,14 @@ As soon as the actual workload has finished the sidecar reads the config from th
 State: the state of a container or script is persisted by copying data to a specific directory (envvar `STATE`).
 This directory is then tarred and persisted as secret data.
 In the future we may have to use volumes or a blob store.
+
+
+## Constraints
+
+### State Handling
+
+Each Deployer is responsible for persisting and managing the state of DeployItems of its type.
+
+### Idempotence
+
+DeployItems might be processed multiple times for various reasons, their execution is therefore required to be idempotent.
