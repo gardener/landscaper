@@ -19,11 +19,13 @@ import (
 	"io/ioutil"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,7 +127,11 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	op := installations.NewOperation(a.log, a.c, a.scheme, a.registry, datatypes)
+	instOp, err := installations.NewInstallationOperation(ctx, a.log, a.c, a.scheme, a.registry, datatypes, internalInstallation)
+	if err != nil {
+		a.log.Error(err, "unable to create installation operation")
+		return reconcile.Result{}, err
+	}
 
 	// for debugging read landscape from tmp file
 	landscapeConfig := make(map[string]interface{})
@@ -137,14 +143,21 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if inst.DeletionTimestamp != nil {
-		if err := a.ensureDeletion(ctx, internalInstallation); err != nil {
-			return reconcile.Result{}, err
+	if inst.DeletionTimestamp.IsZero() {
+		if err := a.ensureDeletion(ctx, instOp, internalInstallation); err != nil {
+			return reconcile.Result{Requeue: true}, err
 		}
+		return reconcile.Result{}, nil
+	} else if !utils.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
+		if err := a.c.Update(ctx, inst); err != nil {
+			return reconcile.Result{Requeue: true}, err
+		}
+		return reconcile.Result{}, nil
 	}
 
 	// todo: get lsconfig
-	if err := a.Ensure(ctx, op, nil, internalInstallation); err != nil {
+	if err := a.Ensure(ctx, instOp, nil, internalInstallation); err != nil {
 		return reconcile.Result{}, err
 	}
 

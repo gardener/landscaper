@@ -29,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
@@ -36,7 +37,7 @@ import (
 var _ = g.Describe("Validation", func() {
 
 	var (
-		op installations.Operation
+		op *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
@@ -69,7 +70,10 @@ var _ = g.Describe("Validation", func() {
 		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
 		Expect(err).ToNot(HaveOccurred())
 
-		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, internalDataTypes)
+		op = &installations.Operation{
+			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry),
+			Datatypes: internalDataTypes,
+		}
 	})
 
 	g.Context("root", func() {

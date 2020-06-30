@@ -25,7 +25,7 @@ import (
 
 // NewValidator creates new import validator.
 // It validates if all imports of a component are satisfied given a context.
-func NewValidator(op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
+func NewValidator(op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
 	return &Validator{
 		Operation: op,
 

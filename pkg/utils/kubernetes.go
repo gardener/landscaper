@@ -59,3 +59,13 @@ func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) 
 		},
 	}, nil
 }
+
+// HasFinalizer checks if the object constains a finalizer with the given name.
+func HasFinalizer(obj metav1.Object, finalizer string) bool {
+	for _, f := range obj.GetFinalizers() {
+		if f == finalizer {
+			return true
+		}
+	}
+	return false
+}

@@ -91,6 +91,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
 
+	if exec.DeletionTimestamp.IsZero() {
+
+	}
+
 	if err := op.Reconcile(ctx); err != nil {
 		return err
 	}

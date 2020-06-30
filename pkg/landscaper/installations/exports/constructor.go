@@ -31,11 +31,11 @@ import (
 // Constructor is a struct that contains all values
 // that are needed to load and merge all exported data.
 type Constructor struct {
-	installations.Operation
+	*installations.Operation
 }
 
 // NewConstructor creates a new export constructor
-func NewConstructor(op installations.Operation) *Constructor {
+func NewConstructor(op *installations.Operation) *Constructor {
 	return &Constructor{
 		Operation: op,
 	}

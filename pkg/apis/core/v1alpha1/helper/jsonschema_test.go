@@ -20,7 +20,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 var _ = Describe("Schema", func() {
@@ -32,7 +32,7 @@ var _ = Describe("Schema", func() {
 					"attr": {Type: "string"},
 				},
 			}
-			refs := datatype.GetUsedReferencedSchemes(schema)
+			refs := helper.GetUsedReferencedSchemes(schema)
 			Expect(refs.Len()).To(Equal(0))
 		})
 
@@ -43,7 +43,7 @@ var _ = Describe("Schema", func() {
 					"myref": {Ref: pointer.StringPtr("customtype")},
 				},
 			}
-			refs := datatype.GetUsedReferencedSchemes(schema)
+			refs := helper.GetUsedReferencedSchemes(schema)
 			Expect(refs.Len()).To(Equal(1))
 			Expect(refs.Has("customtype")).To(BeTrue())
 		})

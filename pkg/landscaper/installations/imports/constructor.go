@@ -29,7 +29,7 @@ import (
 )
 
 // NewConstructor creates a new Import Contructor.
-func NewConstructor(op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
+func NewConstructor(op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
 	return &Constructor{
 		Operation: op,
 		validator: NewValidator(op, landscapeConfig, parent, siblings...),

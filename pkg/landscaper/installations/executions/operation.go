@@ -33,11 +33,11 @@ import (
 // ExecutionOperation templates the executions and handles the interaction with
 // the execution object.
 type ExecutionOperation struct {
-	installations.Operation
+	*installations.Operation
 }
 
 // New creates a new execitions operations object
-func New(op installations.Operation) *ExecutionOperation {
+func New(op *installations.Operation) *ExecutionOperation {
 	return &ExecutionOperation{
 		Operation: op,
 	}

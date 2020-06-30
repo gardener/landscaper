@@ -17,8 +17,6 @@ package installations
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -29,7 +27,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
-func (a *actuator) Ensure(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
+func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
 	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 		return err
@@ -94,11 +92,6 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		return nil
 	}
 
-	instOp, err := installations.NewInstallationOperation(ctx, op, inst) // generate the current context for the installation.
-	if err != nil {
-		return errors.Wrapf(err, "unable to create installation context")
-	}
-
 	exportedValues, err := exports.NewConstructor(op).Construct(ctx, inst)
 	if err != nil {
 		a.log.Error(err, "error during export construction")
@@ -112,7 +105,7 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 		return err
 	}
 
-	if err := instOp.UpdateExportReference(ctx, exportedValues); err != nil {
+	if err := op.UpdateExportReference(ctx, exportedValues); err != nil {
 		a.log.Error(err, "error during export validation")
 		return err
 	}
@@ -126,20 +119,15 @@ func (a *actuator) Ensure(ctx context.Context, op installations.Operation, lands
 
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
-	if err := instOp.TriggerDependants(ctx); err != nil {
+	if err := op.TriggerDependants(ctx); err != nil {
 		a.log.Error(err, "error during dependant trigger")
 		return err
 	}
 	return nil
 }
 
-func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
-	instOp, err := installations.NewInstallationOperation(ctx, op, inst) // generate the current context for the installation.
-	if err != nil {
-		return errors.Wrapf(err, "unable to create installation context")
-	}
-
-	validator := imports.NewValidator(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
+func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
+	validator := imports.NewValidator(op, landscapeConfig, op.Context().Parent, op.Context().Siblings...)
 	if err := validator.Validate(inst); err != nil {
 		a.log.Error(err, "unable to validate imports")
 		return err
@@ -149,14 +137,14 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op installations.Opera
 	// and then start the executions
 
 	// only needed if execution are processed
-	constructor := imports.NewConstructor(op, landscapeConfig, instOp.Context().Parent, instOp.Context().Siblings...)
+	constructor := imports.NewConstructor(op, landscapeConfig, op.Context().Parent, op.Context().Siblings...)
 	importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")
 		return err
 	}
 
-	if err := instOp.UpdateImportReference(ctx, importedValues); err != nil {
+	if err := op.UpdateImportReference(ctx, importedValues); err != nil {
 		a.log.Error(err, "unable to update import objects")
 		return err
 	}

@@ -32,7 +32,7 @@ import (
 // Validators is a struct that contains everything to
 // validate if all imports of a installation are satisfied.
 type Validator struct {
-	installations.Operation
+	*installations.Operation
 
 	lsConfig *landscapeconfig.LandscapeConfig
 	parent   *installations.Installation
@@ -40,7 +40,7 @@ type Validator struct {
 }
 
 // NewValidator creates a new export validator.
-func NewValidator(op installations.Operation) *Validator {
+func NewValidator(op *installations.Operation) *Validator {
 	return &Validator{
 		Operation: op,
 	}

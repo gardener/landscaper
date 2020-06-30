@@ -22,7 +22,7 @@ spec:
     to: b.z
 
 status:
-  phase: Completed
+  phase: Succeeded
   configGeneration: 6
 
   imports:

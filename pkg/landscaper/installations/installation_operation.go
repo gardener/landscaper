@@ -18,31 +18,58 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
-// InstallationOperation contains all installation operations
-type InstallationOperation struct {
-	Operation
+//// Operation is the operation interface that is used to share common operational data across the installation reconciler.
+//type Operation interface {
+//	lsoperation.Interface
+//	GetDataType(name string) (*datatype.Datatype, bool)
+//	GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.ComponentInstallation, error)
+//
+//	Inst() *Installation
+//	Context() *Context
+//	UpdateImportReference(ctx context.Context, values interface{}) error
+//	UpdateExportReference(ctx context.Context, values interface{}) error
+//	TriggerDependants(ctx context.Context) error
+//	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
+//}
+
+// Operation contains all installation operations and implements the Operation interface.
+type Operation struct {
+	lsoperation.Interface
+	Datatypes map[string]*datatype.Datatype
 
 	Inst    *Installation
 	context *Context
 }
 
 // NewInstallationOperation creates a new installation operation
-func NewInstallationOperation(ctx context.Context, op Operation, inst *Installation) (*InstallationOperation, error) {
+func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, registry), datatypes, inst)
+}
+
+// NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
+func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
 	var err error
-	instOp := &InstallationOperation{
-		Operation: op,
+	instOp := &Operation{
+		Interface: op,
+		Datatypes: datatypes,
 		Inst:      inst,
 	}
 
@@ -55,12 +82,30 @@ func NewInstallationOperation(ctx context.Context, op Operation, inst *Installat
 }
 
 // Context returns the context of the operated installation
-func (o *InstallationOperation) Context() *Context {
+func (o *Operation) Context() *Context {
 	return o.context
 }
 
+// GetDataType returns the datatype with a specific name.
+// It returns ok = false if the datatype does not exist.
+func (o *Operation) GetDataType(name string) (dt *datatype.Datatype, ok bool) {
+	dt, ok = o.Datatypes[name]
+	return
+}
+
+// UpdateInstallationStatus updates the status of a installation
+func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+	inst.Status.Phase = phase
+	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
+	if err := o.Client().Status().Update(ctx, inst); err != nil {
+		o.Log().Error(err, "unable to set installation status")
+		return err
+	}
+	return nil
+}
+
 // GetRootInstallations returns all root installations in the system
-func (o *InstallationOperation) GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.ComponentInstallation, error) {
+func (o *Operation) GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.ComponentInstallation, error) {
 	r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
 	if err != nil {
 		return nil, err
@@ -82,7 +127,7 @@ func (o *InstallationOperation) GetRootInstallations(ctx context.Context, opts .
 
 // TriggerDependants triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
-func (o *InstallationOperation) TriggerDependants(ctx context.Context) error {
+func (o *Operation) TriggerDependants(ctx context.Context) error {
 
 	for _, sibling := range o.Context().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
@@ -100,7 +145,7 @@ func (o *InstallationOperation) TriggerDependants(ctx context.Context) error {
 }
 
 // UpdateExportReference updates the data object that holds the exported values of the installation.
-func (o *InstallationOperation) UpdateExportReference(ctx context.Context, values interface{}) error {
+func (o *Operation) UpdateExportReference(ctx context.Context, values interface{}) error {
 	obj := &corev1.Secret{}
 	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
 	obj.Namespace = o.Inst.Info.Namespace
@@ -131,7 +176,7 @@ func (o *InstallationOperation) UpdateExportReference(ctx context.Context, value
 
 // UpdateImportReference updates the data object that holds the imported values
 // todo: make general import/export dataobject creation and update
-func (o *InstallationOperation) UpdateImportReference(ctx context.Context, values interface{}) error {
+func (o *Operation) UpdateImportReference(ctx context.Context, values interface{}) error {
 	obj := &corev1.Secret{}
 	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
 	obj.Namespace = o.Inst.Info.Namespace

@@ -38,7 +38,7 @@ type Context struct {
 // DetermineContext determines the visible context of a installation.
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.
-func (o *InstallationOperation) DetermineContext(ctx context.Context) (*Context, error) {
+func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 	if IsRootInstallation(o.Inst.Info) {
 		// get all root object as siblings
 		ownInstSelector := client.MatchingFieldsSelector{Selector: fields.OneTermNotEqualSelector("metadata.name", o.Inst.Info.Name)}

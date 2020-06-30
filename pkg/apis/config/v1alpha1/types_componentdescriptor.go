@@ -24,8 +24,6 @@ type ComponentList struct {
 	Components      []*Component `json:"components"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // Component represents a arbitrary versioned component with artifacts and dependencies to other components
 type Component struct {
 	DependencyMeta `json:",inline"`

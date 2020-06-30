@@ -26,6 +26,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
@@ -33,7 +34,7 @@ import (
 var _ = g.Describe("Context", func() {
 
 	var (
-		op installations.Operation
+		op lsoperation.Interface
 
 		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
 		fakeClient        client.Client
@@ -56,7 +57,7 @@ var _ = g.Describe("Context", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		op = installations.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, nil)
+		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
 	})
 
 	g.It("should show no parent nor siblings for the test1 root", func() {
@@ -66,10 +67,9 @@ var _ = g.Describe("Context", func() {
 		instRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperation(ctx, op, instRoot)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, instRoot)
 		Expect(err).ToNot(HaveOccurred())
-		lCtx, err := instOp.DetermineContext(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
 		// should be 0, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
@@ -83,10 +83,9 @@ var _ = g.Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
 		Expect(err).ToNot(HaveOccurred())
-		lCtx, err := instOp.DetermineContext(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
 		// should be 1, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
@@ -101,10 +100,9 @@ var _ = g.Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
 		Expect(err).ToNot(HaveOccurred())
-		lCtx, err := instOp.DetermineContext(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).ToNot(BeNil())
 		Expect(lCtx.Siblings).To(HaveLen(3))

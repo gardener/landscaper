@@ -22,6 +22,9 @@ const (
 	// DataObjectSecretDataKey is the key of the secret where the landscape and installations stores their merged configuration.
 	DataObjectSecretDataKey = "config"
 
+	// LandscaperFinalizer is the finalizer of the landscaper
+	LandscaperFinalizer = "finalizer.landscaper.gardener.cloud"
+
 	// Annotations
 
 	// OperationAnnotation is the annotation that specifies a operation for a component

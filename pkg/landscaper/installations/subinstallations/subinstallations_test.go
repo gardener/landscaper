@@ -30,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 )
@@ -37,7 +38,7 @@ import (
 var _ = g.Describe("SubInstallation", func() {
 
 	var (
-		op               installations.Operation
+		op               *installations.Operation
 		ctrl             *gomock.Controller
 		mockClient       *mock_client.MockClient
 		mockStatusWriter *mock_client.MockStatusWriter
@@ -47,18 +48,19 @@ var _ = g.Describe("SubInstallation", func() {
 	)
 
 	g.BeforeEach(func() {
+		var err error
 		ctrl = gomock.NewController(g.GinkgoT())
 		mockClient = mock_client.NewMockClient(ctrl)
 		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
 		once.Do(func() {
-			var err error
 			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeRegistry, nil)
+		commonOp := lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = &installations.Operation{Interface: commonOp}
 	})
 
 	g.AfterEach(func() {
@@ -204,7 +206,10 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			}
 
-			op = installations.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fake.NewFakeRegistry(fake.DefinitionReference{Definition: subdef}), nil)
+			op = &installations.Operation{
+				Interface: lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fake.NewFakeRegistry(fake.DefinitionReference{Definition: subdef})),
+			}
+
 			si := subinstallations.New(op)
 			err := si.Ensure(context.TODO(), inst, def)
 			Expect(err).ToNot(HaveOccurred())
