@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package landscapeconfig
+package execution
 
 import (
-	"testing"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "LandscapeConfig Controller Test Suite")
+func AddActuatorToManager(mgr manager.Manager) error {
+	a, err := NewActuator()
+	if err != nil {
+		return err
+	}
+
+	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("Execution"), a); err != nil {
+		return err
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&lsv1alpha1.Execution{}).
+		Owns(&lsv1alpha1.DeployItem{}).
+		Complete(a)
 }

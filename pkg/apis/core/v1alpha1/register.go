@@ -55,6 +55,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Execution{},
 		&ExecutionList{},
 		&LandscapeConfiguration{},
+		&DeployItem{},
+		&DeployItemList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

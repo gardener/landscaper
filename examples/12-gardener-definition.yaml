@@ -24,6 +24,17 @@ spec:
     type: string
 
   executor: | # has to be idempotent
+    - name: annotate
+      type: script
+      config:
+        script: kubectl annotate project confirmations=xyz
+    - name: create-bucket
+      type: terraform
+    - name: deploy-etcd
+      type: helm
+    - name: deploy-apiserver
+      type: helm
+
     {{ if .abc }} # templating engine of choice => go template (sprig) | spiff++ | makorender | lua | velocity
     - name: abc
       type: DeployerInstallation
@@ -38,15 +49,44 @@ spec:
               abc: ccc
     {{ end }}
 
-    - name: stuff
-      type: Script
-      dependencies: ["abc"]
-      config:
-        script: |
-          doStuff()
-          createHelmDeployItem()
-          getExportsOfDeployItem()
-          createExport()
+#    - name: stuff
+#      type: Script
+#      dependencies: ["abc"]
+#      config:
+#        script: |
+#          doStuff()
+#          createHelmDeployItem()
+#          getExportsOfDeployItem()
+#          createExport()
+    - name: migration_
+      type: script
+      config: abc
+
+    - name: test
+      type: replace
+      old:
+      - name: stuff
+        type: Script
+        dependencies: ["abc"]
+        config:
+          script: |
+            doStuff()
+            createHelmDeployItem()
+            getExportsOfDeployItem()
+            createExport()
+      migration:
+        name: migrate
+        type: Script
+      new:
+      - name: stuff
+        type: Helm
+        dependencies: ["abc"]
+        config:
+          script: |
+            doStuff()
+            createHelmDeployItem()
+            getExportsOfDeployItem()
+            createExport()
 
     {{ const abc := range .imports.value }}
     - name: gardener

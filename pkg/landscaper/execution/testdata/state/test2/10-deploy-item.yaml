@@ -1,0 +1,18 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: di-a
+  namespace: test2
+  generation: 1
+spec:
+
+  importRef:
+    name: exec-1-import
+    namespace: test1
+
+  type: Helm
+  config:
+    my-val: val1
+
+status:
+  phase: Progressing

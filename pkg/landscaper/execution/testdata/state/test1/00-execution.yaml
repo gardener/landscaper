@@ -1,0 +1,21 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: exec-1
+  namespace: test1
+spec:
+
+  importRef:
+    name: exec-1-import
+    namespace: test1
+
+  executions:
+  - name: a
+    type: Helm
+    config:
+      my-val: val1
+
+status:
+  phase: Init
+
+  observedGeneration: 0

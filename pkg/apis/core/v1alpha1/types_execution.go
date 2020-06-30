@@ -20,6 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
+const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
+
 type ExecutionPhase string
 
 const (
@@ -79,8 +82,9 @@ type ExecutionStatus struct {
 	// ExportReference references the object that contains the exported values.
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
-	// DeployItemReferences contain the state of all deploy items
-	DeployItemReferences []NamedObjectReference `json:"deployItemRefs,omitempty"`
+	// DeployItemReferences contain the state of all deploy items.
+	// The observed generation is here the generation of the Execution not the DeployItem
+	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 
 // ExecutionItem defines a execution element that is translated into a deploy item.
@@ -88,7 +92,7 @@ type ExecutionItem struct {
 	// Name is the unique name of the execution.
 	Name string `json:"name"`
 
-	// DataType is the DeployItem type of the execution
+	// DataType is the DeployItem type of the execution.
 	Type ExecutionType `json:"type"`
 
 	// Configuration contains the type specific configuration for the execution.

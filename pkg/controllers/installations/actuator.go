@@ -86,6 +86,8 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
+	// add finalizer if not exist
+
 	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
 	// we need to check if all required imports are satisfied.
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
@@ -97,7 +99,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
-		// handle abort..
+		// todo: handle abort..
 	}
 
 	definition, err := a.registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
@@ -133,6 +135,12 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 	if err := yaml.Unmarshal(data, &landscapeConfig); err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if inst.DeletionTimestamp != nil {
+		if err := a.ensureDeletion(ctx, internalInstallation); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	// todo: get lsconfig

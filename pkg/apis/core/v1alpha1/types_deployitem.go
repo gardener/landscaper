@@ -49,7 +49,7 @@ type DeployItem struct {
 // DeployItemSpec contains the definition of a deploy item.
 type DeployItemSpec struct {
 	// DataType is the type of the deployer that should handle the item.
-	Type string `json:"type"`
+	Type ExecutionType `json:"type"`
 
 	// ImportReference is the reference to the object containing all imported values.
 	ImportReference ObjectReference `json:"importRef,omitempty"`

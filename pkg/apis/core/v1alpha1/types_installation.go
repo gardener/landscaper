@@ -23,6 +23,9 @@ import (
 // todo: add conversion
 const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
 
+// todo: keep only subinstallations?
+const KeepChildrenAnnotation = "landscaper.gardener.cloud/keep-children"
+
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
 const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
 

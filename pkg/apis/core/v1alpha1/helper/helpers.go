@@ -32,6 +32,11 @@ func HasOperation(obj metav1.ObjectMeta, op v1alpha1.Operation) bool {
 	return v1alpha1.Operation(currentOp) == op
 }
 
+// SetOperation sets the given operation annotation on aa object.
+func SetOperation(obj *metav1.ObjectMeta, op v1alpha1.Operation) {
+	metav1.SetMetaDataAnnotation(obj, v1alpha1.OperationAnnotation, string(op))
+}
+
 // InitCondition initializes a new Condition with an Unknown status.
 func InitCondition(conditionType v1alpha1.ConditionType) v1alpha1.Condition {
 	return v1alpha1.Condition{
@@ -138,6 +143,37 @@ func CreateOrUpdateVersionedObjectReferences(refs []v1alpha1.VersionedObjectRefe
 		ObjectReference:    ref,
 		ObservedGeneration: gen,
 	})
+}
+
+// GetNamedObjectReference returns the object reference with the given name.
+func GetNamedObjectReference(objects []v1alpha1.NamedObjectReference, name string) (v1alpha1.NamedObjectReference, bool) {
+	for _, ref := range objects {
+		if ref.Name == name {
+			return ref, true
+		}
+	}
+	return v1alpha1.NamedObjectReference{}, false
+}
+
+// GetVersionedNamedObjectReference returns the versioned object reference with the given name.
+func GetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectReference, name string) (v1alpha1.VersionedNamedObjectReference, bool) {
+	for _, ref := range objects {
+		if ref.Name == name {
+			return ref, true
+		}
+	}
+	return v1alpha1.VersionedNamedObjectReference{}, false
+}
+
+// SetVersionedNamedObjectReference sets the versioned object reference with the given name.
+func SetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectReference, obj v1alpha1.VersionedNamedObjectReference) []v1alpha1.VersionedNamedObjectReference {
+	for i, ref := range objects {
+		if ref.Name == obj.Name {
+			objects[i] = obj
+			return objects
+		}
+	}
+	return append(objects, obj)
 }
 
 // IsCompletedInstallationPhase returns true if the phase indicates a final state.

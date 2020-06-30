@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package types
+package landscapeconfig
 
 import (
 	"context"
@@ -95,14 +95,14 @@ func (a *actuator) Ensure(ctx context.Context, lsConfig *lsv1alpha1.LandscapeCon
 	cond := lsv1alpha1helper.GetOrInitCondition(lsConfig.Status.Conditions, lsv1alpha1.CollectReferencedConfiguration)
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"ConfigurationLoaded", "All configuration data has been successfully reloaded form teh referenced secrets")
-	if err := a.updateInstallationStatus(ctx, lsConfig, cond); err != nil {
+	if err := a.updateStatus(ctx, lsConfig, cond); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (a *actuator) updateInstallationStatus(ctx context.Context, lsConfig *lsv1alpha1.LandscapeConfiguration, updatedConditions ...lsv1alpha1.Condition) error {
+func (a *actuator) updateStatus(ctx context.Context, lsConfig *lsv1alpha1.LandscapeConfiguration, updatedConditions ...lsv1alpha1.Condition) error {
 	// todo: set export generation
 	lsConfig.Status.Conditions = lsv1alpha1helper.MergeConditions(lsConfig.Status.Conditions, updatedConditions...)
 	lsConfig.Status.ObservedGeneration = lsConfig.Generation
@@ -125,7 +125,7 @@ func (a *actuator) reloadConfiguration(ctx context.Context, lsConfig *lsv1alpha1
 			a.log.Error(err, "unable to collect config from secret", "name", ref.Name, "namespace", ref.Namespace)
 			cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"ReferencedSecretNotFound", fmt.Sprintf("Referenced secret %s not available", ref.NamespacedName().String()))
-			_ = a.updateInstallationStatus(ctx, lsConfig, cond)
+			_ = a.updateStatus(ctx, lsConfig, cond)
 			return nil, err
 		}
 
@@ -135,7 +135,7 @@ func (a *actuator) reloadConfiguration(ctx context.Context, lsConfig *lsv1alpha1
 				a.log.Error(err, "unable to parse config", "name", ref.Name, "namespace", ref.Namespace, "key", key)
 				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"ParseError", fmt.Sprintf("Config from referenced secret %s with key %s cannot be parsed", ref.NamespacedName().String(), key))
-				_ = a.updateInstallationStatus(ctx, lsConfig, cond)
+				_ = a.updateStatus(ctx, lsConfig, cond)
 				return nil, err
 			}
 
@@ -150,7 +150,7 @@ func (a *actuator) reloadConfiguration(ctx context.Context, lsConfig *lsv1alpha1
 		a.log.Error(err, "unable to encode config")
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"EncodingError", "Merged config could not be encoded")
-		_ = a.updateInstallationStatus(ctx, lsConfig, cond)
+		_ = a.updateStatus(ctx, lsConfig, cond)
 		return nil, err
 	}
 
@@ -184,7 +184,7 @@ func (a *actuator) createOrUpdateConfigurationData(ctx context.Context, lsConfig
 		a.log.Error(err, "unable to encode config")
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ConfigurationDataError", "Unable to update the exported configuration secret")
-		_ = a.updateInstallationStatus(ctx, lsConfig, cond)
+		_ = a.updateStatus(ctx, lsConfig, cond)
 		return err
 	}
 

@@ -39,6 +39,7 @@ type State struct {
 	DataTypes     map[string]*lsv1alpha1.DataType
 	Installations map[string]*lsv1alpha1.ComponentInstallation
 	Executions    map[string]*lsv1alpha1.Execution
+	DeployItems   map[string]*lsv1alpha1.DeployItem
 	Secrets       map[string]*corev1.Secret
 }
 
@@ -49,6 +50,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		DataTypes:     make(map[string]*lsv1alpha1.DataType),
 		Installations: make(map[string]*lsv1alpha1.ComponentInstallation),
 		Executions:    make(map[string]*lsv1alpha1.Execution),
+		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
 	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
@@ -103,6 +105,14 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	if err == nil {
 		state.Executions[types.NamespacedName{Name: exec.Name, Namespace: exec.Namespace}.String()] = exec
 		return append(objects, exec), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
+	deployItem := &lsv1alpha1.DeployItem{}
+	_, _, err = decoder.Decode(data, nil, deployItem)
+	if err == nil {
+		state.DeployItems[types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String()] = deployItem
+		return append(objects, deployItem), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 

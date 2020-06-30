@@ -123,3 +123,13 @@ type VersionedObjectReference struct {
 	// ObservedGeneration defines the last observed generation of the referenced resource.
 	ObservedGeneration int64 `json:"observedGeneration"`
 }
+
+// VersionedObjectReference is a named reference to a object with its last observed resource generation.
+// This struct is used by status fields.
+type VersionedNamedObjectReference struct {
+	// Name is the unique name of the reference.
+	Name string `json:"name"`
+
+	// Reference is the reference to an object.
+	Reference VersionedObjectReference `json:"ref"`
+}

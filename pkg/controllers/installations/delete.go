@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package landscapeconfig
+package installations
 
 import (
-	"testing"
+	"context"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "LandscapeConfig Controller Test Suite")
+func (a *actuator) ensureDeletion(ctx context.Context, inst *installations.Installation) error {
+
+	// check if suitable for deletion
+	// - sibling has imports that we export
+	// - no subinstallation
+
+	// virtual garden
+	// delete etcd, dns
+
+	// delete execution
+
+	// delete all subinstallations
+
+	return nil
 }

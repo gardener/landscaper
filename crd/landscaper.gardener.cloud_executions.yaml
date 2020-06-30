@@ -52,7 +52,7 @@ spec:
                       description: Name is the unique name of the execution.
                       type: string
                     type:
-                      description: DataType is the DeployItem type of the execution
+                      description: DataType is the DeployItem type of the execution.
                       type: string
                   required:
                   - config
@@ -126,10 +126,12 @@ spec:
                 type: array
               deployItemRefs:
                 description: DeployItemReferences contain the state of all deploy
-                  items
+                  items. The observed generation is here the generation of the Execution
+                  not the DeployItem
                 items:
-                  description: NamedObjectReference is a named reference to a specific
-                    resource.
+                  description: VersionedObjectReference is a named reference to a
+                    object with its last observed resource generation. This struct
+                    is used by status fields.
                   properties:
                     name:
                       description: Name is the unique name of the reference.
@@ -143,9 +145,15 @@ spec:
                         namespace:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
+                        observedGeneration:
+                          description: ObservedGeneration defines the last observed
+                            generation of the referenced resource.
+                          format: int64
+                          type: integer
                       required:
                       - name
                       - namespace
+                      - observedGeneration
                       type: object
                   required:
                   - name
