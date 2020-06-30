@@ -26,17 +26,19 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
-func (a *actuator) ensureDeletion(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
-
+func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 	// check if suitable for deletion
-	// - no sibling has imports that we export
+	// todo: replacements and internal deletions
+	if checkIfSiblingImports(op) {
+		return errors.New("a sibling still imports some of the exports")
+	}
 
-	execDeleted, err := a.deleteExecution(ctx, inst)
+	execDeleted, err := deleteExecution(ctx, op)
 	if err != nil {
 		return err
 	}
 
-	subInstsDeleted, err := a.deleteSubInstallations(ctx, op, inst)
+	subInstsDeleted, err := deleteSubInstallations(ctx, op)
 	if err != nil {
 		return err
 	}
@@ -45,16 +47,16 @@ func (a *actuator) ensureDeletion(ctx context.Context, op *installations.Operati
 		return errors.New("waiting for deletion")
 	}
 
-	controllerutil.RemoveFinalizer(inst.Info, lsv1alpha1.LandscaperFinalizer)
-	return a.c.Update(ctx, inst.Info)
+	controllerutil.RemoveFinalizer(op.Inst.Info, lsv1alpha1.LandscaperFinalizer)
+	return op.Client().Update(ctx, op.Inst.Info)
 }
 
-func (a *actuator) deleteExecution(ctx context.Context, inst *installations.Installation) (bool, error) {
-	if inst.Info.Status.ExecutionReference == nil {
+func deleteExecution(ctx context.Context, op *installations.Operation) (bool, error) {
+	if op.Inst.Info.Status.ExecutionReference == nil {
 		return true, nil
 	}
 	exec := &lsv1alpha1.Execution{}
-	if err := a.c.Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := op.Client().Get(ctx, op.Inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -62,16 +64,16 @@ func (a *actuator) deleteExecution(ctx context.Context, inst *installations.Inst
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {
-		if err := a.c.Delete(ctx, exec); err != nil {
+		if err := op.Client().Delete(ctx, exec); err != nil {
 			return false, err
 		}
 	}
 	return false, nil
 }
 
-func (a *actuator) deleteSubInstallations(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
+func deleteSubInstallations(ctx context.Context, op *installations.Operation) (bool, error) {
 	// todo: better error reporting as condition
-	subInsts, err := subinstallations.New(op).GetSubInstallations(ctx, inst.Info)
+	subInsts, err := subinstallations.New(op).GetSubInstallations(ctx, op.Inst.Info)
 	if err != nil {
 		return false, err
 	}
@@ -80,12 +82,23 @@ func (a *actuator) deleteSubInstallations(ctx context.Context, op *installations
 	}
 
 	for _, inst := range subInsts {
-		if !inst.DeletionTimestamp.IsZero() {
-			if err := a.c.Delete(ctx, inst); err != nil {
+		if inst.DeletionTimestamp.IsZero() {
+			if err := op.Client().Delete(ctx, inst); err != nil {
 				return false, err
 			}
 		}
 	}
 
 	return false, nil
+}
+
+func checkIfSiblingImports(op *installations.Operation) bool {
+	for _, sibling := range op.Context().Siblings {
+		for _, exportMapping := range op.Inst.Info.Spec.Exports {
+			if _, err := sibling.GetImportMappingFrom(exportMapping.To); err == nil {
+				return true
+			}
+		}
+	}
+	return false
 }

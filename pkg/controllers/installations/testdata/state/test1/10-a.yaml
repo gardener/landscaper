@@ -4,7 +4,7 @@ metadata:
   name: a
   namespace: test1
   labels:
-    "landscaper.gardener.cloud/encompassed-by": root
+    "landscaper.gardener.cloud/encompassed-by": a
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: ComponentInstallation
@@ -29,4 +29,10 @@ status:
   - from: root.a
     to: a.b
     configGeneration: 5
+
+  installationRefs:
+  - name: c
+    ref:
+      name: c
+      namespace: test1
 

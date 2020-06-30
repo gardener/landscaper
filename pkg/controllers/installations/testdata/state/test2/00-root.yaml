@@ -2,7 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: ComponentInstallation
 metadata:
   name: root
-  namespace: test3
+  namespace: test2
 spec:
 
   definitionRef: root:1.0.0
@@ -13,11 +13,13 @@ spec:
 
   exports:
   - from: c.z
+    to: root.y
+  - from: d.z
     to: root.z
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: 5
 
   imports:
   - from: ext.a
@@ -28,12 +30,4 @@ status:
   - name: a
     ref:
       name: a
-      namespace: test3
-  - name: b
-    ref:
-      name: b
-      namespace: test3
-  - name: c
-    ref:
-      name: c
-      namespace: test3
+      namespace: test1

@@ -144,7 +144,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 
 	if inst.DeletionTimestamp.IsZero() {
-		if err := a.ensureDeletion(ctx, instOp, internalInstallation); err != nil {
+		if err := EnsureDeletion(ctx, instOp); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
 		return reconcile.Result{}, nil

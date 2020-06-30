@@ -35,11 +35,3 @@ status:
     ref:
       name: b
       namespace: test1
-  - name: c
-    ref:
-      name: c
-      namespace: test1
-  - name: d
-    ref:
-      name: d
-      namespace: test1
