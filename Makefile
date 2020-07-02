@@ -18,7 +18,7 @@ REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_
 install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@curl -sfL "https://install.goreleaser.com/github.com/golangci/golangci-lint.sh" | sh -s -- -b $(shell go env GOPATH)/bin v1.24.0
+	@$(REPO_ROOT)/hack/install-requirements.sh
 
 .PHONY: revendor
 revendor:
