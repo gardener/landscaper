@@ -1,8 +1,10 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: ComponentInstallation
+kind: Installation
 metadata:
   name: root
-  namespace: test1
+  namespace: {{ .Namespace }}
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
 spec:
 
   definitionRef: root:1.0.0
@@ -30,8 +32,10 @@ status:
   - name: a
     ref:
       name: a
-      namespace: test1
+      namespace: {{ .Namespace }}
   - name: b
     ref:
       name: b
-      namespace: test1
+      namespace: {{ .Namespace }}
+
+  observedGeneration: 0

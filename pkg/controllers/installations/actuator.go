@@ -16,7 +16,6 @@ package installations
 
 import (
 	"context"
-	"io/ioutil"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -31,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -82,7 +80,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	defer ctx.Done()
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
-	inst := &lsv1alpha1.ComponentInstallation{}
+	inst := &lsv1alpha1.Installation{}
 	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
 		a.log.Error(err, "unable to get installation")
 		return reconcile.Result{}, err
@@ -133,16 +131,6 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// for debugging read landscape from tmp file
-	landscapeConfig := make(map[string]interface{})
-	data, err := ioutil.ReadFile("./tmp/ls-config.yaml")
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	if err := yaml.Unmarshal(data, &landscapeConfig); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	if inst.DeletionTimestamp.IsZero() {
 		if err := EnsureDeletion(ctx, instOp); err != nil {
 			return reconcile.Result{Requeue: true}, err
@@ -156,8 +144,12 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	// todo: get lsconfig
-	if err := a.Ensure(ctx, instOp, nil, internalInstallation); err != nil {
+	lsConfig, err := instOp.GetLandscapeConfig(ctx, inst.Namespace)
+	if err != nil {
+		a.log.Error(err, "unable to get landscape configuration")
+		return reconcile.Result{}, err
+	}
+	if err := a.Ensure(ctx, instOp, lsConfig, internalInstallation); err != nil {
 		return reconcile.Result{}, err
 	}
 

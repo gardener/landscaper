@@ -21,7 +21,7 @@ import (
 )
 
 // AddDefaultMappings adds all default mappings of im and exports if they are not already defined
-func AddDefaultMappings(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) {
+func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) {
 	mappings := sets.NewString()
 	for _, mapping := range inst.Spec.Imports {
 		mappings.Insert(mapping.To)
@@ -54,7 +54,7 @@ func AddDefaultMappings(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.
 }
 
 // installationNeedsUpdate check if a definition reference has been updated
-func installationNeedsUpdate(def lsv1alpha1.DefinitionReference, inst *lsv1alpha1.ComponentInstallation) bool {
+func installationNeedsUpdate(def lsv1alpha1.DefinitionReference, inst *lsv1alpha1.Installation) bool {
 	if def.Reference != inst.Spec.DefinitionRef {
 		return true
 	}

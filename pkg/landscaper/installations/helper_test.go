@@ -29,8 +29,8 @@ var _ = g.Describe("helper", func() {
 
 	g.Context("IsRoot", func() {
 
-		g.It("should validate that a installation with a non ComponentInstallation type owner is a root installation", func() {
-			inst := &lsv1alpha1.ComponentInstallation{}
+		g.It("should validate that a installation with a non Installation type owner is a root installation", func() {
+			inst := &lsv1alpha1.Installation{}
 			inst.Name = "inst"
 			inst.Namespace = "default"
 			inst.Labels = map[string]string{lsv1alpha1.EncompassedByLabel: "owner"}
@@ -46,12 +46,12 @@ var _ = g.Describe("helper", func() {
 		})
 
 		g.It("should validate that a installation with a installation owner is not a root installation", func() {
-			inst := &lsv1alpha1.ComponentInstallation{}
+			inst := &lsv1alpha1.Installation{}
 			inst.Name = "inst"
 			inst.Namespace = "default"
 			inst.Labels = map[string]string{lsv1alpha1.EncompassedByLabel: "owner"}
 
-			owner := &lsv1alpha1.ComponentInstallation{}
+			owner := &lsv1alpha1.Installation{}
 			owner.Name = "owner"
 			owner.Namespace = "default"
 			err := controllerutil.SetOwnerReference(owner, inst, kubernetes.LandscaperScheme)

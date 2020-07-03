@@ -22,7 +22,7 @@ import (
 
 // Installation is the internal representation of a installation
 type Installation struct {
-	Info       *lsv1alpha1.ComponentInstallation
+	Info       *lsv1alpha1.Installation
 	Definition *lsv1alpha1.ComponentDefinition
 
 	imports map[string]lsv1alpha1.DefinitionImport
@@ -33,7 +33,7 @@ type Installation struct {
 }
 
 // New creates a new internal representation of an installation
-func New(inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
+func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
 	internalInst := &Installation{
 		Info:       inst,
 		Definition: def,

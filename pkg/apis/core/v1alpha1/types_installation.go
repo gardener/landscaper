@@ -48,32 +48,34 @@ const (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentInstallationList contains a list of Components
-type ComponentInstallationList struct {
+// InstallationList contains a list of Components
+type InstallationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ComponentInstallation `json:"items"`
+	Items           []Installation `json:"items"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentDefinition contains the configuration of a component
-// +kubebuilder:resource:path="installation"
+// +kubebuilder:resource:path="installations"
 // +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:resource:shortName="inst"
 // +kubebuilder:resource:singular="installation"
 // +kubebuilder:subresource:status
-type ComponentInstallation struct {
+type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ComponentInstallationSpec   `json:"spec"`
-	Status ComponentInstallationStatus `json:"status"`
+	Spec InstallationSpec `json:"spec"`
+
+	// +optional
+	Status InstallationStatus `json:"status"`
 }
 
-// ComponentInstallationSpec defines a component installation.
-type ComponentInstallationSpec struct {
+// InstallationSpec defines a component installation.
+type InstallationSpec struct {
 	// DefinitionRef is a reference to the component definition.
 	DefinitionRef string `json:"definitionRef"`
 
@@ -88,8 +90,8 @@ type ComponentInstallationSpec struct {
 	Exports []DefinitionExportMapping `json:"exports,omitempty"`
 }
 
-// ComponentInstallationStatus contains the current status of a ComponentInstallation.
-type ComponentInstallationStatus struct {
+// InstallationStatus contains the current status of a Installation.
+type InstallationStatus struct {
 	// Phase is the current phase of the installation.
 	Phase ComponentInstallationPhase `json:"phase,omitempty"`
 

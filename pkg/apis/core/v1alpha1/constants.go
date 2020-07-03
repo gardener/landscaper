@@ -15,9 +15,8 @@
 package v1alpha1
 
 const (
-	ImportConfigEnvVarName = "IMPORT_CONFIG"
-
-	ImportConfigPath = "/landscaper/import.yaml"
+	// LandscapeConfigName is the namespace unique name of the landscape configuration
+	LandscapeConfigName = "default"
 
 	// DataObjectSecretDataKey is the key of the secret where the landscape and installations stores their merged configuration.
 	DataObjectSecretDataKey = "config"

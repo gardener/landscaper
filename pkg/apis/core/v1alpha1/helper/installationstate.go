@@ -17,7 +17,7 @@ package helper
 import landscaperv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 
 // NewInstallationReferenceState creates a new installation reference state from a given installation
-func NewInstallationReferenceState(name string, inst *landscaperv1alpha1.ComponentInstallation) landscaperv1alpha1.NamedObjectReference {
+func NewInstallationReferenceState(name string, inst *landscaperv1alpha1.Installation) landscaperv1alpha1.NamedObjectReference {
 	return landscaperv1alpha1.NamedObjectReference{
 		Name: name,
 		Reference: landscaperv1alpha1.ObjectReference{

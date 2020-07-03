@@ -54,7 +54,9 @@ type Execution struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ExecutionSpec   `json:"spec"`
+	Spec ExecutionSpec `json:"spec"`
+
+	// +optional
 	Status ExecutionStatus `json:"status"`
 }
 

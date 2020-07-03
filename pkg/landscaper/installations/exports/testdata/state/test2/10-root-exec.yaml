@@ -5,7 +5,7 @@ metadata:
   namespace: test2
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
-    kind: ComponentInstallation
+    kind: Installation
     name: root
 spec:
 

@@ -31,7 +31,9 @@ type LandscapeConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LandscapeConfigurationSpec   `json:"spec"`
+	Spec LandscapeConfigurationSpec `json:"spec"`
+
+	// +optional
 	Status LandscapeConfigurationStatus `json:"status"`
 }
 

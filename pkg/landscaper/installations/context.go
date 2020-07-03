@@ -55,18 +55,18 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 
 	// get the parent by owner reference
 	parentName := GetParentInstallationName(o.Inst.Info)
-	parent := &lsv1alpha1.ComponentInstallation{}
+	parent := &lsv1alpha1.Installation{}
 	if err := o.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: o.Inst.Info.Namespace}, parent); err != nil {
 		return nil, err
 	}
 
 	// siblings are all encompassed installation of the parent installation
-	subInstallations := make([]*lsv1alpha1.ComponentInstallation, 0)
+	subInstallations := make([]*lsv1alpha1.Installation, 0)
 	for _, installationRef := range parent.Status.InstallationReferences {
 		if installationRef.Reference.Name == o.Inst.Info.Name {
 			continue
 		}
-		subInst := &lsv1alpha1.ComponentInstallation{}
+		subInst := &lsv1alpha1.Installation{}
 		if err := o.Client().Get(ctx, installationRef.Reference.NamespacedName(), subInst); err != nil {
 			return nil, err
 		}

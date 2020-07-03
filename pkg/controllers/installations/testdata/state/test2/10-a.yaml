@@ -1,14 +1,17 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: ComponentInstallation
+kind: Installation
 metadata:
   name: a
-  namespace: test2
+  namespace: {{ .Namespace }}
   labels:
     "landscaper.gardener.cloud/encompassed-by": root
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
-    kind: ComponentInstallation
+    kind: Installation
     name: root
+    uid: abc-def-root
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
 spec:
 
   definitionRef: a:1.0.0
@@ -34,5 +37,5 @@ status:
   - name: c
     ref:
       name: c
-      namespace: test2
+      namespace: {{ .Namespace }}
 

@@ -40,14 +40,14 @@ import (
 //type Operation interface {
 //	lsoperation.Interface
 //	GetDataType(name string) (*datatype.Datatype, bool)
-//	GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.ComponentInstallation, error)
+//	GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error)
 //
 //	Inst() *Installation
 //	Context() *Context
 //	UpdateImportReference(ctx context.Context, values interface{}) error
 //	UpdateExportReference(ctx context.Context, values interface{}) error
 //	TriggerDependants(ctx context.Context) error
-//	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
+//	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
 //}
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -94,7 +94,7 @@ func (o *Operation) GetDataType(name string) (dt *datatype.Datatype, ok bool) {
 }
 
 // UpdateInstallationStatus updates the status of a installation
-func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	if err := o.Client().Status().Update(ctx, inst); err != nil {
@@ -105,19 +105,19 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 }
 
 // GetRootInstallations returns all root installations in the system
-func (o *Operation) GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.ComponentInstallation, error) {
+func (o *Operation) GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error) {
 	r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
 	if err != nil {
 		return nil, err
 	}
 	opts = append(opts, client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)})
 
-	installationList := &lsv1alpha1.ComponentInstallationList{}
+	installationList := &lsv1alpha1.InstallationList{}
 	if err := o.Client().List(ctx, installationList, opts...); err != nil {
 		return nil, err
 	}
 
-	installations := make([]*lsv1alpha1.ComponentInstallation, len(installationList.Items))
+	installations := make([]*lsv1alpha1.Installation, len(installationList.Items))
 	for i, obj := range installationList.Items {
 		inst := obj
 		installations[i] = &inst

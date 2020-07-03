@@ -12,8 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate ../../hack/generate-code.sh
-//go:generate controller-gen output:crd:artifacts:config=../../crd crd:crdVersions=v1 object:headerFile="../../hack/boilerplate.go.txt" paths="../../pkg/apis/core/v1alpha1"
-//go:generate go run -mod=vendor ../../hack/post-crd-generate ../../crd
+package envtest
 
-package apis
+import (
+	corev1 "k8s.io/api/core/v1"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+)
+
+// State contains the state of initialized fake client
+type State struct {
+	Namespace     string
+	DataTypes     map[string]*lsv1alpha1.DataType
+	Installations map[string]*lsv1alpha1.Installation
+	Executions    map[string]*lsv1alpha1.Execution
+	DeployItems   map[string]*lsv1alpha1.DeployItem
+	Secrets       map[string]*corev1.Secret
+}

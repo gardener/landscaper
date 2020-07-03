@@ -33,8 +33,8 @@ func AddActuatorToManager(mgr manager.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ComponentInstallation{}).
+		For(&v1alpha1.Installation{}).
 		Owns(&v1alpha1.Execution{}).
-		Owns(&v1alpha1.ComponentInstallation{}).
+		Owns(&v1alpha1.Installation{}).
 		Complete(a)
 }

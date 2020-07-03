@@ -23,7 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
+	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
@@ -34,6 +36,8 @@ type Interface interface {
 	Scheme() *runtime.Scheme
 	Registry() registry.Registry
 	GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error)
+
+	GetLandscapeConfig(ctx context.Context, namespace string) (*landscapeconfig.LandscapeConfig, error)
 }
 
 type operation struct {
@@ -86,4 +90,22 @@ func (o *operation) GetDataObjectFromSecret(ctx context.Context, key types.Names
 	}
 
 	return do, nil
+}
+
+// GetLandscapeConfig reads the current landscaper config of the given namespace from the cluster
+func (o *operation) GetLandscapeConfig(ctx context.Context, namespace string) (*landscapeconfig.LandscapeConfig, error) {
+	lsConfig := &lsv1alpha1.LandscapeConfiguration{}
+	if err := o.Client().Get(ctx, client.ObjectKey{Name: lsv1alpha1.LandscapeConfigName, Namespace: namespace}, lsConfig); err != nil {
+		return nil, err
+	}
+
+	do, err := o.GetDataObjectFromSecret(ctx, lsConfig.Status.ConfigReference.NamespacedName())
+	if err != nil {
+		return nil, err
+	}
+
+	return &landscapeconfig.LandscapeConfig{
+		Info: lsConfig,
+		Data: do,
+	}, nil
 }

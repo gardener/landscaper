@@ -29,24 +29,24 @@ var componentInstallationGVK schema.GroupVersionKind
 
 func init() {
 	var err error
-	componentInstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.ComponentInstallation{}, kubernetes.LandscaperScheme)
+	componentInstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, kubernetes.LandscaperScheme)
 	runtime.Must(err)
 }
 
 // IsRootInstallation returns if the installation is a root element.
-func IsRootInstallation(inst *lsv1alpha1.ComponentInstallation) bool {
+func IsRootInstallation(inst *lsv1alpha1.Installation) bool {
 	_, isOwned := utils.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return !isOwned
 }
 
 // GetParentInstallationName returns the name of parent installation that encompasses the given installation.
-func GetParentInstallationName(inst *lsv1alpha1.ComponentInstallation) string {
+func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 	name, _ := utils.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return name
 }
 
 // CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(registry registry.Registry, installations ...*lsv1alpha1.ComponentInstallation) ([]*Installation, error) {
+func CreateInternalInstallations(registry registry.Registry, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
 	internalInstallations := make([]*Installation, len(installations))
 	for i, inst := range installations {
 		inInst, err := CreateInternalInstallation(registry, inst)
@@ -58,8 +58,8 @@ func CreateInternalInstallations(registry registry.Registry, installations ...*l
 	return internalInstallations, nil
 }
 
-// CreateInternalInstallation creates an internal installation for a ComponentInstallation
-func CreateInternalInstallation(registry registry.Registry, inst *lsv1alpha1.ComponentInstallation) (*Installation, error) {
+// CreateInternalInstallation creates an internal installation for a Installation
+func CreateInternalInstallation(registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
 	def, err := registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
 	if err != nil {
 		return nil, err

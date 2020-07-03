@@ -36,7 +36,7 @@ var _ = g.Describe("Context", func() {
 	var (
 		op lsoperation.Interface
 
-		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
+		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
 		fakeRegistry      *fake.FakeRegistry
 

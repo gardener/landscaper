@@ -28,39 +28,44 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
-
 
 var _ = Describe("Delete", func() {
 
 	var (
 		op lsoperation.Interface
 
-		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
-		fakeClient        client.Client
-		fakeRegistry      *fake.FakeRegistry
+		state        *envtest.State
+		fakeRegistry *fake.FakeRegistry
 	)
 
 	BeforeEach(func() {
-		var (
-			err   error
-			state *fake_client.State
-		)
-		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
-		Expect(err).ToNot(HaveOccurred())
-		fakeInstallations = state.Installations
-
+		var err error
 		fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeRegistry)
+	})
+
+	AfterEach(func() {
+		if state != nil {
+			ctx := context.Background()
+			defer ctx.Done()
+			Expect(testenv.CleanupState(ctx, state)).ToNot(HaveOccurred())
+			state = nil
+		}
 	})
 
 	It("should not delete if another installation still imports a exported value", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/a"])
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstA)
@@ -69,13 +74,20 @@ var _ = Describe("Delete", func() {
 		err = installationsctl.EnsureDeletion(ctx, instOp)
 		Expect(err).To(HaveOccurred())
 
-		Expect(fakeInstallations["test1/c"].DeletionTimestamp.IsZero()).To(BeTrue())
+		instC := &lsv1alpha1.Installation{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
+		Expect(instC.DeletionTimestamp.IsZero()).To(BeTrue())
 	})
 
 	It("should block deletion if there are still subinstallations", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, state.Installations["root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstRoot)
@@ -84,14 +96,24 @@ var _ = Describe("Delete", func() {
 		err = installationsctl.EnsureDeletion(ctx, instOp)
 		Expect(err).To(HaveOccurred())
 
-		Expect(fakeInstallations["test1/a"].DeletionTimestamp.IsZero()).To(BeTrue())
-		Expect(fakeInstallations["test1/b"].DeletionTimestamp.IsZero()).To(BeTrue())
+		instA := &lsv1alpha1.Installation{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "a", Namespace: state.Namespace}, instA)).ToNot(HaveOccurred())
+		instB := &lsv1alpha1.Installation{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "b", Namespace: state.Namespace}, instB)).ToNot(HaveOccurred())
+
+		Expect(instA.DeletionTimestamp.IsZero()).To(BeFalse())
+		Expect(instB.DeletionTimestamp.IsZero()).To(BeFalse())
 	})
 
 	It("should not block deletion if there are no subinstallations left", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/b"])
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, state.Installations["b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)
@@ -104,7 +126,12 @@ var _ = Describe("Delete", func() {
 	It("should delete subinstallations if no one imports exported values", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
+
+		var err error
+		state, err = testenv.InitResources(ctx, "./testdata/state/test2")
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)
@@ -113,7 +140,9 @@ var _ = Describe("Delete", func() {
 		err = installationsctl.EnsureDeletion(ctx, instOp)
 		Expect(err).To(HaveOccurred())
 
-		Expect(fakeInstallations["test1/c"].DeletionTimestamp.IsZero()).To(BeFalse())
+		instC := &lsv1alpha1.Installation{}
+		Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
+		Expect(instC.DeletionTimestamp.IsZero()).To(BeFalse())
 	})
 
 })

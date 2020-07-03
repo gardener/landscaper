@@ -39,7 +39,7 @@ var _ = g.Describe("Validation", func() {
 	var (
 		op *installations.Operation
 
-		fakeInstallations map[string]*lsv1alpha1.ComponentInstallation
+		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
 		fakeRegistry      *fake.FakeRegistry

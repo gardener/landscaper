@@ -12,8 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate ../../hack/generate-code.sh
-//go:generate controller-gen output:crd:artifacts:config=../../crd crd:crdVersions=v1 object:headerFile="../../hack/boilerplate.go.txt" paths="../../pkg/apis/core/v1alpha1"
-//go:generate go run -mod=vendor ../../hack/post-crd-generate ../../crd
+package main
 
-package apis
+import "github.com/spf13/pflag"
+
+var (
+	dryRun = false
+	debug  = false
+)
+
+func init() {
+	pflag.BoolVar(&dryRun, "dry-run", false, "do not write changes to files, automatically enabled debug mode")
+	pflag.BoolVar(&debug, "debug", false, "write crds to stdout")
+}

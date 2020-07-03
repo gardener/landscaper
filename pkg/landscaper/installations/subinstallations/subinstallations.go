@@ -32,9 +32,9 @@ import (
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
-func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, operation lsv1alpha1.Operation) error {
+func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation, operation lsv1alpha1.Operation) error {
 	for _, instRef := range inst.Status.InstallationReferences {
-		subInst := &lsv1alpha1.ComponentInstallation{}
+		subInst := &lsv1alpha1.Installation{}
 		if err := o.Client().Get(ctx, instRef.Reference.NamespacedName(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
 		}
@@ -48,7 +48,7 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 }
 
 // EnsureSubInstallations ensures that all referenced definitions are mapped to a installation.
-func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition) error {
+func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
@@ -100,17 +100,17 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.ComponentInstal
 	return o.UpdateInstallationStatus(ctx, inst, inst.Status.Phase, cond)
 }
 
-func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.ComponentInstallation) (map[string]*lsv1alpha1.ComponentInstallation, error) {
+func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation) (map[string]*lsv1alpha1.Installation, error) {
 	var (
 		cond             = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
-		subInstallations = map[string]*lsv1alpha1.ComponentInstallation{}
+		subInstallations = map[string]*lsv1alpha1.Installation{}
 
 		// track all found subinstallation to track if some installations were deleted
 		updatedSubInstallationStates = make([]lsv1alpha1.NamedObjectReference, 0)
 	)
 
 	for _, installationRef := range inst.Status.InstallationReferences {
-		subInst := &lsv1alpha1.ComponentInstallation{}
+		subInst := &lsv1alpha1.Installation{}
 		if err := o.Client().Get(ctx, installationRef.Reference.NamespacedName(), subInst); err != nil {
 			if !apierrors.IsNotFound(err) {
 				o.Log().Error(err, "unable to get installation", "object", installationRef.Reference)
@@ -134,7 +134,7 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.Co
 	return subInstallations, nil
 }
 
-func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *lsv1alpha1.ComponentDefinition, inst *lsv1alpha1.ComponentInstallation, subInstallations map[string]*lsv1alpha1.ComponentInstallation) (error, bool) {
+func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *lsv1alpha1.ComponentDefinition, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
 	var (
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
@@ -161,11 +161,11 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *ls
 	return nil, deleted
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.ComponentInstallation, def *lsv1alpha1.ComponentDefinition, subDefRef lsv1alpha1.DefinitionReference, subInst *lsv1alpha1.ComponentInstallation) (*lsv1alpha1.ComponentInstallation, error) {
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition, subDefRef lsv1alpha1.DefinitionReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
-		subInst = &lsv1alpha1.ComponentInstallation{}
+		subInst = &lsv1alpha1.Installation{}
 		subInst.Name = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
 		subInst.Namespace = inst.Namespace
 	}
@@ -184,7 +184,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		if err := controllerutil.SetOwnerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
-		subInst.Spec = lsv1alpha1.ComponentInstallationSpec{
+		subInst.Spec = lsv1alpha1.InstallationSpec{
 			DefinitionRef: subDefRef.Reference,
 			Imports:       subDefRef.Imports,
 			Exports:       subDefRef.Exports,

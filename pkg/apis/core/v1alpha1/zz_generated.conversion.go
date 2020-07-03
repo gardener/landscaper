@@ -45,46 +45,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ComponentInstallation)(nil), (*core.ComponentInstallation)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentInstallation_To_core_ComponentInstallation(a.(*ComponentInstallation), b.(*core.ComponentInstallation), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentInstallation)(nil), (*ComponentInstallation)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentInstallation_To_v1alpha1_ComponentInstallation(a.(*core.ComponentInstallation), b.(*ComponentInstallation), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*ComponentInstallationList)(nil), (*core.ComponentInstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentInstallationList_To_core_ComponentInstallationList(a.(*ComponentInstallationList), b.(*core.ComponentInstallationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentInstallationList)(nil), (*ComponentInstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentInstallationList_To_v1alpha1_ComponentInstallationList(a.(*core.ComponentInstallationList), b.(*ComponentInstallationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*ComponentInstallationSpec)(nil), (*core.ComponentInstallationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec(a.(*ComponentInstallationSpec), b.(*core.ComponentInstallationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentInstallationSpec)(nil), (*ComponentInstallationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec(a.(*core.ComponentInstallationSpec), b.(*ComponentInstallationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*ComponentInstallationStatus)(nil), (*core.ComponentInstallationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus(a.(*ComponentInstallationStatus), b.(*core.ComponentInstallationStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentInstallationStatus)(nil), (*ComponentInstallationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus(a.(*core.ComponentInstallationStatus), b.(*ComponentInstallationStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*Condition)(nil), (*core.Condition)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Condition_To_core_Condition(a.(*Condition), b.(*core.Condition), scope)
 	}); err != nil {
@@ -325,6 +285,46 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*Installation)(nil), (*core.Installation)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Installation_To_core_Installation(a.(*Installation), b.(*core.Installation), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.Installation)(nil), (*Installation)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Installation_To_v1alpha1_Installation(a.(*core.Installation), b.(*Installation), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*InstallationList)(nil), (*core.InstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_InstallationList_To_core_InstallationList(a.(*InstallationList), b.(*core.InstallationList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.InstallationList)(nil), (*InstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_InstallationList_To_v1alpha1_InstallationList(a.(*core.InstallationList), b.(*InstallationList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*InstallationSpec)(nil), (*core.InstallationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(a.(*InstallationSpec), b.(*core.InstallationSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.InstallationSpec)(nil), (*InstallationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_InstallationSpec_To_v1alpha1_InstallationSpec(a.(*core.InstallationSpec), b.(*InstallationSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*InstallationStatus)(nil), (*core.InstallationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_InstallationStatus_To_core_InstallationStatus(a.(*InstallationStatus), b.(*core.InstallationStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.InstallationStatus)(nil), (*InstallationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_InstallationStatus_To_v1alpha1_InstallationStatus(a.(*core.InstallationStatus), b.(*InstallationStatus), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*JSON)(nil), (*core.JSON)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_JSON_To_core_JSON(a.(*JSON), b.(*core.JSON), scope)
 	}); err != nil {
@@ -488,120 +488,6 @@ func autoConvert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in *co
 // Convert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition is an autogenerated conversion function.
 func Convert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in *core.ComponentDefinition, out *ComponentDefinition, s conversion.Scope) error {
 	return autoConvert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in, out, s)
-}
-
-func autoConvert_v1alpha1_ComponentInstallation_To_core_ComponentInstallation(in *ComponentInstallation, out *core.ComponentInstallation, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_ComponentInstallation_To_core_ComponentInstallation is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentInstallation_To_core_ComponentInstallation(in *ComponentInstallation, out *core.ComponentInstallation, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentInstallation_To_core_ComponentInstallation(in, out, s)
-}
-
-func autoConvert_core_ComponentInstallation_To_v1alpha1_ComponentInstallation(in *core.ComponentInstallation, out *ComponentInstallation, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_ComponentInstallation_To_v1alpha1_ComponentInstallation is an autogenerated conversion function.
-func Convert_core_ComponentInstallation_To_v1alpha1_ComponentInstallation(in *core.ComponentInstallation, out *ComponentInstallation, s conversion.Scope) error {
-	return autoConvert_core_ComponentInstallation_To_v1alpha1_ComponentInstallation(in, out, s)
-}
-
-func autoConvert_v1alpha1_ComponentInstallationList_To_core_ComponentInstallationList(in *ComponentInstallationList, out *core.ComponentInstallationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.ComponentInstallation)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1alpha1_ComponentInstallationList_To_core_ComponentInstallationList is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentInstallationList_To_core_ComponentInstallationList(in *ComponentInstallationList, out *core.ComponentInstallationList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentInstallationList_To_core_ComponentInstallationList(in, out, s)
-}
-
-func autoConvert_core_ComponentInstallationList_To_v1alpha1_ComponentInstallationList(in *core.ComponentInstallationList, out *ComponentInstallationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ComponentInstallation)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_core_ComponentInstallationList_To_v1alpha1_ComponentInstallationList is an autogenerated conversion function.
-func Convert_core_ComponentInstallationList_To_v1alpha1_ComponentInstallationList(in *core.ComponentInstallationList, out *ComponentInstallationList, s conversion.Scope) error {
-	return autoConvert_core_ComponentInstallationList_To_v1alpha1_ComponentInstallationList(in, out, s)
-}
-
-func autoConvert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec(in *ComponentInstallationSpec, out *core.ComponentInstallationSpec, s conversion.Scope) error {
-	out.DefinitionRef = in.DefinitionRef
-	out.Imports = *(*[]core.DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
-	return nil
-}
-
-// Convert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec(in *ComponentInstallationSpec, out *core.ComponentInstallationSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentInstallationSpec_To_core_ComponentInstallationSpec(in, out, s)
-}
-
-func autoConvert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec(in *core.ComponentInstallationSpec, out *ComponentInstallationSpec, s conversion.Scope) error {
-	out.DefinitionRef = in.DefinitionRef
-	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
-	return nil
-}
-
-// Convert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec is an autogenerated conversion function.
-func Convert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec(in *core.ComponentInstallationSpec, out *ComponentInstallationSpec, s conversion.Scope) error {
-	return autoConvert_core_ComponentInstallationSpec_To_v1alpha1_ComponentInstallationSpec(in, out, s)
-}
-
-func autoConvert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus(in *ComponentInstallationStatus, out *core.ComponentInstallationStatus, s conversion.Scope) error {
-	out.Phase = core.ComponentInstallationPhase(in.Phase)
-	out.ObservedGeneration = in.ObservedGeneration
-	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
-	out.ConfigGeneration = in.ConfigGeneration
-	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
-	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
-	out.Imports = *(*[]core.ImportState)(unsafe.Pointer(&in.Imports))
-	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
-	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
-	return nil
-}
-
-// Convert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus(in *ComponentInstallationStatus, out *core.ComponentInstallationStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentInstallationStatus_To_core_ComponentInstallationStatus(in, out, s)
-}
-
-func autoConvert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus(in *core.ComponentInstallationStatus, out *ComponentInstallationStatus, s conversion.Scope) error {
-	out.Phase = ComponentInstallationPhase(in.Phase)
-	out.ObservedGeneration = in.ObservedGeneration
-	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
-	out.ConfigGeneration = in.ConfigGeneration
-	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
-	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
-	out.Imports = *(*[]ImportState)(unsafe.Pointer(&in.Imports))
-	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
-	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
-	return nil
-}
-
-// Convert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus is an autogenerated conversion function.
-func Convert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus(in *core.ComponentInstallationStatus, out *ComponentInstallationStatus, s conversion.Scope) error {
-	return autoConvert_core_ComponentInstallationStatus_To_v1alpha1_ComponentInstallationStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_Condition_To_core_Condition(in *Condition, out *core.Condition, s conversion.Scope) error {
@@ -1214,6 +1100,120 @@ func autoConvert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, 
 // Convert_core_ImportState_To_v1alpha1_ImportState is an autogenerated conversion function.
 func Convert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, out *ImportState, s conversion.Scope) error {
 	return autoConvert_core_ImportState_To_v1alpha1_ImportState(in, out, s)
+}
+
+func autoConvert_v1alpha1_Installation_To_core_Installation(in *Installation, out *core.Installation, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_InstallationStatus_To_core_InstallationStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_Installation_To_core_Installation is an autogenerated conversion function.
+func Convert_v1alpha1_Installation_To_core_Installation(in *Installation, out *core.Installation, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Installation_To_core_Installation(in, out, s)
+}
+
+func autoConvert_core_Installation_To_v1alpha1_Installation(in *core.Installation, out *Installation, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_core_InstallationSpec_To_v1alpha1_InstallationSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_core_InstallationStatus_To_v1alpha1_InstallationStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_core_Installation_To_v1alpha1_Installation is an autogenerated conversion function.
+func Convert_core_Installation_To_v1alpha1_Installation(in *core.Installation, out *Installation, s conversion.Scope) error {
+	return autoConvert_core_Installation_To_v1alpha1_Installation(in, out, s)
+}
+
+func autoConvert_v1alpha1_InstallationList_To_core_InstallationList(in *InstallationList, out *core.InstallationList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]core.Installation)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1alpha1_InstallationList_To_core_InstallationList is an autogenerated conversion function.
+func Convert_v1alpha1_InstallationList_To_core_InstallationList(in *InstallationList, out *core.InstallationList, s conversion.Scope) error {
+	return autoConvert_v1alpha1_InstallationList_To_core_InstallationList(in, out, s)
+}
+
+func autoConvert_core_InstallationList_To_v1alpha1_InstallationList(in *core.InstallationList, out *InstallationList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]Installation)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_core_InstallationList_To_v1alpha1_InstallationList is an autogenerated conversion function.
+func Convert_core_InstallationList_To_v1alpha1_InstallationList(in *core.InstallationList, out *InstallationList, s conversion.Scope) error {
+	return autoConvert_core_InstallationList_To_v1alpha1_InstallationList(in, out, s)
+}
+
+func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
+	out.DefinitionRef = in.DefinitionRef
+	out.Imports = *(*[]core.DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	return nil
+}
+
+// Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec is an autogenerated conversion function.
+func Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in, out, s)
+}
+
+func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.InstallationSpec, out *InstallationSpec, s conversion.Scope) error {
+	out.DefinitionRef = in.DefinitionRef
+	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	return nil
+}
+
+// Convert_core_InstallationSpec_To_v1alpha1_InstallationSpec is an autogenerated conversion function.
+func Convert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.InstallationSpec, out *InstallationSpec, s conversion.Scope) error {
+	return autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in, out, s)
+}
+
+func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *InstallationStatus, out *core.InstallationStatus, s conversion.Scope) error {
+	out.Phase = core.ComponentInstallationPhase(in.Phase)
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
+	out.ConfigGeneration = in.ConfigGeneration
+	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
+	out.Imports = *(*[]core.ImportState)(unsafe.Pointer(&in.Imports))
+	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
+	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	return nil
+}
+
+// Convert_v1alpha1_InstallationStatus_To_core_InstallationStatus is an autogenerated conversion function.
+func Convert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *InstallationStatus, out *core.InstallationStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in, out, s)
+}
+
+func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core.InstallationStatus, out *InstallationStatus, s conversion.Scope) error {
+	out.Phase = ComponentInstallationPhase(in.Phase)
+	out.ObservedGeneration = in.ObservedGeneration
+	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
+	out.ConfigGeneration = in.ConfigGeneration
+	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
+	out.Imports = *(*[]ImportState)(unsafe.Pointer(&in.Imports))
+	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
+	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	return nil
+}
+
+// Convert_core_InstallationStatus_To_v1alpha1_InstallationStatus is an autogenerated conversion function.
+func Convert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core.InstallationStatus, out *InstallationStatus, s conversion.Scope) error {
+	return autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_JSON_To_core_JSON(in *JSON, out *core.JSON, s conversion.Scope) error {

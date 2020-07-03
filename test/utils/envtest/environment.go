@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake_client
+package envtest
 
 import (
+	"bytes"
+	"context"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/golang/mock/gomock"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -27,25 +29,65 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
 )
 
-// State contains the state of initialized fake client
-type State struct {
-	DataTypes     map[string]*lsv1alpha1.DataType
-	Installations map[string]*lsv1alpha1.Installation
-	Executions    map[string]*lsv1alpha1.Execution
-	DeployItems   map[string]*lsv1alpha1.DeployItem
-	Secrets       map[string]*corev1.Secret
+// Environment is a internal landcaper test environment
+type Environment struct {
+	Env *envtest.Environment
+
+	Client client.Client
 }
 
-// NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
-func NewFakeClientFromPath(path string) (client.Client, *State, error) {
-	objects := []runtime.Object{}
+// New creates a new test environment with the landscaper known crds.
+func New(projectRoot string) (*Environment, error) {
+	projectRoot, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, err
+	}
+	testBinPath := filepath.Join(projectRoot, "tmp", "test", "bin")
+	if err := os.Setenv("TEST_ASSET_KUBE_APISERVER", filepath.Join(testBinPath, "kube-apiserver")); err != nil {
+		return nil, err
+	}
+	if err := os.Setenv("TEST_ASSET_ETCD", filepath.Join(testBinPath, "etcd")); err != nil {
+		return nil, err
+	}
+	if err := os.Setenv("TEST_ASSET_KUBECTL", filepath.Join(testBinPath, "kubectl")); err != nil {
+		return nil, err
+	}
+	return &Environment{
+		Env: &envtest.Environment{
+			CRDDirectoryPaths: []string{filepath.Join(projectRoot, "crd")},
+		},
+	}, nil
+}
+
+// Start starts the fake environment and creates a client for the started kubernetes cluster.
+func (e *Environment) Start() (client.Client, error) {
+	restConfig, err := e.Env.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	fakeClient, err := client.New(restConfig, client.Options{Scheme: kubernetes.LandscaperScheme})
+	if err != nil {
+		return nil, err
+	}
+
+	e.Client = fakeClient
+	return fakeClient, nil
+}
+
+// Stop stops the running dev environment
+func (e *Environment) Stop() error {
+	return e.Env.Stop()
+}
+
+// InitResources creates a new isolated environment with its own namespace.
+func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
 	state := &State{
 		DataTypes:     make(map[string]*lsv1alpha1.DataType),
 		Installations: make(map[string]*lsv1alpha1.Installation),
@@ -53,7 +95,43 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
-	err := filepath.Walk("./testdata/state", func(path string, info os.FileInfo, err error) error {
+	// create a new testing namespace
+	ns := &corev1.Namespace{}
+	ns.GenerateName = "unit-tests-"
+	if err := e.Client.Create(ctx, ns); err != nil {
+		return nil, err
+	}
+	state.Namespace = ns.Name
+
+	// parse state and create resources in cluster
+	resources, err := parseResources(resourcesPath, state)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, obj := range resources {
+		if err := e.Client.Create(ctx, obj); err != nil {
+			return nil, err
+		}
+		if err := e.Client.Status().Update(ctx, obj); err != nil {
+			return nil, err
+		}
+	}
+
+	return state, nil
+}
+
+// CleanupState cleans up a test environment.
+// todo: remove finalizers iof all objects in state
+func (e *Environment) CleanupState(ctx context.Context, state *State) error {
+	ns := &corev1.Namespace{}
+	ns.Name = state.Namespace
+	return e.Client.Delete(ctx, ns)
+}
+
+func parseResources(path string, state *State) ([]runtime.Object, error) {
+	objects := make([]runtime.Object, 0)
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -66,7 +144,17 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 			return errors.Wrapf(err, "unable to read file %s", path)
 		}
 
-		objects, err = decodeAndAppendLSObject(data, objects, state)
+		// template files
+		tmpl, err := template.New("init").Parse(string(data))
+		if err != nil {
+			return err
+		}
+		buf := bytes.NewBuffer([]byte{})
+		if err := tmpl.Execute(buf, map[string]string{"Namespace": state.Namespace}); err != nil {
+			return err
+		}
+
+		objects, err = decodeAndAppendLSObject(buf.Bytes(), objects, state)
 		if err != nil {
 			return errors.Wrapf(err, "unable to decode file %s", path)
 		}
@@ -74,10 +162,10 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), state, nil
+	return objects, nil
 }
 
 func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State) ([]runtime.Object, error) {
@@ -87,7 +175,8 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	inst := &lsv1alpha1.Installation{}
 	_, _, err := decoder.Decode(data, nil, inst)
 	if err == nil {
-		state.Installations[types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}.String()] = inst
+		inst.Namespace = state.Namespace
+		state.Installations[inst.Name] = inst
 		return append(objects, inst), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
@@ -95,6 +184,7 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	dt := &lsv1alpha1.DataType{}
 	_, _, err = decoder.Decode(data, nil, dt)
 	if err == nil {
+		inst.Namespace = state.Namespace
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
 		return append(objects, dt), nil
 	}
@@ -103,7 +193,8 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	exec := &lsv1alpha1.Execution{}
 	_, _, err = decoder.Decode(data, nil, exec)
 	if err == nil {
-		state.Executions[types.NamespacedName{Name: exec.Name, Namespace: exec.Namespace}.String()] = exec
+		exec.Namespace = state.Namespace
+		state.Executions[exec.Name] = exec
 		return append(objects, exec), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
@@ -111,7 +202,8 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	deployItem := &lsv1alpha1.DeployItem{}
 	_, _, err = decoder.Decode(data, nil, deployItem)
 	if err == nil {
-		state.DeployItems[types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String()] = deployItem
+		deployItem.Namespace = state.Namespace
+		state.DeployItems[deployItem.Name] = deployItem
 		return append(objects, deployItem), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
@@ -119,7 +211,7 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	secret := &corev1.Secret{}
 	_, _, err = decoder.Decode(data, nil, secret)
 	if err == nil {
-
+		secret.Namespace = state.Namespace
 		// add stringdata and data
 		if secret.Data == nil {
 			secret.Data = make(map[string][]byte)
@@ -128,20 +220,10 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 			secret.Data[key] = []byte(data)
 		}
 
-		state.Secrets[types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}.String()] = secret
+		state.Secrets[secret.Name] = secret
 		return append(objects, secret), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	return nil, allErrors
-}
-
-// RegisterFakeClientToMock adds fake client calls to a mockclient
-func RegisterFakeClientToMock(mockClient *mock_client.MockClient, fakeClient client.Client) error {
-	mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Get)
-	mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Create)
-	mockClient.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Update)
-	mockClient.EXPECT().Patch(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Patch)
-	mockClient.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Delete)
-	return nil
 }
