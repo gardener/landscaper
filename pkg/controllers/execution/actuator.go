@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -93,6 +95,12 @@ func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error
 
 	if exec.DeletionTimestamp.IsZero() {
 
+	} else if !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
+		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
+		if err := a.c.Update(ctx, exec); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if err := op.Reconcile(ctx); err != nil {

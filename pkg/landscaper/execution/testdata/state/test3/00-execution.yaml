@@ -2,13 +2,15 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Execution
 metadata:
   name: exec-1
-  namespace: test2
+  namespace: test3
   generation: 2
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
 spec:
 
   importRef:
     name: exec-1-import
-    namespace: test2
+    namespace: test3
 
   executions:
   - name: a
@@ -29,5 +31,10 @@ status:
   - name: a
     ref:
       name: di-a
-      namespace: test2
+      namespace: test3
+      observedGeneration: 2
+  - name: b
+    ref:
+      name: di-b
+      namespace: test3
       observedGeneration: 2

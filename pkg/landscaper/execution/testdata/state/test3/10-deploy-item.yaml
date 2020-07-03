@@ -2,17 +2,17 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DeployItem
 metadata:
   name: di-a
-  namespace: test2
+  namespace: test3
   generation: 1
 spec:
 
   importRef:
     name: exec-1-import
-    namespace: test2
+    namespace: test3
 
   type: Helm
   config:
     my-val: val1
 
 status:
-  phase: Progressing
+  phase: Succeeded

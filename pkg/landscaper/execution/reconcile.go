@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
+// Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
 func (o *Operation) Reconcile(ctx context.Context) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 

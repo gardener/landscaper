@@ -58,7 +58,8 @@ type DeployItemSpec struct {
 	Configuration json.RawMessage `json:"config,omitempty"`
 }
 
-// DeployItemStatus contains the status of a deploy item
+// DeployItemStatus contains the status of a deploy item.
+// todo: add operation
 type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
 	Phase ExecutionPhase `json:"phase,omitempty"`
