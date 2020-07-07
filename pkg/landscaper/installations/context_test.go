@@ -64,7 +64,7 @@ var _ = g.Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		instRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+		instRoot, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, instRoot)
@@ -80,7 +80,7 @@ var _ = g.Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
+		inst, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
@@ -97,7 +97,7 @@ var _ = g.Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/b"])
+		inst, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)

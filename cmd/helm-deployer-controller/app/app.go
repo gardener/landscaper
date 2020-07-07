@@ -24,17 +24,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
-	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
-	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	lsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/landscapeconfig"
+	helmactuator "github.com/gardener/landscaper/pkg/deployer/helm"
 )
 
-func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
+func NewHelmDeployerControllerCommand(ctx context.Context) *cobra.Command {
 	options := NewOptions()
 
 	cmd := &cobra.Command{
-		Use:   "landscaper-controller",
-		Short: "Landscaper controller manages the orchestration of components",
+		Use:   "helm-deployer",
+		Short: "Helm Deployer is a controller that deploys helm charts based on DeployItems of type Helm",
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := options.Complete(); err != nil {
@@ -65,17 +63,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := lsactuator.AddActuatorToManager(mgr); err != nil {
-		o.log.Error(err, "unable to setup controller")
-		os.Exit(1)
-	}
-
-	if err := installationsactuator.AddActuatorToManager(mgr); err != nil {
-		o.log.Error(err, "unable to setup controller")
-		os.Exit(1)
-	}
-
-	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
+	if err := helmactuator.AddActuatorToManager(mgr); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

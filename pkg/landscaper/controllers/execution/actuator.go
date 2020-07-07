@@ -94,7 +94,7 @@ func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
 
 	if exec.DeletionTimestamp.IsZero() {
-
+		return op.Delete(ctx)
 	} else if !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, exec); err != nil {

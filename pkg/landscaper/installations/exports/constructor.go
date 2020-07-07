@@ -88,7 +88,7 @@ func (c *Constructor) getSubInstallations(ctx context.Context, inst *installatio
 
 	subInsts := make([]*installations.Installation, 0)
 	for _, inst := range subInstsMap {
-		inInst, err := installations.CreateInternalInstallation(c.Operation.Registry(), inst)
+		inInst, err := installations.CreateInternalInstallation(ctx, c.Operation.Registry(), inst)
 		if err != nil {
 			return nil, err
 		}

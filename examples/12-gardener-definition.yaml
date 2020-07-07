@@ -46,7 +46,7 @@ spec:
             version: {{ .imports.gardener-installer-controller.version }}
             kubeconfig: {{ .imports.kubeconfig }}
             values:
-              abc: ccc
+              abc: val1
     {{ end }}
 
 #    - name: stuff

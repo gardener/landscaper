@@ -59,7 +59,8 @@ spec:
             - type
             type: object
           status:
-            description: DeployItemStatus contains the status of a deploy item
+            description: 'DeployItemStatus contains the status of a deploy item. todo:
+              add operation'
             properties:
               conditions:
                 description: Conditions contains the actual condition of a deploy
@@ -120,21 +121,24 @@ spec:
                 - name
                 - namespace
                 type: object
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this DeployItem. It corresponds to the DeployItem generation,
+                  which is updated on mutation by the landscaper.
+                format: int64
+                type: integer
               phase:
                 description: Phase is the current phase of the DeployItem
                 type: string
+              providerStatus:
+                x-kubernetes-preserve-unknown-fields: true
+            required:
+            - observedGeneration
             type: object
         required:
         - spec
-        - status
         type: object
     served: true
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: null
-  storedVersions: null

@@ -900,7 +900,9 @@ func Convert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemS
 
 func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployItemStatus, out *core.DeployItemStatus, s conversion.Scope) error {
 	out.Phase = core.ExecutionPhase(in.Phase)
+	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
+	out.ProviderStatus = *(*json.RawMessage)(unsafe.Pointer(&in.ProviderStatus))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }
@@ -912,7 +914,9 @@ func Convert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployItemSt
 
 func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.DeployItemStatus, out *DeployItemStatus, s conversion.Scope) error {
 	out.Phase = ExecutionPhase(in.Phase)
+	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
+	out.ProviderStatus = *(*json.RawMessage)(unsafe.Pointer(&in.ProviderStatus))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }

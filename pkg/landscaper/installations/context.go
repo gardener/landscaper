@@ -46,7 +46,7 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		if err != nil {
 			return nil, err
 		}
-		intInstallations, err := CreateInternalInstallations(o.Registry(), rootInstallations...)
+		intInstallations, err := CreateInternalInstallations(ctx, o.Registry(), rootInstallations...)
 		if err != nil {
 			return nil, err
 		}
@@ -73,12 +73,12 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	intParent, err := CreateInternalInstallation(o.Registry(), parent)
+	intParent, err := CreateInternalInstallation(ctx, o.Registry(), parent)
 	if err != nil {
 		return nil, err
 	}
 
-	intSubInstallations, err := CreateInternalInstallations(o.Registry(), subInstallations...)
+	intSubInstallations, err := CreateInternalInstallations(ctx, o.Registry(), subInstallations...)
 	if err != nil {
 		return nil, err
 	}

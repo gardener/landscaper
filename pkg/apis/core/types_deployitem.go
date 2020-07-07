@@ -38,7 +38,9 @@ type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DeployItemSpec   `json:"spec"`
+	Spec DeployItemSpec `json:"spec"`
+
+	// +optional
 	Status DeployItemStatus `json:"status"`
 }
 
@@ -59,8 +61,17 @@ type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
 	Phase ExecutionPhase `json:"phase,omitempty"`
 
+	// ObservedGeneration is the most recent generation observed for this DeployItem.
+	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
+	ObservedGeneration int64 `json:"observedGeneration"`
+
 	// Conditions contains the actual condition of a deploy item
+	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
+
+	// ProviderStatus contains the provider specific status
+	// +optional
+	ProviderStatus json.RawMessage `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional

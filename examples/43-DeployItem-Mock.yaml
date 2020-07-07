@@ -1,0 +1,18 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-mock-item
+spec:
+
+  type: Mock
+
+  importRef:
+    name: secret-item1
+    namespace: default
+
+  config:
+    phase: Init
+    providerStatus:
+      key1: val1
+    export:
+      key2: val2

@@ -429,6 +429,11 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ProviderStatus != nil {
+		in, out := &in.ProviderStatus, &out.ProviderStatus
+		*out = make(json.RawMessage, len(*in))
+		copy(*out, *in)
+	}
 	if in.ExportReference != nil {
 		in, out := &in.ExportReference, &out.ExportReference
 		*out = new(ObjectReference)

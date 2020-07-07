@@ -18,6 +18,8 @@
 //
 // As Kubernetes does also not support usage of `{}` we have to workaround with x-kubernetes-preserve-unknown-fields
 // Therefore this script replaces all occurrences for "items" and "additionalProperties"
+//
+// It also removes the status field as there are currently issues with the generation see https://github.com/kubernetes-sigs/controller-tools/issues/456
 
 package main
 
@@ -56,6 +58,11 @@ func main() {
 		}
 
 		crd = replaceTypesInStruct(crd)
+
+		// remove status field
+		if _, ok := crd["status"]; ok {
+			delete(crd, "status")
+		}
 
 		data, err = yaml.Marshal(crd)
 		if err != nil {

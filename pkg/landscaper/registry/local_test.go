@@ -15,6 +15,7 @@
 package registry_test
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/go-logr/logr/testing"
@@ -66,20 +67,20 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should return a component by name", func() {
-			_, err := reg.GetDefinition("root-definition", "1.0.0")
+			_, err := reg.GetDefinition(context.TODO(), "root-definition", "1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = reg.GetDefinition("sub-definition-1", "1.1.0")
+			_, err = reg.GetDefinition(context.TODO(), "sub-definition-1", "1.1.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error if the name is incorrect", func() {
-			_, err := reg.GetDefinition("unkown-definition", "1.0.0")
+			_, err := reg.GetDefinition(context.TODO(), "unkown-definition", "1.0.0")
 			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
 
 		It("should return an error if the version is incorrect", func() {
-			_, err := reg.GetDefinition("sub-definition-1", "1.0.0")
+			_, err := reg.GetDefinition(context.TODO(), "sub-definition-1", "1.0.0")
 			Expect(registry.IsVersionNotFoundError(err)).To(BeTrue())
 		})
 	})
@@ -95,19 +96,19 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should return one available version of a component", func() {
-			versions, err := reg.GetVersions("root-definition")
+			versions, err := reg.GetVersions(context.TODO(), "root-definition")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(versions).To(ConsistOf("1.0.0"))
 		})
 
 		It("should return multiple available versions of a component", func() {
-			versions, err := reg.GetVersions("sub-definition-1")
+			versions, err := reg.GetVersions(context.TODO(), "sub-definition-1")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(versions).To(ConsistOf("1.1.0", "1.2.0"))
 		})
 
 		It("should return an error if the name is incorrect", func() {
-			_, err := reg.GetVersions("unkown-definition")
+			_, err := reg.GetVersions(context.TODO(), "unkown-definition")
 			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
 	})
@@ -123,15 +124,15 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should return the blob for a component by name", func() {
-			_, err := reg.GetBlob("root-definition", "1.0.0")
+			_, err := reg.GetBlob(context.TODO(), "root-definition", "1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = reg.GetBlob("sub-definition-1", "1.1.0")
+			_, err = reg.GetBlob(context.TODO(), "sub-definition-1", "1.1.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should be able to list all subcomponents as directories int he blob of the root component", func() {
-			fs, err := reg.GetBlob("root-definition", "1.0.0")
+			fs, err := reg.GetBlob(context.TODO(), "root-definition", "1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			dirInfo, err := afero.ReadDir(fs, "/")
@@ -146,7 +147,7 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should be able to read the test file of the subcomponent", func() {
-			fs, err := reg.GetBlob("sub-definition-1", "1.1.0")
+			fs, err := reg.GetBlob(context.TODO(), "sub-definition-1", "1.1.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			data, err := afero.ReadFile(fs, "testdata.txt")
@@ -156,12 +157,12 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should return an error if the name is incorrect", func() {
-			_, err := reg.GetBlob("unkown-definition", "1.0.0")
+			_, err := reg.GetBlob(context.TODO(), "unkown-definition", "1.0.0")
 			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
 
 		It("should return an error if the version is incorrect", func() {
-			_, err := reg.GetBlob("sub-definition-1", "1.0.0")
+			_, err := reg.GetBlob(context.TODO(), "sub-definition-1", "1.0.0")
 			Expect(registry.IsVersionNotFoundError(err)).To(BeTrue())
 		})
 	})

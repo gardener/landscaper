@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package main
 
-import "strings"
+import (
+	"context"
+	"fmt"
+	"os"
 
-// VersionedName represents a reference to a ComponentDefinition
-type VersionedName struct {
-	Name    string
-	Version string
-}
+	"github.com/gardener/landscaper/cmd/mock-deployer-controller/app"
+)
 
-// ParseDefinitionRef parses a Definition reference of the form "name:version"
-func ParseDefinitionRef(ref string) (VersionedName, error) {
-	splitName := strings.Split(ref, ":")
+func main() {
+	ctx := context.Background()
+	defer ctx.Done()
+	cmd := app.NewMockDeployerControllerCommand(ctx)
 
-	if len(splitName) < 2 {
-		return VersionedName{}, NewVersionParseError(ref, nil)
+	if err := cmd.Execute(); err != nil {
+		fmt.Print(err)
+		os.Exit(1)
 	}
-
-	return VersionedName{
-		Name:    strings.Join(splitName[:len(splitName)-1], ":"),
-		Version: splitName[len(splitName)-1],
-	}, nil
 }

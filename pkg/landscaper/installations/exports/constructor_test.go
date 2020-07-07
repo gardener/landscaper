@@ -76,7 +76,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from its execution", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -94,7 +94,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -113,7 +113,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings and the execution config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test3/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{

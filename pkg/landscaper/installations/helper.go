@@ -15,6 +15,8 @@
 package installations
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -46,10 +48,10 @@ func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 }
 
 // CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(registry registry.Registry, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
+func CreateInternalInstallations(ctx context.Context, registry registry.Registry, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
 	internalInstallations := make([]*Installation, len(installations))
 	for i, inst := range installations {
-		inInst, err := CreateInternalInstallation(registry, inst)
+		inInst, err := CreateInternalInstallation(ctx, registry, inst)
 		if err != nil {
 			return nil, err
 		}
@@ -59,8 +61,8 @@ func CreateInternalInstallations(registry registry.Registry, installations ...*l
 }
 
 // CreateInternalInstallation creates an internal installation for a Installation
-func CreateInternalInstallation(registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
-	def, err := registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
+func CreateInternalInstallation(ctx context.Context, registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
+	def, err := registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
 	if err != nil {
 		return nil, err
 	}

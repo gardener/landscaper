@@ -15,6 +15,7 @@
 package fake
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -86,15 +87,15 @@ func NewFakeRegistryFromPath(path string) (*FakeRegistry, error) {
 	return NewFakeRegistry(defs...), nil
 }
 
-func (f *FakeRegistry) GetDefinitionByRef(ref string) (*lsv1alpha1.ComponentDefinition, error) {
+func (f *FakeRegistry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
 	vn, err := registry.ParseDefinitionRef(ref)
 	if err != nil {
 		return nil, err
 	}
-	return f.GetDefinition(vn.Name, vn.Version)
+	return f.GetDefinition(ctx, vn.Name, vn.Version)
 }
 
-func (f *FakeRegistry) GetDefinition(name, version string) (*lsv1alpha1.ComponentDefinition, error) {
+func (f *FakeRegistry) GetDefinition(_ context.Context, name, version string) (*lsv1alpha1.ComponentDefinition, error) {
 	if _, ok := f.index[name]; !ok {
 		return nil, registry.NewComponentNotFoundError(name, nil)
 	}
@@ -105,7 +106,7 @@ func (f *FakeRegistry) GetDefinition(name, version string) (*lsv1alpha1.Componen
 	return &ref.Definition, nil
 }
 
-func (f *FakeRegistry) GetBlob(name, version string) (afero.Fs, error) {
+func (f *FakeRegistry) GetBlob(_ context.Context, name, version string) (afero.Fs, error) {
 	if _, ok := f.index[name]; !ok {
 		return nil, registry.NewComponentNotFoundError(name, nil)
 	}
@@ -117,7 +118,7 @@ func (f *FakeRegistry) GetBlob(name, version string) (afero.Fs, error) {
 	return ref.Fs, nil
 }
 
-func (f *FakeRegistry) GetVersions(name string) ([]string, error) {
+func (f *FakeRegistry) GetVersions(_ context.Context, name string) ([]string, error) {
 	if _, ok := f.index[name]; !ok {
 		return nil, registry.NewComponentNotFoundError(name, nil)
 	}

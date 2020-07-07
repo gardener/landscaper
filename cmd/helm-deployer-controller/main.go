@@ -1,4 +1,4 @@
-// Copyright 2019 Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file.
+// Copyright 2020 Copyright (c) 2020 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package v1beta1 is the v1beta1 version of the API.
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/gardener/landscaper/pkg/apis/core
-// +k8s:openapi-gen=true
-// +k8s:defaulter-gen=TypeMeta
+package main
 
-// Package v1alpha1 is a version of the API.
-// +groupName=landscaper.gardener.cloud
-// +kubebuilder:storageversion
-package v1alpha1
+import (
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/gardener/landscaper/cmd/helm-deployer-controller/app"
+)
+
+func main() {
+	ctx := context.Background()
+	defer ctx.Done()
+	cmd := app.NewHelmDeployerControllerCommand(ctx)
+
+	if err := cmd.Execute(); err != nil {
+		fmt.Print(err)
+		os.Exit(1)
+	}
+}

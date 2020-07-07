@@ -78,7 +78,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should directly construct the data from the landscape config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		lsConfig, err := landscapeconfig.New(
@@ -125,13 +125,13 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the imported config from a sibling", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/b"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -149,13 +149,13 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the imported config from a sibling and the indirect parent import", func() {
-		inInstA, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstC, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/c"])
+		inInstC, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(fakeRegistry, fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		lsConfig, err := landscapeconfig.New(

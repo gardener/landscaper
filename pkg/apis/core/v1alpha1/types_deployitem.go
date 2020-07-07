@@ -20,6 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DeployItemValidationCondition is the Conditions type to indicate the deploy items configuration validation status.
+const DeployItemValidationCondition ConditionType = "DeployItemValidation"
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -35,14 +38,16 @@ type DeployItemList struct {
 // DeployItem defines a DeployItem that should be processed by a external deployer
 // +kubebuilder:resource:path="deployitems"
 // +kubebuilder:resource:scope="Namespaced"
-// +kubebuilder:resource:shortName="di,deploy"
+// +kubebuilder:resource:shortName="di"
 // +kubebuilder:resource:singular="deployitem"
 // +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DeployItemSpec   `json:"spec"`
+	Spec DeployItemSpec `json:"spec"`
+
+	// +optional
 	Status DeployItemStatus `json:"status"`
 }
 
@@ -64,8 +69,17 @@ type DeployItemStatus struct {
 	// Phase is the current phase of the DeployItem
 	Phase ExecutionPhase `json:"phase,omitempty"`
 
+	// ObservedGeneration is the most recent generation observed for this DeployItem.
+	// It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
+	ObservedGeneration int64 `json:"observedGeneration"`
+
 	// Conditions contains the actual condition of a deploy item
+	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
+
+	// ProviderStatus contains the provider specific status
+	// +optional
+	ProviderStatus json.RawMessage `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional

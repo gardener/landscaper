@@ -15,6 +15,7 @@
 package registry
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -114,15 +115,15 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 	return index, err
 }
 
-func (r *localRegistry) GetDefinitionByRef(ref string) (*v1alpha1.ComponentDefinition, error) {
+func (r *localRegistry) GetDefinitionByRef(ctx context.Context, ref string) (*v1alpha1.ComponentDefinition, error) {
 	vn, err := ParseDefinitionRef(ref)
 	if err != nil {
 		return nil, err
 	}
-	return r.GetDefinition(vn.Name, vn.Version)
+	return r.GetDefinition(ctx, vn.Name, vn.Version)
 }
 
-func (r *localRegistry) GetDefinition(name, version string) (*v1alpha1.ComponentDefinition, error) {
+func (r *localRegistry) GetDefinition(_ context.Context, name, version string) (*v1alpha1.ComponentDefinition, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)
 	}
@@ -136,7 +137,7 @@ func (r *localRegistry) GetDefinition(name, version string) (*v1alpha1.Component
 // Maybe we should use a virtual filesystem instead of a blob
 // and let the registry handle all the blob downloading/compress etc..
 // e.g. https://github.com/blang/vfs or https://github.com/spf13/afero which would mean that we would return a vfs.filesystem instead of a byte array
-func (r *localRegistry) GetBlob(name, version string) (afero.Fs, error) {
+func (r *localRegistry) GetBlob(_ context.Context, name, version string) (afero.Fs, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)
 	}
@@ -151,7 +152,7 @@ func (r *localRegistry) GetBlob(name, version string) (afero.Fs, error) {
 	return roBlobFS, nil
 }
 
-func (r *localRegistry) GetVersions(name string) ([]string, error) {
+func (r *localRegistry) GetVersions(_ context.Context, name string) ([]string, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)
 	}

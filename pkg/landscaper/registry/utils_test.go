@@ -21,13 +21,27 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
-var _ = Describe("Helper", func() {
+var _ = Describe("Utils", func() {
 
-	Context("ParseDefinition", func() {
+	Context("ParseDefinitionRef", func() {
 		It("should successfully parse a reference into its name and version", func() {
 			vn, err := registry.ParseDefinitionRef("my-comp:1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(vn.Name).To(Equal("my-comp"))
+			Expect(vn.Version).To(Equal("1.0.0"))
+		})
+
+		It("should successfully parse a reference with a complete url into its name and version", func() {
+			vn, err := registry.ParseDefinitionRef("my.host/my-comp:1.0.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(vn.Name).To(Equal("my.host/my-comp"))
+			Expect(vn.Version).To(Equal("1.0.0"))
+		})
+
+		It("should successfully parse a reference with a complete url and specific port into its name and version", func() {
+			vn, err := registry.ParseDefinitionRef("my.host:5000/my-comp:1.0.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(vn.Name).To(Equal("my.host:5000/my-comp"))
 			Expect(vn.Version).To(Equal("1.0.0"))
 		})
 
