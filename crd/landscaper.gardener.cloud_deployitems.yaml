@@ -16,7 +16,14 @@ spec:
     singular: deployitem
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.exportRef.name
+      name: ExportRef
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DeployItem defines a DeployItem that should be processed by a

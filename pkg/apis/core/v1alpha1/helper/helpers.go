@@ -123,6 +123,16 @@ func MergeConditions(oldConditions []v1alpha1.Condition, newConditions ...v1alph
 	return out
 }
 
+// IsConditionStatus returns if all condition states of all conditions are true.
+func IsConditionStatus(conditions []v1alpha1.Condition, status v1alpha1.ConditionStatus) bool {
+	for _, condition := range conditions {
+		if condition.Status != status {
+			return false
+		}
+	}
+	return true
+}
+
 // DecimalToFloat64 converts a decimal to a float64.
 func DecimalToFloat64(dec v1alpha1.Decimal) (float64, error) {
 	return strconv.ParseFloat(string(dec), 64)
@@ -184,7 +194,7 @@ func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) boo
 // CombinedInstallationPhase returns the combined phase of multiple installation's phases.
 func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1alpha1.ComponentInstallationPhase {
 	if len(phases) == 0 {
-		return v1alpha1.ComponentPhaseInit
+		return ""
 	}
 	var (
 		failed  bool

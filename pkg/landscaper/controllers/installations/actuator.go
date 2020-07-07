@@ -34,8 +34,10 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-func NewActuator() (reconcile.Reconciler, error) {
-	return &actuator{}, nil
+func NewActuator(registry registry.Registry) (reconcile.Reconciler, error) {
+	return &actuator{
+		registry: registry,
+	}, nil
 }
 
 type actuator struct {
@@ -82,16 +84,12 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	inst := &lsv1alpha1.Installation{}
 	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
-		a.log.Error(err, "unable to get installation")
+		a.log.V(5).Info(err.Error())
 		return reconcile.Result{}, err
 	}
 
-	// add finalizer if not exist
-
-	// if the inst has the reconcile annotation or if the inst is waiting for dependencies
-	// we need to check if all required imports are satisfied.
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+	if inst.DeletionTimestamp.IsZero() && !utils.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, inst); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
@@ -102,7 +100,21 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		// todo: handle abort..
 	}
 
-	definition, err := a.registry.GetDefinitionByRef(inst.Spec.DefinitionRef)
+	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
+		// if the inst has the reconcile annotation or if the inst is waiting for dependencies
+		// we need to check if all required imports are satisfied.
+		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+			delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+			if err := a.c.Update(ctx, inst); err != nil {
+				return reconcile.Result{Requeue: true}, err
+			}
+			return reconcile.Result{}, nil
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	definition, err := a.registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
 	if err != nil {
 		a.log.Error(err, "unable to get definition")
 		return reconcile.Result{}, err
@@ -131,14 +143,8 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if inst.DeletionTimestamp.IsZero() {
+	if !inst.DeletionTimestamp.IsZero() {
 		if err := EnsureDeletion(ctx, instOp); err != nil {
-			return reconcile.Result{Requeue: true}, err
-		}
-		return reconcile.Result{}, nil
-	} else if !utils.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
-		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, inst); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
 		return reconcile.Result{}, nil

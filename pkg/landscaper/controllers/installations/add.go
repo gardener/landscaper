@@ -20,10 +20,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
+func AddActuatorToManager(mgr manager.Manager, registry registry.Registry) error {
+	a, err := NewActuator(registry)
 	if err != nil {
 		return err
 	}

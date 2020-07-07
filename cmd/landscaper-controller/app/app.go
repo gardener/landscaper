@@ -70,12 +70,12 @@ func (o *options) run(ctx context.Context) {
 		os.Exit(1)
 	}
 
-	if err := installationsactuator.AddActuatorToManager(mgr); err != nil {
+	if err := installationsactuator.AddActuatorToManager(mgr, o.registry); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}
 
-	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
+	if err := executionactuator.AddActuatorToManager(mgr, o.registry); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

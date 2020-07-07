@@ -37,6 +37,8 @@ type DeployItemList struct {
 
 // DeployItem defines a DeployItem that should be processed by a external deployer
 // +kubebuilder:resource:path="deployitems",scope="Namespaced",shortName="di",singular="deployitem"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
 // +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -46,6 +46,8 @@ type ExecutionList struct {
 
 // Execution contains the configuration of a execution and deploy item
 // +kubebuilder:resource:path="executions",scope="Namespaced",shortName="exec",singular="execution"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
 // +kubebuilder:subresource:status
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`

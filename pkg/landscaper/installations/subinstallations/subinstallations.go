@@ -170,7 +170,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		subInst.Namespace = inst.Namespace
 	}
 
-	subDef, err := o.Registry().GetDefinitionByRef(subDefRef.Reference)
+	subDef, err := o.Registry().GetDefinitionByRef(ctx, subDefRef.Reference)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",

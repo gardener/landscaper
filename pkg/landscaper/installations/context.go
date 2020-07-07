@@ -17,7 +17,6 @@ package installations
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -41,8 +40,7 @@ type Context struct {
 func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 	if IsRootInstallation(o.Inst.Info) {
 		// get all root object as siblings
-		ownInstSelector := client.MatchingFieldsSelector{Selector: fields.OneTermNotEqualSelector("metadata.name", o.Inst.Info.Name)}
-		rootInstallations, err := o.GetRootInstallations(ctx, client.InNamespace(o.Inst.Info.Namespace), ownInstSelector)
+		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool { return inst.Name == o.Inst.Info.Name }, client.InNamespace(o.Inst.Info.Namespace))
 		if err != nil {
 			return nil, err
 		}

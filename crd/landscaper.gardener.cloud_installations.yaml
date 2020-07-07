@@ -16,7 +16,20 @@ spec:
     singular: installation
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.configGeneration
+      name: ConfigGen
+      type: integer
+    - jsonPath: .status.executionRef.name
+      name: Execution
+      type: string
+    - jsonPath: .status.exportRef.name
+      name: ExportRef
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ComponentDefinition contains the configuration of a component
@@ -136,7 +149,7 @@ spec:
                 description: ConfigGeneration is the generation of the exported values.
                 format: int64
                 type: integer
-              executionRefs:
+              executionRef:
                 description: ExecutionReference is the reference to the execution
                   that schedules the templated execution items.
                 properties:

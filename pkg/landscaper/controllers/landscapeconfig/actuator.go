@@ -94,7 +94,7 @@ func (a *actuator) Ensure(ctx context.Context, lsConfig *lsv1alpha1.LandscapeCon
 
 	cond := lsv1alpha1helper.GetOrInitCondition(lsConfig.Status.Conditions, lsv1alpha1.CollectReferencedConfiguration)
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
-		"ConfigurationLoaded", "All configuration data has been successfully reloaded form teh referenced secrets")
+		"ConfigurationLoaded", "All configuration data has been successfully reloaded from the referenced secrets")
 	if err := a.updateStatus(ctx, lsConfig, cond); err != nil {
 		return err
 	}

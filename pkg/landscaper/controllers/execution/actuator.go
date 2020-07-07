@@ -31,8 +31,10 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
-func NewActuator() (reconcile.Reconciler, error) {
-	return &actuator{}, nil
+func NewActuator(registry registry.Registry) (reconcile.Reconciler, error) {
+	return &actuator{
+		registry: registry,
+	}, nil
 }
 
 type actuator struct {
@@ -84,6 +86,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 
 	if err := a.Ensure(ctx, exec); err != nil {
+		a.log.Error(err, "error during reconcile")
 		return reconcile.Result{}, err
 	}
 
@@ -93,7 +96,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
 
-	if exec.DeletionTimestamp.IsZero() {
+	if !exec.DeletionTimestamp.IsZero() {
 		return op.Delete(ctx)
 	} else if !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)

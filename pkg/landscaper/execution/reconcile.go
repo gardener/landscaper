@@ -64,8 +64,9 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"DeployItemsReconciled", "All DeployItems are successfully reconciled")
+	o.exec.Status.ObservedGeneration = o.exec.Generation
 	return o.UpdateStatus(ctx, phase, cond)
 }
 

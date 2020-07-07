@@ -21,12 +21,15 @@ import (
 	flag "github.com/spf13/pflag"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
 type options struct {
 	log        logr.Logger
 	configPath string
+
+	registry registry.Registry
 }
 
 func NewOptions() *options {
@@ -49,6 +52,12 @@ func (o *options) Complete() error {
 	o.log = log.WithName("setup")
 	logger.SetLogger(log)
 	ctrl.SetLogger(log)
+
+	r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), []string{"/Users/d064999/go/src/github.com/gardener/landscaper/examples/01-simple/definitions"})
+	if err != nil {
+		return err
+	}
+	o.registry = r
 
 	return nil
 }

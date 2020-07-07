@@ -63,7 +63,7 @@ func deleteExecution(ctx context.Context, op *installations.Operation) (bool, er
 		return false, err
 	}
 
-	if !exec.DeletionTimestamp.IsZero() {
+	if exec.DeletionTimestamp.IsZero() {
 		if err := op.Client().Delete(ctx, exec); err != nil {
 			return false, err
 		}

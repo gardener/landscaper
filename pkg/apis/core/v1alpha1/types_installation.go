@@ -60,6 +60,10 @@ type InstallationList struct {
 
 // ComponentDefinition contains the configuration of a component
 // +kubebuilder:resource:path="installations",scope="Namespaced",shortName="inst",singular="installation"
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.configGeneration",name=ConfigGen,type=integer
+// +kubebuilder:printcolumn:JSONPath=".status.executionRef.name",name=Execution,type=string
+// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
 // +kubebuilder:subresource:status
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -116,7 +120,7 @@ type InstallationStatus struct {
 	InstallationReferences []NamedObjectReference `json:"installationRefs,omitempty"`
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
-	ExecutionReference *ObjectReference `json:"executionRefs,omitempty"`
+	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 
 // ImportState hold the state of a import.

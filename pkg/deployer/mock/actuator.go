@@ -125,6 +125,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		deployItem.Status.ProviderStatus = *config.ProviderStatus
 	}
 
+	deployItem.Status.ObservedGeneration = deployItem.Generation
 	return a.c.Status().Update(ctx, deployItem)
 }
 

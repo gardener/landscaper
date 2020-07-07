@@ -16,7 +16,14 @@ spec:
     singular: execution
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.exportRef.name
+      name: ExportRef
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Execution contains the configuration of a execution and deploy

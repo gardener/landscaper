@@ -75,7 +75,7 @@ func (v *Validator) validateExports(ctx context.Context, fldPath *field.Path, in
 		}
 
 		var data interface{}
-		if err := do.GetData(exportDef.Key, data); err != nil {
+		if err := do.GetData(exportDef.Key, &data); err != nil {
 			return errors.Wrapf(err, "%s: unable to get data", expPath.String())
 		}
 

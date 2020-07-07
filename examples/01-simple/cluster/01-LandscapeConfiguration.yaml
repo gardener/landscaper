@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: main
+  namespace: default
+stringData:
+  config: |
+    root:
+      key1: val1
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: LandscapeConfiguration
+metadata:
+  name: default
+  namespace: default
+spec:
+  secretRefs:
+  - name: main
+    namespace: default

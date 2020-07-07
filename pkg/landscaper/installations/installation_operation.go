@@ -105,7 +105,7 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 }
 
 // GetRootInstallations returns all root installations in the system
-func (o *Operation) GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error) {
+func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1alpha1.Installation) bool, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error) {
 	r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
 	if err != nil {
 		return nil, err
@@ -117,10 +117,13 @@ func (o *Operation) GetRootInstallations(ctx context.Context, opts ...client.Lis
 		return nil, err
 	}
 
-	installations := make([]*lsv1alpha1.Installation, len(installationList.Items))
-	for i, obj := range installationList.Items {
+	installations := make([]*lsv1alpha1.Installation, 0)
+	for _, obj := range installationList.Items {
+		if filter != nil && filter(obj) {
+			continue
+		}
 		inst := obj
-		installations[i] = &inst
+		installations = append(installations, &inst)
 	}
 	return installations, nil
 }

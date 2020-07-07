@@ -49,14 +49,13 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
 
-	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		// if subinstallations are completed and execution is completed
+	if combinedState != "" && !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
 			return err
 		}
 
-		// we have to wait until all children are finished
+		// we have to wait until all children (subinstallations and execution) are finished
 		return nil
 	}
 

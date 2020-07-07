@@ -26,6 +26,12 @@ import (
 
 // Delete handles the delete flow for a execution
 func (o *Operation) Delete(ctx context.Context) error {
+	// set state to deleting
+	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	if err := o.Client().Status().Update(ctx, o.exec); err != nil {
+		return err
+	}
+
 	for i := len(o.exec.Spec.Executions) - 1; i >= 0; i-- {
 		item := o.exec.Spec.Executions[i]
 		ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Name)

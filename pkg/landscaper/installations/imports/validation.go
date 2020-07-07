@@ -85,6 +85,10 @@ func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *ins
 }
 
 func (v *Validator) checkIfLandscapeConfigForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+	if v.lsConfig == nil {
+		return installations.NewImportNotFoundErrorf(nil, "%s: landscape config not defined", fldPath.String())
+	}
+
 	importDef, err := inst.GetImportDefinition(mapping.To)
 	if err != nil {
 		return err
