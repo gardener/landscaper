@@ -45,10 +45,7 @@ type ExecutionList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Execution contains the configuration of a execution and deploy item
-// +kubebuilder:resource:path="executions"
-// +kubebuilder:resource:scope="Namespaced"
-// +kubebuilder:resource:shortName="exec"
-// +kubebuilder:resource:singular="execution"
+// +kubebuilder:resource:path="executions",scope="Namespaced",shortName="exec",singular="execution"
 // +kubebuilder:subresource:status
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -11,6 +11,8 @@ spec:
     kind: Execution
     listKind: ExecutionList
     plural: executions
+    shortNames:
+    - exec
     singular: execution
   scope: Namespaced
   versions:

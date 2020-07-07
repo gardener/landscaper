@@ -36,10 +36,7 @@ type DeployItemList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItem defines a DeployItem that should be processed by a external deployer
-// +kubebuilder:resource:path="deployitems"
-// +kubebuilder:resource:scope="Namespaced"
-// +kubebuilder:resource:shortName="di"
-// +kubebuilder:resource:singular="deployitem"
+// +kubebuilder:resource:path="deployitems",scope="Namespaced",shortName="di",singular="deployitem"
 // +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`

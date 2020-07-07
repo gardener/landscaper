@@ -11,8 +11,12 @@ spec:
     kind: DataType
     listKind: DataTypeList
     plural: datatypes
+    shortNames:
+    - dt
+    - type
+    - types
     singular: datatype
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
