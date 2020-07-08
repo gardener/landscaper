@@ -86,7 +86,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item lsv1alpha1.Executi
 		deployItem.Spec.Type = item.Type
 		deployItem.Spec.Configuration = item.Configuration
 		deployItem.Spec.ImportReference = o.exec.Spec.ImportReference
-		return controllerutil.SetOwnerReference(o.exec, deployItem, o.Scheme())
+		return controllerutil.SetControllerReference(o.exec, deployItem, o.Scheme())
 	}); err != nil {
 		return err
 	}

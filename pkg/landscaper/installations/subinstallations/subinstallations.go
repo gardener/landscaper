@@ -181,7 +181,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
 		subInst.Labels = map[string]string{lsv1alpha1.EncompassedByLabel: inst.Name}
-		if err := controllerutil.SetOwnerReference(inst, subInst, o.Scheme()); err != nil {
+		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{

@@ -61,7 +61,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 
 	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
 		exec.Spec.Executions = executions
-		if err := controllerutil.SetOwnerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
+		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err
 		}
 		return nil
