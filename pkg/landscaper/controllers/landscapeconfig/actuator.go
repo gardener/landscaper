@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/utils"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -171,7 +172,7 @@ func (a *actuator) createOrUpdateConfigurationData(ctx context.Context, lsConfig
 		secret.Namespace = lsConfig.Status.ConfigReference.Namespace
 	}
 
-	_, err := controllerutil.CreateOrUpdate(ctx, a.c, secret, func() error {
+	_, err := kubernetesutil.CreateOrUpdate(ctx, a.c, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: lsConfigData,
 		}

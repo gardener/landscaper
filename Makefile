@@ -35,7 +35,7 @@ check:
 
 .PHONY: test
 test:
-	@go test $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/...
+	@go test $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
 
 .PHONY: verify
 verify: check format

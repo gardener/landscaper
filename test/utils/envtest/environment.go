@@ -17,7 +17,9 @@ package envtest
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,9 +27,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
@@ -89,11 +93,12 @@ func (e *Environment) Stop() error {
 // InitResources creates a new isolated environment with its own namespace.
 func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
 	state := &State{
-		DataTypes:     make(map[string]*lsv1alpha1.DataType),
-		Installations: make(map[string]*lsv1alpha1.Installation),
-		Executions:    make(map[string]*lsv1alpha1.Execution),
-		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
-		Secrets:       make(map[string]*corev1.Secret),
+		DataTypes:        make(map[string]*lsv1alpha1.DataType),
+		LandscapeConfigs: make(map[string]*lsv1alpha1.LandscapeConfiguration),
+		Installations:    make(map[string]*lsv1alpha1.Installation),
+		Executions:       make(map[string]*lsv1alpha1.Execution),
+		DeployItems:      make(map[string]*lsv1alpha1.DeployItem),
+		Secrets:          make(map[string]*corev1.Secret),
 	}
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
@@ -114,6 +119,9 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 			return nil, err
 		}
 		if err := e.Client.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
 	}
@@ -154,12 +162,25 @@ func parseResources(path string, state *State) ([]runtime.Object, error) {
 			return err
 		}
 
-		objects, err = decodeAndAppendLSObject(buf.Bytes(), objects, state)
-		if err != nil {
-			return errors.Wrapf(err, "unable to decode file %s", path)
-		}
+		var (
+			decoder    = yaml.NewYAMLOrJSONDecoder(buf, 1024)
+			decodedObj json.RawMessage
+		)
 
-		return nil
+		for {
+			if err := decoder.Decode(&decodedObj); err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				continue
+			}
+
+			objects, err = decodeAndAppendLSObject(decodedObj, objects, state)
+			if err != nil {
+				return errors.Wrapf(err, "unable to decode file %s", path)
+			}
+
+		}
 	})
 	if err != nil {
 		return nil, err
@@ -184,9 +205,17 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	dt := &lsv1alpha1.DataType{}
 	_, _, err = decoder.Decode(data, nil, dt)
 	if err == nil {
-		inst.Namespace = state.Namespace
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
 		return append(objects, dt), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
+	lsConfig := &lsv1alpha1.LandscapeConfiguration{}
+	_, _, err = decoder.Decode(data, nil, lsConfig)
+	if err == nil {
+		lsConfig.Namespace = state.Namespace
+		state.LandscapeConfigs[types.NamespacedName{Name: lsConfig.Name, Namespace: lsConfig.Namespace}.String()] = lsConfig
+		return append(objects, lsConfig), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
@@ -211,7 +240,9 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	secret := &corev1.Secret{}
 	_, _, err = decoder.Decode(data, nil, secret)
 	if err == nil {
-		secret.Namespace = state.Namespace
+		if len(secret.Namespace) == 0 {
+			secret.Namespace = state.Namespace
+		}
 		// add stringdata and data
 		if secret.Data == nil {
 			secret.Data = make(map[string][]byte)

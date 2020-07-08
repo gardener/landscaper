@@ -12,21 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envtest
+package simple_test
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"path/filepath"
+	"testing"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-// State contains the state of initialized fake client
-type State struct {
-	Namespace        string
-	DataTypes        map[string]*lsv1alpha1.DataType
-	LandscapeConfigs map[string]*lsv1alpha1.LandscapeConfiguration
-	Installations    map[string]*lsv1alpha1.Installation
-	Executions       map[string]*lsv1alpha1.Execution
-	DeployItems      map[string]*lsv1alpha1.DeployItem
-	Secrets          map[string]*corev1.Secret
+func TestConfig(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Installation Controller Test Suite")
 }
+
+var (
+	testenv     *envtest.Environment
+	projectRoot = filepath.Join("../../../")
+)
+
+var _ = BeforeSuite(func() {
+	var err error
+	testenv, err = envtest.New(projectRoot)
+	Expect(err).ToNot(HaveOccurred())
+
+	_, err = testenv.Start()
+	Expect(err).ToNot(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	Expect(testenv.Stop()).ToNot(HaveOccurred())
+})

@@ -16,7 +16,9 @@ package installations
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -87,6 +89,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		a.log.V(5).Info(err.Error())
 		return reconcile.Result{}, err
 	}
+	old := inst.DeepCopy()
 
 	if inst.DeletionTimestamp.IsZero() && !utils.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -155,7 +158,17 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		a.log.Error(err, "unable to get landscape configuration")
 		return reconcile.Result{}, err
 	}
-	if err := a.Ensure(ctx, instOp, lsConfig, internalInstallation); err != nil {
+
+	err = a.Ensure(ctx, instOp, lsConfig, internalInstallation)
+	if !reflect.DeepEqual(inst, old) {
+		if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
+			if err != nil {
+				err2 = errors.Wrapf(err, "update error: %s", err.Error())
+			}
+			return reconcile.Result{}, err2
+		}
+	}
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 

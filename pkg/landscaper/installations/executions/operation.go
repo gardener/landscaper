@@ -28,6 +28,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 // ExecutionOperation templates the executions and handles the interaction with
@@ -58,7 +59,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
 		exec.Spec.Executions = executions
 		if err := controllerutil.SetOwnerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err

@@ -23,6 +23,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/utils"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
@@ -80,7 +81,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item lsv1alpha1.Executi
 		deployItem.Namespace = ref.Reference.Namespace
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), deployItem, func() error {
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), deployItem, func() error {
 		lsv1alpha1helper.SetOperation(&deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
 		deployItem.Spec.Type = item.Type
 		deployItem.Spec.Configuration = item.Configuration

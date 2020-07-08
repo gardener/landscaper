@@ -35,7 +35,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	projectRoot := filepath.Join("../../../")
+	projectRoot := filepath.Join("../../../../")
 	testenv, err = envtest.New(projectRoot)
 	Expect(err).ToNot(HaveOccurred())
 

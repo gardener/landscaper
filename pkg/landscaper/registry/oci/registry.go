@@ -55,7 +55,7 @@ func (r registry) GetDefinition(ctx context.Context, name, version string) (*lsv
 
 func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
 	ingester := content.NewMemoryStore()
-	desc, _, err := oras.Pull(ctx, r.resolver, ref, ingester, oras.WithAllowedMediaTypes(KnownMediaTypes()))
+	_, _, err := oras.Pull(ctx, r.resolver, ref, ingester, oras.WithAllowedMediaTypes(KnownMediaTypes()))
 	if err != nil {
 		return nil, err
 	}

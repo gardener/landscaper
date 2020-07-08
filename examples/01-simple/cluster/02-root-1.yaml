@@ -2,7 +2,6 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: root-1
-  namespace: default
 spec:
   definitionRef: root-a:1.0.0
 

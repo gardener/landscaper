@@ -36,7 +36,9 @@ type LandscapeConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LandscapeConfigurationSpec   `json:"spec"`
+	Spec LandscapeConfigurationSpec `json:"spec"`
+
+	// +optional
 	Status LandscapeConfigurationStatus `json:"status"`
 }
 
@@ -51,7 +53,8 @@ type LandscapeConfigurationStatus struct {
 	// It corresponds to the LandscapeConfig generation, which is updated on mutation.
 	ObservedGeneration int64 `json:"observedGeneration"`
 
-	// Conditions contains the actual condition of a landsacpe config
+	// Conditions contains the actual condition of a landscape config
+	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ConfigGeneration is the generation of the exported values.
@@ -61,5 +64,6 @@ type LandscapeConfigurationStatus struct {
 	ConfigReference *ObjectReference `json:"configRef,omitempty"`
 
 	// Secrets contains the status of the observed referenced secrets.
-	Secrets []VersionedObjectReference `json:"secrets"`
+	// +optional
+	Secrets []VersionedObjectReference `json:"secrets,omitempty"`
 }

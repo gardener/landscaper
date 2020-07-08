@@ -30,6 +30,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/utils"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -159,7 +160,7 @@ func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 		secret.Namespace = item.Status.ExportReference.Namespace
 	}
 
-	_, err := controllerutil.CreateOrUpdate(ctx, a.c, secret, func() error {
+	_, err := kubernetesutil.CreateOrUpdate(ctx, a.c, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: *config.Export,
 		}

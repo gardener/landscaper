@@ -12,7 +12,6 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: LandscapeConfiguration
 metadata:
   name: default
-  namespace: default
 spec:
   secretRefs:
   - name: main

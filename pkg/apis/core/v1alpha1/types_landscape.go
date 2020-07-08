@@ -58,6 +58,7 @@ type LandscapeConfigurationStatus struct {
 	ObservedGeneration int64 `json:"observedGeneration"`
 
 	// Conditions contains the actual condition of a landscape config
+	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ConfigGeneration is the generation of the exported values.
@@ -67,5 +68,6 @@ type LandscapeConfigurationStatus struct {
 	ConfigReference *ObjectReference `json:"configRef,omitempty"`
 
 	// Secrets contains the status of the observed referenced secrets.
-	Secrets []VersionedObjectReference `json:"secrets"`
+	// +optional
+	Secrets []VersionedObjectReference `json:"secrets,omitempty"`
 }

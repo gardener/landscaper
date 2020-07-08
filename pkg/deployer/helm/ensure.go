@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
@@ -49,7 +50,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
 		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
 	}
 	for i, obj := range objects {
-		_, err = controllerutil.CreateOrUpdate(ctx, kubeClient, obj, func() error {
+		_, err = kubernetesutil.CreateOrUpdate(ctx, kubeClient, obj, func() error {
 			return nil
 		})
 

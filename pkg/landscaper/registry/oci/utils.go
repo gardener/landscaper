@@ -13,31 +13,3 @@
 // limitations under the License.
 
 package oci
-
-import (
-	orascontent "github.com/deislabs/oras/pkg/content"
-	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
-)
-
-func getComponentDefinitionFromLayers(ingester *orascontent.Memorystore, layers []ocispecv1.Descriptor) (*lsv1alpha1.ComponentDefinition, error) {
-	for _, layer := range layers {
-		if layer.MediaType == ComponentDefinitionConfigMediaType {
-			_, blob, ok := ingester.Get(layer)
-			if !ok {
-				return nil, registry.NewComponentNotFoundError(layer.MediaType, nil)
-			}
-
-			decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDeserializer()
-			def := &lsv1alpha1.ComponentDefinition{}
-			if _, _, err := decoder.Decode(blob, nil, def); err != nil {
-				return nil, err
-			}
-			return def, nil
-		}
-	}
-	return nil, registry.NewComponentNotFoundError("from OCI", nil)
-}

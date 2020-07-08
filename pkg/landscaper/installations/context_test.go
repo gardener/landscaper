@@ -72,8 +72,7 @@ var _ = g.Describe("Context", func() {
 		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
-		// should be 0, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
-		Expect(lCtx.Siblings).To(HaveLen(1))
+		Expect(lCtx.Siblings).To(HaveLen(0))
 	})
 
 	g.It("should show no parent and one sibling for the test2 a installation", func() {
@@ -88,8 +87,7 @@ var _ = g.Describe("Context", func() {
 		lCtx := instOp.Context()
 
 		Expect(lCtx.Parent).To(BeNil())
-		// should be 1, but this is currently a workaround until this issue https://github.com/kubernetes-sigs/controller-runtime/issues/866 is fixed
-		Expect(lCtx.Siblings).To(HaveLen(2))
+		Expect(lCtx.Siblings).To(HaveLen(1))
 		//Expect(siblings[0].Name).To(Equal("b"))
 	})
 

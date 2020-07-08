@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -34,6 +33,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 //// Operation is the operation interface that is used to share common operational data across the installation reconciler.
@@ -161,7 +161,7 @@ func (o *Operation) UpdateExportReference(ctx context.Context, values interface{
 		return err
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
@@ -193,7 +193,7 @@ func (o *Operation) UpdateImportReference(ctx context.Context, values interface{
 		return err
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}

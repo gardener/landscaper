@@ -18,12 +18,12 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 // Operation contains all execution operations
@@ -66,7 +66,7 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		return err
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}

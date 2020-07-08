@@ -29,7 +29,7 @@ status:
       name: default
       namespace: test1
 
-  executionRefs:
+  executionRef:
     name: root
     namespace: test2
 

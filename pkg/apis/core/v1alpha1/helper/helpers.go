@@ -200,6 +200,7 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 		failed  bool
 		aborted bool
 		init    bool
+		empty   = true
 	)
 	for _, phase := range phases {
 		if phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending {
@@ -210,10 +211,15 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 			return v1alpha1.ComponentPhaseProgressing
 		case v1alpha1.ComponentPhaseFailed:
 			failed = true
+			empty = false
 		case v1alpha1.ComponentPhaseAborted:
 			aborted = true
+			empty = false
 		case v1alpha1.ComponentPhaseInit:
 			init = true
+			empty = false
+		case v1alpha1.ComponentPhaseSucceeded:
+			empty = false
 		}
 	}
 
@@ -227,6 +233,10 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 
 	if init {
 		return v1alpha1.ComponentPhaseInit
+	}
+
+	if empty {
+		return ""
 	}
 
 	return v1alpha1.ComponentPhaseSucceeded

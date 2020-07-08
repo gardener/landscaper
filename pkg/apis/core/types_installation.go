@@ -104,6 +104,7 @@ type InstallationStatus struct {
 	InstallationReferences []NamedObjectReference `json:"installationRefs,omitempty"`
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
+	// +optional
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 

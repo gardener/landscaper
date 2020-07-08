@@ -28,11 +28,6 @@ import (
 )
 
 func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
-
 	// check that all referenced definitions have a corresponding installation
 	subinstallation := subinstallations.New(op)
 	exec := executions.New(op)
@@ -51,9 +46,6 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 
 	if combinedState != "" && !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-			return err
-		}
 
 		// we have to wait until all children (subinstallations and execution) are finished
 		return nil
@@ -70,14 +62,13 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 
 	// check if the spec has changed
 	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
+		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
 		if err := a.StartNewReconcile(ctx, op, landscapeConfig, inst); err != nil {
 			return err
 		}
 
 		inst.Info.Status.ObservedGeneration = inst.Info.Generation
-		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-			return err
-		}
+		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 
 		// need to return and not continue with export validation
 		return nil
@@ -85,9 +76,6 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
 		inst.Info.Status.Phase = combinedState
-		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-			return err
-		}
 		return nil
 	}
 
@@ -112,9 +100,6 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 	// update import status
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
-	if err := a.c.Status().Update(ctx, inst.Info); err != nil {
-		return err
-	}
 
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
