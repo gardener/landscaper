@@ -48,6 +48,7 @@ type ExecutionList struct {
 // +kubebuilder:resource:path="executions",scope="Namespaced",shortName="exec",singular="execution"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:subresource:status
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -135,6 +135,10 @@ var _ = Describe("Delete", func() {
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
 
+		diList := &lsv1alpha1.DeployItemList{}
+		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
+		Expect(diList.Items).To(HaveLen(1))
+
 		diReq := request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())

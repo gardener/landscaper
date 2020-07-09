@@ -39,6 +39,7 @@ type DeployItemList struct {
 // +kubebuilder:resource:path="deployitems",scope="Namespaced",shortName="di",singular="deployitem"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -43,6 +43,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, deployItem.Status.Phase)
 
 			if !lsv1alpha1helper.IsCompletedExecutionPhase(deployItem.Status.Phase) {
+				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 				return nil
 			}
 

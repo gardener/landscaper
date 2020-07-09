@@ -16,8 +16,10 @@ package execution
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -85,8 +87,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if err := a.Ensure(ctx, exec); err != nil {
-		a.log.Error(err, "error during reconcile")
+	old := exec.DeepCopy()
+
+	err := a.Ensure(ctx, exec)
+	if !reflect.DeepEqual(exec, old) { // todo: only use deep equal on status
+		if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
+			if err != nil {
+				err2 = errors.Wrapf(err, "update error: %s", err.Error())
+			}
+			return reconcile.Result{}, err2
+		}
+	}
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -96,14 +108,13 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
 
+	if exec.DeletionTimestamp.IsZero() && !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
+		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
+		return a.c.Update(ctx, exec)
+	}
+
 	if !exec.DeletionTimestamp.IsZero() {
 		return op.Delete(ctx)
-	} else if !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
-		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, exec); err != nil {
-			return err
-		}
-		return nil
 	}
 
 	if err := op.Reconcile(ctx); err != nil {

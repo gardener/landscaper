@@ -11,6 +11,9 @@ spec:
     kind: LandscapeConfiguration
     listKind: LandscapeConfigurationList
     plural: landscapeconfigurations
+    shortNames:
+    - lsconf
+    - lc
     singular: landscapeconfiguration
   scope: Namespaced
   versions:

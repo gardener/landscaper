@@ -35,6 +35,7 @@ type LandscapeConfigurationList struct {
 
 // LandscapeConfiguration defines the landscape configuration that consists of multiple secrets.
 // Must be a singleton.
+// +kubebuilder:resource:path="landscapeconfigurations",scope="Namespaced",shortName={"lsconf","lc"},singular="landscapeconfiguration"
 // +kubebuilder:subresource:status
 type LandscapeConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`

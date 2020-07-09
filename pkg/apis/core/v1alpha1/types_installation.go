@@ -64,6 +64,7 @@ type InstallationList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.configGeneration",name=ConfigGen,type=integer
 // +kubebuilder:printcolumn:JSONPath=".status.executionRef.name",name=Execution,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
+// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:subresource:status
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
