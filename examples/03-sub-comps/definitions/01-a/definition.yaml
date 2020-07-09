@@ -1,0 +1,22 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: def-a
+version: 1.0.0
+
+imports:
+- key: imp-a
+  type: string
+
+exports:
+- key: exp-a
+  type: string
+
+executors: | # has to be idempotent
+  - name: main
+    type: Mock
+    config:
+      providerStatus:
+        imp: {{ index .imports "imp-a" }}
+      export:
+        exp-a: exp-mock

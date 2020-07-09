@@ -53,7 +53,7 @@ func (o *options) Complete() error {
 	logger.SetLogger(log)
 	ctrl.SetLogger(log)
 
-	r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), []string{"/Users/d064999/go/src/github.com/gardener/landscaper/examples/01-simple/definitions"})
+	r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), []string{"/Users/d064999/go/src/github.com/gardener/landscaper/examples/03-sub-comps/definitions"})
 	if err != nil {
 		return err
 	}

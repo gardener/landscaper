@@ -67,7 +67,7 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 }
 
 func (v *Validator) validateExports(ctx context.Context, fldPath *field.Path, inst *installations.Installation, do *dataobject.DataObject) error {
-	for i, exportMapping := range inst.Info.Spec.Exports{
+	for i, exportMapping := range inst.Info.Spec.Exports {
 		expPath := fldPath.Index(i)
 
 		exportDef, err := inst.GetExportDefinition(exportMapping.From)

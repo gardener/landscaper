@@ -27,6 +27,7 @@ import (
 )
 
 func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
+	op.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 	// check if suitable for deletion
 	// todo: replacements and internal deletions
 	if checkIfSiblingImports(op) {

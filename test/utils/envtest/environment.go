@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
@@ -132,9 +133,64 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 // CleanupState cleans up a test environment.
 // todo: remove finalizers iof all objects in state
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
+	for _, obj := range state.DeployItems {
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, obj := range state.Executions {
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, obj := range state.Installations {
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, obj := range state.LandscapeConfigs {
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, obj := range state.Secrets {
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, dt := range state.DataTypes {
+		if err := e.Client.Delete(ctx, dt); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
 	ns := &corev1.Namespace{}
 	ns.Name = state.Namespace
 	return e.Client.Delete(ctx, ns)
+}
+
+func (e *Environment) removeFinalizer(ctx context.Context, object metav1.Object) error {
+	if len(object.GetFinalizers()) == 0 {
+		return nil
+	}
+
+	object.SetFinalizers([]string{})
+	return e.Client.Update(ctx, object.(runtime.Object))
 }
 
 func parseResources(path string, state *State) ([]runtime.Object, error) {

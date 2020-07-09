@@ -121,16 +121,14 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 			}
 			continue
 		}
-		subInstallations[installationRef.Name] = subInst
-		updatedSubInstallationStates = append(updatedSubInstallationStates, installationRef)
+		if _, ok := subInstallations[installationRef.Name]; !ok {
+			subInstallations[installationRef.Name] = subInst
+			updatedSubInstallationStates = append(updatedSubInstallationStates, installationRef)
+		}
 	}
 
 	// update the sub components if installations changed
-	if len(updatedSubInstallationStates) != len(inst.Status.InstallationReferences) {
-		if err := o.Client().Status().Update(ctx, inst); err != nil {
-			return nil, errors.Wrapf(err, "unable to update sub installation status")
-		}
-	}
+	inst.Status.InstallationReferences = updatedSubInstallationStates
 	return subInstallations, nil
 }
 
@@ -166,7 +164,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	if subInst == nil {
 		subInst = &lsv1alpha1.Installation{}
-		subInst.Name = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
+		subInst.GenerateName = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
 		subInst.Namespace = inst.Namespace
 	}
 

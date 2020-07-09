@@ -140,7 +140,7 @@ func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath 
 	}
 
 	var val interface{}
-	if err := do.GetData(exportMapping.From, &val); err != nil {
+	if err := do.GetData(exportMapping.To, &val); err != nil {
 		return nil, err
 	}
 

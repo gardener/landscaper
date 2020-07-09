@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -83,7 +84,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	exec := &lsv1alpha1.Execution{}
 	if err := a.c.Get(ctx, req.NamespacedName, exec); err != nil {
-		a.log.Error(err, "unable to get resource")
+		if apierrors.IsNotFound(err) {
+			a.log.V(5).Info(err.Error())
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, err
 	}
 

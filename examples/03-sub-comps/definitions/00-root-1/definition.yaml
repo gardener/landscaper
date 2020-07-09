@@ -1,0 +1,25 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: root
+version: 1.0.0
+
+imports:
+- key: imp-a
+  type: string
+
+exports:
+- key: exp-b
+  type: string
+
+definitionRefs:
+- name: sub-1
+  ref: def-a:1.0.0
+- name: sub-2
+  ref: def-a:1.0.0
+  imports:
+  - from: exp-a
+    to: imp-a
+  exports:
+  - from: exp-a
+    to: exp-b

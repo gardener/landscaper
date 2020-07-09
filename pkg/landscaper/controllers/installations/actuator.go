@@ -19,6 +19,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -86,10 +87,12 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	inst := &lsv1alpha1.Installation{}
 	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
-		a.log.V(5).Info(err.Error())
+		if apierrors.IsNotFound(err) {
+			a.log.V(5).Info(err.Error())
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, err
 	}
-	old := inst.DeepCopy()
 
 	if inst.DeletionTimestamp.IsZero() && !utils.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -99,75 +102,103 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
-		// todo: handle abort..
-	}
-
-	//if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
-		// if the inst has the reconcile annotation or if the inst is waiting for dependencies
-		// we need to check if all required imports are satisfied.
-		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-			delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-			if err := a.c.Update(ctx, inst); err != nil {
-				return reconcile.Result{Requeue: true}, err
-			}
-			return reconcile.Result{}, nil
-		}
-
-	definition, err := a.registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
-	if err != nil {
-		a.log.Error(err, "unable to get definition")
-		return reconcile.Result{}, err
-	}
-
-	internalInstallation, err := installations.New(inst, definition)
-	if err != nil {
-		a.log.Error(err, "unable to create internal representation of installation")
-		return reconcile.Result{}, err
-	}
-
-	datatypeList := &lsv1alpha1.DataTypeList{}
-	if err := a.c.List(ctx, datatypeList); err != nil {
-		a.log.Error(err, "unable to list all datatypes")
-		return reconcile.Result{}, err
-	}
-	datatypes, err := datatype.CreateDatatypesMap(datatypeList.Items)
-	if err != nil {
-		a.log.Error(err, "unable to parse datatypes")
-		return reconcile.Result{}, err
-	}
-
-	instOp, err := installations.NewInstallationOperation(ctx, a.log, a.c, a.scheme, a.registry, datatypes, internalInstallation)
-	if err != nil {
-		a.log.Error(err, "unable to create installation operation")
-		return reconcile.Result{}, err
-	}
-
-	if !inst.DeletionTimestamp.IsZero() {
-		if err := EnsureDeletion(ctx, instOp); err != nil {
+	// remove the reconcile annotation if it exists
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, inst); err != nil {
 			return reconcile.Result{Requeue: true}, err
+		}
+		if err := a.reconcile(ctx, inst); err != nil {
+			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	}
 
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
+		// todo: handle abort..
+	}
+
+	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
+		return reconcile.Result{}, nil
+	}
+
+	if err := a.reconcile(ctx, inst); err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
+}
+
+func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	old := inst.DeepCopy()
+
+	definition, err := a.registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
+	if err != nil {
+		return errors.Wrap(err, "unable to get definition")
+	}
+
+	internalInstallation, err := installations.New(inst, definition)
+	if err != nil {
+		return errors.Wrap(err, "unable to create internal representation of installation")
+	}
+
+	datatypeList := &lsv1alpha1.DataTypeList{}
+	if err := a.c.List(ctx, datatypeList); err != nil {
+		return errors.Wrap(err, "unable to list all datatypes")
+	}
+	datatypes, err := datatype.CreateDatatypesMap(datatypeList.Items)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse datatypes")
+	}
+
+	instOp, err := installations.NewInstallationOperation(ctx, a.log, a.c, a.scheme, a.registry, datatypes, internalInstallation)
+	if err != nil {
+		return errors.Wrap(err, "unable to create installation operation")
+	}
+
+	if !inst.DeletionTimestamp.IsZero() {
+		err := EnsureDeletion(ctx, instOp)
+		if !reflect.DeepEqual(inst.Status, old.Status) {
+			if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
+				if err != nil {
+					err2 = errors.Wrapf(err, "update error: %s", err.Error())
+				}
+				return err2
+			}
+		}
+		return err
+	}
+
 	lsConfig, err := instOp.GetLandscapeConfig(ctx, inst.Namespace)
 	if err != nil {
-		a.log.Error(err, "unable to get landscape configuration")
-		return reconcile.Result{}, err
+		return errors.Wrap(err, "unable to get landscape configuration")
+	}
+
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
+		if err := a.StartNewReconcile(ctx, instOp, lsConfig, internalInstallation); err != nil {
+			return err
+		}
+
+		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, inst); err != nil {
+			return err
+		}
+
+		inst.Status.ObservedGeneration = inst.Generation
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+
+		// need to return and not continue with export validation
+		return err
 	}
 
 	err = a.Ensure(ctx, instOp, lsConfig, internalInstallation)
-	if !reflect.DeepEqual(inst, old) {
+	if !reflect.DeepEqual(inst.Status, old.Status) {
 		if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
 			if err != nil {
 				err2 = errors.Wrapf(err, "update error: %s", err.Error())
 			}
-			return reconcile.Result{}, err2
+			return err2
 		}
 	}
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	return reconcile.Result{}, nil
+	return err
 }

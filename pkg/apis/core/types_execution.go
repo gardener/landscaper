@@ -22,13 +22,6 @@ import (
 
 type ExecutionPhase string
 
-const (
-	ExecutionPhaseInit        = ExecutionPhase(ComponentPhaseInit)
-	ExecutionPhaseProgressing = ExecutionPhase(ComponentPhaseProgressing)
-	ExecutionPhaseSucceeded   = ExecutionPhase(ComponentPhaseSucceeded)
-	ExecutionPhaseFailed      = ExecutionPhase(ComponentPhaseFailed)
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ExecutionList contains a list of Executions‚

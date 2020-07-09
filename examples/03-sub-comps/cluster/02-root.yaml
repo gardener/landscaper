@@ -1,0 +1,14 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+spec:
+  definitionRef: root:1.0.0
+
+  imports:
+  - from: root.key1
+    to: imp-a
+
+  exports:
+  - from: exp-b
+    to: exp-a

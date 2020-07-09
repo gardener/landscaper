@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package simple_test
+package e2e_test
 
 import (
 	"context"
@@ -21,7 +21,6 @@ import (
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
@@ -32,10 +31,11 @@ import (
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	lsctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = Describe("Delete", func() {
+var _ = Describe("Multi Component Test", func() {
 
 	var (
 		state        *envtest.State
@@ -46,7 +46,7 @@ var _ = Describe("Delete", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeRegistry, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")})
+		fakeRegistry, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
 		Expect(err).ToNot(HaveOccurred())
 
 		lsActuator, err = lsctlr.NewActuator()
@@ -95,24 +95,28 @@ var _ = Describe("Delete", func() {
 		}
 	})
 
-	It("Should successfully reconcile SimpleTest", func() {
+	It("Should successfully reconcile MultiCompTest", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
 		var err error
-		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "01-simple", "cluster"))
+		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-multi-comp", "cluster"))
 		Expect(err).ToNot(HaveOccurred())
 
-		_, err = lsActuator.Reconcile(request("default", state.Namespace))
-		Expect(err).ToNot(HaveOccurred())
+		var (
+			instReq  = request("root-1", state.Namespace)
+			inst2Req = request("root-2", state.Namespace)
+		)
+
+		testutils.ShouldReconcile(lsActuator, request("default", state.Namespace))
+		testutils.ShouldReconcile(instActuator, inst2Req)
+		testutils.ShouldNotReconcile(instActuator, inst2Req, "should not reconcile the second component as there are dependencies on exports of root-1")
 
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution
-		instReq := request("root-1", state.Namespace)
-		_, err = instActuator.Reconcile(instReq)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = instActuator.Reconcile(instReq)
-		Expect(err).ToNot(HaveOccurred())
+		testutils.ShouldReconcile(instActuator, instReq)
+		testutils.ShouldReconcile(instActuator, instReq)
+		testutils.ShouldNotReconcile(instActuator, inst2Req, "should not reconcile the second component as there are still dependencies on root-1")
 
 		inst := &lsv1alpha1.Installation{}
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
@@ -126,11 +130,8 @@ var _ = Describe("Delete", func() {
 		// after the execution was created by the installation, we need to run the execution controller
 		// on first reconcile it should add the finalizer
 		// and int he second reconcile it should create the deploy item
-		_, err = execActuator.Reconcile(execReq)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = execActuator.Reconcile(execReq)
-		Expect(err).ToNot(HaveOccurred())
-
+		testutils.ShouldReconcile(execActuator, execReq)
+		testutils.ShouldReconcile(execActuator, execReq)
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
@@ -142,11 +143,8 @@ var _ = Describe("Delete", func() {
 		diReq := request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
-
-		_, err = mockActuator.Reconcile(diReq)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = mockActuator.Reconcile(diReq)
-		Expect(err).ToNot(HaveOccurred())
+		testutils.ShouldReconcile(mockActuator, diReq)
+		testutils.ShouldReconcile(mockActuator, diReq)
 
 		// as the deploy item is now successfully reconciled, we have to trigger the execution
 		// and check if the states are correctly propagated
@@ -159,56 +157,48 @@ var _ = Describe("Delete", func() {
 
 		// as the execution is now successfully reconciled, we have to trigger the installation
 		// and check if the state is propagated
-		_, err = instActuator.Reconcile(request("root-1", state.Namespace))
-		Expect(err).ToNot(HaveOccurred())
-
+		testutils.ShouldReconcile(instActuator, instReq)
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
 		Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 		Expect(inst.Status.ExportReference).ToNot(BeNil())
 
-		By("delete resource")
+		By("as the first component is now successfully reconciled, we should be able to reconcile the second component")
+		testutils.ShouldReconcile(instActuator, inst2Req)
+		Expect(testenv.Client.Get(ctx, inst2Req.NamespacedName, inst)).ToNot(HaveOccurred())
+		Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseProgressing))
+		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
+
+		By("reconcile the execution of root-2 2 times and create a deploy item")
+		exec2Req := request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
+		testutils.ShouldReconcile(execActuator, exec2Req)
+		testutils.ShouldReconcile(execActuator, exec2Req)
+		Expect(testenv.Client.Get(ctx, exec2Req.NamespacedName, exec)).ToNot(HaveOccurred())
+		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+
+		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
+		Expect(diList.Items).To(HaveLen(2), "there should be one deployitem from root-1 and one from root-2")
+
+		By("reconcile the deploy item")
+		di2Req := request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
+		testutils.ShouldReconcile(mockActuator, di2Req)
+		testutils.ShouldReconcile(mockActuator, di2Req)
+
+		By("as the deploy item is now successfully reconciled, we have to trigger the execution and check if the states are correctly propagated")
+		testutils.ShouldReconcile(execActuator, exec2Req)
+		Expect(testenv.Client.Get(ctx, exec2Req.NamespacedName, exec)).ToNot(HaveOccurred())
+		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		Expect(exec.Status.ExportReference).ToNot(BeNil())
+
+		By("should be unable to delete root-1")
+		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
 		Expect(testenv.Client.Delete(ctx, inst)).ToNot(HaveOccurred())
+		testutils.ShouldNotReconcile(instActuator, instReq, "the component should not be deleted as there are still components that import its exports")
 
-		// the installation controller should propagate the deletion to its subcharts
-		_, err = instActuator.Reconcile(instReq)
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("waiting for deletion"))
+		By("should delete root-2")
+		testutils.DeleteInstallation(ctx, testenv.Client, execActuator, instActuator, mockActuator, inst2Req)
 
-		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
-		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-
-		// the execution controller should propagate the deletion to its deploy item
-		_, err = execActuator.Reconcile(execReq)
-		Expect(err).ToNot(HaveOccurred())
-
-		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
-		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
-
-		_, err = mockActuator.Reconcile(diReq)
-		Expect(err).ToNot(HaveOccurred())
-		err = testenv.Client.Get(ctx, diReq.NamespacedName, di)
-		Expect(err).To(HaveOccurred())
-		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "deploy item should be deleted")
-
-		// execution controller should remove the finalizer
-		_, err = execActuator.Reconcile(execReq)
-		Expect(err).ToNot(HaveOccurred())
-		err = testenv.Client.Get(ctx, execReq.NamespacedName, exec)
-		Expect(err).To(HaveOccurred())
-		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "execution should be deleted")
-
-		// installation controller should remove its own finalizer
-		_, err = instActuator.Reconcile(instReq)
-		Expect(err).ToNot(HaveOccurred())
-		err = testenv.Client.Get(ctx, instReq.NamespacedName, inst)
-		Expect(err).To(HaveOccurred())
-		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")
+		By("should delete root-1")
+		testutils.DeleteInstallation(ctx, testenv.Client, execActuator, instActuator, mockActuator, instReq)
 	})
 })
-
-func request(name, namespace string) reconcile.Request {
-	req := reconcile.Request{}
-	req.Name = name
-	req.Namespace = namespace
-	return req
-}

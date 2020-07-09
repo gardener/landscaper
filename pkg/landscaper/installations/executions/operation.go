@@ -55,6 +55,10 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		return fmt.Errorf("unable to template executions: %w", err)
 	}
 
+	if len(executions) == 0 {
+		return nil
+	}
+
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace

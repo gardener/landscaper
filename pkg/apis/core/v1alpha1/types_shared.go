@@ -74,8 +74,14 @@ type Condition struct {
 type Operation string
 
 const (
+	// ReconcileOperation is a annotation for the landscaper to reconcile the resource
 	ReconcileOperation Operation = "reconcile"
-	AbortOperation     Operation = "abort"
+
+	// ForceReconcileOperation forces the landscaper to not wait for children (executions nor subinstallations) to be completed.
+	ForceReconcileOperation Operation = "force-reconcile"
+
+	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
+	AbortOperation Operation = "abort"
 )
 
 // ObjectReference is the reference to a kubernetes object.

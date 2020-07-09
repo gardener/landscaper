@@ -18,24 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EncompassedByLabel is the label that contains the name of the parent installation
-// that encompasses the current installation.
-// todo: add conversition
-const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
-
-// EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
-const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
-
 type ComponentInstallationPhase string
-
-const (
-	ComponentPhaseInit        ComponentInstallationPhase = "Init"
-	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
-	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
-	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
-	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
-	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"
-)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

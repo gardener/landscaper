@@ -28,6 +28,7 @@ type ExecutionPhase string
 const (
 	ExecutionPhaseInit        = ExecutionPhase(ComponentPhaseInit)
 	ExecutionPhaseProgressing = ExecutionPhase(ComponentPhaseProgressing)
+	ExecutionPhaseDeleting    = ExecutionPhase(ComponentPhaseDeleting)
 	ExecutionPhaseSucceeded   = ExecutionPhase(ComponentPhaseSucceeded)
 	ExecutionPhaseFailed      = ExecutionPhase(ComponentPhaseFailed)
 )

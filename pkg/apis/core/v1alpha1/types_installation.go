@@ -41,6 +41,7 @@ const (
 	ComponentPhaseInit        ComponentInstallationPhase = "Init"
 	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
 	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
+	ComponentPhaseDeleting    ComponentInstallationPhase = "Deleting"
 	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
 	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
 	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"

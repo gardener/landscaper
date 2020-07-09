@@ -74,7 +74,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
-		a.log.V(5).Info(err.Error())
+		if apierrors.IsNotFound(err) {
+			a.log.V(5).Info(err.Error())
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, err
 	}
 
