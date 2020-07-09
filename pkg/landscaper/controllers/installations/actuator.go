@@ -103,7 +103,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		// todo: handle abort..
 	}
 
-	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
+	//if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
 		// if the inst has the reconcile annotation or if the inst is waiting for dependencies
 		// we need to check if all required imports are satisfied.
 		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
@@ -113,9 +113,6 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 			}
 			return reconcile.Result{}, nil
 		}
-
-		return reconcile.Result{}, nil
-	}
 
 	definition, err := a.registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
 	if err != nil {

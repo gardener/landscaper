@@ -95,7 +95,7 @@ var _ = Describe("Delete", func() {
 		}
 	})
 
-	It("should not delete if another installation still imports a exported value", func() {
+	It("Should successfully reconcile SimpleTest", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 

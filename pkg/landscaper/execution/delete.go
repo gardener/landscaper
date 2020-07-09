@@ -28,9 +28,6 @@ import (
 func (o *Operation) Delete(ctx context.Context) error {
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	if err := o.Client().Status().Update(ctx, o.exec); err != nil {
-		return err
-	}
 
 	for i := len(o.exec.Spec.Executions) - 1; i >= 0; i-- {
 		item := o.exec.Spec.Executions[i]
@@ -54,9 +51,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 
 		// update state
 		if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-			if err := o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed); err != nil {
-				return err
-			}
+			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		}
 
 		return nil

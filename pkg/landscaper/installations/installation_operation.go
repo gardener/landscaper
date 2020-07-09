@@ -150,7 +150,7 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 // UpdateExportReference updates the data object that holds the exported values of the installation.
 func (o *Operation) UpdateExportReference(ctx context.Context, values interface{}) error {
 	obj := &corev1.Secret{}
-	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
+	obj.Name = fmt.Sprintf("%s-exports", o.Inst.Info.Name)
 	obj.Namespace = o.Inst.Info.Namespace
 	if o.Inst.Info.Status.ExportReference != nil {
 		obj.Name = o.Inst.Info.Status.ExportReference.Name

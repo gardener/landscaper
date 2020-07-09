@@ -67,15 +67,21 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 }
 
 func (v *Validator) validateExports(ctx context.Context, fldPath *field.Path, inst *installations.Installation, do *dataobject.DataObject) error {
-	for i, exportDef := range inst.Definition.Exports {
+	for i, exportMapping := range inst.Info.Spec.Exports{
 		expPath := fldPath.Index(i)
+
+		exportDef, err := inst.GetExportDefinition(exportMapping.From)
+		if err != nil {
+			return err
+		}
+
 		dt, ok := v.GetDataType(exportDef.Type)
 		if !ok {
 			return fmt.Errorf("%s: cannot find DataType %s", expPath.String(), exportDef.Type)
 		}
 
 		var data interface{}
-		if err := do.GetData(exportDef.Key, &data); err != nil {
+		if err := do.GetData(exportMapping.To, &data); err != nil {
 			return errors.Wrapf(err, "%s: unable to get data", expPath.String())
 		}
 

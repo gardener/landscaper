@@ -1,0 +1,7 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataType
+metadata:
+  name: string
+schema:
+  openAPIV3Schema:
+    type: string

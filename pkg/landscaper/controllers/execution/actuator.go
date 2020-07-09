@@ -90,7 +90,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	old := exec.DeepCopy()
 
 	err := a.Ensure(ctx, exec)
-	if !reflect.DeepEqual(exec, old) { // todo: only use deep equal on status
+	if !reflect.DeepEqual(exec.Status, old.Status) {
 		if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
 			if err != nil {
 				err2 = errors.Wrapf(err, "update error: %s", err.Error())

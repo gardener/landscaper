@@ -210,7 +210,7 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 	// todo: check generation of other components in the dependency tree
 	// we expect the parent's exported config generation to equal the highest among all subcomponents
 
-	if sibling.Info.Status.ConfigGeneration < v.parent.Info.Status.ConfigGeneration {
+	if v.parent != nil && sibling.Info.Status.ConfigGeneration < v.parent.Info.Status.ConfigGeneration {
 		return installations.NewImportNotSatisfiedError("parent has higher generation than the imported configuration", nil)
 	}
 
