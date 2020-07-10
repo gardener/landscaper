@@ -157,12 +157,9 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 
 	if !inst.DeletionTimestamp.IsZero() {
 		err := EnsureDeletion(ctx, instOp)
-		if !reflect.DeepEqual(inst.Status, old.Status) {
+		if err != nil && !reflect.DeepEqual(inst.Status, old.Status) {
 			if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
-				if err != nil {
-					err2 = errors.Wrapf(err, "update error: %s", err.Error())
-				}
-				return err2
+				return errors.Wrapf(err2, "update error: %s", err.Error())
 			}
 		}
 		return err

@@ -134,6 +134,12 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 // todo: remove finalizers iof all objects in state
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 	for _, obj := range state.DeployItems {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.removeFinalizer(ctx, obj); err != nil {
 			return err
 		}
@@ -142,6 +148,12 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, obj := range state.Executions {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.removeFinalizer(ctx, obj); err != nil {
 			return err
 		}
@@ -150,6 +162,12 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, obj := range state.Installations {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.removeFinalizer(ctx, obj); err != nil {
 			return err
 		}
@@ -158,6 +176,12 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, obj := range state.LandscapeConfigs {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.removeFinalizer(ctx, obj); err != nil {
 			return err
 		}
@@ -166,6 +190,12 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, obj := range state.Secrets {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.removeFinalizer(ctx, obj); err != nil {
 			return err
 		}
@@ -174,6 +204,12 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, dt := range state.DataTypes {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: dt.Name, Namespace: dt.Namespace}, dt); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
 		if err := e.Client.Delete(ctx, dt); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
