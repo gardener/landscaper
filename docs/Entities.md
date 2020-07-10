@@ -7,6 +7,7 @@ The Landscaper's conceptual model is made up of various entities:
 - [`DeployItem`](#DeployItem)
 - [`DataType`](#DataType)
 
+![entities](./images/entities.png)
 
 ## `ComponentDefinition`
 A `ComponentDefinition` ([detailed documentation](./ComponentDefinitions.md)) is a _building block_ or piece of a functioning Gardener installation.
