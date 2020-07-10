@@ -27,38 +27,27 @@ chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*
 
 echo "> Generating groups for Landscaper"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
-  deepcopy,defaulter \
+  deepcopy,defaulter,conversion \
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/pkg/apis \
   $PROJECT_MOD_ROOT/pkg/apis \
   "core:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
-echo "> Generating Landscaper conversion"
-bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
-  conversion \
-  $PROJECT_MOD_ROOT/pkg/core \
-  $PROJECT_MOD_ROOT/pkg/apis \
-  $PROJECT_MOD_ROOT/pkg/apis \
-  core:v1alpha1 \
-  --extra-peer-dirs=github.com/gardener/landscaper/pkg/apis/core,github.com/gardener/landscaper/pkg/apis/core/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
-  --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
-
 echo "> Generating groups for Config"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
-  deepcopy,defaulter \
+  deepcopy,defaulter,conversion \
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/pkg/apis \
   $PROJECT_MOD_ROOT/pkg/apis \
   "config:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
-echo "> Generating Config conversion"
+echo "> Generating groups for Helm Deployer"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
-  conversion \
-  $PROJECT_MOD_ROOT/pkg/core \
-  $PROJECT_MOD_ROOT/pkg/apis \
-  $PROJECT_MOD_ROOT/pkg/apis \
-  config:v1alpha1 \
-  --extra-peer-dirs=github.com/gardener/landscaper/pkg/apis/config,github.com/gardener/landscaper/pkg/apis/config/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
+  deepcopy,defaulter,conversion \
+  $PROJECT_MOD_ROOT/pkg/client \
+  $PROJECT_MOD_ROOT/pkg/apis/deployer \
+  $PROJECT_MOD_ROOT/pkg/apis/deployer \
+  "helm:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"

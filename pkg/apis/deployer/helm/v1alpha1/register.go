@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,10 +20,10 @@ import (
 )
 
 // GroupName is the name of the Garden API group.
-const GroupName = "config.landscaper.gardener.cloud"
+const GroupName = "helm.deployer.landscaper.gardener.cloud"
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -48,8 +48,8 @@ func init() {
 // Adds the list of known types to Schema.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&ComponentList{},
-		&LandscaperConfiguration{},
+		&ProviderStatus{},
+		&ProviderConfiguration{},
 	)
 	return nil
 }

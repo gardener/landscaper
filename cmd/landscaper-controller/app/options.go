@@ -15,12 +15,17 @@
 package app
 
 import (
+	"errors"
 	goflag "flag"
+	"io/ioutil"
 
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -29,6 +34,7 @@ type options struct {
 	log        logr.Logger
 	configPath string
 
+	config   *config.LandscaperConfiguration
 	registry registry.Registry
 }
 
@@ -53,11 +59,43 @@ func (o *options) Complete() error {
 	logger.SetLogger(log)
 	ctrl.SetLogger(log)
 
-	r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), []string{"/Users/d064999/go/src/github.com/gardener/landscaper/examples/03-sub-comps/definitions"})
+	o.config, err = o.parseConfigurationFile()
 	if err != nil {
 		return err
 	}
-	o.registry = r
+
+	if err := o.setupRegistry(); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+func (o *options) setupRegistry() error {
+	if o.config.Registry.Local != nil {
+		r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), o.config.Registry.Local.Paths)
+		if err != nil {
+			return err
+		}
+		o.registry = r
+	}
+	return errors.New("no registry defined")
+}
+
+func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {
+	decoder := serializer.NewCodecFactory(kubernetes.ConfigScheme).UniversalDecoder()
+	if len(o.configPath) == 0 {
+		return &config.LandscaperConfiguration{}, nil
+	}
+	data, err := ioutil.ReadFile(o.configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &config.LandscaperConfiguration{}
+	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }

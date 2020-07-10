@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/util/validation/field"
+	"encoding/json"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-// Configuration is the configuration of a helm deploy item.
-// todo: use versioned configuration
-type Configuration struct {
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
+type ProviderConfiguration struct {
+	metav1.TypeMeta `json:",inline"`
+
 	// Kubeconfig is the base64 encoded kubeconfig file
 	Kubeconfig string `json:"kubeconfig"`
 
@@ -39,7 +44,7 @@ type Configuration struct {
 	Namespace string `json:"namespace"`
 
 	// Values are the values that are used for templating.
-	Values map[string]interface{} `json:"values,omitempty"`
+	Values json.RawMessage `json:"values,omitempty"`
 
 	// ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
@@ -59,45 +64,12 @@ type ExportFromManifestItem struct {
 	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
 }
 
-// Status is the helm provider specific status
-type Status struct {
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ProviderStatus is the helm provider specific status
+type ProviderStatus struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
 	ManagedResources []lsv1alpha1.TypedObjectReference `json:"managedResources,omitempty"`
-}
-
-// Validate validates a configuration object
-func Validate(config *Configuration) error {
-	allErrs := field.ErrorList{}
-	if len(config.Repository) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("repository"), "must not be empty"))
-	}
-	if len(config.Version) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("version"), "must not be empty"))
-	}
-
-	expPath := field.NewPath("exportsFromManifests")
-	for i, export := range config.ExportsFromManifests {
-		indexFldPath := expPath.Index(i)
-		if len(export.Key) == 0 {
-			allErrs = append(allErrs, field.Required(indexFldPath.Child("key"), "must not be empty"))
-		}
-		if len(export.JSONPath) == 0 {
-			allErrs = append(allErrs, field.Required(indexFldPath.Child("jsonPath"), "must not be empty"))
-		}
-
-		resFldPath := indexFldPath.Child("resource")
-		if len(export.Resource.APIVersion) == 0 {
-			allErrs = append(allErrs, field.Required(resFldPath.Child("apiGroup"), "must not be empty"))
-		}
-		if len(export.Resource.Kind) == 0 {
-			allErrs = append(allErrs, field.Required(resFldPath.Child("kind"), "must not be empty"))
-		}
-		if len(export.Resource.Name) == 0 {
-			allErrs = append(allErrs, field.Required(resFldPath.Child("name"), "must not be empty"))
-		}
-		if len(export.Resource.Namespace) == 0 {
-			allErrs = append(allErrs, field.Required(resFldPath.Child("namespace"), "must not be empty"))
-		}
-	}
-
-	return allErrs.ToAggregate()
 }

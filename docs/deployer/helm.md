@@ -17,6 +17,9 @@ spec:
     namespace: default
 
   config:
+    apiVersion: helm.deployer.landscaper.gardener.cloud
+    kind: ProviderConfiguration
+
     repository: myrepo/charts/nginx-ingress
     version: 0.5.2
 
@@ -44,11 +47,14 @@ spec:
 ```
 ### Status
 This section describes the provider specific status of the resource
-```
+```yaml
 status:
-  managedResources:
-  - apiGroup: k8s.apigroup.com/v1
-    kind: my-type
-    name: my-resource
-    namespace: default
+  providerStatus:
+    apiVersion: helm.deployer.landscaper.gardener.cloud
+    kind: ProviderStatus
+    managedResources:
+    - apiGroup: k8s.apigroup.com/v1
+      kind: my-type
+      name: my-resource
+      namespace: default
 ```

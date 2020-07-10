@@ -17,19 +17,21 @@ package helm
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
@@ -59,7 +61,11 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
 		objects = append(objects, decodedObjects...)
 	}
 
-	status := &Status{
+	status := &helmv1alpha1.ProviderStatus{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
+			Kind:       "ProviderStatus",
+		},
 		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
 	}
 	for i, obj := range objects {
@@ -210,7 +216,7 @@ func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstr
 	return utils.MergeMaps(exports, newValue), nil
 }
 
-func (h *Helm) findResource(exports map[string]interface{}, obj *unstructured.Unstructured) *ExportFromManifestItem {
+func (h *Helm) findResource(exports map[string]interface{}, obj *unstructured.Unstructured) *helmv1alpha1.ExportFromManifestItem {
 	for _, export := range h.Configuration.ExportsFromManifests {
 		if export.Resource.APIVersion != obj.GetAPIVersion() {
 			continue

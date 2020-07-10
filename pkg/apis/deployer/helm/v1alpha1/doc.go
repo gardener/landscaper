@@ -14,9 +14,9 @@
 
 // Package core is the internal version of the API.
 // +k8s:deepcopy-gen=package
-// +k8s:conversion-gen=github.com/gardener/landscaper/pkg/apis/config
+// +k8s:conversion-gen=github.com/gardener/landscaper/pkg/apis/deployer/helm
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 
-// +groupName=config.landscaper.gardener.cloud
+// +groupName=helm.deployer.landscaper.gardener.cloud
 package v1alpha1

@@ -22,18 +22,29 @@ import (
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	helminstall "github.com/gardener/landscaper/pkg/apis/deployer/helm/install"
+	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	helmv1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1/validation"
 	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
 )
 
 const (
 	Type lsv1alpha1.ExecutionType = "Helm"
 )
+
+var helmscheme = runtime.NewScheme()
+
+func init() {
+	helminstall.Install(helmscheme)
+}
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
@@ -42,17 +53,18 @@ type Helm struct {
 	registryClient *registry.Client
 
 	DeployItem    *lsv1alpha1.DeployItem
-	Configuration *Configuration
+	Configuration *helmv1alpha1.ProviderConfiguration
 }
 
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem) (*Helm, error) {
-	config := &Configuration{}
-	if err := yaml.Unmarshal(item.Spec.Configuration, config); err != nil {
+	config := &helmv1alpha1.ProviderConfiguration{}
+	helmdecoder := serializer.NewCodecFactory(helmscheme).UniversalDecoder()
+	if _, _, err := helmdecoder.Decode(item.Spec.Configuration, nil, config); err != nil {
 		return nil, err
 	}
 
-	if err := Validate(config); err != nil {
+	if err := helmv1alpha1validation.ValidateProviderConfiguration(config); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +100,11 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, error) {
 		IsInstall: true,
 	}
 
-	values, err := chartutil.ToRenderValues(ch, h.Configuration.Values, options, nil)
+	values := make(map[string]interface{})
+	if err := yaml.Unmarshal(h.Configuration.Values, &values); err != nil {
+		return nil, err
+	}
+	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
 		return nil, err
 	}
