@@ -113,8 +113,8 @@ var _ = g.Describe("Constructor", func() {
 			From: "ext.a",
 			To:   "root.a",
 			SourceRef: &lsv1alpha1.TypedObjectReference{
-				APIGroup: "landscaper.gardener.cloud/v1alpha1",
-				Kind:     "LandscapeConfiguration",
+				APIVersion: "landscaper.gardener.cloud/v1alpha1",
+				Kind:       "LandscapeConfiguration",
 				ObjectReference: lsv1alpha1.ObjectReference{
 					Name:      "ls",
 					Namespace: "default",

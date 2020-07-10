@@ -134,6 +134,9 @@ spec:
       to: .identity.cert
 
   exports:
+  - from: mykey.spec.config.ingressclass
+    to: ingressClass
+
   - to: .virtual.etcd.endpoints.main
     type: url
     from: .etcd.endpoints.main

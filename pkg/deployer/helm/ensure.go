@@ -22,16 +22,21 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
+	"github.com/gardener/landscaper/pkg/utils"
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
+	exports := make(map[string]interface{}, 0)
 	_, kubeClient, err := h.TargetClient()
 	if err != nil {
 		return err
@@ -43,6 +48,14 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
 		if err != nil {
 			return err
 		}
+		// add possible export
+		for _, obj := range decodedObjects {
+			exports, err = h.addExport(exports, obj)
+			if err != nil {
+				return err
+			}
+		}
+
 		objects = append(objects, decodedObjects...)
 	}
 
@@ -59,8 +72,8 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
 		}
 
 		status.ManagedResources[i] = lsv1alpha1.TypedObjectReference{
-			APIGroup: obj.GetAPIVersion(),
-			Kind:     obj.GetKind(),
+			APIVersion: obj.GetAPIVersion(),
+			Kind:       obj.GetKind(),
 			ObjectReference: lsv1alpha1.ObjectReference{
 				Name:      obj.GetName(),
 				Namespace: obj.GetNamespace(),
@@ -73,9 +86,48 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
 		return err
 	}
 
+	if err := h.createOrUpdateExport(ctx, exports); err != nil {
+		return err
+	}
+
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	h.DeployItem.Status.ProviderStatus = statusData
 	h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
+	return h.kubeClient.Status().Update(ctx, h.DeployItem)
+}
+
+func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]interface{}) error {
+	if len(values) == 0 {
+		return nil
+	}
+	data, err := yaml.Marshal(values)
+	if err != nil {
+		return err
+	}
+
+	secret := &corev1.Secret{}
+	secret.GenerateName = "mock-export-"
+	secret.Namespace = h.DeployItem.Namespace
+	if h.DeployItem.Status.ExportReference != nil {
+		secret.Name = h.DeployItem.Status.ExportReference.Name
+		secret.Namespace = h.DeployItem.Status.ExportReference.Namespace
+	}
+
+	_, err = kubernetesutil.CreateOrUpdate(ctx, h.kubeClient, secret, func() error {
+		secret.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	h.DeployItem.Status.ExportReference = &lsv1alpha1.ObjectReference{
+		Name:      secret.Name,
+		Namespace: secret.Namespace,
+	}
+
 	return h.kubeClient.Status().Update(ctx, h.DeployItem)
 }
 
@@ -133,9 +185,46 @@ func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstruct
 		if decodedObj == nil {
 			continue
 		}
-
 		obj := &unstructured.Unstructured{Object: decodedObj}
 		objects = append(objects, obj.DeepCopy())
 	}
 	return objects, nil
+}
+
+func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstructured) (map[string]interface{}, error) {
+	export := h.findResource(exports, obj)
+	if export == nil {
+		return exports, nil
+	}
+
+	var val interface{}
+	if err := jsonpath.GetValue(export.JSONPath, obj.Object, &val); err != nil {
+		return nil, err
+	}
+
+	newValue, err := jsonpath.Construct(export.Key, val)
+	if err != nil {
+		return nil, err
+	}
+
+	return utils.MergeMaps(exports, newValue), nil
+}
+
+func (h *Helm) findResource(exports map[string]interface{}, obj *unstructured.Unstructured) *ExportFromManifestItem {
+	for _, export := range h.Configuration.ExportsFromManifests {
+		if export.Resource.APIVersion != obj.GetAPIVersion() {
+			continue
+		}
+		if export.Resource.Kind != obj.GetKind() {
+			continue
+		}
+		if export.Resource.Name != obj.GetName() {
+			continue
+		}
+		if export.Resource.Namespace != obj.GetNamespace() {
+			continue
+		}
+		return &export
+	}
+	return nil
 }

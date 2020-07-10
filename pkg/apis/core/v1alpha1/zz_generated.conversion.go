@@ -1559,7 +1559,7 @@ func Convert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.ObjectRef
 }
 
 func autoConvert_v1alpha1_TypedObjectReference_To_core_TypedObjectReference(in *TypedObjectReference, out *core.TypedObjectReference, s conversion.Scope) error {
-	out.APIGroup = in.APIGroup
+	out.APIVersion = in.APIVersion
 	out.Kind = in.Kind
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ObjectReference, &out.ObjectReference, s); err != nil {
 		return err
@@ -1573,7 +1573,7 @@ func Convert_v1alpha1_TypedObjectReference_To_core_TypedObjectReference(in *Type
 }
 
 func autoConvert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(in *core.TypedObjectReference, out *TypedObjectReference, s conversion.Scope) error {
-	out.APIGroup = in.APIGroup
+	out.APIVersion = in.APIVersion
 	out.Kind = in.Kind
 	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ObjectReference, &out.ObjectReference, s); err != nil {
 		return err

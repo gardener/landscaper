@@ -15,7 +15,7 @@
 package helm
 
 import (
-	"errors"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -41,7 +41,22 @@ type Configuration struct {
 	// Values are the values that are used for templating.
 	Values map[string]interface{} `json:"values,omitempty"`
 
-	ExportedFiles []string
+	// ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.
+	// +optional
+	ExportsFromManifests []ExportFromManifestItem `json:"exportsFromManifests,omitempty"`
+}
+
+// ExportFromManifestItem describes one export that is read from a templated resource.
+type ExportFromManifestItem struct {
+	// Key is the key that the value from JSONPath is exported to.
+	Key string `json:"key"`
+
+	// JSONPath is the jsonpath to look for a value.
+	// The JSONPath root is the referenced resource
+	JSONPath string `json:"jsonPath"`
+
+	// Resource specifies the name of the resource where the value should be read.
+	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
 }
 
 // Status is the helm provider specific status
@@ -51,11 +66,38 @@ type Status struct {
 
 // Validate validates a configuration object
 func Validate(config *Configuration) error {
+	allErrs := field.ErrorList{}
 	if len(config.Repository) == 0 {
-		return errors.New("respoitory has to be defined")
+		allErrs = append(allErrs, field.Required(field.NewPath("repository"), "must not be empty"))
 	}
 	if len(config.Version) == 0 {
-		return errors.New("version has to be defined")
+		allErrs = append(allErrs, field.Required(field.NewPath("version"), "must not be empty"))
 	}
-	return nil
+
+	expPath := field.NewPath("exportsFromManifests")
+	for i, export := range config.ExportsFromManifests {
+		indexFldPath := expPath.Index(i)
+		if len(export.Key) == 0 {
+			allErrs = append(allErrs, field.Required(indexFldPath.Child("key"), "must not be empty"))
+		}
+		if len(export.JSONPath) == 0 {
+			allErrs = append(allErrs, field.Required(indexFldPath.Child("jsonPath"), "must not be empty"))
+		}
+
+		resFldPath := indexFldPath.Child("resource")
+		if len(export.Resource.APIVersion) == 0 {
+			allErrs = append(allErrs, field.Required(resFldPath.Child("apiGroup"), "must not be empty"))
+		}
+		if len(export.Resource.Kind) == 0 {
+			allErrs = append(allErrs, field.Required(resFldPath.Child("kind"), "must not be empty"))
+		}
+		if len(export.Resource.Name) == 0 {
+			allErrs = append(allErrs, field.Required(resFldPath.Child("name"), "must not be empty"))
+		}
+		if len(export.Resource.Namespace) == 0 {
+			allErrs = append(allErrs, field.Required(resFldPath.Child("namespace"), "must not be empty"))
+		}
+	}
+
+	return allErrs.ToAggregate()
 }

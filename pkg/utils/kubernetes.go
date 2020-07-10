@@ -51,8 +51,8 @@ func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) 
 	}
 
 	return &lsv1alpha1.TypedObjectReference{
-		APIGroup: gvk.GroupVersion().String(),
-		Kind:     gvk.Kind,
+		APIVersion: gvk.GroupVersion().String(),
+		Kind:       gvk.Kind,
 		ObjectReference: lsv1alpha1.ObjectReference{
 			Name:      metaObj.GetName(),
 			Namespace: metaObj.GetNamespace(),

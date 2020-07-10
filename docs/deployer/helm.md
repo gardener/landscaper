@@ -30,6 +30,17 @@ spec:
     # Values to template the chart
     # optional
     values: {}
+    
+    # Specifies the resource, that should be read from the templated files
+    # The specified jsonPath value is written with the given key to the exported configuration.
+    exportsFromManifests:
+    - jsonPath: .spec.config
+      key: ingressClass
+      resource:
+        apiGroup: v1
+        kind: Secret
+        name: my-secret
+        namespace: a
 ```
 ### Status
 This section describes the provider specific status of the resource

@@ -211,11 +211,11 @@ spec:
                       description: SourceRef is the reference to the installation
                         where the value is imported
                       properties:
-                        apiGroup:
-                          description: APIGroup is the group for the resource being
-                            referenced. If APIGroup is not specified, the specified
-                            Kind must be in the core API group. For any other third-party
-                            types, APIGroup is required.
+                        apiVersion:
+                          description: APIVersion is the group and version for the
+                            resource being referenced. If APIVersion is not specified,
+                            the specified Kind must be in the core API group. For
+                            any other third-party types, APIVersion is required.
                           type: string
                         kind:
                           description: Kind is the type of resource being referenced
@@ -227,7 +227,7 @@ spec:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
                       required:
-                      - apiGroup
+                      - apiVersion
                       - kind
                       - name
                       - namespace

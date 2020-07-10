@@ -27,7 +27,7 @@ spec:
     type: string
 
   exports:
-  - key: .ingressClass # from effective helm values as DeployItem's export
+  - key: ingressClass # from effective helm values as DeployItem's export
     type: string
 
   executor: | # has to be idempotent
@@ -49,3 +49,11 @@ spec:
               cpu: {{ .imports.resources.requests.cpu }}
               memory: {{ .imports.resources.requests.memory }}
           {{ end }}
+        exportsManifest:
+        - jsonPath: .spec.config
+          key: ingressClass
+          resource:
+            apiVersion: v1
+            kind: Secret
+            name: my-secret
+            namespace: a
