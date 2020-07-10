@@ -1,0 +1,43 @@
+# Helm Deployer
+
+The helm deployer is a controller that reconciles DeployItems of type `Helm`.
+It renders a given helm chart and deploys the resulting manifest into a cluster.
+
+### Configuration
+This sections describes the provider specific configuration
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-nginx
+spec:
+  type: Helm
+  importRef:
+    name: secret-item1
+    namespace: default
+
+  config:
+    repository: myrepo/charts/nginx-ingress
+    version: 0.5.2
+
+    # base64 encoded kubeconfig pointing to the cluster to install the chart
+    kubeconfig: xxx
+    
+    # Name of the release: helm install [name]
+    name: my-release 
+    # Namespace of the release: helm --namespace
+    namespace: default
+    # Values to template the chart
+    # optional
+    values: {}
+```
+### Status
+This section describes the provider specific status of the resource
+```
+status:
+  managedResources:
+  - apiGroup: k8s.apigroup.com/v1
+    kind: my-type
+    name: my-resource
+    namespace: default
+```

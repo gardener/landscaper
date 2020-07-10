@@ -40,6 +40,8 @@ type Configuration struct {
 
 	// Values are the values that are used for templating.
 	Values map[string]interface{} `json:"values,omitempty"`
+
+	ExportedFiles []string
 }
 
 // Status is the helm provider specific status
