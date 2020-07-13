@@ -21,24 +21,23 @@ import (
 	"net/http"
 
 	"github.com/containerd/containerd/remotes"
-	"github.com/deislabs/oras/pkg/auth"
 	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
-	orascontent "github.com/deislabs/oras/pkg/content"
-	"github.com/deislabs/oras/pkg/oras"
+	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 
+	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils/oci"
+	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 type Client struct {
-	authorizer auth.Client
-	resolver   remotes.Resolver
+	oci oci.Client
 }
 
 // NewClient creates a new helm oci registry client.
-func NewClient(configFiles ...string) (*Client, error) {
-	authorizer, err := dockerauth.NewClient(configFiles...)
+func NewClient(log logr.Logger, config *helmv1alpha1.Configuration) (*Client, error) {
+	authorizer, err := dockerauth.NewClient()
 	if err != nil {
 		return nil, err
 	}
@@ -47,24 +46,19 @@ func NewClient(configFiles ...string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ociClient, err := buildOCIClient(log, resolver, config)
+	if err != nil {
+		return nil, err
+	}
 	return &Client{
-		authorizer: authorizer,
-		resolver:   resolver,
+		oci: ociClient,
 	}, nil
 }
 
 // GetChart pulls a chart from a oci registry with the given ref
 func (c *Client) GetChart(ctx context.Context, ref string) (*chart.Chart, error) {
-	ingester := orascontent.NewMemoryStore()
-	desc, _, err := oras.Pull(ctx, c.resolver, ref, ingester,
-		oras.WithPullEmptyNameAllowed(),
-		oras.WithAllowedMediaTypes(KnownMediaTypes()),
-		oras.WithContentProvideIngester(ingester))
-	if err != nil {
-		return nil, err
-	}
-
-	manifest, err := oci.ParseManifest(ingester, desc)
+	manifest, err := c.oci.GetManifest(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +71,33 @@ func (c *Client) GetChart(ctx context.Context, ref string) (*chart.Chart, error)
 		return nil, errors.New("unexpected media type of content")
 	}
 
-	_, blob, ok := ingester.Get(manifest.Layers[0])
-	if !ok {
-		return nil, errors.New("no blob found")
+	var data bytes.Buffer
+	if err := c.oci.Fetch(ctx, ref, manifest.Layers[0], &data); err != nil {
+		return nil, err
 	}
 
-	return chartloader.LoadArchive(bytes.NewBuffer(blob))
+	return chartloader.LoadArchive(&data)
+}
+
+func buildOCIClient(log logr.Logger, resolver remotes.Resolver, config *helmv1alpha1.Configuration) (oci.Client, error) {
+	opts := make([]oci.Option, 0)
+	if config.OCICache != nil {
+		ocicache, err := cache.NewCache(log, applyCacheConfigs(config)...)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, oci.WithCache{Cache: ocicache})
+	}
+	return oci.NewClient(log, resolver, opts...)
+}
+
+func applyCacheConfigs(config *helmv1alpha1.Configuration) []cache.Option {
+	opts := make([]cache.Option, 0)
+	if config.OCICache.UseInMemoryOverlay {
+		opts = append(opts, cache.WithInMemoryOverlay(true))
+	}
+	if len(config.OCICache.Path) != 0 {
+		opts = append(opts, cache.WithBasePath(config.OCICache.Path))
+	}
+	return opts
 }

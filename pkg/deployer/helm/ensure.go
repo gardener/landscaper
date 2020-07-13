@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/json"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -137,19 +138,35 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 	return h.kubeClient.Status().Update(ctx, h.DeployItem)
 }
 
-func (h *Helm) DeleteFiles(ctx context.Context, files map[string]string) error {
+func (h *Helm) DeleteFiles(ctx context.Context) error {
+	status := &helmv1alpha1.ProviderStatus{}
+	if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus, nil, status); err != nil {
+		return err
+	}
+
+	if len(status.ManagedResources) == 0 {
+		controllerutil.RemoveFinalizer(&h.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		return h.kubeClient.Update(ctx, h.DeployItem)
+	}
+
 	_, kubeClient, err := h.TargetClient()
 	if err != nil {
 		return err
 	}
 
 	objects := make([]*unstructured.Unstructured, 0)
-	for name, content := range files {
-		decodedObjects, err := h.decodeObjects(name, []byte(content))
-		if err != nil {
-			return err
+	for _, ref := range status.ManagedResources {
+		obj := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": ref.APIVersion,
+				"kind":       ref.Kind,
+				"metadata": map[string]interface{}{
+					"name":      ref.Name,
+					"namespace": ref.Namespace,
+				},
+			},
 		}
-		objects = append(objects, decodedObjects...)
+		objects = append(objects, obj)
 	}
 
 	completed := true

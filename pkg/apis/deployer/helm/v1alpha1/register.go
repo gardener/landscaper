@@ -50,6 +50,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&ProviderStatus{},
 		&ProviderConfiguration{},
+		&Configuration{},
 	)
 	return nil
 }

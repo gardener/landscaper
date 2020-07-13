@@ -63,7 +63,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := helmactuator.AddActuatorToManager(mgr); err != nil {
+	if err := helmactuator.AddActuatorToManager(mgr, o.config); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

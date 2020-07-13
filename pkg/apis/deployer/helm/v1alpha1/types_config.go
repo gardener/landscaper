@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package v1alpha1
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	confiv1alpha1 "github.com/gardener/landscaper/pkg/apis/config/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("HelmDeployer"), config)
-	if err != nil {
-		return err
-	}
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&lsv1alpha1.DeployItem{}).
-		Complete(a)
+// Configuration is the helm deployer configuration that configures the controller
+type Configuration struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// OCICache configures the oci cache of the controller
+	OCICache *confiv1alpha1.OCICacheConfiguration `json:"ociCache,omitempty"`
 }

@@ -40,10 +40,10 @@ const (
 	Type lsv1alpha1.ExecutionType = "Helm"
 )
 
-var helmscheme = runtime.NewScheme()
+var Helmscheme = runtime.NewScheme()
 
 func init() {
-	helminstall.Install(helmscheme)
+	helminstall.Install(Helmscheme)
 }
 
 // Helm is the internal representation of a DeployItem of Type Helm
@@ -59,7 +59,7 @@ type Helm struct {
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem) (*Helm, error) {
 	config := &helmv1alpha1.ProviderConfiguration{}
-	helmdecoder := serializer.NewCodecFactory(helmscheme).UniversalDecoder()
+	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration, nil, config); err != nil {
 		return nil, err
 	}

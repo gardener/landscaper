@@ -38,3 +38,16 @@ type LocalRegistryConfiguration struct {
 	// Paths are local filesystem paths definitions
 	Paths []string `json:"paths"`
 }
+
+// OCICacheConfiguration contains the configuration for the oci cache
+type OCICacheConfiguration struct {
+	// UseInMemoryOverlay enables an additional in memory overlay cache of oci images
+	UseInMemoryOverlay bool `json:"useInMemoryOverlay,omitempty"`
+
+	// Size of the cache in gb
+	Size int `json:"size"`
+
+	// Path specifies the path to the oci cache on the filesystem.
+	// Defaults to /tmp/ocicache
+	Path string `json:"path"`
+}

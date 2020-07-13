@@ -56,7 +56,7 @@ func NewClient(authorizer auth.Client) (Client, error) {
 	}, nil
 }
 
-// Pull loads a ComponentDefinition from a registry
+// GetManifest loads a ComponentDefinition from a registry
 func (c *client) Pull(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
 	ingester := orascontent.NewMemoryStore()
 	desc, _, err := oras.Pull(ctx, c.resolver, ref, ingester,
