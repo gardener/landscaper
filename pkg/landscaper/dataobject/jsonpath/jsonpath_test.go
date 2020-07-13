@@ -43,6 +43,12 @@ var _ = Describe("JSONPath", func() {
 						"key1": "val",
 					},
 				},
+				"level12": map[string]interface{}{
+					"key1": "{ \"nested\": true }",
+					"key2": map[string]interface{}{
+						"nested": true,
+					},
+				},
 			}
 		)
 
@@ -57,6 +63,21 @@ var _ = Describe("JSONPath", func() {
 			var val bool
 			err := jsonpath.GetValue(".level11.level20.key1", data, &val)
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return a string even if in the string is a valid json or yaml struct", func() {
+			var val string
+			err := jsonpath.GetValue(".level12.key1", data, &val)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(val).To(BeAssignableToTypeOf(""))
+		})
+
+		It("should return a sub struct", func() {
+			var val map[string]interface{}
+			err := jsonpath.GetValue(".level12.key2", data, &val)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(val).To(BeAssignableToTypeOf(map[string]interface{}{}))
+			Expect(val["nested"]).To(Equal(true))
 		})
 
 	})

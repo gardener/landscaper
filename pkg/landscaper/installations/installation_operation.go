@@ -26,10 +26,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
@@ -165,7 +167,7 @@ func (o *Operation) UpdateExportReference(ctx context.Context, values interface{
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
-		return nil
+		return controllerutil.SetOwnerReference(o.Inst.Info, obj, kubernetes.LandscaperScheme)
 	}); err != nil {
 		return err
 	}
@@ -197,7 +199,7 @@ func (o *Operation) UpdateImportReference(ctx context.Context, values interface{
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
-		return nil
+		return controllerutil.SetOwnerReference(o.Inst.Info, obj, kubernetes.LandscaperScheme)
 	}); err != nil {
 		return err
 	}

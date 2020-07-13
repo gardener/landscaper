@@ -1,0 +1,88 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: external-dns-management
+version: 0.7.11
+
+imports:
+- key: kubeconfig
+  type: string
+
+- key: namespace
+  type: string
+  required: false
+
+- key: extdns.dnsClass
+  type: string
+
+- key: baseDomain
+  type: string
+
+- key: gcloudDNSSecret
+  type: string
+
+exports:
+- key: dnsClass
+  type: string
+
+executors: |
+  - name: controller
+    type: Helm
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+
+      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/external-dns-management
+      version: 0.7.11
+
+      name: host
+      namespace: {{ default "default" .imports.namespace}}
+
+      kubeconfig: {{ .imports.kubeconfig | b64enc }}
+
+      values:
+        configuration:
+          dnsClass: {{ .imports.extdns.dnsClass }}
+          identifier: {{ .imports.extdns.dnsClass }}
+
+      exportsFromManifests:
+      - key: dnsClass
+        jsonPath: Values.configuration.dnsClass
+  - name: config
+    type: Helm
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+
+      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/generic-manifests
+      version: 0.1.0
+
+      name: host
+      namespace: {{ default "default" .imports.namespace}}
+
+      kubeconfig: {{ .imports.kubeconfig | b64enc }}
+
+      values:
+        resources:
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: base-domain-dns-secret
+            namespace: {{ default "default" .imports.namespace}}
+          data:
+            serviceaccount.json: {{ .imports.gcloudDNSSecret | b64enc }}
+        - apiVersion: dns.gardener.cloud/v1alpha1
+          kind: DNSProvider
+          metadata:
+            name: google
+            namespace: default
+            annotations:
+              dns.gardener.cloud/class: {{ .imports.extdns.dnsClass }}
+          spec:
+            type: google-clouddns
+            secretRef:
+              name: base-domain-dns-secret
+              namespace: {{ default "default" .imports.namespace}}
+            domains:
+              include:
+              - {{ .imports.baseDomain }}

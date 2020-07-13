@@ -114,6 +114,13 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		if err := a.reconcile(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: handle abort..
 	}

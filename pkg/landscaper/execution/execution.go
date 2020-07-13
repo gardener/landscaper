@@ -18,10 +18,12 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
@@ -70,7 +72,7 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		obj.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
-		return nil
+		return controllerutil.SetOwnerReference(o.exec, obj, kubernetes.LandscaperScheme)
 	}); err != nil {
 		return err
 	}

@@ -1,0 +1,20 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: nginx
+spec:
+  definitionRef: nginx-ingress-controller:0.5.2
+
+  imports:
+  - from: common.namespace
+    to: namespace
+  - from: host.kubeconfig
+    to: kubeconfig
+  - from: dnsClass
+    to: dnsClass
+  - from: common.baseDomain
+    to: baseDomain
+
+  exports:
+  - from: ingressClass
+    to: ingressClass

@@ -78,6 +78,7 @@ func (o *options) setupRegistry() error {
 			return err
 		}
 		o.registry = r
+		return nil
 	}
 	return errors.New("no registry defined")
 }

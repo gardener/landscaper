@@ -15,16 +15,23 @@
 package jsonpath
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
-	"github.com/ghodss/yaml"
+	errors2 "github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
+	"sigs.k8s.io/yaml"
 )
 
 func GetValue(text string, data interface{}, out interface{}) error {
+	outVal := reflect.ValueOf(out)
+	if outVal.Kind() != reflect.Ptr {
+		return errors.New("expected pointer")
+	}
+
 	if !strings.HasPrefix(text, ".") {
 		text = "." + text
 	}
@@ -33,17 +40,37 @@ func GetValue(text string, data interface{}, out interface{}) error {
 		return err
 	}
 
-	res := bytes.NewBuffer([]byte{})
-	if err := jp.Execute(res, data); err != nil {
+	res, err := jp.FindResults(data)
+	if err != nil {
 		return err
 	}
 
-	// do not try to marshal into nil
-	if out == nil {
-		return nil
+	if len(res) == 0 {
+		return errors.New("not found")
 	}
 
-	return yaml.Unmarshal(res.Bytes(), out)
+	if len(res) != 1 && len(res[0]) != 1 {
+		return errors.New("expected exactly one result")
+	}
+	val := reflect.Indirect(res[0][0])
+
+	outVal = outVal.Elem()
+	if !val.Type().AssignableTo(outVal.Type()) {
+		errMsg := fmt.Sprintf("type %s is not assignable to type %s", val.Type(), outVal.Type())
+		// if the value is of kind interface and the types are not assignable lets try to marshal and unmarshal the values
+		if val.Kind() == reflect.Interface {
+			data, err := yaml.Marshal(val.Interface())
+			if err != nil {
+				return errors2.Wrap(err, errMsg)
+			}
+			return yaml.Unmarshal(data, out)
+		}
+
+		return errors.New(errMsg)
+	}
+
+	outVal.Set(val)
+	return nil
 }
 
 // Construct creates a map for the given jsonpath

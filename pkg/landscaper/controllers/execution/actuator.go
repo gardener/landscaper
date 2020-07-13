@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
@@ -92,6 +93,26 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	}
 
 	old := exec.DeepCopy()
+
+	// remove the reconcile annotation if it exists
+	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, exec); err != nil {
+			return reconcile.Result{Requeue: true}, err
+		}
+		err := a.Ensure(ctx, exec)
+		if !reflect.DeepEqual(exec.Status, old.Status) {
+			if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
+				if err != nil {
+					err2 = errors.Wrapf(err, "update error: %s", err.Error())
+				}
+				return reconcile.Result{}, err2
+			}
+		}
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
 
 	err := a.Ensure(ctx, exec)
 	if !reflect.DeepEqual(exec.Status, old.Status) {

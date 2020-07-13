@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: main
+  namespace: default
+stringData:
+  config: |
+    common:
+      namespace: default
+      baseDomain: demo.landscaper.gcp.dev.k8s.ondemand.com
+    extdns:
+      dnsClass: host
+    creds:
+      gcloudDNSSecret: ""
+    host:
+      kubeconfig: ""
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: LandscapeConfiguration
+metadata:
+  name: default
+spec:
+  secretRefs:
+  - name: main
+    namespace: default
+  - name: main-secrets
+    namespace: default

@@ -1,0 +1,57 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: ComponentDefinition
+
+name: nginx-ingress-controller
+version: 0.5.2
+
+imports:
+- key: kubeconfig
+  type: string
+
+- key: namespace
+  type: string
+  required: false
+
+- key: nginx.ingressClass
+  type: string
+  required: false
+
+- key: dnsClass
+  type: string
+
+- key: baseDomain
+  type: string
+
+exports:
+- key: ingressClass
+  type: string
+
+executors: |
+  - name: controller
+    type: Helm
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+
+      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/nginx-ingress
+      version: 0.5.2
+
+      name: ingress
+      namespace: {{ default "default" .imports.namespace}}
+
+      kubeconfig: {{ .imports.kubeconfig | b64enc }}
+
+      values:
+        controller:
+          {{- if .imports.nginx.ingressClass }}
+          ingressClass: {{ .imports.nginx.ingressClass }}
+          {{- end }}
+          service:
+            annotations:
+              dns.gardener.cloud/class: {{ .imports.dnsClass }}
+              dns.gardener.cloud/dnsnames: "*.ingress.{{ .imports.baseDomain }}"
+              dns.gardener.cloud/ttl: "500"
+
+      exportsFromManifests:
+      - key: ingressClass
+        jsonPath: Values.controller.ingressClass

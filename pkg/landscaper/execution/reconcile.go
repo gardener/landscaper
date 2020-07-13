@@ -43,6 +43,9 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, deployItem.Status.Phase)
 
 			if !lsv1alpha1helper.IsCompletedExecutionPhase(deployItem.Status.Phase) {
+				if !lsv1alpha1helper.IsProgressingExecutionPhase(phase) && ref.Reference.ObservedGeneration != o.exec.Generation {
+					return o.deployOrTrigger(ctx, item)
+				}
 				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 				return nil
 			}
@@ -57,6 +60,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			if ref.Reference.ObservedGeneration == o.exec.Generation {
 				continue
 			}
+			continue
 		}
 
 		return o.deployOrTrigger(ctx, item)

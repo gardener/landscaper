@@ -191,6 +191,11 @@ func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) boo
 	return phase == v1alpha1.ComponentPhaseFailed || phase == v1alpha1.ComponentPhaseAborted || phase == v1alpha1.ComponentPhaseSucceeded
 }
 
+// IsProgressingInstallationPhase returns true if the phase indicates that the component is still progressing.
+func IsProgressingInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
+	return phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending || phase == v1alpha1.ComponentPhaseDeleting
+}
+
 // CombinedInstallationPhase returns the combined phase of multiple installation's phases.
 func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1alpha1.ComponentInstallationPhase {
 	if len(phases) == 0 {
@@ -245,6 +250,11 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 // IsCompletedExecutionPhase returns true if the phase indicates a final state.
 func IsCompletedExecutionPhase(phase v1alpha1.ExecutionPhase) bool {
 	return IsCompletedInstallationPhase(v1alpha1.ComponentInstallationPhase(phase))
+}
+
+// IsProgressingExecutionPhase returns true if the phase indicates that the component is still progressing.
+func IsProgressingExecutionPhase(phase v1alpha1.ExecutionPhase) bool {
+	return IsProgressingInstallationPhase(v1alpha1.ComponentInstallationPhase(phase))
 }
 
 // CombinedExecutionPhase returns the combined phase of multiple execution's phases.

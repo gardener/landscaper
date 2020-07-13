@@ -32,6 +32,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
@@ -122,7 +123,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
-		return nil
+		return controllerutil.SetOwnerReference(h.DeployItem, secret, kubernetes.LandscaperScheme)
 	})
 	if err != nil {
 		return err

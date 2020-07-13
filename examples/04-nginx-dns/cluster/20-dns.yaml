@@ -1,0 +1,26 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: dns
+spec:
+  definitionRef: external-dns-management:0.7.11
+
+  imports:
+  - from: common.namespace
+    to: namespace
+
+  - from: host.kubeconfig
+    to: kubeconfig
+
+  - from: extdns.dnsClass
+    to: extdns.dnsClass
+
+  - from: creds.gcloudDNSSecret
+    to: gcloudDNSSecret
+
+  - from: common.baseDomain
+    to: baseDomain
+
+  exports:
+  - from: dnsClass
+    to: dnsClass

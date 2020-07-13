@@ -53,12 +53,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966 // indirect
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.2
-	k8s.io/apiextensions-apiserver v0.18.2
+	k8s.io/apiextensions-apiserver v0.18.2 // indirect
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v0.18.2
 	k8s.io/code-generator v0.18.2
 	k8s.io/gengo v0.0.0-20200413195148-3a45101e95ac // indirect
-	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c
+	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c // indirect
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/controller-tools v0.3.1-0.20200517180335-820a4a27ea84 // including a fix from master
