@@ -37,8 +37,7 @@ import (
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
-func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string) error {
-	exports := make(map[string]interface{}, 0)
+func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
 	_, kubeClient, err := h.TargetClient()
 	if err != nil {
 		return err
@@ -197,8 +196,32 @@ func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstruct
 	return objects, nil
 }
 
+func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {
+	exports := make(map[string]interface{}, 0)
+
+	for _, export := range h.Configuration.ExportsFromManifests {
+		if export.FromResource != nil {
+			continue
+		}
+
+		var val interface{}
+		if err := jsonpath.GetValue(export.JSONPath, values, &val); err != nil {
+			return nil, err
+		}
+
+		newValue, err := jsonpath.Construct(export.Key, val)
+		if err != nil {
+			return nil, err
+		}
+
+		exports = utils.MergeMaps(exports, newValue)
+	}
+
+	return exports, nil
+}
+
 func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstructured) (map[string]interface{}, error) {
-	export := h.findResource(exports, obj)
+	export := h.findResource(obj)
 	if export == nil {
 		return exports, nil
 	}
@@ -216,18 +239,21 @@ func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstr
 	return utils.MergeMaps(exports, newValue), nil
 }
 
-func (h *Helm) findResource(exports map[string]interface{}, obj *unstructured.Unstructured) *helmv1alpha1.ExportFromManifestItem {
+func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.ExportFromManifestItem {
 	for _, export := range h.Configuration.ExportsFromManifests {
-		if export.Resource.APIVersion != obj.GetAPIVersion() {
+		if export.FromResource == nil {
 			continue
 		}
-		if export.Resource.Kind != obj.GetKind() {
+		if export.FromResource.APIVersion != obj.GetAPIVersion() {
 			continue
 		}
-		if export.Resource.Name != obj.GetName() {
+		if export.FromResource.Kind != obj.GetKind() {
 			continue
 		}
-		if export.Resource.Namespace != obj.GetNamespace() {
+		if export.FromResource.Name != obj.GetName() {
+			continue
+		}
+		if export.FromResource.Namespace != obj.GetNamespace() {
 			continue
 		}
 		return &export

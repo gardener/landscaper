@@ -79,17 +79,17 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context) (map[string]string, error) {
+func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]interface{}, error) {
 	restConfig, _, err := h.TargetClient()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// download chart
 	// todo: do caching of charts
 	ch, err := h.registryClient.GetChart(ctx, fmt.Sprintf("%s:%s", h.Configuration.Repository, h.Configuration.Version))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	//template chart
@@ -102,14 +102,19 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, error) {
 
 	values := make(map[string]interface{})
 	if err := yaml.Unmarshal(h.Configuration.Values, &values); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return engine.RenderWithClient(ch, values, restConfig)
+	files, err := engine.RenderWithClient(ch, values, restConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return files, values, nil
 }
 
 func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {

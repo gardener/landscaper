@@ -20,8 +20,6 @@ import (
 
 	"github.com/containerd/containerd/remotes"
 	auth "github.com/deislabs/oras/pkg/auth/docker"
-	"github.com/deislabs/oras/pkg/content"
-	"github.com/deislabs/oras/pkg/oras"
 	"github.com/spf13/afero"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -30,6 +28,7 @@ import (
 
 type registry struct {
 	resolver remotes.Resolver
+	client   Client
 }
 
 func New(configFile string) (regapi.Registry, error) {
@@ -43,8 +42,14 @@ func New(configFile string) (regapi.Registry, error) {
 		return nil, err
 	}
 
+	client, err := NewClient(authorizer)
+	if err != nil {
+		return nil, err
+	}
+
 	return &registry{
 		resolver: resolver,
+		client:   client,
 	}, nil
 }
 
@@ -54,12 +59,7 @@ func (r registry) GetDefinition(ctx context.Context, name, version string) (*lsv
 }
 
 func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
-	ingester := content.NewMemoryStore()
-	_, _, err := oras.Pull(ctx, r.resolver, ref, ingester, oras.WithAllowedMediaTypes(KnownMediaTypes()))
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return r.client.Pull(ctx, ref)
 }
 
 func (r registry) GetBlob(ctx context.Context, name, version string) (afero.Fs, error) {

@@ -89,7 +89,8 @@ func (c *client) Pull(ctx context.Context, ref string) (*lsv1alpha1.ComponentDef
 	return def, nil
 }
 
-// Push uploads a component definition wiht its content to a oci compliant registry.
+// Push uploads a component definition with its content to a oci compliant registry.
+// Push should be used withint the commandline
 func (c *client) Push(ctx context.Context, def *lsv1alpha1.ComponentDefinition) error {
 	ingester := orascontent.NewMemoryStore()
 

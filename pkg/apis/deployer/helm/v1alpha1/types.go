@@ -51,7 +51,8 @@ type ProviderConfiguration struct {
 	ExportsFromManifests []ExportFromManifestItem `json:"exportsFromManifests,omitempty"`
 }
 
-// ExportFromManifestItem describes one export that is read from a templated resource.
+// ExportFromManifestItem describes one export that is read from the templates values or a templated resource.
+// The value will be by default read from the values if fromResource is not specified.
 type ExportFromManifestItem struct {
 	// Key is the key that the value from JSONPath is exported to.
 	Key string `json:"key"`
@@ -60,8 +61,8 @@ type ExportFromManifestItem struct {
 	// The JSONPath root is the referenced resource
 	JSONPath string `json:"jsonPath"`
 
-	// Resource specifies the name of the resource where the value should be read.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	// FromResource specifies the name of the resource where the value should be read.
+	FromResource *lsv1alpha1.TypedObjectReference `json:"fromResource,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

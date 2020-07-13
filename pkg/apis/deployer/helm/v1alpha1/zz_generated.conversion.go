@@ -72,7 +72,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 func autoConvert_v1alpha1_ExportFromManifestItem_To_helm_ExportFromManifestItem(in *ExportFromManifestItem, out *helm.ExportFromManifestItem, s conversion.Scope) error {
 	out.Key = in.Key
 	out.JSONPath = in.JSONPath
-	out.Resource = in.Resource
+	out.FromResource = (*corev1alpha1.TypedObjectReference)(unsafe.Pointer(in.FromResource))
 	return nil
 }
 
@@ -84,7 +84,7 @@ func Convert_v1alpha1_ExportFromManifestItem_To_helm_ExportFromManifestItem(in *
 func autoConvert_helm_ExportFromManifestItem_To_v1alpha1_ExportFromManifestItem(in *helm.ExportFromManifestItem, out *ExportFromManifestItem, s conversion.Scope) error {
 	out.Key = in.Key
 	out.JSONPath = in.JSONPath
-	out.Resource = in.Resource
+	out.FromResource = (*corev1alpha1.TypedObjectReference)(unsafe.Pointer(in.FromResource))
 	return nil
 }
 

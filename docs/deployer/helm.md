@@ -34,17 +34,28 @@ spec:
     # optional
     values: {}
     
-    # Specifies the resource, that should be read from the templated files
+    # Describes one export that is read from the templates values or a templated resource.
+    # The value will be by default read from the values if fromResource is not specified.
     # The specified jsonPath value is written with the given key to the exported configuration.
     exportsFromManifests:
-    - jsonPath: .spec.config
-      key: ingressClass
-      resource:
-        apiGroup: v1
+    - key: KeyA # value is read from the values file
+      jsonPath: .Values.keyA
+    - key: KeyB # value is read from secret
+      jsonPath: .spec.config
+      fromResource:
+        apiVersion: v1
         kind: Secret
         name: my-secret
         namespace: a
 ```
+
+Exports can be defined in `exportsFromManifests` by specifying the exported key to export.
+The value is taken from a rendered resource and a jsonpath to the value.
+For a complete documention of the availabel jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
+
+:warning: only unique identifiable resources (apiVersion, kind, name and namespace).
+
+
 ### Status
 This section describes the provider specific status of the resource
 ```yaml

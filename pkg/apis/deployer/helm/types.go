@@ -60,8 +60,8 @@ type ExportFromManifestItem struct {
 	// The JSONPath root is the referenced resource
 	JSONPath string `json:"jsonPath"`
 
-	// Resource specifies the name of the resource where the value should be read.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	// FromResource specifies the name of the resource where the value should be read.
+	FromResource *lsv1alpha1.TypedObjectReference `json:"fromResource,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

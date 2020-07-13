@@ -105,7 +105,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 	}
 
 	if !deployItem.DeletionTimestamp.IsZero() {
-		files, err := helm.Template(ctx)
+		files, _, err := helm.Template(ctx)
 		if err != nil {
 			return err
 		}
@@ -118,9 +118,13 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return nil
 	}
 
-	files, err := helm.Template(ctx)
+	files, values, err := helm.Template(ctx)
 	if err != nil {
 		return err
 	}
-	return helm.ApplyFiles(ctx, files)
+	exports, err := helm.constructExportsFromValues(values)
+	if err != nil {
+		return err
+	}
+	return helm.ApplyFiles(ctx, files, exports)
 }
