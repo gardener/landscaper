@@ -28,9 +28,13 @@ type LandscaperConfiguration struct {
 
 // RegistryConfiguration contains the configuration for the used definition registry
 type RegistryConfiguration struct {
-	// Local defines a local registry to use
+	// Local defines a local registry to use for definitions
 	// +optional
 	Local *LocalRegistryConfiguration `json:"local,omitempty"`
+
+	// OCI defines a oci registry to use for definitions
+	// +optional
+	OCI *OCIConfiguration `json:"oci,omitempty"`
 }
 
 // LocalRegistryConfiguration contains the configuration for a local registry
@@ -39,15 +43,25 @@ type LocalRegistryConfiguration struct {
 	Paths []string `json:"paths"`
 }
 
+// OCIConfiguration holds configuration for the oci registry
+type OCIConfiguration struct {
+	// ConfigFiles path to additional docker configuration files
+	// +optional
+	ConfigFiles []string `json:"configFiles,omitempty"`
+
+	// Cache holds configuration for the oci cache
+	// +optional
+	Cache *OCICacheConfiguration `json:"cache,omitempty"`
+}
+
 // OCICacheConfiguration contains the configuration for the oci cache
 type OCICacheConfiguration struct {
 	// UseInMemoryOverlay enables an additional in memory overlay cache of oci images
+	// +optional
 	UseInMemoryOverlay bool `json:"useInMemoryOverlay,omitempty"`
-
-	// Size of the cache in gb
-	Size int `json:"size"`
 
 	// Path specifies the path to the oci cache on the filesystem.
 	// Defaults to /tmp/ocicache
+	// +optional
 	Path string `json:"path"`
 }

@@ -23,7 +23,7 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
-	configv1alpha1 "github.com/gardener/landscaper/pkg/apis/config/v1alpha1"
+	config "github.com/gardener/landscaper/pkg/apis/config"
 	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helm "github.com/gardener/landscaper/pkg/apis/deployer/helm"
 	conversion "k8s.io/apimachinery/pkg/conversion"
@@ -81,7 +81,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_Configuration_To_helm_Configuration(in *Configuration, out *helm.Configuration, s conversion.Scope) error {
-	out.OCICache = (*configv1alpha1.OCICacheConfiguration)(unsafe.Pointer(in.OCICache))
+	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	return nil
 }
 
@@ -91,7 +91,7 @@ func Convert_v1alpha1_Configuration_To_helm_Configuration(in *Configuration, out
 }
 
 func autoConvert_helm_Configuration_To_v1alpha1_Configuration(in *helm.Configuration, out *Configuration, s conversion.Scope) error {
-	out.OCICache = (*configv1alpha1.OCICacheConfiguration)(unsafe.Pointer(in.OCICache))
+	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	return nil
 }
 

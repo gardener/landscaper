@@ -93,7 +93,7 @@ func (lc *layeredCache) Get(desc ocispecv1.Descriptor) (io.ReadCloser, error) {
 		if _, err := lc.overlayFs.Stat(path); err == nil {
 			return lc.overlayFs.OpenFile(path, os.O_RDONLY, os.ModePerm)
 		}
-		lc.log.V(7).Info("not found in overlayFs cache", "path", path, "digest", desc.Digest.Encoded())
+		lc.log.V(7).Info("not found in overlay cache", "path", path, "digest", desc.Digest.Encoded())
 	}
 
 	if _, err := lc.baseFs.Stat(path); err != nil {

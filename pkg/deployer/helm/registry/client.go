@@ -18,17 +18,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"net/http"
 
-	"github.com/containerd/containerd/remotes"
-	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 type Client struct {
@@ -37,20 +33,11 @@ type Client struct {
 
 // NewClient creates a new helm oci registry client.
 func NewClient(log logr.Logger, config *helmv1alpha1.Configuration) (*Client, error) {
-	authorizer, err := dockerauth.NewClient()
+	ociClient, err := oci.NewClient(log, oci.WithConfiguration(config.OCI))
 	if err != nil {
 		return nil, err
 	}
 
-	resolver, err := authorizer.Resolver(context.Background(), http.DefaultClient, false)
-	if err != nil {
-		return nil, err
-	}
-
-	ociClient, err := buildOCIClient(log, resolver, config)
-	if err != nil {
-		return nil, err
-	}
 	return &Client{
 		oci: ociClient,
 	}, nil
@@ -77,27 +64,4 @@ func (c *Client) GetChart(ctx context.Context, ref string) (*chart.Chart, error)
 	}
 
 	return chartloader.LoadArchive(&data)
-}
-
-func buildOCIClient(log logr.Logger, resolver remotes.Resolver, config *helmv1alpha1.Configuration) (oci.Client, error) {
-	opts := make([]oci.Option, 0)
-	if config.OCICache != nil {
-		ocicache, err := cache.NewCache(log, applyCacheConfigs(config)...)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, oci.WithCache{Cache: ocicache})
-	}
-	return oci.NewClient(log, resolver, opts...)
-}
-
-func applyCacheConfigs(config *helmv1alpha1.Configuration) []cache.Option {
-	opts := make([]cache.Option, 0)
-	if config.OCICache.UseInMemoryOverlay {
-		opts = append(opts, cache.WithInMemoryOverlay(true))
-	}
-	if len(config.OCICache.Path) != 0 {
-		opts = append(opts, cache.WithBasePath(config.OCICache.Path))
-	}
-	return opts
 }

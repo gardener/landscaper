@@ -18,8 +18,10 @@ import (
 	"context"
 	"io"
 
+	"github.com/containerd/containerd/remotes"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
@@ -33,27 +35,74 @@ type Client interface {
 
 // Options contains all client options to configure the oci client.
 type Options struct {
+	// Paths configures local paths to search for docker configuration files
+	Paths []string
+
+	// Resolver sets the used resolver.
+	// A default resolver will be created if not given.
+	Resolver remotes.Resolver
+
+	// CacheConfig contains the cache configuration.
+	// Tis configuration will automatically create a new cache based on that configuration.
+	// This cache can be overwritten with the Cache property.
+	CacheConfig *config.OCICacheConfiguration
+
+	// Cache is the oci cache to be used by the client
 	Cache cache.Cache
 }
 
 // Option is the interface to specify different cache options
 type Option interface {
-	ApplyToList(options *Options)
+	ApplyOption(options *Options)
 }
 
 // ApplyOptions applies the given list options on these options,
 // and then returns itself (for convenient chaining).
 func (o *Options) ApplyOptions(opts []Option) *Options {
 	for _, opt := range opts {
-		opt.ApplyToList(o)
+		opt.ApplyOption(o)
 	}
 	return o
 }
 
+// WithCache configures a cache for the oci client
 type WithCache struct {
 	cache.Cache
 }
 
-func (c WithCache) ApplyToList(options *Options) {
+func (c WithCache) ApplyOption(options *Options) {
 	options.Cache = c.Cache
+}
+
+// WithResolver configures a resolver for the oci client
+type WithResolver struct {
+	remotes.Resolver
+}
+
+func (c WithResolver) ApplyOption(options *Options) {
+	options.Resolver = c.Resolver
+}
+
+// WithConfiguration applies external oci configuration as internal options.
+func WithConfiguration(cfg *config.OCIConfiguration) *WithConfigurationStruct {
+	if cfg == nil {
+		return nil
+	}
+	wc := WithConfigurationStruct(*cfg)
+	return &wc
+}
+
+// WithConfiguration applies external oci configuration as internal options.
+type WithConfigurationStruct config.OCIConfiguration
+
+func (c *WithConfigurationStruct) ApplyOption(options *Options) {
+	if c == nil {
+		return
+	}
+	if len(c.ConfigFiles) != 0 {
+		options.Paths = c.ConfigFiles
+	}
+	if c.Cache != nil {
+		options.CacheConfig = c.Cache
+	}
 }

@@ -19,8 +19,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 
 	"github.com/containerd/containerd/remotes"
+	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/go-logr/logr"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -34,12 +36,34 @@ type client struct {
 }
 
 // NewClient creates a new OCI Client.
-func NewClient(log logr.Logger, resolver remotes.Resolver, opts ...Option) (Client, error) {
+func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	options := &Options{}
 	options.ApplyOptions(opts)
+
+	if options.Resolver != nil {
+		authorizer, err := dockerauth.NewClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resolver, err := authorizer.Resolver(context.Background(), http.DefaultClient, false)
+		if err != nil {
+			return nil, err
+		}
+		options.Resolver = resolver
+	}
+
+	if options.Cache == nil && options.CacheConfig != nil {
+		c, err := cache.NewCache(log, cache.WithConfiguration(options.CacheConfig))
+		if err != nil {
+			return nil, err
+		}
+		options.Cache = c
+	}
+
 	return &client{
 		log:      log,
-		resolver: resolver,
+		resolver: options.Resolver,
 		cache:    options.Cache,
 	}, nil
 }

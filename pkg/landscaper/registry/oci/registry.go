@@ -15,55 +15,89 @@
 package oci
 
 import (
+	"bytes"
 	"context"
-	"net/http"
+	"errors"
+	"fmt"
 
-	"github.com/containerd/containerd/remotes"
-	auth "github.com/deislabs/oras/pkg/auth/docker"
+	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 type registry struct {
-	resolver remotes.Resolver
-	client   Client
+	oci oci.Client
+	dec runtime.Decoder
 }
 
-func New(configFile string) (regapi.Registry, error) {
-	authorizer, err := auth.NewClient(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	resolver, err := authorizer.Resolver(context.Background(), http.DefaultClient, false)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := NewClient(authorizer)
+func New(log logr.Logger, config *config.OCIConfiguration) (regapi.Registry, error) {
+	client, err := oci.NewClient(log, oci.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}
 
 	return &registry{
-		resolver: resolver,
-		client:   client,
+		oci: client,
+		dec: serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder(),
 	}, nil
 }
 
 func (r registry) GetDefinition(ctx context.Context, name, version string) (*lsv1alpha1.ComponentDefinition, error) {
-
-	panic("implement me")
+	return r.GetDefinitionByRef(ctx, ref(name, version))
 }
 
 func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
-	return r.client.Pull(ctx, ref)
+	manifest, err := r.oci.GetManifest(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	if manifest.Config.MediaType != ComponentDefinitionConfigMediaType {
+		return nil, fmt.Errorf("expected media type %s but got %s", ComponentDefinitionConfigMediaType, manifest.Config.MediaType)
+	}
+
+	// manifest config should contain the component definition
+	var configdata bytes.Buffer
+	if err := r.oci.Fetch(ctx, ref, manifest.Config, &configdata); err != nil {
+		return nil, err
+	}
+
+	config := &lsv1alpha1.ComponentDefinition{}
+	if _, _, err := r.dec.Decode(configdata.Bytes(), nil, config); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (r registry) GetBlob(ctx context.Context, name, version string) (afero.Fs, error) {
-	panic("implement me")
+	ref := ref(name, version)
+	manifest, err := r.oci.GetManifest(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(manifest.Layers) != 1 {
+		return nil, errors.New("unexpected number of layers in manifest")
+	}
+	layer := manifest.Layers[0]
+	if layer.MediaType != ComponentDefinitionContentLayerMediaType {
+		return nil, fmt.Errorf("expected media type %s but got %s", ComponentDefinitionContentLayerMediaType, layer.MediaType)
+	}
+
+	var blob bytes.Buffer
+	if err := r.oci.Fetch(ctx, ref, layer, &blob); err != nil {
+		return nil, err
+	}
+	// todo unzip blob and return created filesystem
+	return nil, nil
 }
 
 func (r registry) GetVersions(ctx context.Context, name string) ([]string, error) {

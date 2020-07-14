@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	confiv1alpha1 "github.com/gardener/landscaper/pkg/apis/config/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/config"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -26,6 +26,6 @@ import (
 type Configuration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// OCICache configures the oci cache of the controller
-	OCICache *confiv1alpha1.OCICacheConfiguration `json:"ociCache,omitempty"`
+	// OCI configures the oci client of the controller
+	OCI *config.OCIConfiguration `json:"oci,omitempty"`
 }

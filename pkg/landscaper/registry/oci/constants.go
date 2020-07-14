@@ -14,6 +14,8 @@
 
 package oci
 
+import "fmt"
+
 const (
 	// ComponentDefinitionConfigMediaType is the reserved media type for the ComponentDefinition manifest config
 	ComponentDefinitionConfigMediaType = "application/vnd.gardener.landscaper.componentdefinition.v1+json"
@@ -22,10 +24,7 @@ const (
 	ComponentDefinitionContentLayerMediaType = "application/tar+gzip"
 )
 
-// KnownMediaTypes returns a list of layer mediaTypes that the Helm client knows about
-func KnownMediaTypes() []string {
-	return []string{
-		ComponentDefinitionConfigMediaType,
-		ComponentDefinitionContentLayerMediaType,
-	}
+// ref creates a reference from a name and a version
+func ref(name, version string) string {
+	return fmt.Sprintf("%s:%s", name, version)
 }

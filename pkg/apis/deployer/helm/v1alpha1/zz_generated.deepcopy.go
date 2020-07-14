@@ -22,7 +22,7 @@ package v1alpha1
 import (
 	json "encoding/json"
 
-	configv1alpha1 "github.com/gardener/landscaper/pkg/apis/config/v1alpha1"
+	config "github.com/gardener/landscaper/pkg/apis/config"
 	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -31,10 +31,10 @@ import (
 func (in *Configuration) DeepCopyInto(out *Configuration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	if in.OCICache != nil {
-		in, out := &in.OCICache, &out.OCICache
-		*out = new(configv1alpha1.OCICacheConfiguration)
-		**out = **in
+	if in.OCI != nil {
+		in, out := &in.OCI, &out.OCI
+		*out = new(config.OCIConfiguration)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }

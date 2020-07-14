@@ -22,8 +22,8 @@ package helm
 import (
 	json "encoding/json"
 
-	v1alpha1 "github.com/gardener/landscaper/pkg/apis/config/v1alpha1"
-	corev1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	config "github.com/gardener/landscaper/pkg/apis/config"
+	v1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -31,10 +31,10 @@ import (
 func (in *Configuration) DeepCopyInto(out *Configuration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	if in.OCICache != nil {
-		in, out := &in.OCICache, &out.OCICache
-		*out = new(v1alpha1.OCICacheConfiguration)
-		**out = **in
+	if in.OCI != nil {
+		in, out := &in.OCI, &out.OCI
+		*out = new(config.OCIConfiguration)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -62,7 +62,7 @@ func (in *ExportFromManifestItem) DeepCopyInto(out *ExportFromManifestItem) {
 	*out = *in
 	if in.FromResource != nil {
 		in, out := &in.FromResource, &out.FromResource
-		*out = new(corev1alpha1.TypedObjectReference)
+		*out = new(v1alpha1.TypedObjectReference)
 		**out = **in
 	}
 	return
@@ -121,7 +121,7 @@ func (in *ProviderStatus) DeepCopyInto(out *ProviderStatus) {
 	out.TypeMeta = in.TypeMeta
 	if in.ManagedResources != nil {
 		in, out := &in.ManagedResources, &out.ManagedResources
-		*out = make([]corev1alpha1.TypedObjectReference, len(*in))
+		*out = make([]v1alpha1.TypedObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	return
