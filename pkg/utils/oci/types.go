@@ -17,6 +17,7 @@ package oci
 import (
 	"context"
 	"io"
+	"net/http"
 
 	"github.com/containerd/containerd/remotes"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -33,6 +34,12 @@ type Client interface {
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
 }
 
+// Resolver is a interface that should return a new resolver if called.
+type Resolver interface {
+	// Resolver returns a new authenticated resolver.
+	Resolver(ctx context.Context, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
+}
+
 // Options contains all client options to configure the oci client.
 type Options struct {
 	// Paths configures local paths to search for docker configuration files
@@ -40,7 +47,7 @@ type Options struct {
 
 	// Resolver sets the used resolver.
 	// A default resolver will be created if not given.
-	Resolver remotes.Resolver
+	Resolver Resolver
 
 	// CacheConfig contains the cache configuration.
 	// Tis configuration will automatically create a new cache based on that configuration.
@@ -76,7 +83,7 @@ func (c WithCache) ApplyOption(options *Options) {
 
 // WithResolver configures a resolver for the oci client
 type WithResolver struct {
-	remotes.Resolver
+	Resolver
 }
 
 func (c WithResolver) ApplyOption(options *Options) {

@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/containerd/containerd/remotes"
 	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/go-logr/logr"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -31,7 +30,7 @@ import (
 
 type client struct {
 	log      logr.Logger
-	resolver remotes.Resolver
+	resolver Resolver
 	cache    cache.Cache
 }
 
@@ -40,17 +39,12 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	options := &Options{}
 	options.ApplyOptions(opts)
 
-	if options.Resolver != nil {
-		authorizer, err := dockerauth.NewClient()
+	if options.Resolver == nil {
+		authorizer, err := dockerauth.NewClient(options.Paths...)
 		if err != nil {
 			return nil, err
 		}
-
-		resolver, err := authorizer.Resolver(context.Background(), http.DefaultClient, false)
-		if err != nil {
-			return nil, err
-		}
-		options.Resolver = resolver
+		options.Resolver = authorizer
 	}
 
 	if options.Cache == nil && options.CacheConfig != nil {
@@ -69,7 +63,11 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 }
 
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
-	_, desc, err := c.resolver.Resolve(ctx, ref)
+	resolver, err := c.resolver.Resolver(context.Background(), http.DefaultClient, false)
+	if err != nil {
+		return nil, err
+	}
+	_, desc, err := resolver.Resolve(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +112,11 @@ func (c *client) getFetchReader(ctx context.Context, ref string, desc ocispecv1.
 		}
 	}
 
-	fetcher, err := c.resolver.Fetcher(ctx, ref)
+	resolver, err := c.resolver.Resolver(context.Background(), http.DefaultClient, false)
+	if err != nil {
+		return nil, err
+	}
+	fetcher, err := resolver.Fetcher(ctx, ref)
 	if err != nil {
 		return nil, err
 	}

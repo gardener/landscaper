@@ -69,12 +69,12 @@ func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alph
 		return nil, err
 	}
 
-	config := &lsv1alpha1.ComponentDefinition{}
-	if _, _, err := r.dec.Decode(configdata.Bytes(), nil, config); err != nil {
+	def := &lsv1alpha1.ComponentDefinition{}
+	if _, _, err := r.dec.Decode(configdata.Bytes(), nil, def); err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return def, nil
 }
 
 func (r registry) GetBlob(ctx context.Context, name, version string) (afero.Fs, error) {
