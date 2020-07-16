@@ -1,4 +1,4 @@
-# Providing external configuration 
+# Providing external configuration
 
 *Assumption*:
 
@@ -9,12 +9,16 @@ If mappings in the component are only needed if the key needs to be changed othe
 
 *Goals*:
 
-- Logically split external configuration into chunks
+- Split external configuration into semantically grouped chunks
   - not one file per key
   - not one big file
 - no additional tooling
 - chunks should be the same chunks in cluster (no magic processing during upload)
 
+*Agreement*:
+
+We agreed to implement Options 3 ([Add data to landscape config](#add-data-to-landscape-config)).
+It has satisfies most of our goals and gives a lot of freedom for easy community deployments as well as strictly versioned cooporate deployments. 
 
 ## Options
 
@@ -50,7 +54,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: ls-config
-spec:  
+spec:
   definitionRef: abc
   executions:
   - type: config
@@ -65,8 +69,8 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: generated-ls
-spec: 
-  definition: 
+spec:
+  definition:
     mydef: abc
   exports:
   - key: root.namespace
@@ -85,11 +89,43 @@ spec:
 - extra jsonpath definition for exported keys othwerwise read from root components with a lot of custom logic
 - new deployer
 
+### Own config executor
+
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: ls-config
+spec:
+  definition:
+    kind: Definition
+    exports:
+    - key: namespace
+      type: string
+    executors:
+    - name: config
+      type: config
+      config:
+        my:
+          data: true
+
+  exports:
+  - from: my.data
+    to: namespace
+```
+*Advantages*:
+- no new elements
+- can be used with the defualt installations import scheduling
+
+*Disadvantages*:
+- redefine exports
+- need new special executor
 
 ### Add data to landscape config
 
 Configuration can be defined in separate secrets and deployed to cluster.
-These secrets are then reference in the root installation(s) as staticData which 
+These secrets are then reference in the root installation(s) as staticData which
 is then also used for satisfying imports.
 
 All secrets are combined and data is searched based on keys as jsonpath
@@ -104,8 +140,15 @@ spec:
   imports: # defines optional mapping for better structuring in the config
   - from: root.namespace
     to: namespace
-    
+
+  exports:
+  - from: root.namespace
+    to: namespace
+
   staticData:
+  - value:
+      root:
+        namespace: default
   - name: main
   - name: main-secrets
 ```
@@ -118,3 +161,48 @@ spec:
 *Disadvantages*:
 - how to track changes?
 - magic happens when import key is jsonpath.
+- need specific handling for secrets (vault integration, etc..)
+
+---
+
+Also make it possible to specify staticData in defintions.
+With that it would be possible to have completely versioned component with versioned configuration.
+
+:warning: secrets in oci registry
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: community-setup
+spec:
+  definitionRef: sap-dev-ls:0.120.0
+```
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Definition
+metadata:
+  name: sap-dev-ls
+spec:
+  definitions:
+  - ref: community-setup:0.5.0
+  - ref: config:0.2.0
+```
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Definition
+metadata:
+  name: config
+spec:
+  exports:
+  - key: namespace
+    type: string
+
+  staticData:
+  - value:
+      namespace: default
+  - fromFile:
+      path: mybloc/namesapce
+      jsonpath: abc
+```
