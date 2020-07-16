@@ -45,7 +45,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (map[string]interface{}, error) {
 	var (
 		fldPath   = field.NewPath(inst.Info.Name)
-		allValues = make(map[string]interface{}, 0)
+		allValues = make(map[string]interface{})
 	)
 
 	execDo, err := executions.New(c.Operation).GetExportedValues(ctx, inst)

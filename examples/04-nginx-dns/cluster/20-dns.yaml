@@ -24,3 +24,15 @@ spec:
   exports:
   - from: dnsClass
     to: dnsClass
+
+  staticData:
+  - valueFrom:
+      secretKeyRef:
+        name: main-secrets
+        key: config
+  - value:
+      common:
+        namespace: default
+        baseDomain: demo.landscaper.gcp.dev.k8s.ondemand.com
+      extdns:
+        dnsClass: host

@@ -21,15 +21,14 @@ import (
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
@@ -78,72 +77,39 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.Context("root", func() {
-		g.It("should import data from the landscape config", func() {
+		g.It("should import data from the static config", func() {
 			inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
 
-			lsConfig, err := landscapeconfig.New(
-				&lsv1alpha1.LandscapeConfiguration{
-					Status: lsv1alpha1.LandscapeConfigurationStatus{
-						ConfigGeneration: 8,
-					},
+			value, err := yaml.Marshal(map[string]interface{}{
+				"ext": map[string]interface{}{
+					"a": "val1",
 				},
-				&corev1.Secret{
-					Data: map[string][]byte{
-						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
-					},
-				},
-			)
+			})
 			Expect(err).ToNot(HaveOccurred())
+			inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
 
-			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(inInstRoot)
+			val := imports.NewValidator(op, nil)
+			err = val.Validate(context.TODO(), inInstRoot)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		g.It("should reject the import from the landscape config if the import is of the wrong type", func() {
+		g.It("should reject the import from static data if the import is of the wrong type", func() {
 			inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
 
-			lsConfig, err := landscapeconfig.New(
-				&lsv1alpha1.LandscapeConfiguration{
-					Status: lsv1alpha1.LandscapeConfigurationStatus{
-						ConfigGeneration: 8,
-					},
+			value, err := yaml.Marshal(map[string]interface{}{
+				"ext": map[string]interface{}{
+					"a": true,
 				},
-				&corev1.Secret{
-					Data: map[string][]byte{
-						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
-					},
-				},
-			)
+			})
 			Expect(err).ToNot(HaveOccurred())
+			inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
 
-			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(inInstRoot)
-			Expect(err).To(HaveOccurred())
-		})
-
-		g.It("should reject when the imported data from the landscape config was already reconciled", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-
-			lsConfig, err := landscapeconfig.New(
-				&lsv1alpha1.LandscapeConfiguration{
-					Status: lsv1alpha1.LandscapeConfigurationStatus{
-						ConfigGeneration: 5,
-					},
-				},
-				&corev1.Secret{
-					Data: map[string][]byte{
-						lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": true } }`), // ext.a
-					},
-				},
-			)
-			Expect(err).ToNot(HaveOccurred())
-
-			val := imports.NewValidator(op, lsConfig, nil)
-			err = val.Validate(inInstRoot)
+			val := imports.NewValidator(op, nil)
+			err = val.Validate(context.TODO(), inInstRoot)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -151,12 +117,13 @@ var _ = g.Describe("Validation", func() {
 	g.It("should successfully validate when the import of a component is defined by its parent with the right version", func() {
 		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstA
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(inInstA)
+		val := imports.NewValidator(op, inInstRoot)
+		err = val.Validate(context.TODO(), inInstA)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -178,13 +145,14 @@ var _ = g.Describe("Validation", func() {
 	g.It("should reject the validation when the parent component is not progressing", func() {
 		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstA
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
 
-		val := imports.NewValidator(op, nil, inInstRoot)
-		err = val.Validate(inInstA)
+		val := imports.NewValidator(op, inInstRoot)
+		err = val.Validate(context.TODO(), inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -201,12 +169,13 @@ var _ = g.Describe("Validation", func() {
 
 		inInstD, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/d"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstD
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB, inInstC)
-		err = val.Validate(inInstD)
+		val := imports.NewValidator(op, inInstRoot, inInstA, inInstB, inInstC)
+		err = val.Validate(context.TODO(), inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -221,12 +190,13 @@ var _ = g.Describe("Validation", func() {
 
 		inInstC, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/c"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstC
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		val := imports.NewValidator(op, nil, inInstRoot, inInstA, inInstB)
-		err = val.Validate(inInstC)
+		val := imports.NewValidator(op, inInstRoot, inInstA, inInstB)
+		err = val.Validate(context.TODO(), inInstC)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})

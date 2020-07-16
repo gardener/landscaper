@@ -16,7 +16,6 @@ package dataobject
 
 import (
 	"errors"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -50,8 +49,5 @@ func New(secret *corev1.Secret) (*DataObject, error) {
 // GetData searches its data for the given Javscript Object Notation path
 // and unmarshals it into the given object
 func (do *DataObject) GetData(path string, out interface{}) error {
-	if !strings.HasPrefix(path, ".") {
-		path = "." + path
-	}
 	return jsonpath.GetValue(path, do.Data, out)
 }

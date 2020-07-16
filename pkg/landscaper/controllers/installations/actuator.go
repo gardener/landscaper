@@ -172,14 +172,9 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return err
 	}
 
-	lsConfig, err := instOp.GetLandscapeConfig(ctx, inst.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "unable to get landscape configuration")
-	}
-
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := a.StartNewReconcile(ctx, instOp, lsConfig, internalInstallation); err != nil {
+		if err := a.StartNewReconcile(ctx, instOp, internalInstallation); err != nil {
 			return err
 		}
 
@@ -195,7 +190,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return err
 	}
 
-	err = a.Ensure(ctx, instOp, lsConfig, internalInstallation)
+	err = a.Ensure(ctx, instOp, internalInstallation)
 	if !reflect.DeepEqual(inst.Status, old.Status) {
 		if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
 			if err != nil {

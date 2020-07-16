@@ -94,12 +94,11 @@ func (e *Environment) Stop() error {
 // InitResources creates a new isolated environment with its own namespace.
 func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
 	state := &State{
-		DataTypes:        make(map[string]*lsv1alpha1.DataType),
-		LandscapeConfigs: make(map[string]*lsv1alpha1.LandscapeConfiguration),
-		Installations:    make(map[string]*lsv1alpha1.Installation),
-		Executions:       make(map[string]*lsv1alpha1.Execution),
-		DeployItems:      make(map[string]*lsv1alpha1.DeployItem),
-		Secrets:          make(map[string]*corev1.Secret),
+		DataTypes:     make(map[string]*lsv1alpha1.DataType),
+		Installations: make(map[string]*lsv1alpha1.Installation),
+		Executions:    make(map[string]*lsv1alpha1.Execution),
+		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
+		Secrets:       make(map[string]*corev1.Secret),
 	}
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
@@ -162,20 +161,6 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 		}
 	}
 	for _, obj := range state.Installations {
-		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return err
-		}
-		if err := e.removeFinalizer(ctx, obj); err != nil {
-			return err
-		}
-		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	for _, obj := range state.LandscapeConfigs {
 		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
@@ -299,15 +284,6 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	if err == nil {
 		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
 		return append(objects, dt), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	lsConfig := &lsv1alpha1.LandscapeConfiguration{}
-	_, _, err = decoder.Decode(data, nil, lsConfig)
-	if err == nil {
-		lsConfig.Namespace = state.Namespace
-		state.LandscapeConfigs[types.NamespacedName{Name: lsConfig.Name, Namespace: lsConfig.Namespace}.String()] = lsConfig
-		return append(objects, lsConfig), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 

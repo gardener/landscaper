@@ -89,7 +89,7 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, d
 			}
 		}
 
-		subInst, err := o.createOrUpdateNewInstallation(ctx, inst, def, subDef, subInst)
+		_, err := o.createOrUpdateNewInstallation(ctx, inst, def, subDef, subInst)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create installation for %s", subDef.Name)
 		}
@@ -210,7 +210,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 // GetExportedValues returns the merged export of all subinstallations
 func (o *Operation) GetExportedValues(ctx context.Context, inst *installations.Installation) (map[string]interface{}, error) {
-	values := make(map[string]interface{}, 0)
+	values := make(map[string]interface{})
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst.Info)
 	if err != nil {

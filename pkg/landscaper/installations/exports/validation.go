@@ -26,17 +26,12 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
 // Validators is a struct that contains everything to
 // validate if all imports of a installation are satisfied.
 type Validator struct {
 	*installations.Operation
-
-	lsConfig *landscapeconfig.LandscapeConfig
-	parent   *installations.Installation
-	siblings []*installations.Installation
 }
 
 // NewValidator creates a new export validator.
@@ -90,8 +85,4 @@ func (v *Validator) validateExports(ctx context.Context, fldPath *field.Path, in
 		}
 	}
 	return nil
-}
-
-func (v *Validator) getExportConfig(ctx context.Context, inst *installations.Installation) (*dataobject.DataObject, error) {
-	return nil, nil
 }

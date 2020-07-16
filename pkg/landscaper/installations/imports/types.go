@@ -16,7 +16,6 @@ package imports
 
 import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
 // Validators is a struct that contains everything to
@@ -24,7 +23,6 @@ import (
 type Validator struct {
 	*installations.Operation
 
-	lsConfig *landscapeconfig.LandscapeConfig
 	parent   *installations.Installation
 	siblings []*installations.Installation
 }
@@ -36,7 +34,6 @@ type Constructor struct {
 	*installations.Operation
 	validator *Validator
 
-	lsConfig *landscapeconfig.LandscapeConfig
 	parent   *installations.Installation
 	siblings []*installations.Installation
 }

@@ -54,8 +54,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&InstallationList{},
 		&Execution{},
 		&ExecutionList{},
-		&LandscapeConfiguration{},
-		&LandscapeConfigurationList{},
 		&DeployItem{},
 		&DeployItemList{},
 	)

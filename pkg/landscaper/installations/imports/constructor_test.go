@@ -21,15 +21,14 @@ import (
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
@@ -77,25 +76,22 @@ var _ = g.Describe("Constructor", func() {
 		}
 	})
 
-	g.It("should directly construct the data from the landscape config", func() {
+	g.It("should directly construct the data from static data", func() {
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
 
-		lsConfig, err := landscapeconfig.New(
-			&lsv1alpha1.LandscapeConfiguration{
-				Status: lsv1alpha1.LandscapeConfigurationStatus{
-					ConfigGeneration: 8,
-				},
+		value, err := yaml.Marshal(map[string]interface{}{
+			"ext": map[string]interface{}{
+				"a": "val1",
 			},
-			&corev1.Secret{
-				Data: map[string][]byte{
-					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
-				},
-			},
-		)
+		})
 		Expect(err).ToNot(HaveOccurred())
-		lsConfig.Info.Name = "ls"
-		lsConfig.Info.Namespace = "default"
+		inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{
+			{
+				Value: value,
+			},
+		}
 
 		expectedConfig := map[string]interface{}{
 			"root": map[string]interface{}{
@@ -103,7 +99,7 @@ var _ = g.Describe("Constructor", func() {
 			},
 		}
 
-		c := imports.NewConstructor(op, lsConfig, nil)
+		c := imports.NewConstructor(op, nil)
 		res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
@@ -114,13 +110,13 @@ var _ = g.Describe("Constructor", func() {
 			To:   "root.a",
 			SourceRef: &lsv1alpha1.TypedObjectReference{
 				APIVersion: "landscaper.gardener.cloud/v1alpha1",
-				Kind:       "LandscapeConfiguration",
+				Kind:       "Installation",
 				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      "ls",
-					Namespace: "default",
+					Name:      "root",
+					Namespace: "test1",
 				},
 			},
-			ConfigGeneration: 8,
+			ConfigGeneration: 0,
 		}))
 	})
 
@@ -130,6 +126,7 @@ var _ = g.Describe("Constructor", func() {
 
 		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstB
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
@@ -140,7 +137,7 @@ var _ = g.Describe("Constructor", func() {
 			},
 		}
 
-		c := imports.NewConstructor(op, nil, inInstRoot, inInstA)
+		c := imports.NewConstructor(op, inInstRoot, inInstA)
 		res, err := c.Construct(context.TODO(), inInstB)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
@@ -154,23 +151,18 @@ var _ = g.Describe("Constructor", func() {
 
 		inInstC, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstC
 
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		lsConfig, err := landscapeconfig.New(
-			&lsv1alpha1.LandscapeConfiguration{
-				Status: lsv1alpha1.LandscapeConfigurationStatus{
-					ConfigGeneration: 8,
-				},
+		value, err := yaml.Marshal(map[string]interface{}{
+			"ext": map[string]interface{}{
+				"a": "val1",
 			},
-			&corev1.Secret{
-				Data: map[string][]byte{
-					lsv1alpha1.DataObjectSecretDataKey: []byte(`{ "ext": { "a": "val1" } }`), // ext.a
-				},
-			},
-		)
+		})
 		Expect(err).ToNot(HaveOccurred())
+		inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
 
 		expectedConfig := map[string]interface{}{
 			"c": map[string]interface{}{
@@ -179,7 +171,7 @@ var _ = g.Describe("Constructor", func() {
 			},
 		}
 
-		c := imports.NewConstructor(op, lsConfig, inInstRoot, inInstA)
+		c := imports.NewConstructor(op, inInstRoot, inInstA)
 		res, err := c.Construct(context.TODO(), inInstC)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())

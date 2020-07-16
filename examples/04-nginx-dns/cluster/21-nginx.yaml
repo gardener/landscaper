@@ -18,3 +18,13 @@ spec:
   exports:
   - from: ingressClass
     to: ingressClass
+
+  staticData:
+  - valueFrom:
+      secretKeyRef:
+        name: main-secrets
+        key: config
+  - value:
+      common:
+        namespace: default
+        baseDomain: demo.landscaper.gcp.dev.k8s.ondemand.com

@@ -15,21 +15,22 @@
 package imports
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
 // NewValidator creates new import validator.
 // It validates if all imports of a component are satisfied given a context.
-func NewValidator(op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
+func NewValidator(op *installations.Operation, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
 	return &Validator{
 		Operation: op,
 
-		lsConfig: landscapeConfig,
 		parent:   parent,
 		siblings: siblings,
 	}
@@ -37,12 +38,12 @@ func NewValidator(op *installations.Operation, landscapeConfig *landscapeconfig.
 
 // Validate traverses through all components and validates if all imports are
 // satisfied with the correct version
-func (v *Validator) Validate(inst *installations.Installation) error {
+func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
 	fldPath := field.NewPath(inst.Info.Name)
 	for i, importMapping := range inst.Info.Spec.Imports {
 		impPath := fldPath.Index(i)
 		// check if the parent also imports my import
-		err := v.checkImportMappingIsSatisfied(impPath, inst, importMapping)
+		err := v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
 		if err != nil {
 			return err
 		}
@@ -51,19 +52,18 @@ func (v *Validator) Validate(inst *installations.Installation) error {
 	return nil
 }
 
-func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
-	// check landscape config if I'm v root installation
-	if v.IsRoot() {
-		err := v.checkIfLandscapeConfigForMapping(fldPath, inst, mapping)
-		if !installations.IsImportNotFoundError(err) {
-			return err
-		}
-		if err == nil {
-			return nil
-		}
-	} else {
+func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+	err := v.checkStaticDataForMapping(ctx, fldPath, inst, mapping)
+	if !installations.IsImportNotFoundError(err) {
+		return err
+	}
+	if err == nil {
+		return nil
+	}
+
+	if !v.IsRoot() {
 		// check if the parent also imports my import
-		err := v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
+		err = v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
 		if !installations.IsImportNotFoundError(err) {
 			return err
 		}
@@ -73,7 +73,7 @@ func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *ins
 	}
 
 	// check if a sibling exports the given value
-	err := v.checkIfSiblingsHaveImportForMapping(fldPath, inst, mapping)
+	err = v.checkIfSiblingsHaveImportForMapping(fldPath, inst, mapping)
 	if !installations.IsImportNotFoundError(err) {
 		return err
 	}
@@ -84,9 +84,14 @@ func (v *Validator) checkImportMappingIsSatisfied(fldPath *field.Path, inst *ins
 	return installations.NewImportNotFoundError("No import found", nil)
 }
 
-func (v *Validator) checkIfLandscapeConfigForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
-	if v.lsConfig == nil {
-		return installations.NewImportNotFoundErrorf(nil, "%s: landscape config not defined", fldPath.String())
+func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+	if inst.Info.Spec.StaticData == nil {
+		return installations.NewImportNotFoundErrorf(nil, "%s: static data not defined", fldPath.String())
+	}
+
+	data, err := v.GetStaticData(ctx)
+	if err != nil {
+		return err
 	}
 
 	importDef, err := inst.GetImportDefinition(mapping.To)
@@ -99,7 +104,7 @@ func (v *Validator) checkIfLandscapeConfigForMapping(fldPath *field.Path, inst *
 	//}
 
 	var val interface{}
-	if err := v.lsConfig.Data.GetData(mapping.From, &val); err != nil {
+	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
 		return installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
 	}
 

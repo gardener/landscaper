@@ -14,14 +14,3 @@ stringData:
       gcloudDNSSecret: ""
     host:
       kubeconfig: ""
----
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: LandscapeConfiguration
-metadata:
-  name: default
-spec:
-  secretRefs:
-  - name: main
-    namespace: default
-  - name: main-secrets
-    namespace: default

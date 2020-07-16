@@ -26,17 +26,17 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func GetValue(text string, data interface{}, out interface{}) error {
+func GetValue(path string, data interface{}, out interface{}) error {
 	outVal := reflect.ValueOf(out)
 	if outVal.Kind() != reflect.Ptr {
 		return errors.New("expected pointer")
 	}
 
-	if !strings.HasPrefix(text, ".") {
-		text = "." + text
+	if !strings.HasPrefix(path, ".") {
+		path = "." + path
 	}
 	jp := jsonpath.New("get")
-	if err := jp.Parse(fmt.Sprintf("{%s}", text)); err != nil {
+	if err := jp.Parse(fmt.Sprintf("{%s}", path)); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func constructWalk(input map[string]interface{}, nodes *jsonpath.ListNode, value
 				return curValue, err
 			}
 		case *jsonpath.FieldNode:
-			newValue := make(map[string]interface{}, 0)
+			newValue := make(map[string]interface{})
 			fldPath = fldPath.Child(n.Value)
 			curValue[n.Value] = newValue
 

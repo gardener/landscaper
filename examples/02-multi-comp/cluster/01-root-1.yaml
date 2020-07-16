@@ -12,3 +12,8 @@ spec:
   exports:
   - from: exp-a
     to: exp-a
+
+  staticData:
+  - value:
+      root:
+        key1: val1

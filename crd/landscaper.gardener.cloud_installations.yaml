@@ -56,9 +56,9 @@ spec:
                 description: DefinitionRef is a reference to the component definition.
                 type: string
               exports:
-                description: Exports define the export mappings for the referenced
+                description: 'Exports define the export mappings for the referenced
                   definition. These values are by default auto generated from the
-                  parent definition.
+                  parent definition. todo: add static data boolean'
                 items:
                   description: DefinitionExportMapping defines the mapping of export
                     value of the referenced definition to the export value of this
@@ -96,6 +96,57 @@ spec:
                   required:
                   - from
                   - to
+                  type: object
+                type: array
+              staticData:
+                description: StaticData contains a list of data sources that are used
+                  to satisfy imports
+                items:
+                  description: StaticDataSource defines a static data source
+                  properties:
+                    value:
+                      x-kubernetes-preserve-unknown-fields: true
+                    valueFrom:
+                      description: ValueFrom defines data from an external resource
+                      properties:
+                        secretKeyRef:
+                          description: Selects a key of a secret in the installations's
+                            namespace
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must
+                                be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                        secretLabelSelector:
+                          description: Selects a key from multiple secrets in the
+                            installations's namespace that matches the given labels.
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            selector:
+                              additionalProperties:
+                                type: string
+                              description: Selector is a map of labels to select specific
+                                secrets.
+                              type: object
+                          required:
+                          - key
+                          - selector
+                          type: object
+                      type: object
                   type: object
                 type: array
             required:

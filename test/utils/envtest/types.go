@@ -22,11 +22,10 @@ import (
 
 // State contains the state of initialized fake client
 type State struct {
-	Namespace        string
-	DataTypes        map[string]*lsv1alpha1.DataType
-	LandscapeConfigs map[string]*lsv1alpha1.LandscapeConfiguration
-	Installations    map[string]*lsv1alpha1.Installation
-	Executions       map[string]*lsv1alpha1.Execution
-	DeployItems      map[string]*lsv1alpha1.DeployItem
-	Secrets          map[string]*corev1.Secret
+	Namespace     string
+	DataTypes     map[string]*lsv1alpha1.DataType
+	Installations map[string]*lsv1alpha1.Installation
+	Executions    map[string]*lsv1alpha1.Execution
+	DeployItems   map[string]*lsv1alpha1.DeployItem
+	Secrets       map[string]*corev1.Secret
 }

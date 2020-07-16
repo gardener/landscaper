@@ -1,11 +1,10 @@
 # Entities Overview
 The Landscaper's conceptual model is made up of various entities:
-- [`ComponentDefinition`](#ComponentDefinition)
-- [`ComponentInstallation`](#ComponentInstallation)
-- [`LandscapeConfiguration`](#LandscapeConfiguration)
-- [`Execution`](#Execution)
-- [`DeployItem`](#DeployItem)
-- [`DataType`](#DataType)
+- [`ComponentDefinition`](#componentdefinition)
+- [`Installation`](#installation)
+- [`Execution`](#execution)
+- [`DeployItem`](#deployitem)
+- [`DataType`](#datatype)
 
 ![entities](./images/entities.png)
 
@@ -22,23 +21,19 @@ It describes:
 The `ComponentDefinition` resides in an OCI compliant registry. Although it looks like a regular K8s CRD, it is not deployed into any cluster but dynamically fetched from the Landscaper as needed.
 
 
-## `ComponentInstallation`
-A `ComponentInstallation` ([detailed documentation](./ComponentInstallations.md)) references one [`ComponentDefinition`](#ComponentDefinition). It is an _instruction_ to the Landscaper to install the respective component.
-It is a CRD that is deployed by an administrator into the cluster that hosts the Landscaper.
-
-
-## `LandscapeConfiguration`
-A set of yaml files ([detailed documentation](./LandscapeConfiguration.md)) which specify the configuration that is required by the components that the Landscaper will install.
-
+## `Installation`
+An `Installation` ([detailed documentation](./Installations.md)) references one [`ComponentDefinition`](#ComponentDefinition). It is an _instruction_ to the Landscaper to install the respective component.
+It is a CR that is deployed by an administrator into the cluster that hosts the Landscaper.
+In addition, the landscaper automatically creates Installation CRs corresponding to aggregated ComponentDefinitions.
 
 ## `Execution`
-An `Execution` references one [`ComponentInstallation`](#ComponentInstallation).
+An `Execution` references one [`Installation`](#installation).
 It is an internal custom resource created automatically by the Landscaper when it decided that all prerequisites are fulfilled to actually install/update/manage the respective component.
 The Landscaper uses this CR to keep track of running installations and distribute the required execution steps upon various controllers responsible for different parts of the installation.
 
 
 ## `DeployItem`
-A `DeployItem` references one [`Execution`](#Execution). It is an internal custom resource created automatically by the Landscaper and used to describe single steps in a complete `Execution`.
+A `DeployItem` references one [`Execution`](#execution). It is an internal custom resource created automatically by the Landscaper and used to describe single steps in a complete `Execution`.
 `DeployItems` can encapsulate the description of a helm deployment or a container execution, etc.
 The Landscaper uses various controllers that watch for new `DeployItems` and schedule the respective work.
 

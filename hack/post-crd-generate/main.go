@@ -43,6 +43,9 @@ func main() {
 	}
 
 	err := filepath.Walk(pflag.Arg(0), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if info.IsDir() {
 			return nil
 		}
@@ -60,9 +63,7 @@ func main() {
 		crd = replaceTypesInStruct(crd)
 
 		// remove status field
-		if _, ok := crd["status"]; ok {
-			delete(crd, "status")
-		}
+		delete(crd, "status")
 
 		data, err = yaml.Marshal(crd)
 		if err != nil {

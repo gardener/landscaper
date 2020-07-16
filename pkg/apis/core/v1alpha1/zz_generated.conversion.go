@@ -24,6 +24,7 @@ import (
 	unsafe "unsafe"
 
 	core "github.com/gardener/landscaper/pkg/apis/core"
+	v1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -375,46 +376,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*LandscapeConfiguration)(nil), (*core.LandscapeConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration(a.(*LandscapeConfiguration), b.(*core.LandscapeConfiguration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.LandscapeConfiguration)(nil), (*LandscapeConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_LandscapeConfiguration_To_v1alpha1_LandscapeConfiguration(a.(*core.LandscapeConfiguration), b.(*LandscapeConfiguration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LandscapeConfigurationList)(nil), (*core.LandscapeConfigurationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationList(a.(*LandscapeConfigurationList), b.(*core.LandscapeConfigurationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.LandscapeConfigurationList)(nil), (*LandscapeConfigurationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList(a.(*core.LandscapeConfigurationList), b.(*LandscapeConfigurationList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LandscapeConfigurationSpec)(nil), (*core.LandscapeConfigurationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec(a.(*LandscapeConfigurationSpec), b.(*core.LandscapeConfigurationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.LandscapeConfigurationSpec)(nil), (*LandscapeConfigurationSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec(a.(*core.LandscapeConfigurationSpec), b.(*LandscapeConfigurationSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LandscapeConfigurationStatus)(nil), (*core.LandscapeConfigurationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(a.(*LandscapeConfigurationStatus), b.(*core.LandscapeConfigurationStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.LandscapeConfigurationStatus)(nil), (*LandscapeConfigurationStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(a.(*core.LandscapeConfigurationStatus), b.(*LandscapeConfigurationStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*NamedObjectReference)(nil), (*core.NamedObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_NamedObjectReference_To_core_NamedObjectReference(a.(*NamedObjectReference), b.(*core.NamedObjectReference), scope)
 	}); err != nil {
@@ -432,6 +393,36 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ObjectReference)(nil), (*ObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ObjectReference_To_v1alpha1_ObjectReference(a.(*core.ObjectReference), b.(*ObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SecretLabelSelectorRef)(nil), (*core.SecretLabelSelectorRef)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(a.(*SecretLabelSelectorRef), b.(*core.SecretLabelSelectorRef), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.SecretLabelSelectorRef)(nil), (*SecretLabelSelectorRef)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_SecretLabelSelectorRef_To_v1alpha1_SecretLabelSelectorRef(a.(*core.SecretLabelSelectorRef), b.(*SecretLabelSelectorRef), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*StaticDataSource)(nil), (*core.StaticDataSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_StaticDataSource_To_core_StaticDataSource(a.(*StaticDataSource), b.(*core.StaticDataSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.StaticDataSource)(nil), (*StaticDataSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_StaticDataSource_To_v1alpha1_StaticDataSource(a.(*core.StaticDataSource), b.(*StaticDataSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*StaticDataValueFrom)(nil), (*core.StaticDataValueFrom)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(a.(*StaticDataValueFrom), b.(*core.StaticDataValueFrom), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.StaticDataValueFrom)(nil), (*StaticDataValueFrom)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(a.(*core.StaticDataValueFrom), b.(*StaticDataValueFrom), scope)
 	}); err != nil {
 		return err
 	}
@@ -1174,6 +1165,7 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 	out.DefinitionRef = in.DefinitionRef
 	out.Imports = *(*[]core.DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	out.StaticData = *(*[]core.StaticDataSource)(unsafe.Pointer(&in.StaticData))
 	return nil
 }
 
@@ -1186,6 +1178,7 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 	out.DefinitionRef = in.DefinitionRef
 	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	out.StaticData = *(*[]StaticDataSource)(unsafe.Pointer(&in.StaticData))
 	return nil
 }
 
@@ -1408,108 +1401,6 @@ func Convert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStri
 	return autoConvert_core_JSONSchemaPropsOrStringArray_To_v1alpha1_JSONSchemaPropsOrStringArray(in, out, s)
 }
 
-func autoConvert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration(in *LandscapeConfiguration, out *core.LandscapeConfiguration, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration is an autogenerated conversion function.
-func Convert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration(in *LandscapeConfiguration, out *core.LandscapeConfiguration, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LandscapeConfiguration_To_core_LandscapeConfiguration(in, out, s)
-}
-
-func autoConvert_core_LandscapeConfiguration_To_v1alpha1_LandscapeConfiguration(in *core.LandscapeConfiguration, out *LandscapeConfiguration, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_LandscapeConfiguration_To_v1alpha1_LandscapeConfiguration is an autogenerated conversion function.
-func Convert_core_LandscapeConfiguration_To_v1alpha1_LandscapeConfiguration(in *core.LandscapeConfiguration, out *LandscapeConfiguration, s conversion.Scope) error {
-	return autoConvert_core_LandscapeConfiguration_To_v1alpha1_LandscapeConfiguration(in, out, s)
-}
-
-func autoConvert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationList(in *LandscapeConfigurationList, out *core.LandscapeConfigurationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.LandscapeConfiguration)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationList is an autogenerated conversion function.
-func Convert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationList(in *LandscapeConfigurationList, out *core.LandscapeConfigurationList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LandscapeConfigurationList_To_core_LandscapeConfigurationList(in, out, s)
-}
-
-func autoConvert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList(in *core.LandscapeConfigurationList, out *LandscapeConfigurationList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]LandscapeConfiguration)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList is an autogenerated conversion function.
-func Convert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList(in *core.LandscapeConfigurationList, out *LandscapeConfigurationList, s conversion.Scope) error {
-	return autoConvert_core_LandscapeConfigurationList_To_v1alpha1_LandscapeConfigurationList(in, out, s)
-}
-
-func autoConvert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec(in *LandscapeConfigurationSpec, out *core.LandscapeConfigurationSpec, s conversion.Scope) error {
-	out.SecretReferences = *(*[]core.ObjectReference)(unsafe.Pointer(&in.SecretReferences))
-	return nil
-}
-
-// Convert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec is an autogenerated conversion function.
-func Convert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec(in *LandscapeConfigurationSpec, out *core.LandscapeConfigurationSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LandscapeConfigurationSpec_To_core_LandscapeConfigurationSpec(in, out, s)
-}
-
-func autoConvert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec(in *core.LandscapeConfigurationSpec, out *LandscapeConfigurationSpec, s conversion.Scope) error {
-	out.SecretReferences = *(*[]ObjectReference)(unsafe.Pointer(&in.SecretReferences))
-	return nil
-}
-
-// Convert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec is an autogenerated conversion function.
-func Convert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec(in *core.LandscapeConfigurationSpec, out *LandscapeConfigurationSpec, s conversion.Scope) error {
-	return autoConvert_core_LandscapeConfigurationSpec_To_v1alpha1_LandscapeConfigurationSpec(in, out, s)
-}
-
-func autoConvert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(in *LandscapeConfigurationStatus, out *core.LandscapeConfigurationStatus, s conversion.Scope) error {
-	out.ObservedGeneration = in.ObservedGeneration
-	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
-	out.ConfigGeneration = in.ConfigGeneration
-	out.ConfigReference = (*core.ObjectReference)(unsafe.Pointer(in.ConfigReference))
-	out.Secrets = *(*[]core.VersionedObjectReference)(unsafe.Pointer(&in.Secrets))
-	return nil
-}
-
-// Convert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus is an autogenerated conversion function.
-func Convert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(in *LandscapeConfigurationStatus, out *core.LandscapeConfigurationStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_LandscapeConfigurationStatus_To_core_LandscapeConfigurationStatus(in, out, s)
-}
-
-func autoConvert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(in *core.LandscapeConfigurationStatus, out *LandscapeConfigurationStatus, s conversion.Scope) error {
-	out.ObservedGeneration = in.ObservedGeneration
-	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
-	out.ConfigGeneration = in.ConfigGeneration
-	out.ConfigReference = (*ObjectReference)(unsafe.Pointer(in.ConfigReference))
-	out.Secrets = *(*[]VersionedObjectReference)(unsafe.Pointer(&in.Secrets))
-	return nil
-}
-
-// Convert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus is an autogenerated conversion function.
-func Convert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(in *core.LandscapeConfigurationStatus, out *LandscapeConfigurationStatus, s conversion.Scope) error {
-	return autoConvert_core_LandscapeConfigurationStatus_To_v1alpha1_LandscapeConfigurationStatus(in, out, s)
-}
-
 func autoConvert_v1alpha1_NamedObjectReference_To_core_NamedObjectReference(in *NamedObjectReference, out *core.NamedObjectReference, s conversion.Scope) error {
 	out.Name = in.Name
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.Reference, &out.Reference, s); err != nil {
@@ -1556,6 +1447,72 @@ func autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.Objec
 // Convert_core_ObjectReference_To_v1alpha1_ObjectReference is an autogenerated conversion function.
 func Convert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.ObjectReference, out *ObjectReference, s conversion.Scope) error {
 	return autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in, out, s)
+}
+
+func autoConvert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(in *SecretLabelSelectorRef, out *core.SecretLabelSelectorRef, s conversion.Scope) error {
+	out.Selector = *(*map[string]string)(unsafe.Pointer(&in.Selector))
+	out.Key = in.Key
+	return nil
+}
+
+// Convert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef is an autogenerated conversion function.
+func Convert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(in *SecretLabelSelectorRef, out *core.SecretLabelSelectorRef, s conversion.Scope) error {
+	return autoConvert_v1alpha1_SecretLabelSelectorRef_To_core_SecretLabelSelectorRef(in, out, s)
+}
+
+func autoConvert_core_SecretLabelSelectorRef_To_v1alpha1_SecretLabelSelectorRef(in *core.SecretLabelSelectorRef, out *SecretLabelSelectorRef, s conversion.Scope) error {
+	out.Selector = *(*map[string]string)(unsafe.Pointer(&in.Selector))
+	out.Key = in.Key
+	return nil
+}
+
+// Convert_core_SecretLabelSelectorRef_To_v1alpha1_SecretLabelSelectorRef is an autogenerated conversion function.
+func Convert_core_SecretLabelSelectorRef_To_v1alpha1_SecretLabelSelectorRef(in *core.SecretLabelSelectorRef, out *SecretLabelSelectorRef, s conversion.Scope) error {
+	return autoConvert_core_SecretLabelSelectorRef_To_v1alpha1_SecretLabelSelectorRef(in, out, s)
+}
+
+func autoConvert_v1alpha1_StaticDataSource_To_core_StaticDataSource(in *StaticDataSource, out *core.StaticDataSource, s conversion.Scope) error {
+	out.Value = *(*json.RawMessage)(unsafe.Pointer(&in.Value))
+	out.ValueFrom = (*core.StaticDataValueFrom)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+// Convert_v1alpha1_StaticDataSource_To_core_StaticDataSource is an autogenerated conversion function.
+func Convert_v1alpha1_StaticDataSource_To_core_StaticDataSource(in *StaticDataSource, out *core.StaticDataSource, s conversion.Scope) error {
+	return autoConvert_v1alpha1_StaticDataSource_To_core_StaticDataSource(in, out, s)
+}
+
+func autoConvert_core_StaticDataSource_To_v1alpha1_StaticDataSource(in *core.StaticDataSource, out *StaticDataSource, s conversion.Scope) error {
+	out.Value = *(*json.RawMessage)(unsafe.Pointer(&in.Value))
+	out.ValueFrom = (*StaticDataValueFrom)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+// Convert_core_StaticDataSource_To_v1alpha1_StaticDataSource is an autogenerated conversion function.
+func Convert_core_StaticDataSource_To_v1alpha1_StaticDataSource(in *core.StaticDataSource, out *StaticDataSource, s conversion.Scope) error {
+	return autoConvert_core_StaticDataSource_To_v1alpha1_StaticDataSource(in, out, s)
+}
+
+func autoConvert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(in *StaticDataValueFrom, out *core.StaticDataValueFrom, s conversion.Scope) error {
+	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.SecretLabelSelector = (*core.SecretLabelSelectorRef)(unsafe.Pointer(in.SecretLabelSelector))
+	return nil
+}
+
+// Convert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom is an autogenerated conversion function.
+func Convert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(in *StaticDataValueFrom, out *core.StaticDataValueFrom, s conversion.Scope) error {
+	return autoConvert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(in, out, s)
+}
+
+func autoConvert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in *core.StaticDataValueFrom, out *StaticDataValueFrom, s conversion.Scope) error {
+	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.SecretLabelSelector = (*SecretLabelSelectorRef)(unsafe.Pointer(in.SecretLabelSelector))
+	return nil
+}
+
+// Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom is an autogenerated conversion function.
+func Convert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in *core.StaticDataValueFrom, out *StaticDataValueFrom, s conversion.Scope) error {
+	return autoConvert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in, out, s)
 }
 
 func autoConvert_v1alpha1_TypedObjectReference_To_core_TypedObjectReference(in *TypedObjectReference, out *core.TypedObjectReference, s conversion.Scope) error {

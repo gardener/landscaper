@@ -29,7 +29,6 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	lsctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -41,21 +40,12 @@ var _ = Describe("Multi Component Test", func() {
 		state        *envtest.State
 		fakeRegistry registry.Registry
 
-		lsActuator, execActuator, instActuator, mockActuator reconcile.Reconciler
+		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
 		fakeRegistry, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
-		Expect(err).ToNot(HaveOccurred())
-
-		lsActuator, err = lsctlr.NewActuator()
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.ClientInto(testenv.Client, lsActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.SchemeInto(kubernetes.LandscaperScheme, lsActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.LoggerInto(testing.NullLogger{}, lsActuator)
 		Expect(err).ToNot(HaveOccurred())
 
 		instActuator, err = instctlr.NewActuator(fakeRegistry)
@@ -108,7 +98,6 @@ var _ = Describe("Multi Component Test", func() {
 			inst2Req = request("root-2", state.Namespace)
 		)
 
-		testutils.ShouldReconcile(lsActuator, request("default", state.Namespace))
 		testutils.ShouldReconcile(instActuator, inst2Req)
 		testutils.ShouldNotReconcile(instActuator, inst2Req, "should not reconcile the second component as there are dependencies on exports of root-1")
 

@@ -15,6 +15,9 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -89,8 +92,13 @@ type InstallationSpec struct {
 
 	// Exports define the export mappings for the referenced definition.
 	// These values are by default auto generated from the parent definition.
+	// todo: add static data boolean
 	// +optional
 	Exports []DefinitionExportMapping `json:"exports,omitempty"`
+
+	// StaticData contains a list of data sources that are used to satisfy imports
+	// +optional
+	StaticData []StaticDataSource `json:"staticData,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.
@@ -123,6 +131,37 @@ type InstallationStatus struct {
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
+}
+
+// StaticDataSource defines a static data source
+type StaticDataSource struct {
+	// Value defined inline a raw data
+	// +optional
+	Value json.RawMessage `json:"value,omitempty"`
+
+	// ValueFrom defines data from an external resource
+	ValueFrom *StaticDataValueFrom `json:"valueFrom,omitempty"`
+}
+
+// StaticDataValueFrom defines a static data that is read from a external resource.
+type StaticDataValueFrom struct {
+	// Selects a key of a secret in the installations's namespace
+	// +optional
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+
+	// Selects a key from multiple secrets in the installations's namespace
+	// that matches the given labels.
+	// +optional
+	SecretLabelSelector *SecretLabelSelectorRef `json:"secretLabelSelector,omitempty"`
+}
+
+// SecretLabelSelectorRef selects secrets with the given label and key.
+type SecretLabelSelectorRef struct {
+	// Selector is a map of labels to select specific secrets.
+	Selector map[string]string `json:"selector"`
+
+	// The key of the secret to select from.  Must be a valid secret key.
+	Key string `json:"key"`
 }
 
 // ImportState hold the state of a import.

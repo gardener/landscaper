@@ -24,17 +24,15 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // NewConstructor creates a new Import Contructor.
-func NewConstructor(op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
+func NewConstructor(op *installations.Operation, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
 	return &Constructor{
 		Operation: op,
-		validator: NewValidator(op, landscapeConfig, parent, siblings...),
+		validator: NewValidator(op, parent, siblings...),
 
-		lsConfig: landscapeConfig,
 		parent:   parent,
 		siblings: siblings,
 	}
@@ -45,7 +43,7 @@ func NewConstructor(op *installations.Operation, landscapeConfig *landscapeconfi
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (interface{}, error) {
 	var (
 		fldPath = field.NewPath(inst.Info.Name)
-		values  = make(map[string]interface{}, 0)
+		values  = make(map[string]interface{})
 	)
 	for i, importMapping := range inst.Info.Spec.Imports {
 		impPath := fldPath.Index(i)
@@ -62,16 +60,16 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 }
 
 func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
-	if c.IsRoot() {
-		values, err := c.tryToConstructFromLandscapeConfig(ctx, fldPath, inst, mapping)
-		if err == nil {
-			return values, nil
-		}
-		if !installations.IsImportNotFoundError(err) {
-			return nil, err
-		}
-	} else {
-		values, err := c.tryToConstructFromParent(ctx, fldPath, inst, mapping)
+	values, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
+	if err == nil {
+		return values, nil
+	}
+	if !installations.IsImportNotFoundError(err) {
+		return nil, err
+	}
+
+	if !c.IsRoot() {
+		values, err = c.tryToConstructFromParent(ctx, fldPath, inst, mapping)
 		if err == nil {
 			return values, nil
 		}
@@ -83,14 +81,19 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 	return c.tryToConstructFromSiblings(ctx, fldPath, inst, mapping)
 }
 
-func (c *Constructor) tryToConstructFromLandscapeConfig(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
-	if err := c.validator.checkIfLandscapeConfigForMapping(fldPath, inst, mapping); err != nil {
+func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
+	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
+		return nil, err
+	}
+
+	data, err := c.GetStaticData(ctx)
+	if err != nil {
 		return nil, err
 	}
 
 	var val interface{}
-	if err := c.lsConfig.Data.GetData(mapping.From, &val); err != nil {
-		// can not happen as it is already checked in checkIfLandscapeConfigForMapping
+	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
+		// can not happen as it is already checked in checkStaticDataForMapping
 		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
 	}
 
@@ -99,7 +102,7 @@ func (c *Constructor) tryToConstructFromLandscapeConfig(ctx context.Context, fld
 		return nil, err
 	}
 
-	tor, err := utils.TypedObjectReferenceFromObject(c.lsConfig.Info, kubernetes.LandscaperScheme)
+	tor, err := utils.TypedObjectReferenceFromObject(c.Inst.Info, kubernetes.LandscaperScheme)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +110,7 @@ func (c *Constructor) tryToConstructFromLandscapeConfig(ctx context.Context, fld
 		From:             mapping.From,
 		To:               mapping.To,
 		SourceRef:        tor,
-		ConfigGeneration: c.lsConfig.Info.Status.ConfigGeneration,
+		ConfigGeneration: inst.Info.Generation,
 	})
 
 	return values, err
@@ -131,7 +134,7 @@ func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *fie
 		From:             mapping.From,
 		To:               mapping.To,
 		SourceRef:        tor,
-		ConfigGeneration: c.lsConfig.Info.Status.ConfigGeneration,
+		ConfigGeneration: c.parent.Info.Status.ConfigGeneration,
 	})
 	return values, nil
 }
@@ -188,7 +191,7 @@ func (c *Constructor) constructValuesFromSecret(ctx context.Context, fldPath *fi
 
 	var val interface{}
 	if err := do.GetData(mapping.From, &val); err != nil {
-		// can not happen as it is already checked in checkIfLandscapeConfigForMapping
+		// can not happen as it is already checked in checkStaticDataForMapping
 		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in config not found", fldPath.String())
 	}
 

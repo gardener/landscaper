@@ -30,7 +30,6 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	lsctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/landscapeconfig"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -42,21 +41,12 @@ var _ = Describe("Simple", func() {
 		state        *envtest.State
 		fakeRegistry registry.Registry
 
-		lsActuator, execActuator, instActuator, mockActuator reconcile.Reconciler
+		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
 		fakeRegistry, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")})
-		Expect(err).ToNot(HaveOccurred())
-
-		lsActuator, err = lsctlr.NewActuator()
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.ClientInto(testenv.Client, lsActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.SchemeInto(kubernetes.LandscaperScheme, lsActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.LoggerInto(testing.NullLogger{}, lsActuator)
 		Expect(err).ToNot(HaveOccurred())
 
 		instActuator, err = instctlr.NewActuator(fakeRegistry)
@@ -102,9 +92,6 @@ var _ = Describe("Simple", func() {
 
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "01-simple", "cluster"))
-		Expect(err).ToNot(HaveOccurred())
-
-		_, err = lsActuator.Reconcile(request("default", state.Namespace))
 		Expect(err).ToNot(HaveOccurred())
 
 		// first the installation controller should run and set the finalizer

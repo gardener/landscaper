@@ -215,7 +215,7 @@ func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstruct
 }
 
 func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {
-	exports := make(map[string]interface{}, 0)
+	exports := make(map[string]interface{})
 
 	for _, export := range h.Configuration.ExportsFromManifests {
 		if export.FromResource != nil {

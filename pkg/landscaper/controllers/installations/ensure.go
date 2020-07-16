@@ -24,10 +24,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	"github.com/gardener/landscaper/pkg/landscaper/landscapeconfig"
 )
 
-func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
+func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
 	// check that all referenced definitions have a corresponding installation
 	subinstallation := subinstallations.New(op)
 	exec := executions.New(op)
@@ -62,7 +61,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 	// check if the spec has changed
 	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := a.StartNewReconcile(ctx, op, landscapeConfig, inst); err != nil {
+		if err := a.StartNewReconcile(ctx, op, inst); err != nil {
 			return err
 		}
 
@@ -109,9 +108,9 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, land
 	return nil
 }
 
-func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, landscapeConfig *landscapeconfig.LandscapeConfig, inst *installations.Installation) error {
-	validator := imports.NewValidator(op, landscapeConfig, op.Context().Parent, op.Context().Siblings...)
-	if err := validator.Validate(inst); err != nil {
+func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
+	validator := imports.NewValidator(op, op.Context().Parent, op.Context().Siblings...)
+	if err := validator.Validate(ctx, inst); err != nil {
 		a.log.Error(err, "unable to validate imports")
 		return err
 	}
@@ -120,7 +119,7 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	// and then start the executions
 
 	// only needed if execution are processed
-	constructor := imports.NewConstructor(op, landscapeConfig, op.Context().Parent, op.Context().Siblings...)
+	constructor := imports.NewConstructor(op, op.Context().Parent, op.Context().Siblings...)
 	importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
 		a.log.Error(err, "unable to collect imports")

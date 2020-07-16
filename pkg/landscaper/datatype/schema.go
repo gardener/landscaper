@@ -38,13 +38,13 @@ func New(dt *lsv1alpha1.DataType, refs []*lsv1alpha1.DataType) *Datatype {
 
 // CreateDatatypesMap creates a map to of datatype name -> internal datatype
 func CreateDatatypesMap(datatypes []lsv1alpha1.DataType) (map[string]*Datatype, error) {
-	rawTypesMap := make(map[string]*lsv1alpha1.DataType, 0)
+	rawTypesMap := make(map[string]*lsv1alpha1.DataType)
 	for _, obj := range datatypes {
 		dt := obj
 		rawTypesMap[dt.Name] = &dt
 	}
 
-	typesMap := make(map[string]*Datatype, 0)
+	typesMap := make(map[string]*Datatype)
 	for _, obj := range datatypes {
 		dt := obj
 		// todo: recursively get used references
