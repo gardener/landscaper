@@ -32,6 +32,18 @@ type Installation struct {
 	importsStatus ImportStatus
 }
 
+// ImportMapping is the internal representation of a import mapping and its defintion
+type ImportMapping struct {
+	lsv1alpha1.DefinitionImportMapping
+	lsv1alpha1.DefinitionImport
+}
+
+// ExportMapping is the internal representation of a export mapping and its defintion
+type ExportMapping struct {
+	lsv1alpha1.DefinitionExportMapping
+	lsv1alpha1.DefinitionExport
+}
+
 // New creates a new internal representation of an installation
 func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
 	internalInst := &Installation{
@@ -75,10 +87,79 @@ func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.DefinitionImp
 	return def, nil
 }
 
+// GetImportMappings returns all import mappings of a installation.
+// If a import definition is not defined in the mappings it will be automatically added with the default mappings.
+// todo: check for unused mappings.
+func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
+	mappings := make([]ImportMapping, 0)
+	for _, obj := range i.Definition.Imports {
+		def := obj.DeepCopy()
+		// try to get a import mapping
+		mapping, err := i.GetImportMappingTo(def.Key)
+		if err == nil {
+			mappings = append(mappings, ImportMapping{
+				DefinitionImport:        *def,
+				DefinitionImportMapping: mapping,
+			})
+			continue
+		}
+		mappings = append(mappings, ImportMapping{
+			DefinitionImport: *def,
+			DefinitionImportMapping: lsv1alpha1.DefinitionImportMapping{
+				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
+					From: def.Key,
+					To:   def.Key,
+				},
+			},
+		})
+	}
+	return mappings, nil
+}
+
+// GetExportMappings returns all exported mappings of a installation.
+// If a export definition is not defined in the mappings it will be automatically added with the default mappings.
+// todo: check for unused mappings.
+func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
+	mappings := make([]ExportMapping, 0)
+	for _, obj := range i.Definition.Exports {
+		def := obj.DeepCopy()
+		// try to get a import mapping
+		mapping, err := i.GetExportMappingTo(def.Key)
+		if err == nil {
+			mappings = append(mappings, ExportMapping{
+				DefinitionExport:        *def,
+				DefinitionExportMapping: mapping,
+			})
+			continue
+		}
+		mappings = append(mappings, ExportMapping{
+			DefinitionExport: *def,
+			DefinitionExportMapping: lsv1alpha1.DefinitionExportMapping{
+				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
+					From: def.Key,
+					To:   def.Key,
+				},
+			},
+		})
+	}
+	return mappings, nil
+}
+
 // GetImportMappingFrom returns the import mapping of the installation that imports data from the given key
 func (i *Installation) GetImportMappingFrom(key string) (lsv1alpha1.DefinitionImportMapping, error) {
 	for _, mapping := range i.Info.Spec.Imports {
 		if mapping.From == key {
+			return mapping, nil
+		}
+	}
+
+	return lsv1alpha1.DefinitionImportMapping{}, fmt.Errorf("import mapping for key %s not found", key)
+}
+
+// GetImportMappingTo returns the import mapping of the installation that imports data to the given key
+func (i *Installation) GetImportMappingTo(key string) (lsv1alpha1.DefinitionImportMapping, error) {
+	for _, mapping := range i.Info.Spec.Imports {
+		if mapping.To == key {
 			return mapping, nil
 		}
 	}

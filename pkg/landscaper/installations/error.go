@@ -32,10 +32,14 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	if e.Err == nil {
-		return fmt.Sprintf("%s - %s", e.Reason, e.Message)
+	msg := string(e.Reason)
+	if len(e.Message) != 0 {
+		msg = fmt.Sprintf("%s - %s", e.Reason, e.Message)
 	}
-	return fmt.Sprintf("%s - %s: %s", e.Reason, e.Message, e.Err.Error())
+	if e.Err != nil {
+		msg = fmt.Sprintf("%s: ", e.Err.Error())
+	}
+	return msg
 }
 
 // Unwrap implements the golang Unwrap function
@@ -47,6 +51,14 @@ func NewError(reason ErrorReason, message string, err error) error {
 		Reason:  reason,
 		Message: message,
 		Err:     err,
+	}
+}
+
+// NewError creates a new import error
+func NewErrorWrap(reason ErrorReason, err error) error {
+	return &Error{
+		Reason: reason,
+		Err:    err,
 	}
 }
 

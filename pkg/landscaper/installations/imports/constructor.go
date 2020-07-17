@@ -45,9 +45,12 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 		fldPath = field.NewPath(inst.Info.Name)
 		values  = make(map[string]interface{})
 	)
-	for i, importMapping := range inst.Info.Spec.Imports {
+	mappings, err := inst.GetImportMappings()
+	if err != nil {
+		return nil, err
+	}
+	for i, importMapping := range mappings {
 		impPath := fldPath.Index(i)
-		// check if the parent also imports my import
 		newValues, err := c.constructForMapping(ctx, impPath, inst, importMapping)
 		if err != nil {
 			return nil, err
@@ -59,7 +62,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	return values, nil
 }
 
-func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
 	values, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
 	if err == nil {
 		return values, nil
@@ -81,7 +84,7 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 	return c.tryToConstructFromSiblings(ctx, fldPath, inst, mapping)
 }
 
-func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
 	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
 		return nil, err
 	}
@@ -116,7 +119,7 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 	return values, err
 }
 
-func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
 	if err := c.validator.checkIfParentHasImportForMapping(fldPath, inst, mapping); err != nil {
 		return nil, err
 	}
@@ -139,7 +142,7 @@ func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *fie
 	return values, nil
 }
 
-func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
 
 	for _, sibling := range c.siblings {
 		sPath := fldPath.Child(sibling.Info.Name)
@@ -155,7 +158,7 @@ func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *f
 	return nil, installations.NewImportNotFoundError("no sibling installation found to satisfy import", nil)
 }
 
-func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping lsv1alpha1.DefinitionImportMapping, sibling *installations.Installation) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping, sibling *installations.Installation) (map[string]interface{}, error) {
 	if err := c.validator.checkIfSiblingHasImportForMapping(fldPath, inst, mapping, sibling); err != nil {
 		return nil, err
 	}

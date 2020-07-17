@@ -13,7 +13,7 @@ spec:
 
   exports:
   - from: a.z
-    to: root.x
+    to: root.y
   - from: root.y
     to: root.z
 

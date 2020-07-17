@@ -132,6 +132,9 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	if err := op.SetExportConfigGeneration(ctx); err != nil {
+		return err
+	}
 
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {

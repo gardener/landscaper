@@ -82,6 +82,7 @@ var _ = g.Describe("Constructor", func() {
 		expectedConfig := map[string]interface{}{
 			"root": map[string]interface{}{
 				"z": "val-exec",
+				"y": "val-exec",
 			},
 		}
 
@@ -119,7 +120,7 @@ var _ = g.Describe("Constructor", func() {
 		expectedConfig := map[string]interface{}{
 			"root": map[string]interface{}{
 				"z": "val-exec",
-				"x": "val-a",
+				"y": "val-a",
 			},
 		}
 

@@ -180,7 +180,6 @@ func (o *Operation) GetStaticData(ctx context.Context) (map[string]interface{}, 
 // TriggerDependants triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
 func (o *Operation) TriggerDependants(ctx context.Context) error {
-
 	for _, sibling := range o.Context().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
 			continue
@@ -192,8 +191,27 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
 		}
 	}
-
 	return nil
+}
+
+// GetExportConfigGeneration returns the new export generation of the installation
+// based on its own generation and its context
+func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
+	// we have to set our config generation to the desired state
+	newGen := o.Inst.Info.Status.ConfigGeneration
+	if o.IsRoot() {
+		newGen = o.Inst.Info.Status.ConfigGeneration + 1
+	}
+
+	newGen = o.Context().Parent.Info.Status.ConfigGeneration
+
+	if o.Inst.Info.Status.ConfigGeneration == o.Context().Parent.Info.Status.ConfigGeneration {
+		newGen = o.Inst.Info.Status.ConfigGeneration + 1
+		// we also have to update the export generation of our parent
+	}
+
+	o.Inst.Info.Status.ConfigGeneration = newGen
+	return o.Client().Status().Update(ctx, o.Inst.Info)
 }
 
 // UpdateExportReference updates the data object that holds the exported values of the installation.

@@ -83,3 +83,8 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 
 	return &Context{Parent: intParent, Siblings: intSubInstallations}, nil
 }
+
+// IsRoot returns if the current component is a root component
+func (o *Operation) IsRoot() bool {
+	return o.Context().Parent == nil
+}

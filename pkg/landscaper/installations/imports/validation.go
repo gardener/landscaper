@@ -40,10 +40,14 @@ func NewValidator(op *installations.Operation, parent *installations.Installatio
 // satisfied with the correct version
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
 	fldPath := field.NewPath(inst.Info.Name)
-	for i, importMapping := range inst.Info.Spec.Imports {
+
+	mappings, err := inst.GetImportMappings()
+	if err != nil {
+		return err
+	}
+	for i, importMapping := range mappings {
 		impPath := fldPath.Index(i)
-		// check if the parent also imports my import
-		err := v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
+		err = v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
 		if err != nil {
 			return err
 		}
@@ -52,7 +56,7 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	return nil
 }
 
-func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
 	err := v.checkStaticDataForMapping(ctx, fldPath, inst, mapping)
 	if !installations.IsImportNotFoundError(err) {
 		return err
@@ -84,7 +88,7 @@ func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *
 	return installations.NewImportNotFoundError("No import found", nil)
 }
 
-func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
 	if inst.Info.Spec.StaticData == nil {
 		return installations.NewImportNotFoundErrorf(nil, "%s: static data not defined", fldPath.String())
 	}
@@ -94,10 +98,6 @@ func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *fiel
 		return err
 	}
 
-	importDef, err := inst.GetImportDefinition(mapping.To)
-	if err != nil {
-		return err
-	}
 	//importState, err := inst.ImportStatus().GetTo(mapping.To)
 	//if err != nil {
 	//	return err
@@ -113,22 +113,18 @@ func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *fiel
 	//}
 
 	// validate types
-	dt, ok := v.GetDataType(importDef.Type)
+	dt, ok := v.GetDataType(mapping.Type)
 	if !ok {
-		return installations.NewImportNotSatisfiedErrorf(nil, "%s: datatype %s cannot be found", fldPath.String(), importDef.Type)
+		return installations.NewImportNotSatisfiedErrorf(nil, "%s: datatype %s cannot be found", fldPath.String(), mapping.Type)
 	}
 	if err := datatype.Validate(*dt, val); err != nil {
-		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected type %s", fldPath.String(), importDef.Type)
+		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected type %s", fldPath.String(), mapping.Type)
 	}
 
 	return nil
 }
 
-func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
-	importDef, err := inst.GetImportDefinition(mapping.To)
-	if err != nil {
-		return err
-	}
+func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
 	//importState, err := inst.ImportStatus().GetTo(mapping.To)
 	//if err != nil {
 	//	return err
@@ -149,8 +145,8 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
 	}
 
-	if parentImport.Type != importDef.Type {
-		return installations.NewImportNotSatisfiedErrorf(nil, "%s: import type of parent is %s but expected %s", fldPath.String(), parentImport.Type, importDef.Type)
+	if parentImport.Type != mapping.Type {
+		return installations.NewImportNotSatisfiedErrorf(nil, "%s: import type of parent is %s but expected %s", fldPath.String(), parentImport.Type, mapping.Type)
 	}
 
 	// check if the import of the parent is of v higher generation
@@ -161,7 +157,7 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 	return nil
 }
 
-func (v *Validator) checkIfSiblingsHaveImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping) error {
+func (v *Validator) checkIfSiblingsHaveImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
 
 	for _, sibling := range v.siblings {
 		sPath := fldPath.Child(sibling.Info.Name)
@@ -177,11 +173,7 @@ func (v *Validator) checkIfSiblingsHaveImportForMapping(fldPath *field.Path, ins
 	return installations.NewImportNotFoundErrorf(nil, "%s: no sibling installation found to satisfy the mapping", fldPath.String())
 }
 
-func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping v1alpha1.DefinitionImportMapping, sibling *installations.Installation) error {
-	importDef, err := inst.GetImportDefinition(mapping.To)
-	if err != nil {
-		return err
-	}
+func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping, sibling *installations.Installation) error {
 	//importState, err := inst.ImportStatus().GetTo(mapping.To)
 	//if err != nil {
 	//	return err
@@ -203,8 +195,8 @@ func (v *Validator) checkIfSiblingHasImportForMapping(fldPath *field.Path, inst 
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 
-	if siblingExport.Type != importDef.Type {
-		return installations.NewImportNotSatisfiedErrorf(nil, "%s: export type of sibling is %s but expected %s", fldPath.String(), siblingExport.Type, importDef.Type)
+	if siblingExport.Type != mapping.Type {
+		return installations.NewImportNotSatisfiedErrorf(nil, "%s: export type of sibling is %s but expected %s", fldPath.String(), siblingExport.Type, mapping.Type)
 	}
 
 	// check if the import of the parent is of v higher generation

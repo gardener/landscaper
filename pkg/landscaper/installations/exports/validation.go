@@ -44,7 +44,7 @@ func NewValidator(op *installations.Operation) *Validator {
 // Validate validates the exports of a installation and
 // checks if the config is of the configured form and type.
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation, values map[string]interface{}) error {
-	fldPath := field.NewPath(inst.Info.Name)
+	fldPath := field.NewPath(fmt.Sprintf("(inst: %s)", inst.Info.Name)).Child("exports")
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateExportCondition)
 
 	do := &dataobject.DataObject{Data: values}
@@ -62,26 +62,25 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 }
 
 func (v *Validator) validateExports(ctx context.Context, fldPath *field.Path, inst *installations.Installation, do *dataobject.DataObject) error {
-	for i, exportMapping := range inst.Info.Spec.Exports {
-		expPath := fldPath.Index(i)
+	mappings, err := inst.GetExportMappings()
+	if err != nil {
+		return err
+	}
+	for _, mapping := range mappings {
+		expPath := fldPath.Child(mapping.Key)
 
-		exportDef, err := inst.GetExportDefinition(exportMapping.From)
-		if err != nil {
-			return err
-		}
-
-		dt, ok := v.GetDataType(exportDef.Type)
+		dt, ok := v.GetDataType(mapping.Type)
 		if !ok {
-			return fmt.Errorf("%s: cannot find DataType %s", expPath.String(), exportDef.Type)
+			return fmt.Errorf("%s: cannot find DataType %s", expPath.String(), mapping.Type)
 		}
 
 		var data interface{}
-		if err := do.GetData(exportMapping.To, &data); err != nil {
+		if err := do.GetData(mapping.To, &data); err != nil {
 			return errors.Wrapf(err, "%s: unable to get data", expPath.String())
 		}
 
 		if err := datatype.Validate(*dt, data); err != nil {
-			return errors.Wrapf(err, "%s: unable to validate data against %s", expPath.String(), exportDef.Type)
+			return errors.Wrapf(err, "%s: unable to validate data against %s", expPath.String(), mapping.Type)
 		}
 	}
 	return nil
