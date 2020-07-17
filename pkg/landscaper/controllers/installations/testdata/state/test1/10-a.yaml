@@ -26,12 +26,12 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 5
+  configGeneration: ""
 
   imports:
   - from: root.a
     to: a.b
-    configGeneration: 5
+    configGeneration: ""
 
   installationRefs:
   - name: c

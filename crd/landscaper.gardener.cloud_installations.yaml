@@ -201,8 +201,7 @@ spec:
                 type: array
               configGeneration:
                 description: ConfigGeneration is the generation of the exported values.
-                format: int64
-                type: integer
+                type: string
               executionRef:
                 description: ExecutionReference is the reference to the execution
                   that schedules the templated execution items.
@@ -253,8 +252,7 @@ spec:
                     configGeneration:
                       description: ConfigGeneration is the generation of the imported
                         value.
-                      format: int64
-                      type: integer
+                      type: string
                     from:
                       description: From is the from key of the import
                       type: string
@@ -262,15 +260,6 @@ spec:
                       description: SourceRef is the reference to the installation
                         where the value is imported
                       properties:
-                        apiVersion:
-                          description: APIVersion is the group and version for the
-                            resource being referenced. If APIVersion is not specified,
-                            the specified Kind must be in the core API group. For
-                            any other third-party types, APIVersion is required.
-                          type: string
-                        kind:
-                          description: Kind is the type of resource being referenced
-                          type: string
                         name:
                           description: Name is the name of the kubernetes object.
                           type: string
@@ -278,8 +267,6 @@ spec:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
                       required:
-                      - apiVersion
-                      - kind
                       - name
                       - namespace
                       type: object

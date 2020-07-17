@@ -7,11 +7,10 @@ metadata:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation
     name: root
-spec:
+spec: {}
 
 status:
   phase: Completed
-  configGeneration: 5
 
   exportRef:
     name: exec-export-config

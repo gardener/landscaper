@@ -175,6 +175,11 @@ func GetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectRef
 	return v1alpha1.VersionedNamedObjectReference{}, false
 }
 
+// ReferenceIsObject checks if the reference describes the given object.
+func ReferenceIsObject(ref v1alpha1.ObjectReference, obj metav1.Object) bool {
+	return ref.Name == obj.GetName() && ref.Namespace == obj.GetNamespace()
+}
+
 // SetVersionedNamedObjectReference sets the versioned object reference with the given name.
 func SetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectReference, obj v1alpha1.VersionedNamedObjectReference) []v1alpha1.VersionedNamedObjectReference {
 	for i, ref := range objects {

@@ -23,9 +23,9 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: ""
 
   imports:
   - from: root.a
     to: a.a
-    configGeneration: 5
+    configGeneration: ""

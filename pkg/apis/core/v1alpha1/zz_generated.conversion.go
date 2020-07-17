@@ -1084,7 +1084,7 @@ func Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in *co
 func autoConvert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core.ImportState, s conversion.Scope) error {
 	out.From = in.From
 	out.To = in.To
-	out.SourceRef = (*core.TypedObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.SourceRef = (*core.ObjectReference)(unsafe.Pointer(in.SourceRef))
 	out.ConfigGeneration = in.ConfigGeneration
 	return nil
 }
@@ -1097,7 +1097,7 @@ func Convert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core
 func autoConvert_core_ImportState_To_v1alpha1_ImportState(in *core.ImportState, out *ImportState, s conversion.Scope) error {
 	out.From = in.From
 	out.To = in.To
-	out.SourceRef = (*TypedObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.SourceRef = (*ObjectReference)(unsafe.Pointer(in.SourceRef))
 	out.ConfigGeneration = in.ConfigGeneration
 	return nil
 }

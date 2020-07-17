@@ -21,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -105,15 +104,14 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 		return nil, err
 	}
 
-	tor, err := utils.TypedObjectReferenceFromObject(c.Inst.Info, kubernetes.LandscaperScheme)
-	if err != nil {
-		return nil, err
-	}
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
-		From:             mapping.From,
-		To:               mapping.To,
-		SourceRef:        tor,
-		ConfigGeneration: inst.Info.Generation,
+		From: mapping.From,
+		To:   mapping.To,
+		SourceRef: &lsv1alpha1.ObjectReference{
+			Name:      inst.Info.Name,
+			Namespace: inst.Info.Namespace,
+		},
+		ConfigGeneration: inst.Info.Status.ConfigGeneration, // todo: update to use newly created hash
 	})
 
 	return values, err
@@ -129,14 +127,13 @@ func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *fie
 		return nil, err
 	}
 
-	tor, err := utils.TypedObjectReferenceFromObject(c.parent.Info, kubernetes.LandscaperScheme)
-	if err != nil {
-		return nil, err
-	}
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
-		From:             mapping.From,
-		To:               mapping.To,
-		SourceRef:        tor,
+		From: mapping.From,
+		To:   mapping.To,
+		SourceRef: &lsv1alpha1.ObjectReference{
+			Name:      c.parent.Info.Name,
+			Namespace: c.parent.Info.Namespace,
+		},
 		ConfigGeneration: c.parent.Info.Status.ConfigGeneration,
 	})
 	return values, nil
@@ -159,7 +156,7 @@ func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *f
 }
 
 func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping, sibling *installations.Installation) (map[string]interface{}, error) {
-	if err := c.validator.checkIfSiblingHasImportForMapping(fldPath, inst, mapping, sibling); err != nil {
+	if err := c.validator.checkIfSiblingHasImportForMapping(ctx, fldPath, inst, mapping, sibling); err != nil {
 		return nil, err
 	}
 
@@ -173,14 +170,13 @@ func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *fi
 		return nil, err
 	}
 
-	tor, err := utils.TypedObjectReferenceFromObject(sibling.Info, kubernetes.LandscaperScheme)
-	if err != nil {
-		return nil, err
-	}
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
-		From:             mapping.From,
-		To:               mapping.To,
-		SourceRef:        tor,
+		From: mapping.From,
+		To:   mapping.To,
+		SourceRef: &lsv1alpha1.ObjectReference{
+			Name:      sibling.Info.Name,
+			Namespace: sibling.Info.Namespace,
+		},
 		ConfigGeneration: sibling.Info.Status.ConfigGeneration,
 	})
 	return values, nil

@@ -16,6 +16,8 @@ spec:
   imports:
   - from: root.a
     to: a.a
+  - from: root.a
+    to: a.b
 
   exports:
   - from: a.x
@@ -23,9 +25,12 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: ""
 
   imports:
   - from: root.a
     to: a.a
-    configGeneration: 5
+    configGeneration: ""
+    sourceRef:
+      name: root
+      namespace: test3

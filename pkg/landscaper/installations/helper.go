@@ -17,12 +17,15 @@ package installations
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -67,4 +70,80 @@ func CreateInternalInstallation(ctx context.Context, registry registry.Registry,
 		return nil, err
 	}
 	return New(inst, def)
+}
+
+// CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
+func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op lsoperation.Interface, parent *Installation) (bool, error) {
+	if parent == nil {
+		return true, nil
+	}
+	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, op, parent)
+	if err != nil {
+		return false, err
+	}
+	if !siblingsCompleted {
+		return siblingsCompleted, nil
+	}
+
+	// check its own parent
+	parentsParent, err := GetParent(ctx, op, parent)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get parent of parent")
+	}
+
+	if parentsParent == nil {
+		return true, nil
+	}
+	return CheckCompletedSiblingDependentsOfParent(ctx, op, parentsParent)
+}
+
+// CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed
+func CheckCompletedSiblingDependents(ctx context.Context, op lsoperation.Interface, inst *Installation) (bool, error) {
+	if inst == nil {
+		return true, nil
+	}
+	for _, impState := range inst.ImportStatus().GetStates() {
+		if impState.SourceRef != nil {
+
+			// check if the import is imported from mysql or the parent
+			// and continue if so as we have a different check for the parent
+			if lsv1alpha1helper.ReferenceIsObject(*impState.SourceRef, inst.Info) {
+				continue
+			}
+
+			parent, err := GetParent(ctx, op, inst)
+			if err != nil {
+				return false, err
+			}
+			if parent != nil && lsv1alpha1helper.ReferenceIsObject(*impState.SourceRef, parent.Info) {
+				continue
+			}
+
+			// we expect that the source ref is always a installation
+			inst := &lsv1alpha1.Installation{}
+			if err := op.Client().Get(ctx, impState.SourceRef.NamespacedName(), inst); err != nil {
+				return false, err
+			}
+
+			if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+				op.Log().V(3).Info("dependent installation not completed", "inst", impState.SourceRef.NamespacedName().String())
+				return false, nil
+			}
+
+			intInst, err := CreateInternalInstallation(ctx, op.Registry(), inst)
+			if err != nil {
+				return false, err
+			}
+
+			isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
+			if err != nil {
+				return false, err
+			}
+			if !isCompleted {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
 }

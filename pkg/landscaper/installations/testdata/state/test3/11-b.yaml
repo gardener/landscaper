@@ -23,9 +23,9 @@ spec:
 
 status:
   phase: Completed
-  configGeneration: 6
+  configGeneration: ""
 
   imports:
   - from: a.z
     to: b.a
-    configGeneration: 6
+    configGeneration: ""

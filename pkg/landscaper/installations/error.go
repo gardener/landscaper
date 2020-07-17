@@ -20,9 +20,10 @@ import "fmt"
 type ErrorReason string
 
 const (
-	ImportNotFound     ErrorReason = "ImportNotFound"
-	ImportNotSatisfied ErrorReason = "ImportNotSatisfied"
-	ExportNotFound     ErrorReason = "ExportNotFound"
+	ImportNotFound         ErrorReason = "ImportNotFound"
+	ImportNotSatisfied     ErrorReason = "ImportNotSatisfied"
+	NotCompletedDependents ErrorReason = "NotCompletedDependents"
+	ExportNotFound         ErrorReason = "ExportNotFound"
 )
 
 type Error struct {
@@ -99,6 +100,21 @@ func NewImportNotSatisfiedErrorf(err error, format string, a ...interface{}) err
 // IsImportNotFoundError checks if the provided error is of type ImportNotSatisfied
 func IsImportNotSatisfiedError(err error) bool {
 	return IsErrorForReason(err, ImportNotSatisfied)
+}
+
+// NewNotCompletedDependentsError creates a new error that indicates that dependent installation is not completed yet
+func NewNotCompletedDependentsError(message string, err error) error {
+	return NewError(NotCompletedDependents, message, err)
+}
+
+// NewNotCompletedDependentsErrorf creates a new error that indicates that dependent installation is not completed yet
+func NewNotCompletedDependentsErrorf(err error, format string, a ...interface{}) error {
+	return NewErrorf(NotCompletedDependents, err, format, a...)
+}
+
+// IsNotCompletedDependentsError checks if the provided error is of type NotCompletedDependents
+func IsNotCompletedDependentsError(err error) bool {
+	return IsErrorForReason(err, NotCompletedDependents)
 }
 
 // NewExportNotFoundError creates a new error that indicates that a export was not found

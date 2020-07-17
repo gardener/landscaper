@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
 // Context contains the visible installations of a specific installation.
@@ -52,15 +53,14 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 	}
 
 	// get the parent by owner reference
-	parentName := GetParentInstallationName(o.Inst.Info)
-	parent := &lsv1alpha1.Installation{}
-	if err := o.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: o.Inst.Info.Namespace}, parent); err != nil {
+	parent, err := GetParent(ctx, o, o.Inst)
+	if err != nil {
 		return nil, err
 	}
 
 	// siblings are all encompassed installation of the parent installation
 	subInstallations := make([]*lsv1alpha1.Installation, 0)
-	for _, installationRef := range parent.Status.InstallationReferences {
+	for _, installationRef := range parent.Info.Status.InstallationReferences {
 		if installationRef.Reference.Name == o.Inst.Info.Name {
 			continue
 		}
@@ -71,17 +71,31 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	intParent, err := CreateInternalInstallation(ctx, o.Registry(), parent)
-	if err != nil {
-		return nil, err
-	}
-
 	intSubInstallations, err := CreateInternalInstallations(ctx, o.Registry(), subInstallations...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Context{Parent: intParent, Siblings: intSubInstallations}, nil
+	return &Context{Parent: parent, Siblings: intSubInstallations}, nil
+}
+
+// GetParent returns the parent of a installation.
+// It returns nil if the installation has no parent
+func GetParent(ctx context.Context, op operation.Interface, inst *Installation) (*Installation, error) {
+	if IsRootInstallation(inst.Info) {
+		return nil, nil
+	}
+	// get the parent by owner reference
+	parentName := GetParentInstallationName(inst.Info)
+	parent := &lsv1alpha1.Installation{}
+	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
+		return nil, err
+	}
+	intParent, err := CreateInternalInstallation(ctx, op.Registry(), parent)
+	if err != nil {
+		return nil, err
+	}
+	return intParent, err
 }
 
 // IsRoot returns if the current component is a root component

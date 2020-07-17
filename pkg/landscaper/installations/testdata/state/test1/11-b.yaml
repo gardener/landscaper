@@ -23,10 +23,10 @@ spec:
 
 status:
   phase: Init
-  configGeneration: 5
+  configGeneration: ""
 
   imports:
   - from: a.z
     to: b.a
-    configGeneration: 5
+    configGeneration: ""
 

@@ -23,10 +23,13 @@ spec:
 
 status:
   phase: Init
-  configGeneration: 5
+  configGeneration: "def"
 
   imports:
   - from: a.z
     to: b.a
-    configGeneration: 5
+    configGeneration: "klm"
+    sourceRef:
+      name: a
+      namespace: test1
 

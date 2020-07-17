@@ -12,28 +12,23 @@ spec:
     to: root.a
 
   exports:
-  - from: c.z
+  - from: a.z
     to: root.z
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: "asdf"
 
   imports:
   - from: ext.a
     to: root.a
-    configGeneration: 6
+    configGeneration: "lkj"
+    sourceRef:
+      name: root-dep
+      namespace: test3
 
   installationRefs:
   - name: a
     ref:
       name: a
-      namespace: test3
-  - name: b
-    ref:
-      name: b
-      namespace: test3
-  - name: c
-    ref:
-      name: c
       namespace: test3

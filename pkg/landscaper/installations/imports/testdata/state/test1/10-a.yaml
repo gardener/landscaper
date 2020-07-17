@@ -23,7 +23,7 @@ spec:
 
 status:
   phase: Succeeded
-  configGeneration: 5
+  configGeneration: "klm"
 
   exportRef:
     name: a-config
@@ -32,6 +32,9 @@ status:
   imports:
   - from: root.a
     to: a.b
-    configGeneration: 5
+    configGeneration: "efg"
+    sourceRef:
+      name: root
+      namespace: test1
   observedGeneration: 0
 

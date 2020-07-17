@@ -22,12 +22,12 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 5
+  configGeneration: ""
 
   imports:
   - from: ext.a
     to: root.a
-    configGeneration: 6
+    configGeneration: ""
 
   installationRefs:
   - name: a

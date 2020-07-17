@@ -108,15 +108,11 @@ var _ = g.Describe("Constructor", func() {
 		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(lsv1alpha1.ImportState{
 			From: "ext.a",
 			To:   "root.a",
-			SourceRef: &lsv1alpha1.TypedObjectReference{
-				APIVersion: "landscaper.gardener.cloud/v1alpha1",
-				Kind:       "Installation",
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      "root",
-					Namespace: "test1",
-				},
+			SourceRef: &lsv1alpha1.ObjectReference{
+				Name:      "root",
+				Namespace: "test1",
 			},
-			ConfigGeneration: 0,
+			ConfigGeneration: "abc",
 		}))
 	})
 

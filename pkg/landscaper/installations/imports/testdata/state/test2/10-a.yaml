@@ -23,7 +23,7 @@ spec:
 
 status:
   phase: Succeeded
-  configGeneration: 5
+  configGeneration: ""
 
   exportRef:
     name: a-config
@@ -32,6 +32,6 @@ status:
   imports:
   - from: root.a
     to: a.b
-    configGeneration: 5
+    configGeneration: ""
   observedGeneration: 0
 

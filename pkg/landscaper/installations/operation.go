@@ -198,19 +198,8 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 // based on its own generation and its context
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
-	newGen := o.Inst.Info.Status.ConfigGeneration
-	if o.IsRoot() {
-		newGen = o.Inst.Info.Status.ConfigGeneration + 1
-	}
 
-	newGen = o.Context().Parent.Info.Status.ConfigGeneration
-
-	if o.Inst.Info.Status.ConfigGeneration == o.Context().Parent.Info.Status.ConfigGeneration {
-		newGen = o.Inst.Info.Status.ConfigGeneration + 1
-		// we also have to update the export generation of our parent
-	}
-
-	o.Inst.Info.Status.ConfigGeneration = newGen
+	o.Inst.Info.Status.ConfigGeneration = "abc"
 	return o.Client().Status().Update(ctx, o.Inst.Info)
 }
 

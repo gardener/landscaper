@@ -17,12 +17,12 @@ spec:
 
 status:
   phase: Progressing
-  configGeneration: 7
+  configGeneration: ""
 
   imports:
   - from: ext.a
     to: root.a
-    configGeneration: 6
+    configGeneration: ""
 
   installationRefs:
   - name: a

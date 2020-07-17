@@ -6,7 +6,7 @@ version: 1.0.0
 
 imports:
 - key: d.a
-  type: number
+  type: string
 - key: d.b
   type: string
 

@@ -79,7 +79,7 @@ type InstallationStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ConfigGeneration is the generation of the exported values.
-	ConfigGeneration int64 `json:"configGeneration"`
+	ConfigGeneration string `json:"configGeneration"`
 
 	// ExportReference references the object that contains the exported values.
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
@@ -139,8 +139,8 @@ type ImportState struct {
 	To string `json:"to"`
 
 	// SourceRef is the reference to the installation where the value is imported
-	SourceRef *TypedObjectReference `json:"sourceRef,omitempty"`
+	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 
 	// ConfigGeneration is the generation of the imported value.
-	ConfigGeneration int64 `json:"configGeneration"`
+	ConfigGeneration string `json:"configGeneration"`
 }

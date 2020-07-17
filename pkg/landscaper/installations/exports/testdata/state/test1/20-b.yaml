@@ -23,7 +23,7 @@ spec:
 
 status:
   phase: Init
-  configGeneration: 5
+  configGeneration: ""
 
   exportRef:
     name: b-config
@@ -32,5 +32,5 @@ status:
   imports:
   - from: a.z
     to: b.a
-    configGeneration: 5
+    configGeneration: ""
 

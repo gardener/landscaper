@@ -606,7 +606,7 @@ func (in *ImportState) DeepCopyInto(out *ImportState) {
 	*out = *in
 	if in.SourceRef != nil {
 		in, out := &in.SourceRef, &out.SourceRef
-		*out = new(TypedObjectReference)
+		*out = new(ObjectReference)
 		**out = **in
 	}
 }

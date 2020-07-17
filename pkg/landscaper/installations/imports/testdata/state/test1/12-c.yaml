@@ -25,13 +25,19 @@ spec:
 
 status:
   phase: Init
-  configGeneration: 5
+  configGeneration: "ghi"
 
   imports:
   - from: a.z
     to: c.a
-    configGeneration: 5
+    configGeneration: "klm"
+    sourceRef:
+      name: a
+      namespace: test1
   - from: b.z
     to: c.b
-    configGeneration: 5
+    configGeneration: ""
+    sourceRef:
+      name: b
+      namespace: test1
 

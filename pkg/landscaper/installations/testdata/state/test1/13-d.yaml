@@ -25,13 +25,13 @@ spec:
 
 status:
   phase: Init
-  configGeneration: 5
+  configGeneration: ""
 
   imports:
   - from: b.z
     to: d.a
-    configGeneration: 5
+    configGeneration: ""
   - from: c.z
     to: d.b
-    configGeneration: 5
+    configGeneration: ""
 
