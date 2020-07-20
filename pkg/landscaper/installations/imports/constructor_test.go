@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -105,15 +106,15 @@ var _ = g.Describe("Constructor", func() {
 		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
-		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(lsv1alpha1.ImportState{
-			From: "ext.a",
-			To:   "root.a",
-			SourceRef: &lsv1alpha1.ObjectReference{
+		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(MatchAllFields(Fields{
+			"From": Equal("ext.a"),
+			"To":   Equal("root.a"),
+			"SourceRef": Equal(&lsv1alpha1.ObjectReference{
 				Name:      "root",
 				Namespace: "test1",
-			},
-			ConfigGeneration: "abc",
-		}))
+			}),
+			"ConfigGeneration": BeAssignableToTypeOf(""),
+		})))
 	})
 
 	g.It("should construct the imported config from a sibling", func() {

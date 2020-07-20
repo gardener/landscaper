@@ -205,6 +205,11 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 
 // UpdateExportReference updates the data object that holds the exported values of the installation.
 func (o *Operation) UpdateExportReference(ctx context.Context, values interface{}) error {
+	configGen, err := CreateGenerationHash(o.Inst.Info)
+	if err != nil {
+		return err
+	}
+
 	obj := &corev1.Secret{}
 	obj.Name = fmt.Sprintf("%s-exports", o.Inst.Info.Name)
 	obj.Namespace = o.Inst.Info.Namespace
@@ -230,6 +235,9 @@ func (o *Operation) UpdateExportReference(ctx context.Context, values interface{
 		Name:      obj.Name,
 		Namespace: obj.Namespace,
 	}
+
+	o.Inst.Info.Status.ConfigGeneration = configGen
+
 	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase)
 }
 

@@ -15,7 +15,11 @@
 package imports
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/gob"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -104,6 +108,13 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 		return nil, err
 	}
 
+	var encData bytes.Buffer
+	if err := gob.NewEncoder(&encData).Encode(val); err != nil {
+		return nil, err
+	}
+	h := sha1.New()
+	h.Write(encData.Bytes())
+
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
 		From: mapping.From,
 		To:   mapping.To,
@@ -111,7 +122,7 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 			Name:      inst.Info.Name,
 			Namespace: inst.Info.Namespace,
 		},
-		ConfigGeneration: inst.Info.Status.ConfigGeneration, // todo: update to use newly created hash
+		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
 	})
 
 	return values, err

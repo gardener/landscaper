@@ -167,6 +167,7 @@ type SecretLabelSelectorRef struct {
 // ImportState hold the state of a import.
 type ImportState struct {
 	// From is the from key of the import
+	// todo: maybe remove in favor of one key from the definition
 	From string `json:"from"`
 
 	// To is the to key of the import
