@@ -28,3 +28,5 @@ spec:
       common:
         namespace: default
         baseDomain: demo.landscaper.gcp.dev.k8s.ondemand.com
+      nginx:
+        ingressClass: "nginx"

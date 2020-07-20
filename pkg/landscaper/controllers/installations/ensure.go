@@ -97,7 +97,6 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 
 	// update import status
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
 
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
@@ -132,6 +131,7 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
 	if err := op.SetExportConfigGeneration(ctx); err != nil {
 		return err
 	}

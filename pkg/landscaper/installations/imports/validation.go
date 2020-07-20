@@ -95,7 +95,7 @@ func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *
 		return nil
 	}
 
-	return installations.NewImportNotFoundError("No import found", nil)
+	return installations.NewImportNotFoundError("", field.NotFound(fldPath, "no import found"))
 }
 
 func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
