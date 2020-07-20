@@ -85,3 +85,16 @@ Static data that satisfies an import is always preferred over exported data from
           my-app: mysecret-label
         key: key1 # default to "config"; the value must contain a map of values
 ```
+
+### Operations
+
+The behavior of a installation is set by using operation annotations.
+These annotations are either automatically set by the landscaper itself as part of the dafault reconiclition loop.
+Or operator can set annoations to force specific behavior.
+
+`landscaper.gardener.cloud/operation`:
+  - `reconcile`: start a default reconcile on the installation
+  - `force-reconcile`: skip the reconcile/pending check and directly start a new reconcilition flow. :warning: Imports still have to be satisfied.
+  - `abort`: abort the current run which will abort all subinstallation but will wait until all current running components have finished.
+ 
+`landscaper.gardener.cloud/skip=true`: skips the reconciliation of a component which means that it will not be triggered by configuration or import change.
