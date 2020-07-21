@@ -21,6 +21,7 @@ import (
 
 	"github.com/containerd/containerd/remotes"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -32,6 +33,9 @@ type Client interface {
 
 	// Fetch fetches the blob for the given ocispec Descriptor.
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
+
+	// PushManifest uploads the given ocisepc Descriptor to the given ref.
+	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error
 }
 
 // Resolver is a interface that should return a new resolver if called.
@@ -56,6 +60,9 @@ type Options struct {
 
 	// Cache is the oci cache to be used by the client
 	Cache cache.Cache
+
+	// CustomMediaTypes defines the custom known media types
+	CustomMediaTypes sets.String
 }
 
 // Option is the interface to specify different cache options
@@ -97,6 +104,18 @@ func WithConfiguration(cfg *config.OCIConfiguration) *WithConfigurationStruct {
 	}
 	wc := WithConfigurationStruct(*cfg)
 	return &wc
+}
+
+// WithKnownMediaType adds a known media types to the client
+type WithKnownMediaType string
+
+func (c WithKnownMediaType) ApplyOption(options *Options) {
+	if options.CustomMediaTypes == nil {
+		options.CustomMediaTypes = sets.NewString(string(c))
+		return
+	}
+
+	options.CustomMediaTypes.Insert(string(c))
 }
 
 // WithConfiguration applies external oci configuration as internal options.

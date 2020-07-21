@@ -84,43 +84,9 @@ func initBasePath(opts *Options) error {
 }
 
 func (lc *layeredCache) Get(desc ocispecv1.Descriptor) (io.ReadCloser, error) {
-	path := path(desc)
-	lc.mux.RLock()
-	defer lc.mux.RUnlock()
-
-	// first search in the overlayFs layer
-	if lc.overlayFs != nil {
-		if _, err := lc.overlayFs.Stat(path); err == nil {
-			return lc.overlayFs.OpenFile(path, os.O_RDONLY, os.ModePerm)
-		}
-		lc.log.V(7).Info("not found in overlay cache", "path", path, "digest", desc.Digest.Encoded())
-	}
-
-	if _, err := lc.baseFs.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	file, err := lc.baseFs.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	_, file, err := lc.get(path(desc))
 	if err != nil {
 		return nil, err
-	}
-
-	// copy file to in memory cache
-	if lc.overlayFs != nil {
-		overlayFile, err := lc.overlayFs.Create(path)
-		if err != nil {
-			// do not return an error here as we are only unable to write to better cache
-			lc.log.V(5).Info(err.Error())
-			return file, nil
-		}
-		defer overlayFile.Close()
-		if _, err := io.Copy(overlayFile, file); err != nil {
-			// do not return an error here as we are only unable to write to better cache
-			lc.log.V(5).Info(err.Error())
-			return file, nil
-		}
 	}
 	return file, nil
 }
@@ -139,6 +105,73 @@ func (lc *layeredCache) Add(desc ocispecv1.Descriptor, reader io.ReadCloser) err
 
 	_, err = io.Copy(file, reader)
 	return err
+}
+
+func (lc *layeredCache) info(dgst string) (os.FileInfo, error) {
+	lc.mux.RLock()
+	defer lc.mux.RUnlock()
+
+	// first search in the overlayFs layer
+	if lc.overlayFs != nil {
+		if info, err := lc.overlayFs.Stat(dgst); err == nil {
+			return info, nil
+		}
+	}
+
+	info, err := lc.baseFs.Stat(dgst)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return info, nil
+}
+
+func (lc *layeredCache) get(dgst string) (os.FileInfo, afero.File, error) {
+	lc.mux.RLock()
+	defer lc.mux.RUnlock()
+
+	// first search in the overlayFs layer
+	if lc.overlayFs != nil {
+		if info, err := lc.overlayFs.Stat(dgst); err == nil {
+			file, err := lc.overlayFs.OpenFile(dgst, os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				return nil, nil, err
+			}
+			return info, file, err
+		}
+		lc.log.V(7).Info("not found in overlay cache", "dgst", dgst, "digest", dgst)
+	}
+
+	info, err := lc.baseFs.Stat(dgst)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil, ErrNotFound
+		}
+		return nil, nil, err
+	}
+	file, err := lc.baseFs.OpenFile(dgst, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// copy file to in memory cache
+	if lc.overlayFs != nil {
+		overlayFile, err := lc.overlayFs.Create(dgst)
+		if err != nil {
+			// do not return an error here as we are only unable to write to better cache
+			lc.log.V(5).Info(err.Error())
+			return info, file, nil
+		}
+		defer overlayFile.Close()
+		if _, err := io.Copy(overlayFile, file); err != nil {
+			// do not return an error here as we are only unable to write to better cache
+			lc.log.V(5).Info(err.Error())
+			return info, file, nil
+		}
+	}
+	return info, file, nil
 }
 
 func path(desc ocispecv1.Descriptor) string {

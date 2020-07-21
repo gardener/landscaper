@@ -18,12 +18,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"io/ioutil"
 	"net/http"
 
+	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/remotes"
 	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/go-logr/logr"
+	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
@@ -32,6 +39,8 @@ type client struct {
 	log      logr.Logger
 	resolver Resolver
 	cache    cache.Cache
+
+	knownMediaTypes sets.String
 }
 
 // NewClient creates a new OCI Client.
@@ -56,9 +65,10 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	}
 
 	return &client{
-		log:      log,
-		resolver: options.Resolver,
-		cache:    options.Cache,
+		log:             log,
+		resolver:        options.Resolver,
+		cache:           options.Cache,
+		knownMediaTypes: options.CustomMediaTypes,
 	}, nil
 }
 
@@ -134,4 +144,83 @@ func (c *client) getFetchReader(ctx context.Context, ref string, desc ocispecv1.
 	}
 
 	return reader, err
+}
+
+func (c *client) PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error {
+	resolver, err := c.resolver.Resolver(context.Background(), http.DefaultClient, false)
+	if err != nil {
+		return err
+	}
+	pusher, err := resolver.Pusher(ctx, ref)
+	if err != nil {
+		return err
+	}
+
+	// at last upload all layers
+	for _, layer := range manifest.Layers {
+		if err := c.pushContent(ctx, pusher, layer); err != nil {
+			return err
+		}
+	}
+
+	// upload config
+	if err := c.pushContent(ctx, pusher, manifest.Config); err != nil {
+		return err
+	}
+
+	desc, err := c.createDescriptorFromManifest(manifest)
+	if err != nil {
+		return err
+	}
+	if err := c.pushContent(ctx, pusher, desc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) createDescriptorFromManifest(manifest *ocispecv1.Manifest) (ocispecv1.Descriptor, error) {
+	manifestBytes, err := json.Marshal(manifest)
+	if err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+	manifestDescriptor := ocispecv1.Descriptor{
+		MediaType: ocispecv1.MediaTypeImageManifest,
+		Digest:    digest.FromBytes(manifestBytes),
+		Size:      int64(len(manifestBytes)),
+	}
+
+	manifestBuf := bytes.NewBuffer(manifestBytes)
+	if err := c.cache.Add(manifestDescriptor, ioutil.NopCloser(manifestBuf)); err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+	return manifestDescriptor, nil
+}
+
+func (c *client) pushContent(ctx context.Context, pusher remotes.Pusher, desc ocispecv1.Descriptor) error {
+	if c.cache == nil {
+		return errors.New("no cache defined. A cache is needed to upload content.")
+	}
+	r, err := c.cache.Get(desc)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	writer, err := pusher.Push(c.knownMediaTypesCtx(ctx), desc)
+	if err != nil {
+		if errdefs.IsAlreadyExists(err) {
+			return nil
+		}
+		return err
+	}
+	defer writer.Close()
+	return content.Copy(ctx, writer, r, desc.Size, desc.Digest)
+}
+
+func (c *client) knownMediaTypesCtx(ctx context.Context) context.Context {
+	for _, mediaType := range c.knownMediaTypes.List() {
+		ctx = remotes.WithMediaTypeKeyPrefix(ctx, mediaType, "custom")
+	}
+	return ctx
 }

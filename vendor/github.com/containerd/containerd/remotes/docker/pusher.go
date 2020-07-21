@@ -18,6 +18,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -338,6 +339,11 @@ func (pw *pushWriter) Commit(ctx context.Context, size int64, expected digest.Di
 		return errors.New("no response")
 	}
 
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
 	// 201 is specified return status, some registries return
 	// 200 or 204.
 	switch resp.StatusCode {

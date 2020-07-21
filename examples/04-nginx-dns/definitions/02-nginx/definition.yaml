@@ -5,6 +5,10 @@ name: nginx-ingress-controller
 version: 0.5.2
 
 imports:
+- key: dep.helm.nginx
+  type: helmchart
+  optional: true
+
 - key: kubeconfig
   type: string
 
@@ -35,6 +39,13 @@ executors: |
 
       repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/nginx-ingress
       version: 0.5.2
+
+      imageOverwrites:
+        "nginx": {{ default "eu.gcr.io/nginx" .imports.dep.helm.nginx.repo }}:{{ default "0.5.2" .imports.dep.helm.nginx.tag }}
+        "nginx": {{ default "eu.gcr.io/nginx" .imports.dep.image.virtualgarden.repo }}:{{ default "0.5.2" .imports.dep.helm.nginx.tag }}
+        {{ range .imports.dep }}
+        {{.name}}: {{ .ref }}
+        {{ end }}
 
       name: ingress
       namespace: {{ default "default" .imports.namespace}}

@@ -12,42 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package definitions
 
 import (
 	"context"
-	"fmt"
-	"os"
-
-	"github.com/gardener/landscaper/cmd/landscaper-cli/app/config"
-	"github.com/gardener/landscaper/cmd/landscaper-cli/app/definitions"
-	"github.com/gardener/landscaper/pkg/logger"
 
 	"github.com/spf13/cobra"
 )
 
-func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
+// NewDefinitionsCommand creates a new definitions command.
+func NewDefinitionsCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "landscapercli",
-		Short: "Landscaper cli",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			log, err := logger.NewCliLogger()
-			if err != nil {
-				fmt.Println("unable to setup logger")
-				fmt.Println(err.Error())
-				os.Exit(1)
-			}
-			logger.SetLogger(log)
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
+		Use:     "definitions",
+		Aliases: []string{"defs", "definition", "def"},
+		Short:   "command to interact with definitions of an oci registry",
 	}
 
-	logger.InitFlags(cmd.Flags())
-
-	cmd.AddCommand(config.NewConfigCommand(ctx))
-	cmd.AddCommand(definitions.NewDefinitionsCommand(ctx))
+	cmd.AddCommand(NewPushDefinitionsCommand(ctx))
+	cmd.AddCommand(NewGetDefinitionsCommand(ctx))
 
 	return cmd
 }

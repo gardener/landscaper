@@ -115,8 +115,9 @@ components:
 - name: github.com/gardener/gardener
   version: 1.2.3
   
-  dependencies:
   components: []
+  
+  dependencies:
       images:
         - type: image
           name: etcd-main
@@ -136,4 +137,9 @@ components:
         config: 
           repository: eu.gcr.io/etcd
           version: 3.2.2
+overwrites:
+- name: github.com/gardener/gardener
+  version: 1.2.3
+  
+  
 ```
