@@ -35,6 +35,9 @@ type Registry interface {
 	// GetBlob returns the blob for a component definition.
 	GetBlob(ctx context.Context, name, version string) (afero.Fs, error)
 
+	// GetBlobByRef returns the blob for a specific definition reference.
+	GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error)
+
 	// GetVersions returns all available versions of a component definition.
 	GetVersions(ctx context.Context, name string) ([]string, error)
 }

@@ -21,9 +21,11 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/util/json"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
@@ -56,4 +58,12 @@ func BuildNewDefinition(cache cache.Cache, def *lsv1alpha1.ComponentDefinition) 
 	}
 
 	return manifest, nil
+}
+
+// BuildNewDefinition creates a ocispec Manifest from a component definition.
+func BuildNewContentBlob(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
+	ann := map[string]string{
+		ocispecv1.AnnotationTitle: ComponentDefinitionAnnotationTitleContent,
+	}
+	return oci.BuildTarGzipLayer(cache, fs, path, ann)
 }

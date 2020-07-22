@@ -1,0 +1,4 @@
+- name: init
+  type: container
+  config:
+    image: my-custom-image:{{ toString (readFile "./VERSION") }}

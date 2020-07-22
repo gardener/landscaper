@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
@@ -29,6 +30,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
@@ -78,26 +80,37 @@ func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alph
 }
 
 func (r registry) GetBlob(ctx context.Context, name, version string) (afero.Fs, error) {
-	ref := ref(name, version)
+	return r.GetBlobByRef(ctx, ref(name, version))
+}
+
+func (r registry) GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error) {
 	manifest, err := r.oci.GetManifest(ctx, ref)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(manifest.Layers) != 1 {
-		return nil, errors.New("unexpected number of layers in manifest")
-	}
-	layer := manifest.Layers[0]
-	if layer.MediaType != ComponentDefinitionContentLayerMediaType {
-		return nil, fmt.Errorf("expected media type %s but got %s", ComponentDefinitionContentLayerMediaType, layer.MediaType)
+	layer := oci.GetLayerByName(manifest.Layers, ComponentDefinitionAnnotationTitleContent)
+	if layer == nil {
+		return nil, regapi.NewNotFoundError(ref, errors.New("no content defined for component"))
 	}
 
 	var blob bytes.Buffer
-	if err := r.oci.Fetch(ctx, ref, layer, &blob); err != nil {
+	if err := r.oci.Fetch(ctx, ref, *layer, &blob); err != nil {
 		return nil, err
 	}
-	// todo unzip blob and return created filesystem
-	return nil, nil
+
+	// todo: use proper cache folder
+	tmpDir, err := ioutil.TempDir("", "content-")
+	if err != nil {
+		return nil, err
+	}
+	fs := afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), tmpDir))
+
+	if err := utils.ExtractTarGzip(&blob, fs, "/"); err != nil {
+		return nil, err
+	}
+
+	return fs, nil
 }
 
 func (r registry) GetVersions(ctx context.Context, name string) ([]string, error) {

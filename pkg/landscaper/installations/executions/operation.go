@@ -21,6 +21,7 @@ import (
 	"html/template"
 
 	"github.com/masterminds/sprig"
+	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -28,6 +29,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
 )
 
@@ -47,7 +49,12 @@ func New(op *installations.Operation) *ExecutionOperation {
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
-	executions, err := o.template(inst.Definition, imports)
+	defContent, err := o.Registry().GetBlobByRef(ctx, inst.Info.Spec.DefinitionRef)
+	if err != nil && !registry.IsNotFoundError(err) {
+		return err
+	}
+
+	executions, err := o.template(inst.Definition, defContent, imports)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"TemplatingFailed", "Unable to template executions")
@@ -85,10 +92,10 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
 }
 
-func (o *ExecutionOperation) template(def *lsv1alpha1.ComponentDefinition, imports interface{}) ([]lsv1alpha1.ExecutionItem, error) {
+func (o *ExecutionOperation) template(def *lsv1alpha1.ComponentDefinition, fs afero.Fs, imports interface{}) ([]lsv1alpha1.ExecutionItem, error) {
 	// we only start with go template + sprig
 	// todo: add support to access definitions blob -> readFromFile, read file
-	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Parse(def.Executors)
+	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Funcs(LandscaperTplFuncMap(fs)).Parse(def.Executors)
 	if err != nil {
 		return nil, err
 	}

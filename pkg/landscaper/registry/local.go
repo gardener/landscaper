@@ -134,9 +134,16 @@ func (r *localRegistry) GetDefinition(_ context.Context, name, version string) (
 	return ref.Definition, nil
 }
 
+func (r *localRegistry) GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error) {
+	vn, err := ParseDefinitionRef(ref)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetBlob(ctx, vn.Name, vn.Version)
+}
+
 // Maybe we should use a virtual filesystem instead of a blob
 // and let the registry handle all the blob downloading/compress etc..
-// e.g. https://github.com/blang/vfs or https://github.com/spf13/afero which would mean that we would return a vfs.filesystem instead of a byte array
 func (r *localRegistry) GetBlob(_ context.Context, name, version string) (afero.Fs, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)

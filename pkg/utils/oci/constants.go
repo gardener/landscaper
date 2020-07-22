@@ -14,17 +14,12 @@
 
 package oci
 
-import "fmt"
+import "k8s.io/apimachinery/pkg/util/sets"
 
-const (
-	// ComponentDefinitionConfigMediaType is the reserved media type for the ComponentDefinition manifest config
-	ComponentDefinitionConfigMediaType = "application/vnd.gardener.landscaper.componentdefinition.v1+json"
+// MediaTypeTarGzip is the media type for a gzipped tar
+const MediaTypeTarGzip = "application/tar+gzip"
 
-	// ComponentDefinitionAnnotationTitleContent is the name of the annotation title of the layer that contains the content blob.
-	ComponentDefinitionAnnotationTitleContent = "content"
+// DefaultKnownMediaTypes contain also known media types of the landscaper oci client
+var DefaultKnownMediaTypes = sets.NewString(
+	MediaTypeTarGzip,
 )
-
-// ref creates a reference from a name and a version
-func ref(name, version string) string {
-	return fmt.Sprintf("%s:%s", name, version)
-}

@@ -30,6 +30,9 @@ const (
 
 	// VersionParseError is an error that is thrown when a component's version cannot be parsed
 	VersionParseError ErrorReason = "VersionParseError"
+
+	// NotFound is an generic error that is thrown when the requested resource cannot be found
+	NotFound ErrorReason = "NotFound"
 )
 
 type registryError struct {
@@ -55,11 +58,6 @@ func NewComponentNotFoundError(name string, err error) error {
 		Message: fmt.Sprintf("The requested component %s cannot be found", name),
 		Err:     err,
 	}
-}
-
-// IsNotFoundError checks if the error is either a ComponentNotFoundError or a VersionNotFoundError
-func IsNotFoundError(err error) bool {
-	return IsComponentNotFoundError(err) || IsVersionNotFoundError(err)
 }
 
 // IsComponentNotFoundError checks if the error is a ComponentNotFoundError
@@ -93,6 +91,20 @@ func NewVersionParseError(version string, err error) error {
 // IsVersionParseError checks if the error is a VersionParseError
 func IsVersionParseError(err error) bool {
 	return IsErrorForReason(err, VersionParseError)
+}
+
+// NewNotFoundError creates a new NotFoundError
+func NewNotFoundError(name string, err error) error {
+	return &registryError{
+		Reason:  NotFound,
+		Message: fmt.Sprintf("The requested component %s cannot be found", name),
+		Err:     err,
+	}
+}
+
+// IsNotFoundError checks if the error is either a ComponentNotFoundError or a VersionNotFoundError or a generic not found error
+func IsNotFoundError(err error) bool {
+	return IsComponentNotFoundError(err) || IsVersionNotFoundError(err) || IsErrorForReason(err, NotFound)
 }
 
 // IsErrorForReason checks if the error is a registry error and of the givne reason.

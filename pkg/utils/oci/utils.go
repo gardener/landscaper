@@ -15,30 +15,49 @@
 package oci
 
 import (
-	"errors"
+	"bytes"
+	"io/ioutil"
 
-	"github.com/containerd/containerd/content"
+	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"k8s.io/apimachinery/pkg/util/json"
+	"github.com/spf13/afero"
+
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
-type Store interface {
-	content.Ingester
-	content.Provider
-	Get(desc ocispecv1.Descriptor) (ocispecv1.Descriptor, []byte, bool)
+// GetLayerByName returns the layer with a given name.
+// The name should be specified by the annotation title.
+func GetLayerByName(layers []ocispecv1.Descriptor, name string) *ocispecv1.Descriptor {
+	for _, desc := range layers {
+		if title, ok := desc.Annotations[ocispecv1.AnnotationTitle]; ok {
+			if title == name {
+				return &desc
+			}
+		}
+	}
+	return nil
 }
 
-// ParseManifest parses a oci manifest from a description and a store.
-func ParseManifest(store Store, desc ocispecv1.Descriptor) (*ocispecv1.Manifest, error) {
-	_, data, ok := store.Get(desc)
-	if !ok {
-		return nil, errors.New("not exist")
+// BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.
+// It returns the newly creates ocispec Description for the tar.
+func BuildTarGzipLayer(cache cache.Cache, fs afero.Fs, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {
+
+	var blob bytes.Buffer
+	if err := utils.BuildTarGzip(fs, path, &blob); err != nil {
+		return ocispecv1.Descriptor{}, err
 	}
 
-	var manifest ocispecv1.Manifest
-	err := json.Unmarshal(data, &manifest)
-	if err != nil {
-		return nil, err
+	desc :=  ocispecv1.Descriptor{
+		MediaType: MediaTypeTarGzip,
+		Digest: digest.FromBytes(blob.Bytes()),
+		Size: int64(blob.Len()),
+		Annotations: annotations,
 	}
-	return &manifest, nil
+
+	if err := cache.Add(desc, ioutil.NopCloser(&blob)); err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+
+	return desc, nil
 }

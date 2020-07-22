@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -39,6 +40,9 @@ type pushOptions struct {
 
 	// definitionPath is the path to the string
 	definition *lsv1alpha1.ComponentDefinition
+
+	// contentBlobPath is the path to the content of the component
+	contentBlobPath string
 }
 
 // NewPushDefinitionsCommand creates a new definition command to push definitions
@@ -80,6 +84,14 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
+	if len(o.contentBlobPath) != 0 {
+		contentLayerDesc, err := lsoci.BuildNewContentBlob(cache, afero.NewOsFs(), o.contentBlobPath)
+		if err != nil {
+			return err
+		}
+		defManifest.Layers = append(defManifest.Layers, contentLayerDesc)
+	}
+
 	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(lsoci.ComponentDefinitionConfigMediaType))
 	if err != nil {
 		return err
@@ -106,5 +118,9 @@ func (o *pushOptions) Complete(args []string) error {
 }
 
 func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {
+	if fs == nil {
+		fs = pflag.CommandLine
+	}
 
+	fs.StringVarP(&o.contentBlobPath, "content", "c", "", "filesystem path to the content of the component")
 }

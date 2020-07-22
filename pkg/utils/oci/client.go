@@ -68,7 +68,7 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 		log:             log,
 		resolver:        options.Resolver,
 		cache:           options.Cache,
-		knownMediaTypes: options.CustomMediaTypes,
+		knownMediaTypes: DefaultKnownMediaTypes.Union(options.CustomMediaTypes),
 	}, nil
 }
 

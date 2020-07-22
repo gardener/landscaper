@@ -16,9 +16,11 @@ package executions
 
 import (
 	"io/ioutil"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -36,12 +38,12 @@ var _ = Describe("Template", func() {
 		rawDef.Executors = string(tmpl)
 		op := New(nil)
 
-		res, err := op.template(rawDef, nil)
+		res, err := op.template(rawDef, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(ConsistOf(expect))
 	})
 
-	It("should return the raw template if no templating funcs are defined", func() {
+	It("should use the import values to template", func() {
 		tmpl, err := ioutil.ReadFile("./testdata/template-02.yaml")
 		Expect(err).ToNot(HaveOccurred())
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
@@ -51,7 +53,30 @@ var _ = Describe("Template", func() {
 		rawDef.Executors = string(tmpl)
 		op := New(nil)
 
-		res, err := op.template(rawDef, map[string]string{"version": "0.0.0"})
+		res, err := op.template(rawDef, nil, map[string]string{"version": "0.0.0"})
+		Expect(err).ToNot(HaveOccurred())
+		Expect(res).To(HaveLen(1))
+
+		config := make(map[string]interface{})
+		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
+		Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+	})
+
+	It("should read the content of a file to template", func() {
+		tmpl, err := ioutil.ReadFile("./testdata/template-03.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		expect := make([]lsv1alpha1.ExecutionItem, 0)
+		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
+
+		rawDef := &lsv1alpha1.ComponentDefinition{}
+		rawDef.Executors = string(tmpl)
+		op := New(nil)
+
+		memFs := afero.NewMemMapFs()
+		err = afero.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+		Expect(err).ToNot(HaveOccurred())
+
+		res, err := op.template(rawDef, memFs, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(HaveLen(1))
 
