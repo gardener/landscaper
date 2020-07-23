@@ -81,7 +81,11 @@ The Landscaper uses [OCI Artifacts](https://github.com/opencontainers/artifacts)
 For more information about the [OCI distribution spec](https://github.com/opencontainers/distribution-spec/blob/master/spec.md) and OCI compliant registries refer to the official documents.
 
 The OCI manifest are stored in the below format in the registry.
-Whereas the config contains the actual `ComponentDefinition` and the content blob is one layer of type `application/tar+gzip`
+Whereas the config contains the actual `ComponentDefinition` and the layers 
+ - must contain a componentdescriptor of type `application/vnd.gardener.componentdescriptor.v2+json`
+ - can contain a content blob of type `application/tar+gzip`
+ 
+ The layers can be identified via their title annotation or via their media type as only one component descriptor per layer is allowed.
 ```json
 {
    "schemaVersion": 2,
@@ -94,8 +98,19 @@ Whereas the config contains the actual `ComponentDefinition` and the content blo
    "layers": [
       {
          "digest": "sha256:6f4e69a5ff18d92e7315e3ee31c62165ebf25bfa05cad05c0d09d8f412dae401",
+         "mediaType": "application/vnd.gardener.componentdescriptor.v2+json",
+         "size": 420,
+         "annotations": {
+            "org.opencontainers.image.title": "componentdescriptor"
+         }
+      },
+      {
+         "digest": "sha256:6f4e69a5ff18d92e7315e3ee31c62165ebf25bfa05cad05c0d09d8f412dae401",
          "mediaType": "application/tar+gzip",
-         "size": 78343
+         "size": 78343,
+         "annotations": {
+            "org.opencontainers.image.title": "content"
+         }
       }
    ]
 }

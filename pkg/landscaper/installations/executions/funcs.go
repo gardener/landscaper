@@ -20,6 +20,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+// LandscaperTplFuncMap contains all additional landscaper functions that are
+// available in the executors templates.
 func LandscaperTplFuncMap(fs afero.Fs) map[string]interface{} {
 	return map[string]interface{}{
 		"readFile": readFileFunc(fs),
