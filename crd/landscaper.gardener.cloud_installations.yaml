@@ -53,7 +53,7 @@ spec:
             description: InstallationSpec defines a component installation.
             properties:
               definitionRef:
-                description: DefinitionRef is a reference to the component definition.
+                description: DefinitionRef is the resolved reference to the definition.
                 type: string
               exports:
                 description: 'Exports define the export mappings for the referenced
@@ -254,7 +254,8 @@ spec:
                         value.
                       type: string
                     from:
-                      description: From is the from key of the import
+                      description: 'From is the from key of the import todo: maybe
+                        remove in favor of one key from the definition'
                       type: string
                     sourceRef:
                       description: SourceRef is the reference to the installation

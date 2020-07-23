@@ -22,7 +22,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Configuration is the helm deployer configuration that configures the controller
+// ProviderConfiguration is the helm deployer configuration that configures the controller
 type Configuration struct {
 	metav1.TypeMeta `json:",inline"`
 

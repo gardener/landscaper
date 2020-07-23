@@ -15,23 +15,20 @@
 package helm
 
 import (
-	"encoding/json"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 )
 
-// Type is the type name of the deployer.
-const Type lsv1alpha1.ExecutionType = "Mock"
+func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {
+	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("HelmDeployer"), config)
+	if err != nil {
+		return err
+	}
 
-// ProviderConfiguration is the configuration of a helm deploy item.
-// todo: use versioned configuration
-type Configuration struct {
-	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
-
-	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *json.RawMessage `json:"providerStatus,omitempty"`
-
-	// Export sets the exported configuration to the given value
-	Export *json.RawMessage `json:"export,omitempty"`
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&lsv1alpha1.DeployItem{}).
+		Complete(a)
 }

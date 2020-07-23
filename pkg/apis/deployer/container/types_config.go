@@ -12,26 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package container
 
 import (
-	"encoding/json"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/config"
 )
 
-// Type is the type name of the deployer.
-const Type lsv1alpha1.ExecutionType = "Mock"
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProviderConfiguration is the configuration of a helm deploy item.
-// todo: use versioned configuration
+// ProviderConfiguration is the container deployer configuration that configures the controller
 type Configuration struct {
-	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
+	metav1.TypeMeta `json:",inline"`
 
-	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *json.RawMessage `json:"providerStatus,omitempty"`
+	// OCI configures the oci client of the controller
+	// +optional
+	OCI *config.OCIConfiguration `json:"oci,omitempty"`
 
-	// Export sets the exported configuration to the given value
-	Export *json.RawMessage `json:"export,omitempty"`
+	// DefaultImage configures the default images that is used if the DeployItem
+	// does not specify one.
+	DefaultImage string `json:"defaultImage"`
 }

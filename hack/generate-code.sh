@@ -43,11 +43,11 @@ bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh 
   "config:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
-echo "> Generating groups for Helm Deployer"
+echo "> Generating groups for Deployers"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   deepcopy,defaulter,conversion \
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/pkg/apis/deployer \
   $PROJECT_MOD_ROOT/pkg/apis/deployer \
-  "helm:v1alpha1" \
+  "helm:v1alpha1 container:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"

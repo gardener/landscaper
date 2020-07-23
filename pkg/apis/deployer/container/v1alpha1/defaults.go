@@ -12,26 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package v1alpha1
 
-import (
-	"encoding/json"
+import "k8s.io/apimachinery/pkg/runtime"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-)
+func addDefaultingFuncs(scheme *runtime.Scheme) error {
+	return RegisterDefaults(scheme)
+}
 
-// Type is the type name of the deployer.
-const Type lsv1alpha1.ExecutionType = "Mock"
-
-// ProviderConfiguration is the configuration of a helm deploy item.
-// todo: use versioned configuration
-type Configuration struct {
-	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
-
-	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *json.RawMessage `json:"providerStatus,omitempty"`
-
-	// Export sets the exported configuration to the given value
-	Export *json.RawMessage `json:"export,omitempty"`
+// SetDefaults_Configuration sets the defaults for the container deployer configuration.
+func SetDefaults_Configuration(obj *Configuration) {
+	if len(obj.DefaultImage) == 0 {
+		obj.DefaultImage = "ubuntu:18:04"
+	}
 }

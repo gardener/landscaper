@@ -12,26 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package install
 
 import (
-	"encoding/json"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 )
 
-// Type is the type name of the deployer.
-const Type lsv1alpha1.ExecutionType = "Mock"
+var (
+	schemeBuilder = runtime.NewSchemeBuilder(
+		v1alpha1.AddToScheme,
+		container.AddToScheme,
+		setVersionPriority,
+	)
 
-// ProviderConfiguration is the configuration of a helm deploy item.
-// todo: use versioned configuration
-type Configuration struct {
-	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
+	AddToScheme = schemeBuilder.AddToScheme
+)
 
-	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *json.RawMessage `json:"providerStatus,omitempty"`
+func setVersionPriority(scheme *runtime.Scheme) error {
+	return scheme.SetVersionPriority(v1alpha1.SchemeGroupVersion)
+}
 
-	// Export sets the exported configuration to the given value
-	Export *json.RawMessage `json:"export,omitempty"`
+// Install installs all APIs in the scheme.
+func Install(scheme *runtime.Scheme) {
+	utilruntime.Must(AddToScheme(scheme))
 }

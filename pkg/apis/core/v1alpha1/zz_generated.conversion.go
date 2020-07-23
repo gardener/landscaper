@@ -873,6 +873,7 @@ func Convert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemL
 
 func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, out *core.DeployItemSpec, s conversion.Scope) error {
 	out.Type = core.ExecutionType(in.Type)
+	out.DefinitionRef = in.DefinitionRef
 	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
 		return err
 	}
@@ -887,6 +888,7 @@ func Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, 
 
 func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemSpec, out *DeployItemSpec, s conversion.Scope) error {
 	out.Type = ExecutionType(in.Type)
+	out.DefinitionRef = in.DefinitionRef
 	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
 		return err
 	}

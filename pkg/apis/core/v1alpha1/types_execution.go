@@ -98,6 +98,6 @@ type ExecutionItem struct {
 	// DataType is the DeployItem type of the execution.
 	Type ExecutionType `json:"type"`
 
-	// Configuration contains the type specific configuration for the execution.
+	// ProviderConfiguration contains the type specific configuration for the execution.
 	Configuration json.RawMessage `json:"config"`
 }

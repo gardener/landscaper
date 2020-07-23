@@ -47,7 +47,7 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
-	// DefinitionRef is a reference to the component definition.
+	// DefinitionRef is the resolved reference to the definition.
 	DefinitionRef string `json:"definitionRef"`
 
 	// Imports define the import mapping for the referenced definition.

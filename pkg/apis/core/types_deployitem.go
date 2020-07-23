@@ -49,10 +49,13 @@ type DeployItemSpec struct {
 	// DataType is the type of the deployer that should handle the item.
 	Type ExecutionType `json:"type"`
 
+	// DefinitionRef is the resolved reference to the definition.
+	DefinitionRef string `json:"definitionRef"`
+
 	// ImportReference is the reference to the object containing all imported values.
 	ImportReference ObjectReference `json:"importRef,omitempty"`
 
-	// Configuration contains the deployer type specific configuration.
+	// ProviderConfiguration contains the deployer type specific configuration.
 	Configuration json.RawMessage `json:"config,omitempty"`
 }
 

@@ -49,6 +49,9 @@ spec:
             properties:
               config:
                 x-kubernetes-preserve-unknown-fields: true
+              definitionRef:
+                description: DefinitionRef is the resolved reference to the definition
+                type: string
               importRef:
                 description: ImportReference is the reference to the object containing
                   all imported values.
@@ -68,6 +71,7 @@ spec:
                   the item.
                 type: string
             required:
+            - definitionRef
             - type
             type: object
           status:
