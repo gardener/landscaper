@@ -26,20 +26,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/oci"
+	ocireg "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
 )
 
-func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
-	client, err := oci.NewClient(log, oci.WithConfiguration(config.OCI))
+func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
+
+	reg, err := ocireg.New(log, config.OCI)
 	if err != nil {
 		return nil, err
 	}
+
 	return &actuator{
-		log:       log,
-		config:    config,
-		ociClient: client,
+		log:      log,
+		config:   config,
+		registry: reg,
 	}, nil
 }
 
@@ -47,16 +50,16 @@ type actuator struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
-	config *helmv1alpha1.Configuration
+	config *containerv1alpha1.Configuration
 
-	ociClient *oci.Client
+	registry registry.Registry
 }
 
 var _ inject.Client = &actuator{}
 
 var _ inject.Scheme = &actuator{}
 
-// InjectClients injects the current kubernetes ociClient into the actuator
+// InjectClients injects the current kubernetes registry into the actuator
 func (a *actuator) InjectClient(c client.Client) error {
 	a.c = c
 	return nil
@@ -99,13 +102,14 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
-	helm, err := New(a.log, a.c, a.ociClient, deployItem)
+	container, err := New(a.log, a.c, a.registry, a.config, deployItem)
 	if err != nil {
 		return err
 	}
 
 	if !deployItem.DeletionTimestamp.IsZero() {
-		return helm.DeleteFiles(ctx)
+		// todo: handle deletion
+		return nil
 	} else if !utils.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
@@ -114,13 +118,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return nil
 	}
 
-	files, values, err := helm.Template(ctx)
-	if err != nil {
-		return err
-	}
-	exports, err := helm.constructExportsFromValues(values)
-	if err != nil {
-		return err
-	}
-	return helm.ApplyFiles(ctx, files, exports)
+	// todo: handle reconcile
+
+	return nil
 }

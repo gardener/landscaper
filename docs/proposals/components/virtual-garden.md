@@ -1,5 +1,28 @@
 # Virtual Garden Contract
 
+### Component Descriptor
+
+```yaml
+meta:
+  schema_version: 'v2'
+components:
+  - name: 'virtual_garden' # needs to be defined
+    version: 'v1.7.2'
+    type: 'component_definition'
+
+    dependencies:
+    - name: 'hyperkube'
+      version: 'v1.7.2'
+      type: 'oci_image'
+      # image_reference attribute is implied by `oci_image` type
+      image_reference: 'eu.gcr.io/gardener-project/gardener/apiserver:v1.7.2'
+    - name: 'etcd'
+      version: 'v3.5.4'
+      type: 'oci_image'
+      # image_reference attribute is implied by `oci_image` type
+      image_reference: 'eu.gcr.io/gardener-project/gardener/etcd:v3.5.4'
+```
+
 ### Import json
 ```yaml
 {

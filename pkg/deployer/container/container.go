@@ -15,12 +15,17 @@
 package helm
 
 import (
+	"fmt"
+	"path"
+
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerinstall "github.com/gardener/landscaper/pkg/apis/deployer/container/install"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
@@ -31,7 +36,9 @@ const (
 	Type lsv1alpha1.ExecutionType = "Container"
 )
 
-var Scheme = runtime.NewScheme()
+var (
+	Scheme         = runtime.NewScheme()
+)
 
 func init() {
 	containerinstall.Install(Scheme)
@@ -39,16 +46,17 @@ func init() {
 
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
-	log            logr.Logger
-	kubeClient     client.Client
-	registryClient *registry.Registry
+	log           logr.Logger
+	kubeClient    client.Client
+	registry      registry.Registry
+	Configuration *containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, client *registry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
+func New(log logr.Logger, kubeClient client.Client, client registry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration, nil, providerConfig); err != nil {
@@ -64,7 +72,8 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Registry, c
 	return &Container{
 		log:                   log,
 		kubeClient:            kubeClient,
-		registryClient:        client,
+		registry:              client,
+		Configuration:         config,
 		DeployItem:            item,
 		ProviderConfiguration: providerConfig,
 	}, nil
