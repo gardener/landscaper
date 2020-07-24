@@ -15,24 +15,40 @@
 package init
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
 	"os"
 	"path"
 
 	"github.com/go-logr/logr"
+	"github.com/docker/cli/cli/config/configfile"
+	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/oci"
 )
 
 // Init downloads the import config, the component descriptor and the blob content
 // to the paths defined by the env vars.
 // It also creates all needed directories.
 func Init(ctx context.Context, log logr.Logger) error {
-	importsFilePath := os.Getenv(container.ImportsPathName)
-	exportsFilePath := os.Getenv(container.ExportsPathName)
-	componentDescriptorFilePath := os.Getenv(container.ComponentDescriptorPathName)
-	contentDirPath := os.Getenv(container.ContentPathName)
+	var (
+		importsFilePath             = os.Getenv(container.ImportsPathName)
+		exportsFilePath             = os.Getenv(container.ExportsPathName)
+		componentDescriptorFilePath = os.Getenv(container.ComponentDescriptorPathName)
+		contentDirPath              = os.Getenv(container.ContentPathName)
 
+		ociConfig = os.Getenv(container.OciConfigName)
+	)
+
+	_, err := createRegistryFromDockerAuthConfig(log, []byte(ociConfig))
+	if err != nil {
+		return err
+	}
 
 	// create all directories
 	log.Info("create directories")
@@ -50,6 +66,33 @@ func Init(ctx context.Context, log logr.Logger) error {
 	}
 	log.Info("all directories successfully created")
 
-	log.Info("download imports file")
+	log.Info("get component descriptor")
+
+	log.Info("get imports file")
+
+	log.Info("get content blob")
+
 	return nil
+}
+
+func createRegistryFromDockerAuthConfig(log logr.Logger, configData []byte) (registry.Registry, error) {
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "oci-auth-")
+	if err != nil {
+		return nil, err
+	}
+	defer tmpfile.Close()
+	filepath := path.Join(os.TempDir(), tmpfile.Name())
+
+	if _, err := io.Copy(tmpfile, bytes.NewBuffer(configData)); err != nil {
+		return nil, err
+	}
+
+	reg, err :=oci.New(log, &config.OCIConfiguration{
+		ConfigFiles: []string{filepath},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return reg, nil
 }

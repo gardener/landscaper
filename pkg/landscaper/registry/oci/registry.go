@@ -39,12 +39,21 @@ type registry struct {
 	dec runtime.Decoder
 }
 
+// New creates a new oci registry from a oci config.
 func New(log logr.Logger, config *config.OCIConfiguration) (regapi.Registry, error) {
 	client, err := oci.NewClient(log, oci.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}
 
+	return &registry{
+		oci: client,
+		dec: serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder(),
+	}, nil
+}
+
+// NewWithOCIClient creates a new oci registry with a oci client
+func NewWithOCIClient(log logr.Logger, client oci.Client) (regapi.Registry, error) {
 	return &registry{
 		oci: client,
 		dec: serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder(),

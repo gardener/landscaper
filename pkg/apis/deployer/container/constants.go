@@ -32,24 +32,29 @@ const ComponentDescriptorPathName = "COMPONENT_DESCRIPTOR_PATH"
 // ContentPathName is the name of the env var that points to the blob content of the definition
 const ContentPathName = "CONTENT_PATH"
 
+// OciUserName is the name of the env var that conatins the OCI auth config.
+// This env is only set for system containers
+const OciConfigName = "OCI_USER"
+
+// BasePath is the base path inside a container that is shared between the main container and ls containers
+const BasePath = "/data/ls"
+
 var (
-	// BasePath is the base path inside a container that is shared between the main container and ls containers
-	BasePath       = "/data/ls"
 	DefaultEnvVars = []corev1.EnvVar{
 		{
-			Name:  container.ImportsPathName,
+			Name:  ImportsPathName,
 			Value: path.Join(BasePath, "imports.json"),
 		},
 		{
-			Name:  container.ExportsPathName,
+			Name:  ExportsPathName,
 			Value: path.Join(BasePath, "exports"),
 		},
 		{
-			Name:  container.ComponentDescriptorPathName,
+			Name:  ComponentDescriptorPathName,
 			Value: path.Join(BasePath, "component_descriptor.json"),
 		},
 		{
-			Name:  container.ContentPathName,
+			Name:  ContentPathName,
 			Value: path.Join(BasePath, "content"),
 		},
 	}

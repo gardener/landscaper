@@ -30,6 +30,7 @@ spec:
 
 In order for the container deployer to interact with the landscaper a contract for imports, exports and the state has to be defined.
 
+The current operation that the image should execute is defined by the env var `OPERATION` which can be `RECONCILE` or `DELETE`.<br>
 *Imports* can be expected as a json file at the path given by the env var `IMPORTS_PATH`.<br>
 *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.<br>
 The optional *state* should be written to the directory given by the env var `STATE_PATH`.
