@@ -36,13 +36,43 @@ func init() {
 // RegisterConversions adds conversion functions to the given scheme.
 // Public to allow building arbitrary schemes.
 func RegisterConversions(s *runtime.Scheme) error {
-	if err := s.AddGeneratedConversionFunc((*ComponentDefinition)(nil), (*core.ComponentDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ComponentDefinition_To_core_ComponentDefinition(a.(*ComponentDefinition), b.(*core.ComponentDefinition), scope)
+	if err := s.AddGeneratedConversionFunc((*Blueprint)(nil), (*core.Blueprint)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Blueprint_To_core_Blueprint(a.(*Blueprint), b.(*core.Blueprint), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.ComponentDefinition)(nil), (*ComponentDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(a.(*core.ComponentDefinition), b.(*ComponentDefinition), scope)
+	if err := s.AddGeneratedConversionFunc((*core.Blueprint)(nil), (*Blueprint)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_Blueprint_To_v1alpha1_Blueprint(a.(*core.Blueprint), b.(*Blueprint), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*BlueprintReference)(nil), (*core.BlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_BlueprintReference_To_core_BlueprintReference(a.(*BlueprintReference), b.(*core.BlueprintReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.BlueprintReference)(nil), (*BlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_BlueprintReference_To_v1alpha1_BlueprintReference(a.(*core.BlueprintReference), b.(*BlueprintReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*BlueprintStaticDataSource)(nil), (*core.BlueprintStaticDataSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_BlueprintStaticDataSource_To_core_BlueprintStaticDataSource(a.(*BlueprintStaticDataSource), b.(*core.BlueprintStaticDataSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.BlueprintStaticDataSource)(nil), (*BlueprintStaticDataSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_BlueprintStaticDataSource_To_v1alpha1_BlueprintStaticDataSource(a.(*core.BlueprintStaticDataSource), b.(*BlueprintStaticDataSource), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*BlueprintStaticDataValueFrom)(nil), (*core.BlueprintStaticDataValueFrom)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_BlueprintStaticDataValueFrom_To_core_BlueprintStaticDataValueFrom(a.(*BlueprintStaticDataValueFrom), b.(*core.BlueprintStaticDataValueFrom), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.BlueprintStaticDataValueFrom)(nil), (*BlueprintStaticDataValueFrom)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(a.(*core.BlueprintStaticDataValueFrom), b.(*BlueprintStaticDataValueFrom), scope)
 	}); err != nil {
 		return err
 	}
@@ -106,16 +136,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*DefinitionExport)(nil), (*core.DefinitionExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DefinitionExport_To_core_DefinitionExport(a.(*DefinitionExport), b.(*core.DefinitionExport), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DefinitionExport)(nil), (*DefinitionExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DefinitionExport_To_v1alpha1_DefinitionExport(a.(*core.DefinitionExport), b.(*DefinitionExport), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*DefinitionExportMapping)(nil), (*core.DefinitionExportMapping)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_DefinitionExportMapping_To_core_DefinitionExportMapping(a.(*DefinitionExportMapping), b.(*core.DefinitionExportMapping), scope)
 	}); err != nil {
@@ -143,36 +163,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.DefinitionFieldValue)(nil), (*DefinitionFieldValue)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(a.(*core.DefinitionFieldValue), b.(*DefinitionFieldValue), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DefinitionImport)(nil), (*core.DefinitionImport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DefinitionImport_To_core_DefinitionImport(a.(*DefinitionImport), b.(*core.DefinitionImport), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DefinitionImport)(nil), (*DefinitionImport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DefinitionImport_To_v1alpha1_DefinitionImport(a.(*core.DefinitionImport), b.(*DefinitionImport), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DefinitionImportMapping)(nil), (*core.DefinitionImportMapping)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping(a.(*DefinitionImportMapping), b.(*core.DefinitionImportMapping), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DefinitionImportMapping)(nil), (*DefinitionImportMapping)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DefinitionImportMapping_To_v1alpha1_DefinitionImportMapping(a.(*core.DefinitionImportMapping), b.(*DefinitionImportMapping), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DefinitionReference)(nil), (*core.DefinitionReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DefinitionReference_To_core_DefinitionReference(a.(*DefinitionReference), b.(*core.DefinitionReference), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DefinitionReference)(nil), (*DefinitionReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DefinitionReference_To_v1alpha1_DefinitionReference(a.(*core.DefinitionReference), b.(*DefinitionReference), scope)
 	}); err != nil {
 		return err
 	}
@@ -266,6 +256,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*ExportDefinition)(nil), (*core.ExportDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ExportDefinition_To_core_ExportDefinition(a.(*ExportDefinition), b.(*core.ExportDefinition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.ExportDefinition)(nil), (*ExportDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(a.(*core.ExportDefinition), b.(*ExportDefinition), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*ExternalDocumentation)(nil), (*core.ExternalDocumentation)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(a.(*ExternalDocumentation), b.(*core.ExternalDocumentation), scope)
 	}); err != nil {
@@ -273,6 +273,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ExternalDocumentation)(nil), (*ExternalDocumentation)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(a.(*core.ExternalDocumentation), b.(*ExternalDocumentation), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ImportDefinition)(nil), (*core.ImportDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition(a.(*ImportDefinition), b.(*core.ImportDefinition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.ImportDefinition)(nil), (*ImportDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ImportDefinition_To_v1alpha1_ImportDefinition(a.(*core.ImportDefinition), b.(*ImportDefinition), scope)
 	}); err != nil {
 		return err
 	}
@@ -459,36 +469,106 @@ func RegisterConversions(s *runtime.Scheme) error {
 	return nil
 }
 
-func autoConvert_v1alpha1_ComponentDefinition_To_core_ComponentDefinition(in *ComponentDefinition, out *core.ComponentDefinition, s conversion.Scope) error {
+func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Blueprint, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Version = in.Version
 	out.CustomTypes = *(*[]core.CustomType)(unsafe.Pointer(&in.CustomTypes))
-	out.Imports = *(*[]core.DefinitionImport)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]core.DefinitionExport)(unsafe.Pointer(&in.Exports))
-	out.DefinitionReferences = *(*[]core.DefinitionReference)(unsafe.Pointer(&in.DefinitionReferences))
+	out.Imports = *(*[]core.ImportDefinition)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]core.ExportDefinition)(unsafe.Pointer(&in.Exports))
+	out.BlueprintReferences = *(*[]string)(unsafe.Pointer(&in.BlueprintReferences))
 	out.Executors = in.Executors
 	return nil
 }
 
-// Convert_v1alpha1_ComponentDefinition_To_core_ComponentDefinition is an autogenerated conversion function.
-func Convert_v1alpha1_ComponentDefinition_To_core_ComponentDefinition(in *ComponentDefinition, out *core.ComponentDefinition, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ComponentDefinition_To_core_ComponentDefinition(in, out, s)
+// Convert_v1alpha1_Blueprint_To_core_Blueprint is an autogenerated conversion function.
+func Convert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Blueprint, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in, out, s)
 }
 
-func autoConvert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in *core.ComponentDefinition, out *ComponentDefinition, s conversion.Scope) error {
+func autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *Blueprint, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Version = in.Version
 	out.CustomTypes = *(*[]CustomType)(unsafe.Pointer(&in.CustomTypes))
-	out.Imports = *(*[]DefinitionImport)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]DefinitionExport)(unsafe.Pointer(&in.Exports))
-	out.DefinitionReferences = *(*[]DefinitionReference)(unsafe.Pointer(&in.DefinitionReferences))
+	out.Imports = *(*[]ImportDefinition)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]ExportDefinition)(unsafe.Pointer(&in.Exports))
+	out.BlueprintReferences = *(*[]string)(unsafe.Pointer(&in.BlueprintReferences))
 	out.Executors = in.Executors
 	return nil
 }
 
-// Convert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition is an autogenerated conversion function.
-func Convert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in *core.ComponentDefinition, out *ComponentDefinition, s conversion.Scope) error {
-	return autoConvert_core_ComponentDefinition_To_v1alpha1_ComponentDefinition(in, out, s)
+// Convert_core_Blueprint_To_v1alpha1_Blueprint is an autogenerated conversion function.
+func Convert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *Blueprint, s conversion.Scope) error {
+	return autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in, out, s)
+}
+
+func autoConvert_v1alpha1_BlueprintReference_To_core_BlueprintReference(in *BlueprintReference, out *core.BlueprintReference, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Reference = in.Reference
+	out.Imports = *(*[]core.ImportMappingDefinition)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	out.StaticData = *(*[]core.BlueprintStaticDataSource)(unsafe.Pointer(&in.StaticData))
+	return nil
+}
+
+// Convert_v1alpha1_BlueprintReference_To_core_BlueprintReference is an autogenerated conversion function.
+func Convert_v1alpha1_BlueprintReference_To_core_BlueprintReference(in *BlueprintReference, out *core.BlueprintReference, s conversion.Scope) error {
+	return autoConvert_v1alpha1_BlueprintReference_To_core_BlueprintReference(in, out, s)
+}
+
+func autoConvert_core_BlueprintReference_To_v1alpha1_BlueprintReference(in *core.BlueprintReference, out *BlueprintReference, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Reference = in.Reference
+	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
+	out.StaticData = *(*[]BlueprintStaticDataSource)(unsafe.Pointer(&in.StaticData))
+	return nil
+}
+
+// Convert_core_BlueprintReference_To_v1alpha1_BlueprintReference is an autogenerated conversion function.
+func Convert_core_BlueprintReference_To_v1alpha1_BlueprintReference(in *core.BlueprintReference, out *BlueprintReference, s conversion.Scope) error {
+	return autoConvert_core_BlueprintReference_To_v1alpha1_BlueprintReference(in, out, s)
+}
+
+func autoConvert_v1alpha1_BlueprintStaticDataSource_To_core_BlueprintStaticDataSource(in *BlueprintStaticDataSource, out *core.BlueprintStaticDataSource, s conversion.Scope) error {
+	out.Value = *(*json.RawMessage)(unsafe.Pointer(&in.Value))
+	out.ValueFrom = (*core.StaticDataValueFrom)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+// Convert_v1alpha1_BlueprintStaticDataSource_To_core_BlueprintStaticDataSource is an autogenerated conversion function.
+func Convert_v1alpha1_BlueprintStaticDataSource_To_core_BlueprintStaticDataSource(in *BlueprintStaticDataSource, out *core.BlueprintStaticDataSource, s conversion.Scope) error {
+	return autoConvert_v1alpha1_BlueprintStaticDataSource_To_core_BlueprintStaticDataSource(in, out, s)
+}
+
+func autoConvert_core_BlueprintStaticDataSource_To_v1alpha1_BlueprintStaticDataSource(in *core.BlueprintStaticDataSource, out *BlueprintStaticDataSource, s conversion.Scope) error {
+	out.Value = *(*json.RawMessage)(unsafe.Pointer(&in.Value))
+	out.ValueFrom = (*StaticDataValueFrom)(unsafe.Pointer(in.ValueFrom))
+	return nil
+}
+
+// Convert_core_BlueprintStaticDataSource_To_v1alpha1_BlueprintStaticDataSource is an autogenerated conversion function.
+func Convert_core_BlueprintStaticDataSource_To_v1alpha1_BlueprintStaticDataSource(in *core.BlueprintStaticDataSource, out *BlueprintStaticDataSource, s conversion.Scope) error {
+	return autoConvert_core_BlueprintStaticDataSource_To_v1alpha1_BlueprintStaticDataSource(in, out, s)
+}
+
+func autoConvert_v1alpha1_BlueprintStaticDataValueFrom_To_core_BlueprintStaticDataValueFrom(in *BlueprintStaticDataValueFrom, out *core.BlueprintStaticDataValueFrom, s conversion.Scope) error {
+	out.LocalPath = in.LocalPath
+	return nil
+}
+
+// Convert_v1alpha1_BlueprintStaticDataValueFrom_To_core_BlueprintStaticDataValueFrom is an autogenerated conversion function.
+func Convert_v1alpha1_BlueprintStaticDataValueFrom_To_core_BlueprintStaticDataValueFrom(in *BlueprintStaticDataValueFrom, out *core.BlueprintStaticDataValueFrom, s conversion.Scope) error {
+	return autoConvert_v1alpha1_BlueprintStaticDataValueFrom_To_core_BlueprintStaticDataValueFrom(in, out, s)
+}
+
+func autoConvert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(in *core.BlueprintStaticDataValueFrom, out *BlueprintStaticDataValueFrom, s conversion.Scope) error {
+	out.LocalPath = in.LocalPath
+	return nil
+}
+
+// Convert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom is an autogenerated conversion function.
+func Convert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(in *core.BlueprintStaticDataValueFrom, out *BlueprintStaticDataValueFrom, s conversion.Scope) error {
+	return autoConvert_core_BlueprintStaticDataValueFrom_To_v1alpha1_BlueprintStaticDataValueFrom(in, out, s)
 }
 
 func autoConvert_v1alpha1_Condition_To_core_Condition(in *Condition, out *core.Condition, s conversion.Scope) error {
@@ -641,30 +721,6 @@ func Convert_core_Default_To_v1alpha1_Default(in *core.Default, out *Default, s 
 	return autoConvert_core_Default_To_v1alpha1_Default(in, out, s)
 }
 
-func autoConvert_v1alpha1_DefinitionExport_To_core_DefinitionExport(in *DefinitionExport, out *core.DefinitionExport, s conversion.Scope) error {
-	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DefinitionExport_To_core_DefinitionExport is an autogenerated conversion function.
-func Convert_v1alpha1_DefinitionExport_To_core_DefinitionExport(in *DefinitionExport, out *core.DefinitionExport, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DefinitionExport_To_core_DefinitionExport(in, out, s)
-}
-
-func autoConvert_core_DefinitionExport_To_v1alpha1_DefinitionExport(in *core.DefinitionExport, out *DefinitionExport, s conversion.Scope) error {
-	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DefinitionExport_To_v1alpha1_DefinitionExport is an autogenerated conversion function.
-func Convert_core_DefinitionExport_To_v1alpha1_DefinitionExport(in *core.DefinitionExport, out *DefinitionExport, s conversion.Scope) error {
-	return autoConvert_core_DefinitionExport_To_v1alpha1_DefinitionExport(in, out, s)
-}
-
 func autoConvert_v1alpha1_DefinitionExportMapping_To_core_DefinitionExportMapping(in *DefinitionExportMapping, out *core.DefinitionExportMapping, s conversion.Scope) error {
 	if err := Convert_v1alpha1_DefinitionFieldMapping_To_core_DefinitionFieldMapping(&in.DefinitionFieldMapping, &out.DefinitionFieldMapping, s); err != nil {
 		return err
@@ -731,90 +787,6 @@ func autoConvert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in *
 // Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue is an autogenerated conversion function.
 func Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in *core.DefinitionFieldValue, out *DefinitionFieldValue, s conversion.Scope) error {
 	return autoConvert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in, out, s)
-}
-
-func autoConvert_v1alpha1_DefinitionImport_To_core_DefinitionImport(in *DefinitionImport, out *core.DefinitionImport, s conversion.Scope) error {
-	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
-		return err
-	}
-	out.Required = (*bool)(unsafe.Pointer(in.Required))
-	if err := Convert_v1alpha1_Default_To_core_Default(&in.Default, &out.Default, s); err != nil {
-		return err
-	}
-	out.ConditionalImports = *(*[]core.DefinitionImport)(unsafe.Pointer(&in.ConditionalImports))
-	return nil
-}
-
-// Convert_v1alpha1_DefinitionImport_To_core_DefinitionImport is an autogenerated conversion function.
-func Convert_v1alpha1_DefinitionImport_To_core_DefinitionImport(in *DefinitionImport, out *core.DefinitionImport, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DefinitionImport_To_core_DefinitionImport(in, out, s)
-}
-
-func autoConvert_core_DefinitionImport_To_v1alpha1_DefinitionImport(in *core.DefinitionImport, out *DefinitionImport, s conversion.Scope) error {
-	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
-		return err
-	}
-	out.Required = (*bool)(unsafe.Pointer(in.Required))
-	if err := Convert_core_Default_To_v1alpha1_Default(&in.Default, &out.Default, s); err != nil {
-		return err
-	}
-	out.ConditionalImports = *(*[]DefinitionImport)(unsafe.Pointer(&in.ConditionalImports))
-	return nil
-}
-
-// Convert_core_DefinitionImport_To_v1alpha1_DefinitionImport is an autogenerated conversion function.
-func Convert_core_DefinitionImport_To_v1alpha1_DefinitionImport(in *core.DefinitionImport, out *DefinitionImport, s conversion.Scope) error {
-	return autoConvert_core_DefinitionImport_To_v1alpha1_DefinitionImport(in, out, s)
-}
-
-func autoConvert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping(in *DefinitionImportMapping, out *core.DefinitionImportMapping, s conversion.Scope) error {
-	if err := Convert_v1alpha1_DefinitionFieldMapping_To_core_DefinitionFieldMapping(&in.DefinitionFieldMapping, &out.DefinitionFieldMapping, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping is an autogenerated conversion function.
-func Convert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping(in *DefinitionImportMapping, out *core.DefinitionImportMapping, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping(in, out, s)
-}
-
-func autoConvert_core_DefinitionImportMapping_To_v1alpha1_DefinitionImportMapping(in *core.DefinitionImportMapping, out *DefinitionImportMapping, s conversion.Scope) error {
-	if err := Convert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping(&in.DefinitionFieldMapping, &out.DefinitionFieldMapping, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DefinitionImportMapping_To_v1alpha1_DefinitionImportMapping is an autogenerated conversion function.
-func Convert_core_DefinitionImportMapping_To_v1alpha1_DefinitionImportMapping(in *core.DefinitionImportMapping, out *DefinitionImportMapping, s conversion.Scope) error {
-	return autoConvert_core_DefinitionImportMapping_To_v1alpha1_DefinitionImportMapping(in, out, s)
-}
-
-func autoConvert_v1alpha1_DefinitionReference_To_core_DefinitionReference(in *DefinitionReference, out *core.DefinitionReference, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Reference = in.Reference
-	out.Imports = *(*[]core.DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
-	return nil
-}
-
-// Convert_v1alpha1_DefinitionReference_To_core_DefinitionReference is an autogenerated conversion function.
-func Convert_v1alpha1_DefinitionReference_To_core_DefinitionReference(in *DefinitionReference, out *core.DefinitionReference, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DefinitionReference_To_core_DefinitionReference(in, out, s)
-}
-
-func autoConvert_core_DefinitionReference_To_v1alpha1_DefinitionReference(in *core.DefinitionReference, out *DefinitionReference, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Reference = in.Reference
-	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
-	return nil
-}
-
-// Convert_core_DefinitionReference_To_v1alpha1_DefinitionReference is an autogenerated conversion function.
-func Convert_core_DefinitionReference_To_v1alpha1_DefinitionReference(in *core.DefinitionReference, out *DefinitionReference, s conversion.Scope) error {
-	return autoConvert_core_DefinitionReference_To_v1alpha1_DefinitionReference(in, out, s)
 }
 
 func autoConvert_v1alpha1_DeployItem_To_core_DeployItem(in *DeployItem, out *core.DeployItem, s conversion.Scope) error {
@@ -1061,6 +1033,30 @@ func Convert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execution
 	return autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in, out, s)
 }
 
+func autoConvert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in *ExportDefinition, out *core.ExportDefinition, s conversion.Scope) error {
+	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_ExportDefinition_To_core_ExportDefinition is an autogenerated conversion function.
+func Convert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in *ExportDefinition, out *core.ExportDefinition, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in, out, s)
+}
+
+func autoConvert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportDefinition, out *ExportDefinition, s conversion.Scope) error {
+	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition is an autogenerated conversion function.
+func Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportDefinition, out *ExportDefinition, s conversion.Scope) error {
+	return autoConvert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in, out, s)
+}
+
 func autoConvert_v1alpha1_ExternalDocumentation_To_core_ExternalDocumentation(in *ExternalDocumentation, out *core.ExternalDocumentation, s conversion.Scope) error {
 	out.Description = in.Description
 	out.URL = in.URL
@@ -1081,6 +1077,40 @@ func autoConvert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in
 // Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation is an autogenerated conversion function.
 func Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in *core.ExternalDocumentation, out *ExternalDocumentation, s conversion.Scope) error {
 	return autoConvert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in, out, s)
+}
+
+func autoConvert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in *ImportDefinition, out *core.ImportDefinition, s conversion.Scope) error {
+	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+		return err
+	}
+	out.Required = (*bool)(unsafe.Pointer(in.Required))
+	if err := Convert_v1alpha1_Default_To_core_Default(&in.Default, &out.Default, s); err != nil {
+		return err
+	}
+	out.ConditionalImports = *(*[]core.ImportDefinition)(unsafe.Pointer(&in.ConditionalImports))
+	return nil
+}
+
+// Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition is an autogenerated conversion function.
+func Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in *ImportDefinition, out *core.ImportDefinition, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in, out, s)
+}
+
+func autoConvert_core_ImportDefinition_To_v1alpha1_ImportDefinition(in *core.ImportDefinition, out *ImportDefinition, s conversion.Scope) error {
+	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+		return err
+	}
+	out.Required = (*bool)(unsafe.Pointer(in.Required))
+	if err := Convert_core_Default_To_v1alpha1_Default(&in.Default, &out.Default, s); err != nil {
+		return err
+	}
+	out.ConditionalImports = *(*[]ImportDefinition)(unsafe.Pointer(&in.ConditionalImports))
+	return nil
+}
+
+// Convert_core_ImportDefinition_To_v1alpha1_ImportDefinition is an autogenerated conversion function.
+func Convert_core_ImportDefinition_To_v1alpha1_ImportDefinition(in *core.ImportDefinition, out *ImportDefinition, s conversion.Scope) error {
+	return autoConvert_core_ImportDefinition_To_v1alpha1_ImportDefinition(in, out, s)
 }
 
 func autoConvert_v1alpha1_ImportState_To_core_ImportState(in *ImportState, out *core.ImportState, s conversion.Scope) error {
@@ -1165,7 +1195,7 @@ func Convert_core_InstallationList_To_v1alpha1_InstallationList(in *core.Install
 
 func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
 	out.DefinitionRef = in.DefinitionRef
-	out.Imports = *(*[]core.DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
+	out.Imports = *(*[]core.ImportMappingDefinition)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
 	out.StaticData = *(*[]core.StaticDataSource)(unsafe.Pointer(&in.StaticData))
 	return nil

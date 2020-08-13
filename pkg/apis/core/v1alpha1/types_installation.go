@@ -62,7 +62,7 @@ type InstallationList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentDefinition contains the configuration of a component
+// Blueprint contains the configuration of a component
 // +kubebuilder:resource:path="installations",scope="Namespaced",shortName="inst",singular="installation"
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.configGeneration",name=ConfigGen,type=integer

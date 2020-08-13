@@ -21,10 +21,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
-	"github.com/docker/cli/cli/config/configfile"
-	"sigs.k8s.io/yaml"
+	"github.com/spf13/afero"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
@@ -32,29 +32,27 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry/oci"
 )
 
-// Init downloads the import config, the component descriptor and the blob content
+// Run downloads the import config, the component descriptor and the blob content
 // to the paths defined by the env vars.
 // It also creates all needed directories.
-func Init(ctx context.Context, log logr.Logger) error {
+func Run(ctx context.Context, log logr.Logger) error {
 	var (
-		importsFilePath             = os.Getenv(container.ImportsPathName)
 		exportsFilePath             = os.Getenv(container.ExportsPathName)
 		componentDescriptorFilePath = os.Getenv(container.ComponentDescriptorPathName)
 		contentDirPath              = os.Getenv(container.ContentPathName)
+		stateDirPath                = os.Getenv(container.StatePathName)
 
+		defRef    = os.Getenv(container.DefinitionReferenceName)
 		ociConfig = os.Getenv(container.OciConfigName)
 	)
 
-	_, err := createRegistryFromDockerAuthConfig(log, []byte(ociConfig))
+	reg, err := createRegistryFromDockerAuthConfig(log, []byte(ociConfig))
 	if err != nil {
 		return err
 	}
 
 	// create all directories
 	log.Info("create directories")
-	if err := os.MkdirAll(path.Dir(importsFilePath), os.ModePerm); err != nil {
-		return err
-	}
 	if err := os.MkdirAll(path.Dir(exportsFilePath), os.ModePerm); err != nil {
 		return err
 	}
@@ -64,15 +62,49 @@ func Init(ctx context.Context, log logr.Logger) error {
 	if err := os.MkdirAll(contentDirPath, os.ModePerm); err != nil {
 		return err
 	}
+	if err := os.MkdirAll(stateDirPath, os.ModePerm); err != nil {
+		return err
+	}
 	log.Info("all directories successfully created")
 
 	log.Info("get component descriptor")
 
-	log.Info("get imports file")
-
 	log.Info("get content blob")
+	blobFS, err := reg.GetContent(ctx, nil) // todo: read reference from component descriptor
+	if err != nil {
+		return err
+	}
+
+	osFS := afero.NewOsFs()
+	if err := copyFS(blobFS, osFS, "/", contentDirPath); err != nil {
+		return err
+	}
+
+	log.Info("get state")
 
 	return nil
+}
+
+func copyFS(src, dst afero.Fs, srcPath, dstPath string) error {
+	return afero.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		dstFilePath := filepath.Join(dstPath, path)
+		if info.IsDir() {
+			if err := dst.MkdirAll(dstFilePath, info.Mode()); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		file, err := src.OpenFile(path, os.O_RDONLY, info.Mode())
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return afero.WriteReader(dst, dstFilePath, file)
+	})
 }
 
 func createRegistryFromDockerAuthConfig(log logr.Logger, configData []byte) (registry.Registry, error) {
@@ -87,7 +119,7 @@ func createRegistryFromDockerAuthConfig(log logr.Logger, configData []byte) (reg
 		return nil, err
 	}
 
-	reg, err :=oci.New(log, &config.OCIConfiguration{
+	reg, err := oci.New(log, &config.OCIConfiguration{
 		ConfigFiles: []string{filepath},
 	})
 	if err != nil {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package container
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils"
 	ocireg "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
+	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
@@ -102,15 +102,14 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
-	container, err := New(a.log, a.c, a.registry, a.config, deployItem)
+	containerOp, err := New(a.log, a.c, a.registry, a.config, deployItem)
 	if err != nil {
 		return err
 	}
 
 	if !deployItem.DeletionTimestamp.IsZero() {
-		// todo: handle deletion
-		return nil
-	} else if !utils.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+		return containerOp.Delete(ctx)
+	} else if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
 			return err
@@ -118,7 +117,5 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return nil
 	}
 
-	// todo: handle reconcile
-
-	return nil
+	return containerOp.Reconcile(ctx)
 }

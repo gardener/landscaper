@@ -17,7 +17,7 @@ spec:
     namespace: default
 
   config:
-    apiVersion: helm.deployer.landscaper.gardener.cloud
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
     repository: myrepo/charts/nginx-ingress

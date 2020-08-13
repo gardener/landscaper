@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -60,12 +61,15 @@ func NewWithOCIClient(log logr.Logger, client oci.Client) (regapi.Registry, erro
 	}, nil
 }
 
-func (r registry) GetDefinition(ctx context.Context, name, version string) (*lsv1alpha1.ComponentDefinition, error) {
-	return r.GetDefinitionByRef(ctx, ref(name, version))
-}
+// GetDefinition returns the definition for a specific name, version and type.
+func (r *registry) GetDefinition(ctx context.Context, ref cdv2.Resource) (*lsv1alpha1.Blueprint, error) {
+	if ref.Access.GetType() != cdv2.OCIRegistryType {
+		return nil, regapi.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+	}
+	ociComp := ref.Access.(*cdv2.OCIRegistryAccess)
+	ociRef := ociComp.ImageReference
 
-func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alpha1.ComponentDefinition, error) {
-	manifest, err := r.oci.GetManifest(ctx, ref)
+	manifest, err := r.oci.GetManifest(ctx, ociRef)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +80,11 @@ func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alph
 
 	// manifest config should contain the component definition
 	var configdata bytes.Buffer
-	if err := r.oci.Fetch(ctx, ref, manifest.Config, &configdata); err != nil {
+	if err := r.oci.Fetch(ctx, ociRef, manifest.Config, &configdata); err != nil {
 		return nil, err
 	}
 
-	def := &lsv1alpha1.ComponentDefinition{}
+	def := &lsv1alpha1.Blueprint{}
 	if _, _, err := r.dec.Decode(configdata.Bytes(), nil, def); err != nil {
 		return nil, err
 	}
@@ -88,23 +92,26 @@ func (r registry) GetDefinitionByRef(ctx context.Context, ref string) (*lsv1alph
 	return def, nil
 }
 
-func (r registry) GetBlob(ctx context.Context, name, version string) (afero.Fs, error) {
-	return r.GetBlobByRef(ctx, ref(name, version))
-}
+// GetBlob returns the blob content for a component definition.
+func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {
+	if ref.Access.GetType() != cdv2.OCIRegistryType {
+		return nil, regapi.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+	}
+	ociComp := ref.Access.(*cdv2.OCIRegistryAccess)
+	ociRef := ociComp.ImageReference
 
-func (r registry) GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error) {
-	manifest, err := r.oci.GetManifest(ctx, ref)
+	manifest, err := r.oci.GetManifest(ctx, ociRef)
 	if err != nil {
 		return nil, err
 	}
 
 	layer := oci.GetLayerByName(manifest.Layers, ComponentDefinitionAnnotationTitleContent)
 	if layer == nil {
-		return nil, regapi.NewNotFoundError(ref, errors.New("no content defined for component"))
+		return nil, regapi.NewNotFoundError(ociRef, errors.New("no content defined for component"))
 	}
 
 	var blob bytes.Buffer
-	if err := r.oci.Fetch(ctx, ref, *layer, &blob); err != nil {
+	if err := r.oci.Fetch(ctx, ociRef, *layer, &blob); err != nil {
 		return nil, err
 	}
 
@@ -120,8 +127,4 @@ func (r registry) GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error
 	}
 
 	return fs, nil
-}
-
-func (r registry) GetVersions(ctx context.Context, name string) ([]string, error) {
-	panic("implement me")
 }

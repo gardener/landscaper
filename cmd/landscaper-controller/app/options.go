@@ -27,6 +27,7 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/manager"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -72,14 +73,11 @@ func (o *options) Complete() error {
 }
 
 func (o *options) setupRegistry() error {
-	if o.config.Registry.Local != nil {
-		r, err := registry.NewLocalRegistry(o.log.WithName("Registry"), o.config.Registry.Local.Paths)
-		if err != nil {
-			return err
-		}
-		o.registry = r
-		return nil
+	r, err := manager.NewRegistryManager(o.log, &o.config.Registry)
+	if err != nil {
+		return err
 	}
+	o.registry = r
 	return errors.New("no registry defined")
 }
 

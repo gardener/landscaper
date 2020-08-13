@@ -27,7 +27,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils"
+	kubernetes2 "github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
@@ -40,13 +40,13 @@ func init() {
 
 // IsRootInstallation returns if the installation is a root element.
 func IsRootInstallation(inst *lsv1alpha1.Installation) bool {
-	_, isOwned := utils.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
+	_, isOwned := kubernetes2.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return !isOwned
 }
 
 // GetParentInstallationName returns the name of parent installation that encompasses the given installation.
 func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
-	name, _ := utils.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
+	name, _ := kubernetes2.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return name
 }
 
@@ -65,7 +65,7 @@ func CreateInternalInstallations(ctx context.Context, registry registry.Registry
 
 // CreateInternalInstallation creates an internal installation for a Installation
 func CreateInternalInstallation(ctx context.Context, registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
-	def, err := registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
+	def, err := registry.GetDefinition(ctx, nil) // todo: read from component descriptor
 	if err != nil {
 		return nil, err
 	}

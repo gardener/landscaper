@@ -30,7 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // ExecutionOperation templates the executions and handles the interaction with
@@ -92,7 +92,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
 }
 
-func (o *ExecutionOperation) template(def *lsv1alpha1.ComponentDefinition, fs afero.Fs, imports interface{}) ([]lsv1alpha1.ExecutionItem, error) {
+func (o *ExecutionOperation) template(def *lsv1alpha1.Blueprint, fs afero.Fs, imports interface{}) ([]lsv1alpha1.ExecutionItem, error) {
 	// we only start with go template + sprig
 	// todo: add support to access definitions blob -> readFromFile, read file
 	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Funcs(LandscaperTplFuncMap(fs)).Parse(def.Executors)

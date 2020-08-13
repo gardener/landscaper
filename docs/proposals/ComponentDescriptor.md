@@ -21,22 +21,41 @@ To support this feature, all dependencies must have a unique name which is used 
 *Assumptions*:
 
 ```yaml
-kind: ComponentDefinition
+type: Installation
+spec:
+    blueprintRef:
+      baseUrl: eu.gcr.io/...
+      component/ref: my-other-def
+      kind: localResource
+      resource: blueprint
+```
+
+```yaml
+kind: Blueprint
 
 name: my-def
 version: 0.5.0
 
-componentDescriptor: abc # could be also a layer in the OCI/in another file
+import:
+- key: etcd
+  component:
+    ref: github.com/gardener/mcm
+    kind: externalResource
+    resource: etcd
+    type: ociImage
 
-definitionRefs:
+
+blueprintRefs:
 - name: abc
-  definitionRef: my-other-def:1.0.0
-```
-
-```yaml
-type: Installation
-spec:
-    definitionRef: my-def:0.5.0
+  blueprintRef:
+    component/ref: my-other-def
+    kind: localResource
+    resource: blueprint
+- name: cde
+  blueprintRef:
+    component/ref: my-other-def
+    kind: localResource
+    resource: blueprint
 ```
 
 ```yaml
@@ -44,10 +63,23 @@ type: DeployItem
 executors:
 - type: helm
   config:
-    repo: {{ .dep.nginx.repo }}
-    tag: {{ .dep.nginx.tag }}
+    image: {{ imports.etcd.access.imageReference }}
+    image2: {{ compdesc."github.com/gardener/mcm".externalResources.etcd.access.ImageReference }}
 ```
 
+- the root installation specifies the component from where the component descriptor is fetched and the blueprint resource in this component desc.
+  - make base url in the installation configurable
+- aggregated blueprints specify only the blueprint's component and blueprints location (kind: local/external and name)
+  - subinstallation blueprint's components have to be defined as componentReference in the aggregated component descriptor.
+  - the baseUrl is automatically given by the repository Context of the aggregated component
+  - this basUrl is then also propagated to the sub installations
+  
+- local or external resources of a component can be accessed via import declartion with referece/componentName, kind and resourceName.
+- the landscaper also translated the components, the local and external resources in to a map so that one can access it by index (no need to for looping over the resources array).
+
+<hr>
+
+Old component descriptor
 - ComponentDefinitions and their Refs have to state the unique identifier of the Definition not the actual ref. `e.g. "gardener:1.0.0" not "eu.gcr.io/my-proj/gardener:1.0.0"`
 - Installations may contain the real ref.
 
@@ -80,31 +112,35 @@ Con:
 - 2nd step: allow non-github-repository-bound components as toplevel-components (or rather: make all components toplevel-components)
 
 ```yaml
-version: v2
+meta:
+  schemaVersion: 'v2'
 
-components:
-- type: image | helm | ComponentDefinition | github
-  name: gardener
-  version: 1.2.3
-  
-  dependencies:
-  - type: <dep type>
-    name: <dep name>
-    config: <type specific info>
+component:
+  name: 'github.com/gardener/gardener'
+  version: 'v1.7.2'
 
-- type: ComponentDefinition
-  name: virtual-garden
-  version: 1.2.3
-  
-  dependencies:
-  - type: image
-    name: etcd-main
-    config: 
-      repository: eu.gcr.io/etcd
-      version: 3.2.2
-  - type: <dep type>
-    name: <dep name>
-    config: <type specific info>
+  provider: internal
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/dev' # => eu.gcr.io/gardener-project/dev/github.com/gardener/gardener:v1.7.2
+  sources: []
+  componentReferences:
+  - ...
+  localResources: 
+  - name: blueprint
+    type: blueprint
+    access:
+      type: ociRegistry
+      reference: eu.gcr.io/gardener-project/blueprints/gardener:v1.7.2
+
+  externalResources:
+  - name: 'hyperkube'
+    version: 'v1.16.4'
+    type: 'ociImage'
+    access:
+      type: 'ociRegistry'
+      # image_reference attribute is implied by `ociImage` type
+      imageReference: 'eu.gcr.io/gardener-project/gardener/apiserver:v1.7.2'
 
 ```
 
@@ -142,4 +178,24 @@ overwrites:
   version: 1.2.3
   
   
+```
+
+
+````yaml
+
+# github.com/gardener/mcm / external resources / etcd => name
+
+
+references:
+- name: github.com/gardener/mcm # basepath + name + version => component descriptor
+  version: 1.5.0
+
+
+externalResource:
+- name: hyperkube
+  version: 1.16.4 => 1.16.x
+  access:
+    imageRef: abc
+- name: hyperkube
+  version: 1.17.2
 ```

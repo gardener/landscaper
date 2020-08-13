@@ -35,7 +35,7 @@ type generation struct {
 }
 
 type importState struct {
-	// Key is the import key of the ComponentDefinition
+	// Key is the import key of the Blueprint
 	Key string
 
 	// Generation is the config generation of the installation where the import's coming from.

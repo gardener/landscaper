@@ -31,8 +31,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
-	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 var _ = g.Describe("SubInstallation", func() {
@@ -40,8 +39,8 @@ var _ = g.Describe("SubInstallation", func() {
 	var (
 		op               *installations.Operation
 		ctrl             *gomock.Controller
-		mockClient       *mock_client.MockClient
-		mockStatusWriter *mock_client.MockStatusWriter
+		mockClient       *mock.MockClient
+		mockStatusWriter *mock.MockStatusWriter
 		fakeRegistry     *fake.FakeRegistry
 
 		once sync.Once
@@ -50,8 +49,8 @@ var _ = g.Describe("SubInstallation", func() {
 	g.BeforeEach(func() {
 		var err error
 		ctrl = gomock.NewController(g.GinkgoT())
-		mockClient = mock_client.NewMockClient(ctrl)
-		mockStatusWriter = mock_client.NewMockStatusWriter(ctrl)
+		mockClient = mock.NewMockClient(ctrl)
+		mockStatusWriter = mock.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
 		once.Do(func() {
@@ -78,7 +77,7 @@ var _ = g.Describe("SubInstallation", func() {
 			)
 
 			si := subinstallations.New(op)
-			err := si.Ensure(context.TODO(), &lsv1alpha1.Installation{}, &lsv1alpha1.ComponentDefinition{})
+			err := si.Ensure(context.TODO(), &lsv1alpha1.Installation{}, &lsv1alpha1.Blueprint{})
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -94,8 +93,8 @@ var _ = g.Describe("SubInstallation", func() {
 
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "root"
-			def := &lsv1alpha1.ComponentDefinition{
-				DefinitionReferences: []lsv1alpha1.DefinitionReference{
+			def := &lsv1alpha1.Blueprint{
+				BlueprintReferences: []lsv1alpha1.BlueprintReference{
 					{
 						Name:      "def1",
 						Reference: "def1:1.0.0",
@@ -137,8 +136,8 @@ var _ = g.Describe("SubInstallation", func() {
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "root"
 			inst.Namespace = "default"
-			def := &lsv1alpha1.ComponentDefinition{
-				DefinitionReferences: []lsv1alpha1.DefinitionReference{
+			def := &lsv1alpha1.Blueprint{
+				BlueprintReferences: []lsv1alpha1.BlueprintReference{
 					{
 						Name:      "def1",
 						Reference: "def1:1.0.0",
@@ -178,8 +177,8 @@ var _ = g.Describe("SubInstallation", func() {
 
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "root"
-			def := &lsv1alpha1.ComponentDefinition{
-				DefinitionReferences: []lsv1alpha1.DefinitionReference{
+			def := &lsv1alpha1.Blueprint{
+				BlueprintReferences: []lsv1alpha1.BlueprintReference{
 					{
 						Name:      "def1",
 						Reference: "def1:1.0.0",
@@ -193,14 +192,14 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			}
 
-			subdef := lsv1alpha1.ComponentDefinition{
+			subdef := lsv1alpha1.Blueprint{
 				Name:    "def1",
 				Version: "1.0.0",
-				Imports: []lsv1alpha1.DefinitionImport{
+				Imports: []lsv1alpha1.ImportDefinition{
 					{DefinitionFieldValue: lsv1alpha1.DefinitionFieldValue{Key: "b"}},
 					{DefinitionFieldValue: lsv1alpha1.DefinitionFieldValue{Key: "y"}},
 				},
-				Exports: []lsv1alpha1.DefinitionExport{
+				Exports: []lsv1alpha1.ExportDefinition{
 					{DefinitionFieldValue: lsv1alpha1.DefinitionFieldValue{Key: "c"}},
 					{DefinitionFieldValue: lsv1alpha1.DefinitionFieldValue{Key: "z"}},
 				},
@@ -234,8 +233,8 @@ var _ = g.Describe("SubInstallation", func() {
 			)
 
 			inst := &lsv1alpha1.Installation{}
-			def := &lsv1alpha1.ComponentDefinition{
-				DefinitionReferences: []lsv1alpha1.DefinitionReference{
+			def := &lsv1alpha1.Blueprint{
+				BlueprintReferences: []lsv1alpha1.BlueprintReference{
 					{
 						Name:      "def1",
 						Reference: "def1:1.0.0",
@@ -285,8 +284,8 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			},
 		}
-		def := &lsv1alpha1.ComponentDefinition{
-			DefinitionReferences: []lsv1alpha1.DefinitionReference{
+		def := &lsv1alpha1.Blueprint{
+			BlueprintReferences: []lsv1alpha1.BlueprintReference{
 				{
 					Name:      "def1",
 					Reference: "def1:1.0.0",
@@ -371,8 +370,8 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			},
 		}
-		def := &lsv1alpha1.ComponentDefinition{
-			DefinitionReferences: []lsv1alpha1.DefinitionReference{
+		def := &lsv1alpha1.Blueprint{
+			BlueprintReferences: []lsv1alpha1.BlueprintReference{
 				{
 					Name:      "def1",
 					Reference: "def1:1.0.0",
@@ -399,7 +398,7 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			},
 		}
-		def := &lsv1alpha1.ComponentDefinition{}
+		def := &lsv1alpha1.Blueprint{}
 		subinst := &lsv1alpha1.Installation{}
 		subinst.Name = "inst-def1"
 
@@ -428,8 +427,8 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			},
 		}
-		def := &lsv1alpha1.ComponentDefinition{
-			DefinitionReferences: []lsv1alpha1.DefinitionReference{
+		def := &lsv1alpha1.Blueprint{
+			BlueprintReferences: []lsv1alpha1.BlueprintReference{
 				{
 					Name:      "def1",
 					Reference: "def1:1.1.0",

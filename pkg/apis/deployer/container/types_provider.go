@@ -58,6 +58,8 @@ type ProviderConfiguration struct {
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 
+	// PodName is the name of the created pod.
+	PodName string `json:"podName"`
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`

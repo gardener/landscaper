@@ -25,6 +25,6 @@ const (
 )
 
 // ref creates a reference from a name and a version
-func ref(name, version string) string {
+func makeRef(name, version string) string {
 	return fmt.Sprintf("%s:%s", name, version)
 }

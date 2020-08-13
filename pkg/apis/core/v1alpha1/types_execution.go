@@ -20,6 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ExecutionType defines the type of the execution
+type ExecutionType string
+
 // ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
 const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
@@ -86,7 +89,7 @@ type ExecutionStatus struct {
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
 	// DeployItemReferences contain the state of all deploy items.
-	// The observed generation is here the generation of the Execution not the DeployItem
+	// The observed generation is here the generation of the Execution not the DeployItem.
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 

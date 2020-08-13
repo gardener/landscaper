@@ -9,7 +9,7 @@ The Landscaper's conceptual model is made up of various entities:
 ![entities](./images/entities.png)
 
 ## `ComponentDefinition`
-A `ComponentDefinition` ([detailed documentation](./ComponentDefinitions.md)) is a _building block_ or piece of a functioning Gardener installation.
+A `ComponentDefinition` ([detailed documentation](Blueprints.md)) is a _building block_ or piece of a functioning Gardener installation.
 
 It describes:
 - expected configuration to be able to install/update/manage this component (_Inputs_)

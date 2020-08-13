@@ -23,10 +23,10 @@ import (
 // Installation is the internal representation of a installation
 type Installation struct {
 	Info       *lsv1alpha1.Installation
-	Definition *lsv1alpha1.ComponentDefinition
+	Definition *lsv1alpha1.Blueprint
 
-	imports map[string]lsv1alpha1.DefinitionImport
-	exports map[string]lsv1alpha1.DefinitionExport
+	imports map[string]lsv1alpha1.ImportDefinition
+	exports map[string]lsv1alpha1.ExportDefinition
 
 	// indexes the import state with from/to as key
 	importsStatus ImportStatus
@@ -35,23 +35,23 @@ type Installation struct {
 // ImportMapping is the internal representation of a import mapping and its defintion
 type ImportMapping struct {
 	lsv1alpha1.DefinitionImportMapping
-	lsv1alpha1.DefinitionImport
+	lsv1alpha1.ImportDefinition
 }
 
 // ExportMapping is the internal representation of a export mapping and its defintion
 type ExportMapping struct {
 	lsv1alpha1.DefinitionExportMapping
-	lsv1alpha1.DefinitionExport
+	lsv1alpha1.ExportDefinition
 }
 
 // New creates a new internal representation of an installation
-func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) (*Installation, error) {
+func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
 		Info:       inst,
 		Definition: def,
 
-		imports: make(map[string]lsv1alpha1.DefinitionImport, len(def.Imports)),
-		exports: make(map[string]lsv1alpha1.DefinitionExport, len(def.Exports)),
+		imports: make(map[string]lsv1alpha1.ImportDefinition, len(def.Imports)),
+		exports: make(map[string]lsv1alpha1.ExportDefinition, len(def.Exports)),
 
 		importsStatus: ImportStatus{
 			From: make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
@@ -79,10 +79,10 @@ func (i *Installation) ImportStatus() *ImportStatus {
 }
 
 // GetImportDefinition return the import for a given key
-func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.DefinitionImport, error) {
+func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.ImportDefinition, error) {
 	def, ok := i.imports[key]
 	if !ok {
-		return lsv1alpha1.DefinitionImport{}, fmt.Errorf("import with key %s not found", key)
+		return lsv1alpha1.ImportDefinition{}, fmt.Errorf("import with key %s not found", key)
 	}
 	return def, nil
 }
@@ -98,13 +98,13 @@ func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
 		mapping, err := i.GetImportMappingTo(def.Key)
 		if err == nil {
 			mappings = append(mappings, ImportMapping{
-				DefinitionImport:        *def,
+				ImportDefinition:        *def,
 				DefinitionImportMapping: mapping,
 			})
 			continue
 		}
 		mappings = append(mappings, ImportMapping{
-			DefinitionImport: *def,
+			ImportDefinition: *def,
 			DefinitionImportMapping: lsv1alpha1.DefinitionImportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
 					From: def.Key,
@@ -127,13 +127,13 @@ func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
 		mapping, err := i.GetExportMappingTo(def.Key)
 		if err == nil {
 			mappings = append(mappings, ExportMapping{
-				DefinitionExport:        *def,
+				ExportDefinition:        *def,
 				DefinitionExportMapping: mapping,
 			})
 			continue
 		}
 		mappings = append(mappings, ExportMapping{
-			DefinitionExport: *def,
+			ExportDefinition: *def,
 			DefinitionExportMapping: lsv1alpha1.DefinitionExportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
 					From: def.Key,
@@ -168,10 +168,10 @@ func (i *Installation) GetImportMappingTo(key string) (lsv1alpha1.DefinitionImpo
 }
 
 // GetExportDefinition return the export definition for a given key
-func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.DefinitionExport, error) {
+func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.ExportDefinition, error) {
 	def, ok := i.exports[key]
 	if !ok {
-		return lsv1alpha1.DefinitionExport{}, fmt.Errorf("export with key %s not found", key)
+		return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
 	}
 	return def, nil
 }

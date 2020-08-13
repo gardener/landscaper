@@ -21,7 +21,7 @@ import (
 )
 
 // AddDefaultMappings adds all default mappings of im and exports if they are not already defined
-func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) {
+func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) {
 	mappings := sets.NewString()
 	for _, mapping := range inst.Spec.Imports {
 		mappings.Insert(mapping.To)
@@ -54,7 +54,7 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Component
 }
 
 // installationNeedsUpdate check if a definition reference has been updated
-func installationNeedsUpdate(def lsv1alpha1.DefinitionReference, inst *lsv1alpha1.Installation) bool {
+func installationNeedsUpdate(def lsv1alpha1.BlueprintReference, inst *lsv1alpha1.Installation) bool {
 	if def.Reference != inst.Spec.DefinitionRef {
 		return true
 	}
@@ -101,11 +101,11 @@ func hasMappingOfExports(search lsv1alpha1.DefinitionExportMapping, mappings []l
 }
 
 // getDefinitionReference returns the definition reference by name
-func getDefinitionReference(def *lsv1alpha1.ComponentDefinition, name string) (lsv1alpha1.DefinitionReference, bool) {
-	for _, ref := range def.DefinitionReferences {
+func getDefinitionReference(def *lsv1alpha1.Blueprint, name string) (lsv1alpha1.BlueprintReference, bool) {
+	for _, ref := range def.BlueprintReferences {
 		if ref.Name == name {
 			return ref, true
 		}
 	}
-	return lsv1alpha1.DefinitionReference{}, false
+	return lsv1alpha1.BlueprintReference{}, false
 }

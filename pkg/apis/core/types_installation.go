@@ -35,7 +35,7 @@ type InstallationList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ComponentDefinition contains the configuration of a component
+// Blueprint contains the configuration of a component
 // +kubebuilder:subresource:status
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -53,7 +53,7 @@ type InstallationSpec struct {
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.
 	// +optional
-	Imports []DefinitionImportMapping `json:"imports,omitempty"`
+	Imports []ImportMappingDefinition `json:"imports,omitempty"`
 
 	// Exports define the export mappings for the referenced definition.
 	// These values are by default auto generated from the parent definition.

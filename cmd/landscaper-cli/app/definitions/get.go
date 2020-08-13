@@ -19,8 +19,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -28,8 +30,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	lsoci "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
 	"github.com/gardener/landscaper/pkg/logger"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
@@ -71,7 +73,7 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(lsoci.ComponentDefinitionConfigMediaType))
+	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache})
 	if err != nil {
 		return err
 	}
@@ -82,12 +84,22 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 	}
 
 	var data bytes.Buffer
-	if err := ociClient.Fetch(ctx, o.ref, manifest.Config, &data); err != nil {
+	if err := ociClient.Fetch(ctx, o.ref, manifest.Layers[0], &data); err != nil {
 		return err
 	}
 
-	def := &lsv1alpha1.ComponentDefinition{}
-	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data.Bytes(), nil, def); err != nil {
+	memFS := afero.NewMemMapFs()
+	if err := utils.ExtractTarGzip(&data, memFS, "/"); err != nil {
+		return err
+	}
+
+	defData, err := afero.ReadFile(memFS, filepath.Join("/", lsv1alpha1.ComponentDefinitionPath))
+	if err != nil {
+		return err
+	}
+
+	def := &lsv1alpha1.Blueprint{}
+	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(defData, nil, def); err != nil {
 		return err
 	}
 

@@ -165,6 +165,7 @@ func Convert_container_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(i
 }
 
 func autoConvert_v1alpha1_ProviderStatus_To_container_ProviderStatus(in *ProviderStatus, out *container.ProviderStatus, s conversion.Scope) error {
+	out.PodName = in.PodName
 	out.Message = in.Message
 	out.Reason = in.Reason
 	out.State = in.State
@@ -179,6 +180,7 @@ func Convert_v1alpha1_ProviderStatus_To_container_ProviderStatus(in *ProviderSta
 }
 
 func autoConvert_container_ProviderStatus_To_v1alpha1_ProviderStatus(in *container.ProviderStatus, out *ProviderStatus, s conversion.Scope) error {
+	out.PodName = in.PodName
 	out.Message = in.Message
 	out.Reason = in.Reason
 	out.State = in.State

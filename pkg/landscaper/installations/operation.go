@@ -36,7 +36,7 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/utils"
-	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 //// Operation is the operation interface that is used to share common operational data across the installation reconciler.

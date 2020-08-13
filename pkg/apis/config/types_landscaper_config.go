@@ -40,6 +40,7 @@ type RegistryConfiguration struct {
 // LocalRegistryConfiguration contains the configuration for a local registry
 type LocalRegistryConfiguration struct {
 	// Paths are local filesystem paths definitions
+	// +optional
 	Paths []string `json:"paths"`
 }
 

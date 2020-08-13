@@ -28,7 +28,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
@@ -106,7 +106,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 
 	if !deployItem.DeletionTimestamp.IsZero() {
 		return helm.DeleteFiles(ctx)
-	} else if !utils.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+	} else if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
 			return err

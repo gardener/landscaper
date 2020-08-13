@@ -12,75 +12,138 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package container
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func (c *Container) generatePod() (*corev1.Pod, error) {
+// Reconcile handles the reconcile flow for a container deploy item.
+func (c *Container) Reconcile(ctx context.Context) error {
+	if len(c.ProviderStatus.PodName) == 0 {
+		c.ProviderStatus = &containerv1alpha1.ProviderStatus{}
+		podOpts := PodOptions{
+			ProviderConfiguration: c.ProviderConfiguration,
+			InitContainer:         c.Configuration.InitContainer,
+			SidecarContainer:      c.Configuration.SidecarContainer,
 
-	sharedVolume := corev1.Volume{
-		Name: "sharedVolume",
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	}
-	sharedVolumeMount := corev1.VolumeMount{
-		Name: "sharedData",
-		MountPath: container.BasePath,
-	}
+			Name:      c.DeployItem.Name,
+			Namespace: c.DeployItem.Namespace,
 
-	initContainer := corev1.Container{
-		Name:                     "init",
-		Image:                    c.Configuration.InitContainer.Image,
-		Command:                  c.Configuration.InitContainer.Command,
-		Args:                     c.Configuration.InitContainer.Args,
-		Env:                      container.DefaultEnvVars,
-		Resources:                corev1.ResourceRequirements{},
-		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{sharedVolumeMount},
-	}
+			Operation:     container.OperationReconcile,
+			DefinitionRef: c.DeployItem.Spec.DefinitionRef,
+			ImportsRef:    c.DeployItem.Spec.ImportReference,
+			OCIConfig:     []byte{},
+		}
+		pod, err := generatePod(podOpts)
+		if err != nil {
+			return err
+		}
 
-	sidecarContainer := corev1.Container{
-		Name:                     "init",
-		Image:                    c.Configuration.SidecarContainer.Image,
-		Command:                  c.Configuration.SidecarContainer.Command,
-		Args:                     c.Configuration.SidecarContainer.Args,
-		Env:                      container.DefaultEnvVars,
-		Resources:                corev1.ResourceRequirements{},
-		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{sharedVolumeMount},
-	}
+		if err := controllerutil.SetControllerReference(c.DeployItem, pod, kubernetes.LandscaperScheme); err != nil {
+			return err
+		}
 
-	mainContainer := corev1.Container{
-		Name:                     "main",
-		Image:                    c.ProviderConfiguration.Image,
-		Command:                  c.ProviderConfiguration.Command,
-		Args:                     c.ProviderConfiguration.Args,
-		Env:                      container.DefaultEnvVars,
-		Resources:                corev1.ResourceRequirements{},
-		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{sharedVolumeMount},
+		if err := c.kubeClient.Create(ctx, pod); err != nil {
+			return err
+		}
+
+		// update status
+		c.ProviderStatus.PodName = pod.Name
+		containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, "main")
+		c.ProviderStatus.Image = containerStatus.Image
+		c.ProviderStatus.ImageID = containerStatus.ImageID
+		encStatus, err := encodeStatus(c.ProviderStatus)
+		if err != nil {
+			return err
+		}
+
+		c.DeployItem.Status.ProviderStatus = encStatus
+		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
+		return c.kubeClient.Status().Update(ctx, c.DeployItem)
 	}
 
-
+	// wait for container to finish
 	pod := &corev1.Pod{}
-	pod.GenerateName = fmt.Sprintf("%s-", c.DeployItem.Name)
-	pod.Namespace = c.DeployItem.Namespace
-	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
-	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(300)
-	pod.Spec.Volumes = []corev1.Volume{sharedVolume}
-	pod.Spec.InitContainers = []corev1.Container{initContainer}
-	pod.Spec.Containers = []corev1.Container{mainContainer, sidecarContainer}
+	if err := c.kubeClient.Get(ctx, client.ObjectKey{Name: c.ProviderStatus.PodName, Namespace: c.DeployItem.Namespace}, pod); err != nil {
+		if apierrors.IsNotFound(err) {
+			// we missed the container deletion, so we have to set the podName to false and retry the operation
+			c.log.Info("missed deletion of pod. Retry operation", "deployItem", c.DeployItem.Name, "pod", c.ProviderStatus.PodName)
+			c.ProviderStatus.PodName = ""
+			encStatus, err := encodeStatus(c.ProviderStatus)
+			if err != nil {
+				return err
+			}
 
-	return pod, nil
+			// todo: set retry condition
+			c.DeployItem.Status.ProviderStatus = encStatus
+			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation - 1
+			return c.kubeClient.Status().Update(ctx, c.DeployItem)
+		}
+		return err
+	}
+
+	// do nothing if the pod is still running
+	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
+		return nil
+	}
+
+	if pod.Status.Phase == corev1.PodSucceeded {
+		controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
+		if err := c.kubeClient.Update(ctx, pod); err != nil {
+			return err
+		}
+		c.ProviderStatus.PodName = ""
+		encStatus, err := encodeStatus(c.ProviderStatus)
+		if err != nil {
+			return err
+		}
+		c.DeployItem.Status.ProviderStatus = encStatus
+		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+		return c.kubeClient.Status().Update(ctx, c.DeployItem)
+	}
+
+	if pod.Status.Phase == corev1.PodFailed {
+		c.ProviderStatus.PodName = ""
+		c.ProviderStatus.Message = pod.Status.Message
+		c.ProviderStatus.Reason = pod.Status.Reason
+		encStatus, err := encodeStatus(c.ProviderStatus)
+		if err != nil {
+			return err
+		}
+		controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
+		if err := c.kubeClient.Update(ctx, pod); err != nil {
+			return err
+		}
+
+		c.DeployItem.Status.ProviderStatus = encStatus
+		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		return c.kubeClient.Status().Update(ctx, c.DeployItem)
+	}
+
+	return nil
+}
+
+func encodeStatus(status *containerv1alpha1.ProviderStatus) ([]byte, error) {
+	status.TypeMeta = metav1.TypeMeta{
+		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
+		Kind:       "ProviderStatus",
+	}
+
+	return json.Marshal(status)
 }

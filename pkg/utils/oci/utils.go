@@ -48,10 +48,10 @@ func BuildTarGzipLayer(cache cache.Cache, fs afero.Fs, path string, annotations 
 		return ocispecv1.Descriptor{}, err
 	}
 
-	desc :=  ocispecv1.Descriptor{
-		MediaType: MediaTypeTarGzip,
-		Digest: digest.FromBytes(blob.Bytes()),
-		Size: int64(blob.Len()),
+	desc := ocispecv1.Descriptor{
+		MediaType:   MediaTypeTarGzip,
+		Digest:      digest.FromBytes(blob.Bytes()),
+		Size:        int64(blob.Len()),
 		Annotations: annotations,
 	}
 

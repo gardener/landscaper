@@ -1,0 +1,45 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+name: prerequisites
+version: 1.0.0
+
+imports:
+...
+
+exports:
+...
+
+executors: | # has to be idempotent
+  ...
+
+definitionRefs: # make as directory structure
+- name: dns-controller # defaulted to the name of the component
+  ref: dns-controller:0.10.5 # will be translated by the component descriptor to eu.gcr.io/gardener-project/definitions/dns.controller:0.10.5
+  exports:
+  - from: dnsClass
+    to: dnsClass
+  staticData:
+    - value:
+        abc: acb..
+
+- name: nginx-ingress-controller # defaulted to the name of the component
+  ref: nginx-ingress-controller:0.5.0
+  imports:
+  - from: ext.dnsClass
+    to: dnsClass
+  exports:
+  - from: nginxIngressClass
+    to: ingressClass
+
+- name: internal # defaulted to the name of the component
+  definition:
+    name: internal-comp
+    imports:
+    - key: abc
+      type: string
+  imports:
+  - from: ext.dnsClass
+    to: dnsClass
+  exports:
+  - from: nginxIngressClass
+    to: ingressClass

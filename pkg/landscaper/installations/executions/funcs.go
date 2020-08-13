@@ -25,12 +25,12 @@ import (
 func LandscaperTplFuncMap(fs afero.Fs) map[string]interface{} {
 	return map[string]interface{}{
 		"readFile": readFileFunc(fs),
-		"readDir": readDir(fs),
+		"readDir":  readDir(fs),
 	}
 }
 
 // readFileFunc returns a function that reads a file from a location in a filesystem
-func readFileFunc(fs afero.Fs) func(path string) []byte{
+func readFileFunc(fs afero.Fs) func(path string) []byte {
 	return func(path string) []byte {
 		file, err := afero.ReadFile(fs, path)
 		if err != nil {

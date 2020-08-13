@@ -30,8 +30,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils"
-	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
+	kubernetes2 "github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator() (reconcile.Reconciler, error) {
@@ -106,7 +106,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 
 		controllerutil.RemoveFinalizer(&deployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
-	} else if !utils.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+	} else if !kubernetes2.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
 	}

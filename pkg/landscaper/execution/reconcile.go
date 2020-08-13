@@ -23,7 +23,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/utils"
-	kubernetesutil "github.com/gardener/landscaper/test/utils/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.

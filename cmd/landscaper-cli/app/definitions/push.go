@@ -19,15 +19,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/json"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	lsoci "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
@@ -38,11 +43,11 @@ type pushOptions struct {
 	// ref is the oci reference where the definition should eb uploaded.
 	ref string
 
-	// definitionPath is the path to the string
-	definition *lsv1alpha1.ComponentDefinition
+	// definitionPath is the path to the directory containing the definition.
+	definitionPath string
 
-	// contentBlobPath is the path to the content of the component
-	contentBlobPath string
+	// definitionPath is the path to the string
+	definition *lsv1alpha1.Blueprint
 }
 
 // NewPushDefinitionsCommand creates a new definition command to push definitions
@@ -51,7 +56,7 @@ func NewPushDefinitionsCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "push",
 		Args:    cobra.ExactArgs(2),
-		Example: "landscapercli definitions push [ref] [path to ComponentDefinition]",
+		Example: "landscapercli definitions push [ref] [path to Blueprint directory]",
 		Short:   "command to interact with definitions of an oci registry",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := opts.Complete(args); err != nil {
@@ -79,17 +84,9 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defManifest, err := lsoci.BuildNewDefinition(cache, o.definition)
+	defManifest, err := lsoci.BuildNewDefinition(cache, afero.NewOsFs(), o.definitionPath)
 	if err != nil {
 		return err
-	}
-
-	if len(o.contentBlobPath) != 0 {
-		contentLayerDesc, err := lsoci.BuildNewContentBlob(cache, afero.NewOsFs(), o.contentBlobPath)
-		if err != nil {
-			return err
-		}
-		defManifest.Layers = append(defManifest.Layers, contentLayerDesc)
 	}
 
 	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(lsoci.ComponentDefinitionConfigMediaType))
@@ -103,24 +100,58 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 func (o *pushOptions) Complete(args []string) error {
 	// todo: validate args
 	o.ref = args[0]
-	definitionPath := args[1]
+	o.definitionPath = args[1]
 
-	data, err := ioutil.ReadFile(definitionPath)
+	data, err := ioutil.ReadFile(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionPath))
 	if err != nil {
 		return err
 	}
-	o.definition = &lsv1alpha1.ComponentDefinition{}
+	o.definition = &lsv1alpha1.Blueprint{}
 	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, o.definition); err != nil {
 		return err
+	}
+
+	// automatically add default component descriptor is none is defined
+	if _, err := os.Stat(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath)); err != nil {
+		vName, err := registry.ParseDefinitionRef(o.ref)
+		if err != nil {
+			return err
+		}
+		ociComponent := &cdv2.OCIComponent{
+			ComponentMetadata: cdv2.ComponentMetadata{
+				Type:    cdv2.OCIComponentType,
+				Name:    o.definition.Name,
+				Version: o.definition.Version,
+			},
+			Repository: vName.Name,
+		}
+
+		cd := cdv2.ComponentDescriptor{
+			Metadata:   cdv2.Metadata{Version: cdv2.SchemaVersion},
+			Components: cdv2.ResolvableComponentList{ociComponent},
+		}
+
+		data, err := json.Marshal(cd)
+		if err != nil {
+			return fmt.Errorf("unable to parse automatically constructed component descriptor: %w", err)
+		}
+
+		if err := ioutil.WriteFile(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath), data, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return o.Validate()
+}
+
+// Validate validates push options
+func (o *pushOptions) Validate() error {
+	// require a component descriptor
+	if _, err := os.Stat(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath)); err != nil {
+		return fmt.Errorf("ComponentDescriptor is required at %s", filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath))
 	}
 
 	return nil
 }
 
-func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {
-	if fs == nil {
-		fs = pflag.CommandLine
-	}
-
-	fs.StringVarP(&o.contentBlobPath, "content", "c", "", "filesystem path to the content of the component")
-}
+func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {}

@@ -41,8 +41,6 @@ seeds:
   target: my-fenced-env
 ```
 
-
-
 ```yaml
 kind: ComponentDefinition
 executors: |
@@ -97,10 +95,85 @@ shootedseed:
 kind: DeployItem
 
 spec:
+  type: Helm
+
   target: # {{ .imports.target }}
     type: kubernetes-cluster
     name: fenced-env-1
     config:
-      my-special--config: abc
+      my-special-config: abc
       kubeconfig: apiVers...
+```
+
+### target as its own resource
+
+```yaml
+kind: Blueprint
+
+import:
+- key: cluster1
+  type: targetRef
+  target: fenced-env-1 # => where to define target types
+- key: cluster1
+  type: kubeconfig
+- key: etcd # optional as own property
+  component: 
+    ref: github.com/gardener/mcm
+    kind: externalResource
+    resource: etcd
+
+exports:
+- key: cluster1
+  type: targetName # => get target <targetName>
+- key: cluster3
+  target: fenced-env-1 # => where to define target types
+- key: cluster4
+  target: k8s # => where to define target types
+```
+
+
+reusable targets
+```yaml
+kind: Target
+metadata:
+  name: fenced-env-1
+  annotations:
+    "my-an": "abc"
+spec:
+  type: kubernetes-cluster
+  subtypes: 
+  - type: gardener
+    providerConfig:
+      topology: 
+        seeds:
+        - abc
+  - type: apphub
+      
+  config:
+    my-special-config: abc
+    kubeconfig: apiVers...
+```
+
+```yaml
+type: aws
+providerConfig: any
+```
+
+```yaml
+kind: DeployItem
+spec:
+  type: Helm
+  targetRef: fenced-env-1
+```
+
+- extra mapping for deployer to configure responsible targets (also possible during runtime)
+- or static commandline option
+```yaml
+kind: TargetMapping
+metadata:
+    labels:
+      resp.class: "abc"
+spec:
+- target: name
+- target: fenced-env-1
 ```

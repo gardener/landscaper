@@ -40,12 +40,12 @@ type options struct {
 	OutputPath string
 
 	outputFormat OutputFormat
-	components   []*core.ComponentDefinition
+	components   []*core.Blueprint
 }
 
 func NewOptions() *options {
 	return &options{
-		components: make([]*core.ComponentDefinition, 0),
+		components: make([]*core.Blueprint, 0),
 	}
 }
 
@@ -101,7 +101,7 @@ func (o *options) Complete() error {
 			return err
 		}
 
-		component := &core.ComponentDefinition{}
+		component := &core.Blueprint{}
 		if _, _, err := decoder.Decode(data, nil, component); err != nil {
 			return err
 		}

@@ -1,0 +1,17 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+name: prerequisites
+version: 1.0.0
+
+imports:
+...
+
+exports:
+...
+
+executors: | # has to be idempotent
+  ...
+
+definitionRefs: # make as directory structure
+- "components/dns-controller"
+- "components/nginx-ingress-controller"

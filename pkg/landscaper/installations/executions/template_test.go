@@ -34,7 +34,7 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.ComponentDefinition{}
+		rawDef := &lsv1alpha1.Blueprint{}
 		rawDef.Executors = string(tmpl)
 		op := New(nil)
 
@@ -49,7 +49,7 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.ComponentDefinition{}
+		rawDef := &lsv1alpha1.Blueprint{}
 		rawDef.Executors = string(tmpl)
 		op := New(nil)
 
@@ -68,7 +68,7 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.ComponentDefinition{}
+		rawDef := &lsv1alpha1.Blueprint{}
 		rawDef.Executors = string(tmpl)
 		op := New(nil)
 

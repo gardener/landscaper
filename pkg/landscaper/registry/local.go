@@ -16,10 +16,13 @@ package registry
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,6 +31,42 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
+
+// LocalAccessType is the name of the local access type
+const LocalAccessType = "local"
+
+// LocalAccess describes the local access for a landscaper blueprint
+type LocalAccess struct {
+	cdv2.ObjectType `json:",inline"`
+}
+
+var _ cdv2.AccessAccessor = &LocalAccess{}
+
+// GetData is the noop implementation for a local accessor
+func (l LocalAccess) GetData() ([]byte, error) {
+	return []byte{}, nil
+}
+
+// SetData is the noop implementation for a local accessor
+func (l LocalAccess) SetData(bytes []byte) error { return nil }
+
+// LocalAccessCodec implements the acccess codec for the local accessor.
+var LocalAccessCodec = &cdv2.AccessCodecWrapper{
+	AccessDecoder: cdv2.AccessDecoderFunc(func(data []byte) (cdv2.AccessAccessor, error) {
+		var localAccess LocalAccess
+		if err := json.Unmarshal(data, &localAccess); err != nil {
+			return nil, err
+		}
+		return &localAccess, nil
+	}),
+	AccessEncoder: cdv2.AccessEncoderFunc(func(accessor cdv2.AccessAccessor) ([]byte, error) {
+		localAccess, ok := accessor.(*LocalAccess)
+		if !ok {
+			return nil, fmt.Errorf("accessor is not of type %s", LocalAccessType)
+		}
+		return json.Marshal(localAccess)
+	}),
+}
 
 /**
 
@@ -48,7 +87,7 @@ type localRegistry struct {
 	index Index
 }
 
-func NewLocalRegistry(log logr.Logger, paths []string) (Registry, error) {
+func NewLocalRegistry(log logr.Logger, paths []string) (*localRegistry, error) {
 	lsScheme := runtime.NewScheme()
 	if err := install.AddToScheme(lsScheme); err != nil {
 		return nil, err
@@ -98,7 +137,7 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 			return nil
 		}
 
-		definition := &v1alpha1.ComponentDefinition{}
+		definition := &v1alpha1.Blueprint{}
 		if _, _, err := r.decoder.Decode(data, nil, definition); err != nil {
 			r.log.Error(err, "unable to decode ")
 			return nil
@@ -115,69 +154,48 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 	return index, err
 }
 
-func (r *localRegistry) GetDefinitionByRef(ctx context.Context, ref string) (*v1alpha1.ComponentDefinition, error) {
-	vn, err := ParseDefinitionRef(ref)
-	if err != nil {
-		return nil, err
-	}
-	return r.GetDefinition(ctx, vn.Name, vn.Version)
-}
+// GetDefinition returns the definition for a specific name, version and type.
+func (r *localRegistry) GetDefinition(_ context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
+	var (
+		name    = ref.GetName()
+		version = ref.GetVersion()
+	)
 
-func (r *localRegistry) GetDefinition(_ context.Context, name, version string) (*v1alpha1.ComponentDefinition, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)
 	}
-	ref, ok := r.index[name][version]
+	intRef, ok := r.index[name][version]
 	if !ok {
 		return nil, NewVersionNotFoundError(name, version, nil)
 	}
-	return ref.Definition, nil
+	return intRef.Definition, nil
 }
 
-func (r *localRegistry) GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error) {
-	vn, err := ParseDefinitionRef(ref)
-	if err != nil {
-		return nil, err
-	}
-	return r.GetBlob(ctx, vn.Name, vn.Version)
-}
+// GetBlob returns the blob content for a component definition.
+func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {
+	var (
+		name    = ref.GetName()
+		version = ref.GetVersion()
+	)
 
-// Maybe we should use a virtual filesystem instead of a blob
-// and let the registry handle all the blob downloading/compress etc..
-func (r *localRegistry) GetBlob(_ context.Context, name, version string) (afero.Fs, error) {
 	if _, ok := r.index[name]; !ok {
 		return nil, NewComponentNotFoundError(name, nil)
 	}
-	ref, ok := r.index[name][version]
+	intRef, ok := r.index[name][version]
 	if !ok {
 		return nil, NewVersionNotFoundError(name, version, nil)
 	}
 
-	blobFS := afero.NewBasePathFs(afero.NewOsFs(), ref.blobPath)
+	blobFS := afero.NewBasePathFs(afero.NewOsFs(), intRef.blobPath)
 	roBlobFS := afero.NewReadOnlyFs(blobFS)
 
 	return roBlobFS, nil
 }
 
-func (r *localRegistry) GetVersions(_ context.Context, name string) ([]string, error) {
-	if _, ok := r.index[name]; !ok {
-		return nil, NewComponentNotFoundError(name, nil)
-	}
-	var (
-		versions = make([]string, len(r.index[name]))
-		i        = 0
-	)
-	for version := range r.index[name] {
-		versions[i] = version
-		i++
-	}
-	return versions, nil
-}
-
-// DefinitionReference is the reference to a local definition
+// BlueprintReference is the reference to a local definition
 type DefinitionReference struct {
 	SourcePath string
-	Definition *v1alpha1.ComponentDefinition
+	Definition *v1alpha1.Blueprint
 	blobPath   string
 }
 

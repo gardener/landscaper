@@ -15,7 +15,6 @@
 package validation
 
 import (
-
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 )
 

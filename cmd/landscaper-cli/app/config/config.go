@@ -142,7 +142,7 @@ func formatConfiguration(format OutputFormat, obj interface{}) ([]byte, error) {
 	}
 }
 
-func parseImports(component *core.ComponentDefinition) (map[string]interface{}, error) {
+func parseImports(component *core.Blueprint) (map[string]interface{}, error) {
 	config := make(map[string]interface{})
 	for _, imp := range component.Imports {
 		// format the jsonpath to internal parsable path
@@ -155,7 +155,7 @@ func parseImports(component *core.ComponentDefinition) (map[string]interface{}, 
 	return config, nil
 }
 
-func parseExports(component *core.ComponentDefinition) (map[string]interface{}, error) {
+func parseExports(component *core.Blueprint) (map[string]interface{}, error) {
 	config := make(map[string]interface{})
 	for _, exp := range component.Exports {
 		// format the jsonpath to internal parsable path

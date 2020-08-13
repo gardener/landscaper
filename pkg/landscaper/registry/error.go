@@ -22,6 +22,9 @@ import (
 type ErrorReason string
 
 const (
+	// WrongType is an error that is thrown when the component request is of the wrong format
+	WrongType ErrorReason = "WrongType"
+
 	// ComponentNotFound is an error that is thrown when the requested component cannot be found
 	ComponentNotFound ErrorReason = "ComponentNotFound"
 
@@ -56,6 +59,20 @@ func NewComponentNotFoundError(name string, err error) error {
 	return &registryError{
 		Reason:  ComponentNotFound,
 		Message: fmt.Sprintf("The requested component %s cannot be found", name),
+		Err:     err,
+	}
+}
+
+// IsWrongTypeError checks if the error is a WrongType error
+func IsWrongTypeError(err error) bool {
+	return IsErrorForReason(err, ComponentNotFound)
+}
+
+// NewWrongTypeError creates a new WrongType error
+func NewWrongTypeError(ttype, name, version string, err error) error {
+	return &registryError{
+		Reason:  WrongType,
+		Message: fmt.Sprintf("The requested resource with name %s and version %s was of a wrong type %s", version, name, ttype),
 		Err:     err,
 	}
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 )
 
 func NewActuator(registry registry.Registry) (reconcile.Reconciler, error) {
@@ -133,7 +133,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
 
-	if exec.DeletionTimestamp.IsZero() && !utils.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
+	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, exec)
 	}

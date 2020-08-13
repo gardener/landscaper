@@ -31,7 +31,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	mock_client "github.com/gardener/landscaper/pkg/utils/mocks/client"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 // State contains the state of initialized fake client
@@ -137,7 +137,7 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient
-func RegisterFakeClientToMock(mockClient *mock_client.MockClient, fakeClient client.Client) error {
+func RegisterFakeClientToMock(mockClient *mock.MockClient, fakeClient client.Client) error {
 	mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Get)
 	mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Create)
 	mockClient.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Update)

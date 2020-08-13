@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -156,16 +157,27 @@ func (c *client) PushManifest(ctx context.Context, ref string, manifest *ocispec
 		return err
 	}
 
+	// add dummy config if it is not set
+	if manifest.Config.Size == 0 {
+		dummyConfig := []byte("{}")
+		dummyDesc := ocispecv1.Descriptor{
+			MediaType:   "application/json",
+			Digest:      digest.FromBytes(dummyConfig),
+			Size:        int64(len(dummyConfig)),
+		}
+		if err := c.cache.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
+			return fmt.Errorf("unable to add dummy config to cache: %w", err)
+		}
+	}
+	if err := c.pushContent(ctx, pusher, manifest.Config); err != nil {
+		return err
+	}
+
 	// at last upload all layers
 	for _, layer := range manifest.Layers {
 		if err := c.pushContent(ctx, pusher, layer); err != nil {
 			return err
 		}
-	}
-
-	// upload config
-	if err := c.pushContent(ctx, pusher, manifest.Config); err != nil {
-		return err
 	}
 
 	desc, err := c.createDescriptorFromManifest(manifest)

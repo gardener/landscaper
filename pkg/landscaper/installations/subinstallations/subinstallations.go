@@ -48,7 +48,7 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 }
 
 // EnsureSubInstallations ensures that all referenced definitions are mapped to a installation.
-func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition) error {
+func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
@@ -80,7 +80,7 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, d
 		return nil
 	}
 
-	for _, subDef := range def.DefinitionReferences {
+	for _, subDef := range def.BlueprintReferences {
 		// skip if the subInstallation already exists
 		subInst, ok := subInstallations[subDef.Name]
 		if ok {
@@ -132,7 +132,7 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 	return subInstallations, nil
 }
 
-func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *lsv1alpha1.ComponentDefinition, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
+func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *lsv1alpha1.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
 	var (
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
@@ -159,7 +159,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *ls
 	return nil, deleted
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.ComponentDefinition, subDefRef lsv1alpha1.DefinitionReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint, subDefRef lsv1alpha1.BlueprintReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
@@ -172,7 +172,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",
-			fmt.Sprintf("ComponentDefinition %s for %s cannot be found", subDefRef.Reference, subDefRef.Name))
+			fmt.Sprintf("Blueprint %s for %s cannot be found", subDefRef.Reference, subDefRef.Name))
 		_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
 		return nil, errors.Wrapf(err, "unable to get definition %s for %s", subDefRef.Reference, subDefRef.Name)
 	}

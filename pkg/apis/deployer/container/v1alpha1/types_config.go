@@ -71,4 +71,3 @@ type ContainerSpec struct {
 	// +optional
 	Args []string `json:"args,omitempty"`
 }
-

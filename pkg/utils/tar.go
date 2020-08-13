@@ -35,14 +35,20 @@ func BuildTarGzip(fs afero.Fs, root string, buf io.Writer) error {
 		if err != nil {
 			return err
 		}
-
-		header, err := tar.FileInfoHeader(info, path)
+		if info.IsDir() && len(info.Name()) == 0 {
+			return nil
+		}
+		relPath, err := filepath.Rel(root, path)
 		if err != nil {
 			return err
 		}
 
-		header.Name = filepath.ToSlash(path)
+		header, err := tar.FileInfoHeader(info, relPath)
+		if err != nil {
+			return err
+		}
 
+		header.Name = relPath
 		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}

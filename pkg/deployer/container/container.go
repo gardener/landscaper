@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package container
 
 import (
-	"fmt"
-	"path"
-
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerinstall "github.com/gardener/landscaper/pkg/apis/deployer/container/install"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 )
 
@@ -37,7 +33,7 @@ const (
 )
 
 var (
-	Scheme         = runtime.NewScheme()
+	Scheme = runtime.NewScheme()
 )
 
 func init() {
@@ -52,6 +48,7 @@ type Container struct {
 	Configuration *containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
+	ProviderStatus        *containerv1alpha1.ProviderStatus
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
 }
 
@@ -69,18 +66,26 @@ func New(log logr.Logger, kubeClient client.Client, client registry.Registry, co
 		return nil, err
 	}
 
+	status := &containerv1alpha1.ProviderStatus{}
+	if len(item.Status.ProviderStatus) != 0 {
+		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(c.DeployItem.Status.ProviderStatus, nil, status); err != nil {
+			return nil, err
+		}
+	}
+
 	return &Container{
 		log:                   log,
 		kubeClient:            kubeClient,
 		registry:              client,
 		Configuration:         config,
 		DeployItem:            item,
+		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
 	}, nil
 }
 
 func applyDefaults(config *containerv1alpha1.Configuration, providerConfig *containerv1alpha1.ProviderConfiguration) {
 	if len(providerConfig.Image) == 0 {
-		providerConfig.Image = config.DefaultImage
+		providerConfig.Image = config.DefaultImage.Image
 	}
 }

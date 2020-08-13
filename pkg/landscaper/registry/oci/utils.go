@@ -16,51 +16,76 @@ package oci
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/afero"
-	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 // BuildNewDefinition creates a ocispec Manifest from a component definition.
-func BuildNewDefinition(cache cache.Cache, def *lsv1alpha1.ComponentDefinition) (*ocispecv1.Manifest, error) {
-	defBytes, err := json.Marshal(def)
+func BuildNewDefinition(cache cache.Cache, fs afero.Fs, path string) (*ocispecv1.Manifest, error) {
+
+	config, err := BuildNewDefinitionConfig(cache, fs, path)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
-	defDesc := ocispecv1.Descriptor{
-		MediaType: ComponentDefinitionConfigMediaType,
-		Digest:    digest.FromBytes(defBytes),
-		Size:      int64(len(defBytes)),
-		Annotations: map[string]string{
-			ocispecv1.AnnotationTitle: "config",
-		},
-	}
-
-	if err := cache.Add(defDesc, ioutil.NopCloser(bytes.NewBuffer(defBytes))); err != nil {
-		return nil, nil
+	defLayer, err := BuildNewContentBlob(cache, fs, path)
+	if err != nil {
+		return nil, err
 	}
 
 	manifest := &ocispecv1.Manifest{
 		Versioned: specs.Versioned{SchemaVersion: 2},
-		Config:    defDesc,
+		Config:    config,
 		Layers: []ocispecv1.Descriptor{
-			defDesc,
+			defLayer,
 		},
 	}
 
 	return manifest, nil
 }
 
-// BuildNewDefinition creates a ocispec Manifest from a component definition.
+// BuildNewDefinitionConfig creates a ocispec Manifest from a component definition.
+func BuildNewDefinitionConfig(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
+	data, err := afero.ReadFile(fs, filepath.Join(path, lsv1alpha1.ComponentDefinitionPath))
+	if err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+
+	def := &lsv1alpha1.Blueprint{}
+	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, def); err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+
+	data, err = json.Marshal(def)
+	if err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+
+	desc := ocispecv1.Descriptor{
+		MediaType: ComponentDefinitionConfigMediaType,
+		Digest:    digest.FromBytes(data),
+		Size:      int64(len(data)),
+	}
+
+	if err := cache.Add(desc, ioutil.NopCloser(bytes.NewBuffer(data))); err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+	return desc, nil
+}
+
+// BuildNewContentBlob creates a ocispec Manifest from a component definition.
 func BuildNewContentBlob(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
 	ann := map[string]string{
 		ocispecv1.AnnotationTitle: ComponentDefinitionAnnotationTitleContent,

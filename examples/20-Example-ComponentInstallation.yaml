@@ -5,7 +5,7 @@ metadata:
   generation: 6
 spec:
 
-  definitionRef: virtual-cluster
+  definitionRef: eu.gcr.io/gardener-project/dev/github/com/gardener/gardener:v1.7.2
 
 #  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
 

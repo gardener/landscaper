@@ -17,6 +17,7 @@ package registry
 import (
 	"context"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/spf13/afero"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -24,20 +25,8 @@ import (
 
 // Registry is the interface for the landscaper to get component definitions and their blob data.
 type Registry interface {
-	// GetDefinition returns the definition for a specific name and version.
-	GetDefinition(ctx context.Context, name, version string) (*v1alpha1.ComponentDefinition, error)
-
-	// GetDefinitionByRef returns the definition for a specific definition reference.
-	// The reference should be in the form of name:version
-	// todo: later support name@sha256:abcadsf
-	GetDefinitionByRef(ctx context.Context, ref string) (*v1alpha1.ComponentDefinition, error)
-
-	// GetBlob returns the blob for a component definition.
-	GetBlob(ctx context.Context, name, version string) (afero.Fs, error)
-
-	// GetBlobByRef returns the blob for a specific definition reference.
-	GetBlobByRef(ctx context.Context, ref string) (afero.Fs, error)
-
-	// GetVersions returns all available versions of a component definition.
-	GetVersions(ctx context.Context, name string) ([]string, error)
+	// GetDefinition returns the definition for a resource of type "Blueprint"
+	GetDefinition(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error)
+	// GetBlob returns the blob content for a component definition.
+	GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error)
 }

@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package helm
+package container
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {
+func AddActuatorToManager(mgr manager.Manager, config *containerv1alpha1.Configuration) error {
 	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("HelmDeployer"), config)
 	if err != nil {
 		return err
@@ -30,5 +31,6 @@ func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuratio
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&lsv1alpha1.DeployItem{}).
+		Owns(&corev1.Pod{}).
 		Complete(a)
 }

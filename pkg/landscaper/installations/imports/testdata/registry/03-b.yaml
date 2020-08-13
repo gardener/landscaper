@@ -1,5 +1,5 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: ComponentDefinition
+kind: Blueprint
 
 name: b
 version: 1.0.0

@@ -35,7 +35,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ComponentDefinition contains the configuration of a component
+        description: Blueprint contains the configuration of a component
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

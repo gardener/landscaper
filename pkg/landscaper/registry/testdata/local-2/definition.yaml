@@ -1,5 +1,5 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: ComponentDefinition
+kind: Blueprint
 
 name: root-definition
 version: 1.1.0
@@ -13,13 +13,6 @@ export:
   type: string
 
 definitionRefs:
-- ref: sub-component1:1.0.0 # 1.0.0-dev-abcdefg # --> gitlink://my-sub-component --> gitlink://my-sub-component:1.0.0-dev
-  imports:
-  - from: abc
-    to: yxz
-    default: abc
-  exports:
-  - from: efg
-    to: ijk
+- sub-component1:1.0.0 # 1.0.0-dev-abcdefg # --> gitlink://my-sub-component --> gitlink://my-sub-component:1.0.0-dev
 
 executors: ""
