@@ -65,7 +65,7 @@ func CreateInternalInstallations(ctx context.Context, registry registry.Registry
 
 // CreateInternalInstallation creates an internal installation for a Installation
 func CreateInternalInstallation(ctx context.Context, registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
-	def, err := registry.GetDefinition(ctx, nil) // todo: read from component descriptor
+	def, err := registry.GetBlueprint(ctx, nil) // todo: read from component descriptor
 	if err != nil {
 		return nil, err
 	}

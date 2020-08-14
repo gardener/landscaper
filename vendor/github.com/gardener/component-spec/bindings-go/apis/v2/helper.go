@@ -14,6 +14,11 @@
 
 package v2
 
+// GetEffectiveRepositoryContext returns the current active repository context.
+func (c ComponentDescriptor) GetEffectiveRepositoryContext() RepositoryContext {
+	return c.RepositoryContexts[len(c.RepositoryContexts)-1]
+}
+
 // GetResource returns a external or local resource with the given type, name and version.
 func (c ComponentDescriptor) GetResource(rtype, name, version string) (Resource, error) {
 	res, err := c.GetLocalResource(rtype, name, version)

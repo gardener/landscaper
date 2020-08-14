@@ -49,12 +49,12 @@ func New(op *installations.Operation) *ExecutionOperation {
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
-	defContent, err := o.Registry().GetBlobByRef(ctx, inst.Info.Spec.DefinitionRef)
+	defContent, err := o.Registry().GetBlobByRef(ctx, inst.Info.Spec.BlueprintRef)
 	if err != nil && !registry.IsNotFoundError(err) {
 		return err
 	}
 
-	executions, err := o.template(inst.Definition, defContent, imports)
+	executions, err := o.template(inst.Blueprint, defContent, imports)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"TemplatingFailed", "Unable to template executions")

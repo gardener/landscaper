@@ -161,9 +161,9 @@ func (c *client) PushManifest(ctx context.Context, ref string, manifest *ocispec
 	if manifest.Config.Size == 0 {
 		dummyConfig := []byte("{}")
 		dummyDesc := ocispecv1.Descriptor{
-			MediaType:   "application/json",
-			Digest:      digest.FromBytes(dummyConfig),
-			Size:        int64(len(dummyConfig)),
+			MediaType: "application/json",
+			Digest:    digest.FromBytes(dummyConfig),
+			Size:      int64(len(dummyConfig)),
 		}
 		if err := c.cache.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyConfig))); err != nil {
 			return fmt.Errorf("unable to add dummy config to cache: %w", err)

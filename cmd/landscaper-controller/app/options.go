@@ -29,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/manager"
 	"github.com/gardener/landscaper/pkg/logger"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 )
 
 type options struct {
@@ -37,6 +38,7 @@ type options struct {
 
 	config   *config.LandscaperConfiguration
 	registry registry.Registry
+	compRepo componentrepository.Client
 }
 
 func NewOptions() *options {
@@ -79,6 +81,26 @@ func (o *options) setupRegistry() error {
 	}
 	o.registry = r
 	return errors.New("no registry defined")
+}
+
+func (o *options) setupCDRepository() error {
+	clients := make([]componentrepository.TypedClient, 0)
+	if o.config.ComponentDescriptorRepository.Local != nil {
+		localClient, err := componentrepository.NewLocalClient(o.log, o.config.ComponentDescriptorRepository.Local.Paths...)
+		if err != nil {
+			return err
+		}
+		clients = append(clients, localClient)
+	}
+	if o.config.ComponentDescriptorRepository.OCI != nil {
+		localClient, err := componentrepository.NewOCIClient(o.log, o.config.ComponentDescriptorRepository.OCI)
+		if err != nil {
+			return err
+		}
+		clients = append(clients, localClient)
+	}
+	o.compRepo = componentrepository.New(clients...)
+	return nil
 }
 
 func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {

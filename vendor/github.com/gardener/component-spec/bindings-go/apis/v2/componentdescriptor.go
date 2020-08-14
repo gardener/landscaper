@@ -73,6 +73,8 @@ type ComponentSpec struct {
 
 // RepositoryContext describes a repository context.
 type RepositoryContext struct {
+	// Type defines the type of the component repository to resolve references.
+	Type string `json:"type"`
 	// BaseURL is the base url of the repository to resolve components.
 	BaseURL string `json:"baseUrl"`
 }

@@ -52,13 +52,14 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: remove annotation
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseAborted
-		if err := a.c.Status().Update(ctx, inst.Info); err != nil {
+		if err := a.Client().Status().Update(ctx, inst.Info); err != nil {
 			return err
 		}
 		return nil
 	}
 
 	// check if the spec has changed
+	// todo: or if our imports have changed since last reconcile => check if config hash has changed
 	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
 		if err := a.StartNewReconcile(ctx, op, inst); err != nil {
@@ -79,19 +80,19 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 
 	exportedValues, err := exports.NewConstructor(op).Construct(ctx, inst)
 	if err != nil {
-		a.log.Error(err, "error during export construction")
+		a.Log().Error(err, "error during export construction")
 		return err
 	}
 
 	// when all executions are finished and the exports are uploaded
 	// we have to validate the uploaded exports
 	if err := exports.NewValidator(op).Validate(ctx, inst, exportedValues); err != nil {
-		a.log.Error(err, "error during export validation")
+		a.Log().Error(err, "error during export validation")
 		return err
 	}
 
 	if err := op.UpdateExportReference(ctx, exportedValues); err != nil {
-		a.log.Error(err, "error during export validation")
+		a.Log().Error(err, "error during export validation")
 		return err
 	}
 
@@ -101,7 +102,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
 	if err := op.TriggerDependants(ctx); err != nil {
-		a.log.Error(err, "error during dependant trigger")
+		a.Log().Error(err, "error during dependant trigger")
 		return err
 	}
 	return nil
@@ -110,7 +111,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
 	validator := imports.NewValidator(op, op.Context().Parent, op.Context().Siblings...)
 	if err := validator.Validate(ctx, inst); err != nil {
-		a.log.Error(err, "unable to validate imports")
+		a.Log().Error(err, "unable to validate imports")
 		return err
 	}
 
@@ -121,12 +122,12 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	constructor := imports.NewConstructor(op, op.Context().Parent, op.Context().Siblings...)
 	importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
-		a.log.Error(err, "unable to collect imports")
+		a.Log().Error(err, "unable to collect imports")
 		return err
 	}
 
 	if err := op.UpdateImportReference(ctx, importedValues); err != nil {
-		a.log.Error(err, "unable to update import objects")
+		a.Log().Error(err, "unable to update import objects")
 		return err
 	}
 
@@ -137,8 +138,8 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	}
 
 	subinstallation := subinstallations.New(op)
-	if err := subinstallation.Ensure(ctx, inst.Info, inst.Definition); err != nil {
-		a.log.Error(err, "unable to ensure sub installations")
+	if err := subinstallation.Ensure(ctx, inst.Info, inst.Blueprint); err != nil {
+		a.Log().Error(err, "unable to ensure sub installations")
 		return err
 	}
 
@@ -148,7 +149,7 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 
 	exec := executions.New(op)
 	if err := exec.Ensure(ctx, inst, importedValues); err != nil {
-		a.log.Error(err, "unable to ensure execution")
+		a.Log().Error(err, "unable to ensure execution")
 		return err
 	}
 	return nil

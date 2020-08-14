@@ -63,7 +63,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 		return nil, err
 	}
 
-	// Get export mapping for all exports
+	// Resolve export mapping for all exports
 	for _, mapping := range mappings {
 		exPath := fldPath.Child(mapping.Key)
 		values, err := c.constructFromExecution(exPath, execDo, mapping)

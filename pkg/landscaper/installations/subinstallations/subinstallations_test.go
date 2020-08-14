@@ -113,7 +113,7 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
-			Expect(resInst.Spec.DefinitionRef).To(Equal("def1:1.0.0"))
+			Expect(resInst.Spec.BlueprintRef).To(Equal("def1:1.0.0"))
 			Expect(resInst.Spec.Imports).To(ContainElement(lsv1alpha1.DefinitionImportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{From: "a", To: "b"},
 			}))
@@ -312,7 +312,7 @@ var _ = g.Describe("SubInstallation", func() {
 		subinst := &lsv1alpha1.Installation{}
 		subinst.Name = "inst-def1"
 		subinst.Namespace = "default"
-		subinst.Spec.DefinitionRef = "def1:1.0.0"
+		subinst.Spec.BlueprintRef = "def1:1.0.0"
 		subinst.Spec.Imports = []lsv1alpha1.DefinitionImportMapping{
 			{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{

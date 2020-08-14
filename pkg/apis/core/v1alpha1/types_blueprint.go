@@ -20,6 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// BlueprintResourceType is the name of the blueprint resource defined in component descriptors.
+const BlueprintResourceType = "blueprint"
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -107,8 +110,8 @@ type BlueprintReference struct {
 	Name string `json:"name"`
 
 	// Reference defines a reference to a Blueprint.
-	// The definition can reside in an OCI or other supported location.
-	Reference string `json:"ref"`
+	// The blueprint can reside in an OCI or other supported location.
+	Reference ResourceReference `json:"ref"`
 
 	// Imports defines the import mappings for the referenced component definition.
 	Imports []DefinitionImportMapping `json:"imports,omitempty"`

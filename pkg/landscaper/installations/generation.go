@@ -60,7 +60,7 @@ func (i imports) Less(a, b int) bool {
 func CreateGenerationHash(inst *lsv1alpha1.Installation) (string, error) {
 	gen := generation{
 		Generation: inst.GetGeneration(),
-		Imports:    make([]importState, len(inst.Status.Imports)),
+		Imports:    make(imports, len(inst.Status.Imports)),
 	}
 
 	for i, state := range inst.Status.Imports {

@@ -15,6 +15,9 @@
 package v1alpha1
 
 import (
+	"errors"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -139,4 +142,42 @@ type VersionedNamedObjectReference struct {
 
 	// Reference is the reference to an object.
 	Reference VersionedObjectReference `json:"ref"`
+}
+
+// ResourceKind is the kind of a resource.
+// It can be local or external.
+type ResourceKind string
+
+var UnknownResourceKindError = errors.New("UnknownResourceKind")
+
+const (
+	// LocalResourceKind is the kind of a local resource.
+	LocalResourceKind ResourceKind = "localResource"
+	// ExternalResourceKind is the kind of a external resource.
+	ExternalResourceKind ResourceKind = "externalResource"
+)
+
+// ResourceReference defines the reference to a resource defined in a component descriptor.
+type ResourceReference struct {
+	// ComponentName defines the unique of the component containing the resource.
+	ComponentName string `json:"componentName"`
+	// Kind defines the kind resource kind where the resource is defined.
+	Kind ResourceKind `json:"kind"`
+	// Resource defines the name of the resource.
+	Resource string `json:"resource"`
+}
+
+// VersionedResourceReference defines the reference to a resource with its version.
+type VersionedResourceReference struct {
+	ResourceReference `json:",inline"`
+	// Version defines the version of the component.
+	Version string `json:"version"`
+}
+
+// ObjectMeta returns the component descriptor v2 compatible object meta for a resource reference.
+func (r VersionedResourceReference) ObjectMeta() cdv2.ObjectMeta {
+	return cdv2.ObjectMeta{
+		Name:    r.ComponentName,
+		Version: r.Version,
+	}
 }

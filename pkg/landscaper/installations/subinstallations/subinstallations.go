@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/spf13/afero"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -27,6 +29,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -48,7 +51,7 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 }
 
 // EnsureSubInstallations ensures that all referenced definitions are mapped to a installation.
-func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) error {
+func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, blueprint *blueprint.Blueprint) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
@@ -80,14 +83,9 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, d
 		return nil
 	}
 
-	for _, subDef := range def.BlueprintReferences {
+	for _, blueprintRef := range blueprint.References {
 		// skip if the subInstallation already exists
-		subInst, ok := subInstallations[subDef.Name]
-		if ok {
-			if !installationNeedsUpdate(subDef, subInst) {
-				continue
-			}
-		}
+		subInst := subInstallations[blueprintRef.Reference.Name]
 
 		_, err := o.createOrUpdateNewInstallation(ctx, inst, def, subDef, subInst)
 		if err != nil {
@@ -100,6 +98,7 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, d
 	return o.UpdateInstallationStatus(ctx, inst, inst.Status.Phase, cond)
 }
 
+// GetSubInstallations returns a map of all subinstallations indexed by the unique blueprint ref name.
 func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation) (map[string]*lsv1alpha1.Installation, error) {
 	var (
 		cond             = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
@@ -159,22 +158,28 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *ls
 	return nil, deleted
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint, subDefRef lsv1alpha1.BlueprintReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, blue *blueprint.Blueprint, blueprintRef blueprint.BlueprintReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
 		subInst = &lsv1alpha1.Installation{}
-		subInst.GenerateName = fmt.Sprintf("%s-%s-", def.Name, subDefRef.Name)
+		subInst.GenerateName = fmt.Sprintf("%s-%s-", blue.Info.Name, blueprintRef.Reference.Name)
 		subInst.Namespace = inst.Namespace
 	}
 
-	subDef, err := o.Registry().GetDefinitionByRef(ctx, subDefRef.Reference)
+	// get version for referenced reference
+	remoteRef, err := blueprintRef.RemoteBlueprintReference(o.ResolvedComponentDescriptor)
+	if err != nil {
+		return nil, err
+	}
+
+	subBlueprint, err := blueprint.Resolve(ctx, o, remoteRef)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",
-			fmt.Sprintf("Blueprint %s for %s cannot be found", subDefRef.Reference, subDefRef.Name))
+			fmt.Sprintf("Blueprint %s for %s cannot be found", remoteRef.Resource, remoteRef.Version))
 		_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
-		return nil, errors.Wrapf(err, "unable to get definition %s for %s", subDefRef.Reference, subDefRef.Name)
+		return nil, errors.Wrapf(err, "unable to get definition %s for %s", remoteRef.Resource, remoteRef.Version)
 	}
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
@@ -183,26 +188,26 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
-			DefinitionRef: subDefRef.Reference,
-			Imports:       subDefRef.Imports,
-			Exports:       subDefRef.Exports,
+			BlueprintRef: remoteRef,
+			Imports:      blueprintRef.Reference.Imports,
+			Exports:      blueprintRef.Reference.Exports,
 		}
 
-		AddDefaultMappings(subInst, subDef)
+		AddDefaultMappings(subInst, subBlueprint.Info)
 		return nil
 	})
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"InstallationCreatingFailed",
-			fmt.Sprintf("Sub Installation %s cannot be created", subDefRef.Name))
+			fmt.Sprintf("Sub Installation %s cannot be created", blueprintRef.Reference.Name))
 		_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
-		return nil, errors.Wrapf(err, "unable to create installation for %s", subDefRef.Name)
+		return nil, errors.Wrapf(err, "unable to create installation for %s", blueprintRef.Reference.Name)
 	}
 
 	// add newly created installation to state
-	inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(subDefRef.Name, subInst))
+	inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(blueprintRef.Reference.Name, subInst))
 	if err := o.Client().Status().Update(ctx, inst); err != nil {
-		return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subDefRef.Name)
+		return nil, errors.Wrapf(err, "unable to add new installation for %s to state", blueprintRef.Reference.Name)
 	}
 
 	return subInst, nil

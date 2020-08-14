@@ -18,12 +18,13 @@ import (
 	"fmt"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
 )
 
 // Installation is the internal representation of a installation
 type Installation struct {
-	Info       *lsv1alpha1.Installation
-	Definition *lsv1alpha1.Blueprint
+	Info      *lsv1alpha1.Installation
+	Blueprint *blueprint.Blueprint
 
 	imports map[string]lsv1alpha1.ImportDefinition
 	exports map[string]lsv1alpha1.ExportDefinition
@@ -45,13 +46,13 @@ type ExportMapping struct {
 }
 
 // New creates a new internal representation of an installation
-func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) (*Installation, error) {
+func New(inst *lsv1alpha1.Installation, blueprint *blueprint.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
-		Info:       inst,
-		Definition: def,
+		Info:      inst,
+		Blueprint: blueprint,
 
-		imports: make(map[string]lsv1alpha1.ImportDefinition, len(def.Imports)),
-		exports: make(map[string]lsv1alpha1.ExportDefinition, len(def.Exports)),
+		imports: make(map[string]lsv1alpha1.ImportDefinition, len(blueprint.Info.Imports)),
+		exports: make(map[string]lsv1alpha1.ExportDefinition, len(blueprint.Info.Exports)),
 
 		importsStatus: ImportStatus{
 			From: make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
@@ -59,10 +60,10 @@ func New(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint) (*Installatio
 		},
 	}
 
-	for _, importDef := range def.Imports {
+	for _, importDef := range blueprint.Info.Imports {
 		internalInst.imports[importDef.Key] = importDef
 	}
-	for _, exportDef := range def.Exports {
+	for _, exportDef := range blueprint.Info.Exports {
 		internalInst.exports[exportDef.Key] = exportDef
 	}
 
@@ -92,7 +93,7 @@ func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.ImportDefinit
 // todo: check for unused mappings.
 func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
 	mappings := make([]ImportMapping, 0)
-	for _, obj := range i.Definition.Imports {
+	for _, obj := range i.Blueprint.Info.Imports {
 		def := obj.DeepCopy()
 		// try to get a import mapping
 		mapping, err := i.GetImportMappingTo(def.Key)
@@ -121,7 +122,7 @@ func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
 // todo: check for unused mappings.
 func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
 	mappings := make([]ExportMapping, 0)
-	for _, obj := range i.Definition.Exports {
+	for _, obj := range i.Blueprint.Info.Exports {
 		def := obj.DeepCopy()
 		// try to get a import mapping
 		mapping, err := i.GetExportMappingTo(def.Key)

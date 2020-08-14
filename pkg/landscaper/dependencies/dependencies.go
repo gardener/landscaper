@@ -27,7 +27,7 @@ package dependencies
 //// CheckImportSatisfaction traverses all component and checks if the imports of the current component are all satisfied
 //func CheckImportSatisfaction(current *component.Component, components []*component.Component, landscapeConfig map[string]interface{}) error {
 //	// todo: schrodit - parallelize execution and catch multierror
-//	for _, importSpec := range current.Info.Spec.Imports {
+//	for _, importSpec := range current.Reference.Spec.Imports {
 //
 //		// check if the value can be found in the landscape config
 //		if err := jsonpath.GetValue(importSpec.From, landscapeConfig, nil); err == nil {
@@ -54,7 +54,7 @@ package dependencies
 //		// we have to check whether the generation has already changed
 //
 //		// todo: traverse through tree to root node
-//		if importStatus.ConfigGeneration >= exportComponent.Info.Status.ConfigGeneration {
+//		if importStatus.ConfigGeneration >= exportComponent.Reference.Status.ConfigGeneration {
 //			return errors.New("config has not been updated yet")
 //		}
 //
@@ -65,10 +65,10 @@ package dependencies
 //
 //func GetComponentForImport(importSpec corev1alpha1.DefinitionImportMapping, components []*component.Component) (*corev1alpha1.DefinitionExportMapping, *component.Component, error) {
 //	for _, component := range components {
-//		if component.Info.Status.Phase != corev1alpha1.ComponentPhaseCompleted {
+//		if component.Reference.Status.Phase != corev1alpha1.ComponentPhaseCompleted {
 //			continue
 //		}
-//		for _, exportItem := range component.Info.Spec.Exports {
+//		for _, exportItem := range component.Reference.Spec.Exports {
 //			if exportItem.To == importSpec.From {
 //				return &exportItem, component, nil
 //			}

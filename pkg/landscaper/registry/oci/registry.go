@@ -62,7 +62,7 @@ func NewWithOCIClient(log logr.Logger, client oci.Client) (regapi.Registry, erro
 }
 
 // GetDefinition returns the definition for a specific name, version and type.
-func (r *registry) GetDefinition(ctx context.Context, ref cdv2.Resource) (*lsv1alpha1.Blueprint, error) {
+func (r *registry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1alpha1.Blueprint, error) {
 	if ref.Access.GetType() != cdv2.OCIRegistryType {
 		return nil, regapi.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}

@@ -40,7 +40,7 @@ func TestConfig(t *testing.T) {
 var _ = Describe("Client", func() {
 
 	var (
-		ctrl *gomock.Controller
+		ctrl      *gomock.Controller
 		ociClient *mock_oci.MockClient
 	)
 
@@ -54,7 +54,7 @@ var _ = Describe("Client", func() {
 	})
 
 	It("should fetch and return a component descriptor when a valid tar is returned", func() {
-		cdClient, err := componentrepository.NewWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentrepository.NewOCIClientWithOCIClient(logtesting.NullLogger{}, ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -65,26 +65,26 @@ var _ = Describe("Client", func() {
 		}
 		cdLayerDesc := ocispecv1.Descriptor{
 			MediaType: componentrepository.ComponentDescriptorMediaType,
-			Digest: "1.2.3",
+			Digest:    "1.2.3",
 		}
 		manifest := &ocispecv1.Manifest{
 			Layers: []ocispecv1.Descriptor{cdLayerDesc},
 		}
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
-		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer){
+		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			data, err := ioutil.ReadFile("./testdata/comp1.tar")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		_, err = cdClient.Get(ctx, "example.com", ref)
+		_, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("should throw an error if the manifest has more layers", func() {
-		cdClient, err := componentrepository.NewWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentrepository.NewOCIClientWithOCIClient(logtesting.NullLogger{}, ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -95,7 +95,7 @@ var _ = Describe("Client", func() {
 		}
 		cdLayerDesc := ocispecv1.Descriptor{
 			MediaType: componentrepository.ComponentDescriptorMediaType,
-			Digest: "1.2.3",
+			Digest:    "1.2.3",
 		}
 		manifest := &ocispecv1.Manifest{
 			Layers: []ocispecv1.Descriptor{
@@ -108,12 +108,12 @@ var _ = Describe("Client", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
 
-		_, err = cdClient.Get(ctx, "example.com", ref)
+		_, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref)
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("should throw an error if the manifest has a unknown type", func() {
-		cdClient, err := componentrepository.NewWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentrepository.NewOCIClientWithOCIClient(logtesting.NullLogger{}, ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -124,7 +124,7 @@ var _ = Describe("Client", func() {
 		}
 		cdLayerDesc := ocispecv1.Descriptor{
 			MediaType: "unknown-type",
-			Digest: "1.2.3",
+			Digest:    "1.2.3",
 		}
 		manifest := &ocispecv1.Manifest{
 			Layers: []ocispecv1.Descriptor{cdLayerDesc},
@@ -132,9 +132,8 @@ var _ = Describe("Client", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
 
-		_, err = cdClient.Get(ctx, "example.com", ref)
+		_, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref)
 		Expect(err).To(HaveOccurred())
 	})
-
 
 })

@@ -59,12 +59,12 @@ func (r registries) AddRegistry(schemaName string, scheme cdv2.AccessCodec, regi
 	return nil
 }
 
-func (r registries) GetDefinition(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
+func (r registries) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
 	reg, ok := r[ref.Access.GetType()]
 	if !ok {
 		return nil, regapi.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
-	return reg.GetDefinition(ctx, ref)
+	return reg.GetBlueprint(ctx, ref)
 }
 
 func (r registries) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {

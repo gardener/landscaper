@@ -36,8 +36,23 @@ func (m *MockRegistry) EXPECT() *MockRegistryMockRecorder {
 	return m.recorder
 }
 
+// GetBlueprint mocks base method
+func (m *MockRegistry) GetBlueprint(arg0 context.Context, arg1 v2.Resource) (*v1alpha1.Blueprint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlueprint", arg0, arg1)
+	ret0, _ := ret[0].(*v1alpha1.Blueprint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlueprint indicates an expected call of GetBlueprint
+func (mr *MockRegistryMockRecorder) GetBlueprint(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlueprint", reflect.TypeOf((*MockRegistry)(nil).GetBlueprint), arg0, arg1)
+}
+
 // GetContent mocks base method
-func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.ResolvableComponentAccessor) (afero.Fs, error) {
+func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.Resource) (afero.Fs, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContent", arg0, arg1)
 	ret0, _ := ret[0].(afero.Fs)
@@ -49,19 +64,4 @@ func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.ResolvableCompon
 func (mr *MockRegistryMockRecorder) GetContent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContent", reflect.TypeOf((*MockRegistry)(nil).GetContent), arg0, arg1)
-}
-
-// GetDefinition mocks base method
-func (m *MockRegistry) GetDefinition(arg0 context.Context, arg1 v2.ResolvableComponentAccessor) (*v1alpha1.Blueprint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDefinition", arg0, arg1)
-	ret0, _ := ret[0].(*v1alpha1.Blueprint)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDefinition indicates an expected call of GetDefinition
-func (mr *MockRegistryMockRecorder) GetDefinition(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefinition", reflect.TypeOf((*MockRegistry)(nil).GetDefinition), arg0, arg1)
 }

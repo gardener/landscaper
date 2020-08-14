@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +37,8 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
 	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository/cdutils"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -58,23 +61,38 @@ type Operation struct {
 	lsoperation.Interface
 	Datatypes map[string]*datatype.Datatype
 
-	Inst       *Installation
-	context    *Context
-	staticData map[string]interface{}
+	Inst                        *Installation
+	ComponentDescriptor         *cdv2.ComponentDescriptor
+	ResolvedComponentDescriptor cdv2.ComponentDescriptorList
+	context                     *Context
+	staticData                  map[string]interface{}
 }
 
 // NewInstallationOperation creates a new installation operation
-func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, registry), datatypes, inst)
+func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, compRepo componentrepository.Client, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, registry, compRepo), datatypes, inst)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
 func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
 	var err error
+
+	cd, err := op.ComponentRepository().Resolve(ctx, inst.Info.Spec.BlueprintRef.RepositoryContext, inst.Info.Spec.BlueprintRef.ObjectMeta())
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, op.ComponentRepository(), *cd)
+	if err != nil {
+		return nil, err
+	}
+
 	instOp := &Operation{
-		Interface: op,
-		Datatypes: datatypes,
-		Inst:      inst,
+		Interface:                   op,
+		Datatypes:                   datatypes,
+		Inst:                        inst,
+		ComponentDescriptor:         cd,
+		ResolvedComponentDescriptor: resolvedCD,
 	}
 
 	instOp.context, err = instOp.DetermineContext(ctx)

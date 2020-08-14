@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
 )
 
 // AddDefaultMappings adds all default mappings of im and exports if they are not already defined
@@ -53,34 +54,35 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint
 	}
 }
 
-// installationNeedsUpdate check if a definition reference has been updated
-func installationNeedsUpdate(def lsv1alpha1.BlueprintReference, inst *lsv1alpha1.Installation) bool {
-	if def.Reference != inst.Spec.DefinitionRef {
-		return true
-	}
-
-	for _, mapping := range def.Imports {
-		if !hasMappingOfImports(mapping, inst.Spec.Imports) {
-			return true
-		}
-	}
-
-	for _, mapping := range def.Exports {
-		if !hasMappingOfExports(mapping, inst.Spec.Exports) {
-			return true
-		}
-	}
-
-	if len(inst.Spec.Imports) != len(def.Imports) {
-		return true
-	}
-
-	if len(inst.Spec.Exports) != len(def.Exports) {
-		return true
-	}
-
-	return false
-}
+//// installationNeedsUpdate check if a definition reference has been updated
+//func installationNeedsUpdate(def lsv1alpha1.BlueprintReference, inst *lsv1alpha1.Installation) bool {
+//	// check if the reference itself has changed
+//	if def.Reference != inst.Spec.BlueprintRef {
+//		return true
+//	}
+//
+//	for _, mapping := range def.Imports {
+//		if !hasMappingOfImports(mapping, inst.Spec.Imports) {
+//			return true
+//		}
+//	}
+//
+//	for _, mapping := range def.Exports {
+//		if !hasMappingOfExports(mapping, inst.Spec.Exports) {
+//			return true
+//		}
+//	}
+//
+//	if len(inst.Spec.Imports) != len(def.Imports) {
+//		return true
+//	}
+//
+//	if len(inst.Spec.Exports) != len(def.Exports) {
+//		return true
+//	}
+//
+//	return false
+//}
 
 func hasMappingOfImports(search lsv1alpha1.DefinitionImportMapping, mappings []lsv1alpha1.DefinitionImportMapping) bool {
 	for _, mapping := range mappings {
@@ -101,11 +103,11 @@ func hasMappingOfExports(search lsv1alpha1.DefinitionExportMapping, mappings []l
 }
 
 // getDefinitionReference returns the definition reference by name
-func getDefinitionReference(def *lsv1alpha1.Blueprint, name string) (lsv1alpha1.BlueprintReference, bool) {
-	for _, ref := range def.BlueprintReferences {
-		if ref.Name == name {
+func getDefinitionReference(def *blueprint.Blueprint, name string) (*blueprint.BlueprintReference, bool) {
+	for _, ref := range def.References {
+		if ref.Reference.Name == name {
 			return ref, true
 		}
 	}
-	return lsv1alpha1.BlueprintReference{}, false
+	return nil, false
 }

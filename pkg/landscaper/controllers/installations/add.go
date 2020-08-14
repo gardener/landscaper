@@ -21,10 +21,11 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 )
 
-func AddActuatorToManager(mgr manager.Manager, registry registry.Registry) error {
-	a, err := NewActuator(registry)
+func AddActuatorToManager(mgr manager.Manager, registry registry.Registry, comp componentrepository.Client) error {
+	a, err := NewActuator(registry, comp)
 	if err != nil {
 		return err
 	}

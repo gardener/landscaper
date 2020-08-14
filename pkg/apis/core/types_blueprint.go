@@ -108,7 +108,7 @@ type BlueprintReference struct {
 
 	// Reference defines a reference to a Blueprint.
 	// The definition can reside in an OCI or other supported location.
-	Reference string `json:"ref"`
+	Reference ResourceReference `json:"ref"`
 
 	// Imports defines the import mappings for the referenced component definition.
 	Imports []ImportMappingDefinition `json:"imports,omitempty"`

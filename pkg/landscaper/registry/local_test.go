@@ -57,7 +57,7 @@ var _ = Describe("Local Registry", func() {
 		})
 	})
 
-	Context("GetDefinition", func() {
+	Context("GetBlueprint", func() {
 
 		var reg registry.Registry
 
@@ -68,20 +68,20 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should return a component by name", func() {
-			_, err := reg.GetDefinition(context.TODO(), newLocalComponent("root-definition", "1.0.0"))
+			_, err := reg.GetBlueprint(context.TODO(), newLocalComponent("root-definition", "1.0.0"))
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = reg.GetDefinition(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"))
+			_, err = reg.GetBlueprint(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"))
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error if the name is incorrect", func() {
-			_, err := reg.GetDefinition(context.TODO(), newLocalComponent("unkown-definition", "1.0.0"))
+			_, err := reg.GetBlueprint(context.TODO(), newLocalComponent("unkown-definition", "1.0.0"))
 			Expect(registry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
 
 		It("should return an error if the version is incorrect", func() {
-			_, err := reg.GetDefinition(context.TODO(), newLocalComponent("sub-definition-1", "1.0.0"))
+			_, err := reg.GetBlueprint(context.TODO(), newLocalComponent("sub-definition-1", "1.0.0"))
 			Expect(registry.IsVersionNotFoundError(err)).To(BeTrue())
 		})
 	})

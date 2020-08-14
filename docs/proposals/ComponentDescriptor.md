@@ -25,9 +25,11 @@ type: Installation
 spec:
     blueprintRef:
       baseUrl: eu.gcr.io/...
+      type: ociRegistry | local | ...
       component/ref: my-other-def
+      version: x.x.x
       kind: localResource
-      resource: blueprint
+      resourceName: my-blueprint
 ```
 
 ```yaml
@@ -127,7 +129,7 @@ component:
   componentReferences:
   - ...
   localResources: 
-  - name: blueprint
+  - name: gardener
     type: blueprint
     access:
       type: ociRegistry

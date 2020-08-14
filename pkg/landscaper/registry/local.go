@@ -155,7 +155,7 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 }
 
 // GetDefinition returns the definition for a specific name, version and type.
-func (r *localRegistry) GetDefinition(_ context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
+func (r *localRegistry) GetBlueprint(_ context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
 	var (
 		name    = ref.GetName()
 		version = ref.GetVersion()

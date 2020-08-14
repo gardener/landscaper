@@ -32,41 +32,45 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
-var (
-	ErrNotFound error = errors.New("NotFound")
-)
-
 // ComponentDescriptorMediaType is the media type containing the component descriptor.
 const ComponentDescriptorMediaType = "application/sap-cnudie+tar"
 
-// Client is a component descriptor repository implementation
+// ociClient is a component descriptor repository implementation
 // that resolves component references stored in an oci repository.
-type Client struct {
+type ociClient struct {
 	oci oci.Client
 }
 
-// New creates a new oci registry from a oci config.
-func New(log logr.Logger, config *config.OCIConfiguration) (*Client, error) {
+// NewOCIClient creates a new oci registry from a oci config.
+func NewOCIClient(log logr.Logger, config *config.OCIConfiguration) (TypedClient, error) {
 	client, err := oci.NewClient(log, oci.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{
+	return &ociClient{
 		oci: client,
 	}, nil
 }
 
-// NewWithOCIClient creates a new oci registry with a oci client
-func NewWithOCIClient(log logr.Logger, client oci.Client) (*Client, error) {
-	return &Client{
+// NewOCIClientWithOCIClient creates a new oci registry with a oci ociClient
+func NewOCIClientWithOCIClient(log logr.Logger, client oci.Client) (TypedClient, error) {
+	return &ociClient{
 		oci: client,
 	}, nil
+}
+
+// Type return the oci registry type that can be handled by this ociClient
+func (r *ociClient) Type() string {
+	return cdv2.OCIRegistryType
 }
 
 // Get resolves a reference and returns the component descriptor.
-func (r *Client) Get(ctx context.Context, baseURl string, ref cdv2.ObjectMeta) (*cdv2.ComponentDescriptor, error) {
-	u, err := url.Parse(baseURl)
+func (r *ociClient) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext, ref cdv2.ObjectMeta) (*cdv2.ComponentDescriptor, error) {
+	if repoCtx.Type != cdv2.OCIRegistryType {
+		return nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, cdv2.OCIRegistryType)
+	}
+	u, err := url.Parse(repoCtx.BaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +113,7 @@ func readCompDescFromTar(data io.Reader) ([]byte, error) {
 		header, err := tr.Next()
 		if err != nil {
 			if err == io.EOF {
-				return nil, ErrNotFound
+				return nil, cdv2.NotFound
 			}
 			return nil, err
 		}

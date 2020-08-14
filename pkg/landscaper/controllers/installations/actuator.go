@@ -20,75 +20,47 @@ import (
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 )
 
-func NewActuator(registry registry.Registry) (reconcile.Reconciler, error) {
+func NewActuator(registry registry.Registry, compRepo componentrepository.Client) (reconcile.Reconciler, error) {
+	op := &operation.Operation{}
+	if err := op.InjectRegistry(registry); err != nil {
+		return nil, err
+	}
+	if err := op.InjectComponentRepository(compRepo); err != nil {
+		return nil, err
+	}
 	return &actuator{
-		registry: registry,
+		Interface: op,
 	}, nil
 }
 
 type actuator struct {
-	log      logr.Logger
-	c        client.Client
-	scheme   *runtime.Scheme
-	registry registry.Registry
-}
-
-var _ inject.Client = &actuator{}
-
-var _ inject.Logger = &actuator{}
-
-var _ inject.Scheme = &actuator{}
-
-// InjectClients injects the current kubernetes client into the actuator
-func (a *actuator) InjectClient(c client.Client) error {
-	a.c = c
-	return nil
-}
-
-// InjectLogger injects a logging instance into the actuator
-func (a *actuator) InjectLogger(log logr.Logger) error {
-	a.log = log
-	return nil
-}
-
-// InjectScheme injects the current scheme into the actuator
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
-	a.scheme = scheme
-	return nil
-}
-
-// InjectRegistry injects a Registry into the actuator
-func (a *actuator) InjectRegistry(r registry.Registry) error {
-	a.registry = r
-	return nil
+	operation.Interface
 }
 
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	ctx := context.Background()
 	defer ctx.Done()
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+	a.Log().Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
-	if err := a.c.Get(ctx, req.NamespacedName, inst); err != nil {
+	if err := a.Client().Get(ctx, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			a.log.V(5).Info(err.Error())
+			a.Log().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -96,7 +68,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, inst); err != nil {
+		if err := a.Client().Update(ctx, inst); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
 		return reconcile.Result{}, nil
@@ -105,7 +77,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	// remove the reconcile annotation if it exists
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.c.Update(ctx, inst); err != nil {
+		if err := a.Client().Update(ctx, inst); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
 		if err := a.reconcile(ctx, inst); err != nil {
@@ -138,18 +110,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	old := inst.DeepCopy()
 
-	definition, err := a.registry.GetDefinitionByRef(ctx, inst.Spec.DefinitionRef)
+	intBlueprint, err := blueprint.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef)
 	if err != nil {
-		return errors.Wrap(err, "unable to get definition")
+		return err
 	}
 
-	internalInstallation, err := installations.New(inst, definition)
+	internalInstallation, err := installations.New(inst, intBlueprint)
 	if err != nil {
 		return errors.Wrap(err, "unable to create internal representation of installation")
 	}
 
 	datatypeList := &lsv1alpha1.DataTypeList{}
-	if err := a.c.List(ctx, datatypeList); err != nil {
+	if err := a.Client().List(ctx, datatypeList); err != nil {
 		return errors.Wrap(err, "unable to list all datatypes")
 	}
 	datatypes, err := datatype.CreateDatatypesMap(datatypeList.Items)
@@ -157,7 +129,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return errors.Wrap(err, "unable to parse datatypes")
 	}
 
-	instOp, err := installations.NewInstallationOperation(ctx, a.log, a.c, a.scheme, a.registry, datatypes, internalInstallation)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, datatypes, internalInstallation)
 	if err != nil {
 		return errors.Wrap(err, "unable to create installation operation")
 	}
@@ -165,7 +137,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 	if !inst.DeletionTimestamp.IsZero() {
 		err := EnsureDeletion(ctx, instOp)
 		if err != nil && !reflect.DeepEqual(inst.Status, old.Status) {
-			if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
+			if err2 := a.Client().Status().Update(ctx, inst); err2 != nil {
 				return errors.Wrapf(err2, "update error: %s", err.Error())
 			}
 		}
@@ -179,7 +151,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		}
 
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.c.Update(ctx, inst); err != nil {
+		if err := a.Client().Update(ctx, inst); err != nil {
 			return err
 		}
 
@@ -192,7 +164,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 
 	err = a.Ensure(ctx, instOp, internalInstallation)
 	if !reflect.DeepEqual(inst.Status, old.Status) {
-		if err2 := a.c.Status().Update(ctx, inst); err2 != nil {
+		if err2 := a.Client().Status().Update(ctx, inst); err2 != nil {
 			if err != nil {
 				err2 = errors.Wrapf(err, "update error: %s", err.Error())
 			}

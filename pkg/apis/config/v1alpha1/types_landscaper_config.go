@@ -21,13 +21,25 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
-
-	// Registry contains the configuration for the used definition registry
+	// Registry contains the configuration for the used blueprint registry
 	Registry RegistryConfiguration `json:"registry"`
+	// ComponentDescriptorRepository contains the configuration for the used component descriptor repository.
+	ComponentDescriptorRepository CDRepositoryConfiguration `json:"componentDescriptorRepository"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
 type RegistryConfiguration struct {
+	// Local defines a local registry to use for definitions
+	// +optional
+	Local *LocalRegistryConfiguration `json:"local,omitempty"`
+
+	// OCI defines a oci registry to use for definitions
+	// +optional
+	OCI *OCIConfiguration `json:"oci,omitempty"`
+}
+
+// CDRepositoryConfiguration contains the configuration for the used component descriptor repository
+type CDRepositoryConfiguration struct {
 	// Local defines a local registry to use for definitions
 	// +optional
 	Local *LocalRegistryConfiguration `json:"local,omitempty"`

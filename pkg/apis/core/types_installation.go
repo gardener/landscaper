@@ -17,6 +17,7 @@ package core
 import (
 	"encoding/json"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,8 +48,8 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
-	// DefinitionRef is the resolved reference to the definition.
-	DefinitionRef string `json:"definitionRef"`
+	// BlueprintRef is the resolved reference to the definition.
+	BlueprintRef InstallationBlueprintReference `json:"definitionRef"`
 
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.
@@ -99,7 +100,14 @@ type InstallationStatus struct {
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 
-// StaticDataSource defines a static data source
+// InstallationBlueprintReference describes a reference to a blueprint defined by a component descriptor.
+type InstallationBlueprintReference struct {
+	VersionedResourceReference `json:",inline"`
+	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	cdv2.RepositoryContext `json:",inline"`
+}
+
+// StaticDataSource defines a static data source.
 type StaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
