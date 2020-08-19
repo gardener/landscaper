@@ -56,15 +56,15 @@ var _ = g.Describe("Constructor", func() {
 				err   error
 				state *fake_client.State
 			)
-			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			fakeClient, state, err = fake_client.NewFakeClientFromPath("../testdata/state")
 			Expect(err).ToNot(HaveOccurred())
 
 			fakeInstallations = state.Installations
 			fakeDataTypes = state.DataTypes
 
-			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
-			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 

@@ -68,9 +68,9 @@ var _ = g.Describe("Constructor", func() {
 		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
 		Expect(err).ToNot(HaveOccurred())
 
-		fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+		fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
-		fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+		fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{

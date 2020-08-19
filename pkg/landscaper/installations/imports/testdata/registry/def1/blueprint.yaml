@@ -1,5 +1,0 @@
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Blueprint
-
-name: def1
-version: 1.0.0

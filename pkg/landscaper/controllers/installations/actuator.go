@@ -31,8 +31,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(registry registry.Registry, compRepo componentrepository.Client) (reconcile.Reconciler, error) {
@@ -138,7 +138,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		err := EnsureDeletion(ctx, instOp)
 		if err != nil && !reflect.DeepEqual(inst.Status, old.Status) {
 			if err2 := a.Client().Status().Update(ctx, inst); err2 != nil {
-				return errors.Wrapf(err2, "update error: %s", err.Error())
+				return errors.Wrapf(err, "update error: %s", err2.Error())
 			}
 		}
 		return err

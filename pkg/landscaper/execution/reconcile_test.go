@@ -26,7 +26,6 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -38,7 +37,6 @@ var _ = g.Describe("Reconcile", func() {
 		fakeExecutions  map[string]*lsv1alpha1.Execution
 		fakeDeployItems map[string]*lsv1alpha1.DeployItem
 		fakeClient      client.Client
-		fakeRegistry    *fake.FakeRegistry
 	)
 
 	g.BeforeEach(func() {
@@ -51,7 +49,7 @@ var _ = g.Describe("Reconcile", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = operation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, nil, nil)
 	})
 
 	g.It("should deploy the specified deploy items", func() {
