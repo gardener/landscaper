@@ -29,7 +29,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -41,7 +42,8 @@ var _ = g.Describe("Constructor", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
-		fakeRegistry      *fake.FakeRegistry
+		fakeRegistry      regapi.Registry
+		fakeCompRepo      componentrepository.Client
 
 		once sync.Once
 	)
@@ -57,9 +59,6 @@ var _ = g.Describe("Constructor", func() {
 
 			fakeInstallations = state.Installations
 			fakeDataTypes = state.DataTypes
-
-			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		dtArr := make([]lsv1alpha1.DataType, 0)
@@ -69,14 +68,19 @@ var _ = g.Describe("Constructor", func() {
 		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
 		Expect(err).ToNot(HaveOccurred())
 
+		fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+		Expect(err).ToNot(HaveOccurred())
+		fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+		Expect(err).ToNot(HaveOccurred())
+
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry),
+			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
 			Datatypes: internalDataTypes,
 		}
 	})
 
 	g.It("should construct the exported config from its execution", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -95,7 +99,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{
@@ -114,7 +118,7 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings and the execution config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		expectedConfig := map[string]interface{}{

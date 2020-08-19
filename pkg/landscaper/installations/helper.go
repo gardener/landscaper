@@ -27,7 +27,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	lscheme "github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -73,7 +73,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo componentrepositor
 
 // CreateInternalInstallation creates an internal installation for a Installation
 func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
-	blue, err := blueprint.Resolve(ctx, op, inst.Spec.BlueprintRef)
+	blue, err := blueprints.Resolve(ctx, op, inst.Spec.BlueprintRef)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

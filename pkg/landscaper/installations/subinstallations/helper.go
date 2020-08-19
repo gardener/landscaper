@@ -18,7 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 // AddDefaultMappings adds all default mappings of im and exports if they are not already defined
@@ -103,7 +103,7 @@ func hasMappingOfExports(search lsv1alpha1.DefinitionExportMapping, mappings []l
 }
 
 // getDefinitionReference returns the definition reference by name
-func getDefinitionReference(blueprint *blueprint.Blueprint, name string) (*blueprint.BlueprintReference, bool) {
+func getDefinitionReference(blueprint *blueprints.Blueprint, name string) (*blueprints.BlueprintReference, bool) {
 	for _, ref := range blueprint.References {
 		if ref.Info.Name == name {
 			return ref, true

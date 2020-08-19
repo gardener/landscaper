@@ -18,13 +18,13 @@ import (
 	"fmt"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 // Installation is the internal representation of a installation
 type Installation struct {
 	Info      *lsv1alpha1.Installation
-	Blueprint *blueprint.Blueprint
+	Blueprint *blueprints.Blueprint
 
 	imports map[string]lsv1alpha1.ImportDefinition
 	exports map[string]lsv1alpha1.ExportDefinition
@@ -46,7 +46,7 @@ type ExportMapping struct {
 }
 
 // New creates a new internal representation of an installation
-func New(inst *lsv1alpha1.Installation, blueprint *blueprint.Blueprint) (*Installation, error) {
+func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
 		Info:      inst,
 		Blueprint: blueprint,

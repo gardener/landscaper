@@ -5,7 +5,13 @@ metadata:
   namespace: test1
 spec:
 
-  definitionRef: root:1.0.0
+  definitionRef:
+    type: local
+    baseUrl: ""
+    version: 1.0.0
+    componentName: root
+    kind: localResource
+    resource: root
 
   imports:
   - from: ext.a

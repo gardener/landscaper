@@ -28,7 +28,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -63,7 +63,7 @@ type TestInstallationConfig struct {
 
 // CreateTestInstallationResources creates a test environment with a installation, a blueprint and a operation.
 // Should only be used for root installation as other installations may be created during runtime.
-func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallationConfig) (*lsv1alpha1.Installation, *installations.Installation, *blueprint.Blueprint, *installations.Operation) {
+func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallationConfig) (*lsv1alpha1.Installation, *installations.Installation, *blueprints.Blueprint, *installations.Operation) {
 	// apply defaults
 	if len(cfg.BlueprintFilePath) == 0 {
 		cfg.BlueprintFilePath = filepath.Join(cfg.BlueprintContentPath, "blueprint.yaml")
@@ -149,10 +149,10 @@ func ReadBlueprintFromFile(testfile string) (*lsv1alpha1.Blueprint, error) {
 }
 
 // CreateBlueprintFromFile reads a blueprint from the given file and creates a internal blueprint object.
-func CreateBlueprintFromFile(filePath, contentPath string) *blueprint.Blueprint {
+func CreateBlueprintFromFile(filePath, contentPath string) *blueprints.Blueprint {
 	def, err := ReadBlueprintFromFile(filePath)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	blue, err := blueprint.New(def, afero.NewBasePathFs(afero.NewOsFs(), contentPath))
+	blue, err := blueprints.New(def, afero.NewBasePathFs(afero.NewOsFs(), contentPath))
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	return blue
 }

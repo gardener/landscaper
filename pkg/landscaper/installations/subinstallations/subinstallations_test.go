@@ -31,7 +31,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -101,7 +101,7 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			)
 
-			blue, err := blueprint.New(&lsv1alpha1.Blueprint{}, afero.NewMemMapFs())
+			blue, err := blueprints.New(&lsv1alpha1.Blueprint{}, afero.NewMemMapFs())
 			Expect(err).ToNot(HaveOccurred())
 
 			si := subinstallations.New(op)

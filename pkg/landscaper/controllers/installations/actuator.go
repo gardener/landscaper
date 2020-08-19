@@ -26,7 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -110,7 +110,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	old := inst.DeepCopy()
 
-	intBlueprint, err := blueprint.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef)
+	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef)
 	if err != nil {
 		return err
 	}
