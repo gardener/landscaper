@@ -27,7 +27,8 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -38,7 +39,8 @@ var _ = g.Describe("Context", func() {
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeRegistry      *fake.FakeRegistry
+		fakeRegistry      regapi.Registry
+		fakeCompRepo      componentrepository.Client
 
 		once sync.Once
 	)
@@ -53,18 +55,20 @@ var _ = g.Describe("Context", func() {
 			Expect(err).ToNot(HaveOccurred())
 			fakeInstallations = state.Installations
 
-			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
+			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+			Expect(err).ToNot(HaveOccurred())
+			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry)
+		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo)
 	})
 
 	g.It("should show no parent nor siblings for the test1 root", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		instRoot, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test1/root"])
+		instRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, instRoot)
@@ -79,7 +83,7 @@ var _ = g.Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test2/a"])
+		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
@@ -95,7 +99,7 @@ var _ = g.Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(ctx, fakeRegistry, fakeInstallations["test1/b"])
+		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)

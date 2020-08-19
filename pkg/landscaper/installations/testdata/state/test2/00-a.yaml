@@ -5,5 +5,11 @@ metadata:
   namespace: test2
 spec:
 
-  definitionRef: a:1.0.0
+  definitionRef:
+    type: local
+    baseUrl: ""
+    version: 1.0.0
+    componentName: root
+    kind: localResource
+    resource: a
 

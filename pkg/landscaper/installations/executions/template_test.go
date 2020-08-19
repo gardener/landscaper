@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 var _ = Describe("Template", func() {
@@ -34,11 +35,14 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.Blueprint{}
-		rawDef.Executors = string(tmpl)
+		blue := &lsv1alpha1.Blueprint{}
+		blue.Executors = string(tmpl)
 		op := New(nil)
 
-		res, err := op.template(rawDef, nil, nil)
+		res, err := op.template(&blueprints.Blueprint{
+			Info: blue,
+			Fs:   nil,
+		}, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(ConsistOf(expect))
 	})
@@ -49,11 +53,14 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.Blueprint{}
-		rawDef.Executors = string(tmpl)
+		blue := &lsv1alpha1.Blueprint{}
+		blue.Executors = string(tmpl)
 		op := New(nil)
 
-		res, err := op.template(rawDef, nil, map[string]string{"version": "0.0.0"})
+		res, err := op.template(&blueprints.Blueprint{
+			Info: blue,
+			Fs:   nil,
+		}, map[string]string{"version": "0.0.0"})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(HaveLen(1))
 
@@ -68,15 +75,18 @@ var _ = Describe("Template", func() {
 		expect := make([]lsv1alpha1.ExecutionItem, 0)
 		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
-		rawDef := &lsv1alpha1.Blueprint{}
-		rawDef.Executors = string(tmpl)
+		blue := &lsv1alpha1.Blueprint{}
+		blue.Executors = string(tmpl)
 		op := New(nil)
 
 		memFs := afero.NewMemMapFs()
 		err = afero.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
 		Expect(err).ToNot(HaveOccurred())
 
-		res, err := op.template(rawDef, memFs, nil)
+		res, err := op.template(&blueprints.Blueprint{
+			Info: blue,
+			Fs:   memFs,
+		}, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).To(HaveLen(1))
 

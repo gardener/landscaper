@@ -11,7 +11,13 @@ metadata:
     name: root
 spec:
 
-  definitionRef: c:1.0.0
+  definitionRef:
+    type: local
+    baseUrl: ""
+    version: 1.0.0
+    componentName: root
+    kind: localResource
+    resource: c
 
   imports:
   - from: b.z
