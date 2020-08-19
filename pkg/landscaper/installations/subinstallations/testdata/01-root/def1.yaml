@@ -1,0 +1,15 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: BlueprintReference
+
+name: def1
+ref:
+  componentName: "root"
+  kind: localResource
+  resource: def1
+
+imports:
+- from: a
+  to: b
+exports:
+- from: c
+  to: d

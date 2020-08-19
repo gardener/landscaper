@@ -106,7 +106,7 @@ func (c *localClient) searchInPath(path string, ref cdv2.ObjectMeta) (*cdv2.Comp
 	if err == nil {
 		return nil, cdv2.NotFound
 	}
-	if err != cdv2.NotFound {
+	if err != foundErr {
 		return nil, err
 	}
 	if cd == nil {

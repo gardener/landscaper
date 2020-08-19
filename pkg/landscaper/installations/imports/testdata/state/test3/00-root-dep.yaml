@@ -5,7 +5,13 @@ metadata:
   namespace: test3
 spec:
 
-  definitionRef: c:1.0.0
+  definitionRef:
+    type: local
+    baseUrl: ""
+    version: 1.0.0
+    componentName: root
+    kind: localResource
+    resource: root
 
   exports:
   - from: c.y

@@ -27,7 +27,7 @@ func NewRegistryManager(log logr.Logger, config *config.RegistryConfiguration) (
 	registries := registries{}
 
 	if config.Local != nil {
-		local, err := regapi.NewLocalRegistry(log, config.Local.Paths)
+		local, err := regapi.NewLocalRegistry(log, config.Local.Paths...)
 		if err != nil {
 			return nil, fmt.Errorf("unable to setup local regapi: %w", err)
 		}

@@ -31,7 +31,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -43,7 +44,8 @@ var _ = g.Describe("Constructor", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
-		fakeRegistry      *fake.FakeRegistry
+		fakeRegistry      regapi.Registry
+		fakeCompRepo      componentrepository.Client
 
 		once sync.Once
 	)
@@ -60,7 +62,9 @@ var _ = g.Describe("Constructor", func() {
 			fakeInstallations = state.Installations
 			fakeDataTypes = state.DataTypes
 
-			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
+			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+			Expect(err).ToNot(HaveOccurred())
+			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -72,15 +76,16 @@ var _ = g.Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry),
+			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
 			Datatypes: internalDataTypes,
 		}
 	})
 
 	g.It("should directly construct the data from static data", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
 		value, err := yaml.Marshal(map[string]interface{}{
 			"ext": map[string]interface{}{
@@ -118,15 +123,16 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the imported config from a sibling", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/a"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/b"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/a"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
-
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
-		Expect(err).ToNot(HaveOccurred())
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
 		expectedConfig := map[string]interface{}{
 			"b": map[string]interface{}{
@@ -143,15 +149,16 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the imported config from a sibling and the indirect parent import", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/a"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstC, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/c"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/a"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstC, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstC
-
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test2/root"])
-		Expect(err).ToNot(HaveOccurred())
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
 		value, err := yaml.Marshal(map[string]interface{}{
 			"ext": map[string]interface{}{

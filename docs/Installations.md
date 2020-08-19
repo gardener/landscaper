@@ -12,7 +12,10 @@ metadata:
   name: my-installation
 spec:
 
-  definitionRef: my-def:1.0.0
+  definitionRef: 
+    component: github.com/gardener/gardener
+    version: v1.7.2
+    resourceName: gardener
 
   imports: # generated from aggregated definition or default from definition with from = to
   - from: current-context.namespace

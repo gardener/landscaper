@@ -33,9 +33,9 @@ type Blueprint struct {
 
 // BlueprintReference is the internal type of a blueprint reference.
 type BlueprintReference struct {
-	Reference *lsv1alpha1.BlueprintReference
-	Path      string
-	Fs        afero.Fs
+	Info *lsv1alpha1.BlueprintReference
+	Path string
+	Fs   afero.Fs
 }
 
 // New creates a new internal Blueprint from a blueprint definition and its filesystem content.
@@ -65,9 +65,9 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 			return err
 		}
 		refs[i] = &BlueprintReference{
-			Reference: blueprintRef,
-			Path:      path,
-			Fs:        blueprint.Fs,
+			Info: blueprintRef,
+			Path: path,
+			Fs:   blueprint.Fs,
 		}
 	}
 
@@ -77,12 +77,12 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 
 // RemoteBlueprintReference returns the remote blueprint ref for the current component given the effective component descriptor
 func (r BlueprintReference) RemoteBlueprintReference(cdList cdv2.ComponentDescriptorList) (lsv1alpha1.RemoteBlueprintReference, error) {
-	components := cdList.GetComponentByName(r.Reference.Reference.ComponentName)
+	components := cdList.GetComponentByName(r.Info.Reference.ComponentName)
 	if len(components) == 0 {
 		return lsv1alpha1.RemoteBlueprintReference{}, cdv2.NotFound
 	}
 
-	res, err := cdutils.FindResourceInComponentByReference(components[0], lsv1alpha1.BlueprintResourceType, r.Reference.Reference)
+	res, err := cdutils.FindResourceInComponentByReference(components[0], lsv1alpha1.BlueprintResourceType, r.Info.Reference)
 	if err != nil {
 		return lsv1alpha1.RemoteBlueprintReference{}, cdv2.NotFound
 	}
@@ -90,7 +90,7 @@ func (r BlueprintReference) RemoteBlueprintReference(cdList cdv2.ComponentDescri
 	return lsv1alpha1.RemoteBlueprintReference{
 		RepositoryContext: components[0].GetEffectiveRepositoryContext(),
 		VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-			ResourceReference: r.Reference.Reference,
+			ResourceReference: r.Info.Reference,
 			Version:           res.Version,
 		},
 	}, nil

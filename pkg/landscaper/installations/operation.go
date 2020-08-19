@@ -75,32 +75,39 @@ func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Cli
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
 func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
-	var err error
-
-	cd, err := op.ComponentRepository().Resolve(ctx, inst.Info.Spec.BlueprintRef.RepositoryContext, inst.Info.Spec.BlueprintRef.ObjectMeta())
-	if err != nil {
-		return nil, err
-	}
-
-	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, op.ComponentRepository(), *cd)
-	if err != nil {
-		return nil, err
-	}
-
 	instOp := &Operation{
-		Interface:                   op,
-		Datatypes:                   datatypes,
-		Inst:                        inst,
-		ComponentDescriptor:         cd,
-		ResolvedComponentDescriptor: resolvedCD,
+		Interface: op,
+		Datatypes: datatypes,
+		Inst:      inst,
 	}
 
+	if err := instOp.ResolveComponentDescriptors(ctx); err != nil {
+		return nil, err
+	}
+
+	var err error
 	instOp.context, err = instOp.DetermineContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return instOp, nil
+}
+
+// ResolveComponentDescriptors resolves the effective component descriptors for the installation.
+func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
+	cd, err := ResolveComponentDescriptor(ctx, o.ComponentRepository(), o.Inst.Info)
+	if err != nil {
+		return err
+	}
+
+	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, o.ComponentRepository(), *cd)
+	if err != nil {
+		return err
+	}
+	o.ComponentDescriptor = cd
+	o.ResolvedComponentDescriptor = resolvedCD
+	return nil
 }
 
 // Context returns the context of the operated installation
@@ -120,6 +127,34 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	if err := o.Client().Status().Update(ctx, inst); err != nil {
+		o.Log().Error(err, "unable to set installation status")
+		return err
+	}
+	return nil
+}
+
+// CreateEventFromCondition creates a new event based on the given condition
+func (o *Operation) CreateEventFromCondition(ctx context.Context, inst *lsv1alpha1.Installation, cond lsv1alpha1.Condition) error {
+	event := &corev1.Event{}
+	event.GenerateName = "inst-"
+	event.Namespace = inst.Namespace
+	event.Type = "Warning"
+	event.Source = corev1.EventSource{
+		Component: "landscaper", // todo: make configurable by the caller
+	}
+	event.InvolvedObject = corev1.ObjectReference{
+		Kind:            inst.Kind,
+		Namespace:       inst.Namespace,
+		Name:            inst.Name,
+		UID:             inst.UID,
+		APIVersion:      inst.APIVersion,
+		ResourceVersion: inst.ResourceVersion,
+	}
+	event.Reason = cond.Reason
+	event.Message = cond.Message
+	event.Action = string(cond.Type)
+
+	if err := o.Client().Create(ctx, event); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}

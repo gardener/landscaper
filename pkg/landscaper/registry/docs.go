@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -destination=./fake/fake_registry.go github.com/gardener/landscaper/pkg/landscaper/registry Registry
+//go:generate mockgen -destination=./mock/mock_registry.go github.com/gardener/landscaper/pkg/landscaper/registry Registry
 
 package registry

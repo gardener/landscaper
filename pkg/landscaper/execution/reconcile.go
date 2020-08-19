@@ -31,6 +31,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 
 	// todo: make it possible to specify a dag
+	// todo: delete removed deploy items
 	var (
 		phase lsv1alpha1.ExecutionPhase
 	)

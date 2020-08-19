@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/spf13/afero"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -59,37 +57,36 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, b
 		return err
 	}
 
-	// need to check if we are allowed to update subinstallation
+	// need to check if we are allowed to update the subinstallation
 	// - we are not allowed if any subresource is in deletion
 	// - we are not allowed to update if any subinstallation is progressing
 	for _, subInstallations := range subInstallations {
 		if subInstallations.DeletionTimestamp != nil {
-			o.Log().V(7).Info("not eligible for update due to deletion of subinstallation", "name", subInstallations.Name)
-			return o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseProgressing, cond)
+			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+			return fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallations.Name)
 		}
 
 		if subInstallations.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
-			o.Log().V(7).Info("not eligible for update due to running subinstallation", "name", subInstallations.Name)
-			return o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseProgressing, cond)
+			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+			return fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
 		}
 	}
 
 	// delete removed subreferences
-	err, deleted := o.cleanupOrphanedSubInstallations(ctx, def, inst, subInstallations)
+	err, deletionTriggered := o.cleanupOrphanedSubInstallations(ctx, blueprint, inst, subInstallations)
 	if err != nil {
 		return err
 	}
-	if deleted {
+	if deletionTriggered {
 		return nil
 	}
 
 	for _, blueprintRef := range blueprint.References {
-		// skip if the subInstallation already exists
-		subInst := subInstallations[blueprintRef.Reference.Name]
+		subInst := subInstallations[blueprintRef.Info.Name]
 
-		_, err := o.createOrUpdateNewInstallation(ctx, inst, def, subDef, subInst)
+		_, err := o.createOrUpdateNewInstallation(ctx, inst, blueprint, blueprintRef, subInst)
 		if err != nil {
-			return errors.Wrapf(err, "unable to create installation for %s", subDef.Name)
+			return errors.Wrapf(err, "unable to create installation for %s", blueprintRef.Info.Name)
 		}
 	}
 
@@ -104,18 +101,19 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 		cond             = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		subInstallations = map[string]*lsv1alpha1.Installation{}
 
-		// track all found subinstallation to track if some installations were deleted
+		// track all found subinstallations to track if some installations were deleted
 		updatedSubInstallationStates = make([]lsv1alpha1.NamedObjectReference, 0)
 	)
 
+	// todo: use encompassed by label to identify subinstallations
 	for _, installationRef := range inst.Status.InstallationReferences {
 		subInst := &lsv1alpha1.Installation{}
 		if err := o.Client().Get(ctx, installationRef.Reference.NamespacedName(), subInst); err != nil {
 			if !apierrors.IsNotFound(err) {
-				o.Log().Error(err, "unable to get installation", "object", installationRef.Reference)
 				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"InstallationNotFound", fmt.Sprintf("Sub Installation %s not available", installationRef.Reference.Name))
-				_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseProgressing, cond)
+				inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+				_ = o.CreateEventFromCondition(ctx, inst, cond)
 				return nil, errors.Wrapf(err, "unable to get installation %v", installationRef.Reference)
 			}
 			continue
@@ -131,14 +129,14 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 	return subInstallations, nil
 }
 
-func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *lsv1alpha1.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
+func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *blueprint.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
 	var (
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
 	)
 
 	for defName, subInst := range subInstallations {
-		if _, ok := getDefinitionReference(def, defName); ok {
+		if _, ok := getDefinitionReference(blue, defName); ok {
 			continue
 		}
 
@@ -148,9 +146,11 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *ls
 			if apierrors.IsNotFound(err) {
 				continue
 			}
+			inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
 			cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"InstallationNotDeleted", fmt.Sprintf("Sub Installation %s cannot be deleted", subInst.Name))
-			_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
+			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+			_ = o.CreateEventFromCondition(ctx, inst, cond)
 			return err, deleted
 		}
 		deleted = true
@@ -158,12 +158,12 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, def *ls
 	return nil, deleted
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, blue *blueprint.Blueprint, blueprintRef blueprint.BlueprintReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, blue *blueprint.Blueprint, blueprintRef *blueprint.BlueprintReference, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
 		subInst = &lsv1alpha1.Installation{}
-		subInst.GenerateName = fmt.Sprintf("%s-%s-", blue.Info.Name, blueprintRef.Reference.Name)
+		subInst.GenerateName = fmt.Sprintf("%s-%s-", blue.Info.Name, blueprintRef.Info.Name)
 		subInst.Namespace = inst.Namespace
 	}
 
@@ -178,7 +178,9 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",
 			fmt.Sprintf("Blueprint %s for %s cannot be found", remoteRef.Resource, remoteRef.Version))
-		_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
+		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+		_ = o.CreateEventFromCondition(ctx, inst, cond)
 		return nil, errors.Wrapf(err, "unable to get definition %s for %s", remoteRef.Resource, remoteRef.Version)
 	}
 
@@ -189,8 +191,8 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
 			BlueprintRef: remoteRef,
-			Imports:      blueprintRef.Reference.Imports,
-			Exports:      blueprintRef.Reference.Exports,
+			Imports:      blueprintRef.Info.Imports,
+			Exports:      blueprintRef.Info.Exports,
 		}
 
 		AddDefaultMappings(subInst, subBlueprint.Info)
@@ -199,15 +201,17 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"InstallationCreatingFailed",
-			fmt.Sprintf("Sub Installation %s cannot be created", blueprintRef.Reference.Name))
-		_ = o.UpdateInstallationStatus(ctx, inst, lsv1alpha1.ComponentPhaseFailed, cond)
-		return nil, errors.Wrapf(err, "unable to create installation for %s", blueprintRef.Reference.Name)
+			fmt.Sprintf("Sub Installation %s cannot be created", blueprintRef.Info.Name))
+		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+		_ = o.CreateEventFromCondition(ctx, inst, cond)
+		return nil, errors.Wrapf(err, "unable to create installation for %s", blueprintRef.Info.Name)
 	}
 
 	// add newly created installation to state
-	inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(blueprintRef.Reference.Name, subInst))
+	inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(blueprintRef.Info.Name, subInst))
+	// todo: erevaluate if we really need that call
 	if err := o.Client().Status().Update(ctx, inst); err != nil {
-		return nil, errors.Wrapf(err, "unable to add new installation for %s to state", blueprintRef.Reference.Name)
+		return nil, errors.Wrapf(err, "unable to add new installation for %s to state", blueprintRef.Info.Name)
 	}
 
 	return subInst, nil

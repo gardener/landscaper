@@ -30,19 +30,23 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
 var _ = g.Describe("Validation", func() {
 
 	var (
-		op *installations.Operation
+		defaultTestInstallationConfig *utils.TestInstallationConfig
+		op                            *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
-		fakeRegistry      *fake.FakeRegistry
+		fakeRegistry      regapi.Registry
+		fakeCompRepo      componentrepository.Client
 
 		once sync.Once
 	)
@@ -59,7 +63,9 @@ var _ = g.Describe("Validation", func() {
 			fakeInstallations = state.Installations
 			fakeDataTypes = state.DataTypes
 
-			fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
+			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+			Expect(err).ToNot(HaveOccurred())
+			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -71,16 +77,20 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry),
+			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
+			Datatypes: internalDataTypes,
+		}
+		defaultTestInstallationConfig = &utils.TestInstallationConfig{
 			Datatypes: internalDataTypes,
 		}
 	})
 
 	g.Context("root", func() {
 		g.It("should import data from the static config", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstRoot
+			defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
+			defaultTestInstallationConfig.BlueprintFilePath = "./testdata/registry/root/blueprint.yaml"
+			defaultTestInstallationConfig.BlueprintContentPath = "./testdata/registry/root"
+			_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
 
 			value, err := yaml.Marshal(map[string]interface{}{
 				"ext": map[string]interface{}{
@@ -90,15 +100,14 @@ var _ = g.Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
 
-			val := imports.NewValidator(op, nil)
-			err = val.Validate(context.TODO(), inInstRoot)
-			Expect(err).ToNot(HaveOccurred())
+			val := imports.NewValidator(instOp, nil)
+			Expect(val.Validate(context.TODO(), inInstRoot)).To(Succeed())
 		})
 
 		g.It("should reject the import from static data if the import is of the wrong type", func() {
-			inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
-			Expect(err).ToNot(HaveOccurred())
-			op.Inst = inInstRoot
+			defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
+			defaultTestInstallationConfig.BlueprintContentPath = "./testdata/registry/root"
+			_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
 
 			value, err := yaml.Marshal(map[string]interface{}{
 				"ext": map[string]interface{}{
@@ -108,48 +117,48 @@ var _ = g.Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
 
-			val := imports.NewValidator(op, nil)
-			err = val.Validate(context.TODO(), inInstRoot)
-			Expect(err).To(HaveOccurred())
+			val := imports.NewValidator(instOp, nil)
+			Expect(val.Validate(context.TODO(), inInstRoot)).To(HaveOccurred())
 		})
 	})
 
 	g.It("should successfully validate when the import of a component is defined by its parent", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
-
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
 		val := imports.NewValidator(op, inInstRoot)
-		err = val.Validate(context.TODO(), inInstA)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(val.Validate(context.TODO(), inInstA)).To(Succeed())
 	})
 
 	g.It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
-
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
 		val := imports.NewValidator(op, inInstRoot, inInstA)
-		err = val.Validate(context.TODO(), inInstB)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(val.Validate(context.TODO(), inInstB)).To(Succeed())
 	})
 
 	g.It("should reject the validation when the parent component is not progressing", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
 
@@ -160,14 +169,15 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.It("should reject when a direct sibling dependency is still running", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, inInstRoot, inInstA)
@@ -176,22 +186,22 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.It("should reject when a dependent sibling has not finished yet", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstB.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
-		inInstC, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/c"])
+		inInstC, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/c"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstC.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
-		inInstD, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/d"])
+		inInstD, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/d"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstD
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, inInstRoot, inInstA, inInstB, inInstC)
@@ -201,11 +211,12 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.It("should reject when a dependent sibling of my parent has not finished yet", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test3/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
+		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, fakeInstallations["test3/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, inInstRoot, inInstA)

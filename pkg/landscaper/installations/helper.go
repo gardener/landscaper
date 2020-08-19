@@ -16,7 +16,9 @@ package installations
 
 import (
 	"context"
+	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -24,37 +26,38 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	lscheme "github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprint"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	kubernetes2 "github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 var componentInstallationGVK schema.GroupVersionKind
 
 func init() {
 	var err error
-	componentInstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, kubernetes.LandscaperScheme)
+	componentInstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, lscheme.LandscaperScheme)
 	runtime.Must(err)
 }
 
 // IsRootInstallation returns if the installation is a root element.
 func IsRootInstallation(inst *lsv1alpha1.Installation) bool {
-	_, isOwned := kubernetes2.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
+	_, isOwned := kubernetes.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return !isOwned
 }
 
 // GetParentInstallationName returns the name of parent installation that encompasses the given installation.
 func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
-	name, _ := kubernetes2.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
+	name, _ := kubernetes.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return name
 }
 
 // CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(ctx context.Context, registry registry.Registry, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
+func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
 	internalInstallations := make([]*Installation, len(installations))
 	for i, inst := range installations {
-		inInst, err := CreateInternalInstallation(ctx, registry, inst)
+		inInst, err := CreateInternalInstallation(ctx, op, inst)
 		if err != nil {
 			return nil, err
 		}
@@ -63,13 +66,18 @@ func CreateInternalInstallations(ctx context.Context, registry registry.Registry
 	return internalInstallations, nil
 }
 
+// ResolveComponentDescriptor resolves the component descriptor of a installation.
+func ResolveComponentDescriptor(ctx context.Context, compRepo componentrepository.Client, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, error) {
+	return compRepo.Resolve(ctx, inst.Spec.BlueprintRef.RepositoryContext, inst.Spec.BlueprintRef.ObjectMeta())
+}
+
 // CreateInternalInstallation creates an internal installation for a Installation
-func CreateInternalInstallation(ctx context.Context, registry registry.Registry, inst *lsv1alpha1.Installation) (*Installation, error) {
-	def, err := registry.GetBlueprint(ctx, nil) // todo: read from component descriptor
+func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
+	blue, err := blueprint.Resolve(ctx, op, inst.Spec.BlueprintRef)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
-	return New(inst, def)
+	return New(inst, blue)
 }
 
 // CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
@@ -130,7 +138,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op lsoperation.Interfa
 				return false, nil
 			}
 
-			intInst, err := CreateInternalInstallation(ctx, op.Registry(), inst)
+			intInst, err := CreateInternalInstallation(ctx, op, inst)
 			if err != nil {
 				return false, err
 			}

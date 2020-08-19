@@ -34,7 +34,7 @@ const (
 
 var _ = Describe("Local Registry", func() {
 
-	Context("initialize index", func() {
+	Context("initialize Index", func() {
 		It("should be successfully initialized with one path", func() {
 			_, err := registry.NewLocalRegistry(testing.NullLogger{}, []string{localTestData1})
 			Expect(err).ToNot(HaveOccurred())

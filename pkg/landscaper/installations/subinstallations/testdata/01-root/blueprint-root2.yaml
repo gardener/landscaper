@@ -1,13 +1,9 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-name: a
+name: root
 version: 1.0.0
 
-imports:
-- key: a.b
-  type: string
-
-exports:
-- key: a.z
-  type: number
+blueprintRefs:
+- ./def1.yaml
+- ./def2.yaml

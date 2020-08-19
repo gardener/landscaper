@@ -45,7 +45,7 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		if err != nil {
 			return nil, err
 		}
-		intInstallations, err := CreateInternalInstallations(ctx, o.Registry(), rootInstallations...)
+		intInstallations, err := CreateInternalInstallations(ctx, o, rootInstallations...)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	intSubInstallations, err := CreateInternalInstallations(ctx, o.Registry(), subInstallations...)
+	intSubInstallations, err := CreateInternalInstallations(ctx, o, subInstallations...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func GetParent(ctx context.Context, op operation.Interface, inst *Installation) 
 	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
 		return nil, err
 	}
-	intParent, err := CreateInternalInstallation(ctx, op.Registry(), parent)
+	intParent, err := CreateInternalInstallation(ctx, op, parent)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ type VersionedName struct {
 	Version string
 }
 
-// ParseDefinitionRef parses a Definition reference of the form "name:version"
+// ParseDefinitionRef parses a Blueprint reference of the form "name:version"
 func ParseDefinitionRef(ref string) (VersionedName, error) {
 	splitName := strings.Split(ref, ":")
 

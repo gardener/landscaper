@@ -57,7 +57,7 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint
 //// installationNeedsUpdate check if a definition reference has been updated
 //func installationNeedsUpdate(def lsv1alpha1.BlueprintReference, inst *lsv1alpha1.Installation) bool {
 //	// check if the reference itself has changed
-//	if def.Reference != inst.Spec.BlueprintRef {
+//	if def.Info != inst.Spec.BlueprintRef {
 //		return true
 //	}
 //
@@ -103,9 +103,9 @@ func hasMappingOfExports(search lsv1alpha1.DefinitionExportMapping, mappings []l
 }
 
 // getDefinitionReference returns the definition reference by name
-func getDefinitionReference(def *blueprint.Blueprint, name string) (*blueprint.BlueprintReference, bool) {
-	for _, ref := range def.References {
-		if ref.Reference.Name == name {
+func getDefinitionReference(blueprint *blueprint.Blueprint, name string) (*blueprint.BlueprintReference, bool) {
+	for _, ref := range blueprint.References {
+		if ref.Info.Name == name {
 			return ref, true
 		}
 	}
