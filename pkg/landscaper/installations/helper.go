@@ -29,7 +29,7 @@ import (
 	lscheme "github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -67,7 +67,7 @@ func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, 
 }
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
-func ResolveComponentDescriptor(ctx context.Context, compRepo componentrepository.Client, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, error) {
+func ResolveComponentDescriptor(ctx context.Context, compRepo componentsregistry.Registry, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, error) {
 	return compRepo.Resolve(ctx, inst.Spec.BlueprintRef.RepositoryContext, inst.Spec.BlueprintRef.ObjectMeta())
 }
 

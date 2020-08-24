@@ -3,7 +3,7 @@ kind: Installation
 metadata:
   name: root-1
 spec:
-  definitionRef: root-a:1.0.0
+  blueprintRef: root-a:1.0.0
 
   imports:
   - from: root.key1

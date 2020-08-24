@@ -29,7 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -38,14 +38,14 @@ var _ = Describe("Multi Component Test", func() {
 
 	var (
 		state        *envtest.State
-		fakeRegistry registry.Registry
+		fakeRegistry blueprintsregistry.Registry
 
 		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeRegistry, err = registry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
+		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
 		Expect(err).ToNot(HaveOccurred())
 
 		instActuator, err = instctlr.NewActuator(fakeRegistry)

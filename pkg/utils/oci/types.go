@@ -25,6 +25,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
+	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
 
 type Client interface {
@@ -34,7 +35,7 @@ type Client interface {
 	// Fetch fetches the blob for the given ocispec Descriptor.
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
 
-	// PushManifest uploads the given ocisepc Descriptor to the given ref.
+	// PushManifest uploads the given ocispec Descriptor to the given ref.
 	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error
 }
 
@@ -86,6 +87,15 @@ type WithCache struct {
 
 func (c WithCache) ApplyOption(options *Options) {
 	options.Cache = c.Cache
+}
+
+// WithKeyring configures the resolver to use the given oci keyring
+type WithKeyring struct {
+	credentials.OCIKeyring
+}
+
+func (c *WithKeyring) ApplyOption(options *Options) {
+	options.Resolver = c.OCIKeyring
 }
 
 // WithResolver configures a resolver for the oci client

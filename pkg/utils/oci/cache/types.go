@@ -34,6 +34,22 @@ type Cache interface {
 	Add(desc ocispecv1.Descriptor, reader io.ReadCloser) error
 }
 
+// InjectCache is a interface to inject a cache.
+type InjectCache interface {
+	InjectCache(c Cache) error
+}
+
+// InjectCacheInto injects a cache if the given object implements the InjectCache interface.
+func InjectCacheInto(obj interface{}, cache Cache) error {
+	if cache == nil {
+		return nil
+	}
+	if injector, ok := obj.(InjectCache); ok {
+		return injector.InjectCache(cache)
+	}
+	return nil
+}
+
 // Options contains all oci cache options to configure the oci cache.
 type Options struct {
 	// InMemoryOverlay specifies if a overlayFs InMemory cache should be used

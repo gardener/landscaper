@@ -3,7 +3,7 @@ kind: Installation
 metadata:
   name: nginx
 spec:
-  definitionRef: nginx-ingress-controller:0.5.2
+  blueprintRef: nginx-ingress-controller:0.5.2
 
   imports:
   - from: common.namespace

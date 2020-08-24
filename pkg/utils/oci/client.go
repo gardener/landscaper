@@ -73,6 +73,11 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	}, nil
 }
 
+func (c *client) InjectCache(cache cache.Cache) error {
+	c.cache = cache
+	return nil
+}
+
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
 	resolver, err := c.resolver.Resolver(context.Background(), http.DefaultClient, false)
 	if err != nil {

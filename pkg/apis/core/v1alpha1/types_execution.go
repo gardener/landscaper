@@ -15,10 +15,19 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+// ExecutionManagedByLabel is the label of a deploy item that contains the name of the managed execution.
+// This label is used by the extension controller to identify its managed deploy items
+// todo: add conversion
+const ExecutionManagedByLabel = "execution.landscaper.gardener.cloud/managed-by"
+
+// ExecutionManagedNameAnnotation is the unique identifier of the deploy items managed by a execution.
+// It corresponds to the execution item name.
+// todo: add conversion
+const ExecutionManagedNameAnnotation = "execution.landscaper.gardener.cloud/name"
 
 // ExecutionType defines the type of the execution
 type ExecutionType string
@@ -66,8 +75,20 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
+	// BlueprintRef is the resolved reference to the definition.
+	// +optional
+	BlueprintRef *RemoteBlueprintReference `json:"blueprintRef"`
+
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
+
 	// ImportReference is the reference to the object containing all imported values.
-	ImportReference ObjectReference `json:"importRef,omitempty"`
+	// +optional
+	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Executions defines all execution items that need to be scheduled.
 	Executions []ExecutionItem `json:"executions"`
@@ -102,5 +123,5 @@ type ExecutionItem struct {
 	Type ExecutionType `json:"type"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
-	Configuration json.RawMessage `json:"config"`
+	Configuration runtime.RawExtension `json:"config"`
 }

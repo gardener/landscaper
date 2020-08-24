@@ -1,0 +1,13 @@
+**
+
+!.git
+!.dockerignore
+!cmd/
+!pkg/
+!hack/
+!test/
+!vendor/
+!go.mod
+!go.sum
+!Makefile
+!VERSION

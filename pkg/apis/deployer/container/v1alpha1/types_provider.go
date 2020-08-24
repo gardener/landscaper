@@ -60,6 +60,9 @@ type ProviderStatus struct {
 
 	// PodName is the name of the created pod.
 	PodName string `json:"podName"`
+	// LastOperation defines the last run operation of the pod.
+	// The operation can be either reconcile or deletion.
+	LastOperation string `json:"lastOperation"`
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`

@@ -21,9 +21,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -72,6 +73,14 @@ func mutate(f controllerutil.MutateFn, key client.ObjectKey, obj runtime.Object)
 	return nil
 }
 
+// ObjectKey creates a namespaced name (client.ObjectKey) for a given name and namespace.
+func ObjectKey(name, namespace string) types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+}
+
 // GetStatusForContainer returns the container for a specific container
 func GetStatusForContainer(containerStatus []corev1.ContainerStatus, name string) (corev1.ContainerStatus, error) {
 	for _, status := range containerStatus {
@@ -83,7 +92,7 @@ func GetStatusForContainer(containerStatus []corev1.ContainerStatus, name string
 }
 
 // OwnerOfGVK validates whether a instance of the given gvk is referenced
-func OwnerOfGVK(ownerRefs []v1.OwnerReference, gvk schema.GroupVersionKind) (string, bool) {
+func OwnerOfGVK(ownerRefs []metav1.OwnerReference, gvk schema.GroupVersionKind) (string, bool) {
 	for _, ownerRef := range ownerRefs {
 		gv, err := schema.ParseGroupVersion(ownerRef.APIVersion)
 		if err != nil {
@@ -119,11 +128,19 @@ func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) 
 }
 
 // HasFinalizer checks if the object constains a finalizer with the given name.
-func HasFinalizer(obj v1.Object, finalizer string) bool {
+func HasFinalizer(obj metav1.Object, finalizer string) bool {
 	for _, f := range obj.GetFinalizers() {
 		if f == finalizer {
 			return true
 		}
 	}
 	return false
+}
+
+// SetMetaDataLabel sets the label and value
+func SetMetaDataLabel(obj *metav1.ObjectMeta, lab string, value string) {
+	if obj.Labels == nil {
+		obj.Labels = make(map[string]string)
+	}
+	obj.Labels[lab] = value
 }

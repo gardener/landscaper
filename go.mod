@@ -37,7 +37,7 @@ require (
 	github.com/deislabs/oras v0.8.1
 	github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba // indirect
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
-	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492 // indirect
+	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce // indirect
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect

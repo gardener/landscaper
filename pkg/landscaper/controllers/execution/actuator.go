@@ -31,11 +31,11 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator(registry registry.Registry) (reconcile.Reconciler, error) {
+func NewActuator(registry blueprintsregistry.Registry) (reconcile.Reconciler, error) {
 	return &actuator{
 		registry: registry,
 	}, nil
@@ -45,7 +45,7 @@ type actuator struct {
 	log      logr.Logger
 	c        client.Client
 	scheme   *runtime.Scheme
-	registry registry.Registry
+	registry blueprintsregistry.Registry
 }
 
 var _ inject.Client = &actuator{}
@@ -73,7 +73,7 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 }
 
 // InjectRegistry injects a Registry into the actuator
-func (a *actuator) InjectRegistry(r registry.Registry) error {
+func (a *actuator) InjectRegistry(r blueprintsregistry.Registry) error {
 	a.registry = r
 	return nil
 }
@@ -131,7 +131,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry), exec)
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)

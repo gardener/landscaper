@@ -26,10 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	ocireg "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	ocireg "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
@@ -52,7 +54,7 @@ type actuator struct {
 	scheme *runtime.Scheme
 	config *containerv1alpha1.Configuration
 
-	registry registry.Registry
+	registry blueprintsregistry.Registry
 }
 
 var _ inject.Client = &actuator{}
@@ -89,10 +91,6 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation {
-		return reconcile.Result{}, nil
-	}
-
 	if err := a.reconcile(ctx, deployItem); err != nil {
 		a.log.Error(err, "unable to reconcile deploy item")
 		return reconcile.Result{}, err
@@ -117,5 +115,15 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return nil
 	}
 
-	return containerOp.Reconcile(ctx)
+	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		// remove reconcile annotation and set status to init
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+		if err := a.c.Status().Update(ctx, deployItem); err != nil {
+			return err
+		}
+		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
+		return a.c.Update(ctx, deployItem)
+	}
+
+	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }

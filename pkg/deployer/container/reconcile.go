@@ -16,12 +16,11 @@ package container
 
 import (
 	"context"
-	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -32,21 +31,38 @@ import (
 )
 
 // Reconcile handles the reconcile flow for a container deploy item.
-func (c *Container) Reconcile(ctx context.Context) error {
-	if len(c.ProviderStatus.PodName) == 0 {
+func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
+	pod, err := c.getPod(ctx)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	// do nothing if the pod is still running
+	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
+		return nil
+	}
+
+	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation {
+		// ensure new pod
+		if err := c.ensureServiceAccounts(ctx); err != nil {
+			return err
+		}
 		c.ProviderStatus = &containerv1alpha1.ProviderStatus{}
 		podOpts := PodOptions{
-			ProviderConfiguration: c.ProviderConfiguration,
-			InitContainer:         c.Configuration.InitContainer,
-			SidecarContainer:      c.Configuration.SidecarContainer,
+			ProviderConfiguration:             c.ProviderConfiguration,
+			InitContainer:                     c.Configuration.InitContainer,
+			WaitContainer:                     c.Configuration.WaitContainer,
+			InitContainerServiceAccountSecret: c.InitContainerServiceAccountSecret,
+			WaitContainerServiceAccountSecret: c.WaitContainerServiceAccountSecret,
 
 			Name:      c.DeployItem.Name,
 			Namespace: c.DeployItem.Namespace,
 
-			Operation:     container.OperationReconcile,
-			DefinitionRef: c.DeployItem.Spec.DefinitionRef,
-			ImportsRef:    c.DeployItem.Spec.ImportReference,
-			OCIConfig:     []byte{},
+			Operation:    operation,
+			BlueprintRef: c.DeployItem.Spec.BlueprintRef,
+			ImportsRef:   c.DeployItem.Spec.ImportReference,
+
+			Debug: true,
 		}
 		pod, err := generatePod(podOpts)
 		if err != nil {
@@ -63,7 +79,8 @@ func (c *Container) Reconcile(ctx context.Context) error {
 
 		// update status
 		c.ProviderStatus.PodName = pod.Name
-		containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, "main")
+		containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
+		c.ProviderStatus.LastOperation = string(operation)
 		c.ProviderStatus.Image = containerStatus.Image
 		c.ProviderStatus.ImageID = containerStatus.ImageID
 		encStatus, err := encodeStatus(c.ProviderStatus)
@@ -74,40 +91,13 @@ func (c *Container) Reconcile(ctx context.Context) error {
 		c.DeployItem.Status.ProviderStatus = encStatus
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
+		if operation == container.OperationDelete {
+			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+		}
 		return c.kubeClient.Status().Update(ctx, c.DeployItem)
 	}
 
-	// wait for container to finish
-	pod := &corev1.Pod{}
-	if err := c.kubeClient.Get(ctx, client.ObjectKey{Name: c.ProviderStatus.PodName, Namespace: c.DeployItem.Namespace}, pod); err != nil {
-		if apierrors.IsNotFound(err) {
-			// we missed the container deletion, so we have to set the podName to false and retry the operation
-			c.log.Info("missed deletion of pod. Retry operation", "deployItem", c.DeployItem.Name, "pod", c.ProviderStatus.PodName)
-			c.ProviderStatus.PodName = ""
-			encStatus, err := encodeStatus(c.ProviderStatus)
-			if err != nil {
-				return err
-			}
-
-			// todo: set retry condition
-			c.DeployItem.Status.ProviderStatus = encStatus
-			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-			c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation - 1
-			return c.kubeClient.Status().Update(ctx, c.DeployItem)
-		}
-		return err
-	}
-
-	// do nothing if the pod is still running
-	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
-		return nil
-	}
-
 	if pod.Status.Phase == corev1.PodSucceeded {
-		controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
-		if err := c.kubeClient.Update(ctx, pod); err != nil {
-			return err
-		}
 		c.ProviderStatus.PodName = ""
 		encStatus, err := encodeStatus(c.ProviderStatus)
 		if err != nil {
@@ -119,31 +109,43 @@ func (c *Container) Reconcile(ctx context.Context) error {
 	}
 
 	if pod.Status.Phase == corev1.PodFailed {
-		c.ProviderStatus.PodName = ""
-		c.ProviderStatus.Message = pod.Status.Message
-		c.ProviderStatus.Reason = pod.Status.Reason
-		encStatus, err := encodeStatus(c.ProviderStatus)
-		if err != nil {
-			return err
-		}
-		controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
-		if err := c.kubeClient.Update(ctx, pod); err != nil {
-			return err
-		}
-
-		c.DeployItem.Status.ProviderStatus = encStatus
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		return c.kubeClient.Status().Update(ctx, c.DeployItem)
 	}
 
+	// wait for container to finish
+	containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
+	c.ProviderStatus.Image = containerStatus.Image
+	c.ProviderStatus.ImageID = containerStatus.ImageID
+	c.ProviderStatus.Message = pod.Status.Message
+	c.ProviderStatus.Reason = pod.Status.Reason
+	encStatus, err := encodeStatus(c.ProviderStatus)
+	if err != nil {
+		return err
+	}
+
+	c.DeployItem.Status.ProviderStatus = encStatus
+	if err := c.kubeClient.Status().Update(ctx, c.DeployItem); err != nil {
+		return err
+	}
+
+	// only remove the finalizer if we catched the status of the pod
+	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
+	if err := c.kubeClient.Update(ctx, pod); err != nil {
+		return err
+	}
 	return nil
 }
 
-func encodeStatus(status *containerv1alpha1.ProviderStatus) ([]byte, error) {
+func encodeStatus(status *containerv1alpha1.ProviderStatus) (runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
 		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
 		Kind:       "ProviderStatus",
 	}
 
-	return json.Marshal(status)
+	raw := &runtime.RawExtension{}
+	obj := status.DeepCopyObject()
+	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
+		return runtime.RawExtension{}, err
+	}
+	return *raw, nil
 }

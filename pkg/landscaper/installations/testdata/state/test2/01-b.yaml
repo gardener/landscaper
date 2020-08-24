@@ -5,7 +5,7 @@ metadata:
   namespace: test2
 spec:
 
-  definitionRef:
+  blueprintRef:
     type: local
     baseUrl: ""
     version: 1.0.0

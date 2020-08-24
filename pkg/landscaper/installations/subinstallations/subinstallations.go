@@ -190,9 +190,10 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
-			BlueprintRef: remoteRef,
-			Imports:      blueprintRef.Info.Imports,
-			Exports:      blueprintRef.Info.Exports,
+			BlueprintRef:        remoteRef,
+			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
+			Imports:             blueprintRef.Info.Imports,
+			Exports:             blueprintRef.Info.Exports,
 		}
 
 		AddDefaultMappings(subInst, subBlueprint.Info)

@@ -21,7 +21,10 @@ import (
 )
 
 // ContainerDeployerFinalizer is the finalizer that is set by the container deployer
-const ContainerDeployerFinalizer = "finalizer.container.deployer.landscaper.gardener.cloud"
+const ContainerDeployerFinalizer = "container.deployer.landscaper.gardener.cloud/finalizer"
+
+// ContainerDeployerNameLabel is the name label that is used to identify managed pods.
+const ContainerDeployerNameLabel = "container.deployer.landscaper.gardener.cloud/name"
 
 // OperationName is the name of the env var that specifies the current operation that the image should execute
 const OperationName = "OPERATION"
@@ -35,51 +38,47 @@ const OperationReconcile OperationType = "RECONCILE"
 // OperationDelete is the value of the Operation env var that defines a delete operation.
 const OperationDelete OperationType = "DELETE"
 
-// BasePath is the base path inside a container that is shared between the main container and ls containers.
+// BasePath is the base path inside a container that contains the container deployer specific data.
 const BasePath = "/data/ls"
+
+// SharedBasePath is the base path inside the container that is shared between the main and ls containers
+var SharedBasePath = filepath.Join(BasePath, "shared")
 
 // ImportsPathName is the name of the env var that points to the imports file.
 const ImportsPathName = "IMPORTS_PATH"
 
 // ImportsPath is the path to the imports file.
-var ImportsPath = filepath.Join(BasePath, "imports.json")
+var ImportsPath = filepath.Join(BasePath, "imports", "imports.json")
 
 // ExportsPathName is the name of the env var that points to the exports file.
 const ExportsPathName = "EXPORTS_PATH"
 
 // ExportsPath is the path to the export file.
-var ExportsPath = filepath.Join(BasePath, "exports")
+var ExportsPath = filepath.Join(SharedBasePath, "exports", "values")
 
 // ComponentDescriptorPathName is the name of the env var that points to the component descriptor.
 const ComponentDescriptorPathName = "COMPONENT_DESCRIPTOR_PATH"
 
 // ComponentDescriptorPath is the path to the component descriptor file.
-var ComponentDescriptorPath = filepath.Join(BasePath, "component_descriptor.json")
+var ComponentDescriptorPath = filepath.Join(SharedBasePath, "component_descriptor.json")
 
 // ContentPathName is the name of the env var that points to the blob content of the definition.
 const ContentPathName = "CONTENT_PATH"
 
 // ContentPath is the path to the content directory.
-var ContentPath = filepath.Join(BasePath, "content")
+var ContentPath = filepath.Join(SharedBasePath, "content")
 
 // StatePathName is the name of the env var that points to the directory where the state can be stored.
 const StatePathName = "STATE_PATH"
 
 // StatePath is the path to the state directory.
-var StatePath = filepath.Join(BasePath, "state")
+var StatePath = filepath.Join(SharedBasePath, "state")
 
 // PodName is the name of the env var that contains the name of the pod.
 const PodName = "POD_NAME"
 
 // PodNamespaceName is the name of the env var that contains the namespace of the pod.
 const PodNamespaceName = "POD_NAMESPACE"
-
-// OciUserName is the name of the env var that contains the OCI auth config.
-// This env is only set for system containers
-const OciConfigName = "OCI_USER"
-
-// DefinitionReferenceName is the name of the env var that contains the reference to the ComponentDefinition.
-const DefinitionReferenceName = "DEFINITION_REFERENCE"
 
 // DeployItemName is the name of the env var that contains name of the source DeployItem.
 const DeployItemName = "DEPLOY_ITEM_NAME"
@@ -93,8 +92,14 @@ const MainContainerName = "main"
 // InitContainerName is the name of the container running the init container.
 const InitContainerName = "init"
 
-// SidecarContainerName is the name of the container running the sidecar container.
-const SidecarContainerName = "sidecar"
+// WaitContainerName is the name of the container running the sidecar container.
+const WaitContainerName = "wait"
+
+// ServiceAccountTokenPath is the path where the landscaper specific service account token is mounted.
+// This mounted token is then copied by the init and wait container to the k8s specified location.
+// This is a workaround for the issue https://github.com/kubernetes/kubernetes/issues/19764 that
+// kubernetes is only able mount directories which would overwrite other files in /var/run/secrets/kubernetes.io/serviceaccount.
+const ServiceAccountTokenPath = "/etc/ls/token"
 
 var (
 	DefaultEnvVars = []corev1.EnvVar{

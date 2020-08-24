@@ -86,7 +86,7 @@ func autoConvert_v1alpha1_Configuration_To_container_Configuration(in *Configura
 	if err := Convert_v1alpha1_ContainerSpec_To_container_ContainerSpec(&in.InitContainer, &out.InitContainer, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha1_ContainerSpec_To_container_ContainerSpec(&in.SidecarContainer, &out.SidecarContainer, s); err != nil {
+	if err := Convert_v1alpha1_ContainerSpec_To_container_ContainerSpec(&in.WaitContainer, &out.WaitContainer, s); err != nil {
 		return err
 	}
 	return nil
@@ -105,7 +105,7 @@ func autoConvert_container_Configuration_To_v1alpha1_Configuration(in *container
 	if err := Convert_container_ContainerSpec_To_v1alpha1_ContainerSpec(&in.InitContainer, &out.InitContainer, s); err != nil {
 		return err
 	}
-	if err := Convert_container_ContainerSpec_To_v1alpha1_ContainerSpec(&in.SidecarContainer, &out.SidecarContainer, s); err != nil {
+	if err := Convert_container_ContainerSpec_To_v1alpha1_ContainerSpec(&in.WaitContainer, &out.WaitContainer, s); err != nil {
 		return err
 	}
 	return nil

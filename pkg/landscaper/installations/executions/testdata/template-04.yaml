@@ -1,0 +1,4 @@
+- name: init
+  type: container
+  config:
+    image: {{ .components.mycomp.component.externalResources.mycustomimage.access.imageReference }}

@@ -22,7 +22,7 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 
 // SetDefaults_Configuration sets the defaults for the container deployer configuration.
 func SetDefaults_Configuration(obj *Configuration) {
-	if len(obj.DefaultImage) == 0 {
-		obj.DefaultImage = "ubuntu:18:04"
+	if len(obj.DefaultImage.Image) == 0 {
+		obj.DefaultImage.Image = "ubuntu:18:04"
 	}
 }

@@ -18,38 +18,92 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/manager"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
-func NewActuator(registry registry.Registry, compRepo componentrepository.Client) (reconcile.Reconciler, error) {
+func NewActuator(log logr.Logger, regConfig *config.RegistriesConfiguration) (reconcile.Reconciler, error) {
 	op := &operation.Operation{}
-	if err := op.InjectRegistry(registry); err != nil {
+	_ = op.InjectLogger(log)
+
+	var sharedCache cache.Cache
+	if regConfig.Components.OCI != nil && regConfig.Components.OCI.Cache != nil {
+		var err error
+		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Components.OCI.Cache))
+		if err != nil {
+			return nil, err
+		}
+	}
+	componentRegistryMgr, err := componentsregistry.New(sharedCache)
+	if err != nil {
 		return nil, err
 	}
-	if err := op.InjectComponentRepository(compRepo); err != nil {
-		return nil, err
+	_ = op.InjectComponentsRegistry(componentRegistryMgr)
+
+	// add once a local registry
+	if regConfig.Components.Local != nil {
+		localReg, err := componentsregistry.NewLocalClient(log, regConfig.Components.Local.ConfigPaths...)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create local components registry")
+		}
+		if err := componentRegistryMgr.Set(localReg); err != nil {
+			return nil, errors.Wrap(err, "unable to add local components registry to manager")
+		}
 	}
+	log.V(3).Info("setup components registry")
+
+	if regConfig.Blueprints.OCI != nil && regConfig.Blueprints.OCI.Cache != nil {
+		var err error
+		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Blueprints.OCI.Cache))
+		if err != nil {
+			return nil, err
+		}
+	}
+	blueprintsRegistryMgr := manager.New(sharedCache)
+	_ = op.InjectBlueprintsRegistry(blueprintsRegistryMgr)
+
+	// add once a local registry
+	if regConfig.Blueprints.Local != nil {
+		localReg, err := blueprintsregistry.NewLocalRegistry(log, regConfig.Blueprints.Local.ConfigPaths...)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create local blueprint registry")
+		}
+		if err := blueprintsRegistryMgr.Set(blueprintsregistry.LocalAccessType, blueprintsregistry.LocalAccessCodec, localReg); err != nil {
+			return nil, errors.Wrap(err, "unable to add local blueprint registry to manager")
+		}
+	}
+	log.V(3).Info("setup blueprints registry")
+
 	return &actuator{
-		Interface: op,
+		Interface:             op,
+		registriesConfig:      regConfig,
+		componentsRegistryMgr: componentRegistryMgr,
+		blueprintRegistryMgr:  blueprintsRegistryMgr,
 	}, nil
 }
 
 type actuator struct {
 	operation.Interface
+	registriesConfig      *config.RegistriesConfiguration
+	blueprintRegistryMgr  manager.Interface
+	componentsRegistryMgr *componentsregistry.Manager
 }
 
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
@@ -109,6 +163,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	old := inst.DeepCopy()
+
+	if err := a.setupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
+		return err
+	}
 
 	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef)
 	if err != nil {

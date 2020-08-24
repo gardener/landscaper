@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -26,45 +27,56 @@ import (
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
+// executionItem is the internal representation of a execution item with its deployitem and status
+type executionItem struct {
+	Info       lsv1alpha1.ExecutionItem
+	DeployItem *lsv1alpha1.DeployItem
+}
+
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
 func (o *Operation) Reconcile(ctx context.Context) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 
 	// todo: make it possible to specify a dag
-	// todo: delete removed deploy items
-	var (
-		phase lsv1alpha1.ExecutionPhase
-	)
-	for _, item := range o.exec.Spec.Executions {
-		if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Name); ok {
-			deployItem := &lsv1alpha1.DeployItem{}
-			if err := o.Client().Get(ctx, ref.Reference.NamespacedName(), deployItem); err != nil {
-				return err
-			}
-			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, deployItem.Status.Phase)
+	managedItems, err := o.listManagedDeployItems(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to list managed deploy items: %w", err)
+	}
+	// todo: remove orphaned items and also remove them from the status
+	executionItems, _ := o.getExecutionItems(managedItems)
 
-			if !lsv1alpha1helper.IsCompletedExecutionPhase(deployItem.Status.Phase) {
-				if !lsv1alpha1helper.IsProgressingExecutionPhase(phase) && ref.Reference.ObservedGeneration != o.exec.Generation {
-					return o.deployOrTrigger(ctx, item)
-				}
-				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-				return nil
-			}
+	var phase lsv1alpha1.ExecutionPhase
+	for _, item := range executionItems {
+		if item.DeployItem == nil {
+			return o.deployOrTrigger(ctx, item)
+		}
+		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
 
-			if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-					"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Name, ref.Reference.NamespacedName().String()))
-				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
-			}
-
-			// we already updated this item
-			if ref.Reference.ObservedGeneration == o.exec.Generation {
-				continue
-			}
-			continue
+		// get last applied status from own status
+		var lastAppliedGeneration int64
+		if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
+			lastAppliedGeneration = ref.Reference.ObservedGeneration
 		}
 
-		return o.deployOrTrigger(ctx, item)
+		if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) {
+			if !lsv1alpha1helper.IsProgressingExecutionPhase(phase) && lastAppliedGeneration != o.exec.Generation {
+				return o.deployOrTrigger(ctx, item)
+			}
+			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+			return nil
+		}
+
+		if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+			cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
+			return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
+		}
+
+		// we already updated this item
+		if lastAppliedGeneration == o.exec.Generation {
+			continue
+		}
+		continue
 	}
 
 	if err := o.collectAndUpdateExports(ctx); err != nil {
@@ -77,30 +89,62 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	return o.UpdateStatus(ctx, phase, cond)
 }
 
+// listManagedDeployItems collects all deploy items that are managed by the execution.
+// The managed execution is identified by the managed by label and the ownership.
+func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
+	deployItemList := &lsv1alpha1.DeployItemList{}
+	// todo: maybe use name and namespace
+	if err := o.Client().List(ctx, deployItemList, client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name}, client.InNamespace(o.exec.Namespace)); err != nil {
+		return nil, err
+	}
+	return deployItemList.Items, nil
+}
+
+// getExecutionItems creates an internal representation for all execution items.
+// It also returns all removed deploy items that are not defined by the execution anymore.
+func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
+	execItems := make([]executionItem, len(o.exec.Spec.Executions))
+	orphaned := items
+	for i, exec := range o.exec.Spec.Executions {
+		execItem := executionItem{
+			Info: exec,
+		}
+		if j, ok := getDeployItemIndexByManagedName(items, exec.Name); ok {
+			execItem.DeployItem = &items[j]
+			copy(orphaned[i:], orphaned[j+1:])
+			orphaned[len(orphaned)-1] = lsv1alpha1.DeployItem{}
+			orphaned = orphaned[:len(orphaned)-1]
+		}
+	}
+	return execItems, orphaned
+}
+
 // deployOrTrigger creates a new deploy item or triggers it if it already exists.
-func (o *Operation) deployOrTrigger(ctx context.Context, item lsv1alpha1.ExecutionItem) error {
-	deployItem := &lsv1alpha1.DeployItem{}
-	deployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Name)
-	deployItem.Namespace = o.exec.Namespace
-	if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Name); ok {
-		deployItem.Name = ref.Reference.Name
-		deployItem.Namespace = ref.Reference.Namespace
+func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) error {
+
+	if item.DeployItem == nil {
+		item.DeployItem = &lsv1alpha1.DeployItem{}
+		item.DeployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Info.Name)
+		item.DeployItem.Namespace = o.exec.Namespace
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), deployItem, func() error {
-		lsv1alpha1helper.SetOperation(&deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
-		deployItem.Spec.Type = item.Type
-		deployItem.Spec.Configuration = item.Configuration
-		deployItem.Spec.ImportReference = o.exec.Spec.ImportReference
-		return controllerutil.SetControllerReference(o.exec, deployItem, o.Scheme())
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
+		lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
+		item.DeployItem.Spec.BlueprintRef = o.exec.Spec.BlueprintRef
+		item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
+		item.DeployItem.Spec.ImportReference = o.exec.Spec.ImportReference
+		item.DeployItem.Spec.Type = item.Info.Type
+		item.DeployItem.Spec.Configuration = item.Info.Configuration
+		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
+		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
 		return err
 	}
 
 	ref := lsv1alpha1.VersionedNamedObjectReference{}
-	ref.Name = item.Name
-	ref.Reference.Name = deployItem.Name
-	ref.Reference.Namespace = deployItem.Namespace
+	ref.Name = item.Info.Name
+	ref.Reference.Name = item.DeployItem.Name
+	ref.Reference.Namespace = item.DeployItem.Namespace
 	ref.Reference.ObservedGeneration = o.exec.Generation
 
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)

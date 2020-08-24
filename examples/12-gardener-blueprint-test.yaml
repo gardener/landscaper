@@ -12,7 +12,7 @@ exports:
 executors: | # has to be idempotent
   ...
 
-definitionRefs: # make as directory structure
+blueprintRefs: # make as directory structure
 - name: dns-controller # defaulted to the name of the component
   ref: dns-controller:0.10.5 # will be translated by the component descriptor to eu.gcr.io/gardener-project/definitions/dns.controller:0.10.5
   exports:

@@ -17,6 +17,8 @@ package helm
 import (
 	"encoding/json"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
@@ -30,7 +32,7 @@ type Configuration struct {
 	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
 
 	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *json.RawMessage `json:"providerStatus,omitempty"`
+	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
 
 	// Export sets the exported configuration to the given value
 	Export *json.RawMessage `json:"export,omitempty"`

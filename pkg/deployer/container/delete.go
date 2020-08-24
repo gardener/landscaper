@@ -17,20 +17,79 @@ package container
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 )
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
-	c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
-	if len(c.ProviderStatus.PodName) != 0 || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
+	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
 		// do default reconcile until the pod has finished
-		return c.Reconcile(ctx)
+		return c.Reconcile(ctx, container.OperationDelete)
+	}
+
+	if err := c.cleanupRBAC(ctx); err != nil {
+		return err
 	}
 
 	controllerutil.RemoveFinalizer(c.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return c.kubeClient.Update(ctx, c.DeployItem)
+}
+
+// cleanupRBAC removes all service accounts, roles and rolebindings that belong to the deploy item
+func (c *Container) cleanupRBAC(ctx context.Context) error {
+	sa := &corev1.ServiceAccount{}
+	sa.Name = InitContainerServiceAccountName(c.DeployItem)
+	sa.Namespace = c.DeployItem.Namespace
+
+	role := &rbacv1.Role{}
+	role.Name = sa.Name
+	role.Namespace = sa.Namespace
+
+	rolebinding := &rbacv1.RoleBinding{}
+	rolebinding.Name = sa.Name
+	rolebinding.Namespace = sa.Namespace
+
+	if err := c.kubeClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	if err := c.kubeClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	if err := c.kubeClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	c.log.V(3).Info("successfully removed init container rbac resources")
+
+	sa = &corev1.ServiceAccount{}
+	sa.Name = WaitContainerServiceAccountName(c.DeployItem)
+	sa.Namespace = c.DeployItem.Namespace
+
+	role = &rbacv1.Role{}
+	role.Name = sa.Name
+	role.Namespace = sa.Namespace
+
+	rolebinding = &rbacv1.RoleBinding{}
+	rolebinding.Name = sa.Name
+	rolebinding.Namespace = sa.Namespace
+
+	if err := c.kubeClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	if err := c.kubeClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	if err := c.kubeClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	c.log.V(3).Info("successfully removed wait container rbac resources")
+
+	return nil
 }

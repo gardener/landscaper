@@ -30,7 +30,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	kubernetes2 "github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -106,7 +105,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 
 		controllerutil.RemoveFinalizer(&deployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
-	} else if !kubernetes2.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+	} else if !kubernetesutil.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
 	}
@@ -184,7 +183,7 @@ func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 
 func (a *actuator) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*Configuration, error) {
 	config := &Configuration{}
-	if err := yaml.Unmarshal(item.Spec.Configuration, config); err != nil {
+	if err := yaml.Unmarshal(item.Spec.Configuration.Raw, config); err != nil {
 		a.log.Error(err, "unable to unmarshal config")
 		item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionFalse,
 			"FailedUnmarshal", err.Error())

@@ -12,7 +12,7 @@ exports:
 - key: exp-b
   type: string
 
-definitionRefs:
+blueprintRefs:
 - name: sub-1
   ref: def-a:1.0.0
 - name: sub-2

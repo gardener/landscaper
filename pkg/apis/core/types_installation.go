@@ -49,19 +49,22 @@ type Installation struct {
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
 	// BlueprintRef is the resolved reference to the definition.
-	BlueprintRef InstallationBlueprintReference `json:"definitionRef"`
-
+	BlueprintRef RemoteBlueprintReference `json:"blueprintRef"`
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.
 	// +optional
 	Imports []ImportMappingDefinition `json:"imports,omitempty"`
-
 	// Exports define the export mappings for the referenced definition.
 	// These values are by default auto generated from the parent definition.
 	// todo: add static data boolean
 	// +optional
 	Exports []DefinitionExportMapping `json:"exports,omitempty"`
-
 	// StaticData contains a list of data sources that are used to satisfy imports
 	// +optional
 	StaticData []StaticDataSource `json:"staticData,omitempty"`
@@ -100,8 +103,8 @@ type InstallationStatus struct {
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 
-// InstallationBlueprintReference describes a reference to a blueprint defined by a component descriptor.
-type InstallationBlueprintReference struct {
+// RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.
+type RemoteBlueprintReference struct {
 	VersionedResourceReference `json:",inline"`
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	cdv2.RepositoryContext `json:",inline"`

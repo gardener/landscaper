@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -25,6 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
 var _ = Describe("Template", func() {
@@ -37,7 +39,7 @@ var _ = Describe("Template", func() {
 
 		blue := &lsv1alpha1.Blueprint{}
 		blue.Executors = string(tmpl)
-		op := New(nil)
+		op := New(&installations.Operation{})
 
 		res, err := op.template(&blueprints.Blueprint{
 			Info: blue,
@@ -50,12 +52,10 @@ var _ = Describe("Template", func() {
 	It("should use the import values to template", func() {
 		tmpl, err := ioutil.ReadFile("./testdata/template-02.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		expect := make([]lsv1alpha1.ExecutionItem, 0)
-		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
 		blue := &lsv1alpha1.Blueprint{}
 		blue.Executors = string(tmpl)
-		op := New(nil)
+		op := New(&installations.Operation{})
 
 		res, err := op.template(&blueprints.Blueprint{
 			Info: blue,
@@ -72,12 +72,10 @@ var _ = Describe("Template", func() {
 	It("should read the content of a file to template", func() {
 		tmpl, err := ioutil.ReadFile("./testdata/template-03.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		expect := make([]lsv1alpha1.ExecutionItem, 0)
-		Expect(yaml.Unmarshal(tmpl, &expect)).ToNot(HaveOccurred())
 
 		blue := &lsv1alpha1.Blueprint{}
 		blue.Executors = string(tmpl)
-		op := New(nil)
+		op := New(&installations.Operation{})
 
 		memFs := afero.NewMemMapFs()
 		err = afero.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -93,6 +91,51 @@ var _ = Describe("Template", func() {
 		config := make(map[string]interface{})
 		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
 		Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+	})
+
+	It("should use a resource from the component descriptor", func() {
+		tmpl, err := ioutil.ReadFile("./testdata/template-04.yaml")
+		Expect(err).ToNot(HaveOccurred())
+
+		blue := &lsv1alpha1.Blueprint{}
+		blue.Executors = string(tmpl)
+		op := New(&installations.Operation{})
+		op.ResolvedComponentDescriptor = cdv2.ComponentDescriptorList{
+			Components: []cdv2.ComponentDescriptor{
+				{
+					ComponentSpec: cdv2.ComponentSpec{
+						ObjectMeta: cdv2.ObjectMeta{
+							Name:    "mycomp",
+							Version: "1.0.0",
+						},
+						ExternalResources: []cdv2.Resource{
+							{
+								ObjectMeta: cdv2.ObjectMeta{
+									Name:    "mycustomimage",
+									Version: "1.0.0",
+								},
+								Access: &cdv2.OCIRegistryAccess{
+									ObjectType: cdv2.ObjectType{
+										Type: cdv2.OCIRegistryType,
+									},
+									ImageReference: "quay.io/example/myimage:1.0.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		res, err := op.template(&blueprints.Blueprint{
+			Info: blue,
+		}, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(res).To(HaveLen(1))
+
+		config := make(map[string]interface{})
+		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
+		Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
 	})
 
 })

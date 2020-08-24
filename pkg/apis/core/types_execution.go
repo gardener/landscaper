@@ -15,9 +15,8 @@
 package core
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ExecutionType defines the type of the execution
@@ -49,8 +48,20 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
+	// BlueprintRef is the resolved reference to the definition.
+	// +optional
+	BlueprintRef *RemoteBlueprintReference `json:"blueprintRef"`
+
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
+
 	// ImportReference is the reference to the object containing all imported values.
-	ImportReference ObjectReference `json:"importRef,omitempty"`
+	// +optional
+	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Executions defines all execution items that need to be scheduled.
 	Executions []ExecutionItem `json:"executions"`
@@ -84,5 +95,5 @@ type ExecutionItem struct {
 	Type ExecutionType `json:"type"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
-	Configuration json.RawMessage `json:"config"`
+	Configuration runtime.RawExtension `json:"config"`
 }

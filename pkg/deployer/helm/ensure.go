@@ -25,8 +25,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/json"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
@@ -88,7 +88,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		}
 	}
 
-	statusData, err := json.Marshal(status)
+	statusData, err := encodeStatus(status)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 
 func (h *Helm) DeleteFiles(ctx context.Context) error {
 	status := &helmv1alpha1.ProviderStatus{}
-	if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus, nil, status); err != nil {
+	if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus.Raw, nil, status); err != nil {
 		return err
 	}
 
@@ -277,4 +277,18 @@ func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.Export
 		return &export
 	}
 	return nil
+}
+
+func encodeStatus(status *helmv1alpha1.ProviderStatus) (runtime.RawExtension, error) {
+	status.TypeMeta = metav1.TypeMeta{
+		APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
+		Kind:       "ProviderStatus",
+	}
+
+	raw := &runtime.RawExtension{}
+	obj := status.DeepCopyObject()
+	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
+		return runtime.RawExtension{}, err
+	}
+	return *raw, nil
 }

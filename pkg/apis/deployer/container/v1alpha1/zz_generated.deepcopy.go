@@ -35,7 +35,7 @@ func (in *Configuration) DeepCopyInto(out *Configuration) {
 	}
 	in.DefaultImage.DeepCopyInto(&out.DefaultImage)
 	in.InitContainer.DeepCopyInto(&out.InitContainer)
-	in.SidecarContainer.DeepCopyInto(&out.SidecarContainer)
+	in.WaitContainer.DeepCopyInto(&out.WaitContainer)
 	return
 }
 

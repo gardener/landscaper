@@ -57,9 +57,10 @@ type ProviderConfiguration struct {
 // ProviderStatus is the helm provider specific status
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
-
 	// PodName is the name of the created pod.
 	PodName string `json:"podName"`
+	// LastOperation defines the last run operation of the pod.
+	LastOperation string `json:"lastOperation"`
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`

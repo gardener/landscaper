@@ -84,7 +84,14 @@ type Installation struct {
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
 	// BlueprintRef is the resolved reference to the definition.
-	BlueprintRef RemoteBlueprintReference `json:"definitionRef"`
+	BlueprintRef RemoteBlueprintReference `json:"blueprintRef"`
+
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
 
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.

@@ -3,7 +3,7 @@ kind: Component
 metadata:
   name: ingress-controller
 spec:
-  definitionRef: nginx-ingress-controller
+  blueprintRef: nginx-ingress-controller
 
   imports:
   - from: .kubeconfigs.base

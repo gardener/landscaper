@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func TestConfig(t *testing.T) {

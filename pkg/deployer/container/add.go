@@ -24,7 +24,7 @@ import (
 )
 
 func AddActuatorToManager(mgr manager.Manager, config *containerv1alpha1.Configuration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("HelmDeployer"), config)
+	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ContainerDeployer"), config)
 	if err != nil {
 		return err
 	}

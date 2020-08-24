@@ -17,10 +17,11 @@ package executions
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 
-	"github.com/masterminds/sprig"
+	"github.com/Masterminds/sprig"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -65,6 +67,9 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Namespace = inst.Info.Namespace
 
 	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
+		exec.Spec.BlueprintRef = &inst.Info.Spec.BlueprintRef
+		exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
+		exec.Spec.ImportReference = inst.Info.Status.ImportReference
 		exec.Spec.Executions = executions
 		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err
@@ -94,10 +99,18 @@ func (o *ExecutionOperation) template(blueprint *blueprints.Blueprint, imports i
 		return nil, err
 	}
 
-	data := bytes.NewBuffer([]byte{})
-	values := map[string]interface{}{
-		"imports": imports,
+	// marshal and unmarshal resolved component descriptor
+	components, err := serializeResolvedComponentDescriptor(cdutils.ConvertFromComponentDescriptorList(o.ResolvedComponentDescriptor).Components)
+	if err != nil {
+		return nil, fmt.Errorf("error during serializing of the resolved component descriptor: %w", err)
 	}
+
+	values := map[string]interface{}{
+		"imports":    imports,
+		"components": components,
+	}
+
+	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {
 		return nil, err
 	}
@@ -108,4 +121,16 @@ func (o *ExecutionOperation) template(blueprint *blueprints.Blueprint, imports i
 	}
 
 	return executions, nil
+}
+
+func serializeResolvedComponentDescriptor(list map[string]cdutils.MappedComponentDescriptor) (interface{}, error) {
+	data, err := json.Marshal(list)
+	if err != nil {
+		return nil, err
+	}
+	var val interface{}
+	if err := json.Unmarshal(data, &val); err != nil {
+		return nil, err
+	}
+	return val, nil
 }

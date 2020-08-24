@@ -12,6 +12,6 @@ exports:
 executors: | # has to be idempotent
   ...
 
-definitionRefs: # make as directory structure
+blueprintRefs: # make as directory structure
 - "components/dns-controller"
 - "components/nginx-ingress-controller"

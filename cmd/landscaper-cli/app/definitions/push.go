@@ -26,14 +26,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/util/json"
-
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	lsoci "github.com/gardener/landscaper/pkg/landscaper/registry/oci"
+	lsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -110,37 +106,6 @@ func (o *pushOptions) Complete(args []string) error {
 	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, o.definition); err != nil {
 		return err
 	}
-
-	// automatically add default component descriptor is none is defined
-	if _, err := os.Stat(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath)); err != nil {
-		vName, err := registry.ParseDefinitionRef(o.ref)
-		if err != nil {
-			return err
-		}
-		ociComponent := &cdv2.OCIComponent{
-			ComponentMetadata: cdv2.ComponentMetadata{
-				Type:    cdv2.OCIComponentType,
-				Name:    o.definition.Name,
-				Version: o.definition.Version,
-			},
-			Repository: vName.Name,
-		}
-
-		cd := cdv2.ComponentDescriptor{
-			Metadata:   cdv2.Metadata{Version: cdv2.SchemaVersion},
-			Components: cdv2.ResolvableComponentList{ociComponent},
-		}
-
-		data, err := json.Marshal(cd)
-		if err != nil {
-			return fmt.Errorf("unable to parse automatically constructed component descriptor: %w", err)
-		}
-
-		if err := ioutil.WriteFile(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath), data, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
 	return o.Validate()
 }
 

@@ -54,7 +54,6 @@ func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.Execution
 }
 
 // CreateOrUpdateDataObject creates or updates a dataobject from a object reference
-// if
 func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values interface{}) error {
 	obj := &corev1.Secret{}
 	obj.GenerateName = "dataobject-"

@@ -17,20 +17,15 @@ package installations
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
 )
 
-func AddActuatorToManager(mgr manager.Manager, registry registry.Registry, comp componentrepository.Client) error {
-	a, err := NewActuator(registry, comp)
+// AddActuatorToManager register the installation in a manager.
+func AddActuatorToManager(mgr manager.Manager, regConfig *config.RegistriesConfiguration) error {
+	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ComponentInstallations"), regConfig)
 	if err != nil {
-		return err
-	}
-
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("ComponentInstallations"), a); err != nil {
 		return err
 	}
 

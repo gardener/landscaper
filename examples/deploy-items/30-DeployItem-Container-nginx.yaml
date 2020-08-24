@@ -1,0 +1,20 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: sleep
+spec:
+  type: Container
+  importRef:
+    name: secret-item1
+    namespace: default
+
+  config:
+    apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+
+    image: alpine
+    command: ["sh", "-c"]
+    args:
+    - |
+      env
+      sleep 60

@@ -27,7 +27,7 @@ import (
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/fake"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/fake"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 

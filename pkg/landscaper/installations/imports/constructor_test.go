@@ -31,8 +31,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -44,8 +44,8 @@ var _ = g.Describe("Constructor", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
-		fakeRegistry      regapi.Registry
-		fakeCompRepo      componentrepository.Client
+		fakeRegistry      blueprintsregistry.Registry
+		fakeCompRepo      componentsregistry.Registry
 
 		once sync.Once
 	)
@@ -62,9 +62,9 @@ var _ = g.Describe("Constructor", func() {
 			fakeInstallations = state.Installations
 			fakeDataTypes = state.DataTypes
 
-			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
+			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
-			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
+			fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 

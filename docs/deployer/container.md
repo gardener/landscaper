@@ -12,7 +12,8 @@ metadata:
   name: my-custom-container
 spec:
   type: Container
-  definitionRef: <resolved definition reference>
+  # +optional
+  blueprintRef: <resolved definition reference>
   importRef:
     name: secret-item1
     namespace: default
@@ -20,6 +21,8 @@ spec:
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud
     kind: ProviderConfiguration
+
+    blueprintRef: <abc....>
 
     image: <image ref>
     command: ["my command"]

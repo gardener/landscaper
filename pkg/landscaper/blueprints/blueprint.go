@@ -21,7 +21,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository/cdutils"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 // Blueprint is the internal resolved type of a blueprint.

@@ -19,7 +19,7 @@ export:
 - key: ijk
   type: string
 
-definitionRefs:
+blueprintRefs:
 - name: my-sub-component # defaulted to the name of the component
   ref: my-sub-component:1.1.0 # 1.0.0-dev-abcdefg # --> gitlink://my-sub-component --> gitlink://my-sub-component:1.0.0-dev
   imports:

@@ -47,6 +47,39 @@ spec:
           spec:
             description: ExecutionSpec defines a execution plan.
             properties:
+              blueprintRef:
+                description: BlueprintRef is the resolved reference to the definition.
+                properties:
+                  baseUrl:
+                    description: BaseURL is the base url of the repository to resolve
+                      components.
+                    type: string
+                  componentName:
+                    description: ComponentName defines the unique of the component
+                      containing the resource.
+                    type: string
+                  kind:
+                    description: Kind defines the kind resource kind where the resource
+                      is defined.
+                    type: string
+                  resource:
+                    description: Resource defines the name of the resource.
+                    type: string
+                  type:
+                    description: Type defines the type of the component repository
+                      to resolve references.
+                    type: string
+                  version:
+                    description: Version defines the version of the component.
+                    type: string
+                required:
+                - baseUrl
+                - componentName
+                - kind
+                - resource
+                - type
+                - version
+                type: object
               executions:
                 description: Executions defines all execution items that need to be
                   scheduled.
@@ -55,7 +88,9 @@ spec:
                     into a deploy item.
                   properties:
                     config:
-                      x-kubernetes-preserve-unknown-fields: true
+                      description: ProviderConfiguration contains the type specific
+                        configuration for the execution.
+                      type: object
                     name:
                       description: Name is the unique name of the execution.
                       type: string
@@ -82,6 +117,26 @@ spec:
                 - name
                 - namespace
                 type: object
+              registryPullSecrets:
+                description: 'RegistryPullSecrets defines a list of registry credentials
+                  that are used to pull blueprints and component descriptors from
+                  the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+                  Note that the type information is used to determine the secret key
+                  and the type of the secret.'
+                items:
+                  description: ObjectReference is the reference to a kubernetes object.
+                  properties:
+                    name:
+                      description: Name is the name of the kubernetes object.
+                      type: string
+                    namespace:
+                      description: Namespace is the namespace of kubernetes object.
+                      type: string
+                  required:
+                  - name
+                  - namespace
+                  type: object
+                type: array
             required:
             - executions
             type: object

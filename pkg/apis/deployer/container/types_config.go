@@ -41,7 +41,7 @@ type Configuration struct {
 	// SidecarContainerImage defines the image that is used as a
 	// sidecar to the defined main container.
 	// The sidecar container is responsible to collect the exports and the state of the main container.
-	SidecarContainer ContainerSpec `json:"sidecarContainer"`
+	WaitContainer ContainerSpec `json:"waitContainer"`
 }
 
 // ContainerSpec defines a container specification

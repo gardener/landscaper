@@ -60,7 +60,7 @@ type Helm struct {
 func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem) (*Helm, error) {
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
-	if _, _, err := helmdecoder.Decode(item.Spec.Configuration, nil, config); err != nil {
+	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, err
 	}
 

@@ -30,31 +30,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository/cdutils"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
-
-//// Operation is the operation interface that is used to share common operational data across the installation reconciler.
-//type Operation interface {
-//	lsoperation.Interface
-//	GetDataType(name string) (*datatype.Datatype, bool)
-//	GetRootInstallations(ctx context.Context, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error)
-//
-//	Inst() *Installation
-//	Context() *Context
-//	UpdateImportReference(ctx context.Context, values interface{}) error
-//	UpdateExportReference(ctx context.Context, values interface{}) error
-//	TriggerDependants(ctx context.Context) error
-//	UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error
-//}
 
 // Operation contains all installation operations and implements the Operation interface.
 type Operation struct {
@@ -69,8 +56,8 @@ type Operation struct {
 }
 
 // NewInstallationOperation creates a new installation operation
-func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, compRepo componentrepository.Client, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, registry, compRepo), datatypes, inst)
+func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, bRegistry blueprintsregistry.Registry, cRegistry componentsregistry.Registry, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, bRegistry, cRegistry), datatypes, inst)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
@@ -96,12 +83,12 @@ func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.I
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, err := ResolveComponentDescriptor(ctx, o.ComponentRepository(), o.Inst.Info)
+	cd, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
 	if err != nil {
 		return err
 	}
 
-	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, o.ComponentRepository(), *cd)
+	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd)
 	if err != nil {
 		return err
 	}

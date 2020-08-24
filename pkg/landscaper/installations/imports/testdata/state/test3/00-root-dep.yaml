@@ -5,9 +5,9 @@ metadata:
   namespace: test3
 spec:
 
-  definitionRef:
+  blueprintRef:
     type: local
-    baseUrl: ""
+    baseUrl: "../testdata/registry"
     version: 1.0.0
     componentName: root
     kind: localResource

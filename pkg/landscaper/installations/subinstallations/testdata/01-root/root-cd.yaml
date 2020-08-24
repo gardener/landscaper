@@ -9,6 +9,7 @@ component:
 
   repositoryContexts:
   - type: local
+    baseUrl: "./testdata"
 
   localResources:
   - name: root

@@ -14,7 +14,7 @@ metadata:
   - finalizer.landscaper.gardener.cloud
 spec:
 
-  definitionRef: b:1.0.0
+  blueprintRef: b:1.0.0
 
   imports:
   - from: a.z

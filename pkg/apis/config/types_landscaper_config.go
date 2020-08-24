@@ -21,10 +21,16 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
-	// Registry contains the configuration for the used blueprint registry
-	Registry RegistryConfiguration `json:"registry"`
-	// ComponentDescriptorRepository contains the configuration for the used component descriptor repository.
-	ComponentDescriptorRepository CDRepositoryConfiguration `json:"componentDescriptorRepository"`
+	// Registries configures the landscaper registries.
+	Registries RegistriesConfiguration `json:"registries"`
+}
+
+// RegistriesConfiguration contains the configuration options for blueprint and component registries
+type RegistriesConfiguration struct {
+	// Blueprints contains the configuration for the used blueprint
+	Blueprints RegistryConfiguration `json:"blueprints"`
+	// Blueprints contains the configuration for the used component descriptor registry
+	Components RegistryConfiguration `json:"components"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
@@ -38,22 +44,10 @@ type RegistryConfiguration struct {
 	OCI *OCIConfiguration `json:"oci,omitempty"`
 }
 
-// CDRepositoryConfiguration contains the configuration for the used component descriptor repository
-type CDRepositoryConfiguration struct {
-	// Local defines a local registry to use for definitions
-	// +optional
-	Local *LocalRegistryConfiguration `json:"local,omitempty"`
-
-	// OCI defines a oci registry to use for definitions
-	// +optional
-	OCI *OCIConfiguration `json:"oci,omitempty"`
-}
-
 // LocalRegistryConfiguration contains the configuration for a local registry
 type LocalRegistryConfiguration struct {
-	// Paths are local filesystem paths definitions
-	// +optional
-	Paths []string `json:"paths"`
+	// ConfigPaths configures local file paths to look for resources.
+	ConfigPaths []string `json:"configPaths"`
 }
 
 // OCIConfiguration holds configuration for the oci registry

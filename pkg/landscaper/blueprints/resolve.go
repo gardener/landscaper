@@ -20,12 +20,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository/cdutils"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 // Resolve returns a blueprint from a given reference.
-func Resolve(ctx context.Context, op operation.Interface, reference lsv1alpha1.RemoteBlueprintReference) (*Blueprint, error) {
-	cd, err := op.ComponentRepository().Resolve(ctx, reference.RepositoryContext, reference.ObjectMeta())
+func Resolve(ctx context.Context, op operation.RegistriesAccessor, reference lsv1alpha1.RemoteBlueprintReference) (*Blueprint, error) {
+	cd, err := op.ComponentsRegistry().Resolve(ctx, reference.RepositoryContext, reference.ObjectMeta())
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", reference, err)
 	}
@@ -35,12 +35,12 @@ func Resolve(ctx context.Context, op operation.Interface, reference lsv1alpha1.R
 		return nil, fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", reference, err)
 	}
 
-	blue, err := op.Registry().GetBlueprint(ctx, res)
+	blue, err := op.BlueprintsRegistry().GetBlueprint(ctx, res)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch blueprint for ref %#v: %w", reference, err)
 	}
 
-	blueprintContent, err := op.Registry().GetContent(ctx, res)
+	blueprintContent, err := op.BlueprintsRegistry().GetContent(ctx, res)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch content for ref %#v: %w", reference, err)
 	}

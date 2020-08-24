@@ -27,8 +27,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
@@ -39,8 +38,8 @@ var _ = g.Describe("Context", func() {
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeRegistry      regapi.Registry
-		fakeCompRepo      componentrepository.Client
+		fakeRegistry      blueprintsregistry.Registry
+		fakeCompRepo      components.Registry
 
 		once sync.Once
 	)
@@ -55,9 +54,9 @@ var _ = g.Describe("Context", func() {
 			Expect(err).ToNot(HaveOccurred())
 			fakeInstallations = state.Installations
 
-			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
-			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+			fakeCompRepo, err = components.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 

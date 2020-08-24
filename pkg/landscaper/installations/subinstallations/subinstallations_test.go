@@ -35,8 +35,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	regapi "github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	k8smock "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -48,8 +48,8 @@ var _ = g.Describe("SubInstallation", func() {
 		ctrl             *gomock.Controller
 		mockClient       *k8smock.MockClient
 		mockStatusWriter *k8smock.MockStatusWriter
-		fakeRegistry     regapi.Registry
-		fakeCompRepo     componentrepository.Client
+		fakeRegistry     blueprintsregistry.Registry
+		fakeCompRepo     componentsregistry.Registry
 
 		defaultTestConfig *utils.TestInstallationConfig
 
@@ -64,10 +64,10 @@ var _ = g.Describe("SubInstallation", func() {
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
 		once.Do(func() {
-			fakeRegistry, err = regapi.NewLocalRegistry(testing.NullLogger{}, "./testdata")
+			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			fakeCompRepo, err = componentrepository.NewLocalClient(testing.NullLogger{}, "./testdata")
+			fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -83,6 +83,7 @@ var _ = g.Describe("SubInstallation", func() {
 			RemoteBlueprintVersion:       "1.0.0",
 			BlueprintFilePath:            "./testdata/01-root/blueprint-root1.yaml",
 			BlueprintContentPath:         "./testdata/01-root",
+			RemoteBlueprintBaseURL:       "./testdata",
 		}
 	})
 
@@ -127,7 +128,8 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
 			Expect(resInst.Spec.BlueprintRef).To(Equal(lsv1alpha1.RemoteBlueprintReference{
 				RepositoryContext: cdv2.RepositoryContext{
-					Type: "local",
+					Type:    "local",
+					BaseURL: "./testdata",
 				},
 				VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 					ResourceReference: lsv1alpha1.ResourceReference{
@@ -236,7 +238,7 @@ var _ = g.Describe("SubInstallation", func() {
 			subinst := &lsv1alpha1.Installation{}
 			subinst.Name = "inst-def1"
 			subinst.Namespace = "default"
-			subinst.Spec.BlueprintRef = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0")
+			subinst.Spec.BlueprintRef = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
 			subinst.Spec.Imports = []lsv1alpha1.DefinitionImportMapping{
 				{
 					DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{

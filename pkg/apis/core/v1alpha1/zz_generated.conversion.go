@@ -306,16 +306,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*RemoteBlueprintReference)(nil), (*core.InstallationBlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference(a.(*RemoteBlueprintReference), b.(*core.InstallationBlueprintReference), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.InstallationBlueprintReference)(nil), (*RemoteBlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference(a.(*core.InstallationBlueprintReference), b.(*RemoteBlueprintReference), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*InstallationList)(nil), (*core.InstallationList)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_InstallationList_To_core_InstallationList(a.(*InstallationList), b.(*core.InstallationList), scope)
 	}); err != nil {
@@ -413,6 +403,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ObjectReference)(nil), (*ObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ObjectReference_To_v1alpha1_ObjectReference(a.(*core.ObjectReference), b.(*ObjectReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RemoteBlueprintReference)(nil), (*core.RemoteBlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(a.(*RemoteBlueprintReference), b.(*core.RemoteBlueprintReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.RemoteBlueprintReference)(nil), (*RemoteBlueprintReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference(a.(*core.RemoteBlueprintReference), b.(*RemoteBlueprintReference), scope)
 	}); err != nil {
 		return err
 	}
@@ -879,11 +879,10 @@ func Convert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemL
 
 func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, out *core.DeployItemSpec, s conversion.Scope) error {
 	out.Type = core.ExecutionType(in.Type)
-	out.DefinitionRef = in.DefinitionRef
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
-	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
+	out.BlueprintRef = (*core.RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
+	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
+	out.Configuration = in.Configuration
 	return nil
 }
 
@@ -894,11 +893,10 @@ func Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, 
 
 func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemSpec, out *DeployItemSpec, s conversion.Scope) error {
 	out.Type = ExecutionType(in.Type)
-	out.DefinitionRef = in.DefinitionRef
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
-	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
+	out.BlueprintRef = (*RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
+	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
+	out.Configuration = in.Configuration
 	return nil
 }
 
@@ -911,7 +909,7 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.Phase = core.ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
-	out.ProviderStatus = *(*json.RawMessage)(unsafe.Pointer(&in.ProviderStatus))
+	out.ProviderStatus = in.ProviderStatus
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }
@@ -925,7 +923,7 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.Phase = ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
-	out.ProviderStatus = *(*json.RawMessage)(unsafe.Pointer(&in.ProviderStatus))
+	out.ProviderStatus = in.ProviderStatus
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }
@@ -970,7 +968,7 @@ func Convert_core_Execution_To_v1alpha1_Execution(in *core.Execution, out *Execu
 func autoConvert_v1alpha1_ExecutionItem_To_core_ExecutionItem(in *ExecutionItem, out *core.ExecutionItem, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Type = core.ExecutionType(in.Type)
-	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
+	out.Configuration = in.Configuration
 	return nil
 }
 
@@ -982,7 +980,7 @@ func Convert_v1alpha1_ExecutionItem_To_core_ExecutionItem(in *ExecutionItem, out
 func autoConvert_core_ExecutionItem_To_v1alpha1_ExecutionItem(in *core.ExecutionItem, out *ExecutionItem, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Type = ExecutionType(in.Type)
-	out.Configuration = *(*json.RawMessage)(unsafe.Pointer(&in.Configuration))
+	out.Configuration = in.Configuration
 	return nil
 }
 
@@ -1014,9 +1012,9 @@ func Convert_core_ExecutionList_To_v1alpha1_ExecutionList(in *core.ExecutionList
 }
 
 func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out *core.ExecutionSpec, s conversion.Scope) error {
-	if err := Convert_v1alpha1_ObjectReference_To_core_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
+	out.BlueprintRef = (*core.RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
+	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
 	out.Executions = *(*[]core.ExecutionItem)(unsafe.Pointer(&in.Executions))
 	return nil
 }
@@ -1027,9 +1025,9 @@ func Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out
 }
 
 func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.ExecutionSpec, out *ExecutionSpec, s conversion.Scope) error {
-	if err := Convert_core_ObjectReference_To_v1alpha1_ObjectReference(&in.ImportReference, &out.ImportReference, s); err != nil {
-		return err
-	}
+	out.BlueprintRef = (*RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
+	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
 	out.Executions = *(*[]ExecutionItem)(unsafe.Pointer(&in.Executions))
 	return nil
 }
@@ -1205,32 +1203,6 @@ func Convert_core_Installation_To_v1alpha1_Installation(in *core.Installation, o
 	return autoConvert_core_Installation_To_v1alpha1_Installation(in, out, s)
 }
 
-func autoConvert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference(in *RemoteBlueprintReference, out *core.InstallationBlueprintReference, s conversion.Scope) error {
-	if err := Convert_v1alpha1_VersionedResourceReference_To_core_VersionedResourceReference(&in.VersionedResourceReference, &out.VersionedResourceReference, s); err != nil {
-		return err
-	}
-	out.RepositoryContext = in.RepositoryContext
-	return nil
-}
-
-// Convert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference is an autogenerated conversion function.
-func Convert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference(in *RemoteBlueprintReference, out *core.InstallationBlueprintReference, s conversion.Scope) error {
-	return autoConvert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference(in, out, s)
-}
-
-func autoConvert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference(in *core.InstallationBlueprintReference, out *RemoteBlueprintReference, s conversion.Scope) error {
-	if err := Convert_core_VersionedResourceReference_To_v1alpha1_VersionedResourceReference(&in.VersionedResourceReference, &out.VersionedResourceReference, s); err != nil {
-		return err
-	}
-	out.RepositoryContext = in.RepositoryContext
-	return nil
-}
-
-// Convert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference is an autogenerated conversion function.
-func Convert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference(in *core.InstallationBlueprintReference, out *RemoteBlueprintReference, s conversion.Scope) error {
-	return autoConvert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference(in, out, s)
-}
-
 func autoConvert_v1alpha1_InstallationList_To_core_InstallationList(in *InstallationList, out *core.InstallationList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]core.Installation)(unsafe.Pointer(&in.Items))
@@ -1254,9 +1226,10 @@ func Convert_core_InstallationList_To_v1alpha1_InstallationList(in *core.Install
 }
 
 func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *InstallationSpec, out *core.InstallationSpec, s conversion.Scope) error {
-	if err := Convert_v1alpha1_InstallationBlueprintReference_To_core_InstallationBlueprintReference(&in.BlueprintRef, &out.BlueprintRef, s); err != nil {
+	if err := Convert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(&in.BlueprintRef, &out.BlueprintRef, s); err != nil {
 		return err
 	}
+	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Imports = *(*[]core.ImportMappingDefinition)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]core.DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
 	out.StaticData = *(*[]core.StaticDataSource)(unsafe.Pointer(&in.StaticData))
@@ -1269,9 +1242,10 @@ func Convert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installation
 }
 
 func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.InstallationSpec, out *InstallationSpec, s conversion.Scope) error {
-	if err := Convert_core_InstallationBlueprintReference_To_v1alpha1_InstallationBlueprintReference(&in.BlueprintRef, &out.BlueprintRef, s); err != nil {
+	if err := Convert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference(&in.BlueprintRef, &out.BlueprintRef, s); err != nil {
 		return err
 	}
+	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.Imports = *(*[]DefinitionImportMapping)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]DefinitionExportMapping)(unsafe.Pointer(&in.Exports))
 	out.StaticData = *(*[]StaticDataSource)(unsafe.Pointer(&in.StaticData))
@@ -1543,6 +1517,32 @@ func autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.Objec
 // Convert_core_ObjectReference_To_v1alpha1_ObjectReference is an autogenerated conversion function.
 func Convert_core_ObjectReference_To_v1alpha1_ObjectReference(in *core.ObjectReference, out *ObjectReference, s conversion.Scope) error {
 	return autoConvert_core_ObjectReference_To_v1alpha1_ObjectReference(in, out, s)
+}
+
+func autoConvert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(in *RemoteBlueprintReference, out *core.RemoteBlueprintReference, s conversion.Scope) error {
+	if err := Convert_v1alpha1_VersionedResourceReference_To_core_VersionedResourceReference(&in.VersionedResourceReference, &out.VersionedResourceReference, s); err != nil {
+		return err
+	}
+	out.RepositoryContext = in.RepositoryContext
+	return nil
+}
+
+// Convert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference is an autogenerated conversion function.
+func Convert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(in *RemoteBlueprintReference, out *core.RemoteBlueprintReference, s conversion.Scope) error {
+	return autoConvert_v1alpha1_RemoteBlueprintReference_To_core_RemoteBlueprintReference(in, out, s)
+}
+
+func autoConvert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference(in *core.RemoteBlueprintReference, out *RemoteBlueprintReference, s conversion.Scope) error {
+	if err := Convert_core_VersionedResourceReference_To_v1alpha1_VersionedResourceReference(&in.VersionedResourceReference, &out.VersionedResourceReference, s); err != nil {
+		return err
+	}
+	out.RepositoryContext = in.RepositoryContext
+	return nil
+}
+
+// Convert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference is an autogenerated conversion function.
+func Convert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference(in *core.RemoteBlueprintReference, out *RemoteBlueprintReference, s conversion.Scope) error {
+	return autoConvert_core_RemoteBlueprintReference_To_v1alpha1_RemoteBlueprintReference(in, out, s)
 }
 
 func autoConvert_v1alpha1_ResourceReference_To_core_ResourceReference(in *ResourceReference, out *core.ResourceReference, s conversion.Scope) error {

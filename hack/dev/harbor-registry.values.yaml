@@ -1,0 +1,9 @@
+expose:
+  type: ingress
+  ingress:
+    hosts:
+      core: reg.ingress.ts-test.core.shoot.canary.k8s-hana.ondemand.com
+  tls:
+    secretName: registry-harbor-ingress-managed
+
+externalURL: https://reg.ingress.ts-test.core.shoot.canary.k8s-hana.ondemand.com

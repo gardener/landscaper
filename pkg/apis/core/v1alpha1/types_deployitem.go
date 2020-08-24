@@ -15,9 +15,8 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // DeployItemValidationCondition is the Conditions type to indicate the deploy items configuration validation status.
@@ -56,14 +55,24 @@ type DeployItemSpec struct {
 	// DataType is the type of the deployer that should handle the item.
 	Type ExecutionType `json:"type"`
 
-	// DefinitionRef is the resolved reference to the definition
-	DefinitionRef string `json:"definitionRef"`
+	// BlueprintRef is the resolved reference to the definition
+	// +optional
+	BlueprintRef *RemoteBlueprintReference `json:"blueprintRef,omitempty"`
+
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 
 	// ImportReference is the reference to the object containing all imported values.
-	ImportReference ObjectReference `json:"importRef,omitempty"`
+	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// ProviderConfiguration contains the deployer type specific configuration.
-	Configuration json.RawMessage `json:"config,omitempty"`
+	// +kubebuilder:validation:XEmbeddedResource
+	// +kubebuilder:validation:XPreserveUnknownFields
+	Configuration runtime.RawExtension `json:"config,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item.
@@ -82,7 +91,9 @@ type DeployItemStatus struct {
 
 	// ProviderStatus contains the provider specific status
 	// +optional
-	ProviderStatus json.RawMessage `json:"providerStatus,omitempty"`
+	// +kubebuilder:validation:XEmbeddedResource
+	// +kubebuilder:validation:XPreserveUnknownFields
+	ProviderStatus runtime.RawExtension `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional

@@ -51,6 +51,7 @@ type TestInstallationConfig struct {
 	RemoteBlueprintComponentName string
 	RemoteBlueprintResourceName  string
 	RemoteBlueprintVersion       string
+	RemoteBlueprintBaseURL       string
 
 	BlueprintContentPath string
 	// BlueprintFilePath defines the filepath to the blueprint definition.
@@ -82,7 +83,8 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 		rootInst = &lsv1alpha1.Installation{}
 		rootInst.Name = cfg.InstallationName
 		rootInst.Namespace = cfg.InstallationNamespace
-		rootInst.Spec.BlueprintRef = LocalRemoteBlueprintRef(cfg.RemoteBlueprintComponentName, cfg.RemoteBlueprintResourceName, cfg.RemoteBlueprintVersion)
+		rootInst.Spec.BlueprintRef = LocalRemoteBlueprintRef(cfg.RemoteBlueprintComponentName,
+			cfg.RemoteBlueprintResourceName, cfg.RemoteBlueprintVersion, cfg.RemoteBlueprintBaseURL)
 	}
 
 	rootBlueprint := CreateBlueprintFromFile(cfg.BlueprintFilePath, cfg.BlueprintContentPath)
@@ -96,10 +98,11 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 }
 
 // LocalRemoteBlueprintRef creates a new default local remote blueprint reference
-func LocalRemoteBlueprintRef(componentName, resourceName, version string) lsv1alpha1.RemoteBlueprintReference {
+func LocalRemoteBlueprintRef(componentName, resourceName, version, baseUrl string) lsv1alpha1.RemoteBlueprintReference {
 	return lsv1alpha1.RemoteBlueprintReference{
 		RepositoryContext: cdv2.RepositoryContext{
-			Type: "local",
+			Type:    "local",
+			BaseURL: baseUrl,
 		},
 		VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 			ResourceReference: lsv1alpha1.ResourceReference{

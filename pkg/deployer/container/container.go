@@ -18,6 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -25,7 +26,7 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
 const (
@@ -44,19 +45,22 @@ func init() {
 type Container struct {
 	log           logr.Logger
 	kubeClient    client.Client
-	registry      registry.Registry
+	registry      blueprintsregistry.Registry
 	Configuration *containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	ProviderStatus        *containerv1alpha1.ProviderStatus
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
+
+	InitContainerServiceAccountSecret types.NamespacedName
+	WaitContainerServiceAccountSecret types.NamespacedName
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, client registry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
+func New(log logr.Logger, kubeClient client.Client, client blueprintsregistry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
-	if _, _, err := decoder.Decode(item.Spec.Configuration, nil, providerConfig); err != nil {
+	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
 		return nil, err
 	}
 
@@ -67,8 +71,8 @@ func New(log logr.Logger, kubeClient client.Client, client registry.Registry, co
 	}
 
 	status := &containerv1alpha1.ProviderStatus{}
-	if len(item.Status.ProviderStatus) != 0 {
-		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(c.DeployItem.Status.ProviderStatus, nil, status); err != nil {
+	if len(item.Status.ProviderStatus.Raw) != 0 {
+		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
 			return nil, err
 		}
 	}

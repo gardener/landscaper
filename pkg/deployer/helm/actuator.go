@@ -28,7 +28,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
-	"github.com/gardener/landscaper/pkg/landscaper/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {

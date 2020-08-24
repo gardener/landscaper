@@ -24,8 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
-	"github.com/gardener/landscaper/pkg/landscaper/registry"
-	"github.com/gardener/landscaper/pkg/utils/componentrepository"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -33,8 +33,7 @@ type Interface interface {
 	Log() logr.Logger
 	Client() client.Client
 	Scheme() *runtime.Scheme
-	Registry() registry.Registry
-	ComponentRepository() componentrepository.Client
+	RegistriesAccessor
 	GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error)
 	// InjectLogger is used to inject Loggers into components that need them
 	// and don't otherwise have opinions.
@@ -46,21 +45,29 @@ type Interface interface {
 	// Reconciles
 	InjectScheme(scheme *runtime.Scheme) error
 	// InjectRegistry is used to inject a blueprint registry.
-	InjectRegistry(registry.Registry) error
+	InjectBlueprintsRegistry(blueprintsregistry.Registry) error
 	// InjectComponentRepository is used to inject a component repository.
-	InjectComponentRepository(componentrepository.Client) error
+	InjectComponentsRegistry(componentsregistry.Registry) error
+}
+
+// RegistriesAccessor is a getter interface for available registries.
+type RegistriesAccessor interface {
+	// BlueprintsRegistry returns a blueprints registry instance.
+	BlueprintsRegistry() blueprintsregistry.Registry
+	// ComponentsRegistry returns a components registry instance.
+	ComponentsRegistry() componentsregistry.Registry
 }
 
 type Operation struct {
 	log                 logr.Logger
 	client              client.Client
 	scheme              *runtime.Scheme
-	registry            registry.Registry
-	componentRepository componentrepository.Client
+	registry            blueprintsregistry.Registry
+	componentRepository componentsregistry.Registry
 }
 
 // NewOperation creates a new internal installation Operation object.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, registry registry.Registry, compRepo componentrepository.Client) Interface {
+func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, registry blueprintsregistry.Registry, compRepo componentsregistry.Registry) Interface {
 	return &Operation{
 		log:                 log,
 		client:              c,
@@ -81,7 +88,7 @@ func (o *Operation) InjectLogger(l logr.Logger) error {
 	return nil
 }
 
-// Client returns a controller runtime client.Client
+// Client returns a controller runtime client.Registry
 func (o *Operation) Client() client.Client {
 	return o.client
 }
@@ -104,23 +111,23 @@ func (o *Operation) InjectScheme(scheme *runtime.Scheme) error {
 }
 
 // Registry returns a Registry instance
-func (o *Operation) Registry() registry.Registry {
+func (o *Operation) BlueprintsRegistry() blueprintsregistry.Registry {
 	return o.registry
 }
 
 // InjectRegistry injects a Registry into the actuator
-func (o *Operation) InjectRegistry(r registry.Registry) error {
+func (o *Operation) InjectBlueprintsRegistry(r blueprintsregistry.Registry) error {
 	o.registry = r
 	return nil
 }
 
 // ComponentRepository returns a component registry instance
-func (o *Operation) ComponentRepository() componentrepository.Client {
+func (o *Operation) ComponentsRegistry() componentsregistry.Registry {
 	return o.componentRepository
 }
 
 // InjectComponentRepository injects a component registry into the operation
-func (o *Operation) InjectComponentRepository(c componentrepository.Client) error {
+func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) error {
 	o.componentRepository = c
 	return nil
 }
