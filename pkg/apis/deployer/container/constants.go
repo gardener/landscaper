@@ -26,6 +26,9 @@ const ContainerDeployerFinalizer = "container.deployer.landscaper.gardener.cloud
 // ContainerDeployerNameLabel is the name label that is used to identify managed pods.
 const ContainerDeployerNameLabel = "container.deployer.landscaper.gardener.cloud/name"
 
+// ContainerDeployerTypeLabel is a label that is used to identify secrets that contain the state of a container.
+const ContainerDeployerTypeLabel = "container.deployer.landscaper.gardener.cloud/type"
+
 // OperationName is the name of the env var that specifies the current operation that the image should execute
 const OperationName = "OPERATION"
 
@@ -95,11 +98,13 @@ const InitContainerName = "init"
 // WaitContainerName is the name of the container running the sidecar container.
 const WaitContainerName = "wait"
 
-// ServiceAccountTokenPath is the path where the landscaper specific service account token is mounted.
-// This mounted token is then copied by the init and wait container to the k8s specified location.
-// This is a workaround for the issue https://github.com/kubernetes/kubernetes/issues/19764 that
-// kubernetes is only able mount directories which would overwrite other files in /var/run/secrets/kubernetes.io/serviceaccount.
-const ServiceAccountTokenPath = "/etc/ls/token"
+// ContainerDeployerStateUUIDAnnotation is a annotation that is used to group chunks
+// that are stored in the secrets.
+const ContainerDeployerStateUUIDAnnotation = "container.deployer.landscaper.gardener.cloud/uuid"
+
+// ContainerDeployerStateNumAnnotation is a annotation that is used to define the order of chunks
+// that are stored in the secrets.
+const ContainerDeployerStateNumAnnotation = "container.deployer.landscaper.gardener.cloud/num"
 
 var (
 	DefaultEnvVars = []corev1.EnvVar{

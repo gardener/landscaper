@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -73,7 +74,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 	deployItem := &lsv1alpha1.DeployItem{}
-	if err := kubeClient.Get(ctx, opts.DeployItemKey, deployItem); err != nil {
+	if err := kubeClient.Get(ctx, opts.DeployItemKey.NamespacedName(), deployItem); err != nil {
 		return err
 	}
 
@@ -133,7 +134,11 @@ func Run(ctx context.Context, log logr.Logger) error {
 		log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
 	}
 
-	log.Info("get state")
+	log.Info("restore state")
+	if err := state.New(log, kubeClient, opts.DeployItemKey, opts.StateDirPath).Restore(ctx); err != nil {
+		return err
+	}
+	log.Info("state has been successfully restored")
 
 	return nil
 }

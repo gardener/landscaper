@@ -29,7 +29,7 @@ import (
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
-	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
+	if c.ProviderStatus.PodStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
 		// do default reconcile until the pod has finished
 		return c.Reconcile(ctx, container.OperationDelete)
 	}
@@ -38,8 +38,7 @@ func (c *Container) Delete(ctx context.Context) error {
 		return err
 	}
 
-	controllerutil.RemoveFinalizer(c.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return c.kubeClient.Update(ctx, c.DeployItem)
+	return c.cleanupDeployItem(ctx)
 }
 
 // cleanupRBAC removes all service accounts, roles and rolebindings that belong to the deploy item
@@ -92,4 +91,19 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	c.log.V(3).Info("successfully removed wait container rbac resources")
 
 	return nil
+}
+
+func (c *Container) cleanupDeployItem(ctx context.Context) error {
+	// delete the referenced export secret if there is one
+	if c.DeployItem.Status.ExportReference != nil {
+		secret := &corev1.Secret{}
+		secret.Name = c.DeployItem.Status.ExportReference.Name
+		secret.Namespace = c.DeployItem.Status.ExportReference.Namespace
+		if err := c.kubeClient.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	controllerutil.RemoveFinalizer(c.DeployItem, lsv1alpha1.LandscaperFinalizer)
+	return c.kubeClient.Update(ctx, c.DeployItem)
 }

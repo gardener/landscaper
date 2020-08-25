@@ -17,6 +17,8 @@ package container
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -53,13 +55,23 @@ type ProviderConfiguration struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // ProviderStatus is the helm provider specific status
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
+	// PodStatus contains the status of the pod that
+	// executes the configured container.
+	PodStatus PodStatus `json:"podStatus"`
+	// State contains the status of the deploy items state
+	// +optional
+	State *StateStatus `json:"state,omitempty"`
+}
+
+// PodStatus describes the status of a pod with its init, wait and main container.
+type PodStatus struct {
 	// PodName is the name of the created pod.
 	PodName string `json:"podName"`
 	// LastOperation defines the last run operation of the pod.
+	// The operation can be either reconcile or deletion.
 	LastOperation string `json:"lastOperation"`
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
@@ -76,4 +88,10 @@ type ProviderStatus struct {
 	Image string `json:"image"`
 	// ImageID of the container's image.
 	ImageID string `json:"imageID"`
+}
+
+// StateStatus defines the status of the deploy item's state
+type StateStatus struct {
+	// Data is the list of secrets that stores the state
+	Data []lsv1alpha1.ObjectReference `json:"data,omitempty"`
 }

@@ -25,7 +25,6 @@ import (
 	containerinstall "github.com/gardener/landscaper/pkg/apis/deployer/container/install"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
@@ -70,11 +69,9 @@ func New(log logr.Logger, kubeClient client.Client, client blueprintsregistry.Re
 		return nil, err
 	}
 
-	status := &containerv1alpha1.ProviderStatus{}
-	if len(item.Status.ProviderStatus.Raw) != 0 {
-		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
-			return nil, err
-		}
+	status, err := DecodeProviderStatus(item.Status.ProviderStatus)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Container{

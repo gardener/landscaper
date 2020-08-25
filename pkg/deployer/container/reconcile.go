@@ -38,8 +38,10 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	// do nothing if the pod is still running
-	if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
-		return nil
+	if pod != nil {
+		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
+			return nil
+		}
 	}
 
 	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation {
@@ -78,17 +80,17 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// update status
-		c.ProviderStatus.PodName = pod.Name
+		c.ProviderStatus.PodStatus.PodName = pod.Name
 		containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
-		c.ProviderStatus.LastOperation = string(operation)
-		c.ProviderStatus.Image = containerStatus.Image
-		c.ProviderStatus.ImageID = containerStatus.ImageID
-		encStatus, err := encodeStatus(c.ProviderStatus)
+		c.ProviderStatus.PodStatus.LastOperation = string(operation)
+		c.ProviderStatus.PodStatus.Image = containerStatus.Image
+		c.ProviderStatus.PodStatus.ImageID = containerStatus.ImageID
+		encStatus, err := EncodeProviderStatus(c.ProviderStatus)
 		if err != nil {
 			return err
 		}
 
-		c.DeployItem.Status.ProviderStatus = encStatus
+		c.DeployItem.Status.ProviderStatus = *encStatus
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
 		if operation == container.OperationDelete {
@@ -97,8 +99,12 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		return c.kubeClient.Status().Update(ctx, c.DeployItem)
 	}
 
+	if pod == nil {
+		return nil
+	}
+
 	if pod.Status.Phase == corev1.PodSucceeded {
-		c.ProviderStatus.PodName = ""
+		c.ProviderStatus.PodStatus.PodName = ""
 		encStatus, err := encodeStatus(c.ProviderStatus)
 		if err != nil {
 			return err
@@ -114,10 +120,10 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 	// wait for container to finish
 	containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
-	c.ProviderStatus.Image = containerStatus.Image
-	c.ProviderStatus.ImageID = containerStatus.ImageID
-	c.ProviderStatus.Message = pod.Status.Message
-	c.ProviderStatus.Reason = pod.Status.Reason
+	c.ProviderStatus.PodStatus.Image = containerStatus.Image
+	c.ProviderStatus.PodStatus.ImageID = containerStatus.ImageID
+	c.ProviderStatus.PodStatus.Message = pod.Status.Message
+	c.ProviderStatus.PodStatus.Reason = pod.Status.Reason
 	encStatus, err := encodeStatus(c.ProviderStatus)
 	if err != nil {
 		return err

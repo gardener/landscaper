@@ -23,12 +23,12 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -36,23 +36,9 @@ import (
 // UploadExport reads the export config from the given path and creates or updates the
 // corresponding DeployItem.
 // todo: mount restricted kubernetes token to pod
-func UploadExport(ctx context.Context, log logr.Logger, deployItemKey client.ObjectKey, podKey client.ObjectKey, exportFilePath string) error {
-	// do not update the export if the exit code != 0
-	restConfig, err := clientcmd.BuildConfigFromFlags("", "")
-	if err != nil {
-		return err
-	}
-
-	// todo: add retries
-	kubeClient, err := client.New(restConfig, client.Options{
-		Scheme: kubernetes.LandscaperScheme,
-	})
-	if err != nil {
-		return err
-	}
-
+func UploadExport(ctx context.Context, log logr.Logger, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
 	pod := &corev1.Pod{}
-	if err := kubeClient.Get(ctx, podKey, pod); err != nil {
+	if err := kubeClient.Get(ctx, podKey.NamespacedName(), pod); err != nil {
 		return err
 	}
 	mainContainerStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
@@ -77,7 +63,7 @@ func UploadExport(ctx context.Context, log logr.Logger, deployItemKey client.Obj
 	}
 
 	deployItem := &lsv1alpha1.DeployItem{}
-	if err := kubeClient.Get(ctx, deployItemKey, deployItem); err != nil {
+	if err := kubeClient.Get(ctx, deployItemKey.NamespacedName(), deployItem); err != nil {
 		return err
 	}
 
@@ -86,19 +72,22 @@ func UploadExport(ctx context.Context, log logr.Logger, deployItemKey client.Obj
 
 func createOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, data []byte) error {
 	secret := &corev1.Secret{}
-	secret.GenerateName = deployItem.Name + "-"
+	secret.Name = containeractuator.ExportSecretName(deployItem)
 	secret.Namespace = deployItem.Namespace
 	if deployItem.Status.ExportReference != nil {
-		secret.Name = deployItem.Status.ExportReference.Name
-		secret.Name = deployItem.Status.ExportReference.Namespace
+		if deployItem.Status.ExportReference.Name != secret.Name {
+			return fmt.Errorf("expected exported secret with name %s but found %s", secret.Name, deployItem.Status.ExportReference.Name)
+		}
 	}
 
 	_, err := kubernetesutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
-		secret.Data[lsv1alpha1.DataObjectSecretDataKey] = data
+		secret.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
 		return controllerutil.SetControllerReference(deployItem, secret, kubernetes.LandscaperScheme)
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create or update secret %s in namespace %s: %w", secret.Name, secret.Namespace, err)
 	}
 
 	deployItem.Status.ExportReference = &lsv1alpha1.ObjectReference{

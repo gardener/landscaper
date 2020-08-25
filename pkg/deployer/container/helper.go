@@ -15,40 +15,34 @@
 package container
 
 import (
-	"io"
-	"os"
-	"path/filepath"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
-// CopyServiceAccountToken copies the container deployer specific token to the
-// kubernetes defined location if it exists.
-func CopyServiceAccountToken() error {
-	if _, err := os.Stat(container.ServiceAccountTokenPath); err != nil {
-		if os.IsExist(err) {
-			return nil
+func DecodeProviderStatus(raw runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
+	status := &containerv1alpha1.ProviderStatus{}
+	if len(raw.Raw) != 0 {
+		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(raw.Raw, nil, status); err != nil {
+			return nil, err
 		}
-		return err
+	}
+	return status, nil
+}
+
+func EncodeProviderStatus(status *containerv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
+	status.TypeMeta = metav1.TypeMeta{
+		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
+		Kind:       "ProviderStatus",
 	}
 
-	// ensure the path exists
-	if err := os.MkdirAll(filepath.Dir(PodTokenPath), os.ModePerm); err != nil {
-		return err
+	raw := &runtime.RawExtension{}
+	obj := status.DeepCopyObject()
+	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
+		return &runtime.RawExtension{}, err
 	}
-	in, err := os.Open(container.ServiceAccountTokenPath)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	out, err := os.Create(PodTokenPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	if _, err := io.Copy(out, in); err != nil {
-		return err
-	}
-	return nil
+	return raw, nil
 }

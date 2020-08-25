@@ -348,14 +348,22 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
-				Resources:     []string{"deployitems"},
+				Resources:     []string{"deployitems", "deployitems/status"},
 				Verbs:         []string{"get", "update"},
 				ResourceNames: []string{c.DeployItem.Name},
+			},
+			// we need a specific create secrets role as we cannot restrict the creation of a secret to a specific name
+			// See https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+			// "You cannot restrict create or deletecollection requests by resourceName. For create, this limitation is because the object name is not known at authorization time."
+			{
+				APIGroups: []string{corev1.SchemeGroupVersion.Group},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"create"},
 			},
 			{
 				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
 				Resources:     []string{"secrets"},
-				Verbs:         []string{"create", "update"},
+				Verbs:         []string{"update", "get"},
 				ResourceNames: []string{ExportSecretName(c.DeployItem)},
 			},
 			{

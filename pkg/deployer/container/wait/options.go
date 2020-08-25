@@ -22,8 +22,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 )
 
@@ -35,11 +35,11 @@ type options struct {
 
 	podName      string
 	podNamespace string
-	PodKey       client.ObjectKey
+	PodKey       lsv1alpha1.ObjectReference
 
 	deployItemName      string
 	deployItemNamespace string
-	DeployItemKey       client.ObjectKey
+	DeployItemKey       lsv1alpha1.ObjectReference
 }
 
 // Setup reads necessary options from the expected sources.
@@ -49,11 +49,11 @@ func (o *options) Setup() {
 
 	o.podName = os.Getenv(container.PodName)
 	o.podNamespace = os.Getenv(container.PodNamespaceName)
-	o.PodKey = client.ObjectKey{Name: o.podName, Namespace: o.podNamespace}
+	o.PodKey = lsv1alpha1.ObjectReference{Name: o.podName, Namespace: o.podNamespace}
 
 	o.deployItemName = os.Getenv(container.DeployItemName)
 	o.deployItemNamespace = os.Getenv(container.DeployItemNamespaceName)
-	o.DeployItemKey = client.ObjectKey{Name: o.deployItemName, Namespace: o.deployItemNamespace}
+	o.DeployItemKey = lsv1alpha1.ObjectReference{Name: o.deployItemName, Namespace: o.deployItemNamespace}
 
 	// todo: create own backoff method with timeout to gracefully handle timeouts
 	o.DefaultBackoff = wait.Backoff{

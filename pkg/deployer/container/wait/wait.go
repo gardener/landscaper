@@ -23,11 +23,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -35,27 +33,7 @@ import (
 // For a comparison of different possibilities to wait for a container to finish
 // see the argo doc: https://github.com/argoproj/argo/blob/master/docs/workflow-executors.md
 // This method currently uses the k8s api method for simplicity and stability reasons.
-func WaitUntilMainContainerFinished(ctx context.Context, log logr.Logger, podKey client.ObjectKey, defaultBackoff wait.Backoff) error {
-	restConfig, err := clientcmd.BuildConfigFromFlags("", "")
-	if err != nil {
-		return err
-	}
-
-	var kubeClient client.Client
-	if err := wait.ExponentialBackoff(defaultBackoff, func() (bool, error) {
-		var err error
-		kubeClient, err = client.New(restConfig, client.Options{
-			Scheme: kubernetes.LandscaperScheme,
-		})
-		if err != nil {
-			log.Error(err, "unable to build kubernetes client")
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		return err
-	}
-
+func WaitUntilMainContainerFinished(ctx context.Context, log logr.Logger, kubeClient client.Client, podKey client.ObjectKey) error {
 	backoff := wait.Backoff{
 		Duration: 30 * time.Second,
 		Factor:   1.25,

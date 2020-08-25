@@ -40,7 +40,7 @@ type options struct {
 
 	deployItemName      string
 	deployItemNamespace string
-	DeployItemKey       client.ObjectKey
+	DeployItemKey       lsv1alpha1.ObjectReference
 	DeployItem          *lsv1alpha1.DeployItem
 }
 
@@ -53,7 +53,7 @@ func (o *options) Complete(ctx context.Context) {
 
 	o.deployItemName = os.Getenv(container.DeployItemName)
 	o.deployItemNamespace = os.Getenv(container.DeployItemNamespaceName)
-	o.DeployItemKey = client.ObjectKey{Name: o.deployItemName, Namespace: o.deployItemNamespace}
+	o.DeployItemKey = lsv1alpha1.ObjectReference{Name: o.deployItemName, Namespace: o.deployItemNamespace}
 
 	o.DefaultBackoff = wait.Backoff{
 		Duration: 10 * time.Second,
