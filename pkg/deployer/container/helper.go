@@ -23,6 +23,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
+// DecodeProviderStatus decodes a RawExtension to a container status.
 func DecodeProviderStatus(raw runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
 	status := &containerv1alpha1.ProviderStatus{}
 	if len(raw.Raw) != 0 {
@@ -33,6 +34,7 @@ func DecodeProviderStatus(raw runtime.RawExtension) (*containerv1alpha1.Provider
 	return status, nil
 }
 
+// EncodeProviderStatus encodes a container status to a RawExtension.
 func EncodeProviderStatus(status *containerv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
 		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),

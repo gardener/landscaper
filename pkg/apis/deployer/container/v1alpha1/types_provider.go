@@ -59,6 +59,9 @@ type ProviderConfiguration struct {
 // ProviderStatus is the helm provider specific status
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
+	// LastOperation defines the last run operation of the pod.
+	// The operation can be either reconcile or deletion.
+	LastOperation string `json:"lastOperation"`
 	// PodStatus contains the status of the pod that
 	// executes the configured container.
 	PodStatus PodStatus `json:"podStatus"`
@@ -71,9 +74,6 @@ type ProviderStatus struct {
 type PodStatus struct {
 	// PodName is the name of the created pod.
 	PodName string `json:"podName"`
-	// LastOperation defines the last run operation of the pod.
-	// The operation can be either reconcile or deletion.
-	LastOperation string `json:"lastOperation"`
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`
@@ -89,6 +89,9 @@ type PodStatus struct {
 	Image string `json:"image"`
 	// ImageID of the container's image.
 	ImageID string `json:"imageID"`
+	// ExitCode of the main container.
+	// +optional
+	ExitCode *int32 `json:"exitCode,omitempty"`
 }
 
 // StateStatus defines the status of the deploy item's state

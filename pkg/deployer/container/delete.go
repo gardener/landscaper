@@ -29,7 +29,7 @@ import (
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
-	if c.ProviderStatus.PodStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
+	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
 		// do default reconcile until the pod has finished
 		return c.Reconcile(ctx, container.OperationDelete)
 	}

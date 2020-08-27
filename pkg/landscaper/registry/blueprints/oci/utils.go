@@ -58,7 +58,7 @@ func BuildNewDefinition(cache cache.Cache, fs afero.Fs, path string) (*ocispecv1
 
 // BuildNewDefinitionConfig creates a ocispec Manifest from a component definition.
 func BuildNewDefinitionConfig(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
-	data, err := afero.ReadFile(fs, filepath.Join(path, lsv1alpha1.ComponentDefinitionPath))
+	data, err := afero.ReadFile(fs, filepath.Join(path, lsv1alpha1.BlueprintFilePath))
 	if err != nil {
 		return ocispecv1.Descriptor{}, err
 	}

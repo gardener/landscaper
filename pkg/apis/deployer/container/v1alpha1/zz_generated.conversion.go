@@ -163,12 +163,12 @@ func Convert_container_ContainerSpec_To_v1alpha1_ContainerSpec(in *container.Con
 
 func autoConvert_v1alpha1_PodStatus_To_container_PodStatus(in *PodStatus, out *container.PodStatus, s conversion.Scope) error {
 	out.PodName = in.PodName
-	out.LastOperation = in.LastOperation
 	out.Message = in.Message
 	out.Reason = in.Reason
 	out.State = in.State
 	out.Image = in.Image
 	out.ImageID = in.ImageID
+	out.ExitCode = (*int32)(unsafe.Pointer(in.ExitCode))
 	return nil
 }
 
@@ -179,12 +179,12 @@ func Convert_v1alpha1_PodStatus_To_container_PodStatus(in *PodStatus, out *conta
 
 func autoConvert_container_PodStatus_To_v1alpha1_PodStatus(in *container.PodStatus, out *PodStatus, s conversion.Scope) error {
 	out.PodName = in.PodName
-	out.LastOperation = in.LastOperation
 	out.Message = in.Message
 	out.Reason = in.Reason
 	out.State = in.State
 	out.Image = in.Image
 	out.ImageID = in.ImageID
+	out.ExitCode = (*int32)(unsafe.Pointer(in.ExitCode))
 	return nil
 }
 
@@ -218,6 +218,7 @@ func Convert_container_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(i
 }
 
 func autoConvert_v1alpha1_ProviderStatus_To_container_ProviderStatus(in *ProviderStatus, out *container.ProviderStatus, s conversion.Scope) error {
+	out.LastOperation = in.LastOperation
 	if err := Convert_v1alpha1_PodStatus_To_container_PodStatus(&in.PodStatus, &out.PodStatus, s); err != nil {
 		return err
 	}
@@ -231,6 +232,7 @@ func Convert_v1alpha1_ProviderStatus_To_container_ProviderStatus(in *ProviderSta
 }
 
 func autoConvert_container_ProviderStatus_To_v1alpha1_ProviderStatus(in *container.ProviderStatus, out *ProviderStatus, s conversion.Scope) error {
+	out.LastOperation = in.LastOperation
 	if err := Convert_container_PodStatus_To_v1alpha1_PodStatus(&in.PodStatus, &out.PodStatus, s); err != nil {
 		return err
 	}

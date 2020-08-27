@@ -81,7 +81,7 @@ func ObjectKey(name, namespace string) types.NamespacedName {
 	}
 }
 
-// GetStatusForContainer returns the container for a specific container
+// GetStatusForContainer returns the container status for a specific container
 func GetStatusForContainer(containerStatus []corev1.ContainerStatus, name string) (corev1.ContainerStatus, error) {
 	for _, status := range containerStatus {
 		if status.Name == name {

@@ -29,8 +29,8 @@ const (
 	// OperationAnnotation is the annotation that specifies a operation for a component
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
-	// ComponentDefinitionPath is the path to the component definition
-	ComponentDefinitionPath = "definition.yaml"
+	// BlueprintFilePath is the path to the component definition
+	BlueprintFilePath = "blueprint.yaml"
 
 	// ComponentDefinitionComponentDescriptorPath is the path to the component descriptor
 	ComponentDefinitionComponentDescriptorPath = "component_descriptor.yaml"

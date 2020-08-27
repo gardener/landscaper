@@ -29,6 +29,12 @@ const ContainerDeployerNameLabel = "container.deployer.landscaper.gardener.cloud
 // ContainerDeployerTypeLabel is a label that is used to identify secrets that contain the state of a container.
 const ContainerDeployerTypeLabel = "container.deployer.landscaper.gardener.cloud/type"
 
+// InitContainerConditionType defines the condition for the current init container
+const InitContainerConditionType = "InitContainer"
+
+// WaitContainerConditionType defines the condition of the current wait container
+const WaitContainerConditionType = "WaitContainer"
+
 // OperationName is the name of the env var that specifies the current operation that the image should execute
 const OperationName = "OPERATION"
 

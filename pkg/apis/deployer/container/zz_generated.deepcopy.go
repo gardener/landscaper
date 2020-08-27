@@ -88,6 +88,11 @@ func (in *ContainerSpec) DeepCopy() *ContainerSpec {
 func (in *PodStatus) DeepCopyInto(out *PodStatus) {
 	*out = *in
 	in.State.DeepCopyInto(&out.State)
+	if in.ExitCode != nil {
+		in, out := &in.ExitCode, &out.ExitCode
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

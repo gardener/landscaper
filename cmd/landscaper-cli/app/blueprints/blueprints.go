@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package blueprints
 
 import (
 	"context"
@@ -20,16 +20,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewDefinitionsCommand creates a new definitions command.
-func NewDefinitionsCommand(ctx context.Context) *cobra.Command {
+// NewBlueprintsCommand creates a new definitions command.
+func NewBlueprintsCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "definitions",
 		Aliases: []string{"defs", "definition", "def"},
 		Short:   "command to interact with definitions of an oci registry",
 	}
 
-	cmd.AddCommand(NewPushDefinitionsCommand(ctx))
-	cmd.AddCommand(NewGetDefinitionsCommand(ctx))
+	cmd.AddCommand(NewPushCommand(ctx))
+	cmd.AddCommand(NewGetCommand(ctx))
 
 	return cmd
 }

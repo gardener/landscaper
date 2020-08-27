@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package blueprints
 
 import (
 	"context"
@@ -39,15 +39,12 @@ type pushOptions struct {
 	// ref is the oci reference where the definition should eb uploaded.
 	ref string
 
-	// definitionPath is the path to the directory containing the definition.
-	definitionPath string
-
-	// definitionPath is the path to the string
-	definition *lsv1alpha1.Blueprint
+	// blueprintPath is the path to the directory containing the definition.
+	blueprintPath string
 }
 
-// NewPushDefinitionsCommand creates a new definition command to push definitions
-func NewPushDefinitionsCommand(ctx context.Context) *cobra.Command {
+// NewPushCommand creates a new definition command to push definitions
+func NewPushCommand(ctx context.Context) *cobra.Command {
 	opts := &pushOptions{}
 	cmd := &cobra.Command{
 		Use:     "push",
@@ -80,7 +77,7 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defManifest, err := lsoci.BuildNewDefinition(cache, afero.NewOsFs(), o.definitionPath)
+	defManifest, err := lsoci.BuildNewDefinition(cache, afero.NewOsFs(), o.blueprintPath)
 	if err != nil {
 		return err
 	}
@@ -96,26 +93,22 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 func (o *pushOptions) Complete(args []string) error {
 	// todo: validate args
 	o.ref = args[0]
-	o.definitionPath = args[1]
-
-	data, err := ioutil.ReadFile(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionPath))
-	if err != nil {
-		return err
-	}
-	o.definition = &lsv1alpha1.Blueprint{}
-	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, o.definition); err != nil {
-		return err
-	}
+	o.blueprintPath = args[1]
 	return o.Validate()
 }
 
 // Validate validates push options
 func (o *pushOptions) Validate() error {
-	// require a component descriptor
-	if _, err := os.Stat(filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath)); err != nil {
-		return fmt.Errorf("ComponentDescriptor is required at %s", filepath.Join(o.definitionPath, lsv1alpha1.ComponentDefinitionComponentDescriptorPath))
+	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath))
+	if err != nil {
+		return err
+	}
+	blueprint := &lsv1alpha1.Blueprint{}
+	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, blueprint); err != nil {
+		return err
 	}
 
+	// todo: validate references exist
 	return nil
 }
 

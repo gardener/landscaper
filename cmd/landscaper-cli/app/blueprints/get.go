@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package blueprints
 
 import (
 	"bytes"
@@ -41,8 +41,8 @@ type showOptions struct {
 	ref string
 }
 
-// NewGetDefinitionsCommand shows definitions and their configuration.
-func NewGetDefinitionsCommand(ctx context.Context) *cobra.Command {
+// NewGetCommand shows definitions and their configuration.
+func NewGetCommand(ctx context.Context) *cobra.Command {
 	opts := &showOptions{}
 	cmd := &cobra.Command{
 		Use:     "get",
@@ -93,7 +93,7 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defData, err := afero.ReadFile(memFS, filepath.Join("/", lsv1alpha1.ComponentDefinitionPath))
+	defData, err := afero.ReadFile(memFS, filepath.Join("/", lsv1alpha1.BlueprintFilePath))
 	if err != nil {
 		return err
 	}

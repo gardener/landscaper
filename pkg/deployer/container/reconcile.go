@@ -16,14 +16,14 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
@@ -40,7 +40,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
-			return nil
+			c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
+			return c.kubeClient.Status().Update(ctx, c.DeployItem)
 		}
 	}
 
@@ -81,18 +82,18 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// update status
 		c.ProviderStatus.PodStatus.PodName = pod.Name
-		containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
-		c.ProviderStatus.PodStatus.LastOperation = string(operation)
-		c.ProviderStatus.PodStatus.Image = containerStatus.Image
-		c.ProviderStatus.PodStatus.ImageID = containerStatus.ImageID
+		c.ProviderStatus.LastOperation = string(operation)
+		if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+			return err
+		}
 		encStatus, err := EncodeProviderStatus(c.ProviderStatus)
 		if err != nil {
 			return err
 		}
 
 		c.DeployItem.Status.ProviderStatus = *encStatus
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
+		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		if operation == container.OperationDelete {
 			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 		}
@@ -104,14 +105,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	if pod.Status.Phase == corev1.PodSucceeded {
-		c.ProviderStatus.PodStatus.PodName = ""
-		encStatus, err := encodeStatus(c.ProviderStatus)
-		if err != nil {
-			return err
-		}
-		c.DeployItem.Status.ProviderStatus = encStatus
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-		return c.kubeClient.Status().Update(ctx, c.DeployItem)
 	}
 
 	if pod.Status.Phase == corev1.PodFailed {
@@ -119,17 +113,17 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	// wait for container to finish
-	containerStatus, _ := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
-	c.ProviderStatus.PodStatus.Image = containerStatus.Image
-	c.ProviderStatus.PodStatus.ImageID = containerStatus.ImageID
-	c.ProviderStatus.PodStatus.Message = pod.Status.Message
-	c.ProviderStatus.PodStatus.Reason = pod.Status.Reason
-	encStatus, err := encodeStatus(c.ProviderStatus)
+	c.ProviderStatus.LastOperation = string(operation)
+	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+		return err
+	}
+	encStatus, err := EncodeProviderStatus(c.ProviderStatus)
 	if err != nil {
 		return err
 	}
 
-	c.DeployItem.Status.ProviderStatus = encStatus
+	c.DeployItem.Status.ProviderStatus = *encStatus
+	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 	if err := c.kubeClient.Status().Update(ctx, c.DeployItem); err != nil {
 		return err
 	}
@@ -142,16 +136,87 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	return nil
 }
 
-func encodeStatus(status *containerv1alpha1.ProviderStatus) (runtime.RawExtension, error) {
-	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
-		Kind:       "ProviderStatus",
+func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus) error {
+	containerStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
+	if err != nil {
+		return nil
+	}
+	providerStatus.PodStatus.Image = containerStatus.Image
+	providerStatus.PodStatus.ImageID = containerStatus.ImageID
+
+	if containerStatus.State.Waiting != nil {
+		providerStatus.PodStatus.Message = containerStatus.State.Waiting.Message
+		providerStatus.PodStatus.Reason = containerStatus.State.Waiting.Reason
+	}
+	if containerStatus.State.Running != nil {
+		providerStatus.PodStatus.Reason = "Running"
+	}
+	if containerStatus.State.Terminated != nil {
+		providerStatus.PodStatus.Reason = containerStatus.State.Terminated.Reason
+		providerStatus.PodStatus.Message = containerStatus.State.Terminated.Message
+		providerStatus.PodStatus.ExitCode = &containerStatus.State.Terminated.ExitCode
+	}
+	return nil
+}
+
+func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []lsv1alpha1.Condition {
+	initStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.InitContainerStatuses, container.InitContainerName)
+	if err == nil {
+		cond := lsv1alpha1helper.GetOrInitCondition(conditions, container.InitContainerConditionType)
+		if initStatus.State.Waiting != nil {
+			cond = lsv1alpha1helper.UpdatedCondition(cond,
+				lsv1alpha1.ConditionProgressing, initStatus.State.Waiting.Reason, initStatus.State.Waiting.Message)
+		}
+		if initStatus.State.Running != nil {
+			cond = lsv1alpha1helper.UpdatedCondition(cond,
+				lsv1alpha1.ConditionProgressing,
+				fmt.Sprintf("Pod running"),
+				fmt.Sprintf("Pod started running at %s", initStatus.State.Running.StartedAt.String()))
+		}
+		if initStatus.State.Terminated != nil {
+			if initStatus.State.Terminated.ExitCode == 0 {
+				cond = lsv1alpha1helper.UpdatedCondition(cond,
+					lsv1alpha1.ConditionTrue,
+					"ContainerSucceeded",
+					"Container successfully finished")
+			} else {
+				cond = lsv1alpha1helper.UpdatedCondition(cond,
+					lsv1alpha1.ConditionFalse,
+					initStatus.State.Terminated.Reason,
+					initStatus.State.Terminated.Message)
+			}
+		}
+		conditions = lsv1alpha1helper.MergeConditions(conditions, cond)
 	}
 
-	raw := &runtime.RawExtension{}
-	obj := status.DeepCopyObject()
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
-		return runtime.RawExtension{}, err
+	waitStatus, err := kubernetesutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.WaitContainerName)
+	if err == nil {
+		cond := lsv1alpha1helper.GetOrInitCondition(conditions, container.WaitContainerConditionType)
+		if waitStatus.State.Waiting != nil {
+			cond = lsv1alpha1helper.UpdatedCondition(cond,
+				lsv1alpha1.ConditionProgressing, waitStatus.State.Waiting.Reason, waitStatus.State.Waiting.Message)
+		}
+		if waitStatus.State.Running != nil {
+			cond = lsv1alpha1helper.UpdatedCondition(cond,
+				lsv1alpha1.ConditionProgressing,
+				"Pod running",
+				fmt.Sprintf("Pod started running at %s", waitStatus.State.Running.StartedAt.String()))
+		}
+		if waitStatus.State.Terminated != nil {
+			if waitStatus.State.Terminated.ExitCode == 0 {
+				cond = lsv1alpha1helper.UpdatedCondition(cond,
+					lsv1alpha1.ConditionTrue,
+					"ContainerSucceeded",
+					"Container successfully finished")
+			} else {
+				cond = lsv1alpha1helper.UpdatedCondition(cond,
+					lsv1alpha1.ConditionFalse,
+					waitStatus.State.Terminated.Reason,
+					waitStatus.State.Terminated.Message)
+			}
+		}
+		conditions = lsv1alpha1helper.MergeConditions(conditions, cond)
 	}
-	return *raw, nil
+
+	return conditions
 }

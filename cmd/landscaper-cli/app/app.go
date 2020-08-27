@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app/blueprints"
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/config"
-	"github.com/gardener/landscaper/cmd/landscaper-cli/app/definitions"
 	"github.com/gardener/landscaper/pkg/logger"
 
 	"github.com/spf13/cobra"
@@ -47,7 +47,7 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 	logger.InitFlags(cmd.Flags())
 
 	cmd.AddCommand(config.NewConfigCommand(ctx))
-	cmd.AddCommand(definitions.NewDefinitionsCommand(ctx))
+	cmd.AddCommand(blueprints.NewBlueprintsCommand(ctx))
 
 	return cmd
 }
