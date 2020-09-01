@@ -298,6 +298,19 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 				ResourceNames: []string{c.DeployItem.Spec.ImportReference.Name},
 			})
 		}
+		// todo: consider different namespace of secrets
+		if len(c.DeployItem.Spec.RegistryPullSecrets) != 0 {
+			rule := rbacv1.PolicyRule{
+				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
+				Resources:     []string{"secrets"},
+				Verbs:         []string{"get"},
+				ResourceNames: []string{},
+			}
+			for _, refs := range c.DeployItem.Spec.RegistryPullSecrets {
+				rule.ResourceNames = append(rule.ResourceNames, refs.Name)
+			}
+			role.Rules = append(role.Rules, rule)
+		}
 		return nil
 	})
 	if err != nil {

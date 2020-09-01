@@ -30,6 +30,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // LocalAccessType is the name of the local access type
@@ -175,24 +176,23 @@ func (r *localRegistry) GetBlueprint(_ context.Context, ref cdv2.Resource) (*v1a
 }
 
 // GetBlob returns the blob content for a component definition.
-func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {
+func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
 	var (
 		name    = ref.GetName()
 		version = ref.GetVersion()
 	)
 
 	if _, ok := r.Index[name]; !ok {
-		return nil, NewComponentNotFoundError(name, nil)
+		return NewComponentNotFoundError(name, nil)
 	}
 	intRef, ok := r.Index[name][version]
 	if !ok {
-		return nil, NewVersionNotFoundError(name, version, nil)
+		return NewVersionNotFoundError(name, version, nil)
 	}
 
 	blobFS := afero.NewBasePathFs(afero.NewOsFs(), intRef.blobPath)
-	roBlobFS := afero.NewReadOnlyFs(blobFS)
 
-	return roBlobFS, nil
+	return utils.CopyFS(blobFS, fs, "/", "/")
 }
 
 // BlueprintReference is the reference to a local definition

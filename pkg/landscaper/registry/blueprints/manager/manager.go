@@ -95,10 +95,10 @@ func (m *manager) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha
 	return reg.GetBlueprint(ctx, ref)
 }
 
-func (m *manager) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {
+func (m *manager) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
 	reg, ok := m.registries[ref.Access.GetType()]
 	if !ok {
-		return nil, blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
-	return reg.GetContent(ctx, ref)
+	return reg.GetContent(ctx, ref, fs)
 }

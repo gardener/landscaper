@@ -18,14 +18,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
+	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Constructor is a struct that contains all values
@@ -42,10 +44,9 @@ func NewConstructor(op *installations.Operation) *Constructor {
 }
 
 // Construct loads the exported data from the execution and the subinstallations.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (map[string]interface{}, error) {
+func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]*dataobjects.DataObject, error) {
 	var (
-		fldPath   = field.NewPath(fmt.Sprintf("(inst: %s)", inst.Info.Name)).Child("exports")
-		allValues = make(map[string]interface{})
+		fldPath = field.NewPath(fmt.Sprintf("(inst: %s)", inst.Info.Name)).Child("exports")
 	)
 
 	execDo, err := executions.New(c.Operation).GetExportedValues(ctx, inst)
@@ -64,28 +65,32 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	}
 
 	// Resolve export mapping for all exports
-	for _, mapping := range mappings {
+	dataObjects := make([]*dataobjects.DataObject, len(mappings)) // map of mapping key to data
+	for i, mapping := range mappings {
 		exPath := fldPath.Child(mapping.Key)
-		values, err := c.constructFromExecution(exPath, execDo, mapping)
-		if err == nil {
-			allValues = utils.MergeMaps(allValues, values)
-			continue
-		}
-		if !installations.IsExportNotFoundError(err) {
-			return nil, err
+
+		if execDo != nil {
+			do, err := c.constructFromExecution(exPath, execDo.Data, mapping)
+			if err == nil {
+				dataObjects[i] = do
+				continue
+			}
+			if !installations.IsExportNotFoundError(err) {
+				return nil, err
+			}
 		}
 
-		values, err = c.constructFromSubInstallations(ctx, exPath, mapping, subInsts)
+		do, err := c.constructFromSubInstallations(ctx, exPath, mapping, subInsts)
 		if err != nil {
 			return nil, err
 		}
-		if values == nil {
+		if do == nil {
 			return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(exPath, "no data found"))
 		}
-		allValues = utils.MergeMaps(allValues, values)
+		dataObjects[i] = do
 	}
 
-	return allValues, nil
+	return dataObjects, nil
 }
 
 func (c *Constructor) getSubInstallations(ctx context.Context, inst *installations.Installation) ([]*installations.Installation, error) {
@@ -105,24 +110,35 @@ func (c *Constructor) getSubInstallations(ctx context.Context, inst *installatio
 	return subInsts, nil
 }
 
-func (c *Constructor) constructFromExecution(fldPath *field.Path, do *dataobject.DataObject, mapping installations.ExportMapping) (map[string]interface{}, error) {
-	if do == nil {
+func (c *Constructor) constructFromExecution(fldPath *field.Path, input interface{}, mapping installations.ExportMapping) (*dataobjects.DataObject, error) {
+	if input == nil {
 		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "no execution dataobject given"))
 	}
 
-	var val interface{}
-	if err := do.GetData(mapping.From, &val); err != nil {
+	var data interface{}
+	if err := jsonpath.GetValue(mapping.From, input, &data); err != nil {
 		return nil, installations.NewExportNotFoundError("unable to find export from execution", field.InternalError(fldPath, err))
 	}
 
-	data, err := jsonpath.Construct(mapping.To, val)
-	if err != nil {
-		return nil, field.InternalError(fldPath, err)
+	dt, ok := c.GetDataType(mapping.Type)
+	if !ok {
+		return nil, fmt.Errorf("%s: cannot find DataType %s", fldPath.String(), mapping.Type)
 	}
-	return data, nil
+
+	if err := datatype.Validate(*dt, data); err != nil {
+		return nil, errors.Wrapf(err, "%s: unable to validate data against %s", fldPath.String(), mapping.Type)
+	}
+
+	do := &dataobjects.DataObject{
+		FieldValue: &mapping.DefinitionFieldValue,
+		Data:       data,
+	}
+	do.SetContext(lsv1alpha1.ExportDataObjectContext)
+	do.SetKey(mapping.DefinitionExportMapping.To)
+	return do, nil
 }
 
-func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInsts []*installations.Installation) (map[string]interface{}, error) {
+func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInsts []*installations.Installation) (*dataobjects.DataObject, error) {
 	for _, subInst := range subInsts {
 		subPath := fldPath.Child(subInst.Info.Name)
 		values, err := c.constructFromSubInstallation(ctx, subPath, mapping, subInst)
@@ -136,30 +152,38 @@ func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath
 	return nil, nil
 }
 
-func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInst *installations.Installation) (map[string]interface{}, error) {
+func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInst *installations.Installation) (*dataobjects.DataObject, error) {
 	if subInst.Info.Status.ExportReference == nil {
 		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "subinstallation has no exported data"))
 	}
 
-	// todo: check if subinstalaltion exports this key, before reading it
+	// todo: check if subinstallation exports this key, before reading it
 	_, err := subInst.GetExportMappingTo(mapping.From)
 	if err != nil {
 		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "subinstallation does not export that key"))
 	}
 
-	do, err := c.Operation.GetDataObjectFromSecret(ctx, subInst.Info.Status.ExportReference.NamespacedName())
+	// get specific export dataobject for the given exported key
+	// subinst -> export -> key=mappingTo
+	do, err := c.Operation.GetExportForKey(ctx, subInst.Info, mapping.From)
 	if err != nil {
 		return nil, field.InternalError(fldPath, err)
 	}
 
-	var val interface{}
-	if err := do.GetData(mapping.From, &val); err != nil {
-		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, err))
+	dt, ok := c.GetDataType(mapping.Type)
+	if !ok {
+		return nil, fmt.Errorf("%s: cannot find DataType %s", fldPath.String(), mapping.Type)
 	}
 
-	data, err := jsonpath.Construct(mapping.To, val)
-	if err != nil {
-		return nil, field.InternalError(fldPath, err)
+	if err := datatype.Validate(*dt, do.Data); err != nil {
+		return nil, errors.Wrapf(err, "%s: unable to validate data against %s", fldPath.String(), mapping.Type)
 	}
-	return data, nil
+
+	do = &dataobjects.DataObject{
+		FieldValue: &mapping.DefinitionFieldValue,
+		Data:       do.Data,
+	}
+	do.SetContext(lsv1alpha1.ExportDataObjectContext)
+	do.SetKey(mapping.DefinitionExportMapping.To)
+	return do, nil
 }

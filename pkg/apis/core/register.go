@@ -50,6 +50,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&DataType{},
 		&DataTypeList{},
+		&DataObject{},
+		&DataObjectList{},
 		&Blueprint{},
 		&Installation{},
 		&InstallationList{},

@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -40,6 +39,7 @@ import (
 	blueprintsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
@@ -128,7 +128,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 		}
 
 		osFS := afero.NewOsFs()
-		if err := copyFS(blueprint.Fs, osFS, "/", opts.ContentDirPath); err != nil {
+		if err := utils.CopyFS(blueprint.Fs, osFS, "/", opts.ContentDirPath); err != nil {
 			return err
 		}
 		log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
@@ -141,28 +141,6 @@ func Run(ctx context.Context, log logr.Logger) error {
 	log.Info("state has been successfully restored")
 
 	return nil
-}
-
-func copyFS(src, dst afero.Fs, srcPath, dstPath string) error {
-	return afero.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		dstFilePath := filepath.Join(dstPath, path)
-		if info.IsDir() {
-			if err := dst.MkdirAll(dstFilePath, info.Mode()); err != nil {
-				return err
-			}
-			return nil
-		}
-
-		file, err := src.OpenFile(path, os.O_RDONLY, info.Mode())
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		return afero.WriteReader(dst, dstFilePath, file)
-	})
 }
 
 // registries is a internal struct that implements the registry accessors interface

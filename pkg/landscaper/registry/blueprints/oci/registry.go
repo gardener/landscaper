@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
@@ -93,38 +92,27 @@ func (r *registry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1al
 }
 
 // GetBlob returns the blob content for a component definition.
-func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error) {
+func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
 	if ref.Access.GetType() != cdv2.OCIRegistryType {
-		return nil, blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
 	ociComp := ref.Access.(*cdv2.OCIRegistryAccess)
 	ociRef := ociComp.ImageReference
 
 	manifest, err := r.oci.GetManifest(ctx, ociRef)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	layer := oci.GetLayerByName(manifest.Layers, ComponentDefinitionAnnotationTitleContent)
 	if layer == nil {
-		return nil, blueprintsregistry.NewNotFoundError(ociRef, errors.New("no content defined for component"))
+		return blueprintsregistry.NewNotFoundError(ociRef, errors.New("no content defined for component"))
 	}
 
 	var blob bytes.Buffer
 	if err := r.oci.Fetch(ctx, ociRef, *layer, &blob); err != nil {
-		return nil, err
+		return err
 	}
 
-	// todo: use proper cache folder
-	tmpDir, err := ioutil.TempDir("", "content-")
-	if err != nil {
-		return nil, err
-	}
-	fs := afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), tmpDir))
-
-	if err := utils.ExtractTarGzip(&blob, fs, "/"); err != nil {
-		return nil, err
-	}
-
-	return fs, nil
+	return utils.ExtractTarGzip(&blob, fs, "/")
 }

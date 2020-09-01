@@ -17,6 +17,10 @@ package blueprints
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+
+	"github.com/spf13/afero"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -40,12 +44,16 @@ func Resolve(ctx context.Context, op operation.RegistriesAccessor, reference lsv
 		return nil, fmt.Errorf("unable to fetch blueprint for ref %#v: %w", reference, err)
 	}
 
-	blueprintContent, err := op.BlueprintsRegistry().GetContent(ctx, res)
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "blueprint-")
 	if err != nil {
+		return nil, fmt.Errorf("unable to create temporary directory: %w", err)
+	}
+	fs := afero.NewBasePathFs(afero.NewOsFs(), tmpDir)
+	if err := op.BlueprintsRegistry().GetContent(ctx, res, fs); err != nil {
 		return nil, fmt.Errorf("unable to fetch content for ref %#v: %w", reference, err)
 	}
 
-	intBlueprint, err := New(blue, blueprintContent)
+	intBlueprint, err := New(blue, afero.NewReadOnlyFs(fs))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create internal blueprint representation for ref %#v: %w", reference, err)
 	}

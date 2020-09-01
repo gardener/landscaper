@@ -15,12 +15,23 @@
 package cdutils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/opencontainers/go-digest"
+	"github.com/opencontainers/image-spec/specs-go"
+	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/afero"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 // FindResourceByVersionedReference searches all given components for the defined resource ref.
@@ -110,4 +121,47 @@ func FindResourceInComponentByReference(comp cdv2.ComponentDescriptor, ttype str
 	}
 
 	return cdv2.Resource{}, cdv2.NotFound
+}
+
+// BuildComponentDescriptorManifest creates a new manifest from a component descriptor
+func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispecv1.Manifest, error) {
+	// add dummy json as config to have valid json that is required in a oci manifest
+	dummyData := []byte("{}")
+	dummyDesc := ocispecv1.Descriptor{
+		MediaType: "application/json",
+		Digest:    digest.FromBytes(dummyData),
+		Size:      int64(len(dummyData)),
+	}
+	if err := cache.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyData))); err != nil {
+		return ocispecv1.Manifest{}, nil
+	}
+
+	memFs := afero.NewMemMapFs()
+	if err := afero.WriteFile(memFs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), cdData, os.ModePerm); err != nil {
+		return ocispecv1.Manifest{}, err
+	}
+	var blob bytes.Buffer
+	if err := utils.BuildTar(memFs, "/", &blob); err != nil {
+		return ocispecv1.Manifest{}, err
+	}
+
+	desc := ocispecv1.Descriptor{
+		MediaType: componentsregistry.ComponentDescriptorMediaType,
+		Digest:    digest.FromBytes(blob.Bytes()),
+		Size:      int64(blob.Len()),
+	}
+
+	if err := cache.Add(desc, ioutil.NopCloser(&blob)); err != nil {
+		return ocispecv1.Manifest{}, err
+	}
+
+	manifest := ocispecv1.Manifest{
+		Versioned: specs.Versioned{SchemaVersion: 2},
+		Config:    dummyDesc,
+		Layers: []ocispecv1.Descriptor{
+			desc,
+		},
+	}
+
+	return manifest, nil
 }

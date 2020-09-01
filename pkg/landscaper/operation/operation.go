@@ -16,16 +16,19 @@ package operation
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/landscaper/dataobject"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -34,7 +37,7 @@ type Interface interface {
 	Client() client.Client
 	Scheme() *runtime.Scheme
 	RegistriesAccessor
-	GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error)
+	GetExportForKey(ctx context.Context, srcObj runtime.Object, key string) (*dataobjects.DataObject, error)
 	// InjectLogger is used to inject Loggers into components that need them
 	// and don't otherwise have opinions.
 	InjectLogger(l logr.Logger) error
@@ -132,17 +135,23 @@ func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) erro
 	return nil
 }
 
-// GetDataObjectFromSecret creates a dataobject from a secret
-func (o *Operation) GetDataObjectFromSecret(ctx context.Context, key types.NamespacedName) (*dataobject.DataObject, error) {
-	secret := &corev1.Secret{}
-	if err := o.Client().Get(ctx, key, secret); err != nil {
-		return nil, err
+// GetExportForKey creates a dataobject from a secret
+func (o *Operation) GetExportForKey(ctx context.Context, srcObj runtime.Object, key string) (*dataobjects.DataObject, error) {
+	acc, ok := srcObj.(metav1.Object)
+	if !ok {
+		return nil, fmt.Errorf("source has to be a kubernetes metadata object")
 	}
 
-	do, err := dataobject.New(secret)
+	src, err := lsv1alpha1helper.DataObjectSourceFromObject(srcObj)
 	if err != nil {
 		return nil, err
 	}
 
-	return do, nil
+	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1.ExportDataObjectContext, src, key)
+	rawDO := &lsv1alpha1.DataObject{}
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, acc.GetNamespace()), rawDO); err != nil {
+		return nil, err
+	}
+
+	return dataobjects.New(rawDO)
 }

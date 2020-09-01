@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
@@ -34,25 +35,27 @@ const (
 
 var _ = Describe("Local Registry", func() {
 
+	var (
+		fs afero.Fs
+	)
+
+	BeforeEach(func() {
+		fs = afero.NewMemMapFs()
+	})
+
 	Context("initialize Index", func() {
 		It("should be successfully initialized with one path", func() {
-			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{localTestData1})
+			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, localTestData1)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should be successfully initialized with multiple paths", func() {
-			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{
-				localTestData1,
-				localTestData2,
-			})
+			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, localTestData1, localTestData2)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should be successfully initialized with multiple paths that are subpaths", func() {
-			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{
-				localTestData1,
-				fmt.Sprintf("%s/comp1", localTestData1),
-			})
+			_, err := blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, localTestData1, fmt.Sprintf("%s/comp1", localTestData1))
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -63,7 +66,7 @@ var _ = Describe("Local Registry", func() {
 
 		BeforeEach(func() {
 			var err error
-			reg, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{localTestData1})
+			reg, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, localTestData1)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -92,20 +95,21 @@ var _ = Describe("Local Registry", func() {
 
 		BeforeEach(func() {
 			var err error
-			reg, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{localTestData1})
+			reg, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, localTestData1)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return the blob for a component by name", func() {
-			_, err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"))
+			err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"))
+			fs = afero.NewMemMapFs()
+			err = reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should be able to list all subcomponents as directories int he blob of the root component", func() {
-			fs, err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"))
+			err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
 			dirInfo, err := afero.ReadDir(fs, "/")
@@ -120,34 +124,35 @@ var _ = Describe("Local Registry", func() {
 		})
 
 		It("should be able to read the test file of the subcomponent", func() {
-			fs, err := reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"))
+			err := reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
-			data, err := afero.ReadFile(fs, "testdata.txt")
+			data, err := afero.ReadFile(fs, "/testdata.txt")
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(string(data)).To(Equal("Test Data"))
 		})
 
 		It("should return an error if the name is incorrect", func() {
-			_, err := reg.GetContent(context.TODO(), newLocalComponent("unkown-definition", "1.0.0"))
+			err := reg.GetContent(context.TODO(), newLocalComponent("unkown-definition", "1.0.0"), fs)
 			Expect(blueprintsregistry.IsComponentNotFoundError(err)).To(BeTrue())
 		})
 
 		It("should return an error if the version is incorrect", func() {
-			_, err := reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.0.0"))
+			err := reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.0.0"), fs)
 			Expect(blueprintsregistry.IsVersionNotFoundError(err)).To(BeTrue())
 		})
 	})
 
 })
 
-func newLocalComponent(name, version string) *blueprintsregistry.LocalAccess {
-	return &blueprintsregistry.LocalAccess{
-		ComponentMetadata: cdv2.ComponentMetadata{
+func newLocalComponent(name, version string) cdv2.Resource {
+	return cdv2.Resource{
+		ObjectMeta: cdv2.ObjectMeta{
 			Name:    name,
 			Version: version,
-			Type:    blueprintsregistry.LocalAccessType,
 		},
+		ObjectType: cdv2.ObjectType{Type: lsv1alpha1.BlueprintResourceType},
+		Access:     &blueprintsregistry.LocalAccess{ObjectType: cdv2.ObjectType{Type: blueprintsregistry.LocalAccessType}},
 	}
 }

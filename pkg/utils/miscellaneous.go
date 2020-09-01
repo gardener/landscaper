@@ -14,6 +14,13 @@
 
 package utils
 
+import (
+	"os"
+	"path/filepath"
+
+	"github.com/spf13/afero"
+)
+
 // MergeMaps takes two maps <a>, <b> and merges them. If <b> defines a value with a key
 // already existing in the <a> map, the <a> value for that key will be overwritten.
 func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
@@ -48,4 +55,27 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	}
 
 	return values
+}
+
+// CopyFS copies all files and directories of a filesystem to another.
+func CopyFS(src, dst afero.Fs, srcPath, dstPath string) error {
+	return afero.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		dstFilePath := filepath.Join(dstPath, path)
+		if info.IsDir() {
+			if err := dst.MkdirAll(dstFilePath, info.Mode()); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		file, err := src.OpenFile(path, os.O_RDONLY, info.Mode())
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		return afero.WriteReader(dst, dstFilePath, file)
+	})
 }

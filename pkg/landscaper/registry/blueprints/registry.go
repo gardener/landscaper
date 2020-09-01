@@ -28,5 +28,5 @@ type Registry interface {
 	// GetBlueprint returns the blueprint for a resource of type "Blueprint"
 	GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error)
 	// GetBlob returns the blob content for a component definition.
-	GetContent(ctx context.Context, ref cdv2.Resource) (afero.Fs, error)
+	GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error
 }

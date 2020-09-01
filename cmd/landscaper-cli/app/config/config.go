@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/apis/core"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobject/jsonpath"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 

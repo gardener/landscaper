@@ -8,6 +8,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.1.0 // indirect
 	github.com/Masterminds/squirrel v1.2.0 // indirect
 	github.com/Masterminds/vcs v1.13.1 // indirect
@@ -60,6 +61,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.4.0 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/handlers v0.0.0-20150720190736-60c7bfde3e33 // indirect
 	github.com/gorilla/mux v1.7.2 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -73,7 +75,7 @@ require (
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
 	github.com/marstr/guid v1.1.0 // indirect
-	github.com/masterminds/sprig v2.22.0+incompatible
+	github.com/masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/mattn/go-shellwords v1.0.10 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/osext v0.0.0-20151018003038-5e2d6d41470f // indirect
@@ -90,6 +92,8 @@ require (
 	github.com/prometheus/client_golang v1.5.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/procfs v0.0.11 // indirect
+	github.com/qri-io/jsonpointer v0.1.1 // indirect
+	github.com/qri-io/jsonschema v0.2.0 // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20200212082348-64f95ea68aa3 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/schrodit/component-spec v0.0.0-20200731111717-ec9f02509b07 // indirect

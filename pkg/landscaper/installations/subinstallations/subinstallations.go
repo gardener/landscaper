@@ -28,8 +28,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
@@ -216,28 +214,4 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	}
 
 	return subInst, nil
-}
-
-// GetExportedValues returns the merged export of all subinstallations
-func (o *Operation) GetExportedValues(ctx context.Context, inst *installations.Installation) (map[string]interface{}, error) {
-	values := make(map[string]interface{})
-
-	subInstallations, err := o.GetSubInstallations(ctx, inst.Info)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, subInst := range subInstallations {
-		if subInst.Status.ExportReference == nil {
-			continue
-		}
-		do, err := o.Operation.GetDataObjectFromSecret(ctx, subInst.Status.ExportReference.NamespacedName())
-		if err != nil {
-			return nil, err
-		}
-
-		values = utils.MergeMaps(values, do.Data)
-	}
-
-	return values, nil
 }

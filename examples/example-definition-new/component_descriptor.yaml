@@ -33,11 +33,11 @@ components:
 
     repository: eu.gcr.io/gardener-project/definitions/nginx-ingress-controller
 
-- name: 'dns-controller'
-  version: '0.10.5'
-  type: 'ociComponent'
+  - name: 'dns-controller'
+    version: '0.10.5'
+    type: 'ociComponent'
 
-  repository: eu.gcr.io/gardener-project/definitions/prerequisites
+    repository: eu.gcr.io/gardener-project/definitions/prerequisites
 
   dependencies:
   - name: 'external-dns-mangement'

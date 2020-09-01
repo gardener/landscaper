@@ -12,9 +12,5 @@ spec: {}
 status:
   phase: Completed
 
-  exportRef:
-    name: exec-export-config
-    namespace: test2
-
   observedGeneration: 0
 

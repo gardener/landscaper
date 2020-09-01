@@ -25,7 +25,7 @@ spec:
 
   exports:
   - from: a.x
-    to: a.z
+    to: root.z
 
 status:
   phase: Completed

@@ -36,6 +36,9 @@ import (
 // ComponentDescriptorMediaType is the media type containing the component descriptor.
 const ComponentDescriptorMediaType = "application/sap-cnudie+tar"
 
+// ComponentDescriptorFileName is the name of the file
+const ComponentDescriptorFileName = "component-descriptor.yaml"
+
 // ociClient is a component descriptor repository implementation
 // that resolves component references stored in an oci repository.
 type ociClient struct {
@@ -123,7 +126,7 @@ func readCompDescFromTar(data io.Reader) ([]byte, error) {
 			return nil, err
 		}
 
-		if header.Name != "component-descriptor.yaml" {
+		if header.Name != ComponentDescriptorFileName {
 			continue
 		}
 

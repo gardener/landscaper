@@ -29,8 +29,13 @@ import (
 // The tar is written to the given io.Writer.
 func BuildTarGzip(fs afero.Fs, root string, buf io.Writer) error {
 	zr := gzip.NewWriter(buf)
-	tw := tar.NewWriter(zr)
+	return BuildTar(fs, root, zr)
+}
 
+// BuildTar creates a new tar based on a filesystem and a path.
+// The tar is written to the given io.Writer.
+func BuildTar(fs afero.Fs, root string, buf io.Writer) error {
+	tw := tar.NewWriter(buf)
 	err := afero.Walk(fs, root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -73,7 +78,7 @@ func BuildTarGzip(fs afero.Fs, root string, buf io.Writer) error {
 		return err
 	}
 
-	return zr.Close()
+	return tw.Close()
 }
 
 // ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path

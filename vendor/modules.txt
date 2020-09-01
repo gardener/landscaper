@@ -9,6 +9,8 @@ github.com/Masterminds/goutils
 github.com/Masterminds/semver
 # github.com/Masterminds/semver/v3 v3.1.0
 github.com/Masterminds/semver/v3
+# github.com/Masterminds/sprig v2.22.0+incompatible
+github.com/Masterminds/sprig
 # github.com/Masterminds/sprig/v3 v3.1.0
 github.com/Masterminds/sprig/v3
 # github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5
@@ -236,8 +238,6 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/masterminds/sprig v2.22.0+incompatible
-github.com/masterminds/sprig
 # github.com/mattn/go-colorable v0.1.2
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.8

@@ -18,9 +18,9 @@ spec:
     to: root.a
 
   exports:
-  - from: b.z
+  - from: root.z
     to: root.z
-  - from: c.z
+  - from: root.y
     to: root.y
 
 status:

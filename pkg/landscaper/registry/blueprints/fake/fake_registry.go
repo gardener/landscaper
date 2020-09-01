@@ -54,12 +54,12 @@ func (mr *MockRegistryMockRecorder) GetBlueprint(arg0, arg1 interface{}) *gomock
 }
 
 // GetContent mocks base method
-func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.Resource) (afero.Fs, error) {
+func (m *MockRegistry) GetContent(ctx context.Context, ref v2.Resource, fs afero.Fs) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContent", arg0, arg1)
 	ret0, _ := ret[0].(afero.Fs)
 	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret1
 }
 
 // GetContent indicates an expected call of GetContent

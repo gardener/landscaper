@@ -23,9 +23,9 @@ import (
 // NewBlueprintsCommand creates a new definitions command.
 func NewBlueprintsCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "definitions",
-		Aliases: []string{"defs", "definition", "def"},
-		Short:   "command to interact with definitions of an oci registry",
+		Use:     "blueprints",
+		Aliases: []string{"blue", "blueprint", "bp"},
+		Short:   "command to interact with blueprints stored in an oci registry",
 	}
 
 	cmd.AddCommand(NewPushCommand(ctx))

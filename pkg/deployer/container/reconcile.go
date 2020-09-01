@@ -31,6 +31,7 @@ import (
 )
 
 // Reconcile handles the reconcile flow for a container deploy item.
+// todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
@@ -170,7 +171,7 @@ func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []
 		if initStatus.State.Running != nil {
 			cond = lsv1alpha1helper.UpdatedCondition(cond,
 				lsv1alpha1.ConditionProgressing,
-				fmt.Sprintf("Pod running"),
+				"Pod running",
 				fmt.Sprintf("Pod started running at %s", initStatus.State.Running.StartedAt.String()))
 		}
 		if initStatus.State.Terminated != nil {

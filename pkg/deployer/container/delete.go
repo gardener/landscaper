@@ -23,13 +23,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 )
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
-	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || !lsv1alpha1helper.IsCompletedExecutionPhase(c.DeployItem.Status.Phase) {
+	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
 		// do default reconcile until the pod has finished
 		return c.Reconcile(ctx, container.OperationDelete)
 	}
