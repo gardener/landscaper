@@ -74,7 +74,7 @@ func GetValue(path string, data interface{}, out interface{}) error {
 }
 
 // Construct creates a map for the given jsonpath
-// the value if the resulting map is set to the given value paramter
+// the value if the resulting map is set to the given value parameter
 func Construct(text string, value interface{}) (map[string]interface{}, error) {
 	if !strings.HasPrefix(text, ".") {
 		text = "." + text

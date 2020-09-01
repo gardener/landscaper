@@ -30,17 +30,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -243,74 +242,68 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	return o.Client().Status().Update(ctx, o.Inst.Info)
 }
 
-// UpdateExportReference updates the data object that holds the exported values of the installation.
-func (o *Operation) UpdateExportReference(ctx context.Context, values interface{}) error {
+// CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
+func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*dataobjects.DataObject) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateExportsCondition)
+
 	configGen, err := CreateGenerationHash(o.Inst.Info)
 	if err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateConfigHash",
+				fmt.Sprintf("unable to create config hash: %s", err.Error())))
 		return err
 	}
 
-	obj := &corev1.Secret{}
-	obj.Name = fmt.Sprintf("%s-exports", o.Inst.Info.Name)
-	obj.Namespace = o.Inst.Info.Namespace
-	if o.Inst.Info.Status.ExportReference != nil {
-		obj.Name = o.Inst.Info.Status.ExportReference.Name
-		obj.Namespace = o.Inst.Info.Status.ExportReference.Namespace
-	}
-	data, err := yaml.Marshal(values)
-	if err != nil {
-		return err
-	}
-
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
-		obj.Data = map[string][]byte{
-			lsv1alpha1.DataObjectSecretDataKey: data,
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	for _, do := range dataObjects {
+		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).Build()
+		if err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+					"CreateDataObjects",
+					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
+			return fmt.Errorf("unable to build data object for export %s: %w", do.Metadata.Key, err)
 		}
-		return controllerutil.SetOwnerReference(o.Inst.Info, obj, kubernetes.LandscaperScheme)
-	}); err != nil {
-		return err
-	}
 
-	o.Inst.Info.Status.ExportReference = &lsv1alpha1.ObjectReference{
-		Name:      obj.Name,
-		Namespace: obj.Namespace,
+		// we do not need to set controller ownership as we anyway need a separate garbage collection.
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects", fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
+			return fmt.Errorf("unable to create or update data object %s for export %s: %w", raw.Name, do.Metadata.Key, err)
+		}
 	}
 
 	o.Inst.Info.Status.ConfigGeneration = configGen
-
-	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase)
+	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
+	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase, cond)
 }
 
-// UpdateImportReference updates the data object that holds the imported values
+// CreateOrUpdateImports creates or updates the data objects that holds the imported values
 // todo: make general import/export dataobject creation and update
-func (o *Operation) UpdateImportReference(ctx context.Context, values interface{}) error {
-	obj := &corev1.Secret{}
-	obj.Name = fmt.Sprintf("%s-imports", o.Inst.Info.Name)
-	obj.Namespace = o.Inst.Info.Namespace
-	if o.Inst.Info.Status.ImportReference != nil {
-		obj.Name = o.Inst.Info.Status.ImportReference.Name
-		obj.Namespace = o.Inst.Info.Status.ImportReference.Namespace
-	}
-
-	data, err := yaml.Marshal(values)
-	if err != nil {
-		return err
-	}
-
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
-		obj.Data = map[string][]byte{
-			lsv1alpha1.DataObjectSecretDataKey: data,
+func (o *Operation) CreateOrUpdateImports(ctx context.Context, dataObjects []*dataobjects.DataObject) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	for _, do := range dataObjects {
+		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).Build()
+		if err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+					"CreateDataObjects",
+					fmt.Sprintf("unable to create data object for import %s", do.Metadata.Key)))
+			return fmt.Errorf("unable to build data object for import %s: %w", do.Metadata.Key, err)
 		}
-		return controllerutil.SetOwnerReference(o.Inst.Info, obj, kubernetes.LandscaperScheme)
-	}); err != nil {
-		return err
-	}
 
-	o.Inst.Info.Status.ImportReference = &lsv1alpha1.ObjectReference{
-		Name:      obj.Name,
-		Namespace: obj.Namespace,
+		// we do not need to set controller ownership as we anyway need a separate garbage collection.
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+					"CreateDataObjects",
+					fmt.Sprintf("unable to create data object for import %s", do.Metadata.Key)))
+			return fmt.Errorf("unable to create or update data object %s for import %s: %w", raw.Name, do.Metadata.Key, err)
+		}
 	}
-	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase)
+	return nil
 }
 
 func importsAnyExport(exporter, importer *Installation) bool {

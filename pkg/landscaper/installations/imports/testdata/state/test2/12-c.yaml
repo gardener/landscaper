@@ -27,7 +27,7 @@ spec:
 
   exports:
   - from: c.y
-    to: c.z
+    to: root.y
 
 status:
   phase: Init

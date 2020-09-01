@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
@@ -179,9 +181,13 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem,
 	if item.Status.ExportReference == nil {
 		return values, nil
 	}
-	do, err := o.GetDataObjectFromSecret(ctx, item.Status.ExportReference.NamespacedName())
-	if err != nil {
+	secret := &corev1.Secret{}
+	if err := o.Client().Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
 		return nil, err
 	}
-	return utils.MergeMaps(values, do.Data), nil
+	var data map[string]interface{}
+	if err := yaml.Unmarshal(secret.Data[lsv1alpha1.DataObjectSecretDataKey], &data); err != nil {
+		return nil, err
+	}
+	return utils.MergeMaps(values, data), nil
 }

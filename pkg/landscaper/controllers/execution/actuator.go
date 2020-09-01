@@ -72,12 +72,6 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-// InjectRegistry injects a Registry into the actuator
-func (a *actuator) InjectRegistry(r blueprintsregistry.Registry) error {
-	a.registry = r
-	return nil
-}
-
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	ctx := context.Background()
 	defer ctx.Done()

@@ -65,7 +65,7 @@ var _ = Describe("Template", func() {
 		Expect(res).To(HaveLen(1))
 
 		config := make(map[string]interface{})
-		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
+		Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 		Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
 	})
 
@@ -89,7 +89,7 @@ var _ = Describe("Template", func() {
 		Expect(res).To(HaveLen(1))
 
 		config := make(map[string]interface{})
-		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
+		Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 		Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
 	})
 
@@ -134,7 +134,7 @@ var _ = Describe("Template", func() {
 		Expect(res).To(HaveLen(1))
 
 		config := make(map[string]interface{})
-		Expect(yaml.Unmarshal(res[0].Configuration, &config)).ToNot(HaveOccurred())
+		Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 		Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
 	})
 

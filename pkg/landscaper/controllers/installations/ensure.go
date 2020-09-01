@@ -84,14 +84,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 		return err
 	}
 
-	// when all executions are finished and the exports are uploaded
-	// we have to validate the uploaded exports
-	if err := exports.NewValidator(op).Validate(ctx, inst, exportedValues); err != nil {
-		a.Log().Error(err, "error during export validation")
-		return err
-	}
-
-	if err := op.UpdateExportReference(ctx, exportedValues); err != nil {
+	if err := op.CreateOrUpdateExports(ctx, exportedValues); err != nil {
 		a.Log().Error(err, "error during export validation")
 		return err
 	}
@@ -101,6 +94,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
+	// maybe we also need to increase the generation manually to signal a new config version
 	if err := op.TriggerDependants(ctx); err != nil {
 		a.Log().Error(err, "error during dependant trigger")
 		return err
@@ -120,13 +114,13 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 
 	// only needed if execution are processed
 	constructor := imports.NewConstructor(op, op.Context().Parent, op.Context().Siblings...)
-	importedValues, err := constructor.Construct(ctx, inst)
+	importDataObjects, importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
 		a.Log().Error(err, "unable to collect imports")
 		return err
 	}
 
-	if err := op.UpdateImportReference(ctx, importedValues); err != nil {
+	if err := op.CreateOrUpdateImports(ctx, importDataObjects); err != nil {
 		a.Log().Error(err, "unable to update import objects")
 		return err
 	}

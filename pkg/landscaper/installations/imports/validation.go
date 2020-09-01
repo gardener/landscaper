@@ -31,7 +31,6 @@ import (
 func NewValidator(op *installations.Operation, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
 	return &Validator{
 		Operation: op,
-
 		parent:   parent,
 		siblings: siblings,
 	}
@@ -147,6 +146,7 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 func (v *Validator) checkIfSiblingsHaveImportForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
 
 	for _, sibling := range v.siblings {
+		// todo: make own path for better readability
 		sPath := fldPath.Child(sibling.Info.Name)
 		err := v.checkIfSiblingHasImportForMapping(ctx, sPath, inst, mapping, sibling)
 		if !installations.IsImportNotFoundError(err) {
@@ -167,7 +167,6 @@ func (v *Validator) checkIfSiblingHasImportForMapping(ctx context.Context, fldPa
 		return installations.NewImportNotFoundErrorf(err, "%s: ExportMapping not found in sibling", fldPath.String())
 	}
 
-	// check if the sibling also imports my import
 	siblingExport, err := sibling.GetExportDefinition(exportMapping.To)
 	if err != nil {
 		return installations.NewImportNotFoundErrorf(err, "%s: ImportDefinition not found", fldPath.String())

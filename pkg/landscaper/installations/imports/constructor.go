@@ -21,13 +21,15 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/utils"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // NewConstructor creates a new Import Contructor.
@@ -43,41 +45,48 @@ func NewConstructor(op *installations.Operation, parent *installations.Installat
 
 // Construct loads all imported data from the datasources (either installations or the landscape config)
 // and creates the imported configuration.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (interface{}, error) {
+func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]*dataobjects.DataObject, interface{}, error) {
 	var (
 		fldPath = field.NewPath(inst.Info.Name)
 		values  = make(map[string]interface{})
 	)
 	mappings, err := inst.GetImportMappings()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	dataObjects := make([]*dataobjects.DataObject, len(mappings))
 	for i, importMapping := range mappings {
 		impPath := fldPath.Index(i)
-		newValues, err := c.constructForMapping(ctx, impPath, inst, importMapping)
+		do, err := c.constructForMapping(ctx, impPath, inst, importMapping)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		values = utils.MergeMaps(values, newValues)
+		dataObjects = append(dataObjects, do)
+
+		value, err := jsonpath.Construct(importMapping.To, do.Data)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to construct object with path %s for import %s: %w", importMapping.To, importMapping.Key, err)
+		}
+		values = utils.MergeMaps(values, value)
 	}
 
-	return values, nil
+	return dataObjects, values, nil
 }
 
-func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
-	values, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
+func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
+	do, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
 	if err == nil {
-		return values, nil
+		return do, nil
 	}
 	if !installations.IsImportNotFoundError(err) {
 		return nil, err
 	}
 
 	if !c.IsRoot() {
-		values, err = c.tryToConstructFromParent(ctx, fldPath, inst, mapping)
+		do, err = c.tryToConstructFromParent(ctx, fldPath, inst, mapping)
 		if err == nil {
-			return values, nil
+			return do, nil
 		}
 		if !installations.IsImportNotFoundError(err) {
 			return nil, err
@@ -87,7 +96,7 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 	return c.tryToConstructFromSiblings(ctx, fldPath, inst, mapping)
 }
 
-func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
 	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
 		return nil, err
 	}
@@ -99,13 +108,8 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 
 	var val interface{}
 	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
-		// can not happen as it is already checked in checkStaticDataForMapping
+		// should not happen as it is already checked in checkStaticDataForMapping
 		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
-	}
-
-	values, err := jsonpath.Construct(mapping.To, val)
-	if err != nil {
-		return nil, err
 	}
 
 	var encData bytes.Buffer
@@ -124,19 +128,27 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 		},
 		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
 	})
-
-	return values, err
+	do := dataobjects.New().SetContext(lsv1alpha1.ImportDataObjectContext).SetKey(mapping.To).SetData(val)
+	return do, err
 }
 
-func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
 	if err := c.validator.checkIfParentHasImportForMapping(fldPath, inst, mapping); err != nil {
 		return nil, err
 	}
 
-	values, err := c.constructValuesFromSecret(ctx, fldPath, c.parent.Info.Status.ImportReference.NamespacedName(), mapping.DefinitionFieldMapping)
+	raw := &lsv1alpha1.DataObject{}
+	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1.ImportDataObjectContext, lsv1alpha1helper.DataObjectSourceFromInstallation(c.parent.Info), mapping.From)
+	if err := c.Client().Get(ctx, kutil.ObjectKey(doName, c.parent.Info.Namespace), raw); err != nil {
+		return nil, err
+	}
+
+	do, err := dataobjects.NewFromDataObject(raw)
 	if err != nil {
 		return nil, err
 	}
+	do.SetContext(lsv1alpha1.ImportDataObjectContext)
+	do.SetKey(mapping.To)
 
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
 		From: mapping.From,
@@ -147,16 +159,15 @@ func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *fie
 		},
 		ConfigGeneration: c.parent.Info.Status.ConfigGeneration,
 	})
-	return values, nil
+	return do, nil
 }
 
-func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (map[string]interface{}, error) {
-
+func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
 	for _, sibling := range c.siblings {
 		sPath := fldPath.Child(sibling.Info.Name)
-		values, err := c.tryToConstructFromSibling(ctx, sPath, inst, mapping, sibling)
+		do, err := c.tryToConstructFromSibling(ctx, sPath, inst, mapping, sibling)
 		if err == nil {
-			return values, nil
+			return do, nil
 		}
 		if !installations.IsImportNotFoundError(err) {
 			return nil, err
@@ -166,20 +177,23 @@ func (c *Constructor) tryToConstructFromSiblings(ctx context.Context, fldPath *f
 	return nil, installations.NewImportNotFoundError("no sibling installation found to satisfy import", nil)
 }
 
-func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping, sibling *installations.Installation) (map[string]interface{}, error) {
+func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping, sibling *installations.Installation) (*dataobjects.DataObject, error) {
 	if err := c.validator.checkIfSiblingHasImportForMapping(ctx, fldPath, inst, mapping, sibling); err != nil {
 		return nil, err
 	}
 
-	exportMapping, err := sibling.GetExportMappingTo(mapping.From)
-	if err != nil {
+	raw := &lsv1alpha1.DataObject{}
+	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1.ExportDataObjectContext, lsv1alpha1helper.DataObjectSourceFromInstallation(sibling.Info), mapping.From)
+	if err := c.Client().Get(ctx, kutil.ObjectKey(doName, c.parent.Info.Namespace), raw); err != nil {
 		return nil, err
 	}
 
-	values, err := c.constructValuesFromSecret(ctx, fldPath, sibling.Info.Status.ExportReference.NamespacedName(), lsv1alpha1.DefinitionFieldMapping{From: exportMapping.From, To: mapping.To})
+	do, err := dataobjects.NewFromDataObject(raw)
 	if err != nil {
 		return nil, err
 	}
+	do.SetContext(lsv1alpha1.ImportDataObjectContext)
+	do.SetKey(mapping.To)
 
 	inst.ImportStatus().Update(lsv1alpha1.ImportState{
 		From: mapping.From,
@@ -190,22 +204,7 @@ func (c *Constructor) tryToConstructFromSibling(ctx context.Context, fldPath *fi
 		},
 		ConfigGeneration: sibling.Info.Status.ConfigGeneration,
 	})
-	return values, nil
-}
-
-func (c *Constructor) constructValuesFromSecret(ctx context.Context, fldPath *field.Path, key types.NamespacedName, mapping lsv1alpha1.DefinitionFieldMapping) (map[string]interface{}, error) {
-	do, err := c.GetDataObjectFromSecret(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	var val interface{}
-	if err := do.GetData(mapping.From, &val); err != nil {
-		// can not happen as it is already checked in checkStaticDataForMapping
-		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in config not found", fldPath.String())
-	}
-
-	return jsonpath.Construct(mapping.To, val)
+	return do, nil
 }
 
 func (c *Constructor) IsRoot() bool {

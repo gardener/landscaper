@@ -56,7 +56,7 @@ var _ = g.Describe("Constructor", func() {
 				err   error
 				state *fake_client.State
 			)
-			fakeClient, state, err = fake_client.NewFakeClientFromPath("../testdata/state")
+			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
 
 			fakeInstallations = state.Installations
@@ -106,7 +106,7 @@ var _ = g.Describe("Constructor", func() {
 		}
 
 		c := imports.NewConstructor(op, nil)
-		res, err := c.Construct(context.TODO(), inInstRoot)
+		_, res, err := c.Construct(context.TODO(), inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
@@ -141,7 +141,7 @@ var _ = g.Describe("Constructor", func() {
 		}
 
 		c := imports.NewConstructor(op, inInstRoot, inInstA)
-		res, err := c.Construct(context.TODO(), inInstB)
+		_, res, err := c.Construct(context.TODO(), inInstB)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
@@ -176,7 +176,7 @@ var _ = g.Describe("Constructor", func() {
 		}
 
 		c := imports.NewConstructor(op, inInstRoot, inInstA)
-		res, err := c.Construct(context.TODO(), inInstC)
+		_, res, err := c.Construct(context.TODO(), inInstC)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 

@@ -153,5 +153,5 @@ func (o *Operation) GetExportForKey(ctx context.Context, srcObj runtime.Object, 
 		return nil, err
 	}
 
-	return dataobjects.New(rawDO)
+	return dataobjects.NewFromDataObject(rawDO)
 }

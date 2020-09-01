@@ -25,14 +25,9 @@ spec:
 
   exports:
   - from: b.y
-    to: b.z
+    to: root.z
 
 status:
   phase: Init
   configGeneration: ""
-
-  imports:
-  - from: a.z
-    to: b.a
-    configGeneration: ""
 

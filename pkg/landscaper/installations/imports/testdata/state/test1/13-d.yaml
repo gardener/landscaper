@@ -22,12 +22,12 @@ spec:
   imports:
   - from: b.z
     to: d.a
-  - from: c.z
+  - from: root.y
     to: d.b
 
   exports:
   - from: d.y
-    to: d.z
+    to: root.z
 
 status:
   phase: Init

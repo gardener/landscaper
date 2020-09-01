@@ -17,13 +17,12 @@ package execution
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -55,30 +54,20 @@ func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.Execution
 
 // CreateOrUpdateDataObject creates or updates a dataobject from a object reference
 func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values interface{}) error {
-	obj := &corev1.Secret{}
-	obj.GenerateName = "dataobject-"
-	obj.Namespace = o.exec.Namespace
-	if o.exec.Status.ExportReference != nil {
-		obj.Name = o.exec.Status.ExportReference.Name
-		obj.Namespace = o.exec.Status.ExportReference.Namespace
-	}
-	data, err := yaml.Marshal(values)
+	do, err := dataobjects.New().SetNamespace(o.exec.Namespace).SetSource(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).SetData(values).Build()
 	if err != nil {
 		return err
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), obj, func() error {
-		obj.Data = map[string][]byte{
-			lsv1alpha1.DataObjectSecretDataKey: data,
-		}
-		return controllerutil.SetOwnerReference(o.exec, obj, kubernetes.LandscaperScheme)
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), do, func() error {
+		return controllerutil.SetOwnerReference(o.exec, do, kubernetes.LandscaperScheme)
 	}); err != nil {
 		return err
 	}
 
 	o.exec.Status.ExportReference = &lsv1alpha1.ObjectReference{
-		Name:      obj.Name,
-		Namespace: obj.Namespace,
+		Name:      do.Name,
+		Namespace: do.Namespace,
 	}
 	return o.UpdateStatus(ctx, o.exec.Status.Phase)
 }

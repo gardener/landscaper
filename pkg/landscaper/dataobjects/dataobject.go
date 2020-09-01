@@ -41,8 +41,13 @@ type DataObjectMetadata struct {
 	Key       string
 }
 
-// New creates a new internal dataobject instance from a raw data object.
-func New(do *lsv1alpha1.DataObject) (*DataObject, error) {
+// New creates a new internal dataobject.
+func New() *DataObject {
+	return &DataObject{}
+}
+
+// NewFromDataObject creates a new internal dataobject instance from a raw data object.
+func NewFromDataObject(do *lsv1alpha1.DataObject) (*DataObject, error) {
 	var data interface{}
 	if err := yaml.Unmarshal(do.Data, &data); err != nil {
 		return nil, err
@@ -78,11 +83,10 @@ func (do *DataObject) GetData(path string, out interface{}) error {
 	return jsonpath.GetValue(path, do.Data, out)
 }
 
-// SetMetaData sets the metadata for the given object
-func (do *DataObject) SetMetadata(ctx lsv1alpha1.DataObjectContext, src, key string) {
-	do.Metadata.Context = ctx
-	do.Metadata.Source = src
-	do.Metadata.Key = key
+// SetData sets the data for the given object.
+func (do *DataObject) SetData(data interface{}) *DataObject {
+	do.Data = data
+	return do
 }
 
 // SetNamespace sets the namespace for the given data object.

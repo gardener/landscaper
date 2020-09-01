@@ -110,10 +110,11 @@ func CheckCompletedSiblingDependents(ctx context.Context, op lsoperation.Interfa
 	if inst == nil {
 		return true, nil
 	}
+	// todo: may not depend on status of object
 	for _, impState := range inst.ImportStatus().GetStates() {
 		if impState.SourceRef != nil {
 
-			// check if the import is imported from mysql or the parent
+			// check if the import is imported from myself or the parent
 			// and continue if so as we have a different check for the parent
 			if lsv1alpha1helper.ReferenceIsObject(*impState.SourceRef, inst.Info) {
 				continue

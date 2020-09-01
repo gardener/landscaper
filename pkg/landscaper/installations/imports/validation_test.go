@@ -57,7 +57,7 @@ var _ = g.Describe("Validation", func() {
 				err   error
 				state *fake_client.State
 			)
-			fakeClient, state, err = fake_client.NewFakeClientFromPath("../testdata/state")
+			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
 
 			fakeInstallations = state.Installations
@@ -89,8 +89,8 @@ var _ = g.Describe("Validation", func() {
 	g.Context("root", func() {
 		g.It("should import data from the static config", func() {
 			defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
-			defaultTestInstallationConfig.BlueprintFilePath = "./testdata/registry/root/blueprint.yaml"
-			defaultTestInstallationConfig.BlueprintContentPath = "./testdata/registry/root"
+			defaultTestInstallationConfig.BlueprintFilePath = "../testdata/registry/root/blueprint.yaml"
+			defaultTestInstallationConfig.BlueprintContentPath = "../testdata/registry/root"
 			_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
 
 			value, err := yaml.Marshal(map[string]interface{}{
@@ -107,7 +107,7 @@ var _ = g.Describe("Validation", func() {
 
 		g.It("should reject the import from static data if the import is of the wrong type", func() {
 			defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
-			defaultTestInstallationConfig.BlueprintContentPath = "./testdata/registry/root"
+			defaultTestInstallationConfig.BlueprintContentPath = "../testdata/registry/root"
 			_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
 
 			value, err := yaml.Marshal(map[string]interface{}{
@@ -187,26 +187,30 @@ var _ = g.Describe("Validation", func() {
 	})
 
 	g.It("should reject when a dependent sibling has not finished yet", func() {
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/a"])
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
+		inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+		Expect(fakeClient.Update(ctx, inInstA.Info)).To(Succeed())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstB.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
-		inInstC, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/c"])
+		inInstC, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/c"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstC.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
-		inInstD, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/d"])
+		inInstD, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/d"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstD
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		val := imports.NewValidator(op, inInstRoot, inInstA, inInstB, inInstC)
-		err = val.Validate(context.TODO(), inInstD)
+		err = val.Validate(ctx, inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 	})

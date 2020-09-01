@@ -33,6 +33,12 @@ const KeepChildrenAnnotation = "landscaper.gardener.cloud/keep-children"
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
 const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
 
+// CreateImportsCondition is the Conditions type to indicate status of the imported data and data objects.
+const CreateImportsCondition ConditionType = "CreateImports"
+
+// CreateExportsCondition is the Conditions type to indicate status of the exported data and data objects.
+const CreateExportsCondition ConditionType = "CreateExports"
+
 // EnsureExecutionsCondition is the Conditions type to indicate the executions status.
 const EnsureExecutionsCondition ConditionType = "EnsureExecutions"
 

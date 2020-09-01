@@ -49,13 +49,13 @@ func DataObjectSourceFromObject(src runtime.Object) (string, error) {
 }
 
 // DataObjectSourceFromInstallation returns the data object source for a Installation.
-func DataObjectSourceFromInstallation(src lsv1alpha1.Installation) string {
+func DataObjectSourceFromInstallation(src *lsv1alpha1.Installation) string {
 	srcKind := src.GetObjectKind().GroupVersionKind().Kind
 	return fmt.Sprintf("%s/%s/%s", srcKind, src.GetNamespace(), src.GetName())
 }
 
 // DataObjectSourceFromExecution returns the data object source for a Execution.
-func DataObjectSourceFromExecution(src lsv1alpha1.Execution) string {
+func DataObjectSourceFromExecution(src *lsv1alpha1.Execution) string {
 	srcKind := src.GetObjectKind().GroupVersionKind().Kind
 	return fmt.Sprintf("%s/%s/%s", srcKind, src.GetNamespace(), src.GetName())
 }
