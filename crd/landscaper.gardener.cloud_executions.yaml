@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ExecutionSpec defines a execution plan.
+            description: Spec defines a execution and its items
             properties:
               blueprintRef:
                 description: BlueprintRef is the resolved reference to the definition.
@@ -141,7 +141,7 @@ spec:
             - executions
             type: object
           status:
-            description: ExecutionStatus contains the current status of a execution.
+            description: Status contains the current status of the execution.
             properties:
               conditions:
                 description: Conditions contains the actual condition of a execution
@@ -225,7 +225,7 @@ spec:
                 type: array
               exportRef:
                 description: ExportReference references the object that contains the
-                  exported values.
+                  exported values. only used for operation purpose.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.

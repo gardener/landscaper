@@ -15,6 +15,8 @@
 package core
 
 import (
+	"errors"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,7 +33,7 @@ const (
 	ConditionTrue ConditionStatus = "True"
 	// ConditionFalse means a resource is not in the condition.
 	ConditionFalse ConditionStatus = "False"
-	// ConditionUnknown means Gardener can't decide if a resource is in the condition or not.
+	// ConditionUnknown means Landscaper can't decide if a resource is in the condition or not.
 	ConditionUnknown ConditionStatus = "Unknown"
 	// ConditionProgressing means the condition was seen true, failed but stayed within a predefined failure threshold.
 	// In the future, we could add other intermediate conditions, e.g. ConditionDegraded.
@@ -75,7 +77,14 @@ type Condition struct {
 type Operation string
 
 const (
+	// ReconcileOperation is a annotation for the landscaper to reconcile the resource
 	ReconcileOperation Operation = "reconcile"
+
+	// ForceReconcileOperation forces the landscaper to not wait for children (executions nor subinstallations) to be completed.
+	ForceReconcileOperation Operation = "force-reconcile"
+
+	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
+	AbortOperation Operation = "abort"
 )
 
 // ObjectReference is the reference to a kubernetes object.
@@ -136,8 +145,10 @@ type VersionedNamedObjectReference struct {
 }
 
 // ResourceKind is the kind of a resource.
-// It can be local or external
+// It can be local or external.
 type ResourceKind string
+
+var UnknownResourceKindError = errors.New("UnknownResourceKind")
 
 const (
 	// LocalResourceKind is the kind of a local resource.
@@ -146,17 +157,17 @@ const (
 	ExternalResourceKind ResourceKind = "externalResource"
 )
 
-// ResourceReference defines the reference to a resource defined in a component descriptor
+// ResourceReference defines the reference to a resource defined in a component descriptor.
 type ResourceReference struct {
 	// ComponentName defines the unique of the component containing the resource.
 	ComponentName string `json:"componentName"`
 	// Kind defines the kind resource kind where the resource is defined.
 	Kind ResourceKind `json:"kind"`
-	// Resource defines the name of the resource
+	// Resource defines the name of the resource.
 	Resource string `json:"resource"`
 }
 
-// VersionedResourceReference defines the reference to a resource with its version
+// VersionedResourceReference defines the reference to a resource with its version.
 type VersionedResourceReference struct {
 	ResourceReference `json:",inline"`
 	// Version defines the version of the component.

@@ -22,7 +22,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// EncompassedByLabel is the label that contains the name of the parent installation
+// that encompasses the current installation.
+// todo: add conversion
+const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
+
+// EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
+const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
+
+// ValidateImportsCondition is the Conditions type to indicate status of the import validation.
+const ValidateImportsCondition ConditionType = "ValidateImports"
+
+// CreateImportsCondition is the Conditions type to indicate status of the imported data and data objects.
+const CreateImportsCondition ConditionType = "CreateImports"
+
+// CreateExportsCondition is the Conditions type to indicate status of the exported data and data objects.
+const CreateExportsCondition ConditionType = "CreateExports"
+
+// EnsureExecutionsCondition is the Conditions type to indicate the executions status.
+const EnsureExecutionsCondition ConditionType = "EnsureExecutions"
+
+// ValidateExportCondition is the Conditions type to indicate validation status of teh exported data.
+const ValidateExportCondition ConditionType = "ValidateExport"
+
 type ComponentInstallationPhase string
+
+const (
+	ComponentPhaseInit        ComponentInstallationPhase = "Init"
+	ComponentPhasePending     ComponentInstallationPhase = "PendingDependencies"
+	ComponentPhaseProgressing ComponentInstallationPhase = "Progressing"
+	ComponentPhaseDeleting    ComponentInstallationPhase = "Deleting"
+	ComponentPhaseAborted     ComponentInstallationPhase = "Aborted"
+	ComponentPhaseSucceeded   ComponentInstallationPhase = "Succeeded"
+	ComponentPhaseFailed      ComponentInstallationPhase = "Failed"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -37,12 +70,15 @@ type InstallationList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Blueprint contains the configuration of a component
-// +kubebuilder:subresource:status
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   InstallationSpec   `json:"spec"`
+	// Spec contains the specification for a installation.
+	Spec InstallationSpec `json:"spec"`
+
+	// Status contains the status of the installation.
+	// +optional
 	Status InstallationStatus `json:"status"`
 }
 
@@ -50,21 +86,25 @@ type Installation struct {
 type InstallationSpec struct {
 	// BlueprintRef is the resolved reference to the definition.
 	BlueprintRef RemoteBlueprintReference `json:"blueprintRef"`
+
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints and component descriptors from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
+
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.
 	// +optional
-	Imports []ImportMappingDefinition `json:"imports,omitempty"`
+	Imports []DefinitionImportMapping `json:"imports,omitempty"`
+
 	// Exports define the export mappings for the referenced definition.
 	// These values are by default auto generated from the parent definition.
 	// todo: add static data boolean
 	// +optional
 	Exports []DefinitionExportMapping `json:"exports,omitempty"`
+
 	// StaticData contains a list of data sources that are used to satisfy imports
 	// +optional
 	StaticData []StaticDataSource `json:"staticData,omitempty"`
@@ -85,12 +125,6 @@ type InstallationStatus struct {
 	// ConfigGeneration is the generation of the exported values.
 	ConfigGeneration string `json:"configGeneration"`
 
-	// ExportReference references the object that contains the exported values.
-	ExportReference *ObjectReference `json:"exportRef,omitempty"`
-
-	// ImportReference references the object that contains the temporary imported values.
-	ImportReference *ObjectReference `json:"importRef,omitempty"`
-
 	// Imports contain the state of the imported values.
 	Imports []ImportState `json:"imports,omitempty"`
 
@@ -99,7 +133,6 @@ type InstallationStatus struct {
 	InstallationReferences []NamedObjectReference `json:"installationRefs,omitempty"`
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
-	// +optional
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 
@@ -110,7 +143,7 @@ type RemoteBlueprintReference struct {
 	cdv2.RepositoryContext `json:",inline"`
 }
 
-// StaticDataSource defines a static data source.
+// StaticDataSource defines a static data source
 type StaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
@@ -141,9 +174,10 @@ type SecretLabelSelectorRef struct {
 	Key string `json:"key"`
 }
 
-// ImportState hold the state of a import
+// ImportState hold the state of a import.
 type ImportState struct {
 	// From is the from key of the import
+	// todo: maybe remove in favor the key from the blueprint
 	From string `json:"from"`
 
 	// To is the to key of the import

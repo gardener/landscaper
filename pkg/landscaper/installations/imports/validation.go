@@ -20,48 +20,64 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
+
+// CheckSiblingDependentsOfParentsReason defines the reason for the parent dependent validation
+const CheckSiblingDependentsOfParentsReason = "CheckSiblingDependentsOfParentsReason"
+
+// CheckImportsReason defines the reason for the import validation
+const CheckImportsReason = "CheckImportsReason"
 
 // NewValidator creates new import validator.
 // It validates if all imports of a component are satisfied given a context.
 func NewValidator(op *installations.Operation, parent *installations.Installation, siblings ...*installations.Installation) *Validator {
 	return &Validator{
 		Operation: op,
-		parent:   parent,
-		siblings: siblings,
+		parent:    parent,
+		siblings:  siblings,
 	}
 }
 
 // Validate traverses through all components and validates if all imports are
 // satisfied with the correct version
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 	fldPath := field.NewPath(inst.Info.Name)
 
 	// check if parent has sibling installation dependencies that are not finished yet
 	completed, err := installations.CheckCompletedSiblingDependentsOfParent(ctx, v, v.parent)
 	if err != nil {
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			CheckSiblingDependentsOfParentsReason,
+			fmt.Sprintf("Check for progressing dependents of the parent failed: %s", err.Error())))
 		return err
 	}
 	if !completed {
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			CheckSiblingDependentsOfParentsReason,
+			"Waiting until all progressing dependents of the parent are finished"))
 		return installations.NewNotCompletedDependentsError("A parent or parent's parent sibling Installation dependency is not completed yet", nil)
 	}
 
-	mappings, err := inst.GetImportMappings()
-	if err != nil {
-		return err
-	}
-	for _, importMapping := range mappings {
+	for _, importMapping := range inst.GetImportMappings() {
 		impPath := fldPath.Child(importMapping.Key)
 		err = v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
 		if err != nil {
+			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				CheckImportsReason,
+				fmt.Sprintf("Waiting until all imports are satisfied: %s", err.Error())))
 			return err
 		}
 	}
 
+	inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
+		CheckImportsReason,
+		"All imports are satisfied"))
 	return nil
 }
 
@@ -76,7 +92,7 @@ func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *
 
 	if !v.IsRoot() {
 		// check if the parent also imports my import
-		err = v.checkIfParentHasImportForMapping(fldPath, inst, mapping)
+		err = v.checkIfParentHasImportForMapping(fldPath, mapping)
 		if !installations.IsImportNotFoundError(err) {
 			return err
 		}
@@ -124,7 +140,7 @@ func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *fiel
 	return nil
 }
 
-func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
+func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, mapping installations.ImportMapping) error {
 	// check if the parent also imports my import
 	parentImport, err := v.parent.GetImportDefinition(mapping.From)
 	if err != nil {
@@ -132,7 +148,7 @@ func (v *Validator) checkIfParentHasImportForMapping(fldPath *field.Path, inst *
 	}
 
 	// parent has to be progressing
-	if v.parent.Info.Status.Phase != v1alpha1.ComponentPhaseProgressing {
+	if v.parent.Info.Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
 	}
 
@@ -174,7 +190,7 @@ func (v *Validator) checkIfSiblingHasImportForMapping(ctx context.Context, fldPa
 
 	// sibling exports the key we import
 
-	if sibling.Info.Status.Phase != v1alpha1.ComponentPhaseSucceeded {
+	if sibling.Info.Status.Phase != lsv1alpha1.ComponentPhaseSucceeded {
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 

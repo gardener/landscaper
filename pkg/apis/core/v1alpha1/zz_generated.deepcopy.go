@@ -861,16 +861,6 @@ func (in *InstallationStatus) DeepCopyInto(out *InstallationStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.ExportReference != nil {
-		in, out := &in.ExportReference, &out.ExportReference
-		*out = new(ObjectReference)
-		**out = **in
-	}
-	if in.ImportReference != nil {
-		in, out := &in.ImportReference, &out.ImportReference
-		*out = new(ObjectReference)
-		**out = **in
-	}
 	if in.Imports != nil {
 		in, out := &in.Imports, &out.Imports
 		*out = make([]ImportState, len(*in))

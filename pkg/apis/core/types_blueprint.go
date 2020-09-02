@@ -20,11 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// BlueprintResourceType is the name of the blueprint resource defined in component descriptors.
+const BlueprintResourceType = "blueprint"
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Blueprint specifies a template and configuration of a installation
-// +kubebuilder:skip
+// Blueprint contains the configuration of a component
 type Blueprint struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -38,7 +40,7 @@ type Blueprint struct {
 	// +optional
 	CustomTypes []CustomType `json:"customTypes,omitempty"`
 
-	// Imports define the import values that are needed for the blueprint and its sub-blueprints.
+	// Imports define the import values that are needed for the definition and its sub-definitions.
 	// +optional
 	Imports []ImportDefinition `json:"imports,omitempty"`
 
@@ -107,11 +109,11 @@ type BlueprintReference struct {
 	Name string `json:"name"`
 
 	// Reference defines a reference to a Blueprint.
-	// The definition can reside in an OCI or other supported location.
+	// The blueprint can reside in an OCI or other supported location.
 	Reference ResourceReference `json:"ref"`
 
 	// Imports defines the import mappings for the referenced component definition.
-	Imports []ImportMappingDefinition `json:"imports,omitempty"`
+	Imports []DefinitionImportMapping `json:"imports,omitempty"`
 
 	// Exports defines the export mappings for the referenced component definition.
 	Exports []DefinitionExportMapping `json:"exports,omitempty"`
@@ -121,9 +123,9 @@ type BlueprintReference struct {
 	StaticData []BlueprintStaticDataSource `json:"staticData,omitempty"`
 }
 
-// ImportMappingDefinition defines the mapping of import value
+// DefinitionImportMapping defines the mapping of import value
 // to the import of the referenced definition.
-type ImportMappingDefinition struct {
+type DefinitionImportMapping struct {
 	DefinitionFieldMapping `json:",inline"`
 }
 
@@ -151,7 +153,7 @@ type CustomType struct {
 	OpenAPIV3Schema JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
 }
 
-// BlueprintStaticDataSource defines a static data source of a blueprint
+// BlueprintStaticDataSource defines a static data source for a blueprint
 type BlueprintStaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
@@ -161,7 +163,7 @@ type BlueprintStaticDataSource struct {
 	ValueFrom *StaticDataValueFrom `json:"valueFrom,omitempty"`
 }
 
-// StaticDataValueFrom defines a static data that is read from a external resource.
+// BlueprintStaticDataValueFrom defines static data that is read from a external resource.
 type BlueprintStaticDataValueFrom struct {
 	// Selects a key of a secret in the installations's namespace
 	// +optional

@@ -26,9 +26,6 @@ spec:
     - jsonPath: .status.executionRef.name
       name: Execution
       type: string
-    - jsonPath: .status.exportRef.name
-      name: ExportRef
-      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -50,7 +47,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: InstallationSpec defines a component installation.
+            description: Spec contains the specification for a installation.
             properties:
               blueprintRef:
                 description: BlueprintRef is the resolved reference to the definition.
@@ -203,7 +200,7 @@ spec:
             - blueprintRef
             type: object
           status:
-            description: InstallationStatus contains the current status of a Installation.
+            description: Status contains the status of the installation.
             properties:
               conditions:
                 description: Conditions contains the actual condition of a installation
@@ -266,34 +263,6 @@ spec:
                 - name
                 - namespace
                 type: object
-              exportRef:
-                description: ExportReference references the object that contains the
-                  exported values.
-                properties:
-                  name:
-                    description: Name is the name of the kubernetes object.
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of kubernetes object.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
-              importRef:
-                description: ImportReference references the object that contains the
-                  temporary imported values.
-                properties:
-                  name:
-                    description: Name is the name of the kubernetes object.
-                    type: string
-                  namespace:
-                    description: Namespace is the namespace of kubernetes object.
-                    type: string
-                required:
-                - name
-                - namespace
-                type: object
               imports:
                 description: Imports contain the state of the imported values.
                 items:
@@ -305,7 +274,7 @@ spec:
                       type: string
                     from:
                       description: 'From is the from key of the import todo: maybe
-                        remove in favor of one key from the definition'
+                        remove in favor the key from the blueprint'
                       type: string
                     sourceRef:
                       description: SourceRef is the reference to the installation

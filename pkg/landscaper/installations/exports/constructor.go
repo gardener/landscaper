@@ -153,13 +153,8 @@ func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath
 }
 
 func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInst *installations.Installation) (*dataobjects.DataObject, error) {
-	if subInst.Info.Status.ExportReference == nil {
-		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "subinstallation has no exported data"))
-	}
-
 	// todo: check if subinstallation exports this key, before reading it
-	_, err := subInst.GetExportMappingTo(mapping.From)
-	if err != nil {
+	if _, err := subInst.GetExportMappingTo(mapping.From); err != nil {
 		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "subinstallation does not export that key"))
 	}
 

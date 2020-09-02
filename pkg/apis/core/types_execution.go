@@ -19,10 +19,31 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// ExecutionManagedByLabel is the label of a deploy item that contains the name of the managed execution.
+// This label is used by the extension controller to identify its managed deploy items
+// todo: add conversion
+const ExecutionManagedByLabel = "execution.landscaper.gardener.cloud/managed-by"
+
+// ExecutionManagedNameAnnotation is the unique identifier of the deploy items managed by a execution.
+// It corresponds to the execution item name.
+// todo: add conversion
+const ExecutionManagedNameAnnotation = "execution.landscaper.gardener.cloud/name"
+
 // ExecutionType defines the type of the execution
 type ExecutionType string
 
+// ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
+const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
+
 type ExecutionPhase string
+
+const (
+	ExecutionPhaseInit        = ExecutionPhase(ComponentPhaseInit)
+	ExecutionPhaseProgressing = ExecutionPhase(ComponentPhaseProgressing)
+	ExecutionPhaseDeleting    = ExecutionPhase(ComponentPhaseDeleting)
+	ExecutionPhaseSucceeded   = ExecutionPhase(ComponentPhaseSucceeded)
+	ExecutionPhaseFailed      = ExecutionPhase(ComponentPhaseFailed)
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -37,12 +58,13 @@ type ExecutionList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Execution contains the configuration of a execution and deploy item
-// +kubebuilder:subresource:status
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   ExecutionSpec   `json:"spec"`
+	// Spec defines a execution and its items
+	Spec ExecutionSpec `json:"spec"`
+	// Status contains the current status of the execution.
+	// +optional
 	Status ExecutionStatus `json:"status"`
 }
 
@@ -59,8 +81,7 @@ type ExecutionSpec struct {
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
 
-	// ImportReference is the reference to the object containing all imported values.
-	// +optional
+	// ImportReference is the reference to the data object containing all imported values.
 	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Executions defines all execution items that need to be scheduled.
@@ -80,9 +101,12 @@ type ExecutionStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ExportReference references the object that contains the exported values.
+	// only used for operation purpose.
+	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
-	// DeployItemReferences contain the state of all deploy items
+	// DeployItemReferences contain the state of all deploy items.
+	// The observed generation is here the generation of the Execution not the DeployItem.
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 
@@ -91,7 +115,7 @@ type ExecutionItem struct {
 	// Name is the unique name of the execution.
 	Name string `json:"name"`
 
-	// DataType is the DeployItem type of the execution
+	// DataType is the DeployItem type of the execution.
 	Type ExecutionType `json:"type"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.

@@ -1,15 +1,26 @@
 
+- dataobject validation
+
 ```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 
-dataObjects:
-  apiServerDomain: "virtualapiserverdomain"
-  credentials: "aws-credentials"
+imports:
+  A:
+    name: A
+    version: v1
+  apiServerDomain: 
+    name: "virtualapiserverdomain"
+    version: v1 # optional, defaults to v1
+  dev-aws-credentials: 
+    name: "aws-credentials"
+    version: v1 # optional; defaults to v1
 
-inputs:
-    A: 5
+# 
+importMapping: # -> map[string]interface{} : input[import.name]
+    A: (( imports.A ))
     B:
-        A: (( inputs.A ))
+        A: (( importMapping.A ))
         B: “text”
         C:
         - E1
@@ -21,9 +32,14 @@ inputs:
         F1: bla
         F2: (( dataObjects.credentials.field1 ))
         F3: (( inputs.A + 1 ))
+
+exportMapping:
+  dataObjectA: (( export.A )) 
+  apiderverUrl: myapiserverURl
 ```
 
 ```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
 
@@ -33,22 +49,31 @@ localTypes:
       type: number
 
 imports:
-    key1: 
-      schema:
-        "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
-        type: string
-      optional: false
-    key2: 
-      schema:
-        $ref: "blueprint://types/gcp-credentials" # read file from blueprint content
-      optional: false
-    key3: 
-      schema:
-        $ref: "local://aws-credentials"
-      optional: false
-    key4: 
-      schema:
-        $ref: "cd:///componentReferences/etcd/localResources/my-type" # path in component descriptor
-      optional: false
+- name: A
+  schema:
+    "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
+    type: string
+  optional: false
+- name: B
+  schema:
+    $ref: "blueprint://types/gcp-credentials" # read file from blueprint content
+  optional: false
+- name: C 
+  schema:
+    $ref: "local://aws-credentials"
+  optional: false
+- name: D
+  schema:
+    $ref: "cd:///componentReferences/etcd/localResources/my-type" # path in component descriptor
+  optional: false
 
+exports:
+- name: key1
+  version: v1 # optional; defaults to "v1"
+  schema:
+    "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
+    type: string
 ```
+
+*Ideas*:
+- versioned exports and versioned dataobject imports

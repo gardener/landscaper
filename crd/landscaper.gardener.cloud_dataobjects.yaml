@@ -14,13 +14,14 @@ spec:
     shortNames:
     - do
     - dobj
-    singular: dataobjects
+    singular: dataobject
   scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DataObject are resources that can hold any kind of data.
+        description: DataObject are resources that can hold any kind json or yaml
+          data.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

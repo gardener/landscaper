@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
@@ -91,7 +92,7 @@ func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.ImportDefinit
 // GetImportMappings returns all import mappings of a installation.
 // If a import definition is not defined in the mappings it will be automatically added with the default mappings.
 // todo: check for unused mappings.
-func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
+func (i *Installation) GetImportMappings() []ImportMapping {
 	mappings := make([]ImportMapping, 0)
 	for _, obj := range i.Blueprint.Info.Imports {
 		def := obj.DeepCopy()
@@ -114,7 +115,7 @@ func (i *Installation) GetImportMappings() ([]ImportMapping, error) {
 			},
 		})
 	}
-	return mappings, nil
+	return mappings
 }
 
 // GetExportMappings returns all exported mappings of a installation.
@@ -197,4 +198,9 @@ func (i *Installation) GetExportMappingFrom(key string) (lsv1alpha1.DefinitionEx
 	}
 
 	return lsv1alpha1.DefinitionExportMapping{}, fmt.Errorf("export mapping for key %s not found", key)
+}
+
+// MergeConditions updates or adds the given condition to the installation's condition.
+func (i *Installation) MergeConditions(conditions ...lsv1alpha1.Condition) {
+	i.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(i.Info.Status.Conditions, conditions...)
 }

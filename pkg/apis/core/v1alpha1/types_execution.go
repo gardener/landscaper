@@ -66,9 +66,9 @@ type ExecutionList struct {
 type Execution struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	// Spec defines a execution and its items
 	Spec ExecutionSpec `json:"spec"`
-
+	// Status contains the current status of the execution.
 	// +optional
 	Status ExecutionStatus `json:"status"`
 }
@@ -87,7 +87,6 @@ type ExecutionSpec struct {
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
 
 	// ImportReference is the reference to the object containing all imported values.
-	// +optional
 	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Executions defines all execution items that need to be scheduled.
@@ -107,6 +106,8 @@ type ExecutionStatus struct {
 	Conditions []Condition `json:"conditions,omitempty"`
 
 	// ExportReference references the object that contains the exported values.
+	// only used for operation purpose.
+	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
 	// DeployItemReferences contain the state of all deploy items.

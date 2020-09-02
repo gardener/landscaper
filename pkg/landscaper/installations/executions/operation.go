@@ -22,6 +22,7 @@ import (
 	"html/template"
 
 	"github.com/Masterminds/sprig"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -31,7 +32,19 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+)
+
+const (
+	// TemplatingFailedReason is the reason that is defined during templating.
+	TemplatingFailedReason = "TemplatingFailed"
+	// CreateOrUpdateImportsReason is the reason that is defined during
+	// the creation or update of the secret containing the imported values
+	CreateOrUpdateImportsReason = "CreateOrUpdateImports"
+	// CreateOrUpdateExecutionReason is the reason that is defined during the execution create or update.
+	CreateOrUpdateExecutionReason = "CreateOrUpdateExecution"
+	// ExecutionDeployedReason is the final reason that is defined if the execution is successfully deployed.
+	ExecutionDeployedReason = "ExecutionDeployed"
 )
 
 // ExecutionOperation templates the executions and handles the interaction with
@@ -48,13 +61,12 @@ func New(op *installations.Operation) *ExecutionOperation {
 }
 
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	executions, err := o.template(inst.Blueprint, imports)
 	if err != nil {
-		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-			"TemplatingFailed", "Unable to template executions")
-		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			TemplatingFailedReason, "Unable to template executions"))
 		return fmt.Errorf("unable to template executions: %w", err)
 	}
 
@@ -62,14 +74,41 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		return nil
 	}
 
+	o.Log().V(3).Info("create secret with imported values for execution")
+	data, err := json.MarshalIndent(imports, "", "  ")
+	if err != nil {
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			CreateOrUpdateImportsReason, "Unable to marshal imports"))
+		return fmt.Errorf("unable to marshal imported values: %w", err)
+	}
+	secret := &corev1.Secret{}
+	secret.Name = fmt.Sprintf("%s.imports", inst.Info.Name)
+	secret.Namespace = inst.Info.Namespace
+	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), secret, func() error {
+		secret.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
+		if err := controllerutil.SetControllerReference(inst.Info, secret, kubernetes.LandscaperScheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			CreateOrUpdateImportsReason, "Unable to create or update import secret for execution")
+		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
+		return err
+	}
+
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
-
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
+	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
 		exec.Spec.BlueprintRef = &inst.Info.Spec.BlueprintRef
 		exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
-		exec.Spec.ImportReference = inst.Info.Status.ImportReference
+		exec.Spec.ImportReference = &lsv1alpha1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		}
 		exec.Spec.Executions = executions
 		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err
@@ -77,7 +116,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		return nil
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-			"CreateOrUpdateExecution", "Unable to create or update execution")
+			CreateOrUpdateExecutionReason, "Unable to create or update execution")
 		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
 		return err
 	}
@@ -87,7 +126,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		Namespace: exec.Namespace,
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
-		"ExecutionDeployed", "Deployed execution item")
+		ExecutionDeployedReason, "Deployed execution item")
 	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
 }
 

@@ -32,7 +32,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// NewConstructor creates a new Import Contructor.
+// NewConstructor creates a new Import Constructor.
 func NewConstructor(op *installations.Operation, parent *installations.Installation, siblings ...*installations.Installation) *Constructor {
 	return &Constructor{
 		Operation: op,
@@ -43,18 +43,16 @@ func NewConstructor(op *installations.Operation, parent *installations.Installat
 	}
 }
 
-// Construct loads all imported data from the datasources (either installations or the landscape config)
+// Construct loads all imported data from the data sources (either installations or the landscape config)
 // and creates the imported configuration.
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]*dataobjects.DataObject, interface{}, error) {
 	var (
-		fldPath = field.NewPath(inst.Info.Name)
-		values  = make(map[string]interface{})
+		fldPath     = field.NewPath(inst.Info.Name)
+		values      = make(map[string]interface{})
+		mappings    = inst.GetImportMappings()
+		dataObjects = make([]*dataobjects.DataObject, len(mappings))
 	)
-	mappings, err := inst.GetImportMappings()
-	if err != nil {
-		return nil, nil, err
-	}
-	dataObjects := make([]*dataobjects.DataObject, len(mappings))
+
 	for i, importMapping := range mappings {
 		impPath := fldPath.Index(i)
 		do, err := c.constructForMapping(ctx, impPath, inst, importMapping)
@@ -133,7 +131,7 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 }
 
 func (c *Constructor) tryToConstructFromParent(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
-	if err := c.validator.checkIfParentHasImportForMapping(fldPath, inst, mapping); err != nil {
+	if err := c.validator.checkIfParentHasImportForMapping(fldPath, mapping); err != nil {
 		return nil, err
 	}
 

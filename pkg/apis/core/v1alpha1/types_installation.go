@@ -33,6 +33,12 @@ const KeepChildrenAnnotation = "landscaper.gardener.cloud/keep-children"
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
 const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
 
+// ReconcileExecutionCondition is the Conditions type to indicate the execution reconcile status.
+const ReconcileExecutionCondition ConditionType = "ReconcileExecution"
+
+// ValidateImportsCondition is the Conditions type to indicate status of the import validation.
+const ValidateImportsCondition ConditionType = "ValidateImports"
+
 // CreateImportsCondition is the Conditions type to indicate status of the imported data and data objects.
 const CreateImportsCondition ConditionType = "CreateImports"
 
@@ -74,15 +80,16 @@ type InstallationList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.configGeneration",name=ConfigGen,type=integer
 // +kubebuilder:printcolumn:JSONPath=".status.executionRef.name",name=Execution,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:subresource:status
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec contains the specification for a installation.
 	Spec InstallationSpec `json:"spec"`
 
+	// Status contains the status of the installation.
 	// +optional
 	Status InstallationStatus `json:"status"`
 }
@@ -129,12 +136,6 @@ type InstallationStatus struct {
 
 	// ConfigGeneration is the generation of the exported values.
 	ConfigGeneration string `json:"configGeneration"`
-
-	// ExportReference references the object that contains the exported values.
-	ExportReference *ObjectReference `json:"exportRef,omitempty"`
-
-	// ImportReference references the object that contains the temporary imported values.
-	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Imports contain the state of the imported values.
 	Imports []ImportState `json:"imports,omitempty"`
@@ -188,7 +189,7 @@ type SecretLabelSelectorRef struct {
 // ImportState hold the state of a import.
 type ImportState struct {
 	// From is the from key of the import
-	// todo: maybe remove in favor of one key from the definition
+	// todo: maybe remove in favor the key from the blueprint
 	From string `json:"from"`
 
 	// To is the to key of the import
