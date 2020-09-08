@@ -1,0 +1,34 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+localTypes:
+    aws-credential: # inline
+      type: number
+
+imports:
+- name: A
+  schema:
+    "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
+    type: string[]
+  optional: false
+- name: B
+  schema:
+    $ref: "blueprint://types/gcp-credentials" # read file from blueprint content
+  optional: false
+- name: C
+  schema:
+    $ref: "local://aws-credentials"
+  optional: false
+- name: D
+  schema:
+    $ref: "cd:///componentReferences/etcd/localResources/my-type" # path in component descriptor
+  optional: false
+
+exports:
+- name: key1
+  version: v1 # optional; defaults to "v1"
+  schema:
+    "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
+    type: string

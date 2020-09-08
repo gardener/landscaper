@@ -1,0 +1,26 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/external-dns-management-schemas'
+  version: 'v1'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  componentReferences:
+  - name: schemas
+    componentName: github.com/gardener/aws-schemas
+    version: v1
+
+  localResources:
+  - name: schemas
+    type: JSONSchema
+    access:
+      type: github
+      url: https://github.com/gardener/external-dns-management-schemas
+      ref: refs/tags/v1
+      path: schemas.yaml

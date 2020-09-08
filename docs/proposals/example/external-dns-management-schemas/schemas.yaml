@@ -1,0 +1,44 @@
+$schema: "https://json-schema.org/draft/2019-09/schema"
+
+definitions:
+  route53-provider:
+    type:
+      type: string
+    credentials:
+      $ref: cd://github.com/gardener/aws-schemas/localResource/schemas#definitions/credentials
+    dnsClass:
+      type: string
+    domains:
+      type: array
+      items:
+        type: string
+    zones:
+      type: array
+      items:
+        type: string
+    required:
+    - type
+    - credentials
+  googleCloudDNS-provider:
+    type:
+      type: string
+    credentials:
+      $ref: cd://github.com/gardener/gcp-schemas/localResource/schemas#definitions/credentials
+    dnsClass:
+      type: string
+    domains:
+      type: array
+      items:
+        type: string
+    zones:
+      type: array
+      items:
+        type: string
+    required:
+    - type
+    - credentials
+
+  provider:
+    anyOf:
+    - $ref: "#definitions/route53-provider"
+    - $ref: "#definitions/googleCloudDNS-provider"

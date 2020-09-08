@@ -1,0 +1,31 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/external-dns-management'
+  version: 'v0.30.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  componentReferences:
+  - name: schemas
+    componentName: github.com/gardener/external-dns-management-schemas
+    version: v1
+
+  localResources:
+  - name: blueprint
+    type: blueprint
+    access:
+      type: github
+      url: https://github.com/gardener/external-dns-management
+      ref: refs/tags/v1
+      path: blueprint
+  - name: controller
+    type: ociImage
+    access:
+      type: ociRegistry
+      imageRef: eu.gcr.io/gardener-project/external-dns-management:v0.30.0

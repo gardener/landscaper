@@ -1,0 +1,40 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+
+imports:
+  A:
+    name: A
+    version: v1
+  apiServerDomain:
+    name: "virtualapiserverdomain"
+    version: v1 # optional, defaults to v1
+  dev-aws-credentials:
+    name: "aws-credentials"
+    version: v1 # optional; defaults to v1
+
+#
+importMapping: # -> map[string]interface{} : input[import.name]
+    A: (( imports.A ))
+    B:
+        A: (( importMapping.A ))
+        B: “text”
+        C:
+        - E1
+        - E2
+    C:
+    - "demo.gardener.cloud"
+    - (( dataObjects.apiServerDomain ))
+    D:
+        F1: bla
+        F2: (( dataObjects.credentials.field1 ))
+        F3: (( inputs.A + 1 ))
+
+exportMapping:
+  dataObjectAV1: (( export.A.v1 ))
+  dataObjectAV2: (( export.A.v2 ))
+  apiderverUrl: myapiserverURl
+
+exports:
+  dataObjectAV1:
+    name: B
+    version: v2

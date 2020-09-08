@@ -1,0 +1,21 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/aws-schemas'
+  version: 'v1'
+
+  repositoryContexts:
+  - type: 'ociRegistry'
+    baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  localResources:
+  - name: schemas
+    type: JSONSchema
+    access:
+      type: github
+      url: https://github.com/gardener/aws-schemas
+      ref: refs/tags/v1
+      path: schemas.yaml

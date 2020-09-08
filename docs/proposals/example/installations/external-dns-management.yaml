@@ -1,0 +1,43 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: application-dns-controller
+
+# imported data objects that have to be defined in the system
+# either by the operator or exported by another installation.
+imports:
+  provider1-credentials:
+    name: "aws-dev-account-credentials"
+  provider2-credentials:
+    name: "gcp-dev-account-credentials"
+
+  namespace:
+    name: "application-namespace"
+
+  cluster:
+    target: "dev-cluster"
+
+importMappings:
+  providers:
+  - type: aws-route53
+    credentials: (( imports.provider1-credentials ))
+  - type: google-clouddns
+    credentials: (( imports.provider2-credentials ))
+
+  identifier: my-gardener-dns
+  namespace: (( imports.namespace )) # optional, will be defaulted
+
+exportMappings:
+  dnsClass: (( exports.dnsClass ))
+
+exports:
+  dnsClass:
+    name: application-dnsClass
+---
+kind: DataObject
+metadata:
+  name: application-dnsClass
+  ownerReferences:
+  - kind: Installation
+    name: application-dns-controller
+data: "mydnsclass"
