@@ -15,10 +15,11 @@
 package utils
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
 // MergeMaps takes two maps <a>, <b> and merges them. If <b> defines a value with a key
@@ -58,8 +59,8 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 }
 
 // CopyFS copies all files and directories of a filesystem to another.
-func CopyFS(src, dst afero.Fs, srcPath, dstPath string) error {
-	return afero.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {
+func CopyFS(src, dst vfs.FileSystem, srcPath, dstPath string) error {
+	return vfs.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -76,6 +77,16 @@ func CopyFS(src, dst afero.Fs, srcPath, dstPath string) error {
 			return err
 		}
 		defer file.Close()
-		return afero.WriteReader(dst, dstFilePath, file)
+
+		dstFile, err := dst.Create(dstFilePath)
+		if err != nil {
+			return err
+		}
+		defer dstFile.Close()
+
+		if _, err := io.Copy(dstFile, file); err != nil {
+			return err
+		}
+		return nil
 	})
 }

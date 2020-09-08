@@ -22,21 +22,21 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
 // BuildTarGzip creates a new compressed tar based on a filesystem and a path.
 // The tar is written to the given io.Writer.
-func BuildTarGzip(fs afero.Fs, root string, buf io.Writer) error {
+func BuildTarGzip(fs vfs.FileSystem, root string, buf io.Writer) error {
 	zr := gzip.NewWriter(buf)
 	return BuildTar(fs, root, zr)
 }
 
 // BuildTar creates a new tar based on a filesystem and a path.
 // The tar is written to the given io.Writer.
-func BuildTar(fs afero.Fs, root string, buf io.Writer) error {
+func BuildTar(fs vfs.FileSystem, root string, buf io.Writer) error {
 	tw := tar.NewWriter(buf)
-	err := afero.Walk(fs, root, func(path string, info os.FileInfo, err error) error {
+	err := vfs.Walk(fs, root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func BuildTar(fs afero.Fs, root string, buf io.Writer) error {
 }
 
 // ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path
-func ExtractTarGzip(gzipStream io.Reader, fs afero.Fs, root string) error {
+func ExtractTarGzip(gzipStream io.Reader, fs vfs.FileSystem, root string) error {
 	uncompStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -28,5 +28,5 @@ type Registry interface {
 	// GetBlueprint returns the blueprint for a resource of type "Blueprint"
 	GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error)
 	// GetBlob returns the blob content for a component definition.
-	GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error
+	GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error
 }

@@ -24,7 +24,9 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -176,7 +178,7 @@ func (r *localRegistry) GetBlueprint(_ context.Context, ref cdv2.Resource) (*v1a
 }
 
 // GetBlob returns the blob content for a component definition.
-func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
+func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
 	var (
 		name    = ref.GetName()
 		version = ref.GetVersion()
@@ -190,7 +192,10 @@ func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs af
 		return NewVersionNotFoundError(name, version, nil)
 	}
 
-	blobFS := afero.NewBasePathFs(afero.NewOsFs(), intRef.blobPath)
+	blobFS, err := projectionfs.New(osfs.New(), intRef.blobPath)
+	if err != nil {
+		return err
+	}
 
 	return utils.CopyFS(blobFS, fs, "/", "/")
 }

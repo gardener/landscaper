@@ -6,7 +6,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -95,7 +95,7 @@ func (m *manager) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha
 	return reg.GetBlueprint(ctx, ref)
 }
 
-func (m *manager) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
+func (m *manager) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
 	reg, ok := m.registries[ref.Access.GetType()]
 	if !ok {
 		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)

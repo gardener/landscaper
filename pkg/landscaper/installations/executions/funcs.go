@@ -17,12 +17,14 @@ package executions
 import (
 	"os"
 
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+
+	"github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs afero.Fs) map[string]interface{} {
+func LandscaperTplFuncMap(fs vfs.FileSystem) map[string]interface{} {
 	return map[string]interface{}{
 		"readFile": readFileFunc(fs),
 		"readDir":  readDir(fs),
@@ -30,9 +32,9 @@ func LandscaperTplFuncMap(fs afero.Fs) map[string]interface{} {
 }
 
 // readFileFunc returns a function that reads a file from a location in a filesystem
-func readFileFunc(fs afero.Fs) func(path string) []byte {
+func readFileFunc(fs vfs.FileSystem) func(path string) []byte {
 	return func(path string) []byte {
-		file, err := afero.ReadFile(fs, path)
+		file, err := ioutil.ReadFile(fs, path)
 		if err != nil {
 			// maybe we should ignore the error and return an empty byte array
 			panic(err)
@@ -42,9 +44,9 @@ func readFileFunc(fs afero.Fs) func(path string) []byte {
 }
 
 // readDir lists all files of directory
-func readDir(fs afero.Fs) func(path string) []os.FileInfo {
+func readDir(fs vfs.FileSystem) func(path string) []os.FileInfo {
 	return func(path string) []os.FileInfo {
-		files, err := afero.ReadDir(fs, path)
+		files, err := ioutil.ReadDir(fs, path)
 		if err != nil {
 			// maybe we should ignore the error and return an empty byte array
 			panic(err)

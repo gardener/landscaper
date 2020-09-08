@@ -25,15 +25,15 @@ spec:
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
-    
+
     # Name of the release: helm install [name]
-    name: my-release 
+    name: my-release
     # Namespace of the release: helm --namespace
     namespace: default
     # Values to template the chart
     # optional
     values: {}
-    
+
     # Describes one export that is read from the templates values or a templated resource.
     # The value will be by default read from the values if fromResource is not specified.
     # The specified jsonPath value is written with the given key to the exported configuration.

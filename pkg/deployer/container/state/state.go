@@ -29,8 +29,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -97,7 +97,7 @@ func (s *State) Backup(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := utils.BuildTarGzip(afero.NewOsFs(), s.path, tmpFile); err != nil {
+	if err := utils.BuildTarGzip(osfs.New(), s.path, tmpFile); err != nil {
 		tmpFile.Close()
 		return errors.Wrap(err, "unable to tar and gzip State")
 	}
@@ -203,7 +203,7 @@ func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
 		data.Write(chunk)
 	}
 
-	return utils.ExtractTarGzip(&data, afero.NewOsFs(), s.path)
+	return utils.ExtractTarGzip(&data, osfs.New(), s.path)
 }
 
 func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {

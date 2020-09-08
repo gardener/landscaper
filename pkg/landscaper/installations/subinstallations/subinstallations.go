@@ -171,7 +171,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		return nil, err
 	}
 
-	subBlueprint, err := blueprints.Resolve(ctx, o, remoteRef)
+	subBlueprint, err := blueprints.Resolve(ctx, o, remoteRef, nil)
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",

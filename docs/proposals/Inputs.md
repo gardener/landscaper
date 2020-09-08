@@ -34,8 +34,13 @@ importMapping: # -> map[string]interface{} : input[import.name]
         F3: (( inputs.A + 1 ))
 
 exportMapping:
-  dataObjectA: (( export.A )) 
+  dataObjectA: (( export.A.v1 ))
   apiderverUrl: myapiserverURl
+
+exports:
+  dataObjectA:
+    name: B
+    version: v1
 ```
 
 ```yaml

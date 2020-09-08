@@ -22,7 +22,8 @@ import (
 	"path/filepath"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -88,12 +89,12 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	memFS := afero.NewMemMapFs()
+	memFS := memoryfs.New()
 	if err := utils.ExtractTarGzip(&data, memFS, "/"); err != nil {
 		return err
 	}
 
-	defData, err := afero.ReadFile(memFS, filepath.Join("/", lsv1alpha1.BlueprintFilePath))
+	defData, err := vfs.ReadFile(memFS, filepath.Join("/", lsv1alpha1.BlueprintFilePath))
 	if err != nil {
 		return err
 	}

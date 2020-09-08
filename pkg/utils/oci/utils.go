@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"io/ioutil"
 
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/afero"
 
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -41,7 +41,7 @@ func GetLayerByName(layers []ocispecv1.Descriptor, name string) *ocispecv1.Descr
 
 // BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.
 // It returns the newly creates ocispec Description for the tar.
-func BuildTarGzipLayer(cache cache.Cache, fs afero.Fs, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {
+func BuildTarGzipLayer(cache cache.Cache, fs vfs.FileSystem, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {
 
 	var blob bytes.Buffer
 	if err := utils.BuildTarGzip(fs, path, &blob); err != nil {

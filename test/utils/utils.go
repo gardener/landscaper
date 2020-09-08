@@ -21,8 +21,9 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/golang/mock/gomock"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
-	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -155,7 +156,10 @@ func ReadBlueprintFromFile(testfile string) (*lsv1alpha1.Blueprint, error) {
 func CreateBlueprintFromFile(filePath, contentPath string) *blueprints.Blueprint {
 	def, err := ReadBlueprintFromFile(filePath)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	blue, err := blueprints.New(def, afero.NewBasePathFs(afero.NewOsFs(), contentPath))
+
+	fs, err := projectionfs.New(osfs.New(), contentPath)
+	gomega.Expect(err).To(gomega.Succeed())
+	blue, err := blueprints.New(def, fs)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	return blue
 }

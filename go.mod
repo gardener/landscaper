@@ -73,6 +73,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.3.0 // indirect
+	github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/masterminds/sprig v2.22.0+incompatible // indirect
@@ -98,7 +99,7 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/schrodit/component-spec v0.0.0-20200731111717-ec9f02509b07 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
-	github.com/spf13/afero v1.2.2
+	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8 // indirect

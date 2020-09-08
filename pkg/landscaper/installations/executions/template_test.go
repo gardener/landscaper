@@ -19,14 +19,15 @@ import (
 	"os"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	vfsutil "github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
 var _ = Describe("Template", func() {
@@ -77,8 +78,8 @@ var _ = Describe("Template", func() {
 		blue.Executors = string(tmpl)
 		op := New(&installations.Operation{})
 
-		memFs := afero.NewMemMapFs()
-		err = afero.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+		memFs := memoryfs.New()
+		err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
 		Expect(err).ToNot(HaveOccurred())
 
 		res, err := op.template(&blueprints.Blueprint{

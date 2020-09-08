@@ -20,10 +20,10 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/afero"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -33,7 +33,7 @@ import (
 )
 
 // BuildNewDefinition creates a ocispec Manifest from a component definition.
-func BuildNewDefinition(cache cache.Cache, fs afero.Fs, path string) (*ocispecv1.Manifest, error) {
+func BuildNewDefinition(cache cache.Cache, fs vfs.FileSystem, path string) (*ocispecv1.Manifest, error) {
 
 	config, err := BuildNewDefinitionConfig(cache, fs, path)
 	if err != nil {
@@ -57,8 +57,8 @@ func BuildNewDefinition(cache cache.Cache, fs afero.Fs, path string) (*ocispecv1
 }
 
 // BuildNewDefinitionConfig creates a ocispec Manifest from a component definition.
-func BuildNewDefinitionConfig(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
-	data, err := afero.ReadFile(fs, filepath.Join(path, lsv1alpha1.BlueprintFilePath))
+func BuildNewDefinitionConfig(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
+	data, err := vfs.ReadFile(fs, filepath.Join(path, lsv1alpha1.BlueprintFilePath))
 	if err != nil {
 		return ocispecv1.Descriptor{}, err
 	}
@@ -86,7 +86,7 @@ func BuildNewDefinitionConfig(cache cache.Cache, fs afero.Fs, path string) (ocis
 }
 
 // BuildNewContentBlob creates a ocispec Manifest from a component definition.
-func BuildNewContentBlob(cache cache.Cache, fs afero.Fs, path string) (ocispecv1.Descriptor, error) {
+func BuildNewContentBlob(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
 	ann := map[string]string{
 		ocispecv1.AnnotationTitle: ComponentDefinitionAnnotationTitleContent,
 	}

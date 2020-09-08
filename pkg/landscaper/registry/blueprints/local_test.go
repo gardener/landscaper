@@ -20,9 +20,11 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr/testing"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/test"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
@@ -36,11 +38,11 @@ const (
 var _ = Describe("Local Registry", func() {
 
 	var (
-		fs afero.Fs
+		fs vfs.FileSystem
 	)
 
 	BeforeEach(func() {
-		fs = afero.NewMemMapFs()
+		fs = memoryfs.New()
 	})
 
 	Context("initialize Index", func() {
@@ -103,7 +105,7 @@ var _ = Describe("Local Registry", func() {
 			err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
-			fs = afero.NewMemMapFs()
+			fs = memoryfs.New()
 			err = reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -112,13 +114,10 @@ var _ = Describe("Local Registry", func() {
 			err := reg.GetContent(context.TODO(), newLocalComponent("root-definition", "1.0.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
-			dirInfo, err := afero.ReadDir(fs, "/")
+			dirs, err := test.List(fs, "/")
 			Expect(err).ToNot(HaveOccurred())
-
-			dirs := []string{}
-			for _, dir := range dirInfo {
-				dirs = append(dirs, dir.Name())
-			}
+			//dirInfo, err := afero.ReadDir(fs, "/")
+			//Expect(err).ToNot(HaveOccurred())
 
 			Expect(dirs).To(And(ContainElement("comp1"), ContainElement("comp1-1")))
 		})
@@ -127,10 +126,10 @@ var _ = Describe("Local Registry", func() {
 			err := reg.GetContent(context.TODO(), newLocalComponent("sub-definition-1", "1.1.0"), fs)
 			Expect(err).ToNot(HaveOccurred())
 
-			data, err := afero.ReadFile(fs, "/testdata.txt")
+			file, err := fs.Open("/testdata.txt")
 			Expect(err).ToNot(HaveOccurred())
-
-			Expect(string(data)).To(Equal("Test Data"))
+			defer file.Close()
+			test.ExpectRead(file, []byte("Test Data"))
 		})
 
 		It("should return an error if the name is incorrect", func() {

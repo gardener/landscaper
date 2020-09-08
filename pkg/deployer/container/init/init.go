@@ -23,8 +23,9 @@ import (
 	"path"
 
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
@@ -39,7 +40,6 @@ import (
 	blueprintsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
@@ -122,14 +122,14 @@ func Run(ctx context.Context, log logr.Logger) error {
 	if deployItem.Spec.BlueprintRef != nil {
 		log.Info("get blueprint content")
 		log.Info(fmt.Sprintf("fetching blueprint for %#v", deployItem.Spec.BlueprintRef))
-		blueprint, err := blueprints.Resolve(ctx, regAcc, *deployItem.Spec.BlueprintRef)
+		fs, err := projectionfs.New(osfs.New(), opts.ContentDirPath)
+		if err != nil {
+			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
+		}
+		// resolve is only used to download the blueprint's content to the filesystem
+		_, err = blueprints.Resolve(ctx, regAcc, *deployItem.Spec.BlueprintRef, fs)
 		if err != nil {
 			return errors.Wrap(err, "unable to fetch blueprint from registry")
-		}
-
-		osFS := afero.NewOsFs()
-		if err := utils.CopyFS(blueprint.Fs, osFS, "/", opts.ContentDirPath); err != nil {
-			return err
 		}
 		log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
 	}

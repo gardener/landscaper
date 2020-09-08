@@ -238,6 +238,16 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
+# github.com/mandelsoft/filepath v0.0.0-20200906144341-f6f7308759ed
+github.com/mandelsoft/filepath/pkg/filepath
+# github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c
+github.com/mandelsoft/vfs/pkg/memoryfs
+github.com/mandelsoft/vfs/pkg/osfs
+github.com/mandelsoft/vfs/pkg/projectionfs
+github.com/mandelsoft/vfs/pkg/readonlyfs
+github.com/mandelsoft/vfs/pkg/test
+github.com/mandelsoft/vfs/pkg/utils
+github.com/mandelsoft/vfs/pkg/vfs
 # github.com/mattn/go-colorable v0.1.2
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.8
@@ -325,9 +335,6 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/sirupsen/logrus v1.4.2
 github.com/sirupsen/logrus
-# github.com/spf13/afero v1.2.2
-github.com/spf13/afero
-github.com/spf13/afero/mem
 # github.com/spf13/cast v1.3.1
 github.com/spf13/cast
 # github.com/spf13/cobra v1.0.0

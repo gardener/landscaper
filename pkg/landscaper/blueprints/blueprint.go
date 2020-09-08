@@ -16,18 +16,19 @@ package blueprints
 
 import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
 // Blueprint is the internal resolved type of a blueprint.
 type Blueprint struct {
 	Info       *lsv1alpha1.Blueprint
-	Fs         afero.Fs
+	Fs         vfs.FileSystem
 	References []*BlueprintReference
 }
 
@@ -35,11 +36,11 @@ type Blueprint struct {
 type BlueprintReference struct {
 	Info *lsv1alpha1.BlueprintReference
 	Path string
-	Fs   afero.Fs
+	Fs   vfs.FileSystem
 }
 
 // New creates a new internal Blueprint from a blueprint definition and its filesystem content.
-func New(blueprint *lsv1alpha1.Blueprint, content afero.Fs) (*Blueprint, error) {
+func New(blueprint *lsv1alpha1.Blueprint, content vfs.FileSystem) (*Blueprint, error) {
 	b := &Blueprint{
 		Info: blueprint,
 		Fs:   content,
@@ -55,7 +56,7 @@ func New(blueprint *lsv1alpha1.Blueprint, content afero.Fs) (*Blueprint, error) 
 func ResolveBlueprintReferences(blueprint *Blueprint) error {
 	refs := make([]*BlueprintReference, len(blueprint.Info.BlueprintReferences))
 	for i, path := range blueprint.Info.BlueprintReferences {
-		data, err := afero.ReadFile(blueprint.Fs, path)
+		data, err := ioutil.ReadFile(blueprint.Fs, path)
 		if err != nil {
 			return err
 		}

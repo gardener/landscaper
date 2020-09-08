@@ -168,7 +168,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return err
 	}
 
-	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef)
+	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.BlueprintRef, nil)
 	if err != nil {
 		return err
 	}

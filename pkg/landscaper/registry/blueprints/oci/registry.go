@@ -22,7 +22,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
@@ -92,7 +92,7 @@ func (r *registry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1al
 }
 
 // GetBlob returns the blob content for a component definition.
-func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs afero.Fs) error {
+func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
 	if ref.Access.GetType() != cdv2.OCIRegistryType {
 		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}

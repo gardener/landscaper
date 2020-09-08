@@ -23,10 +23,11 @@ import (
 	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/afero"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -136,8 +137,8 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 		return ocispecv1.Manifest{}, nil
 	}
 
-	memFs := afero.NewMemMapFs()
-	if err := afero.WriteFile(memFs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), cdData, os.ModePerm); err != nil {
+	memFs := memoryfs.New()
+	if err := vfs.WriteFile(memFs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), cdData, os.ModePerm); err != nil {
 		return ocispecv1.Manifest{}, err
 	}
 	var blob bytes.Buffer

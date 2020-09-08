@@ -27,7 +27,7 @@ import (
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/fake"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -37,15 +37,15 @@ var _ = Describe("Delete", func() {
 		op lsoperation.Interface
 
 		state        *envtest.State
-		fakeRegistry *fake.FakeRegistry
+		fakeRegistry blueprintsregistry.Registry
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeRegistry, err = fake.NewFakeRegistryFromPath("./testdata/registry")
+		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeRegistry)
+		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeRegistry, nil)
 	})
 
 	AfterEach(func() {
@@ -65,7 +65,7 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, state.Installations["a"])
+		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstA)
@@ -87,7 +87,7 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, state.Installations["root"])
+		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstRoot)
@@ -113,7 +113,7 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, state.Installations["b"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)
@@ -131,7 +131,7 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test2")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), fakeRegistry, state.Installations["a"])
+		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)

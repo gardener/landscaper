@@ -22,16 +22,19 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/afero"
 )
 
 type layeredCache struct {
 	log logr.Logger
 	mux sync.RWMutex
 
-	baseFs    afero.Fs
-	overlayFs afero.Fs
+	baseFs    vfs.FileSystem
+	overlayFs vfs.FileSystem
 }
 
 // NewCache creates a new cache with the given options.
@@ -44,10 +47,13 @@ func NewCache(log logr.Logger, options ...Option) (Cache, error) {
 		return nil, err
 	}
 
-	base := afero.NewBasePathFs(afero.NewOsFs(), opts.BasePath)
-	var overlay afero.Fs
+	base, err := projectionfs.New(osfs.New(), opts.BasePath)
+	if err != nil {
+		return nil, err
+	}
+	var overlay vfs.FileSystem
 	if opts.InMemoryOverlay {
-		overlay = afero.NewMemMapFs()
+		overlay = memoryfs.New()
 	}
 
 	return &layeredCache{
@@ -128,7 +134,7 @@ func (lc *layeredCache) info(dgst string) (os.FileInfo, error) {
 	return info, nil
 }
 
-func (lc *layeredCache) get(dgst string) (os.FileInfo, afero.File, error) {
+func (lc *layeredCache) get(dgst string) (os.FileInfo, vfs.File, error) {
 	lc.mux.RLock()
 	defer lc.mux.RUnlock()
 

@@ -465,6 +465,16 @@ github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e h1:hB2xlXdHp/pmPZq
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.7.0 h1:aizVhC/NAAcKWb+5QsU1iNOZb4Yws5UO2I+aIprQITM=
 github.com/mailru/easyjson v0.7.0/go.mod h1:KAzv3t3aY1NaHWoQz1+4F1ccyAH66Jk7yos7ldAVICs=
+github.com/mandelsoft/filepath v0.0.0-20200902151426-f6fe988ac4aa h1:DgGRipjIJrFlbU9AD8h2s58oXE+MwcJP9hNNe+sjIug=
+github.com/mandelsoft/filepath v0.0.0-20200902151426-f6fe988ac4aa/go.mod h1:n4xEiUD2HNHnn2w5ZKF0qgjDecHVCWAl5DxZ7+pcFU8=
+github.com/mandelsoft/filepath v0.0.0-20200906144341-f6f7308759ed h1:yu9MpVjXEvfTAmhZFKHAgVVYgSn9D7N9VHn/3/XsXDo=
+github.com/mandelsoft/filepath v0.0.0-20200906144341-f6f7308759ed/go.mod h1:n4xEiUD2HNHnn2w5ZKF0qgjDecHVCWAl5DxZ7+pcFU8=
+github.com/mandelsoft/vfs v0.0.0-20200902163307-9bb2d0eb5720 h1:F83vrIoyuWS5RnZ/iGol57hRLfxG10qfo4XZ+MjCeYE=
+github.com/mandelsoft/vfs v0.0.0-20200902163307-9bb2d0eb5720/go.mod h1:jI0cljC6pwF7b71t65et7YeqzAQA0009r1GXoOIhfGY=
+github.com/mandelsoft/vfs v0.0.0-20200903153159-150c2824475f h1:D07RofHjk6Sl2Cao0SfCCLC989VdoZNlpeqwv0jKr9E=
+github.com/mandelsoft/vfs v0.0.0-20200903153159-150c2824475f/go.mod h1:jI0cljC6pwF7b71t65et7YeqzAQA0009r1GXoOIhfGY=
+github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c h1:Q9O/Ege/pTBBhPU0l5G8RTTkzzR32xMzI5Xks2W4nxU=
+github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c/go.mod h1:5d4Qs06LR5OnZVtW7zLuoEJslOTk5205JqatkXp/Z5Q=
 github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d h1:Zj+PHjnhRYWBK6RqCDBcAhLXoi3TzC27Zad/Vn+gnVQ=
 github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d/go.mod h1:WZy8Q5coAB1zhY9AOBJP0O6J4BuDfbupUDavKY+I3+s=
 github.com/marstr/guid v1.1.0/go.mod h1:74gB1z2wpxxInTG6yaqA7KrtM0NZ+RbrcqDvYHefzho=

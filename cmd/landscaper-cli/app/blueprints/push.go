@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -77,7 +77,7 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defManifest, err := lsoci.BuildNewDefinition(cache, afero.NewOsFs(), o.blueprintPath)
+	defManifest, err := lsoci.BuildNewDefinition(cache, osfs.New(), o.blueprintPath)
 	if err != nil {
 		return err
 	}

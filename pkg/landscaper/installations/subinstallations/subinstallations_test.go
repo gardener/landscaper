@@ -21,9 +21,9 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	g "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/spf13/afero"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -102,7 +102,7 @@ var _ = g.Describe("SubInstallation", func() {
 				},
 			)
 
-			blue, err := blueprints.New(&lsv1alpha1.Blueprint{}, afero.NewMemMapFs())
+			blue, err := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
 			Expect(err).ToNot(HaveOccurred())
 
 			si := subinstallations.New(op)
