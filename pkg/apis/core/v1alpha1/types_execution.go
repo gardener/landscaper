@@ -90,7 +90,7 @@ type ExecutionSpec struct {
 	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
 	// Executions defines all execution items that need to be scheduled.
-	Executions []ExecutionItem `json:"executions"`
+	Executions []DeployItemTemplate `json:"executions"`
 }
 
 // ExecutionStatus contains the current status of a execution.
@@ -115,8 +115,8 @@ type ExecutionStatus struct {
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 
-// ExecutionItem defines a execution element that is translated into a deploy item.
-type ExecutionItem struct {
+// DeployItemTemplate defines a execution element that is translated into a deploy item.
+type DeployItemTemplate struct {
 	// Name is the unique name of the execution.
 	Name string `json:"name"`
 

@@ -15,23 +15,18 @@
 package executions
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 
-	"github.com/Masterminds/sprig"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -63,7 +58,7 @@ func New(op *installations.Operation) *ExecutionOperation {
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
-	executions, err := o.template(inst.Blueprint, imports)
+	executions, err := template.New(o).TemplateDeployExecutions(inst.Blueprint, o.ResolvedComponentDescriptor, imports)
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
@@ -128,48 +123,4 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
 	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
-}
-
-func (o *ExecutionOperation) template(blueprint *blueprints.Blueprint, imports interface{}) ([]lsv1alpha1.ExecutionItem, error) {
-	// we only start with go template + sprig
-	// todo: add support to access definitions blob -> readFromFile, read file
-	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs)).Parse(blueprint.Info.Executors)
-	if err != nil {
-		return nil, err
-	}
-
-	// marshal and unmarshal resolved component descriptor
-	components, err := serializeResolvedComponentDescriptor(cdutils.ConvertFromComponentDescriptorList(o.ResolvedComponentDescriptor).Components)
-	if err != nil {
-		return nil, fmt.Errorf("error during serializing of the resolved component descriptor: %w", err)
-	}
-
-	values := map[string]interface{}{
-		"imports":    imports,
-		"components": components,
-	}
-
-	data := bytes.NewBuffer([]byte{})
-	if err := tmpl.Execute(data, values); err != nil {
-		return nil, err
-	}
-
-	executions := make([]lsv1alpha1.ExecutionItem, 0)
-	if err := yaml.Unmarshal(data.Bytes(), &executions); err != nil {
-		return nil, err
-	}
-
-	return executions, nil
-}
-
-func serializeResolvedComponentDescriptor(list map[string]cdutils.MappedComponentDescriptor) (interface{}, error) {
-	data, err := json.Marshal(list)
-	if err != nil {
-		return nil, err
-	}
-	var val interface{}
-	if err := json.Unmarshal(data, &val); err != nil {
-		return nil, err
-	}
-	return val, nil
 }

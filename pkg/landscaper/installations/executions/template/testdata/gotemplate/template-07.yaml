@@ -1,0 +1,4 @@
+- name: one
+  type: GoTemplate
+  template: |
+      image: my-custom-image:{{ toString (readFile "./VERSION") }}

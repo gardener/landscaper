@@ -1,0 +1,4 @@
+- name: one
+  type: GoTemplate
+  template: |
+    testKey: myval

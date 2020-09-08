@@ -55,7 +55,7 @@ deployExecutions:
   stubs:
   - "/my/stubfile/..."
   - "cd://componentReference/my-other-comp/localResource/..."
-  file: /installer.yaml # virtual filesystemØ
+  file: /installer.yaml # virtual filesystem
   # template:
   #   a:
   #     b: (( readFile() ))

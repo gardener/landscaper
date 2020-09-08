@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
-	github.com/Masterminds/sprig/v3 v3.1.0 // indirect
+	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/Masterminds/squirrel v1.2.0 // indirect
 	github.com/Masterminds/vcs v1.13.1 // indirect
 	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect

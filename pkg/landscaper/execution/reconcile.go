@@ -31,7 +31,7 @@ import (
 
 // executionItem is the internal representation of a execution item with its deployitem and status
 type executionItem struct {
-	Info       lsv1alpha1.ExecutionItem
+	Info       lsv1alpha1.DeployItemTemplate
 	DeployItem *lsv1alpha1.DeployItem
 }
 

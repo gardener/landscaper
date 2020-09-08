@@ -54,9 +54,10 @@ type Blueprint struct {
 	// +optional
 	BlueprintReferences []string `json:"blueprintRefs,omitempty"`
 
-	// DeployItemReferences defines the executors that are sequentially executed by the landscaper
+	// DeployExecutions defines the templating executors that are sequentially executed by the landscaper.
+	// The templates must return a list of deploy item templates.
 	// +optional
-	Executors string `json:"executors"`
+	DeployExecutions []TemplateExecutor `json:"deployExecutions,omitempty"`
 }
 
 // ImportDefinition defines a imported value
@@ -169,4 +170,26 @@ type BlueprintStaticDataValueFrom struct {
 	// Selects a key of a secret in the installations's namespace
 	// +optional
 	LocalPath string `json:"localPath,omitempty"`
+}
+
+// TemplateType describes the template mechanism.
+type TemplateType string
+
+// GOTemplateType describes the go templating type.
+const GOTemplateType TemplateType = "GoTemplate"
+
+// TemplateExecutor describes a templating mechanism and configuration.
+type TemplateExecutor struct {
+	// Name is the unique name of the template
+	Name string `json:"name"`
+	// Type describes the templating mechanism.
+	Type TemplateType `json:"type"`
+	// File is the path to the template in the blueprint's content.
+	// +optional
+	File string `json:"file,omitempty"`
+	// Template contains an optional inline template.
+	// The template has to be of string for go template
+	// and a valid yaml/json for spiff.
+	// + optional
+	Template json.RawMessage `json:"template,omitempty"`
 }
