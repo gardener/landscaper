@@ -147,7 +147,7 @@ func (o *Operation) GetExportForKey(ctx context.Context, srcObj runtime.Object, 
 		return nil, err
 	}
 
-	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1.ExportDataObjectContext, src, key)
+	doName := lsv1alpha1helper.GenerateDataObjectName(src, key)
 	rawDO := &lsv1alpha1.DataObject{}
 	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, acc.GetNamespace()), rawDO); err != nil {
 		return nil, err

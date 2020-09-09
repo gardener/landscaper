@@ -20,14 +20,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DataObjectContext defines the context of a data object.
-type DataObjectContext string
+// DataObjectSourceType defines the context of a data object.
+type DataObjectSourceType string
 
 const (
-	// ExportDataObjectContext is the data object type of a exported object.
-	ExportDataObjectContext DataObjectContext = "export"
-	// ExportDataObjectContext is the data object type of a imported object.
-	ImportDataObjectContext DataObjectContext = "import"
+	// ExportDataObjectSourceType is the data object type of a exported object.
+	ExportDataObjectSourceType DataObjectSourceType = "export"
+	// ExportDataObjectSourceType is the data object type of a imported object.
+	ImportDataObjectSourceType DataObjectSourceType = "import"
 )
 
 // DataObjectTypeAnnotation defines the name of the annotation that specifies the type of the dataobject.
@@ -35,6 +35,9 @@ const DataObjectTypeAnnotation = "dataobjects.landscaper.gardener.cloud/type"
 
 // DataObjectContextLabel defines the name of the label that specifies the context of the dataobject.
 const DataObjectContextLabel = "dataobjects.landscaper.gardener.cloud/context"
+
+// DataObjectSourceTypeLabel defines the name of the label that specifies the source type (import or export) of the dataobject.
+const DataObjectSourceTypeLabel = "dataobjects.landscaper.gardener.cloud/sourceType"
 
 // DataObjectKeyLabel defines the name of the label that specifies the export or imported key of the dataobject.
 const DataObjectKeyLabel = "dataobjects.landscaper.gardener.cloud/key"

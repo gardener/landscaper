@@ -20,12 +20,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 )
 
 // Context contains the visible installations of a specific installation.
 // This context is later used to validate and get import data
 type Context struct {
+	// Name is the name of the current installation's context.
+	// BY default it is the source name of the parent.
+	Name string
 	// Parent is the installation the installation is encompassed in.
 	// Parents are handled separately as installation have access to the same imports as their parent.
 	Parent *Installation
@@ -35,10 +39,20 @@ type Context struct {
 	Siblings []*Installation
 }
 
-// DetermineContext determines the visible context of a installation.
+// SetInstallationContext determines the current context and updates the operation context.
+func (o *Operation) SetInstallationContext(ctx context.Context) error {
+	newCtx, err := o.DetermineInstallationContext(ctx)
+	if err != nil {
+		return err
+	}
+	o.context = *newCtx
+	return nil
+}
+
+// DetermineInstallationContext determines the visible context of a installation.
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.
-func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
+func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context, error) {
 	if IsRootInstallation(o.Inst.Info) {
 		// get all root object as siblings
 		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool { return inst.Name == o.Inst.Info.Name }, client.InNamespace(o.Inst.Info.Namespace))
@@ -76,7 +90,11 @@ func (o *Operation) DetermineContext(ctx context.Context) (*Context, error) {
 		return nil, err
 	}
 
-	return &Context{Parent: parent, Siblings: intSubInstallations}, nil
+	return &Context{
+		Name:     lsv1alpha1helper.DataObjectSourceFromInstallation(parent.Info),
+		Parent:   parent,
+		Siblings: intSubInstallations,
+	}, nil
 }
 
 // GetParent returns the parent of a installation.

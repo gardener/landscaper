@@ -48,9 +48,10 @@ type Operation struct {
 	Datatypes map[string]*datatype.Datatype
 
 	Inst                        *Installation
+	InstallationContext         string
 	ComponentDescriptor         *cdv2.ComponentDescriptor
 	ResolvedComponentDescriptor cdv2.ComponentDescriptorList
-	context                     *Context
+	context                     Context
 	staticData                  map[string]interface{}
 }
 
@@ -70,13 +71,9 @@ func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.I
 	if err := instOp.ResolveComponentDescriptors(ctx); err != nil {
 		return nil, err
 	}
-
-	var err error
-	instOp.context, err = instOp.DetermineContext(ctx)
-	if err != nil {
+	if err := instOp.SetInstallationContext(ctx); err != nil {
 		return nil, err
 	}
-
 	return instOp, nil
 }
 
@@ -98,7 +95,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 
 // Context returns the context of the operated installation
 func (o *Operation) Context() *Context {
-	return o.context
+	return &o.context
 }
 
 // GetDataType returns the datatype with a specific name.

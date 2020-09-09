@@ -333,6 +333,18 @@ func DirExists(fs FileSystem, path string) (bool, error) {
 	return false, err
 }
 
+// FileExists checks if a path exists and is a regular file.
+func FileExists(fs FileSystem, path string) (bool, error) {
+	fi, err := fs.Stat(path)
+	if err == nil && fi.Mode()&os.ModeType == 0 {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // IsDir checks if a given path is a directory.
 func IsDir(fs FileSystem, path string) (bool, error) {
 	fi, err := fs.Stat(path)
@@ -340,6 +352,15 @@ func IsDir(fs FileSystem, path string) (bool, error) {
 		return false, err
 	}
 	return fi.IsDir(), nil
+}
+
+// IsFile checks if a given path is a file.
+func IsFile(fs FileSystem, path string) (bool, error) {
+	fi, err := fs.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fi.Mode()&os.ModeType == 0, nil
 }
 
 func CopyFile(srcfs FileSystem, src string, dstfs FileSystem, dst string) error {

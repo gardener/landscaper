@@ -8,7 +8,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible
+	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/Masterminds/squirrel v1.2.0 // indirect
 	github.com/Masterminds/vcs v1.13.1 // indirect
@@ -73,7 +73,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.3.0 // indirect
-	github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c
+	github.com/mandelsoft/vfs v0.0.0-20200909114934-2adb28762d89
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
 	github.com/marstr/guid v1.1.0 // indirect
 	github.com/masterminds/sprig v2.22.0+incompatible // indirect

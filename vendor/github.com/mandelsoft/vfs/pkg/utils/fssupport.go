@@ -128,11 +128,11 @@ func (m *FileSystemSupport) MkdirAll(path string, perm os.FileMode) error {
 }
 
 func (m *FileSystemSupport) Open(name string) (vfs.File, error) {
-	f, n, err := m.findFile(name)
+	f, _, err := m.findFile(name)
 	if err != nil {
 		return nil, err
 	}
-	return newFileHandle(n, f), nil
+	return newFileHandle(name, f), nil
 }
 
 func (m *FileSystemSupport) OpenFile(name string, flags int, perm os.FileMode) (vfs.File, error) {
@@ -142,7 +142,7 @@ func (m *FileSystemSupport) OpenFile(name string, flags int, perm os.FileMode) (
 	}
 	if f == nil {
 		if flags&(os.O_CREATE) == 0 {
-			return nil, &os.PathError{Op: "create", Path: name, Err: os.ErrNotExist}
+			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
 		}
 		f = m.adapter.CreateFile(perm)
 		dir.Lock()
@@ -151,13 +151,20 @@ func (m *FileSystemSupport) OpenFile(name string, flags int, perm os.FileMode) (
 		if err != nil {
 			if !vfs.IsErrExist(err) {
 				dir.Unlock()
-				return nil, &os.PathError{Op: "create", Path: name, Err: err}
+				return nil, &os.PathError{Op: "open", Path: name, Err: err}
+			}
+			if flags&os.O_EXCL != 0 {
+				return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrExist}
 			}
 			f = a.(FileData)
 		}
 		dir.Unlock()
+	} else {
+		if flags&os.O_EXCL != 0 {
+			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrExist}
+		}
 	}
-	h := newFileHandle(n, f)
+	h := newFileHandle(name, f)
 
 	if flags&(os.O_RDONLY|os.O_WRONLY|os.O_RDWR) == os.O_RDONLY {
 		h.readOnly = true

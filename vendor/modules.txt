@@ -5,12 +5,8 @@ github.com/Azure/go-ansiterm/winterm
 github.com/BurntSushi/toml
 # github.com/Masterminds/goutils v1.1.0
 github.com/Masterminds/goutils
-# github.com/Masterminds/semver v1.5.0
-github.com/Masterminds/semver
 # github.com/Masterminds/semver/v3 v3.1.0
 github.com/Masterminds/semver/v3
-# github.com/Masterminds/sprig v2.22.0+incompatible
-github.com/Masterminds/sprig
 # github.com/Masterminds/sprig/v3 v3.1.0
 github.com/Masterminds/sprig/v3
 # github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5
@@ -238,9 +234,9 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/mandelsoft/filepath v0.0.0-20200906144341-f6f7308759ed
+# github.com/mandelsoft/filepath v0.0.0-20200909114706-3df73d378d55
 github.com/mandelsoft/filepath/pkg/filepath
-# github.com/mandelsoft/vfs v0.0.0-20200907154420-aa0934c4682c
+# github.com/mandelsoft/vfs v0.0.0-20200909114934-2adb28762d89
 github.com/mandelsoft/vfs/pkg/memoryfs
 github.com/mandelsoft/vfs/pkg/osfs
 github.com/mandelsoft/vfs/pkg/projectionfs
@@ -492,7 +488,7 @@ gopkg.in/fsnotify.v1
 gopkg.in/inf.v0
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
-# gopkg.in/yaml.v2 v2.2.8
+# gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966
 gopkg.in/yaml.v3

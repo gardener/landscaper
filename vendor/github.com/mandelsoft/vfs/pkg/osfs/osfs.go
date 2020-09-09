@@ -28,26 +28,30 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
-type OSFileSysten struct {
+type osFileSystem struct {
 }
 
 func New() vfs.FileSystem {
-	return &OSFileSysten{}
+	return &osFileSystem{}
 }
 
-func (OSFileSysten) Name() string {
+func (osFileSystem) Name() string {
 	return "OsFs"
 }
 
-func (OSFileSysten) VolumeName(name string) string {
+func (osFileSystem) VolumeName(name string) string {
 	return filepath.VolumeName(name)
 }
 
-func (OSFileSysten) Normalize(path string) string {
+func (osFileSystem) FSTempDir() string {
+	return os.TempDir()
+}
+
+func (osFileSystem) Normalize(path string) string {
 	return mapPath(path)
 }
 
-func (OSFileSysten) Getwd() (string, error) {
+func (osFileSystem) Getwd() (string, error) {
 	d, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -55,7 +59,7 @@ func (OSFileSysten) Getwd() (string, error) {
 	return mapPath(d), nil
 }
 
-func (OSFileSysten) Create(name string) (vfs.File, error) {
+func (osFileSystem) Create(name string) (vfs.File, error) {
 	abs, err := filepath.Abs(name)
 	if err != nil {
 		return nil, err
@@ -72,15 +76,15 @@ func (OSFileSysten) Create(name string) (vfs.File, error) {
 	return utils.NewRenamedFile(abs, f), e
 }
 
-func (OSFileSysten) Mkdir(name string, perm os.FileMode) error {
+func (osFileSystem) Mkdir(name string, perm os.FileMode) error {
 	return os.Mkdir(name, perm)
 }
 
-func (OSFileSysten) MkdirAll(path string, perm os.FileMode) error {
+func (osFileSystem) MkdirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-func (OSFileSysten) Open(name string) (vfs.File, error) {
+func (osFileSystem) Open(name string) (vfs.File, error) {
 	abs, err := filepath.Abs(name)
 	if err != nil {
 		return nil, err
@@ -97,7 +101,7 @@ func (OSFileSysten) Open(name string) (vfs.File, error) {
 	return utils.NewRenamedFile(abs, f), e
 }
 
-func (OSFileSysten) OpenFile(name string, flag int, perm os.FileMode) (vfs.File, error) {
+func (osFileSystem) OpenFile(name string, flag int, perm os.FileMode) (vfs.File, error) {
 	abs, err := filepath.Abs(name)
 	if err != nil {
 		return nil, err
@@ -114,38 +118,38 @@ func (OSFileSysten) OpenFile(name string, flag int, perm os.FileMode) (vfs.File,
 	return utils.NewRenamedFile(abs, f), e
 }
 
-func (OSFileSysten) Remove(name string) error {
+func (osFileSystem) Remove(name string) error {
 	return os.Remove(name)
 }
 
-func (OSFileSysten) RemoveAll(path string) error {
+func (osFileSystem) RemoveAll(path string) error {
 	return os.RemoveAll(path)
 }
 
-func (OSFileSysten) Rename(oldname, newname string) error {
+func (osFileSystem) Rename(oldname, newname string) error {
 	return os.Rename(oldname, newname)
 }
 
-func (OSFileSysten) Stat(name string) (os.FileInfo, error) {
+func (osFileSystem) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
 }
 
-func (OSFileSysten) Chmod(name string, mode os.FileMode) error {
+func (osFileSystem) Chmod(name string, mode os.FileMode) error {
 	return os.Chmod(name, mode)
 }
 
-func (OSFileSysten) Chtimes(name string, atime time.Time, mtime time.Time) error {
+func (osFileSystem) Chtimes(name string, atime time.Time, mtime time.Time) error {
 	return os.Chtimes(name, atime, mtime)
 }
 
-func (OSFileSysten) Lstat(name string) (os.FileInfo, error) {
+func (osFileSystem) Lstat(name string) (os.FileInfo, error) {
 	return os.Lstat(name)
 }
 
-func (OSFileSysten) Symlink(oldname, newname string) error {
+func (osFileSystem) Symlink(oldname, newname string) error {
 	return os.Symlink(oldname, newname)
 }
 
-func (OSFileSysten) Readlink(name string) (string, error) {
+func (osFileSystem) Readlink(name string) (string, error) {
 	return os.Readlink(name)
 }

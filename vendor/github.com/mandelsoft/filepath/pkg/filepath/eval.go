@@ -83,13 +83,17 @@ outer:
 				}
 				continue
 			}
-			fi, err := os.Lstat(next)
+			p := next
+			if rooted {
+				p = string(os.PathSeparator) + next
+			}
+			fi, err := os.Lstat(p)
 			if err != nil {
 				if os.IsPermission(err) {
-					return "", &os.PathError{"", next, err}
+					return "", &os.PathError{"", p, err}
 				}
 				if exist || !os.IsNotExist(err) {
-					return "", &os.PathError{"", next, err}
+					return "", &os.PathError{"", p, err}
 				}
 				dir = true
 				parsed = next
@@ -99,7 +103,7 @@ outer:
 					parsed = next
 					continue
 				}
-				link, err := os.Readlink(next)
+				link, err := os.Readlink(p)
 				if err != nil {
 					return "", &os.PathError{"", next, err}
 				}

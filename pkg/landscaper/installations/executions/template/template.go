@@ -47,6 +47,7 @@ func New(op lsoperation.Interface) *Templater {
 
 // templateExecution describes a implementation for a template execution
 type templateExecution interface {
+	// TemplateDeployExecutions templates a deploy executor and return a list of deployitem templates.
 	TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, components, imports interface{}) ([]byte, error)
 	// TemplateExportExecutions templates a export executor.
 	// It return the exported data as key value map where the key is the name of the export.
@@ -64,7 +65,6 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 
 	executionItems := make([]lsv1alpha1.DeployItemTemplate, 0)
 	for _, tmplExec := range blueprint.Info.DeployExecutions {
-
 		impl, ok := o.impl[tmplExec.Type]
 		if !ok {
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)

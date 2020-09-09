@@ -17,8 +17,6 @@ package blueprints
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -49,14 +47,16 @@ func Resolve(ctx context.Context, op operation.RegistriesAccessor, reference lsv
 	}
 
 	if fs == nil {
-		tmpDir, err := ioutil.TempDir(os.TempDir(), "blueprint-")
+		osFs := osfs.New()
+		tmpDir, err := vfs.TempDir(osFs, osFs.FSTempDir(), "blueprint-")
 		if err != nil {
 			return nil, fmt.Errorf("unable to create temporary directory: %w", err)
 		}
-		fs, err = projectionfs.New(osfs.New(), tmpDir)
+		fs, err = projectionfs.New(osFs, tmpDir)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create virtual filesystem with base path %s for content for ref %#v: %w", tmpDir, reference, err)
 		}
+
 	}
 	if err := op.BlueprintsRegistry().GetContent(ctx, res, fs); err != nil {
 		return nil, fmt.Errorf("unable to fetch content for ref %#v: %w", reference, err)

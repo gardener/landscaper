@@ -18,6 +18,7 @@ import (
 	"crypto/sha1"
 	"encoding/base32"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,9 +28,11 @@ import (
 
 const Base32EncodeStdLowerCase = "abcdefghijklmnopqrstuvwxyz234567"
 
+const SourceDelimiter = "/"
+
 // GenerateDataObjectName generates the unique name for a data object exported or imported by a installation.
-func GenerateDataObjectName(context lsv1alpha1.DataObjectContext, src string, key string) string {
-	name := fmt.Sprintf("%s/%s/%s", context, src, key)
+func GenerateDataObjectName(context string, key string) string {
+	name := fmt.Sprintf("%s/%s", context, key)
 	h := sha1.New()
 	h.Write([]byte(name))
 	// we need base32 encoding as some base64 (even url safe base64) characters are not supported by k8s
@@ -45,7 +48,18 @@ func DataObjectSourceFromObject(src runtime.Object) (string, error) {
 	}
 
 	srcKind := src.GetObjectKind().GroupVersionKind().Kind
-	return fmt.Sprintf("%s/%s/%s", srcKind, acc.GetNamespace(), acc.GetName()), nil
+	return srcKind + SourceDelimiter + acc.GetNamespace() + SourceDelimiter + acc.GetName(), nil
+}
+
+// ObjectFromDataObjectSource parses the source's kind, namespace and name from a src string.
+func ObjectFromDataObjectSource(src string) (string, lsv1alpha1.ObjectReference, error) {
+	splitValues := strings.Split(src, SourceDelimiter)
+	if len(splitValues) != 3 {
+		return "", lsv1alpha1.ObjectReference{}, fmt.Errorf("expected source definition with 3 paramters but got %d", len(splitValues))
+	}
+
+	kind, namespace, name := splitValues[0], splitValues[1], splitValues[2]
+	return kind, lsv1alpha1.ObjectReference{Namespace: namespace, Name: name}, nil
 }
 
 // DataObjectSourceFromInstallation returns the data object source for a Installation.

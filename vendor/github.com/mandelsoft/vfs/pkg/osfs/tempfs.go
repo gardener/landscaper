@@ -16,30 +16,33 @@
  *  limitations under the License.
  */
 
-package utils
+package osfs
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
 )
 
-type FileSystemBase struct{}
-
-func (FileSystemBase) VolumeName(name string) string {
-	return ""
+type tempfs struct {
+	vfs.FileSystem
+	dir string
 }
 
-func (FileSystemBase) FSTempDir() string {
-	return "/"
+func NewTempFileSystem() (vfs.FileSystem, error) {
+	dir, err := ioutil.TempDir("", "VFS-")
+	if err != nil {
+		return nil, err
+	}
+	fs, err := projectionfs.New(New(), dir)
+	if err != nil {
+		os.Remove(dir)
+	}
+	return &tempfs{fs, dir}, err
 }
 
-func (FileSystemBase) Normalize(path string) string {
-	return path
-}
-
-func (FileSystemBase) Getwd() (string, error) {
-	return vfs.PathSeparatorString, nil
-}
-
-func (FileSystemBase) Cleanup() error {
-	return nil
+func (t *tempfs) Cleanup() {
+	os.RemoveAll(t.dir)
 }

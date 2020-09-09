@@ -31,7 +31,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/fake_client"
 )
 
-var _ = g.Describe("Context", func() {
+var _ = g.Describe("SourceType", func() {
 
 	var (
 		op lsoperation.Interface

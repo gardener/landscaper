@@ -105,6 +105,21 @@ func OwnerOfGVK(ownerRefs []metav1.OwnerReference, gvk schema.GroupVersionKind) 
 	return "", false
 }
 
+// GetOwner returns the owner reference of a object.
+// If multiple owners are defined, the controlling owner is returned.
+func GetOwner(objMeta metav1.ObjectMeta) *metav1.OwnerReference {
+	if len(objMeta.GetOwnerReferences()) == 1 {
+		return &objMeta.GetOwnerReferences()[0]
+	}
+	for _, ownerRef := range objMeta.GetOwnerReferences() {
+		if ownerRef.Controller != nil && *ownerRef.Controller {
+			return &ownerRef
+		}
+	}
+
+	return nil
+}
+
 // TypedObjectReferenceFromObject creates a typed object reference from a object.
 func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) (*v1alpha1.TypedObjectReference, error) {
 	metaObj, err := meta.Accessor(obj)

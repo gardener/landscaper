@@ -35,10 +35,11 @@ type DataObject struct {
 // DataObjectMetadata describes the metadata of a data object.
 // This metadata is also represented as annotations/labels at the object.
 type DataObjectMetadata struct {
-	Namespace string
-	Context   lsv1alpha1.DataObjectContext
-	Source    string
-	Key       string
+	Namespace  string
+	Context    string
+	SourceType lsv1alpha1.DataObjectSourceType
+	Source     string
+	Key        string
 }
 
 // New creates a new internal dataobject.
@@ -65,7 +66,10 @@ func GetMetadataFromObject(objAcc metav1.Object) DataObjectMetadata {
 	if objAcc.GetLabels() != nil {
 		labels := objAcc.GetLabels()
 		if context, ok := labels[lsv1alpha1.DataObjectContextLabel]; ok {
-			meta.Context = lsv1alpha1.DataObjectContext(context)
+			meta.Context = context
+		}
+		if context, ok := labels[lsv1alpha1.DataObjectSourceTypeLabel]; ok {
+			meta.SourceType = lsv1alpha1.DataObjectSourceType(context)
 		}
 		if src, ok := labels[lsv1alpha1.DataObjectSourceLabel]; ok {
 			meta.Source = src
@@ -96,8 +100,8 @@ func (do *DataObject) SetNamespace(ns string) *DataObject {
 }
 
 // SetContext sets the context for the given data object.
-func (do *DataObject) SetContext(ctx lsv1alpha1.DataObjectContext) *DataObject {
-	do.Metadata.Context = ctx
+func (do *DataObject) SetContext(ctx lsv1alpha1.DataObjectSourceType) *DataObject {
+	do.Metadata.SourceType = ctx
 	return do
 }
 
@@ -119,7 +123,7 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 		raw = &lsv1alpha1.DataObject{}
 		err error
 	)
-	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Source, do.Metadata.Key)
+	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Key)
 	raw.Namespace = do.Metadata.Namespace
 	raw.Data, err = yaml.Marshal(do.Data)
 	if err != nil {

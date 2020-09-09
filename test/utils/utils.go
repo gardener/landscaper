@@ -157,6 +157,9 @@ func CreateBlueprintFromFile(filePath, contentPath string) *blueprints.Blueprint
 	def, err := ReadBlueprintFromFile(filePath)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
+	contentPath, err = filepath.Abs(contentPath)
+	gomega.Expect(err).To(gomega.Succeed())
+
 	fs, err := projectionfs.New(osfs.New(), contentPath)
 	gomega.Expect(err).To(gomega.Succeed())
 	blue, err := blueprints.New(def, fs)

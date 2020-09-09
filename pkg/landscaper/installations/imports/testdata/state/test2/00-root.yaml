@@ -52,9 +52,5 @@ status:
     ref:
       name: c
       namespace: test2
-  - name: d
-    ref:
-      name: d
-      namespace: test2
 
   observedGeneration: 0

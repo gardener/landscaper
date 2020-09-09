@@ -133,7 +133,7 @@ func (c *Constructor) constructFromExecution(fldPath *field.Path, input interfac
 		FieldValue: &mapping.DefinitionFieldValue,
 		Data:       data,
 	}
-	do.SetContext(lsv1alpha1.ExportDataObjectContext)
+	do.SetContext(lsv1alpha1.ExportDataObjectSourceType)
 	do.SetKey(mapping.DefinitionExportMapping.To)
 	return do, nil
 }
@@ -178,7 +178,7 @@ func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath 
 		FieldValue: &mapping.DefinitionFieldValue,
 		Data:       do.Data,
 	}
-	do.SetContext(lsv1alpha1.ExportDataObjectContext)
+	do.SetContext(lsv1alpha1.ExportDataObjectSourceType)
 	do.SetKey(mapping.DefinitionExportMapping.To)
 	return do, nil
 }

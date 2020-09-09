@@ -92,10 +92,10 @@ var _ = g.Describe("Constructor", func() {
 		Expect(res).To(HaveLen(2), "should export 2 data object for 2 exports")
 
 		Expect(res[0].Data).To(Equal("val-exec"))
-		Expect(res[0].Metadata.Context).To(Equal(lsv1alpha1.ExportDataObjectContext))
+		Expect(res[0].Metadata.SourceType).To(Equal(lsv1alpha1.ExportDataObjectSourceType))
 		Expect(res[0].Metadata.Key).To(Equal("root.y"))
 		Expect(res[1].Data).To(Equal("val-exec"))
-		Expect(res[1].Metadata.Context).To(Equal(lsv1alpha1.ExportDataObjectContext))
+		Expect(res[1].Metadata.SourceType).To(Equal(lsv1alpha1.ExportDataObjectSourceType))
 		Expect(res[1].Metadata.Key).To(Equal("root.z"))
 	})
 
@@ -117,15 +117,15 @@ var _ = g.Describe("Constructor", func() {
 			"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Data": Equal("val-b"),
 				"Metadata": MatchFields(IgnoreExtras, Fields{
-					"Context": Equal(lsv1alpha1.ExportDataObjectContext),
-					"Key":     Equal("root.z"),
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+					"Key":        Equal("root.z"),
 				}),
 			})),
 			"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Data": Equal("val-c"),
 				"Metadata": MatchFields(IgnoreExtras, Fields{
-					"Context": Equal(lsv1alpha1.ExportDataObjectContext),
-					"Key":     Equal("root.y"),
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+					"Key":        Equal("root.y"),
 				}),
 			})),
 		}))
@@ -149,15 +149,15 @@ var _ = g.Describe("Constructor", func() {
 			"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Data": Equal("val-exec"),
 				"Metadata": MatchFields(IgnoreExtras, Fields{
-					"Context": Equal(lsv1alpha1.ExportDataObjectContext),
-					"Key":     Equal("root.y"),
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+					"Key":        Equal("root.y"),
 				}),
 			})),
 			"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Data": Equal("val-a"),
 				"Metadata": MatchFields(IgnoreExtras, Fields{
-					"Context": Equal(lsv1alpha1.ExportDataObjectContext),
-					"Key":     Equal("root.z"),
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+					"Key":        Equal("root.z"),
 				}),
 			})),
 		}))

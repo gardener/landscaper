@@ -33,12 +33,13 @@ type PathMapper interface {
 }
 
 type MappedFileSystem struct {
+	FileSystemBase
 	mapper PathMapper
 	base   vfs.FileSystem
 }
 
 func NewMappedFileSystem(root vfs.FileSystem, mapper PathMapper) *MappedFileSystem {
-	return &MappedFileSystem{mapper, root}
+	return &MappedFileSystem{mapper: mapper, base: root}
 }
 
 func (m *MappedFileSystem) Base() vfs.FileSystem {
@@ -47,6 +48,10 @@ func (m *MappedFileSystem) Base() vfs.FileSystem {
 
 func (m *MappedFileSystem) VolumeName(name string) string {
 	return m.base.VolumeName(name)
+}
+
+func (m *MappedFileSystem) FSTempDir() string {
+	return vfs.PathSeparatorString
 }
 
 func (m *MappedFileSystem) Normalize(path string) string {
