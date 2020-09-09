@@ -1,8 +1,8 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: 73y3cbrmx2uzbypl5mjm6uo4k6wzqpsb
-  namespace: test3
+  name: elmpnol5zsxhw72qcj2cldsx4vvznjc6
+  namespace: test2
 data:
   root:
     "y": val-exec

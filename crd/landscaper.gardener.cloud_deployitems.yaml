@@ -29,18 +29,13 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DeployItem defines a DeployItem that should be processed by a
-          external deployer
+        description: DeployItem defines a DeployItem that should be processed by a external deployer
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -51,23 +46,19 @@ spec:
                 description: BlueprintRef is the resolved reference to the definition
                 properties:
                   baseUrl:
-                    description: BaseURL is the base url of the repository to resolve
-                      components.
+                    description: BaseURL is the base url of the repository to resolve components.
                     type: string
                   componentName:
-                    description: ComponentName defines the unique of the component
-                      containing the resource.
+                    description: ComponentName defines the unique of the component containing the resource.
                     type: string
                   kind:
-                    description: Kind defines the kind resource kind where the resource
-                      is defined.
+                    description: Kind defines the kind resource kind where the resource is defined.
                     type: string
                   resource:
                     description: Resource defines the name of the resource.
                     type: string
                   type:
-                    description: Type defines the type of the component repository
-                      to resolve references.
+                    description: Type defines the type of the component repository to resolve references.
                     type: string
                   version:
                     description: Version defines the version of the component.
@@ -81,14 +72,12 @@ spec:
                 - version
                 type: object
               config:
-                description: ProviderConfiguration contains the deployer type specific
-                  configuration.
+                description: ProviderConfiguration contains the deployer type specific configuration.
                 type: object
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
               importRef:
-                description: ImportReference is the reference to the object containing
-                  all imported values.
+                description: ImportReference is the reference to the object containing all imported values.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -101,11 +90,7 @@ spec:
                 - namespace
                 type: object
               registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials
-                  that are used to pull blueprints and component descriptors from
-                  the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-                  Note that the type information is used to determine the secret key
-                  and the type of the secret.'
+                description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints and component descriptors from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
                 items:
                   description: ObjectReference is the reference to a kubernetes object.
                   properties:
@@ -121,33 +106,27 @@ spec:
                   type: object
                 type: array
               type:
-                description: DataType is the type of the deployer that should handle
-                  the item.
+                description: DataType is the type of the deployer that should handle the item.
                 type: string
             required:
             - type
             type: object
           status:
-            description: 'DeployItemStatus contains the status of a deploy item. todo:
-              add operation'
+            description: 'DeployItemStatus contains the status of a deploy item. todo: add operation'
             properties:
               conditions:
-                description: Conditions contains the actual condition of a deploy
-                  item
+                description: Conditions contains the actual condition of a deploy item
                 items:
-                  description: Condition holds the information about the state of
-                    a resource.
+                  description: Condition holds the information about the state of a resource.
                   properties:
                     codes:
-                      description: Well-defined error codes in case the condition
-                        reports a problem.
+                      description: Well-defined error codes in case the condition reports a problem.
                       items:
                         description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
+                      description: Last time the condition transitioned from one status to another.
                       format: date-time
                       type: string
                     lastUpdateTime:
@@ -155,8 +134,7 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about
-                        the transition.
+                      description: A human readable message indicating details about the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -177,8 +155,7 @@ spec:
                   type: object
                 type: array
               exportRef:
-                description: ExportReference is the reference to the object that contains
-                  the exported values.
+                description: ExportReference is the reference to the object that contains the exported values.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -191,9 +168,7 @@ spec:
                 - namespace
                 type: object
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed
-                  for this DeployItem. It corresponds to the DeployItem generation,
-                  which is updated on mutation by the landscaper.
+                description: ObservedGeneration is the most recent generation observed for this DeployItem. It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

@@ -13,3 +13,9 @@ exports:
   type: string
 - key: root.z
   type: string
+
+exportExecutions:
+- type: GoTemplate
+  template: |
+    root.y: {{ .exports.di.root.y }}
+    root.z: {{ .exports.di.root.z }}

@@ -20,8 +20,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ExecutionPhase, error) {
@@ -68,5 +70,11 @@ func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *instal
 		return nil, err
 	}
 
-	return o.GetExportForKey(ctx, exec, "")
+	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromExecution(exec), "")
+	rawDO := &lsv1alpha1.DataObject{}
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
+		return nil, err
+	}
+
+	return dataobjects.NewFromDataObject(rawDO)
 }

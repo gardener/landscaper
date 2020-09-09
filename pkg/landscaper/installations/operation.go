@@ -33,6 +33,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
@@ -254,7 +255,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*da
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
 	for _, do := range dataObjects {
-		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).Build()
+		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContext).Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -301,6 +302,16 @@ func (o *Operation) CreateOrUpdateImports(ctx context.Context, dataObjects []*da
 		}
 	}
 	return nil
+}
+
+// GetExportForKey creates a dataobject from a dataobject
+func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjects.DataObject, error) {
+	doName := lsv1alpha1helper.GenerateDataObjectName(o.context.Name, key)
+	rawDO := &lsv1alpha1.DataObject{}
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
+		return nil, err
+	}
+	return dataobjects.NewFromDataObject(rawDO)
 }
 
 func importsAnyExport(exporter, importer *Installation) bool {

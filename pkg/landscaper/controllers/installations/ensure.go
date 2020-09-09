@@ -78,7 +78,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 		return nil
 	}
 
-	exportedValues, err := exports.NewConstructor(op).Construct(ctx, inst)
+	exportedValues, err := exports.NewConstructor(op).Construct(ctx)
 	if err != nil {
 		a.Log().Error(err, "error during export construction")
 		return err
@@ -103,7 +103,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 }
 
 func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
-	validator := imports.NewValidator(op, op.Context().Parent, op.Context().Siblings...)
+	validator := imports.NewValidator(op)
 	if err := validator.Validate(ctx, inst); err != nil {
 		a.Log().Error(err, "unable to validate imports")
 		return err
@@ -113,7 +113,7 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	// and then start the executions
 
 	// only needed if execution are processed
-	constructor := imports.NewConstructor(op, op.Context().Parent, op.Context().Siblings...)
+	constructor := imports.NewConstructor(op)
 	importDataObjects, importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
 		a.Log().Error(err, "unable to collect imports")

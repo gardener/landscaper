@@ -88,7 +88,7 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
 func (o *Templater) TemplateExportExecutions(blueprint *blueprints.Blueprint, exports interface{}) (map[string]interface{}, error) {
 	exportData := make(map[string]interface{})
-	for _, tmplExec := range blueprint.Info.DeployExecutions {
+	for _, tmplExec := range blueprint.Info.ExportExecutions {
 
 		impl, ok := o.impl[tmplExec.Type]
 		if !ok {

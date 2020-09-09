@@ -92,7 +92,7 @@ func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Pa
 		return nil, err
 	}
 	// set new import metadata
-	do.SetContext(lsv1alpha1.ImportDataObjectSourceType)
+	do.SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 	do.SetKey(mapping.To)
 
 	if err := c.updateImportStateForDatatObject(ctx, inst, mapping, do); err != nil {
@@ -134,7 +134,7 @@ func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath 
 		},
 		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
 	})
-	do := dataobjects.New().SetContext(lsv1alpha1.ImportDataObjectSourceType).SetKey(mapping.To).SetData(val)
+	do := dataobjects.New().SetSourceType(lsv1alpha1.ImportDataObjectSourceType).SetKey(mapping.To).SetData(val)
 	return do, err
 }
 

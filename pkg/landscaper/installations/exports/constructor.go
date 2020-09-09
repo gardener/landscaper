@@ -19,7 +19,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -27,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
@@ -44,49 +47,53 @@ func NewConstructor(op *installations.Operation) *Constructor {
 }
 
 // Construct loads the exported data from the execution and the subinstallations.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]*dataobjects.DataObject, error) {
+func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, error) {
 	var (
-		fldPath = field.NewPath(fmt.Sprintf("(inst: %s)", inst.Info.Name)).Child("exports")
+		fldPath = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
 	)
 
-	execDo, err := executions.New(c.Operation).GetExportedValues(ctx, inst)
+	execDo, err := executions.New(c.Operation).GetExportedValues(ctx, c.Inst)
 	if err != nil {
 		return nil, err
 	}
 
-	subInsts, err := c.getSubInstallations(ctx, inst)
+	dataObjectMap, err := c.aggregateDataObjectsInContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to aggregate data object: %w", err)
+	}
+
+	internalExports := map[string]interface{}{
+		"di": execDo.Data,
+		"do": dataObjectMap,
+	}
+
+	templater := template.New(c.Operation)
+	exports, err := templater.TemplateExportExecutions(c.Inst.Blueprint, internalExports)
 	if err != nil {
 		return nil, err
 	}
 
-	mappings, err := inst.GetExportMappings()
+	mappings, err := c.Inst.GetExportMappings()
 	if err != nil {
 		return nil, err
 	}
 
-	// Resolve export mapping for all exports
+	// Resolve export mapping for all internalExports
 	dataObjects := make([]*dataobjects.DataObject, len(mappings)) // map of mapping key to data
 	for i, mapping := range mappings {
-		exPath := fldPath.Child(mapping.Key)
 
-		if execDo != nil {
-			do, err := c.constructFromExecution(exPath, execDo.Data, mapping)
-			if err == nil {
-				dataObjects[i] = do
-				continue
-			}
-			if !installations.IsExportNotFoundError(err) {
-				return nil, err
-			}
+		data, ok := exports[mapping.From]
+		if !ok {
+			return nil, fmt.Errorf("%s: export %s is not defined", fldPath.String(), mapping.Key)
 		}
 
-		do, err := c.constructFromSubInstallations(ctx, exPath, mapping, subInsts)
-		if err != nil {
-			return nil, err
+		do := &dataobjects.DataObject{
+			FieldValue: &mapping.DefinitionFieldValue,
+			Data:       data,
 		}
-		if do == nil {
-			return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(exPath, "no data found"))
-		}
+		do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
+		do.SetKey(mapping.DefinitionExportMapping.To)
+
 		dataObjects[i] = do
 	}
 
@@ -133,14 +140,14 @@ func (c *Constructor) constructFromExecution(fldPath *field.Path, input interfac
 		FieldValue: &mapping.DefinitionFieldValue,
 		Data:       data,
 	}
-	do.SetContext(lsv1alpha1.ExportDataObjectSourceType)
+	do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
 	do.SetKey(mapping.DefinitionExportMapping.To)
 	return do, nil
 }
 
 func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInsts []*installations.Installation) (*dataobjects.DataObject, error) {
 	for _, subInst := range subInsts {
-		subPath := fldPath.Child(subInst.Info.Name)
+		subPath := fldPath.Child(fmt.Sprintf("(subinst: %s)", subInst.Info.Name))
 		values, err := c.constructFromSubInstallation(ctx, subPath, mapping, subInst)
 		if err == nil {
 			return values, err
@@ -160,8 +167,11 @@ func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath 
 
 	// get specific export dataobject for the given exported key
 	// subinst -> export -> key=mappingTo
-	do, err := c.Operation.GetExportForKey(ctx, subInst.Info, mapping.From)
+	do, err := c.Operation.GetExportForKey(ctx, mapping.From)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, installations.NewExportNotFoundErrorf(err, "%s: could not fetch data object", fldPath.String())
+		}
 		return nil, field.InternalError(fldPath, err)
 	}
 
@@ -178,7 +188,21 @@ func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath 
 		FieldValue: &mapping.DefinitionFieldValue,
 		Data:       do.Data,
 	}
-	do.SetContext(lsv1alpha1.ExportDataObjectSourceType)
+	do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
 	do.SetKey(mapping.DefinitionExportMapping.To)
 	return do, nil
+}
+
+func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string][]byte, error) {
+	dataObjectList := &lsv1alpha1.DataObjectList{}
+	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: c.InstallationContext}); err != nil {
+		return nil, err
+	}
+
+	aggDataObjects := map[string][]byte{}
+	for _, do := range dataObjectList.Items {
+		meta := dataobjects.GetMetadataFromObject(&do)
+		aggDataObjects[meta.Key] = do.Data
+	}
+	return aggDataObjects, nil
 }

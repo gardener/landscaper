@@ -26,7 +26,7 @@ import (
 type DataObjectList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []DataType `json:"items"`
+	Items           []DataObject `json:"items"`
 }
 
 // +genclient

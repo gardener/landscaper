@@ -35,14 +35,10 @@ spec:
         description: Blueprint contains the configuration of a component
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -53,23 +49,19 @@ spec:
                 description: BlueprintRef is the resolved reference to the definition.
                 properties:
                   baseUrl:
-                    description: BaseURL is the base url of the repository to resolve
-                      components.
+                    description: BaseURL is the base url of the repository to resolve components.
                     type: string
                   componentName:
-                    description: ComponentName defines the unique of the component
-                      containing the resource.
+                    description: ComponentName defines the unique of the component containing the resource.
                     type: string
                   kind:
-                    description: Kind defines the kind resource kind where the resource
-                      is defined.
+                    description: Kind defines the kind resource kind where the resource is defined.
                     type: string
                   resource:
                     description: Resource defines the name of the resource.
                     type: string
                   type:
-                    description: Type defines the type of the component repository
-                      to resolve references.
+                    description: Type defines the type of the component repository to resolve references.
                     type: string
                   version:
                     description: Version defines the version of the component.
@@ -83,21 +75,15 @@ spec:
                 - version
                 type: object
               exports:
-                description: 'Exports define the export mappings for the referenced
-                  definition. These values are by default auto generated from the
-                  parent definition. todo: add static data boolean'
+                description: 'Exports define the export mappings for the referenced definition. These values are by default auto generated from the parent definition. todo: add static data boolean'
                 items:
-                  description: DefinitionExportMapping defines the mapping of export
-                    value of the referenced definition to the export value of this
-                    definition.
+                  description: DefinitionExportMapping defines the mapping of export value of the referenced definition to the export value of this definition.
                   properties:
                     from:
-                      description: From defines a field name to get a value from an
-                        import.
+                      description: From defines a field name to get a value from an import.
                       type: string
                     to:
-                      description: To defines a field name to map the value from the
-                        "from" field.
+                      description: To defines a field name to map the value from the "from" field.
                       type: string
                   required:
                   - from
@@ -105,20 +91,15 @@ spec:
                   type: object
                 type: array
               imports:
-                description: Imports define the import mapping for the referenced
-                  definition. These values are by default auto generated from the
-                  parent definition.
+                description: Imports define the import mapping for the referenced definition. These values are by default auto generated from the parent definition.
                 items:
-                  description: DefinitionImportMapping defines the mapping of import
-                    value to the import of the referenced definition.
+                  description: DefinitionImportMapping defines the mapping of import value to the import of the referenced definition.
                   properties:
                     from:
-                      description: From defines a field name to get a value from an
-                        import.
+                      description: From defines a field name to get a value from an import.
                       type: string
                     to:
-                      description: To defines a field name to map the value from the
-                        "from" field.
+                      description: To defines a field name to map the value from the "from" field.
                       type: string
                   required:
                   - from
@@ -126,11 +107,7 @@ spec:
                   type: object
                 type: array
               registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials
-                  that are used to pull blueprints and component descriptors from
-                  the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-                  Note that the type information is used to determine the secret key
-                  and the type of the secret.'
+                description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints and component descriptors from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
                 items:
                   description: ObjectReference is the reference to a kubernetes object.
                   properties:
@@ -146,8 +123,7 @@ spec:
                   type: object
                 type: array
               staticData:
-                description: StaticData contains a list of data sources that are used
-                  to satisfy imports
+                description: StaticData contains a list of data sources that are used to satisfy imports
                 items:
                   description: StaticDataSource defines a static data source
                   properties:
@@ -157,37 +133,30 @@ spec:
                       description: ValueFrom defines data from an external resource
                       properties:
                         secretKeyRef:
-                          description: Selects a key of a secret in the installations's
-                            namespace
+                          description: Selects a key of a secret in the installations's namespace
                           properties:
                             key:
-                              description: The key of the secret to select from.  Must
-                                be a valid secret key.
+                              description: The key of the secret to select from.  Must be a valid secret key.
                               type: string
                             name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                TODO: Add other useful fields. apiVersion, kind, uid?'
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                             optional:
-                              description: Specify whether the Secret or its key must
-                                be defined
+                              description: Specify whether the Secret or its key must be defined
                               type: boolean
                           required:
                           - key
                           type: object
                         secretLabelSelector:
-                          description: Selects a key from multiple secrets in the
-                            installations's namespace that matches the given labels.
+                          description: Selects a key from multiple secrets in the installations's namespace that matches the given labels.
                           properties:
                             key:
-                              description: The key of the secret to select from.  Must
-                                be a valid secret key.
+                              description: The key of the secret to select from.  Must be a valid secret key.
                               type: string
                             selector:
                               additionalProperties:
                                 type: string
-                              description: Selector is a map of labels to select specific
-                                secrets.
+                              description: Selector is a map of labels to select specific secrets.
                               type: object
                           required:
                           - key
@@ -205,19 +174,16 @@ spec:
               conditions:
                 description: Conditions contains the actual condition of a installation
                 items:
-                  description: Condition holds the information about the state of
-                    a resource.
+                  description: Condition holds the information about the state of a resource.
                   properties:
                     codes:
-                      description: Well-defined error codes in case the condition
-                        reports a problem.
+                      description: Well-defined error codes in case the condition reports a problem.
                       items:
                         description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
+                      description: Last time the condition transitioned from one status to another.
                       format: date-time
                       type: string
                     lastUpdateTime:
@@ -225,8 +191,7 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about
-                        the transition.
+                      description: A human readable message indicating details about the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -250,8 +215,7 @@ spec:
                 description: ConfigGeneration is the generation of the exported values.
                 type: string
               executionRef:
-                description: ExecutionReference is the reference to the execution
-                  that schedules the templated execution items.
+                description: ExecutionReference is the reference to the execution that schedules the templated execution items.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -269,16 +233,13 @@ spec:
                   description: ImportState hold the state of a import.
                   properties:
                     configGeneration:
-                      description: ConfigGeneration is the generation of the imported
-                        value.
+                      description: ConfigGeneration is the generation of the imported value.
                       type: string
                     from:
-                      description: 'From is the from key of the import todo: maybe
-                        remove in favor the key from the blueprint'
+                      description: 'From is the from key of the import todo: maybe remove in favor the key from the blueprint'
                       type: string
                     sourceRef:
-                      description: SourceRef is the reference to the installation
-                        where the value is imported
+                      description: SourceRef is the reference to the installation where the value is imported
                       properties:
                         name:
                           description: Name is the name of the kubernetes object.
@@ -300,11 +261,9 @@ spec:
                   type: object
                 type: array
               installationRefs:
-                description: InstallationReferences contain all references to sub-components
-                  that are created based on the component definition.
+                description: InstallationReferences contain all references to sub-components that are created based on the component definition.
                 items:
-                  description: NamedObjectReference is a named reference to a specific
-                    resource.
+                  description: NamedObjectReference is a named reference to a specific resource.
                   properties:
                     name:
                       description: Name is the unique name of the reference.
@@ -328,9 +287,7 @@ spec:
                   type: object
                 type: array
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed
-                  for this ControllerInstallations. It corresponds to the ControllerInstallations
-                  generation, which is updated on mutation by the landscaper.
+                description: ObservedGeneration is the most recent generation observed for this ControllerInstallations. It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

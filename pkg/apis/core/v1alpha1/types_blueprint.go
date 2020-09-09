@@ -58,6 +58,10 @@ type Blueprint struct {
 	// The templates must return a list of deploy item templates.
 	// +optional
 	DeployExecutions []TemplateExecutor `json:"deployExecutions,omitempty"`
+
+	// ExportExecutions defines the templating executors that are used to generate the exports.
+	// +optional
+	ExportExecutions []TemplateExecutor `json:"exportExecutions,omitempty"`
 }
 
 // ImportDefinition defines a imported value

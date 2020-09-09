@@ -16,7 +16,6 @@ package exports_test
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
@@ -46,22 +45,18 @@ var _ = g.Describe("Constructor", func() {
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
 		fakeCompRepo      componentsregistry.Registry
-
-		once sync.Once
 	)
 
 	g.BeforeEach(func() {
-		once.Do(func() {
-			var (
-				err   error
-				state *fake_client.State
-			)
-			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
-			Expect(err).ToNot(HaveOccurred())
+		var (
+			err   error
+			state *fake_client.State
+		)
+		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+		Expect(err).ToNot(HaveOccurred())
 
-			fakeInstallations = state.Installations
-			fakeDataTypes = state.DataTypes
-		})
+		fakeInstallations = state.Installations
+		fakeDataTypes = state.DataTypes
 
 		dtArr := make([]lsv1alpha1.DataType, 0)
 		for _, dt := range fakeDataTypes {
@@ -81,12 +76,15 @@ var _ = g.Describe("Constructor", func() {
 		}
 	})
 
-	g.It("should construct the exported config from its execution", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test2/root"])
+	g.FIt("should construct the exported config from its execution", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(context.TODO(), inInstRoot)
+		res, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object for 2 exports")
@@ -100,11 +98,15 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test1/root"])
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(context.TODO(), inInstRoot)
+		res, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object from b and c")
@@ -132,11 +134,14 @@ var _ = g.Describe("Constructor", func() {
 	})
 
 	g.It("should construct the exported config from a siblings and the execution config", func() {
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, fakeInstallations["test3/root"])
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(context.TODO(), inInstRoot)
+		res, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object from execution and a")

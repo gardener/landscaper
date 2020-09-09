@@ -93,14 +93,20 @@ func (do *DataObject) SetData(data interface{}) *DataObject {
 	return do
 }
 
+// SetContext sets the installation context for the given data object.
+func (do *DataObject) SetContext(ctx string) *DataObject {
+	do.Metadata.Context = ctx
+	return do
+}
+
 // SetNamespace sets the namespace for the given data object.
 func (do *DataObject) SetNamespace(ns string) *DataObject {
 	do.Metadata.Namespace = ns
 	return do
 }
 
-// SetContext sets the context for the given data object.
-func (do *DataObject) SetContext(ctx lsv1alpha1.DataObjectSourceType) *DataObject {
+// SetSourceType sets the context for the given data object.
+func (do *DataObject) SetSourceType(ctx lsv1alpha1.DataObjectSourceType) *DataObject {
 	do.Metadata.SourceType = ctx
 	return do
 }

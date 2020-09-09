@@ -1,11 +1,11 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: bduxegjm6cb6vemsthoi3m27rsrtonmw
-  namespace: test3
+  name: 3daqmfbwdhbcyp2a6kmz6ufnwlzgjgpk
+  namespace: test1
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation
-    name: a
+    name: b
     uid: xxx
-data: val-a
+data: val-b

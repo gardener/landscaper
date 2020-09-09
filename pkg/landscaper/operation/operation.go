@@ -15,20 +15,12 @@
 package operation
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -37,7 +29,6 @@ type Interface interface {
 	Client() client.Client
 	Scheme() *runtime.Scheme
 	RegistriesAccessor
-	GetExportForKey(ctx context.Context, srcObj runtime.Object, key string) (*dataobjects.DataObject, error)
 	// InjectLogger is used to inject Loggers into components that need them
 	// and don't otherwise have opinions.
 	InjectLogger(l logr.Logger) error
@@ -133,25 +124,4 @@ func (o *Operation) ComponentsRegistry() componentsregistry.Registry {
 func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) error {
 	o.componentRepository = c
 	return nil
-}
-
-// GetExportForKey creates a dataobject from a secret
-func (o *Operation) GetExportForKey(ctx context.Context, srcObj runtime.Object, key string) (*dataobjects.DataObject, error) {
-	acc, ok := srcObj.(metav1.Object)
-	if !ok {
-		return nil, fmt.Errorf("source has to be a kubernetes metadata object")
-	}
-
-	src, err := lsv1alpha1helper.DataObjectSourceFromObject(srcObj)
-	if err != nil {
-		return nil, err
-	}
-
-	doName := lsv1alpha1helper.GenerateDataObjectName(src, key)
-	rawDO := &lsv1alpha1.DataObject{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, acc.GetNamespace()), rawDO); err != nil {
-		return nil, err
-	}
-
-	return dataobjects.NewFromDataObject(rawDO)
 }
