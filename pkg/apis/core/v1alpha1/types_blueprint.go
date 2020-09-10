@@ -182,6 +182,9 @@ type TemplateType string
 // GOTemplateType describes the go templating type.
 const GOTemplateType TemplateType = "GoTemplate"
 
+// SpiffTemplateType describes the spiff templating type.
+const SpiffTemplateType TemplateType = "Spiff"
+
 // TemplateExecutor describes a templating mechanism and configuration.
 type TemplateExecutor struct {
 	// Name is the unique name of the template

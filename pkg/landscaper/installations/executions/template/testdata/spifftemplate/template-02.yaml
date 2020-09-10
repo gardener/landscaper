@@ -1,0 +1,9 @@
+- name: one
+  type: Spiff
+  template:
+    - name: init
+      type: container
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        image: (( "my-custom-image:" imports.version ))

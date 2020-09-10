@@ -1,0 +1,4 @@
+- name: one
+  type: Spiff
+  template:
+    testKey: myval

@@ -17,6 +17,7 @@ package template
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -40,186 +41,195 @@ func TestConfig(t *testing.T) {
 var _ = Describe("TemplateDeployExecutions", func() {
 
 	Context("GoTemplate", func() {
-		Context("TemplateDeployExecutions", func() {
-			It("should return the raw template if no templating funcs are defined", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-01.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+		testdataDir := filepath.Join("./testdata", "gotemplate")
+		runTestSuite(testdataDir)
+	})
 
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
+	Context("Spiff", func() {
+		testdataDir := filepath.Join("./testdata", "spifftemplate")
+		runTestSuite(testdataDir)
+	})
 
-				res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   nil,
-				}, cdv2.ComponentDescriptorList{}, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveLen(1))
-				Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
-					"Name": Equal("init"),
-					"Type": Equal(lsv1alpha1.ExecutionType("container")),
-				}))
-			})
+})
 
-			It("should use the import values to template", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-02.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+func runTestSuite(testdataDir string) {
+	Context("TemplateDeployExecutions", func() {
+		It("should return the raw template if no templating funcs are defined", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-01.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{})
 
-				res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   nil,
-				}, cdv2.ComponentDescriptorList{}, map[string]string{"version": "0.0.0"})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveLen(1))
+			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, cdv2.ComponentDescriptorList{}, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
+				"Name": Equal("init"),
+				"Type": Equal(lsv1alpha1.ExecutionType("container")),
+			}))
+		})
 
-				config := make(map[string]interface{})
-				Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-				Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
-			})
+		It("should use the import values to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-02.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
-			It("should read the content of a file to template", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-03.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{})
 
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
+			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, cdv2.ComponentDescriptorList{}, map[string]interface{}{"version": "0.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
 
-				memFs := memoryfs.New()
-				err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
-				Expect(err).ToNot(HaveOccurred())
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+		})
 
-				res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   memFs,
-				}, cdv2.ComponentDescriptorList{}, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveLen(1))
+		It("should read the content of a file to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-03.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
-				config := make(map[string]interface{})
-				Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-				Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
-			})
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{})
 
-			It("should use a resource from the component descriptor", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-04.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+			memFs := memoryfs.New()
+			err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
 
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
-				cd := cdv2.ComponentDescriptorList{
-					Components: []cdv2.ComponentDescriptor{
-						{
-							ComponentSpec: cdv2.ComponentSpec{
-								ObjectMeta: cdv2.ObjectMeta{
-									Name:    "mycomp",
-									Version: "1.0.0",
-								},
-								ExternalResources: []cdv2.Resource{
-									{
-										ObjectMeta: cdv2.ObjectMeta{
-											Name:    "mycustomimage",
-											Version: "1.0.0",
+			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   memFs,
+			}, cdv2.ComponentDescriptorList{}, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+		})
+
+		It("should use a resource from the component descriptor", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-04.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{})
+			cd := cdv2.ComponentDescriptorList{
+				Components: []cdv2.ComponentDescriptor{
+					{
+						ComponentSpec: cdv2.ComponentSpec{
+							ObjectMeta: cdv2.ObjectMeta{
+								Name:    "mycomp",
+								Version: "1.0.0",
+							},
+							ExternalResources: []cdv2.Resource{
+								{
+									ObjectMeta: cdv2.ObjectMeta{
+										Name:    "mycustomimage",
+										Version: "1.0.0",
+									},
+									Access: &cdv2.OCIRegistryAccess{
+										ObjectType: cdv2.ObjectType{
+											Type: cdv2.OCIRegistryType,
 										},
-										Access: &cdv2.OCIRegistryAccess{
-											ObjectType: cdv2.ObjectType{
-												Type: cdv2.OCIRegistryType,
-											},
-											ImageReference: "quay.io/example/myimage:1.0.0",
-										},
+										ImageReference: "quay.io/example/myimage:1.0.0",
 									},
 								},
 							},
 						},
 					},
-				}
+				},
+			}
 
-				res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-					Info: blue,
-				}, cd, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveLen(1))
+			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+			}, cd, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
 
-				config := make(map[string]interface{})
-				Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
-				Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
-			})
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
 		})
-
-		Context("TemplateExportExecutions", func() {
-			It("should return the raw template if no templating funcs are defined", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-05.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
-
-				res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   nil,
-				}, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveKeyWithValue("testKey", "myval"))
-			})
-
-			It("should use the export values to template", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-06.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
-
-				res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   nil,
-				}, map[string]string{"version": "0.0.0"})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
-			})
-
-			It("should read the content of a file to template", func() {
-				tmpl, err := ioutil.ReadFile("./testdata/gotemplate/template-07.yaml")
-				Expect(err).ToNot(HaveOccurred())
-				exec := make([]lsv1alpha1.TemplateExecutor, 0)
-				Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
-
-				blue := &lsv1alpha1.Blueprint{}
-				blue.DeployExecutions = exec
-				op := New(&installations.Operation{})
-
-				memFs := memoryfs.New()
-				err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
-				Expect(err).ToNot(HaveOccurred())
-
-				res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
-					Info: blue,
-					Fs:   memFs,
-				}, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(res).To(HaveLen(1))
-				Expect(res).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
-			})
-		})
-
 	})
 
-})
+	Context("TemplateExportExecutions", func() {
+		It("should return the raw template if no templating funcs are defined", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-05.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.ExportExecutions = exec
+			op := New(&installations.Operation{})
+
+			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveKeyWithValue("testKey", "myval"))
+		})
+
+		It("should use the export values to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-06.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.ExportExecutions = exec
+			op := New(&installations.Operation{})
+
+			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, map[string]interface{}{"version": "0.0.0"})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+		})
+
+		It("should read the content of a file to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-07.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.ExportExecutions = exec
+			op := New(&installations.Operation{})
+
+			memFs := memoryfs.New()
+			err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+
+			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   memFs,
+			}, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			Expect(res).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+		})
+	})
+}

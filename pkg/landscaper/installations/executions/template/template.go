@@ -40,7 +40,8 @@ func New(op lsoperation.Interface) *Templater {
 	return &Templater{
 		Interface: op,
 		impl: map[lsv1alpha1.TemplateType]templateExecution{
-			lsv1alpha1.GOTemplateType: &GoTemplateExecution{},
+			lsv1alpha1.GOTemplateType:    &GoTemplateExecution{},
+			lsv1alpha1.SpiffTemplateType: &SpiffTemplate{},
 		},
 	}
 }
