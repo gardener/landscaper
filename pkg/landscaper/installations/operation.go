@@ -49,7 +49,6 @@ type Operation struct {
 	Datatypes map[string]*datatype.Datatype
 
 	Inst                        *Installation
-	InstallationContext         string
 	ComponentDescriptor         *cdv2.ComponentDescriptor
 	ResolvedComponentDescriptor cdv2.ComponentDescriptorList
 	context                     Context
@@ -97,6 +96,11 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 // Context returns the context of the operated installation
 func (o *Operation) Context() *Context {
 	return &o.context
+}
+
+// InstallationContextName returns the name of the current installation context.
+func (o *Operation) InstallationContextName() string {
+	return o.context.Name
 }
 
 // GetDataType returns the datatype with a specific name.
@@ -255,7 +259,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*da
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
 	for _, do := range dataObjects {
-		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContext).Build()
+		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName()).Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,

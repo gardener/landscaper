@@ -22,8 +22,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/datatype"
@@ -49,23 +51,26 @@ func NewConstructor(op *installations.Operation) *Constructor {
 // Construct loads the exported data from the execution and the subinstallations.
 func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, error) {
 	var (
-		fldPath = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
+		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
+		internalExports = map[string]interface{}{
+			"di": struct{}{},
+			"do": struct{}{},
+		}
 	)
 
 	execDo, err := executions.New(c.Operation).GetExportedValues(ctx, c.Inst)
 	if err != nil {
 		return nil, err
 	}
+	if execDo != nil {
+		internalExports["di"] = execDo.Data
+	}
 
 	dataObjectMap, err := c.aggregateDataObjectsInContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to aggregate data object: %w", err)
 	}
-
-	internalExports := map[string]interface{}{
-		"di": execDo.Data,
-		"do": dataObjectMap,
-	}
+	internalExports["do"] = dataObjectMap
 
 	templater := template.New(c.Operation)
 	exports, err := templater.TemplateExportExecutions(c.Inst.Blueprint, internalExports)
@@ -88,7 +93,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		}
 
 		do := &dataobjects.DataObject{
-			FieldValue: &mapping.DefinitionFieldValue,
+			FieldValue: mapping.DefinitionFieldValue.DeepCopy(),
 			Data:       data,
 		}
 		do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
@@ -193,16 +198,21 @@ func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath 
 	return do, nil
 }
 
-func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string][]byte, error) {
+func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {
+	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.Info)
 	dataObjectList := &lsv1alpha1.DataObjectList{}
-	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: c.InstallationContext}); err != nil {
+	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 
-	aggDataObjects := map[string][]byte{}
+	aggDataObjects := map[string]interface{}{}
 	for _, do := range dataObjectList.Items {
 		meta := dataobjects.GetMetadataFromObject(&do)
-		aggDataObjects[meta.Key] = do.Data
+		var data interface{}
+		if err := yaml.Unmarshal(do.Data, &data); err != nil {
+			return nil, fmt.Errorf("error while decoding data object %s: %w", do.Name, err)
+		}
+		aggDataObjects[meta.Key] = data
 	}
 	return aggDataObjects, nil
 }

@@ -25,7 +25,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/utils"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -81,7 +80,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		continue
 	}
 
-	if err := o.collectAndUpdateExports(ctx); err != nil {
+	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
 		return err
 	}
 
@@ -109,14 +108,15 @@ func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executio
 	orphaned := items
 	for i, exec := range o.exec.Spec.Executions {
 		execItem := executionItem{
-			Info: exec,
+			Info: *exec.DeepCopy(),
 		}
-		if j, ok := getDeployItemIndexByManagedName(items, exec.Name); ok {
-			execItem.DeployItem = &items[j]
+		if j, ok := getDeployItemIndexByManagedName(orphaned, exec.Name); ok {
+			execItem.DeployItem = items[j].DeepCopy()
 			copy(orphaned[i:], orphaned[j+1:])
 			orphaned[len(orphaned)-1] = lsv1alpha1.DeployItem{}
 			orphaned = orphaned[:len(orphaned)-1]
 		}
+		execItems[i] = execItem
 	}
 	return execItems, orphaned
 }
@@ -156,30 +156,23 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 // collectAndUpdateExports loads all exports of all deploy items and
 // persists them in a data object in the cluster.
 // It also updates the export reference of the execution.
-func (o *Operation) collectAndUpdateExports(ctx context.Context) error {
-	var (
-		values = make(map[string]interface{})
-		err    error
-	)
-	for _, ref := range o.exec.Status.DeployItemReferences {
-		deployItem := &lsv1alpha1.DeployItem{}
-		if err := o.Client().Get(ctx, ref.Reference.NamespacedName(), deployItem); err != nil {
-			return err
-		}
-
-		values, err = o.addExports(ctx, deployItem, values)
+func (o *Operation) collectAndUpdateExports(ctx context.Context, items []executionItem) error {
+	values := make(map[string]interface{})
+	for _, item := range items {
+		data, err := o.addExports(ctx, item.DeployItem)
 		if err != nil {
 			return err
 		}
+		values[item.Info.Name] = data
 	}
 
 	return o.CreateOrUpdateExportReference(ctx, values)
 }
 
 // addExports loads the exports of a deploy item and adds it to the given values.
-func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem, values map[string]interface{}) (map[string]interface{}, error) {
+func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem) (map[string]interface{}, error) {
 	if item.Status.ExportReference == nil {
-		return values, nil
+		return nil, nil
 	}
 	secret := &corev1.Secret{}
 	if err := o.Client().Get(ctx, item.Status.ExportReference.NamespacedName(), secret); err != nil {
@@ -189,5 +182,5 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem,
 	if err := yaml.Unmarshal(secret.Data[lsv1alpha1.DataObjectSecretDataKey], &data); err != nil {
 		return nil, err
 	}
-	return utils.MergeMaps(values, data), nil
+	return data, nil
 }

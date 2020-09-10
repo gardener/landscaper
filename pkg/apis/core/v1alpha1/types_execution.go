@@ -24,7 +24,7 @@ import (
 // todo: add conversion
 const ExecutionManagedByLabel = "execution.landscaper.gardener.cloud/managed-by"
 
-// ExecutionManagedNameAnnotation is the unique identifier of the deploy items managed by a execution.
+// ExecutionManagedNameAnnotation is the unique identifier of the deploy item managed by a execution.
 // It corresponds to the execution item name.
 // todo: add conversion
 const ExecutionManagedNameAnnotation = "execution.landscaper.gardener.cloud/name"

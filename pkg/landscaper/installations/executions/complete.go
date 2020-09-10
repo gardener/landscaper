@@ -58,12 +58,8 @@ func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installatio
 
 // GetExportedValues returns the exported values of the execution
 func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.Installation) (*dataobjects.DataObject, error) {
-	if inst.Info.Status.ExecutionReference == nil {
-		return nil, nil
-	}
-
 	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := o.Client().Get(ctx, kutil.ObjectKey(inst.Info.Name, inst.Info.Namespace), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}

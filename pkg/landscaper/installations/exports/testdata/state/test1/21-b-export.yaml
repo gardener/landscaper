@@ -3,6 +3,9 @@ kind: DataObject
 metadata:
   name: 3daqmfbwdhbcyp2a6kmz6ufnwlzgjgpk
   namespace: test1
+  labels:
+    dataobjects.landscaper.gardener.cloud/context: "Installation/test1/root"
+    dataobjects.landscaper.gardener.cloud/key: "root.z"
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation

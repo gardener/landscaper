@@ -76,7 +76,7 @@ var _ = g.Describe("Constructor", func() {
 		}
 	})
 
-	g.FIt("should construct the exported config from its execution", func() {
+	g.It("should construct the exported config from its execution", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/root"])
@@ -97,13 +97,20 @@ var _ = g.Describe("Constructor", func() {
 		Expect(res[1].Metadata.Key).To(Equal("root.z"))
 	})
 
-	g.It("should construct the exported config from a siblings", func() {
+	g.It("should construct the exported config from a child", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+			{
+				Type:     lsv1alpha1.GOTemplateType,
+				Template: []byte(`"root.y: {{ index .exports.do \"root.y\" }}\nroot.z: {{ index .exports.do \"root.z\" }}"`),
+			},
+		}
 
 		c := exports.NewConstructor(op)
 		res, err := c.Construct(ctx)
@@ -139,6 +146,14 @@ var _ = g.Describe("Constructor", func() {
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+			{
+				Type:     lsv1alpha1.GOTemplateType,
+				Template: []byte(`"root.y: {{ .exports.di.root.y }}\nroot.z: {{ index .exports.do \"root.z\" }}"`),
+			},
+		}
 
 		c := exports.NewConstructor(op)
 		res, err := c.Construct(ctx)

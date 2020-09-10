@@ -3,6 +3,10 @@ kind: DeployItem
 metadata:
   name: di-a
   namespace: test2
+  labels:
+    execution.landscaper.gardener.cloud/managed-by: exec-1
+  annotations:
+    execution.landscaper.gardener.cloud/name: a
   generation: 1
 spec:
 

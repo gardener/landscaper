@@ -29,8 +29,7 @@ install-requirements:
 
 .PHONY: revendor
 revendor:
-	@GO111MODULE=on go mod vendor
-    @GO111MODULE=on go mod tidy
+	@$(REPO_ROOT)/hack/revendor.sh
 
 .PHONY: format
 format:
