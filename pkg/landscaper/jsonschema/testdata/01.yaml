@@ -1,0 +1,10 @@
+name: simple string
+openAPIV3Schema:
+  type: string
+tests:
+- data: "test"
+  result: true
+- data:
+    spec:
+      myvalue: hello
+  result: false
