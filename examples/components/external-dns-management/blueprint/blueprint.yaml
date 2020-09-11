@@ -60,54 +60,8 @@ deployExecutions:
   #   a:
   #     b: (( readFile() ))
 
-executionItems:
-- name: dns-controller-deployment
-  type: Helm
-  config:
-    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
-    kind: ProviderConfiguration
-
-    repository: myrepo/charts/dns-controller
-    version: 0.5.2
-    name: my-release
-    namespace: default
-
-    values:
-      configuration:
-        dnsClass: "mydnsclass"
-
-    exportsFromManifests:
-    - key: dnsClass
-      jsonPath: .Values.configuration.dnsClass
-    - key: seviceAccount
-      resource:
-        apiVersion: v1
-        kind: secret
-        name: my-serviceaccount
-        jsonPath: data.config
-
 exportExecutions:
 # - type: go-template # returns list of deploy items
 #   file: /my/path/cc # virtual filesystem
 #   template: |
 #     my template: {{ .Values.abc }}
-
-# ------------------
----
-template:
-  exports:
-    dnsClass: {{ .exports.dns-controller-deployment.dnsClass }}
----
-exports:
-  dns-controller-deployment:
-    dnsClass: "mydnsclasss"
-    serviceAccount:
-
----
-data:
-  exports:
-    dnsClass: "mydnsclass"
----
-kind: DataObject
-name: application-dnsClass
-data: "mydnsclass"

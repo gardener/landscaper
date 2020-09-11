@@ -15,9 +15,6 @@ spec:
 
 status:
   phase: Reconciled
-  conditions:
-  - condition1: healthy
-    message: testing
 
   exports:
     value: xxx

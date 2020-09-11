@@ -1,0 +1,56 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+localTypes:
+  resourceDef:
+    type: object
+    properties:
+      memory:
+        type: string
+      cpu:
+        type: string
+
+imports:
+- name: dnsClass
+  optional: true
+  schema:
+    type: string
+
+- name: namespace
+  default:
+    value: kube-system
+  schema:
+    type: string
+
+- name: cluster
+  targetType: kubernetes-cluster
+
+- name: resources
+  optional: true
+  schema:
+    type: object
+    properties:
+      requests:
+        $ref: "local://resourceDef"
+      limits:
+        $ref: "local://resourceDef"
+
+exports:
+- name: ingressClass
+  schema:
+    type: string
+
+# List of deploy item generators
+# The generators return list of deploy items that are aggregated.
+# Be aware that all deploy items must have a unique key
+# otherwise the aggregation will return an error.
+deployExecutions:
+- type: go-template
+  file: /deployItems.yaml # virtual filesystem
+
+exportExecutions:
+- type: go-template
+ template: |
+   ingressClass: {{ .exports.di.deploy.ingressClass }}

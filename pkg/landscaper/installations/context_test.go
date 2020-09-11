@@ -16,7 +16,6 @@ package installations_test
 
 import (
 	"context"
-	"sync"
 
 	"github.com/go-logr/logr/testing"
 	g "github.com/onsi/ginkgo"
@@ -41,25 +40,21 @@ var _ = g.Describe("SourceType", func() {
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
 		fakeCompRepo      componentsregistry.Registry
-
-		once sync.Once
 	)
 
 	g.BeforeEach(func() {
-		once.Do(func() {
-			var (
-				err   error
-				state *envtest.State
-			)
-			fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
-			Expect(err).ToNot(HaveOccurred())
-			fakeInstallations = state.Installations
+		var (
+			err   error
+			state *envtest.State
+		)
+		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
+		Expect(err).ToNot(HaveOccurred())
+		fakeInstallations = state.Installations
 
-			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
-			Expect(err).ToNot(HaveOccurred())
-			fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
-			Expect(err).ToNot(HaveOccurred())
-		})
+		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
+		Expect(err).ToNot(HaveOccurred())
+		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+		Expect(err).ToNot(HaveOccurred())
 
 		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo)
 	})

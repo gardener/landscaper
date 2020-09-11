@@ -5,9 +5,13 @@ metadata:
   generation: 6
 spec:
 
-  blueprintRef: eu.gcr.io/gardener-project/dev/github/com/gardener/gardener:v1.7.2
+  blueprintRef: # will be read from the component descriptor
+    componentName: github.com/gardener/virtual-cluster
+    version: v1.7.2
+    kind: LocalResource
+    resource: my-installation-blueprint
 
-#  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
+  #  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
 
   imports: # generated from aggregated definition or default from definition with from = to
   - from: .kubeconfig

@@ -1,0 +1,24 @@
+- name: deploy
+  type: helm
+  config:
+    chartRef: {{ .cd.externalResources.controller-chart.access.ref }}
+    kubeconfig: {{ .imports.cluster.kubeconfig }}
+    values:
+      ingressClass: nginx
+      image:
+        ref: {{ .cd.externalResources.controller.ref }}
+      dnsControllerClass: {{ .imports.dnsClass }}
+      {{ if .imports.resources }}
+      resources:
+        requests:
+          cpu: {{ .imports.resources.requests.cpu }}
+          memory: {{ .imports.resources.requests.memory }}
+      {{ end }}
+    exportsManifest:
+    - jsonPath: .spec.config
+      key: ingressClass
+      resource:
+        apiVersion: v1
+        kind: Secret
+        name: my-secret
+        namespace: a

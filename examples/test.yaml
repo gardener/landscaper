@@ -1,6 +1,0 @@
-importsExternal:
-  dns:
-    class: gardener
-
-importsInternal:
-  dnsClass: gardener

@@ -1,8 +1,0 @@
-apiVersion: config.landscaper.gardener.cloud/v1alpha1
-kind: LandscaperConfiguration
-
-registry:
-  local:
-    paths:
-    - /path/to/def1
-    - /second/path/to/efs

@@ -1,0 +1,34 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/nginx-ingress'
+  version: 'v0.1.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  componentReferences: []
+
+  localResources:
+  - name: blueprint
+    type: blueprint
+    access:
+      type: github
+      url: https://github.com/gardener/nginx-ingress
+      ref: refs/tags/v1
+      path: blueprint
+  externalResource:
+  - name: controller
+    type: ociImage
+    access:
+      type: ociRegistry
+      imageRef: nginx/nginx-ingress:1.8.1
+  - name: controller-chart
+    type: ociChart
+    access:
+      type: ociRegistry
+      imageRef: nginx/nginx-ingress-chart:1.8.1

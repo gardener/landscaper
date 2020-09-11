@@ -1,23 +1,27 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-name: my-component-definition
-version: 1.0.0
-
 import:
-- key: dnsControllerClass | common.dnsControllerClass
-  type: string
+- name: dnsControllerClass | common.dnsControllerClass
+  schema:
+    type: string
   default:
     value: ""
 #      ref: common.dnsControllerClass # tbd
-- key: abc
-  type: number
+- name: abc
+  schema:
+    type: number
 
 export:
-- key: a.b
-  type: mytype
+- name: a.b
+  schema:
+    type: object
+    properties:
+      mykey:
+        type: string
 - key: ijk
-  type: string
+  schema:
+    type: number
 
 blueprintRefs:
 - name: my-sub-component # defaulted to the name of the component
@@ -38,67 +42,109 @@ blueprintRefs:
   - from: efg2
     to: ijk2
 
-executors: | # has to be idempotent
-  - name: init
-    type: container # also extensions resource
-    config:
-      image: my-custom-image:version
-      command: ["run-component"]
-      args: []
-  - name: my-script
-    type: script
-    environment: ls-abc
-    config:
-      mount:
-        artifact: xyz
-        path: /repo
-      script: |
-        #!/bin/python3
+exportExecutors:
+- name: default # has to return a list of deploy item templates
+  type: GoTemplate
+  template: |
+    a.b: {{ .exports.di.my-script.mykey }} # template from own deploy items
+    ijk: {{ .exports.do.my-sub-component.ijk }} # export from sub installations
+# - type: go-template
+#   file: /my/path/cc # virtual filesystem
+#   template: |
+#     my template: {{ .Values.abc }}
+#
+# - type: container
+#   image: localResource/my-templater
+#   command: "asdf"
+#
+#- name: my-exec
+#  type: spiff
+#  stubs:
+#  - "/my/stubfile/..."
+#  - "cd://componentReference/my-other-comp/localResource/..."
+#  file: /installer.yaml # virtual filesystem
+# template:
+#   a:
+#     b: (( readFile() ))
 
-        import os
+deployExecutors: # has to be idempotent
+# - type: go-template
+#   file: /my/path/cc # virtual filesystem
+#   template: |
+#     my template: {{ .Values.abc }}
+#
+# - type: container
+#   image: localResource/my-templater
+#   command: "asdf"
+#
+#- name: my-exec
+#  type: spiff
+#  stubs:
+#  - "/my/stubfile/..."
+#  - "cd://componentReference/my-other-comp/localResource/..."
+#  file: /installer.yaml # virtual filesystem
+  # template:
+  #   a:
+  #     b: (( readFile() ))
 
-        yaml.load(os.genenv('IMPORT_CONFIG'))
+- name: default # has to return a list of deploy item templates
+  type: GoTemplate
+  template: |
+    - name: init
+      type: container # also extensions resource
+      config:
+        image: my-custom-image:version
+        command: ["run-component"]
+        args: []
+    - name: my-script
+      type: script
+      environment: ls-abc
+      config:
+        mount:
+          artifact: xyz
+          path: /repo
+        script: |
+          #!/bin/python3
 
-        doStuff()
+          import os
 
-        yaml.dump(export)
-      image: ubuntu:latest
-  - name: my-container
-    type: container
-    config:
-      image: my-custom-image:version
-      command: ["run-component"]
-      args: []
-  - name: deploy-chart
-    type: helm
-    config:
-      chartRepository: my-repo
-      version: 1.0.0
-      values: {{ .exports.mykey.x }}
-      valueRef:
-        secretRef: abc
-  - name: deploy-other-chart
-    type: helm
-    config:
-      chartRepository: my-repo/dns-controller
-      version: 1.0.0
-      values:
-        instanceID: {{ .imports.dnsController }}
-        ca: {{ state "key" function }}
-      valueRef:
-        secretRef: abc
-  - name: deploy-manifest
-    type: manifest
-    config:
-    - apiVersion: v1
-      kind: Secret
-      metdata:
-        name: abc
-      data:
-        value1: {{ .import.my-import.value1 }}
-        value2: (( .import.my-import.value2 ))
-status:
+          yaml.load(os.genenv('IMPORT_CONFIG'))
 
-  executionRef:
-    name: abc
-    namespacE: default
+          doStuff()
+
+          yaml.dump(export)
+        image: ubuntu:latest
+    - name: my-container
+      type: container
+      config:
+        image: my-custom-image:version
+        command: ["run-component"]
+        args: []
+    - name: deploy-chart
+      type: helm
+      config:
+        chartRepository: my-repo
+        version: 1.0.0
+        values: {{ .exports.mykey.x }}
+        valueRef:
+          secretRef: abc
+    - name: deploy-other-chart
+      type: helm
+      config:
+        chartRepository: my-repo/dns-controller
+        version: 1.0.0
+        values:
+          instanceID: {{ .imports.dnsController }}
+          ca: {{ state "key" function }}
+        valueRef:
+          secretRef: abc
+    - name: deploy-manifest
+      type: manifest
+      config:
+      - apiVersion: v1
+        kind: Secret
+        metdata:
+          name: abc
+        data:
+          value1: {{ .import.my-import.value1 }}
+          value2: (( .import.my-import.value2 ))
