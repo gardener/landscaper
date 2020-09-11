@@ -24,6 +24,8 @@ import (
 	"github.com/xeipuuv/gojsonreference"
 	"github.com/xeipuuv/gojsonschema"
 	"sigs.k8s.io/yaml"
+
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 type LoaderWrapper struct {
@@ -59,7 +61,7 @@ type Loader struct {
 type LoaderConfig struct {
 	// LocalTypes is a map of blueprint locally defined types.
 	// It is a map of schema name to schema definition
-	LocalTypes map[string][]byte
+	LocalTypes map[string]lsv1alpha1.JSONSchemaDefinition
 	// BlueprintFs is the virtual filesystem that is used to resolve "blueprint" refs
 	BlueprintFs vfs.FileSystem
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
@@ -109,7 +111,7 @@ func (l *Loader) LoadJSON() (interface{}, error) {
 		return nil, err
 	}
 
-	if err := validateSchemeBytes(schemaJSONBytes); err != nil {
+	if err := ValidateSchema(schemaJSONBytes); err != nil {
 		return nil, err
 	}
 
@@ -128,13 +130,6 @@ func (l Loader) LoaderFactory() gojsonschema.JSONLoaderFactory {
 	return &LoaderFactory{
 		LoaderConfig: l.LoaderConfig,
 	}
-}
-
-func validateSchemeBytes(schemBytes []byte) error {
-	if _, err := gojsonschema.NewSchemaLoader().Compile(gojsonschema.NewBytesLoader(schemBytes)); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (l *Loader) loadLocalReference(refURL *url.URL) ([]byte, error) {

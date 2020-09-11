@@ -30,13 +30,12 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	ocireg "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
 
-	reg, err := ocireg.New(log, config.OCI)
+	reg, err := blueprintsregistry.NewOCIRegistry(log, config.OCI)
 	if err != nil {
 		return nil, err
 	}

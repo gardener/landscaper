@@ -5,9 +5,11 @@ name: a
 version: 1.0.0
 
 imports:
-- key: a.b
-  type: string
+- name: a.b
+  schema:
+    type: string
 
 exports:
-- key: a.z
-  type: string
+- name: a.z
+  schema:
+    type: string

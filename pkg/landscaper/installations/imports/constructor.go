@@ -64,7 +64,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 
 		value, err := jsonpath.Construct(importMapping.To, do.Data)
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable to construct object with path %s for import %s: %w", importMapping.To, importMapping.Key, err)
+			return nil, nil, fmt.Errorf("unable to construct object with path %s for import %s: %w", importMapping.To, importMapping.Name, err)
 		}
 		values = utils.MergeMaps(values, value)
 	}
@@ -156,7 +156,7 @@ func (c *Constructor) updateImportStateForDatatObject(ctx context.Context, inst 
 	if owner != nil && owner.Kind == "Installation" {
 		inst := &lsv1alpha1.Installation{}
 		if err := c.Client().Get(ctx, ref.NamespacedName(), inst); err != nil {
-			return fmt.Errorf("unable to fetch source of data object for import %s: %w", mapping.Key, err)
+			return fmt.Errorf("unable to fetch source of data object for import %s: %w", mapping.Name, err)
 		}
 		state.ConfigGeneration = inst.Status.ConfigGeneration
 	}

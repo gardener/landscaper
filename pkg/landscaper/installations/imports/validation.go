@@ -24,7 +24,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -67,7 +66,7 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	}
 
 	for _, importMapping := range inst.GetImportMappings() {
-		impPath := fldPath.Child(importMapping.Key)
+		impPath := fldPath.Child(importMapping.Name)
 		err = v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
 		if err != nil {
 			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -102,6 +101,10 @@ func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *
 	do, err := dataobjects.NewFromDataObject(raw)
 	if err != nil {
 		return err
+	}
+
+	if err := v.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, do.Data); err != nil {
+		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected schema: %s", fldPath.String(), err.Error())
 	}
 
 	owner := kutil.GetOwner(do.Raw.ObjectMeta)
@@ -139,15 +142,9 @@ func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *fiel
 		return installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
 	}
 
-	// validate types
-	dt, ok := v.GetDataType(mapping.Type)
-	if !ok {
-		return installations.NewImportNotSatisfiedErrorf(nil, "%s: datatype %s cannot be found", fldPath.String(), mapping.Type)
+	if err := v.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, val); err != nil {
+		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected schema: %s", fldPath.String(), err.Error())
 	}
-	if err := datatype.Validate(*dt, val); err != nil {
-		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected type %s", fldPath.String(), mapping.Type)
-	}
-
 	return nil
 }
 

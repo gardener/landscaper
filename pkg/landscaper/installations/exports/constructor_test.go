@@ -26,13 +26,12 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = g.Describe("Constructor", func() {
@@ -41,7 +40,6 @@ var _ = g.Describe("Constructor", func() {
 		op *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
-		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
 		fakeCompRepo      componentsregistry.Registry
@@ -50,20 +48,12 @@ var _ = g.Describe("Constructor", func() {
 	g.BeforeEach(func() {
 		var (
 			err   error
-			state *fake_client.State
+			state *envtest.State
 		)
-		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
 		fakeInstallations = state.Installations
-		fakeDataTypes = state.DataTypes
-
-		dtArr := make([]lsv1alpha1.DataType, 0)
-		for _, dt := range fakeDataTypes {
-			dtArr = append(dtArr, *dt)
-		}
-		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
-		Expect(err).ToNot(HaveOccurred())
 
 		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -72,7 +62,6 @@ var _ = g.Describe("Constructor", func() {
 
 		op = &installations.Operation{
 			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
-			Datatypes: internalDataTypes,
 		}
 	})
 
@@ -120,7 +109,7 @@ var _ = g.Describe("Constructor", func() {
 
 		id := func(element interface{}) string {
 			do := element.(*dataobjects.DataObject)
-			return do.FieldValue.Key
+			return do.FieldValue.Name
 		}
 		Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
 			"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
@@ -138,6 +127,26 @@ var _ = g.Describe("Constructor", func() {
 				}),
 			})),
 		}))
+	})
+
+	g.It("should forbid the export from a child when the schema is not satisfied", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+			{
+				Type:     lsv1alpha1.GOTemplateType,
+				Template: []byte(`"root.y: true\nroot.z: {{ index .exports.do \"root.z\" }}"`),
+			},
+		}
+
+		c := exports.NewConstructor(op)
+		_, err = c.Construct(ctx)
+		Expect(err).To(HaveOccurred())
 	})
 
 	g.It("should construct the exported config from a siblings and the execution config", func() {
@@ -163,7 +172,7 @@ var _ = g.Describe("Constructor", func() {
 
 		id := func(element interface{}) string {
 			do := element.(*dataobjects.DataObject)
-			return do.FieldValue.Key
+			return do.FieldValue.Name
 		}
 		Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
 			"root.y": PointTo(MatchFields(IgnoreExtras, Fields{

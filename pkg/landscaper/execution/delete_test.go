@@ -28,7 +28,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = g.Describe("Delete", func() {
@@ -44,9 +44,9 @@ var _ = g.Describe("Delete", func() {
 	g.BeforeEach(func() {
 		var (
 			err   error
-			state *fake_client.State
+			state *envtest.State
 		)
-		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
 		fakeExecutions = state.Executions

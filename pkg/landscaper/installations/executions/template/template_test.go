@@ -71,8 +71,8 @@ func runTestSuite(testdataDir string) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
-				"Name": Equal("init"),
-				"Type": Equal(lsv1alpha1.ExecutionType("container")),
+				"Name":   Equal("init"),
+				"Schema": Equal(lsv1alpha1.ExecutionType("container")),
 			}))
 		})
 

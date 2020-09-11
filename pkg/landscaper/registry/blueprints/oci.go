@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oci
+package blueprintsregistry
 
 import (
 	"bytes"
@@ -29,41 +29,40 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
-type registry struct {
+type ociRegistry struct {
 	oci oci.Client
 	dec runtime.Decoder
 }
 
-// New creates a new oci registry from a oci config.
-func New(log logr.Logger, config *config.OCIConfiguration) (blueprintsregistry.Registry, error) {
+// NewOCIRegistry creates a new oci ociRegistry from a oci config.
+func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration) (Registry, error) {
 	client, err := oci.NewClient(log, oci.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}
 
-	return &registry{
+	return &ociRegistry{
 		oci: client,
 		dec: serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder(),
 	}, nil
 }
 
-// NewWithOCIClient creates a new oci registry with a oci client
-func NewWithOCIClient(log logr.Logger, client oci.Client) (blueprintsregistry.Registry, error) {
-	return &registry{
+// NewOCIRegistryWithOCIClient creates a new oci ociRegistry with a oci client
+func NewOCIRegistryWithOCIClient(log logr.Logger, client oci.Client) (Registry, error) {
+	return &ociRegistry{
 		oci: client,
 		dec: serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder(),
 	}, nil
 }
 
 // GetDefinition returns the definition for a specific name, version and type.
-func (r *registry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1alpha1.Blueprint, error) {
+func (r *ociRegistry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1alpha1.Blueprint, error) {
 	if ref.Access.GetType() != cdv2.OCIRegistryType {
-		return nil, blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return nil, NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
 	ociComp := ref.Access.(*cdv2.OCIRegistryAccess)
 	ociRef := ociComp.ImageReference
@@ -92,9 +91,9 @@ func (r *registry) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*lsv1al
 }
 
 // GetBlob returns the blob content for a component definition.
-func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
+func (r *ociRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
 	if ref.Access.GetType() != cdv2.OCIRegistryType {
-		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
 	ociComp := ref.Access.(*cdv2.OCIRegistryAccess)
 	ociRef := ociComp.ImageReference
@@ -106,7 +105,7 @@ func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.Fil
 
 	layer := oci.GetLayerByName(manifest.Layers, ComponentDefinitionAnnotationTitleContent)
 	if layer == nil {
-		return blueprintsregistry.NewNotFoundError(ociRef, errors.New("no content defined for component"))
+		return NewNotFoundError(ociRef, errors.New("no content defined for component"))
 	}
 
 	var blob bytes.Buffer
@@ -116,3 +115,11 @@ func (r *registry) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.Fil
 
 	return utils.ExtractTarGzip(&blob, fs, "/")
 }
+
+const (
+	// ComponentDefinitionConfigMediaType is the reserved media type for the ComponentDefinition manifest config
+	ComponentDefinitionConfigMediaType = "application/vnd.gardener.landscaper.componentdefinition.v1+json"
+
+	// ComponentDefinitionAnnotationTitleContent is the name of the annotation title of the layer that contains the content blob.
+	ComponentDefinitionAnnotationTitleContent = "content"
+)

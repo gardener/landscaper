@@ -31,13 +31,13 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
+	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -46,7 +46,6 @@ import (
 // Operation contains all installation operations and implements the Operation interface.
 type Operation struct {
 	lsoperation.Interface
-	Datatypes map[string]*datatype.Datatype
 
 	Inst                        *Installation
 	ComponentDescriptor         *cdv2.ComponentDescriptor
@@ -56,15 +55,14 @@ type Operation struct {
 }
 
 // NewInstallationOperation creates a new installation operation
-func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, bRegistry blueprintsregistry.Registry, cRegistry componentsregistry.Registry, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, bRegistry, cRegistry), datatypes, inst)
+func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, bRegistry blueprintsregistry.Registry, cRegistry componentsregistry.Registry, inst *Installation) (*Operation, error) {
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, bRegistry, cRegistry), inst)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
-func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, datatypes map[string]*datatype.Datatype, inst *Installation) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, inst *Installation) (*Operation, error) {
 	instOp := &Operation{
 		Interface: op,
-		Datatypes: datatypes,
 		Inst:      inst,
 	}
 
@@ -103,11 +101,14 @@ func (o *Operation) InstallationContextName() string {
 	return o.context.Name
 }
 
-// GetDataType returns the datatype with a specific name.
-// It returns ok = false if the datatype does not exist.
-func (o *Operation) GetDataType(name string) (dt *datatype.Datatype, ok bool) {
-	dt, ok = o.Datatypes[name]
-	return
+// JSONSchemaValidator returns a jsonschema validator for the current installation and blueprint.
+func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
+	return &jsonschema.Validator{
+		Config: &jsonschema.LoaderConfig{
+			LocalTypes:  o.Inst.Blueprint.Info.LocalTypes,
+			BlueprintFs: o.Inst.Blueprint.Fs,
+		},
+	}
 }
 
 // UpdateInstallationStatus updates the status of a installation

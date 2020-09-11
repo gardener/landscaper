@@ -26,13 +26,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = g.Describe("Constructor", func() {
@@ -41,7 +40,6 @@ var _ = g.Describe("Constructor", func() {
 		op *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
-		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
 		fakeCompRepo      componentsregistry.Registry
@@ -50,29 +48,20 @@ var _ = g.Describe("Constructor", func() {
 	g.BeforeEach(func() {
 		var (
 			err   error
-			state *fake_client.State
+			state *envtest.State
 		)
-		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
 		fakeInstallations = state.Installations
-		fakeDataTypes = state.DataTypes
 
 		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		dtArr := make([]lsv1alpha1.DataType, 0)
-		for _, dt := range fakeDataTypes {
-			dtArr = append(dtArr, *dt)
-		}
-		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
-		Expect(err).ToNot(HaveOccurred())
-
 		op = &installations.Operation{
 			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
-			Datatypes: internalDataTypes,
 		}
 	})
 

@@ -94,7 +94,7 @@ type localRegistry struct {
 	Index Index
 }
 
-// NewLocalRegistry creates a new registry that serves local blueprints.
+// NewLocalRegistry creates a new ociRegistry that serves local blueprints.
 func NewLocalRegistry(log logr.Logger, paths ...string) (*localRegistry, error) {
 	lsScheme := runtime.NewScheme()
 	if err := install.AddToScheme(lsScheme); err != nil {

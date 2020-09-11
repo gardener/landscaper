@@ -28,7 +28,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = g.Describe("SourceType", func() {
@@ -39,7 +40,7 @@ var _ = g.Describe("SourceType", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
-		fakeCompRepo      components.Registry
+		fakeCompRepo      componentsregistry.Registry
 
 		once sync.Once
 	)
@@ -48,15 +49,15 @@ var _ = g.Describe("SourceType", func() {
 		once.Do(func() {
 			var (
 				err   error
-				state *fake_client.State
+				state *envtest.State
 			)
-			fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+			fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 			Expect(err).ToNot(HaveOccurred())
 			fakeInstallations = state.Installations
 
 			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
-			fakeCompRepo, err = components.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+			fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -70,7 +71,7 @@ var _ = g.Describe("SourceType", func() {
 		instRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, instRoot)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -85,7 +86,7 @@ var _ = g.Describe("SourceType", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -101,7 +102,7 @@ var _ = g.Describe("SourceType", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 

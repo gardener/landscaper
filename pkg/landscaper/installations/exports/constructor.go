@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -27,8 +25,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -86,14 +82,17 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	// Resolve export mapping for all internalExports
 	dataObjects := make([]*dataobjects.DataObject, len(mappings)) // map of mapping key to data
 	for i, mapping := range mappings {
-
 		data, ok := exports[mapping.From]
 		if !ok {
-			return nil, fmt.Errorf("%s: export %s is not defined", fldPath.String(), mapping.Key)
+			return nil, fmt.Errorf("%s: export %s is not defined", fldPath.String(), mapping.Name)
+		}
+
+		if err := c.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, data); err != nil {
+			return nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
 		}
 
 		do := &dataobjects.DataObject{
-			FieldValue: mapping.DefinitionFieldValue.DeepCopy(),
+			FieldValue: mapping.FieldValueDefinition.DeepCopy(),
 			Data:       data,
 		}
 		do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
@@ -120,82 +119,6 @@ func (c *Constructor) getSubInstallations(ctx context.Context, inst *installatio
 		subInsts = append(subInsts, inInst)
 	}
 	return subInsts, nil
-}
-
-func (c *Constructor) constructFromExecution(fldPath *field.Path, input interface{}, mapping installations.ExportMapping) (*dataobjects.DataObject, error) {
-	if input == nil {
-		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "no execution dataobject given"))
-	}
-
-	var data interface{}
-	if err := jsonpath.GetValue(mapping.From, input, &data); err != nil {
-		return nil, installations.NewExportNotFoundError("unable to find export from execution", field.InternalError(fldPath, err))
-	}
-
-	dt, ok := c.GetDataType(mapping.Type)
-	if !ok {
-		return nil, fmt.Errorf("%s: cannot find DataType %s", fldPath.String(), mapping.Type)
-	}
-
-	if err := datatype.Validate(*dt, data); err != nil {
-		return nil, errors.Wrapf(err, "%s: unable to validate data against %s", fldPath.String(), mapping.Type)
-	}
-
-	do := &dataobjects.DataObject{
-		FieldValue: &mapping.DefinitionFieldValue,
-		Data:       data,
-	}
-	do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
-	do.SetKey(mapping.DefinitionExportMapping.To)
-	return do, nil
-}
-
-func (c *Constructor) constructFromSubInstallations(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInsts []*installations.Installation) (*dataobjects.DataObject, error) {
-	for _, subInst := range subInsts {
-		subPath := fldPath.Child(fmt.Sprintf("(subinst: %s)", subInst.Info.Name))
-		values, err := c.constructFromSubInstallation(ctx, subPath, mapping, subInst)
-		if err == nil {
-			return values, err
-		}
-		if !installations.IsExportNotFoundError(err) {
-			return nil, err
-		}
-	}
-	return nil, nil
-}
-
-func (c *Constructor) constructFromSubInstallation(ctx context.Context, fldPath *field.Path, mapping installations.ExportMapping, subInst *installations.Installation) (*dataobjects.DataObject, error) {
-	// todo: check if subinstallation exports this key, before reading it
-	if _, err := subInst.GetExportMappingTo(mapping.From); err != nil {
-		return nil, installations.NewErrorWrap(installations.ExportNotFound, field.NotFound(fldPath, "subinstallation does not export that key"))
-	}
-
-	// get specific export dataobject for the given exported key
-	// subinst -> export -> key=mappingTo
-	do, err := c.Operation.GetExportForKey(ctx, mapping.From)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, installations.NewExportNotFoundErrorf(err, "%s: could not fetch data object", fldPath.String())
-		}
-		return nil, field.InternalError(fldPath, err)
-	}
-
-	dt, ok := c.GetDataType(mapping.Type)
-	if !ok {
-		return nil, fmt.Errorf("%s: cannot find DataType %s", fldPath.String(), mapping.Type)
-	}
-
-	if err := datatype.Validate(*dt, do.Data); err != nil {
-		return nil, errors.Wrapf(err, "%s: unable to validate data against %s", fldPath.String(), mapping.Type)
-	}
-
-	do = &dataobjects.DataObject{
-		FieldValue: &mapping.DefinitionFieldValue,
-		Data:       do.Data,
-	}
-	do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
-	do.SetKey(mapping.DefinitionExportMapping.To)
-	return do, nil
 }
 
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {

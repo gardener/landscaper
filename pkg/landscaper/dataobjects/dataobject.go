@@ -28,7 +28,7 @@ type DataObject struct {
 	Raw  *lsv1alpha1.DataObject
 	Data interface{}
 
-	FieldValue *lsv1alpha1.DefinitionFieldValue
+	FieldValue *lsv1alpha1.FieldValueDefinition
 	Metadata   DataObjectMetadata
 }
 

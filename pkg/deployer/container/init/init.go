@@ -37,7 +37,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	blueprintsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
@@ -180,7 +179,7 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, ku
 		return nil, err
 	}
 
-	blueprintsRegistry, err := blueprintsoci.NewWithOCIClient(log, ociClient)
+	blueprintsRegistry, err := blueprintsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup blueprints registry")
 	}

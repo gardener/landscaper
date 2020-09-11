@@ -58,20 +58,20 @@ const (
 // Condition holds the information about the state of a resource.
 type Condition struct {
 	// DataType of the Shoot condition.
-	Type ConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
+	Type ConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
-	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
+	Status ConditionStatus `json:"status"`
 	// Last time the condition transitioned from one status to another.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime" protobuf:"bytes,3,opt,name=lastTransitionTime"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 	// Last time the condition was updated.
-	LastUpdateTime metav1.Time `json:"lastUpdateTime" protobuf:"bytes,4,opt,name=lastUpdateTime"`
+	LastUpdateTime metav1.Time `json:"lastUpdateTime"`
 	// The reason for the condition's last transition.
-	Reason string `json:"reason" protobuf:"bytes,5,opt,name=reason"`
+	Reason string `json:"reason"`
 	// A human readable message indicating details about the transition.
-	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
+	Message string `json:"message"`
 	// Well-defined error codes in case the condition reports a problem.
 	// +optional
-	Codes []ErrorCode `json:"codes,omitempty" protobuf:"bytes,7,rep,name=codes,casttype=ErrorCode"`
+	Codes []ErrorCode `json:"codes,omitempty"`
 }
 
 type Operation string

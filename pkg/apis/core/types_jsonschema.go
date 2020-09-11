@@ -22,6 +22,24 @@ import (
 	"errors"
 )
 
+// JSONSchemaDefinition defines a jsonschema.
+type JSONSchemaDefinition json.RawMessage
+
+// MarshalJSON implements the json marshaling for a JSON
+func (s JSONSchemaDefinition) MarshalJSON() ([]byte, error) {
+	return json.RawMessage(s).MarshalJSON()
+}
+
+// UnmarshalJSON implements json unmarshaling for a JSON
+func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
+	raw := json.RawMessage{}
+	if err := raw.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	*s = JSONSchemaDefinition(raw)
+	return nil
+}
+
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
 // Inspired by https://github.com/kubernetes/apiextensions-apiserver/blob/master/pkg/apis/apiextensions/v1/types_jsonschema.go
 type JSONSchemaProps struct {

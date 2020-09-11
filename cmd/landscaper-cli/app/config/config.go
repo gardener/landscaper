@@ -146,9 +146,9 @@ func parseImports(component *core.Blueprint) (map[string]interface{}, error) {
 	config := make(map[string]interface{})
 	for _, imp := range component.Imports {
 		// format the jsonpath to internal parsable path
-		cfg, err := jsonpath.Construct(imp.Key, imp.Type)
+		cfg, err := jsonpath.Construct(imp.Name, imp.Schema)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.Key)
+			return nil, errors.Wrapf(err, "unable to construct config at to: %s", imp.Name)
 		}
 		config = utils.MergeMaps(config, cfg)
 	}
@@ -159,9 +159,9 @@ func parseExports(component *core.Blueprint) (map[string]interface{}, error) {
 	config := make(map[string]interface{})
 	for _, exp := range component.Exports {
 		// format the jsonpath to internal parsable path
-		cfg, err := jsonpath.Construct(exp.Key, exp.Type)
+		cfg, err := jsonpath.Construct(exp.Name, exp.Schema)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.Key)
+			return nil, errors.Wrapf(err, "unable to construct config at to: %s", exp.Name)
 		}
 		config = utils.MergeMaps(config, cfg)
 	}

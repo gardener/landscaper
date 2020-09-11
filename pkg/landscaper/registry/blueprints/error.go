@@ -18,7 +18,7 @@ import (
 	"fmt"
 )
 
-// ErrorReason represents a registry specific issue
+// ErrorReason represents a ociRegistry specific issue
 type ErrorReason string
 
 const (
@@ -124,7 +124,7 @@ func IsNotFoundError(err error) bool {
 	return IsComponentNotFoundError(err) || IsVersionNotFoundError(err) || IsErrorForReason(err, NotFound)
 }
 
-// IsErrorForReason checks if the error is a registry error and of the givne reason.
+// IsErrorForReason checks if the error is a ociRegistry error and of the givne reason.
 func IsErrorForReason(err error, reason ErrorReason) bool {
 	if err == nil {
 		return false

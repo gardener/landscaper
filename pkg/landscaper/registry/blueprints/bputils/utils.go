@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oci
+package bputils
 
 import (
 	"bytes"
@@ -28,6 +28,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
@@ -74,7 +75,7 @@ func BuildNewDefinitionConfig(cache cache.Cache, fs vfs.FileSystem, path string)
 	}
 
 	desc := ocispecv1.Descriptor{
-		MediaType: ComponentDefinitionConfigMediaType,
+		MediaType: blueprintsregistry.ComponentDefinitionConfigMediaType,
 		Digest:    digest.FromBytes(data),
 		Size:      int64(len(data)),
 	}
@@ -88,7 +89,7 @@ func BuildNewDefinitionConfig(cache cache.Cache, fs vfs.FileSystem, path string)
 // BuildNewContentBlob creates a ocispec Manifest from a component definition.
 func BuildNewContentBlob(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
 	ann := map[string]string{
-		ocispecv1.AnnotationTitle: ComponentDefinitionAnnotationTitleContent,
+		ocispecv1.AnnotationTitle: blueprintsregistry.ComponentDefinitionAnnotationTitleContent,
 	}
 	return oci.BuildTarGzipLayer(cache, fs, path, ann)
 }

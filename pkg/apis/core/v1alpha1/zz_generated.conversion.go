@@ -116,36 +116,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*DataType)(nil), (*core.DataType)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DataType_To_core_DataType(a.(*DataType), b.(*core.DataType), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DataType)(nil), (*DataType)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DataType_To_v1alpha1_DataType(a.(*core.DataType), b.(*DataType), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DataTypeList)(nil), (*core.DataTypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DataTypeList_To_core_DataTypeList(a.(*DataTypeList), b.(*core.DataTypeList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DataTypeList)(nil), (*DataTypeList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DataTypeList_To_v1alpha1_DataTypeList(a.(*core.DataTypeList), b.(*DataTypeList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DataTypeSchema)(nil), (*core.DataTypeSchema)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema(a.(*DataTypeSchema), b.(*core.DataTypeSchema), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DataTypeSchema)(nil), (*DataTypeSchema)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema(a.(*core.DataTypeSchema), b.(*DataTypeSchema), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*Default)(nil), (*core.Default)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Default_To_core_Default(a.(*Default), b.(*core.Default), scope)
 	}); err != nil {
@@ -173,16 +143,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.DefinitionFieldMapping)(nil), (*DefinitionFieldMapping)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping(a.(*core.DefinitionFieldMapping), b.(*DefinitionFieldMapping), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*DefinitionFieldValue)(nil), (*core.DefinitionFieldValue)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(a.(*DefinitionFieldValue), b.(*core.DefinitionFieldValue), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.DefinitionFieldValue)(nil), (*DefinitionFieldValue)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(a.(*core.DefinitionFieldValue), b.(*DefinitionFieldValue), scope)
 	}); err != nil {
 		return err
 	}
@@ -303,6 +263,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.ExternalDocumentation)(nil), (*ExternalDocumentation)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(a.(*core.ExternalDocumentation), b.(*ExternalDocumentation), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*FieldValueDefinition)(nil), (*core.FieldValueDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(a.(*FieldValueDefinition), b.(*core.FieldValueDefinition), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.FieldValueDefinition)(nil), (*FieldValueDefinition)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(a.(*core.FieldValueDefinition), b.(*FieldValueDefinition), scope)
 	}); err != nil {
 		return err
 	}
@@ -542,7 +512,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Blueprint, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Version = in.Version
-	out.CustomTypes = *(*[]core.CustomType)(unsafe.Pointer(&in.CustomTypes))
+	out.JSONSchemaVersion = in.JSONSchemaVersion
+	out.LocalTypes = *(*map[string]core.JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*[]core.ImportDefinition)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]core.ExportDefinition)(unsafe.Pointer(&in.Exports))
 	out.BlueprintReferences = *(*[]string)(unsafe.Pointer(&in.BlueprintReferences))
@@ -559,7 +530,8 @@ func Convert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Bluep
 func autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *Blueprint, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Version = in.Version
-	out.CustomTypes = *(*[]CustomType)(unsafe.Pointer(&in.CustomTypes))
+	out.JSONSchemaVersion = in.JSONSchemaVersion
+	out.LocalTypes = *(*map[string]JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*[]ImportDefinition)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*[]ExportDefinition)(unsafe.Pointer(&in.Exports))
 	out.BlueprintReferences = *(*[]string)(unsafe.Pointer(&in.BlueprintReferences))
@@ -749,78 +721,6 @@ func Convert_core_DataObjectList_To_v1alpha1_DataObjectList(in *core.DataObjectL
 	return autoConvert_core_DataObjectList_To_v1alpha1_DataObjectList(in, out, s)
 }
 
-func autoConvert_v1alpha1_DataType_To_core_DataType(in *DataType, out *core.DataType, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema(&in.Schema, &out.Schema, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DataType_To_core_DataType is an autogenerated conversion function.
-func Convert_v1alpha1_DataType_To_core_DataType(in *DataType, out *core.DataType, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DataType_To_core_DataType(in, out, s)
-}
-
-func autoConvert_core_DataType_To_v1alpha1_DataType(in *core.DataType, out *DataType, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema(&in.Schema, &out.Schema, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DataType_To_v1alpha1_DataType is an autogenerated conversion function.
-func Convert_core_DataType_To_v1alpha1_DataType(in *core.DataType, out *DataType, s conversion.Scope) error {
-	return autoConvert_core_DataType_To_v1alpha1_DataType(in, out, s)
-}
-
-func autoConvert_v1alpha1_DataTypeList_To_core_DataTypeList(in *DataTypeList, out *core.DataTypeList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.DataType)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1alpha1_DataTypeList_To_core_DataTypeList is an autogenerated conversion function.
-func Convert_v1alpha1_DataTypeList_To_core_DataTypeList(in *DataTypeList, out *core.DataTypeList, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DataTypeList_To_core_DataTypeList(in, out, s)
-}
-
-func autoConvert_core_DataTypeList_To_v1alpha1_DataTypeList(in *core.DataTypeList, out *DataTypeList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]DataType)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_core_DataTypeList_To_v1alpha1_DataTypeList is an autogenerated conversion function.
-func Convert_core_DataTypeList_To_v1alpha1_DataTypeList(in *core.DataTypeList, out *DataTypeList, s conversion.Scope) error {
-	return autoConvert_core_DataTypeList_To_v1alpha1_DataTypeList(in, out, s)
-}
-
-func autoConvert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema(in *DataTypeSchema, out *core.DataTypeSchema, s conversion.Scope) error {
-	if err := Convert_v1alpha1_JSONSchemaProps_To_core_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema is an autogenerated conversion function.
-func Convert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema(in *DataTypeSchema, out *core.DataTypeSchema, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DataTypeSchema_To_core_DataTypeSchema(in, out, s)
-}
-
-func autoConvert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema(in *core.DataTypeSchema, out *DataTypeSchema, s conversion.Scope) error {
-	if err := Convert_core_JSONSchemaProps_To_v1alpha1_JSONSchemaProps(&in.OpenAPIV3Schema, &out.OpenAPIV3Schema, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema is an autogenerated conversion function.
-func Convert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema(in *core.DataTypeSchema, out *DataTypeSchema, s conversion.Scope) error {
-	return autoConvert_core_DataTypeSchema_To_v1alpha1_DataTypeSchema(in, out, s)
-}
-
 func autoConvert_v1alpha1_Default_To_core_Default(in *Default, out *core.Default, s conversion.Scope) error {
 	out.Value = *(*json.RawMessage)(unsafe.Pointer(&in.Value))
 	return nil
@@ -885,28 +785,6 @@ func autoConvert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping(
 // Convert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping is an autogenerated conversion function.
 func Convert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping(in *core.DefinitionFieldMapping, out *DefinitionFieldMapping, s conversion.Scope) error {
 	return autoConvert_core_DefinitionFieldMapping_To_v1alpha1_DefinitionFieldMapping(in, out, s)
-}
-
-func autoConvert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(in *DefinitionFieldValue, out *core.DefinitionFieldValue, s conversion.Scope) error {
-	out.Key = in.Key
-	out.Type = in.Type
-	return nil
-}
-
-// Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue is an autogenerated conversion function.
-func Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(in *DefinitionFieldValue, out *core.DefinitionFieldValue, s conversion.Scope) error {
-	return autoConvert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(in, out, s)
-}
-
-func autoConvert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in *core.DefinitionFieldValue, out *DefinitionFieldValue, s conversion.Scope) error {
-	out.Key = in.Key
-	out.Type = in.Type
-	return nil
-}
-
-// Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue is an autogenerated conversion function.
-func Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in *core.DefinitionFieldValue, out *DefinitionFieldValue, s conversion.Scope) error {
-	return autoConvert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(in, out, s)
 }
 
 func autoConvert_v1alpha1_DefinitionImportMapping_To_core_DefinitionImportMapping(in *DefinitionImportMapping, out *core.DefinitionImportMapping, s conversion.Scope) error {
@@ -1176,7 +1054,7 @@ func Convert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execution
 }
 
 func autoConvert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in *ExportDefinition, out *core.ExportDefinition, s conversion.Scope) error {
-	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+	if err := Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
 	return nil
@@ -1188,7 +1066,7 @@ func Convert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in *ExportDefini
 }
 
 func autoConvert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportDefinition, out *ExportDefinition, s conversion.Scope) error {
-	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+	if err := Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
 	return nil
@@ -1221,8 +1099,30 @@ func Convert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in *co
 	return autoConvert_core_ExternalDocumentation_To_v1alpha1_ExternalDocumentation(in, out, s)
 }
 
+func autoConvert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in *FieldValueDefinition, out *core.FieldValueDefinition, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Schema = *(*core.JSONSchemaDefinition)(unsafe.Pointer(&in.Schema))
+	return nil
+}
+
+// Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition is an autogenerated conversion function.
+func Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in *FieldValueDefinition, out *core.FieldValueDefinition, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in, out, s)
+}
+
+func autoConvert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(in *core.FieldValueDefinition, out *FieldValueDefinition, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Schema = *(*JSONSchemaDefinition)(unsafe.Pointer(&in.Schema))
+	return nil
+}
+
+// Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition is an autogenerated conversion function.
+func Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(in *core.FieldValueDefinition, out *FieldValueDefinition, s conversion.Scope) error {
+	return autoConvert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(in, out, s)
+}
+
 func autoConvert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in *ImportDefinition, out *core.ImportDefinition, s conversion.Scope) error {
-	if err := Convert_v1alpha1_DefinitionFieldValue_To_core_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+	if err := Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
 	out.Required = (*bool)(unsafe.Pointer(in.Required))
@@ -1239,7 +1139,7 @@ func Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in *ImportDefini
 }
 
 func autoConvert_core_ImportDefinition_To_v1alpha1_ImportDefinition(in *core.ImportDefinition, out *ImportDefinition, s conversion.Scope) error {
-	if err := Convert_core_DefinitionFieldValue_To_v1alpha1_DefinitionFieldValue(&in.DefinitionFieldValue, &out.DefinitionFieldValue, s); err != nil {
+	if err := Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
 	out.Required = (*bool)(unsafe.Pointer(in.Required))

@@ -29,7 +29,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	lsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/bputils"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -77,12 +78,12 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defManifest, err := lsoci.BuildNewDefinition(cache, osfs.New(), o.blueprintPath)
+	defManifest, err := bputils.BuildNewDefinition(cache, osfs.New(), o.blueprintPath)
 	if err != nil {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(lsoci.ComponentDefinitionConfigMediaType))
+	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(blueprintsregistry.ComponentDefinitionConfigMediaType))
 	if err != nil {
 		return err
 	}

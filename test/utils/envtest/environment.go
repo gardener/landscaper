@@ -94,7 +94,6 @@ func (e *Environment) Stop() error {
 // InitResources creates a new isolated environment with its own namespace.
 func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
 	state := &State{
-		DataTypes:     make(map[string]*lsv1alpha1.DataType),
 		Installations: make(map[string]*lsv1alpha1.Installation),
 		Executions:    make(map[string]*lsv1alpha1.Execution),
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
@@ -188,17 +187,6 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 			return err
 		}
 	}
-	for _, dt := range state.DataTypes {
-		if err := e.Client.Get(ctx, client.ObjectKey{Name: dt.Name, Namespace: dt.Namespace}, dt); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return err
-		}
-		if err := e.Client.Delete(ctx, dt); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
 
 	ns := &corev1.Namespace{}
 	ns.Name = state.Namespace
@@ -273,25 +261,15 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	inst := &lsv1alpha1.Installation{}
 	_, _, err := decoder.Decode(data, nil, inst)
 	if err == nil {
-		inst.Namespace = state.Namespace
-		state.Installations[inst.Name] = inst
+		state.Installations[types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}.String()] = inst
 		return append(objects, inst), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	dt := &lsv1alpha1.DataType{}
-	_, _, err = decoder.Decode(data, nil, dt)
-	if err == nil {
-		state.DataTypes[types.NamespacedName{Name: dt.Name, Namespace: dt.Namespace}.String()] = dt
-		return append(objects, dt), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	exec := &lsv1alpha1.Execution{}
 	_, _, err = decoder.Decode(data, nil, exec)
 	if err == nil {
-		exec.Namespace = state.Namespace
-		state.Executions[exec.Name] = exec
+		state.Executions[types.NamespacedName{Name: exec.Name, Namespace: exec.Namespace}.String()] = exec
 		return append(objects, exec), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
@@ -299,18 +277,23 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	deployItem := &lsv1alpha1.DeployItem{}
 	_, _, err = decoder.Decode(data, nil, deployItem)
 	if err == nil {
-		deployItem.Namespace = state.Namespace
-		state.DeployItems[deployItem.Name] = deployItem
+		state.DeployItems[types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String()] = deployItem
 		return append(objects, deployItem), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
+	dataObject := &lsv1alpha1.DataObject{}
+	_, _, err = decoder.Decode(data, nil, dataObject)
+	if err == nil {
+		state.DataObjects[types.NamespacedName{Name: dataObject.Name, Namespace: dataObject.Namespace}.String()] = dataObject
+		return append(objects, dataObject), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	secret := &corev1.Secret{}
 	_, _, err = decoder.Decode(data, nil, secret)
 	if err == nil {
-		if len(secret.Namespace) == 0 {
-			secret.Namespace = state.Namespace
-		}
+
 		// add stringdata and data
 		if secret.Data == nil {
 			secret.Data = make(map[string][]byte)
@@ -319,7 +302,7 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 			secret.Data[key] = []byte(data)
 		}
 
-		state.Secrets[secret.Name] = secret
+		state.Secrets[types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}.String()] = secret
 		return append(objects, secret), nil
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))

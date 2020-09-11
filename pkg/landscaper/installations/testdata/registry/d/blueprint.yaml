@@ -5,11 +5,14 @@ name: d
 version: 1.0.0
 
 imports:
-- key: d.a
-  type: string
-- key: d.b
-  type: string
+- name: d.a
+  schema:
+    type: string
+- name: d.b
+  schema:
+    type: string
 
 exports:
-- key: d.z
-  type: string
+- name: d.z
+  schema:
+    type: string

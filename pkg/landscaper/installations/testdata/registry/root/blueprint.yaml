@@ -5,14 +5,17 @@ name: root
 version: 1.0.0
 
 imports:
-- key: root.a
-  type: string
+- name: root.a
+  schema:
+    type: string
 
 exports:
-- key: root.y
-  type: string
-- key: root.z
-  type: string
+- name: root.y
+  schema:
+    type: string
+- name: root.z
+  schema:
+    type: string
 
 exportExecutions:
 - type: GoTemplate

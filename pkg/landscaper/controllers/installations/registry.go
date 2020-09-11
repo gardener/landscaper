@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	blueprintsoci "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
@@ -60,7 +60,7 @@ func (a *actuator) setupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	blueprintsOCIRegistry, err := blueprintsoci.NewWithOCIClient(a.Log(), ociClient)
+	blueprintsOCIRegistry, err := blueprintsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
 	if err != nil {
 		return err
 	}

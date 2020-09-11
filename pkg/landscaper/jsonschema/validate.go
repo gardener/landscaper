@@ -23,9 +23,25 @@ type Validator struct {
 	Config *LoaderConfig
 }
 
-func (v *Validator) Validate(schemaBytes []byte, data []byte) error {
+// ValidateSchema validates a jsonschema schema definition.
+func ValidateSchema(schemaBytes []byte) error {
+	_, err := gojsonschema.NewSchemaLoader().Compile(gojsonschema.NewBytesLoader(schemaBytes))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (v *Validator) ValidateGoStruct(schemaBytes []byte, data interface{}) error {
+	return v.validate(schemaBytes, gojsonschema.NewGoLoader(data))
+}
+
+func (v *Validator) ValidateBytes(schemaBytes []byte, data []byte) error {
+	return v.validate(schemaBytes, gojsonschema.NewBytesLoader(data))
+}
+
+func (v *Validator) validate(schemaBytes []byte, documentLoader gojsonschema.JSONLoader) error {
 	schemaLoader := gojsonschema.NewBytesLoader(schemaBytes)
-	documentLoader := gojsonschema.NewBytesLoader(data)
 
 	// Wrap default loader if config is defined
 	if v.Config != nil {

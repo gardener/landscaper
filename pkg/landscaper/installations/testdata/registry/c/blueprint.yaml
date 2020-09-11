@@ -5,10 +5,12 @@ name: c
 version: 1.0.0
 
 imports:
-- key: c.a
-  type: string
-- key: c.b
-  type: string
+- name: c.a
+  schema:
+    type: string
+- name: c.b
+  schema:
+    type: string
 
 exports:
 - key: c.z

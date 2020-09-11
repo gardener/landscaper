@@ -29,7 +29,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
@@ -178,16 +177,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return errors.Wrap(err, "unable to create internal representation of installation")
 	}
 
-	datatypeList := &lsv1alpha1.DataTypeList{}
-	if err := a.Client().List(ctx, datatypeList); err != nil {
-		return errors.Wrap(err, "unable to list all datatypes")
-	}
-	datatypes, err := datatype.CreateDatatypesMap(datatypeList.Items)
-	if err != nil {
-		return errors.Wrap(err, "unable to parse datatypes")
-	}
-
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, datatypes, internalInstallation)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, internalInstallation)
 	if err != nil {
 		return errors.Wrap(err, "unable to create installation operation")
 	}

@@ -62,10 +62,10 @@ func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Insta
 	}
 
 	for _, importDef := range blueprint.Info.Imports {
-		internalInst.imports[importDef.Key] = importDef
+		internalInst.imports[importDef.Name] = importDef
 	}
 	for _, exportDef := range blueprint.Info.Exports {
-		internalInst.exports[exportDef.Key] = exportDef
+		internalInst.exports[exportDef.Name] = exportDef
 	}
 
 	for _, importStatus := range inst.Status.Imports {
@@ -97,7 +97,7 @@ func (i *Installation) GetImportMappings() []ImportMapping {
 	for _, obj := range i.Blueprint.Info.Imports {
 		def := obj.DeepCopy()
 		// try to get a import mapping
-		mapping, err := i.GetImportMappingTo(def.Key)
+		mapping, err := i.GetImportMappingTo(def.Name)
 		if err == nil {
 			mappings = append(mappings, ImportMapping{
 				ImportDefinition:        *def,
@@ -109,8 +109,8 @@ func (i *Installation) GetImportMappings() []ImportMapping {
 			ImportDefinition: *def,
 			DefinitionImportMapping: lsv1alpha1.DefinitionImportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: def.Key,
-					To:   def.Key,
+					From: def.Name,
+					To:   def.Name,
 				},
 			},
 		})
@@ -126,7 +126,7 @@ func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
 	for _, obj := range i.Blueprint.Info.Exports {
 		def := obj.DeepCopy()
 		// try to get a import mapping
-		mapping, err := i.GetExportMappingTo(def.Key)
+		mapping, err := i.GetExportMappingTo(def.Name)
 		if err == nil {
 			mappings = append(mappings, ExportMapping{
 				ExportDefinition:        *def,
@@ -138,8 +138,8 @@ func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
 			ExportDefinition: *def,
 			DefinitionExportMapping: lsv1alpha1.DefinitionExportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: def.Key,
-					To:   def.Key,
+					From: def.Name,
+					To:   def.Name,
 				},
 			},
 		})

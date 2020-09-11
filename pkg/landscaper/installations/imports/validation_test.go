@@ -25,14 +25,13 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/fake_client"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = g.Describe("Validation", func() {
@@ -42,7 +41,6 @@ var _ = g.Describe("Validation", func() {
 		op                            *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
-		fakeDataTypes     map[string]*lsv1alpha1.DataType
 		fakeClient        client.Client
 		fakeRegistry      blueprintsregistry.Registry
 		fakeCompRepo      componentsregistry.Registry
@@ -51,32 +49,22 @@ var _ = g.Describe("Validation", func() {
 	g.BeforeEach(func() {
 		var (
 			err   error
-			state *fake_client.State
+			state *envtest.State
 		)
-		fakeClient, state, err = fake_client.NewFakeClientFromPath("./testdata/state")
+		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
 		fakeInstallations = state.Installations
-		fakeDataTypes = state.DataTypes
 
 		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		dtArr := make([]lsv1alpha1.DataType, 0)
-		for _, dt := range fakeDataTypes {
-			dtArr = append(dtArr, *dt)
-		}
-		internalDataTypes, err := datatype.CreateDatatypesMap(dtArr)
-		Expect(err).ToNot(HaveOccurred())
-
 		op = &installations.Operation{
 			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
-			Datatypes: internalDataTypes,
 		}
 		defaultTestInstallationConfig = &utils.TestInstallationConfig{
-			Datatypes:              internalDataTypes,
 			RemoteBlueprintBaseURL: "../testdata/registry",
 		}
 	})
@@ -134,6 +122,30 @@ var _ = g.Describe("Validation", func() {
 
 		val := imports.NewValidator(op)
 		Expect(val.Validate(ctx, inInstA)).To(Succeed())
+	})
+
+	g.It("should forbid when the import of a component does not satisfy the schema", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstA
+		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+		op.Context().Parent = inInstRoot
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+		do := &lsv1alpha1.DataObject{}
+		do.Name = "jcmfrpcqy5fxd2bdahuo7zkzl7ifu4jm"
+		do.Namespace = inInstRoot.Info.Namespace
+		do.Data = []byte("7")
+		Expect(fakeClient.Update(ctx, do)).To(Succeed())
+
+		val := imports.NewValidator(op)
+		Expect(val.Validate(ctx, inInstA)).To(HaveOccurred())
 	})
 
 	g.It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {

@@ -11,7 +11,6 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
@@ -46,7 +45,7 @@ func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Inter
 	}
 
 	if config.OCI != nil {
-		ociReg, err := oci.New(log, nil) // use the shared cache
+		ociReg, err := blueprintsregistry.NewOCIRegistry(log, nil) // use the shared cache
 		if err != nil {
 			return nil, fmt.Errorf("unable to setup oci regapi: %w", err)
 		}

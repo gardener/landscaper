@@ -68,7 +68,7 @@ var _ = Describe("Delete", func() {
 		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstA)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstA)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -90,7 +90,7 @@ var _ = Describe("Delete", func() {
 		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstRoot)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -116,7 +116,7 @@ var _ = Describe("Delete", func() {
 		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -134,7 +134,7 @@ var _ = Describe("Delete", func() {
 		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations["a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, nil, inInstB)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)

@@ -37,7 +37,7 @@ format:
 
 .PHONY: check
 check:
-	@$(REPO_ROOT)/hack/check.sh
+	@$(REPO_ROOT)/hack/check.sh $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
 
 .PHONY: test
 test:

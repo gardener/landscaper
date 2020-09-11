@@ -30,7 +30,6 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/datatype"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	k8smock "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
@@ -58,9 +57,6 @@ type TestInstallationConfig struct {
 	// BlueprintFilePath defines the filepath to the blueprint definition.
 	// Will be defaulted to <BlueprintContentPath>/blueprint.yaml if not defined.
 	BlueprintFilePath string
-
-	// Datatypes defines the datatpyes that the installation should be initialized with.
-	Datatypes map[string]*datatype.Datatype
 }
 
 // CreateTestInstallationResources creates a test environment with a installation, a blueprint and a operation.
@@ -92,7 +88,7 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 
 	rootIntInst, err := installations.New(rootInst, rootBlueprint)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	rootInstOp, err := installations.NewInstallationOperationFromOperation(context.TODO(), op, cfg.Datatypes, rootIntInst)
+	rootInstOp, err := installations.NewInstallationOperationFromOperation(context.TODO(), op, rootIntInst)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	return rootInst, rootIntInst, rootBlueprint, rootInstOp

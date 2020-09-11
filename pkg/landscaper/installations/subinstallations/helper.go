@@ -28,11 +28,11 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint
 		mappings.Insert(mapping.To)
 	}
 	for _, importDef := range def.Imports {
-		if !mappings.Has(importDef.Key) {
+		if !mappings.Has(importDef.Name) {
 			inst.Spec.Imports = append(inst.Spec.Imports, lsv1alpha1.DefinitionImportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: importDef.Key,
-					To:   importDef.Key,
+					From: importDef.Name,
+					To:   importDef.Name,
 				},
 			})
 		}
@@ -43,11 +43,11 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint
 		mappings.Insert(mapping.From)
 	}
 	for _, importDef := range def.Exports {
-		if !mappings.Has(importDef.Key) {
+		if !mappings.Has(importDef.Name) {
 			inst.Spec.Exports = append(inst.Spec.Exports, lsv1alpha1.DefinitionExportMapping{
 				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: importDef.Key,
-					To:   importDef.Key,
+					From: importDef.Name,
+					To:   importDef.Name,
 				},
 			})
 		}

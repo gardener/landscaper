@@ -36,9 +36,13 @@ type Blueprint struct {
 	// Version is the semver version of the definition.
 	Version string `json:"version"`
 
-	// CustomTypes defines additional DataTypes
+	// JSONSchemaVersion defines the default jsonschema version of the blueprint.
+	// e.g. "https://json-schema.org/draft/2019-09/schema"
+	JSONSchemaVersion string `json:"jsonSchemaVersion"`
+
+	// LocalTypes defines additional blueprint local schemas
 	// +optional
-	CustomTypes []CustomType `json:"customTypes,omitempty"`
+	LocalTypes map[string]JSONSchemaDefinition `json:"localTypes,omitempty"`
 
 	// Imports define the import values that are needed for the definition and its sub-definitions.
 	// +optional
@@ -65,7 +69,7 @@ type Blueprint struct {
 
 // ImportDefinition defines a imported value
 type ImportDefinition struct {
-	DefinitionFieldValue `json:",inline"`
+	FieldValueDefinition `json:",inline"`
 
 	// Required specifies whether the import is required for the component to run.
 	// Defaults to true.
@@ -85,16 +89,16 @@ type ImportDefinition struct {
 
 // ExportDefinition defines a exported value
 type ExportDefinition struct {
-	DefinitionFieldValue `json:",inline"`
+	FieldValueDefinition `json:",inline"`
 }
 
-// ExportDefinition defines a exported value
-type DefinitionFieldValue struct {
-	// Key defines the field name to search for the value and map to exports.
+// FieldValueDefinition defines a im- or exported field.
+type FieldValueDefinition struct {
+	// Name defines the field name to search for the value and map to exports.
 	// Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields
-	Key string `json:"key"`
-	// DataType is the data type of the imported value
-	Type string `json:"type"`
+	Name string `json:"name"`
+	// Schema defines the imported value as jsonschema.
+	Schema JSONSchemaDefinition `json:"schema"`
 }
 
 // Default defines a default value (future idea: also reference?).
