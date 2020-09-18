@@ -104,7 +104,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			Name:      secret.Name,
 			Namespace: secret.Namespace,
 		}
-		exec.Spec.Executions = executions
+		exec.Spec.DeployItems = executions
 		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err
 		}

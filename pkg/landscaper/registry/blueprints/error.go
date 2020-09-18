@@ -82,7 +82,7 @@ func IsComponentNotFoundError(err error) bool {
 	return IsErrorForReason(err, ComponentNotFound)
 }
 
-// NewComponentNotFoundError creates a new ComponentNotFoundError
+// NewVersionNotFoundError creates a new ComponentNotFoundError
 func NewVersionNotFoundError(name, version string, err error) error {
 	return &registryError{
 		Reason:  VersionNotFound,

@@ -29,8 +29,8 @@ func (o *Operation) Delete(ctx context.Context) error {
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
-	for i := len(o.exec.Spec.Executions) - 1; i >= 0; i-- {
-		item := o.exec.Spec.Executions[i]
+	for i := len(o.exec.Spec.DeployItems) - 1; i >= 0; i-- {
+		item := o.exec.Spec.DeployItems[i]
 		ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Name)
 		if !ok {
 			continue

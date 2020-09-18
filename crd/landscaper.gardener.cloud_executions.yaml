@@ -71,14 +71,19 @@ spec:
                 - type
                 - version
                 type: object
-              executions:
-                description: Executions defines all execution items that need to be scheduled.
+              deployItems:
+                description: DeployItems defines all execution items that need to be scheduled.
                 items:
                   description: DeployItemTemplate defines a execution element that is translated into a deploy item.
                   properties:
                     config:
                       description: ProviderConfiguration contains the type specific configuration for the execution.
                       type: object
+                    dependsOn:
+                      description: DependsOn lists deploy items that need to be executed before this one
+                      items:
+                        type: string
+                      type: array
                     name:
                       description: Name is the unique name of the execution.
                       type: string
@@ -120,8 +125,6 @@ spec:
                   - namespace
                   type: object
                 type: array
-            required:
-            - executions
             type: object
           status:
             description: Status contains the current status of the execution.

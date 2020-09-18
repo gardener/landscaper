@@ -89,8 +89,8 @@ type ExecutionSpec struct {
 	// ImportReference is the reference to the object containing all imported values.
 	ImportReference *ObjectReference `json:"importRef,omitempty"`
 
-	// Executions defines all execution items that need to be scheduled.
-	Executions []DeployItemTemplate `json:"executions"`
+	// DeployItems defines all execution items that need to be scheduled.
+	DeployItems []DeployItemTemplate `json:"deployItems,omitempty"`
 }
 
 // ExecutionStatus contains the current status of a execution.
@@ -125,4 +125,7 @@ type DeployItemTemplate struct {
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
 	Configuration runtime.RawExtension `json:"config"`
+
+	// DependsOn lists deploy items that need to be executed before this one
+	DependsOn []string `json:"dependsOn,omitempty"`
 }

@@ -4,7 +4,7 @@ metadta:
   name: abc
 
 spec:
-  executors:  # has to be idempotent
+  deployItems:  # has to be idempotent
   - name: init
     type: container # also extensions resource
     config:
@@ -13,6 +13,8 @@ spec:
       args: []
   - name: my-script
     type: script
+    dependsOn:
+    - init
     environment: ls-abc
     config:
       mount:
@@ -31,6 +33,9 @@ spec:
       image: ubuntu:latest
   - name: my-container
     type: container
+    dependsOn:
+    - init # not needed because indirect dependency via my-script
+    - my-script
     config:
       image: my-custom-image:version
       command: ["run-component"]

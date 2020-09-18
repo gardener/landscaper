@@ -925,6 +925,7 @@ func autoConvert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *Depl
 	out.Name = in.Name
 	out.Type = core.ExecutionType(in.Type)
 	out.Configuration = in.Configuration
+	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
 }
 
@@ -937,6 +938,7 @@ func autoConvert_core_DeployItemTemplate_To_v1alpha1_DeployItemTemplate(in *core
 	out.Name = in.Name
 	out.Type = ExecutionType(in.Type)
 	out.Configuration = in.Configuration
+	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
 }
 
@@ -1003,7 +1005,7 @@ func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec,
 	out.BlueprintRef = (*core.RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.ImportReference = (*core.ObjectReference)(unsafe.Pointer(in.ImportReference))
-	out.Executions = *(*[]core.DeployItemTemplate)(unsafe.Pointer(&in.Executions))
+	out.DeployItems = *(*[]core.DeployItemTemplate)(unsafe.Pointer(&in.DeployItems))
 	return nil
 }
 
@@ -1016,7 +1018,7 @@ func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.Execution
 	out.BlueprintRef = (*RemoteBlueprintReference)(unsafe.Pointer(in.BlueprintRef))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	out.ImportReference = (*ObjectReference)(unsafe.Pointer(in.ImportReference))
-	out.Executions = *(*[]DeployItemTemplate)(unsafe.Pointer(&in.Executions))
+	out.DeployItems = *(*[]DeployItemTemplate)(unsafe.Pointer(&in.DeployItems))
 	return nil
 }
 

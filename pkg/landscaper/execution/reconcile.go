@@ -48,36 +48,43 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	var phase lsv1alpha1.ExecutionPhase
 	for _, item := range executionItems {
-		if item.DeployItem == nil {
-			return o.deployOrTrigger(ctx, item)
-		}
-		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
-
-		// get last applied status from own status
-		var lastAppliedGeneration int64
-		if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
-			lastAppliedGeneration = ref.Reference.ObservedGeneration
-		}
-
-		if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) {
-			if !lsv1alpha1helper.IsProgressingExecutionPhase(phase) && lastAppliedGeneration != o.exec.Generation {
-				return o.deployOrTrigger(ctx, item)
+		if item.DeployItem != nil {
+			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
+			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) {
+				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
+				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+				continue
 			}
-			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-			return nil
+			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
+				// TODO: check if need to wait for other deploy items to finish
+				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
+			}
+			// get last applied status from own status
+			var lastAppliedGeneration int64
+			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
+				lastAppliedGeneration = ref.Reference.ObservedGeneration
+			}
+			if lastAppliedGeneration == o.exec.Generation {
+				continue
+			}
 		}
-
-		if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-			cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-				"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
-			return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
+		runnable, err := o.checkRunnable(ctx, item, executionItems)
+		if err != nil {
+			return fmt.Errorf("unable to check runnable condition for %s: %w", item.Info.Name, err)
 		}
-
-		// we already updated this item
-		if lastAppliedGeneration == o.exec.Generation {
+		if !runnable {
+			o.Log().V(5).Info("deploy item not runnable", "name", item.Info.Name)
 			continue
 		}
-		continue
+		if err := o.deployOrTrigger(ctx, item); err != nil {
+			return fmt.Errorf("error while triggering deployitem %s: %w", item.Info.Name, err)
+		}
+		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
+	}
+
+	if !lsv1alpha1helper.IsCompletedExecutionPhase(phase) {
+		return nil
 	}
 
 	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
@@ -104,9 +111,9 @@ func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.De
 // getExecutionItems creates an internal representation for all execution items.
 // It also returns all removed deploy items that are not defined by the execution anymore.
 func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
-	execItems := make([]executionItem, len(o.exec.Spec.Executions))
+	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
 	orphaned := items
-	for i, exec := range o.exec.Spec.Executions {
+	for i, exec := range o.exec.Spec.DeployItems {
 		execItem := executionItem{
 			Info: *exec.DeepCopy(),
 		}
@@ -183,4 +190,40 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 		return nil, err
 	}
 	return data, nil
+}
+
+// checkRunnable checks whether all deploy items a given deploy item depends on have been successfully executed.
+func (o *Operation) checkRunnable(ctx context.Context, item executionItem, items []executionItem) (bool, error) {
+	if len(item.Info.DependsOn) == 0 {
+		return true, nil
+	}
+
+	for _, dep := range item.Info.DependsOn {
+		found := false
+		for _, exec := range items {
+			if exec.Info.Name != dep {
+				continue
+			}
+			found = true
+			if exec.DeployItem == nil { // dependent deploy item has never run
+				return false, nil
+			}
+			var lastAppliedGeneration int64
+			// TODO: check generation increment or reconcile annotation
+			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, exec.Info.Name); ok {
+				lastAppliedGeneration = ref.Reference.ObservedGeneration
+			}
+			if o.exec.Generation != lastAppliedGeneration { // dependent deploy item not up-to-date
+				return false, nil
+			}
+			if exec.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded { // dependent deploy item not finished
+				return false, nil
+			}
+			break
+		}
+		if !found {
+			return false, fmt.Errorf("dependent deploy item '%s' not found", dep)
+		}
+	}
+	return true, nil
 }
