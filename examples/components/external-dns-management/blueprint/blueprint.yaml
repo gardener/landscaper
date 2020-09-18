@@ -19,9 +19,10 @@ imports:
 
 - name: identifier
   optional: true
+  example: ... # optional
   schema:
+    description: ""
     type: string
-
 - name: namespace
   default:
     value: kube-system
@@ -29,12 +30,18 @@ imports:
     type: string
 
 - name: cluster
-  targetType: kubernetes-cluster
+  targetType: landscaper.cloud/kubernetes-cluster # schema definition
+  subTypes:
+    - gardener
+    - seed
 
 exports:
 - name: dnsClass
   schema:
     type: string
+
+- name: myTarget
+  targetType: landscaper.cloud/kubernetes-cluster
 
 # List of deploy item generators
 # The generators return list of deploy items that are aggregated.
@@ -65,3 +72,19 @@ exportExecutions:
 #   file: /my/path/cc # virtual filesystem
 #   template: |
 #     my template: {{ .Values.abc }}
+ - type: go-template
+   template: |
+     dnsClass: {{ .deployitem.installer.myexports }}
+     url: https://{{ .deployitem.installer.myexports }}:{{ .dataobjects.port }}
+
+--- # exported data after all subinstllations and deployitems are successfully finished
+exports:
+  deployitem:
+    installer:
+      my exports: abc
+    deployitem2:
+      my expotrs: ...
+  dataobjects:
+    my-sub-installation-template: abc
+
+--- # template

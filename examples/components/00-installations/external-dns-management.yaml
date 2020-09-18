@@ -3,36 +3,51 @@ kind: Installation
 metadata:
   name: application-dns-controller
 
-# imported data objects that have to be defined in the system
-# either by the operator or exported by another installation.
-imports:
-  provider1-credentials:
-    name: "aws-dev-account-credentials"
-  provider2-credentials:
-    name: "gcp-dev-account-credentials"
+spec:
+  blueprint:
+    ref:
+      repositoryContext: #maybe optional
+        baseUrl: "eu.gcr.io/gardener-dev/"
+        type: ociRegistry
 
-  namespace:
-    name: "application-namespace"
+      version: "v0.2.0"
+      componentName: "github.com/gardener/external-dns-management"
+      kind: "localResource"
+      resourceName: "installation"
+    inline: ...
 
-  cluster:
-    target: "dev-cluster"
+  # imported data objects that have to be defined in the system
+  # either by the operator or exported by another installation.
+  imports:
+    provider1-credentials:
+      name: "aws-dev-account-credentials"
+      version: v1
+    provider2-credentials:
+      name: "gcp-dev-account-credentials"
 
-importMappings:
-  providers:
-  - type: aws-route53
-    credentials: (( imports.provider1-credentials ))
-  - type: google-clouddns
-    credentials: (( imports.provider2-credentials ))
+    namespace:
+      name: "application-namespace"
 
-  identifier: my-gardener-dns
-  namespace: (( imports.namespace )) # optional, will be defaulted
+    cluster:
+      target: "dev-cluster"
 
-exportMappings:
-  dnsClass: (( exports.dnsClass ))
+  importMappings:
+    providers:
+    - type: aws-route53
+      credentials: (( installation.imports.provider1-credentials ))
+    - type: google-clouddns
+      credentials: (( installation.imports.provider2-credentials ))
 
-exports:
-  dnsClass:
-    name: application-dnsClass
+    identifier: my-gardener-dns
+    namespace: (( installation.imports.namespace )) # optional, will be defaulted
+
+  exportMappings:
+    dnsClass: (( blueprint.exports.dnsClass )) # will be defaulted
+    aws-dev-account: (( blueprint.exports.aws-creds[0] ))
+
+  exports:
+    dnsClass:
+      name: application-dnsClass
 ---
 kind: DataObject
 metadata:
