@@ -47,22 +47,11 @@ type DeployItem struct {
 type DeployItemSpec struct {
 	// DataType is the type of the deployer that should handle the item.
 	Type ExecutionType `json:"type"`
-
-	// BlueprintRef is the resolved reference to the definition.
+	// Target specifies an optional target of the deploy item.
+	// In most cases it contains the secrets to access a evironment.
+	// It is also used by the deployers to determine the ownernship.
 	// +optional
-	BlueprintRef *RemoteBlueprintReference `json:"blueprintRef,omitempty"`
-
-	// RegistryPullSecrets defines a list of registry credentials that are used to
-	// pull blueprints and component descriptors from the respective registry.
-	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-	// Note that the type information is used to determine the secret key and the type of the secret.
-	// +optional
-	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
-
-	// ImportReference is the reference to the object containing all imported values.
-	// +optional
-	ImportReference *ObjectReference `json:"importRef,omitempty"`
-
+	Target *ObjectReference
 	// ProviderConfiguration contains the deployer type specific configuration.
 	Configuration runtime.RawExtension `json:"config,omitempty"`
 }

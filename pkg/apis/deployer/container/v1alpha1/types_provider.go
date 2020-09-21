@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -52,6 +54,18 @@ type ProviderConfiguration struct {
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Args []string `json:"args,omitempty"`
+	// ImportReference is the reference to the object containing all imported values.
+	// +optional
+	ImportReference json.RawMessage `json:"importRef,omitempty"`
+	// BlueprintRef is the resolved reference to the definition
+	// +optional
+	BlueprintRef *lsv1alpha1.RemoteBlueprintReference `json:"blueprintRef,omitempty"`
+	// RegistryPullSecrets defines a list of registry credentials that are used to
+	// pull blueprints and component descriptors from the respective registry.
+	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+	// Note that the type information is used to determine the secret key and the type of the secret.
+	// +optional
+	RegistryPullSecrets []lsv1alpha1.ObjectReference `json:"registryPullSecrets,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
