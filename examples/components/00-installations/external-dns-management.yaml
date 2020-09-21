@@ -14,7 +14,11 @@ spec:
       componentName: "github.com/gardener/external-dns-management"
       kind: "localResource"
       resourceName: "installation"
-    inline: ...
+    inline:
+      blueprint.yaml:
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+        imports: ....
 
   # imported data objects that have to be defined in the system
   # either by the operator or exported by another installation.

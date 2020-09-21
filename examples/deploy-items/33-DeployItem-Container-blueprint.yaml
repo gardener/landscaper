@@ -25,6 +25,18 @@ spec:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
+    blueprintRef:
+      baseUrl: eu.gcr.io/sap-se-gcp-scp-k8s-dev/gci-test
+      type: ociRegistry
+      componentName: simple
+      version: 0.1.0
+      kind: localResource
+      resource: simple
+
+    registryPullSecrets:
+    - name: gcr-dev
+      namespace: default
+
     image: alpine
     command: ["sh", "-c"]
     args:
