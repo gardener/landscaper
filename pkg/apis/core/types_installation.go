@@ -27,8 +27,14 @@ import (
 // todo: add conversion
 const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
 
+// todo: keep only subinstallations?
+const KeepChildrenAnnotation = "landscaper.gardener.cloud/keep-children"
+
 // EnsureSubInstallationsCondition is the Conditions type to indicate the sub installation status.
 const EnsureSubInstallationsCondition ConditionType = "EnsureSubInstallations"
+
+// ReconcileExecutionCondition is the Conditions type to indicate the execution reconcile status.
+const ReconcileExecutionCondition ConditionType = "ReconcileExecution"
 
 // ValidateImportsCondition is the Conditions type to indicate status of the import validation.
 const ValidateImportsCondition ConditionType = "ValidateImports"
@@ -94,16 +100,27 @@ type InstallationSpec struct {
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 
-	// Imports define the import mapping for the referenced definition.
-	// These values are by default auto generated from the parent definition.
+	// Imports define the imported data objects and targets.
 	// +optional
-	Imports []DefinitionImportMapping `json:"imports,omitempty"`
+	Imports *InstallationImportsExports `json:"imports,omitempty"`
 
-	// Exports define the export mappings for the referenced definition.
-	// These values are by default auto generated from the parent definition.
-	// todo: add static data boolean
+	// ImportDataMappings contains a template for restructuring imports.
+	// It is expected to contain a key for every blueprint-defined data import.
+	// Missing keys will be defaulted to their respective data import.
+	// Example: namespace: (( installation.imports.namespace ))
 	// +optional
-	Exports []DefinitionExportMapping `json:"exports,omitempty"`
+	ImportDataMappings map[string]json.RawMessage `json:"importDataMappings,omitempty"`
+
+	// Exports define the exported data objects and targets.
+	// +optional
+	Exports *InstallationImportsExports `json:"exports,omitempty"`
+
+	// ExportDataMappings contains a template for restructuring exports.
+	// It is expected to contain a key for every blueprint-defined data export.
+	// Missing keys will be defaulted to their respective data export.
+	// Example: namespace: (( blueprint.exports.namespace ))
+	// +optional
+	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
 
 	// StaticData contains a list of data sources that are used to satisfy imports
 	// +optional
@@ -134,6 +151,90 @@ type InstallationStatus struct {
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// InstallationTemplate defines a subinstallation in a blueprint.
+type InstallationTemplate struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Name is the unique name of the step
+	Name string `json:"name"`
+
+	// Reference defines a reference to a Blueprint.
+	// The blueprint can reside in an OCI or other supported location.
+	Blueprint InstallationTemplateBlueprintDefinition `json:"blueprint"`
+
+	// Imports define the imported data objects and targets.
+	// +optional
+	Imports *InstallationImportsExports `json:"imports,omitempty"`
+
+	// ImportDataMappings contains a template for restructuring imports.
+	// It is expected to contain a key for every blueprint-defined data import.
+	// Missing keys will be defaulted to their respective data import.
+	// Example: namespace: (( installation.imports.namespace ))
+	// +optional
+	ImportDataMappings map[string]json.RawMessage `json:"importDataMappings,omitempty"`
+
+	// Exports define the exported data objects and targets.
+	// +optional
+	Exports *InstallationImportsExports `json:"exports,omitempty"`
+
+	// ExportDataMappings contains a template for restructuring exports.
+	// It is expected to contain a key for every blueprint-defined data export.
+	// Missing keys will be defaulted to their respective data export.
+	// Example: namespace: (( blueprint.exports.namespace ))
+	// +optional
+	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
+
+	// StaticData contains a list of data sources that are used to satisfy imports
+	// +optional
+	StaticData []BlueprintStaticDataSource `json:"staticData,omitempty"`
+}
+
+// InstallationTemplateBlueprintDefinition contains either a reference to a blueprint or an inline definition.
+type InstallationTemplateBlueprintDefinition struct {
+	// Ref is a reference to a blueprint.
+	// Only blueprints that are defined by the component descriptor of the current blueprint can be referenced here.
+	// Example: cd://componentReference/dns/localResources/blueprint
+	// +optional
+	Ref string `json:"ref,omitempty"`
+
+	// Filesystem defines a virtual filesystem with all files needed for a blueprint.
+	// The filesystem must be a YAML filesystem.
+	// +optional
+	Filesystem json.RawMessage `json:"filesystem,omitempty"`
+}
+
+// InstallationImportsExports defines imports/exports of data objects and targets.
+type InstallationImportsExports struct {
+	// Data defines all data object imports/exports.
+	// +optional
+	Data []DataImportExport `json:"data,omitempty"`
+
+	// Targets defines all target imports/exports.
+	// +optional
+	Targets []TargetImportExport `json:"targets,omitempty"`
+}
+
+// DataImportExport is a data object import/export.
+type DataImportExport struct {
+	// Name the internal name of the imported/exported data.
+	Name string `json:"name"`
+
+	// DataRef is the name of the in-cluster data object.
+	DataRef string `json:"dataRef"`
+}
+
+// TargetImportExport is a target import/export.
+type TargetImportExport struct {
+	// Name the internal name of the imported/exported target.
+	Name string `json:"name"`
+
+	// DataRef is the name of the in-cluster target object.
+	Target string `json:"target"`
 }
 
 // BlueprintDefinition defines the blueprint that should be used for the installation.
@@ -174,6 +275,14 @@ type ComponentDescriptorReference struct {
 	ComponentName string `json:"componentName"`
 	// Version defines the version of the component.
 	Version string `json:"version"`
+}
+
+// ObjectMeta returns the component descriptor v2 compatible object meta for a resource reference.
+func (r ComponentDescriptorReference) ObjectMeta() cdv2.ObjectMeta {
+	return cdv2.ObjectMeta{
+		Name:    r.ComponentName,
+		Version: r.Version,
+	}
 }
 
 // StaticDataSource defines a static data source

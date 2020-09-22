@@ -24,23 +24,26 @@ spec:
   # imported data objects that have to be defined in the system
   # either by the operator or exported by another installation.
   imports:
-    dnsClass:
-      name: "application-dnsClass"
+    data:
+    - name: dnsClass
+      dataRef: "application-dnsClass"
 
-    namespace:
-      name: "application-namespace"
+    - name: namespace
+      dataRef: "application-namespace"
 
-    cluster:
+    targets:
+    - name: cluster
       target: "dev-cluster"
 
-  importMappings:
+  importDataMappings:
     identifier: my-gardener-dns
     namespace: (( installation.imports.namespace )) # optional, will be defaulted
     dnsClass: (( installation.imports.dnsClass )) # optional, will be defaulted
 
   exports:
-    exported-cluster:
-      targetName: application-cluster
+    targets:
+    - name: exported-cluster
+      target: application-cluster
 ---
 kind: DataObject
 metadata:

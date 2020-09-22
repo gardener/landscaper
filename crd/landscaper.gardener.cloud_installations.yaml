@@ -117,38 +117,88 @@ spec:
                     - version
                     type: object
                 type: object
+              exportDataMappings:
+                additionalProperties:
+                  x-kubernetes-preserve-unknown-fields: true
+                description: 'ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace ))'
+                type: object
               exports:
-                description: 'Exports define the export mappings for the referenced definition. These values are by default auto generated from the parent definition. todo: add static data boolean'
-                items:
-                  description: DefinitionExportMapping defines the mapping of export value of the referenced definition to the export value of this definition.
-                  properties:
-                    from:
-                      description: From defines a field name to get a value from an import.
-                      type: string
-                    to:
-                      description: To defines a field name to map the value from the "from" field.
-                      type: string
-                  required:
-                  - from
-                  - to
-                  type: object
-                type: array
+                description: Exports define the exported data objects and targets.
+                properties:
+                  data:
+                    description: Data defines all data object imports/exports.
+                    items:
+                      description: DataImportExport is a data object import/export.
+                      properties:
+                        dataRef:
+                          description: DataRef is the name of the in-cluster data object.
+                          type: string
+                        name:
+                          description: Name the internal name of the imported/exported data.
+                          type: string
+                      required:
+                      - dataRef
+                      - name
+                      type: object
+                    type: array
+                  targets:
+                    description: Targets defines all target imports/exports.
+                    items:
+                      description: TargetImportExport is a target import/export.
+                      properties:
+                        name:
+                          description: Name the internal name of the imported/exported target.
+                          type: string
+                        target:
+                          description: DataRef is the name of the in-cluster target object.
+                          type: string
+                      required:
+                      - name
+                      - target
+                      type: object
+                    type: array
+                type: object
+              importDataMappings:
+                additionalProperties:
+                  x-kubernetes-preserve-unknown-fields: true
+                description: 'ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace ))'
+                type: object
               imports:
-                description: Imports define the import mapping for the referenced definition. These values are by default auto generated from the parent definition.
-                items:
-                  description: DefinitionImportMapping defines the mapping of import value to the import of the referenced definition.
-                  properties:
-                    from:
-                      description: From defines a field name to get a value from an import.
-                      type: string
-                    to:
-                      description: To defines a field name to map the value from the "from" field.
-                      type: string
-                  required:
-                  - from
-                  - to
-                  type: object
-                type: array
+                description: Imports define the imported data objects and targets.
+                properties:
+                  data:
+                    description: Data defines all data object imports/exports.
+                    items:
+                      description: DataImportExport is a data object import/export.
+                      properties:
+                        dataRef:
+                          description: DataRef is the name of the in-cluster data object.
+                          type: string
+                        name:
+                          description: Name the internal name of the imported/exported data.
+                          type: string
+                      required:
+                      - dataRef
+                      - name
+                      type: object
+                    type: array
+                  targets:
+                    description: Targets defines all target imports/exports.
+                    items:
+                      description: TargetImportExport is a target import/export.
+                      properties:
+                        name:
+                          description: Name the internal name of the imported/exported target.
+                          type: string
+                        target:
+                          description: DataRef is the name of the in-cluster target object.
+                          type: string
+                      required:
+                      - name
+                      - target
+                      type: object
+                    type: array
+                type: object
               registryPullSecrets:
                 description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints and component descriptors from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
                 items:

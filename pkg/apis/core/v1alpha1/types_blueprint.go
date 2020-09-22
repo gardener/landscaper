@@ -53,10 +53,9 @@ type Blueprint struct {
 	// +optional
 	Exports []ExportDefinition `json:"exports,omitempty"`
 
-	// BlueprintReferences define all sub-definitions that are referenced.
-	// The references are relative paths to BlueprintReferences
+	// Subinstallations defines an optional list of subinstallations (for aggregating blueprints).
 	// +optional
-	BlueprintReferences []string `json:"blueprintRefs,omitempty"`
+	Subinstallations []SubinstallationTemplate `json:"subinstallations,omitempty"`
 
 	// DeployExecutions defines the templating executors that are sequentially executed by the landscaper.
 	// The templates must return a list of deploy item templates.
@@ -107,62 +106,6 @@ type Default struct {
 	Value json.RawMessage `json:"value"`
 }
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// BlueprintReferenceTemplate contains reference to a Blueprint included definition
-// +kubebuilder:skip
-type BlueprintReferenceTemplate struct {
-	metav1.TypeMeta `json:",inline"`
-
-	// Name is the unique name of the step
-	Name string `json:"name"`
-
-	// Reference defines a reference to a Blueprint.
-	// The blueprint can reside in an OCI or other supported location.
-	Reference ResourceReference `json:"ref"`
-
-	// Imports defines the import mappings for the referenced component definition.
-	Imports []DefinitionImportMapping `json:"imports,omitempty"`
-
-	// Exports defines the export mappings for the referenced component definition.
-	Exports []DefinitionExportMapping `json:"exports,omitempty"`
-
-	// StaticData contains a list of data sources that are used to satisfy imports
-	// +optional
-	StaticData []BlueprintStaticDataSource `json:"staticData,omitempty"`
-}
-
-// DefinitionImportMapping defines the mapping of import value
-// to the import of the referenced definition.
-type DefinitionImportMapping struct {
-	DefinitionFieldMapping `json:",inline"`
-}
-
-// DefinitionExportMapping defines the mapping of export value of the referenced definition
-// to the export value of this definition.
-type DefinitionExportMapping struct {
-	DefinitionFieldMapping `json:",inline"`
-}
-
-// DefinitionFieldMapping defines a mapping of a field name to another.
-type DefinitionFieldMapping struct {
-	// From defines a field name to get a value from an import.
-	From string `json:"from"`
-
-	// To defines a field name to map the value from the "from" field.
-	To string `json:"to"`
-}
-
-// CustomType defines a custom datatype.
-type CustomType struct {
-	// Name is the unique name of the datatype
-	Name string `json:"name"`
-
-	// OpenAPIV3Schema defines the type as openapi v3 scheme.
-	OpenAPIV3Schema JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
-}
-
 // BlueprintStaticDataSource defines a static data source for a blueprint
 type BlueprintStaticDataSource struct {
 	// Value defined inline a raw data
@@ -203,4 +146,15 @@ type TemplateExecutor struct {
 	// and a valid yaml/json for spiff.
 	// + optional
 	Template json.RawMessage `json:"template,omitempty"`
+}
+
+// SubinstallationTemplate defines a subinstallation template.
+type SubinstallationTemplate struct {
+	// File references a subinstallation template stored in another file.
+	// +optional
+	File string `json:"file,omitempty"`
+
+	// An inline subinstallation template.
+	// +optional
+	*InstallationTemplate `json:",inline"`
 }
