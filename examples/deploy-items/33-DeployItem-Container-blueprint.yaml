@@ -5,37 +5,25 @@ metadata:
 spec:
   type: Container
 
-  blueprintRef:
-    baseUrl: eu.gcr.io/sap-se-gcp-scp-k8s-dev/gci-test
-    type: ociRegistry
-    componentName: simple
-    version: 0.1.0
-    kind: localResource
-    resource: simple
-
-  registryPullSecrets:
-    - name: gcr-dev
-      namespace: default
-
-  importRef:
-    name: secret-item1
-    namespace: default
-
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
-    blueprintRef:
-      baseUrl: eu.gcr.io/sap-se-gcp-scp-k8s-dev/gci-test
-      type: ociRegistry
-      componentName: simple
-      version: 0.1.0
-      kind: localResource
-      resource: simple
+    blueprint:
+      ref:
+        repositoryContext:
+          baseUrl: eu.gcr.io/sap-se-gcp-scp-k8s-dev/gci-test
+          type: ociRegistry
+        componentName: simple
+        version: 0.1.0
+        kind: localResource
+        resourceName: simple
 
     registryPullSecrets:
     - name: gcr-dev
       namespace: default
+
+    importValues: abc
 
     image: alpine
     command: ["sh", "-c"]

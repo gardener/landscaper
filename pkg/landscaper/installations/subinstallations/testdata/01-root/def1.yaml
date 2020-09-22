@@ -5,7 +5,7 @@ name: def1
 ref:
   componentName: "root"
   kind: localResource
-  resource: def1
+  resourceName: def1
 
 imports:
 - from: a

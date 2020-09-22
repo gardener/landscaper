@@ -3,13 +3,7 @@ kind: DeployItem
 metadata:
   name: my-mock-item
 spec:
-
   type: Mock
-
-  importRef:
-    name: secret-item1
-    namespace: default
-
   config:
     phase: Init
     providerStatus:

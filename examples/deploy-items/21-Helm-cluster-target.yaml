@@ -1,0 +1,29 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: subinst-123-my-cluster
+  annotations:
+    abc...
+spec:
+  type: landscaper.gardener.cloud/kubernetes-cluster
+  config:
+    kubeconfig: |
+      apiVersion: v1
+      clusters:
+      - cluster:
+          certificate-authority-data: <redacted>
+          server: https://127.0.0.1:50488
+        name: kind-kind
+      contexts:
+      - context:
+          cluster: kind-kind
+          user: kind-kind
+        name: kind-kind
+      current-context: kind-kind
+      kind: Config
+      preferences: {}
+      users:
+      - name: kind-kind
+        user:
+          client-certificate-data: <redacted>
+          client-key-data: <redacted>

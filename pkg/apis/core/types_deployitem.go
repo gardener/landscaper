@@ -51,7 +51,7 @@ type DeployItemSpec struct {
 	// In most cases it contains the secrets to access a evironment.
 	// It is also used by the deployers to determine the ownernship.
 	// +optional
-	Target *ObjectReference
+	Target *ObjectReference `json:"target,omitempty"`
 	// ProviderConfiguration contains the deployer type specific configuration.
 	Configuration runtime.RawExtension `json:"config,omitempty"`
 }

@@ -139,9 +139,6 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 
 	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
 		lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
-		item.DeployItem.Spec.BlueprintRef = o.exec.Spec.BlueprintRef
-		item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
-		item.DeployItem.Spec.ImportReference = o.exec.Spec.ImportReference
 		item.DeployItem.Spec.Type = item.Info.Type
 		item.DeployItem.Spec.Configuration = item.Info.Configuration
 		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)

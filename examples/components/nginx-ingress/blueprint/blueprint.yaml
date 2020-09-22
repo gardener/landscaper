@@ -42,6 +42,9 @@ exports:
   schema:
     type: string
 
+- name: kubeconfig
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
 # List of deploy item generators
 # The generators return list of deploy items that are aggregated.
 # Be aware that all deploy items must have a unique key
@@ -52,5 +55,18 @@ deployExecutions:
 
 exportExecutions:
 - type: go-template
- template: |
+  template: |
    ingressClass: {{ .exports.di.deploy.ingressClass }}
+   kubeconfig:
+     kubeconfig: {{ .exports.di.deploy.kubeconfig  }}
+   kubeconfig:
+      apiVersion: lasdfas
+      kind: Target
+      metadata:
+        name: subinst-123-kubeconfig
+        annotations:
+          myclass: fenced-env-1
+      spec:
+        type: landscaper.gardener.cloud/kubernetes-cluster
+        config:
+          kubeconfig: {{ .exports.di.deploy.kubeconfig  }}

@@ -63,7 +63,7 @@ func FindResourceInComponentByVersionedReference(comp cdv2.ComponentDescriptor, 
 	}
 
 	if ref.Kind == lsv1alpha1.LocalResourceKind {
-		res, err := comp.GetLocalResource(ttype, ref.Resource, ref.Version)
+		res, err := comp.GetLocalResource(ttype, ref.ResourceName, ref.Version)
 		if err != nil {
 			return cdv2.Resource{}, err
 		}
@@ -71,7 +71,7 @@ func FindResourceInComponentByVersionedReference(comp cdv2.ComponentDescriptor, 
 	}
 
 	if ref.Kind == lsv1alpha1.ExternalResourceKind {
-		res, err := comp.GetExternalResource(ttype, ref.Resource, ref.Version)
+		res, err := comp.GetExternalResource(ttype, ref.ResourceName, ref.Version)
 		if err != nil {
 			return cdv2.Resource{}, err
 		}
@@ -106,7 +106,7 @@ func FindResourceInComponentByReference(comp cdv2.ComponentDescriptor, ttype str
 	}
 
 	if ref.Kind == lsv1alpha1.LocalResourceKind {
-		resources := comp.GetLocalResourcesByName(ttype, ref.Resource)
+		resources := comp.GetLocalResourcesByName(ttype, ref.ResourceName)
 		if len(resources) == 0 {
 			return cdv2.Resource{}, cdv2.NotFound
 		}
@@ -114,7 +114,7 @@ func FindResourceInComponentByReference(comp cdv2.ComponentDescriptor, ttype str
 	}
 
 	if ref.Kind == lsv1alpha1.ExternalResourceKind {
-		resources := comp.GetExternalResourcesByName(ttype, ref.Resource)
+		resources := comp.GetExternalResourcesByName(ttype, ref.ResourceName)
 		if len(resources) == 0 {
 			return cdv2.Resource{}, cdv2.NotFound
 		}

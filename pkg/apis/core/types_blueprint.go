@@ -109,9 +109,9 @@ type Default struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// BlueprintReference contains reference to a Blueprint included definition
+// BlueprintReferenceTemplate contains reference to a Blueprint included definition
 // +kubebuilder:skip
-type BlueprintReference struct {
+type BlueprintReferenceTemplate struct {
 	metav1.TypeMeta `json:",inline"`
 
 	// Name is the unique name of the step

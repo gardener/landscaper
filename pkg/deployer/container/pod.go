@@ -67,19 +67,19 @@ type PodOptions struct {
 	Namespace string
 
 	Operation       container.OperationType
-	BlueprintRef    *lsv1alpha1.RemoteBlueprintReference
 	encBlueprintRef []byte
-	ImportsRef      *lsv1alpha1.ObjectReference
 
 	Debug bool
 }
 
 func (o *PodOptions) Complete() error {
-	raw, err := json.Marshal(o.BlueprintRef)
-	if err != nil {
-		return err
+	if o.ProviderConfiguration.Blueprint != nil {
+		raw, err := json.Marshal(o.ProviderConfiguration.Blueprint)
+		if err != nil {
+			return err
+		}
+		o.encBlueprintRef = raw
 	}
-	o.encBlueprintRef = raw
 	return nil
 }
 
@@ -97,25 +97,6 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	sharedVolumeMount := corev1.VolumeMount{
 		Name:      "shared-volume",
 		MountPath: container.SharedBasePath,
-	}
-
-	importsVolume := corev1.Volume{
-		Name: "imports",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: opts.ImportsRef.Name,
-				Items: []corev1.KeyToPath{
-					{
-						Key:  lsv1alpha1.DataObjectSecretDataKey,
-						Path: filepath.Base(container.ImportsPath),
-					},
-				},
-			},
-		},
-	}
-	importsVolumeMount := corev1.VolumeMount{
-		Name:      "imports",
-		MountPath: filepath.Base(container.ImportsPath),
 	}
 
 	initServiceAccountMount := corev1.VolumeMount{
@@ -177,7 +158,6 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		initServiceAccountVolume,
 		waitServiceAccountVolume,
 		sharedVolume,
-		importsVolume,
 	}
 
 	initContainer := corev1.Container{
@@ -216,7 +196,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		Resources:                corev1.ResourceRequirements{},
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 		ImagePullPolicy:          corev1.PullIfNotPresent,
-		VolumeMounts:             []corev1.VolumeMount{sharedVolumeMount, importsVolumeMount},
+		VolumeMounts:             []corev1.VolumeMount{sharedVolumeMount},
 	}
 
 	if opts.Debug {
@@ -290,23 +270,15 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 				ResourceNames: []string{c.DeployItem.Name},
 			},
 		}
-		if c.DeployItem.Spec.ImportReference != nil {
-			role.Rules = append(role.Rules, rbacv1.PolicyRule{
-				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
-				Resources:     []string{"secrets"},
-				Verbs:         []string{"get"},
-				ResourceNames: []string{c.DeployItem.Spec.ImportReference.Name},
-			})
-		}
 		// todo: consider different namespace of secrets
-		if len(c.DeployItem.Spec.RegistryPullSecrets) != 0 {
+		if len(c.ProviderConfiguration.RegistryPullSecrets) != 0 {
 			rule := rbacv1.PolicyRule{
 				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
 				Resources:     []string{"secrets"},
 				Verbs:         []string{"get"},
 				ResourceNames: []string{},
 			}
-			for _, refs := range c.DeployItem.Spec.RegistryPullSecrets {
+			for _, refs := range c.ProviderConfiguration.RegistryPullSecrets {
 				rule.ResourceNames = append(rule.ResourceNames, refs.Name)
 			}
 			role.Rules = append(role.Rules, rule)

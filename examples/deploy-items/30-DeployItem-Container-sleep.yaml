@@ -4,9 +4,6 @@ metadata:
   name: sleep
 spec:
   type: Container
-  importRef:
-    name: secret-item1
-    namespace: default
 
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
@@ -18,3 +15,5 @@ spec:
     - |
       env
       sleep 60
+
+    importValues: abc

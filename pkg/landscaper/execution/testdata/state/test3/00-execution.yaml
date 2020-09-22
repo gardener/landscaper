@@ -8,11 +8,7 @@ metadata:
   - finalizer.landscaper.gardener.cloud
 spec:
 
-  importRef:
-    name: exec-1-import
-    namespace: test3
-
-  executions:
+  deployItems:
   - name: a
     type: Helm
     config:

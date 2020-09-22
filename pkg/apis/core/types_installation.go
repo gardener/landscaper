@@ -84,15 +84,15 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
-	// BlueprintRef is the resolved reference to the definition.
-	BlueprintRef RemoteBlueprintReference `json:"blueprintRef"`
+	// Blueprint is the resolved reference to the definition.
+	Blueprint BlueprintDefinition `json:"blueprint"`
 
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints and component descriptors from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
-	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
+	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
 
 	// Imports define the import mapping for the referenced definition.
 	// These values are by default auto generated from the parent definition.
@@ -136,11 +136,44 @@ type InstallationStatus struct {
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
 }
 
+// BlueprintDefinition defines the blueprint that should be used for the installation.
+type BlueprintDefinition struct {
+	// Reference defines a remote reference to a blueprint
+	// +optional
+	Reference *RemoteBlueprintReference `json:"ref,omitempty"`
+	// Inline defines a inline yaml filesystem with a blueprint.
+	// +optional
+	Inline *InlineBlueprint `json:"inline,omitmepty"`
+}
+
 // RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.
 type RemoteBlueprintReference struct {
 	VersionedResourceReference `json:",inline"`
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
-	cdv2.RepositoryContext `json:",inline"`
+	// +optional
+	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+}
+
+// InlineBlueprint defines a inline blueprint with component descriptor and
+// filesystem.
+type InlineBlueprint struct {
+	// ComponentDescriptorReference is the reference to a component descriptor
+	// +optional
+	ComponentDescriptorReference *ComponentDescriptorReference `json:"cdRef,omitempty"`
+	// Filesystem defines a inline yaml filesystem with a blueprint.
+	Filesystem json.RawMessage `json:"filesystem"`
+}
+
+// ComponentDescriptorReference is the reference to a component descriptor.
+// given an optional context.
+type ComponentDescriptorReference struct {
+	// RepositoryContext defines the context of the component repository to resolve blueprints.
+	// +optional
+	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	// ComponentName defines the unique of the component containing the resource.
+	ComponentName string `json:"componentName"`
+	// Version defines the version of the component.
+	Version string `json:"version"`
 }
 
 // StaticDataSource defines a static data source

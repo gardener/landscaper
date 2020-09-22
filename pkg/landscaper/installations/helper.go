@@ -68,12 +68,29 @@ func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, 
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
 func ResolveComponentDescriptor(ctx context.Context, compRepo componentsregistry.Registry, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, error) {
-	return compRepo.Resolve(ctx, inst.Spec.BlueprintRef.RepositoryContext, inst.Spec.BlueprintRef.ObjectMeta())
+	if inst.Spec.Blueprint.Reference == nil &&
+		(inst.Spec.Blueprint.Inline == nil || inst.Spec.Blueprint.Inline.ComponentDescriptorReference == nil) {
+		return nil, nil
+	}
+	var (
+		repoCtx cdv2.RepositoryContext
+		ref     cdv2.ObjectMeta
+	)
+	if inst.Spec.Blueprint.Reference != nil {
+		// todo: if not defined read from default configured repo context.
+		repoCtx = *inst.Spec.Blueprint.Reference.RepositoryContext
+		ref = inst.Spec.Blueprint.Reference.ObjectMeta()
+	}
+	if inst.Spec.Blueprint.Inline != nil && inst.Spec.Blueprint.Inline.ComponentDescriptorReference != nil {
+		repoCtx = *inst.Spec.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext
+		ref = inst.Spec.Blueprint.Inline.ComponentDescriptorReference.ObjectMeta()
+	}
+	return compRepo.Resolve(ctx, repoCtx, ref)
 }
 
 // CreateInternalInstallation creates an internal installation for a Installation
 func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
-	blue, err := blueprints.Resolve(ctx, op, inst.Spec.BlueprintRef, nil)
+	blue, err := blueprints.Resolve(ctx, op, inst.Spec.Blueprint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

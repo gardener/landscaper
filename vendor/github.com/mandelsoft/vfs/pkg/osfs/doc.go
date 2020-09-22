@@ -16,33 +16,5 @@
  *  limitations under the License.
  */
 
+// Package osfs maps the operating system filesystem to a virtual filesystem.
 package osfs
-
-import (
-	"io/ioutil"
-	"os"
-
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
-)
-
-type tempfs struct {
-	vfs.FileSystem
-	dir string
-}
-
-func NewTempFileSystem() (vfs.FileSystem, error) {
-	dir, err := ioutil.TempDir("", "VFS-")
-	if err != nil {
-		return nil, err
-	}
-	fs, err := projectionfs.New(New(), dir)
-	if err != nil {
-		os.Remove(dir)
-	}
-	return &tempfs{fs, dir}, err
-}
-
-func (t *tempfs) Cleanup() {
-	os.RemoveAll(t.dir)
-}

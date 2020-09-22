@@ -33,6 +33,7 @@ type options struct {
 	DefaultBackoff wait.Backoff
 	KubeClient     client.Client
 
+	ImportsFilePath             string
 	ExportsFilePath             string
 	ComponentDescriptorFilePath string
 	ContentDirPath              string
@@ -46,6 +47,7 @@ type options struct {
 
 // Complete reads necessary options from the expected sources.
 func (o *options) Complete(ctx context.Context) {
+	o.ImportsFilePath = os.Getenv(container.ImportsPathName)
 	o.ExportsFilePath = os.Getenv(container.ExportsPathName)
 	o.ComponentDescriptorFilePath = os.Getenv(container.ComponentDescriptorPathName)
 	o.ContentDirPath = os.Getenv(container.ContentPathName)

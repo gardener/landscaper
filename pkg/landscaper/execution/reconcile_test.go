@@ -67,7 +67,6 @@ var _ = g.Describe("Reconcile", func() {
 		err = fakeClient.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), item)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(item.Spec.ImportReference).To(Equal(exec.Spec.ImportReference))
 		Expect(item.Spec.Type).To(Equal(lsv1alpha1.ExecutionType("Helm")))
 		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
 	})
@@ -103,7 +102,6 @@ var _ = g.Describe("Reconcile", func() {
 		err = fakeClient.Get(ctx, exec.Status.DeployItemReferences[1].Reference.NamespacedName(), item)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(item.Spec.ImportReference).To(Equal(exec.Spec.ImportReference))
 		Expect(item.Spec.Type).To(Equal(lsv1alpha1.ExecutionType("Container")))
 		Expect(exec.Status.DeployItemReferences[1].Reference.ObservedGeneration).To(Equal(exec.Generation))
 	})

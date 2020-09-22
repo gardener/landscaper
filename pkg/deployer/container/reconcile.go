@@ -62,11 +62,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			Name:      c.DeployItem.Name,
 			Namespace: c.DeployItem.Namespace,
 
-			Operation:    operation,
-			BlueprintRef: c.DeployItem.Spec.BlueprintRef,
-			ImportsRef:   c.DeployItem.Spec.ImportReference,
-
-			Debug: true,
+			Operation: operation,
+			Debug:     true,
 		}
 		pod, err := generatePod(podOpts)
 		if err != nil {

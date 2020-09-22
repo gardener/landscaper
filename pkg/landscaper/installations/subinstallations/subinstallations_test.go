@@ -126,8 +126,8 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
-			Expect(resInst.Spec.BlueprintRef).To(Equal(lsv1alpha1.RemoteBlueprintReference{
-				RepositoryContext: cdv2.RepositoryContext{
+			Expect(resInst.Spec.Blueprint).To(Equal(lsv1alpha1.RemoteBlueprintReference{
+				RepositoryContext: &cdv2.RepositoryContext{
 					Type:    "local",
 					BaseURL: "./testdata",
 				},
@@ -135,7 +135,7 @@ var _ = g.Describe("SubInstallation", func() {
 					ResourceReference: lsv1alpha1.ResourceReference{
 						ComponentName: "root",
 						Kind:          "localResource",
-						Resource:      "def1",
+						ResourceName:  "def1",
 					},
 					Version: "1.0.0",
 				},
@@ -238,7 +238,7 @@ var _ = g.Describe("SubInstallation", func() {
 			subinst := &lsv1alpha1.Installation{}
 			subinst.Name = "inst-def1"
 			subinst.Namespace = "default"
-			subinst.Spec.BlueprintRef = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
+			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
 			subinst.Spec.Imports = []lsv1alpha1.DefinitionImportMapping{
 				{
 					DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{

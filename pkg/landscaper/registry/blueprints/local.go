@@ -200,7 +200,7 @@ func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs vf
 	return utils.CopyFS(blobFS, fs, "/", "/")
 }
 
-// BlueprintReference is the reference to a local definition
+// BlueprintReferenceTemplate is the reference to a local definition
 type LocalBlueprintReference struct {
 	SourcePath string
 	Blueprint  *v1alpha1.Blueprint

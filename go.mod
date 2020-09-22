@@ -4,15 +4,13 @@ go 1.13
 
 require (
 	github.com/Masterminds/sprig/v3 v3.1.0
+	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
 	github.com/gardener/component-spec/bindings-go v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
-	github.com/go-openapi/spec v0.19.3
-	github.com/go-openapi/strfmt v0.19.3
-	github.com/go-openapi/validate v0.19.5
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.4.0 // indirect
@@ -23,7 +21,7 @@ require (
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mandelsoft/spiff v1.5.0
-	github.com/mandelsoft/vfs v0.0.0-20200909114934-2adb28762d89
+	github.com/mandelsoft/vfs v0.0.0-20200915112109-4781252bc384
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
 	github.com/opencontainers/go-digest v1.0.0-rc1

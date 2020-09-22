@@ -54,12 +54,12 @@ type ProviderConfiguration struct {
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Args []string `json:"args,omitempty"`
-	// ImportReference is the reference to the object containing all imported values.
+	// ImportValues contains the import values for the container.
 	// +optional
-	ImportReference json.RawMessage `json:"importRef,omitempty"`
-	// BlueprintRef is the resolved reference to the definition
+	ImportValues json.RawMessage `json:"importRef,omitempty"`
+	// Blueprint is the resolved reference to the definition
 	// +optional
-	BlueprintRef *lsv1alpha1.RemoteBlueprintReference `json:"blueprintRef,omitempty"`
+	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprintRef,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints and component descriptors from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

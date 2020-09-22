@@ -33,6 +33,10 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
+// BlueprintFilePath is the expected path in a filesystem where the blueprint definition
+// is stored.
+const BlueprintFilePath = "/blueprint.yaml"
+
 type ociRegistry struct {
 	oci oci.Client
 	dec runtime.Decoder

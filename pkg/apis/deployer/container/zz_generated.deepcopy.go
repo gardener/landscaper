@@ -20,6 +20,8 @@ limitations under the License.
 package container
 
 import (
+	json "encoding/json"
+
 	config "github.com/gardener/landscaper/pkg/apis/config"
 	v1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -118,6 +120,21 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	if in.Args != nil {
 		in, out := &in.Args, &out.Args
 		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ImportValues != nil {
+		in, out := &in.ImportValues, &out.ImportValues
+		*out = make(json.RawMessage, len(*in))
+		copy(*out, *in)
+	}
+	if in.Blueprint != nil {
+		in, out := &in.Blueprint, &out.Blueprint
+		*out = new(v1alpha1.BlueprintDefinition)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.RegistryPullSecrets != nil {
+		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
+		*out = make([]v1alpha1.ObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	return

@@ -166,6 +166,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	}
 
 	// get version for referenced reference
+	// todo: revisit for subinstallations
 	remoteRef, err := blueprintRef.RemoteBlueprintReference(o.ResolvedComponentDescriptor)
 	if err != nil {
 		return nil, err
@@ -175,11 +176,11 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	if err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			"ComponentDefinitionNotFound",
-			fmt.Sprintf("Blueprint %s for %s cannot be found", remoteRef.Resource, remoteRef.Version))
+			fmt.Sprintf("Blueprint %s for %s cannot be found", remoteRef.Reference.ResourceName, remoteRef.Reference.Version))
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
 		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 		_ = o.CreateEventFromCondition(ctx, inst, cond)
-		return nil, errors.Wrapf(err, "unable to get definition %s for %s", remoteRef.Resource, remoteRef.Version)
+		return nil, errors.Wrapf(err, "unable to get definition %s for %s", remoteRef.Reference.ResourceName, remoteRef.Reference.Version)
 	}
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
@@ -188,7 +189,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
-			BlueprintRef:        remoteRef,
+			Blueprint:           remoteRef,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			Imports:             blueprintRef.Info.Imports,
 			Exports:             blueprintRef.Info.Exports,

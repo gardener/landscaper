@@ -11,13 +11,15 @@ metadata:
     name: root
 spec:
 
-  blueprintRef:
-    type: local
-    baseUrl: ""
-    version: 1.0.0
-    componentName: root
-    kind: localResource
-    resource: c
+  blueprint:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: root
+      kind: localResource
+      resourceName: c
 
   imports:
   - from: a.z

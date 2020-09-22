@@ -1,7 +1,6 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-
 jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 
 imports:
@@ -10,7 +9,7 @@ imports:
   schema:
     type: array
     items:
-      $ref: cd://github.com/gardener/external-dns-management-schemas/localResources/schemas#definitions/provider # cd://schemas/localResources/schemas#definitions/provider
+      $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # cd://componentReferences/github.com/gardener/external-dns-management-schemas/localResources/schemas#definitions/provider
 
 - name: dnsClass
   optional: true
@@ -76,15 +75,3 @@ exportExecutions:
    template: |
      dnsClass: {{ .deployitem.installer.myexports }}
      url: https://{{ .deployitem.installer.myexports }}:{{ .dataobjects.port }}
-
---- # exported data after all subinstllations and deployitems are successfully finished
-exports:
-  deployitem:
-    installer:
-      my exports: abc
-    deployitem2:
-      my expotrs: ...
-  dataobjects:
-    my-sub-installation-template: abc
-
---- # template

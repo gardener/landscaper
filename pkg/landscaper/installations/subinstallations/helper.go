@@ -55,9 +55,9 @@ func AddDefaultMappings(inst *lsv1alpha1.Installation, def *lsv1alpha1.Blueprint
 }
 
 //// installationNeedsUpdate check if a definition reference has been updated
-//func installationNeedsUpdate(def lsv1alpha1.BlueprintReference, inst *lsv1alpha1.Installation) bool {
+//func installationNeedsUpdate(def lsv1alpha1.BlueprintReferenceTemplate, inst *lsv1alpha1.Installation) bool {
 //	// check if the reference itself has changed
-//	if def.Info != inst.Spec.BlueprintRef {
+//	if def.Info != inst.Spec.Blueprint {
 //		return true
 //	}
 //

@@ -5,11 +5,6 @@ metadata:
   namespace: test3
   generation: 1
 spec:
-
-  importRef:
-    name: exec-1-import
-    namespace: test3
-
   type: Helm
   config:
     my-val: val1

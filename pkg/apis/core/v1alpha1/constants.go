@@ -30,7 +30,7 @@ const (
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
 	// BlueprintFilePath is the path to the component definition
-	BlueprintFilePath = "blueprint.yaml"
+	BlueprintFilePath = "/blueprint.yaml"
 
 	// ComponentDefinitionComponentDescriptorPath is the path to the component descriptor
 	ComponentDefinitionComponentDescriptorPath = "component_descriptor.yaml"

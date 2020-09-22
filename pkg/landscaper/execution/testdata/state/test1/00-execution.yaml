@@ -5,11 +5,7 @@ metadata:
   namespace: test1
 spec:
 
-  importRef:
-    name: exec-1-import
-    namespace: test1
-
-  executions:
+  deployItems:
   - name: a
     type: Helm
     config:

@@ -9,11 +9,6 @@ metadata:
     execution.landscaper.gardener.cloud/name: a
   generation: 1
 spec:
-
-  importRef:
-    name: exec-1-import
-    namespace: test2
-
   type: Helm
   config:
     my-val: val1

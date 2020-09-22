@@ -11,7 +11,7 @@ spec:
     version: 1.0.0
     componentName: root
     kind: localResource
-    resource: root
+    resourceName: root
 
   exports:
   - from: c.y

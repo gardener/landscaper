@@ -27,11 +27,14 @@ import (
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -76,8 +79,13 @@ func Run(ctx context.Context, log logr.Logger) error {
 	if err := kubeClient.Get(ctx, opts.DeployItemKey.NamespacedName(), deployItem); err != nil {
 		return err
 	}
+	providerConfig := &containerv1alpha1.ProviderConfiguration{}
+	decoder := serializer.NewCodecFactory(container.Scheme).UniversalDecoder()
+	if _, _, err := decoder.Decode(deployItem.Spec.Configuration.Raw, nil, providerConfig); err != nil {
+		return err
+	}
 
-	regAcc, err := createRegistryFromDockerAuthConfig(ctx, log, kubeClient, deployItem)
+	regAcc, err := createRegistryFromDockerAuthConfig(ctx, log, kubeClient, providerConfig.RegistryPullSecrets)
 	if err != nil {
 		return err
 	}
@@ -98,15 +106,15 @@ func Run(ctx context.Context, log logr.Logger) error {
 	}
 	log.Info("all directories have been successfully created")
 
-	if deployItem.Spec.BlueprintRef != nil {
+	if providerConfig.Blueprint != nil && providerConfig.Blueprint.Reference != nil {
 		log.Info("get component descriptor")
-		cd, err := regAcc.ComponentsRegistry().Resolve(ctx, deployItem.Spec.BlueprintRef.RepositoryContext, deployItem.Spec.BlueprintRef.ObjectMeta())
+		cd, err := regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Reference.RepositoryContext, providerConfig.Blueprint.Reference.ObjectMeta())
 		if err != nil {
-			return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", deployItem.Spec.BlueprintRef)
+			return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
 		}
 		cdList, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
 		if err != nil {
-			return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", deployItem.Spec.BlueprintRef)
+			return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
 		}
 
 		cdListJSONBytes, err := json.Marshal(cdutils.ConvertFromComponentDescriptorList(cdList))
@@ -116,21 +124,26 @@ func Run(ctx context.Context, log logr.Logger) error {
 		if err := ioutil.WriteFile(opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
 			return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
 		}
-	}
 
-	if deployItem.Spec.BlueprintRef != nil {
 		log.Info("get blueprint content")
-		log.Info(fmt.Sprintf("fetching blueprint for %#v", deployItem.Spec.BlueprintRef))
+		log.Info(fmt.Sprintf("fetching blueprint for %#v", providerConfig.Blueprint))
 		fs, err := projectionfs.New(osfs.New(), opts.ContentDirPath)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
 		}
 		// resolve is only used to download the blueprint's content to the filesystem
-		_, err = blueprints.Resolve(ctx, regAcc, *deployItem.Spec.BlueprintRef, fs)
+		_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, fs)
 		if err != nil {
 			return errors.Wrap(err, "unable to fetch blueprint from registry")
 		}
 		log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
+	}
+
+	if providerConfig.ImportValues != nil {
+		log.Info("write import values")
+		if err := ioutil.WriteFile(opts.ImportsFilePath, providerConfig.ImportValues, os.ModePerm); err != nil {
+			return fmt.Errorf("unable to write imported values: %w", err)
+		}
 	}
 
 	log.Info("restore state")
@@ -159,9 +172,9 @@ func (r registries) ComponentsRegistry() componentsregistry.Registry {
 }
 
 // todo: add retries
-func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem) (lsoperation.RegistriesAccessor, error) {
-	secrets := make([]corev1.Secret, len(deployItem.Spec.RegistryPullSecrets))
-	for i, secretRef := range deployItem.Spec.RegistryPullSecrets {
+func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, kubeClient client.Client, registryPullSecrets []lsv1alpha1.ObjectReference) (lsoperation.RegistriesAccessor, error) {
+	secrets := make([]corev1.Secret, len(registryPullSecrets))
+	for i, secretRef := range registryPullSecrets {
 		secret := corev1.Secret{}
 		if err := kubeClient.Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
 			return nil, err

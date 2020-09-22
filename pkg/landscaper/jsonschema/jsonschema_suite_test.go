@@ -72,7 +72,7 @@ var _ = Describe("jsonschema", func() {
 		Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
 	})
 
-	Context("BlueprintReference", func() {
+	Context("BlueprintReferenceTemplate", func() {
 		var config *jsonschema.LoaderConfig
 		BeforeEach(func() {
 			config = &jsonschema.LoaderConfig{

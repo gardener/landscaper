@@ -34,7 +34,7 @@ type Blueprint struct {
 
 // BlueprintReference is the internal type of a blueprint reference.
 type BlueprintReference struct {
-	Info *lsv1alpha1.BlueprintReference
+	Info *lsv1alpha1.BlueprintReferenceTemplate
 	Path string
 	Fs   vfs.FileSystem
 }
@@ -61,7 +61,7 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 			return err
 		}
 
-		blueprintRef := &lsv1alpha1.BlueprintReference{}
+		blueprintRef := &lsv1alpha1.BlueprintReferenceTemplate{}
 		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, blueprintRef); err != nil {
 			return err
 		}
@@ -77,22 +77,25 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 }
 
 // RemoteBlueprintReference returns the remote blueprint ref for the current component given the effective component descriptor
-func (r BlueprintReference) RemoteBlueprintReference(cdList cdv2.ComponentDescriptorList) (lsv1alpha1.RemoteBlueprintReference, error) {
+func (r BlueprintReference) RemoteBlueprintReference(cdList cdv2.ComponentDescriptorList) (lsv1alpha1.BlueprintDefinition, error) {
 	components := cdList.GetComponentByName(r.Info.Reference.ComponentName)
 	if len(components) == 0 {
-		return lsv1alpha1.RemoteBlueprintReference{}, cdv2.NotFound
+		return lsv1alpha1.BlueprintDefinition{}, cdv2.NotFound
 	}
 
 	res, err := cdutils.FindResourceInComponentByReference(components[0], lsv1alpha1.BlueprintResourceType, r.Info.Reference)
 	if err != nil {
-		return lsv1alpha1.RemoteBlueprintReference{}, cdv2.NotFound
+		return lsv1alpha1.BlueprintDefinition{}, cdv2.NotFound
 	}
 
-	return lsv1alpha1.RemoteBlueprintReference{
-		RepositoryContext: components[0].GetEffectiveRepositoryContext(),
-		VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-			ResourceReference: r.Info.Reference,
-			Version:           res.Version,
+	repoCtx := components[0].GetEffectiveRepositoryContext()
+	return lsv1alpha1.BlueprintDefinition{
+		Reference: &lsv1alpha1.RemoteBlueprintReference{
+			RepositoryContext: &repoCtx,
+			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
+				ResourceReference: r.Info.Reference,
+				Version:           res.Version,
+			},
 		},
 	}, nil
 }

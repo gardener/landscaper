@@ -81,6 +81,9 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if cd == nil {
+		return nil
+	}
 
 	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd)
 	if err != nil {

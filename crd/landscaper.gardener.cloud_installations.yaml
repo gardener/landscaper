@@ -45,34 +45,77 @@ spec:
           spec:
             description: Spec contains the specification for a installation.
             properties:
-              blueprintRef:
-                description: BlueprintRef is the resolved reference to the definition.
+              blueprint:
+                description: Blueprint is the resolved reference to the definition.
                 properties:
-                  baseUrl:
-                    description: BaseURL is the base url of the repository to resolve components.
-                    type: string
-                  componentName:
-                    description: ComponentName defines the unique of the component containing the resource.
-                    type: string
-                  kind:
-                    description: Kind defines the kind resource kind where the resource is defined.
-                    type: string
-                  resource:
-                    description: Resource defines the name of the resource.
-                    type: string
-                  type:
-                    description: Type defines the type of the component repository to resolve references.
-                    type: string
-                  version:
-                    description: Version defines the version of the component.
-                    type: string
-                required:
-                - baseUrl
-                - componentName
-                - kind
-                - resource
-                - type
-                - version
+                  inline:
+                    description: Inline defines a inline yaml filesystem with a blueprint.
+                    properties:
+                      cdRef:
+                        description: ComponentDescriptorReference is the reference to a component descriptor
+                        properties:
+                          componentName:
+                            description: ComponentName defines the unique of the component containing the resource.
+                            type: string
+                          repositoryContext:
+                            description: RepositoryContext defines the context of the component repository to resolve blueprints.
+                            properties:
+                              baseUrl:
+                                description: BaseURL is the base url of the repository to resolve components.
+                                type: string
+                              type:
+                                description: Type defines the type of the component repository to resolve references.
+                                type: string
+                            required:
+                            - baseUrl
+                            - type
+                            type: object
+                          version:
+                            description: Version defines the version of the component.
+                            type: string
+                        required:
+                        - componentName
+                        - version
+                        type: object
+                      filesystem:
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                    - filesystem
+                    type: object
+                  ref:
+                    description: Reference defines a remote reference to a blueprint
+                    properties:
+                      componentName:
+                        description: ComponentName defines the unique of the component containing the resource.
+                        type: string
+                      kind:
+                        description: Kind defines the kind resource kind where the resource is defined.
+                        type: string
+                      repositoryContext:
+                        description: RepositoryContext defines the context of the component repository to resolve blueprints.
+                        properties:
+                          baseUrl:
+                            description: BaseURL is the base url of the repository to resolve components.
+                            type: string
+                          type:
+                            description: Type defines the type of the component repository to resolve references.
+                            type: string
+                        required:
+                        - baseUrl
+                        - type
+                        type: object
+                      resourceName:
+                        description: ResourceName defines the name of the resource.
+                        type: string
+                      version:
+                        description: Version defines the version of the component.
+                        type: string
+                    required:
+                    - componentName
+                    - kind
+                    - resourceName
+                    - version
+                    type: object
                 type: object
               exports:
                 description: 'Exports define the export mappings for the referenced definition. These values are by default auto generated from the parent definition. todo: add static data boolean'
@@ -166,7 +209,7 @@ spec:
                   type: object
                 type: array
             required:
-            - blueprintRef
+            - blueprint
             type: object
           status:
             description: Status contains the status of the installation.

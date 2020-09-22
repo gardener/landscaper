@@ -75,20 +75,6 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
-	// BlueprintRef is the resolved reference to the definition.
-	// +optional
-	BlueprintRef *RemoteBlueprintReference `json:"blueprintRef"`
-
-	// RegistryPullSecrets defines a list of registry credentials that are used to
-	// pull blueprints and component descriptors from the respective registry.
-	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-	// Note that the type information is used to determine the secret key and the type of the secret.
-	// +optional
-	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets"`
-
-	// ImportReference is the reference to the object containing all imported values.
-	ImportReference *ObjectReference `json:"importRef,omitempty"`
-
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems []DeployItemTemplate `json:"deployItems,omitempty"`
 }

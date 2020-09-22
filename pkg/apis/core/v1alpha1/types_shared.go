@@ -163,8 +163,8 @@ type ResourceReference struct {
 	ComponentName string `json:"componentName"`
 	// Kind defines the kind resource kind where the resource is defined.
 	Kind ResourceKind `json:"kind"`
-	// Resource defines the name of the resource.
-	Resource string `json:"resource"`
+	// ResourceName defines the name of the resource.
+	ResourceName string `json:"resourceName"`
 }
 
 // VersionedResourceReference defines the reference to a resource with its version.

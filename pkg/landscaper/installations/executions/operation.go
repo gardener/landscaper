@@ -98,12 +98,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
-		exec.Spec.BlueprintRef = &inst.Info.Spec.BlueprintRef
-		exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
-		exec.Spec.ImportReference = &lsv1alpha1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		}
 		exec.Spec.DeployItems = executions
 		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
 			return err

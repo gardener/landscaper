@@ -6,11 +6,7 @@ metadata:
   generation: 2
 spec:
 
-  importRef:
-    name: exec-1-import
-    namespace: test2
-
-  executions:
+  deployItems:
   - name: a
     type: Helm
     config:

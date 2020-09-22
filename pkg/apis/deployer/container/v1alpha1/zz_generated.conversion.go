@@ -20,6 +20,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	json "encoding/json"
 	unsafe "unsafe"
 
 	config "github.com/gardener/landscaper/pkg/apis/config"
@@ -197,6 +198,9 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_container_ProviderConfigurati
 	out.Image = in.Image
 	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImportValues = *(*json.RawMessage)(unsafe.Pointer(&in.ImportValues))
+	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
+	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }
 
@@ -209,6 +213,9 @@ func autoConvert_container_ProviderConfiguration_To_v1alpha1_ProviderConfigurati
 	out.Image = in.Image
 	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImportValues = *(*json.RawMessage)(unsafe.Pointer(&in.ImportValues))
+	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
+	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }
 
