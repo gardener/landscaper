@@ -22,9 +22,11 @@ import (
 	"os"
 	"path"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -42,6 +44,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
@@ -107,36 +110,66 @@ func Run(ctx context.Context, log logr.Logger) error {
 	log.Info("all directories have been successfully created")
 
 	if providerConfig.Blueprint != nil && providerConfig.Blueprint.Reference != nil {
-		log.Info("get component descriptor")
-		cd, err := regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Reference.RepositoryContext, providerConfig.Blueprint.Reference.ObjectMeta())
-		if err != nil {
-			return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
+		var (
+			cd  *cdv2.ComponentDescriptor
+			err error
+		)
+
+		if providerConfig.Blueprint.Reference != nil {
+			log.Info("get component descriptor")
+			cd, err = regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Reference.RepositoryContext, providerConfig.Blueprint.Reference.ObjectMeta())
+			if err != nil {
+				return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
+			}
 		}
-		cdList, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
-		if err != nil {
-			return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
+		if providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
+			log.Info("get component descriptor")
+			cd, err = regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext, providerConfig.Blueprint.Inline.ComponentDescriptorReference.ObjectMeta())
+			if err != nil {
+				return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
+			}
 		}
 
-		cdListJSONBytes, err := json.Marshal(cdutils.ConvertFromComponentDescriptorList(cdList))
-		if err != nil {
-			return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
-		}
-		if err := ioutil.WriteFile(opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
-			return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
+		if cd != nil {
+			cdList, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
+			if err != nil {
+				return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
+			}
+
+			cdListJSONBytes, err := json.Marshal(cdutils.ConvertFromComponentDescriptorList(cdList))
+			if err != nil {
+				return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
+			}
+			if err := ioutil.WriteFile(opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
+				return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
+			}
 		}
 
 		log.Info("get blueprint content")
-		log.Info(fmt.Sprintf("fetching blueprint for %#v", providerConfig.Blueprint))
 		fs, err := projectionfs.New(osfs.New(), opts.ContentDirPath)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
 		}
-		// resolve is only used to download the blueprint's content to the filesystem
-		_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, fs)
-		if err != nil {
-			return errors.Wrap(err, "unable to fetch blueprint from registry")
+		if providerConfig.Blueprint.Reference != nil {
+			log.Info(fmt.Sprintf("fetching blueprint for %#v", providerConfig.Blueprint.Reference))
+			// resolve is only used to download the blueprint's content to the filesystem
+			_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, fs)
+			if err != nil {
+				return fmt.Errorf("unable to fetch blueprint from registry: %w", err)
+			}
+			log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
 		}
-		log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
+		if providerConfig.Blueprint.Inline != nil {
+			log.Info("using inline blueprint definition")
+			blueprintFs, err := yamlfs.New(providerConfig.Blueprint.Inline.Filesystem)
+			if err != nil {
+				return fmt.Errorf("unable to create yaml filesystem from internal config: %w", err)
+			}
+			// copy yaml filesystem to conatiner filesystem
+			if err := utils.CopyFS(blueprintFs, fs, "/", "/"); err != nil {
+				return fmt.Errorf("unabel to copy inline blueprint filesystem to container filesystem: %w", err)
+			}
+		}
 	}
 
 	if providerConfig.ImportValues != nil {
