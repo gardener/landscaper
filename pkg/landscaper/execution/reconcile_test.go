@@ -71,7 +71,7 @@ var _ = g.Describe("Reconcile", func() {
 		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
 	})
 
-	g.It("should not deploy the next deployitem when the previous one has not finished yet", func() {
+	g.It("should not deploy a deployitem when dependent ones haven't finished yet", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
@@ -80,7 +80,14 @@ var _ = g.Describe("Reconcile", func() {
 		err := eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+		// 2 because the dag starts with 2 parallel ones
+		Expect(exec.Status.DeployItemReferences).To(HaveLen(2))
+
+		// check that the last one is not referenced
+		references := exec.Status.DeployItemReferences
+		for _, reference := range references {
+			Expect(reference.Name).ToNot(Equal("c"))
+		}
 	})
 
 	g.It("should deploy the next deployitem when the previous one successfully finished", func() {

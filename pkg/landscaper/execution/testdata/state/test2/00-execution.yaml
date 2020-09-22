@@ -15,6 +15,13 @@ spec:
     type: Container
     config:
       my-val: val1
+  - name: c
+    type: Container
+    config:
+      my-val: val1
+    dependsOn:
+      - a
+      - b
 
 status:
   phase: Init
