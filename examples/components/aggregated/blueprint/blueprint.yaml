@@ -1,0 +1,56 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
+
+imports:
+- name: aws-dev-account-credentials
+  schema:
+    $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/localResources/schemas#definitions/provider
+
+- name: gcp-dev-account-credentials
+  schema:
+    $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/localResources/schemas#definitions/provider
+
+- name: dnsClass
+  optional: true
+  schema:
+    type: string
+
+- name: namespace
+  default:
+    value: kube-system
+  schema:
+    type: string
+
+- name: dev-cluster
+  targetType: kubernetes-cluster
+
+exports:
+- name: exported-cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+
+subinstallations: # installation templates
+- file: /installations/dns/dns-installation.yaml
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: ingress # must be unique
+  blueprint:
+    ref: cd://componentReference/ingress/localResources/blueprint #cd://localResources/myblueprint
+#    filesystem:
+#      blueprint.yaml: abc...
+
+  imports:
+    dnsClass:
+      name: "application-dnsClass"
+    namespace:
+      name: "application-namespace"
+    cluster:
+      target: "dev-cluster"
+  #importMappings: {}
+
+  exports:
+    exported-cluster:
+      targetName: application-cluster
+  #exportMappings: {}

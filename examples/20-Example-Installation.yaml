@@ -15,7 +15,7 @@ spec:
       cdRef:
         componentName: github.com/gardener/virtual-cluster
         version: v1.7.2
-      fs: abc
+      filesystem: abc
 
   #  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
 

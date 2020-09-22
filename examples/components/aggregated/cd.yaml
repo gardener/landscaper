@@ -1,0 +1,23 @@
+meta:
+  schemaVersion: 'v2'
+
+component:
+  name: 'github.com/gardener/aggregated'
+  version: 'v0.1.0'
+
+  repositoryContexts:
+    - type: 'ociRegistry'
+      baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+
+  provider: 'internal'
+
+  componentReferences:
+  - name: ingress
+    componentName: github.com/gardener/nginx-ingress
+    version: v0.1.0
+  - name: dns
+    componentName: github.com/gardener/external-dns-management
+    version: v0.30.0
+  - name: schemas
+    componentName: github.com/gardener/external-dns-management-schemas
+    version: v1

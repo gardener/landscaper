@@ -42,7 +42,7 @@ exports:
   schema:
     type: string
 
-- name: kubeconfig
+- name: exported-cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # List of deploy item generators
@@ -50,23 +50,16 @@ exports:
 # Be aware that all deploy items must have a unique key
 # otherwise the aggregation will return an error.
 deployExecutions:
+  # todo: add values export
 - type: go-template
   file: /deployItems.yaml # virtual filesystem
 
 exportExecutions:
 - type: go-template
   template: |
-   ingressClass: {{ .exports.di.deploy.ingressClass }}
-   kubeconfig:
-     kubeconfig: {{ .exports.di.deploy.kubeconfig  }}
-   kubeconfig:
-      apiVersion: lasdfas
-      kind: Target
-      metadata:
-        name: subinst-123-kubeconfig
-        annotations:
-          myclass: fenced-env-1
-      spec:
-        type: landscaper.gardener.cloud/kubernetes-cluster
-        config:
-          kubeconfig: {{ .exports.di.deploy.kubeconfig  }}
+    ingressClass: {{ .exports.di.deploy.ingressClass }}
+    exported-cluster:
+      labels: {}
+      annotations: {}
+      config:
+        kubeconfig: {{ .exports.di.deploy.kubeconfig  }}

@@ -1,0 +1,63 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: application-nginx-ingress-controller
+
+spec:
+  blueprint:
+    ref:
+      repositoryContext: #maybe optional
+        baseUrl: "eu.gcr.io/gardener-dev/"
+        type: ociRegistry
+
+      version: "v0.2.0"
+      componentName: "github.com/gardener/external-dns-management"
+      kind: "localResource"
+      resourceName: "installation"
+    inline:
+
+      blueprint.yaml:
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+        imports: ....
+
+  # imported data objects that have to be defined in the system
+  # either by the operator or exported by another installation.
+  imports:
+    dnsClass:
+      name: "application-dnsClass"
+
+    namespace:
+      name: "application-namespace"
+
+    cluster:
+      target: "dev-cluster"
+
+  importMappings:
+    identifier: my-gardener-dns
+    namespace: (( installation.imports.namespace )) # optional, will be defaulted
+    dnsClass: (( installation.imports.dnsClass )) # optional, will be defaulted
+
+  exports:
+    exported-cluster:
+      targetName: application-cluster
+---
+kind: DataObject
+metadata:
+  name: application-ingressClass
+  ownerReferences:
+  - kind: Installation
+    name: application-nginx-ingress-controller
+data: "myingressclass"
+---
+kind: Target
+metadata:
+  name: application-cluster
+  lables: {}
+  annotations: {}
+spec:
+  type: "landscaper.gardener.cloud/kubernetes-cluster"
+  config:
+    kubeconfig: |
+      apiVersion: ....
+---

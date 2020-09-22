@@ -1,0 +1,42 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate # todo: rename
+
+name: application-dns-controller
+
+blueprint:
+  ref: cd://componentReference/dns/localResources/blueprint #cd://localResources/myblueprint
+  #    filesystem:
+  #      blueprint.yaml: abc...
+
+# imported data objects that have to be defined in the system
+# either by the operator or exported by another installation.
+imports:
+  provider1-credentials:
+    name: "aws-dev-account-credentials"
+    version: v1
+  provider2-credentials:
+    name: "gcp-dev-account-credentials"
+
+  namespace:
+    name: "application-namespace"
+
+  cluster:
+    target: "dev-cluster"
+
+importMappings:
+  providers:
+  - type: aws-route53
+    credentials: (( installation.imports.provider1-credentials ))
+  - type: google-clouddns
+    credentials: (( installation.imports.provider2-credentials ))
+
+  identifier: my-gardener-dns
+  namespace: (( installation.imports.namespace )) # optional, will be defaulted
+
+exportMappings:
+  dnsClass: (( blueprint.exports.dnsClass )) # will be defaulted
+  aws-dev-account: (( blueprint.exports.aws-creds[0] ))
+
+exports:
+  dnsClass:
+    name: application-dnsClass
