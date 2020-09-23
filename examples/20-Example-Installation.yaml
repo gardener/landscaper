@@ -17,30 +17,18 @@ spec:
         version: v1.7.2
       filesystem: abc
 
-  #  target: fencedEnv1 # => class.deployer.landscaper.gardener.cloud = fencedEnv1
-
   imports: # generated from aggregated definition or default from definition with from = to
-  - from: .kubeconfig
-    to: .kubeconfig
+    targets:
+    - name: "host-cluster"
+      target: "gke-cluster"
+    data:
+    - name: "namespace"
+      dataRef: "common-namespace"
 
-  - from: .kubeconfigs.base
-    to: .kubeconfig
-
-  - from: .dep.helmchart.etcd
-    to: .helmchart.etcd
-  - from: .dep.helmchart.kube-apiserver-controllermanager
-    to: .helmchart.kube-apiserver-controllermanager
-  - from: .dep.image.etcd
-    to: .images.etcd
-  - from: .dep.image.etcdbr
-    to: .images.etcdbr
-  - from: .dep.image.kube-apiserver
-    to: .images.kube-apiserver
-  - from: .dep.image.kube-controllermanager
-    to: .images.kube-controllermanager
-
-  - from: .common.namespace
-    to: .namespace
+    - name: "activeBackup"
+      dataRef: "common-namespace"
+    - name: "namespace"
+      dataRef: "common-namespace"
 
   - from: .virtual.etcd.backup.active
     to: .backup.active
@@ -93,56 +81,40 @@ spec:
     to: .identity.cert
 
   exports:
-  - from: mykey.spec.config.ingressclass
-    to: ingressClass
-
-  - to: .virtual.etcd.endpoints.main
-    from: .etcd.endpoints.main
-
-  - to: .virtual.etcd.endpoints.events
-    from: .etcd.endpoints.events
-
-  - to: .virtual.etcd.cert # server cert
-    from: .etcd.cert
-
-  - to: .virtual.apiserver.cert # server cert
-    from: .apiserver.cert
-
-  - to: .virtual.apiserver.endpoint.internal
-    from: .apiserver.endpoint.internal
-
-  - to: .kubeconfigs.virtual # an external reachable "kubeconfig"
-    from: .virtualAdminKubeconfig
-
-  staticData:
-  - value: # map[string]interface{}
-      configkey1: val1
-  - valueFrom:
-      secretKeyRef:
-        name: mysecret
-        key: key1 # default to "config" we expect map[string]interface{}
-  - valueFrom:
-      secretLabelSelector:
-        selector:
-          my-app: mysecret-label
-        key: key1 # default to "config" we expect map[string]interface{}
+    data:
+    - name: "etcd-main"
+      dataRef: "virtual-etcd-main" # contains endpoints and certs
+    - name: "etcd-events"
+      dataRef: "virtual-etcd-events"
+    - name: "apiserver-cert"
+      dataRef: "virtual-apiserver-cert"
+    targets:
+    - name: "cluster-internal"
+      target: "virtual-garden-cluster-internal"
+    - name: "cluster"
+      target: "virtual-garden-cluster"
 
 
 status:
   phase: Progressing | Pending | Completed
 
-  imports:
-  - from: .kubeconfigs.base
-    installationRef:
-      name: xyz
-      namespace: default
-    configGeneration: 2
+  configGeneration: "some hash"
 
-  deployItemRefs:
-  - name: my-step
-    ref:
-      name: abc --> OwnerRef
+  imports:
+  - name: namespace
+    sourceRef:
+      apiVersion: "landscaper.gardener.cloud/v1alpha1"
+      kind: "DataObject"
+      name: common-namespace
       namespace: default
+    configGeneration: "asdfasdf"
+  - name: host-cluster
+    sourceRef:
+      apiVersion: "landscaper.gardener.cloud/v1alpha1"
+      kind: "Target"
+      name: gke-cluster
+      namespace: default
+    configGeneration: ""
 
   installationRefs:
   - name: my-sub-component
@@ -153,6 +125,4 @@ status:
     ref:
       name: Installation2 --> OwnerRef
       namespace: default
-
-  configGeneration: 0
-  exportRef: my-secret --> OwnerRef
+  observedGeneration: 0

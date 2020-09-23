@@ -2,7 +2,6 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: application-dns-controller
-
 spec:
   blueprint:
     ref:
@@ -15,27 +14,28 @@ spec:
       kind: "localResource"
       resourceName: "installation"
     inline:
-      blueprint.yaml:
-        apiVersion: landscaper.gardener.cloud/v1alpha1
-        kind: Blueprint
-        imports: ....
+      filesystem:
+        blueprint.yaml:
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          imports: ....
 
   # imported data objects that have to be defined in the system
   # either by the operator or exported by another installation.
   imports:
-    provider1-credentials:
-      name: "aws-dev-account-credentials"
+    data:
+    - name: "provider1-credentials"
+      dataRef: "aws-dev-account-credentials"
       version: v1
-    provider2-credentials:
-      name: "gcp-dev-account-credentials"
+    - name: "provider2-credentials"
+      dataRef: "gcp-dev-account-credentials"
+    - name: "namespace"
+      dataRef: "application-namespace"
+    targets:
+      - name: cluster
+        target: "dev-cluster"
 
-    namespace:
-      name: "application-namespace"
-
-    cluster:
-      target: "dev-cluster"
-
-  importMappings:
+  importDataMappings:
     providers:
     - type: aws-route53
       credentials: (( installation.imports.provider1-credentials ))
@@ -45,14 +45,16 @@ spec:
     identifier: my-gardener-dns
     namespace: (( installation.imports.namespace )) # optional, will be defaulted
 
-  exportMappings:
+  exportDataMappings:
     dnsClass: (( blueprint.exports.dnsClass )) # will be defaulted
     aws-dev-account: (( blueprint.exports.aws-creds[0] ))
 
   exports:
-    dnsClass:
-      name: application-dnsClass
+    data:
+    - name: "dnsClass"
+      dataRef: application-dnsClass
 ---
+apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
   name: application-dnsClass

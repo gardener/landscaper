@@ -108,7 +108,7 @@ type InstallationSpec struct {
 
 	// Imports define the imported data objects and targets.
 	// +optional
-	Imports *InstallationImportsExports `json:"imports,omitempty"`
+	Imports *InstallationImports `json:"imports,omitempty"`
 
 	// ImportDataMappings contains a template for restructuring imports.
 	// It is expected to contain a key for every blueprint-defined data import.
@@ -119,7 +119,7 @@ type InstallationSpec struct {
 
 	// Exports define the exported data objects and targets.
 	// +optional
-	Exports *InstallationImportsExports `json:"exports,omitempty"`
+	Exports *InstallationExports `json:"exports,omitempty"`
 
 	// ExportDataMappings contains a template for restructuring exports.
 	// It is expected to contain a key for every blueprint-defined data export.
@@ -176,7 +176,7 @@ type InstallationTemplate struct {
 
 	// Imports define the imported data objects and targets.
 	// +optional
-	Imports *InstallationImportsExports `json:"imports,omitempty"`
+	Imports *InstallationImports `json:"imports,omitempty"`
 
 	// ImportDataMappings contains a template for restructuring imports.
 	// It is expected to contain a key for every blueprint-defined data import.
@@ -187,7 +187,7 @@ type InstallationTemplate struct {
 
 	// Exports define the exported data objects and targets.
 	// +optional
-	Exports *InstallationImportsExports `json:"exports,omitempty"`
+	Exports *InstallationExports `json:"exports,omitempty"`
 
 	// ExportDataMappings contains a template for restructuring exports.
 	// It is expected to contain a key for every blueprint-defined data export.
@@ -215,19 +215,44 @@ type InstallationTemplateBlueprintDefinition struct {
 	Filesystem json.RawMessage `json:"filesystem,omitempty"`
 }
 
-// InstallationImportsExports defines imports/exports of data objects and targets.
-type InstallationImportsExports struct {
-	// Data defines all data object imports/exports.
+// InstallationImports defines import of data objects and targets.
+type InstallationImports struct {
+	// Data defines all data object imports.
 	// +optional
-	Data []DataImportExport `json:"data,omitempty"`
+	Data []DataImport `json:"data,omitempty"`
 
-	// Targets defines all target imports/exports.
+	// Targets defines all target imports.
 	// +optional
 	Targets []TargetImportExport `json:"targets,omitempty"`
 }
 
-// DataImportExport is a data object import/export.
-type DataImportExport struct {
+// InstallationExports defines exports of data objects and targets.
+type InstallationExports struct {
+	// Data defines all data object exports.
+	// +optional
+	Data []DataExport `json:"data,omitempty"`
+
+	// Targets defines all target exports.
+	// +optional
+	Targets []TargetImportExport `json:"targets,omitempty"`
+}
+
+// DataImport is a data object import.
+type DataImport struct {
+	// Name the internal name of the imported/exported data.
+	Name string `json:"name"`
+
+	// DataRef is the name of the in-cluster data object.
+	DataRef string `json:"dataRef"`
+
+	// Version specifies the imported data version.
+	// defaults to "v1"
+	// +optional
+	Version string `json:"version,omitempty"`
+}
+
+// DataImportExport is a data object export.
+type DataExport struct {
 	// Name the internal name of the imported/exported data.
 	Name string `json:"name"`
 
@@ -325,15 +350,12 @@ type SecretLabelSelectorRef struct {
 
 // ImportState hold the state of a import.
 type ImportState struct {
-	// From is the from key of the import
-	// todo: maybe remove in favor the key from the blueprint
-	From string `json:"from"`
-
-	// To is the to key of the import
-	To string `json:"to"`
+	// Name is the distinct identifier of the import.
+	// Can be either from data or target imports
+	Name string `json:"name"`
 
 	// SourceRef is the reference to the installation where the value is imported
-	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
+	SourceRef *TypedObjectReference `json:"sourceRef,omitempty"`
 
 	// ConfigGeneration is the generation of the imported value.
 	ConfigGeneration string `json:"configGeneration"`

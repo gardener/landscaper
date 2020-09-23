@@ -126,9 +126,9 @@ spec:
                 description: Exports define the exported data objects and targets.
                 properties:
                   data:
-                    description: Data defines all data object imports/exports.
+                    description: Data defines all data object exports.
                     items:
-                      description: DataImportExport is a data object import/export.
+                      description: DataImportExport is a data object export.
                       properties:
                         dataRef:
                           description: DataRef is the name of the in-cluster data object.
@@ -142,7 +142,7 @@ spec:
                       type: object
                     type: array
                   targets:
-                    description: Targets defines all target imports/exports.
+                    description: Targets defines all target exports.
                     items:
                       description: TargetImportExport is a target import/export.
                       properties:
@@ -167,9 +167,9 @@ spec:
                 description: Imports define the imported data objects and targets.
                 properties:
                   data:
-                    description: Data defines all data object imports/exports.
+                    description: Data defines all data object imports.
                     items:
-                      description: DataImportExport is a data object import/export.
+                      description: DataImport is a data object import.
                       properties:
                         dataRef:
                           description: DataRef is the name of the in-cluster data object.
@@ -177,13 +177,16 @@ spec:
                         name:
                           description: Name the internal name of the imported/exported data.
                           type: string
+                        version:
+                          description: Version specifies the imported data version. defaults to "v1"
+                          type: string
                       required:
                       - dataRef
                       - name
                       type: object
                     type: array
                   targets:
-                    description: Targets defines all target imports/exports.
+                    description: Targets defines all target imports.
                     items:
                       description: TargetImportExport is a target import/export.
                       properties:
@@ -328,12 +331,18 @@ spec:
                     configGeneration:
                       description: ConfigGeneration is the generation of the imported value.
                       type: string
-                    from:
-                      description: 'From is the from key of the import todo: maybe remove in favor the key from the blueprint'
+                    name:
+                      description: Name is the distinct identifier of the import. Can be either from data or target imports
                       type: string
                     sourceRef:
                       description: SourceRef is the reference to the installation where the value is imported
                       properties:
+                        apiVersion:
+                          description: APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
                         name:
                           description: Name is the name of the kubernetes object.
                           type: string
@@ -341,16 +350,14 @@ spec:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
                       required:
+                      - apiVersion
+                      - kind
                       - name
                       - namespace
                       type: object
-                    to:
-                      description: To is the to key of the import
-                      type: string
                   required:
                   - configGeneration
-                  - from
-                  - to
+                  - name
                   type: object
                 type: array
               installationRefs:

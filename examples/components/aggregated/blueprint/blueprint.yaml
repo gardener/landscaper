@@ -42,15 +42,18 @@ subinstallations: # installation templates
 #      blueprint.yaml: abc...
 
   imports:
-    dnsClass:
-      name: "application-dnsClass"
-    namespace:
-      name: "application-namespace"
-    cluster:
+    data:
+    - name: "dnsClass"
+      dataRef: "application-dnsClass"
+    - name: "namespace"
+      dataRef: "application-namespace"
+    targets:
+    - name: "cluster"
       target: "dev-cluster"
   #importMappings: {}
 
   exports:
-    exported-cluster:
-      targetName: application-cluster
+    targets:
+    - name: "exported-cluster"
+      target: application-cluster
   #exportMappings: {}
