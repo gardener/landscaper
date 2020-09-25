@@ -1,0 +1,11 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: lcbfmdxrujms7lcvwmmiugwkzhv52mx6
+  namespace: test1
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: c
+    uid: xxx
+data: val-c

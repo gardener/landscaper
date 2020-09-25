@@ -1,0 +1,44 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: application-nginx-ingress-controller
+
+spec:
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml:
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+
+          exports:
+          - name: providers
+            schema:
+              type: array
+              $ref: ref to provider credentials
+
+          exportExecutor:
+          - name: export
+            type: GoTemplate
+            template:
+              providers:
+              - aws-credentials: ...
+
+  exportDataMappings:
+    providers:
+    - aws-redetials: ...
+
+  exports:
+    targets:
+    - name: providers
+      target: providers
+---
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  labels:
+    my-gloabl-key: test
+  name: my-landscape-yaml
+data:
+  providers:
+  - aws_credentials: ...

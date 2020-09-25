@@ -9,30 +9,34 @@ spec:
     ref:
       repositoryContext:
         type: local
-        baseUrl: ""
+        baseUrl: "../testdata/registry"
       version: 1.0.0
       componentName: root
       kind: localResource
       resourceName: root
 
   imports:
-  - from: ext.a
-    to: root.a
+    data:
+    - name: root.a
+      dataRef: ext.a
 
   exports:
-  - from: c.z
-    to: root.y
-  - from: d.z
-    to: root.z
+    data:
+    - name: root.y
+      dataRef: root.y
+    - name: root.y
+      dataRef: root.y
 
 status:
   phase: Progressing
-  configGeneration: ""
+  configGeneration: "abc"
 
   imports:
-  - from: ext.a
-    to: root.a
-    configGeneration: ""
+  - name: root.a
+    configGeneration: "efg"
+    sourceRef:
+      name: root
+      namespace: test1
 
   installationRefs:
   - name: a
@@ -51,3 +55,5 @@ status:
     ref:
       name: d
       namespace: test1
+
+  observedGeneration: 0

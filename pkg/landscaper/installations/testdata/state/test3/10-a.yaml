@@ -15,25 +15,31 @@ spec:
     ref:
       repositoryContext:
         type: local
-        baseUrl: ""
+        baseUrl: "../testdata/registry"
       version: 1.0.0
       componentName: root
       kind: localResource
       resourceName: a
 
   imports:
-  - from: root.a
-    to: a.a
+    data:
+    - name: a.a
+      dataRef: root.a
+    - name: a.b
+      dataRef: root.a
 
   exports:
-  - from: a.x
-    to: a.z
+    data:
+    - name: a.x
+      dataRef: a.z
 
 status:
   phase: Progressing
   configGeneration: ""
 
   imports:
-  - from: root.a
-    to: a.a
+  - name: a.a
     configGeneration: ""
+    sourceRef:
+      name: root
+      namespace: test3

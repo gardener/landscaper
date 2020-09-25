@@ -22,28 +22,26 @@ spec:
       resourceName: c
 
   imports:
-  - from: a.z
-    to: c.a
-  - from: root.z
-    to: c.b
+    data:
+    - name: c.a
+      dataRef: a.z
+    - name: c.b
+      dataRef: root.z
 
   exports:
-  - from: c.y
-    to: root.y
+    data:
+    - name: c.y
+      dataRef: root.y
+    - name: root.y
+      dataRef: root.y
 
 status:
   phase: Init
   configGeneration: ""
 
-  exportRef:
-    name: c-config
-    namespace: test1
-
   imports:
-  - from: a.z
-    to: c.a
+  - name: c.a
     configGeneration: ""
-  - from: b.z
-    to: c.b
+  - name: c.b
     configGeneration: ""
 

@@ -30,6 +30,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	vfsutil "github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
@@ -67,7 +68,7 @@ func runTestSuite(testdataDir string) {
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, cdv2.ComponentDescriptorList{}, nil)
+			}, &cdutils.ResolvedComponentDescriptor{}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
@@ -89,7 +90,7 @@ func runTestSuite(testdataDir string) {
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, cdv2.ComponentDescriptorList{}, map[string]interface{}{"version": "0.0.0"})
+			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -115,7 +116,7 @@ func runTestSuite(testdataDir string) {
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   memFs,
-			}, cdv2.ComponentDescriptorList{}, nil)
+			}, &cdutils.ResolvedComponentDescriptor{}, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -133,27 +134,23 @@ func runTestSuite(testdataDir string) {
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
 			op := New(&installations.Operation{})
-			cd := cdv2.ComponentDescriptorList{
-				Components: []cdv2.ComponentDescriptor{
-					{
-						ComponentSpec: cdv2.ComponentSpec{
+			cd := &cdutils.ResolvedComponentDescriptor{
+				ResolvedComponentSpec: cdutils.ResolvedComponentSpec{
+					ObjectMeta: cdv2.ObjectMeta{
+						Name:    "mycomp",
+						Version: "1.0.0",
+					},
+					ExternalResources: map[string]cdv2.Resource{
+						"mycustomimage": {
 							ObjectMeta: cdv2.ObjectMeta{
-								Name:    "mycomp",
+								Name:    "mycustomimage",
 								Version: "1.0.0",
 							},
-							ExternalResources: []cdv2.Resource{
-								{
-									ObjectMeta: cdv2.ObjectMeta{
-										Name:    "mycustomimage",
-										Version: "1.0.0",
-									},
-									Access: &cdv2.OCIRegistryAccess{
-										ObjectType: cdv2.ObjectType{
-											Type: cdv2.OCIRegistryType,
-										},
-										ImageReference: "quay.io/example/myimage:1.0.0",
-									},
+							Access: &cdv2.OCIRegistryAccess{
+								ObjectType: cdv2.ObjectType{
+									Type: cdv2.OCIRegistryType,
 								},
+								ImageReference: "quay.io/example/myimage:1.0.0",
 							},
 						},
 					},

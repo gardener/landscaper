@@ -22,43 +22,50 @@ import (
 
 // ImportStatus is the internal representation of all import status of a installation.
 type ImportStatus struct {
-	From map[string]*lsv1alpha1.ImportState
-	To   map[string]*lsv1alpha1.ImportState
+	Data   map[string]*lsv1alpha1.ImportStatus
+	Target map[string]*lsv1alpha1.ImportStatus
 }
 
-func (s *ImportStatus) set(status lsv1alpha1.ImportState) {
-	s.From[status.From] = &status
-	s.To[status.To] = &status
+func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
+	if status.Type == lsv1alpha1.DataImportStatusType {
+		s.Data[status.Name] = &status
+	}
+	if status.Type == lsv1alpha1.TargetImportStatusType {
+		s.Target[status.Name] = &status
+	}
 }
 
 // Updates the internal import states
-func (s *ImportStatus) Update(state lsv1alpha1.ImportState) {
+func (s *ImportStatus) Update(state lsv1alpha1.ImportStatus) {
 	s.set(state)
 }
 
-// GetStates returns the import states of the installation.
-func (s *ImportStatus) GetStates() []lsv1alpha1.ImportState {
-	states := make([]lsv1alpha1.ImportState, 0)
-	for _, state := range s.To {
+// GetStatus returns the import states of the installation.
+func (s *ImportStatus) GetStatus() []lsv1alpha1.ImportStatus {
+	states := make([]lsv1alpha1.ImportStatus, 0)
+	for _, state := range s.Data {
+		states = append(states, *state)
+	}
+	for _, state := range s.Target {
 		states = append(states, *state)
 	}
 	return states
 }
 
-// GetFrom returns the component state for the given From key.
-func (s *ImportStatus) GetFrom(key string) (lsv1alpha1.ImportState, error) {
-	state, ok := s.From[key]
+// GetData returns the import data status for the given key.
+func (s *ImportStatus) GetData(name string) (lsv1alpha1.ImportStatus, error) {
+	state, ok := s.Data[name]
 	if !ok {
-		return lsv1alpha1.ImportState{}, fmt.Errorf("import state with from key %s not found", key)
+		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
 	}
 	return *state, nil
 }
 
-// GetFrom returns the component state for the given To key.
-func (s *ImportStatus) GetTo(key string) (lsv1alpha1.ImportState, error) {
-	state, ok := s.To[key]
+// GetTarget returns the import target state for the given key.
+func (s *ImportStatus) GetTarget(name string) (lsv1alpha1.ImportStatus, error) {
+	state, ok := s.Target[name]
 	if !ok {
-		return lsv1alpha1.ImportState{}, fmt.Errorf("import state with to key %s not found", key)
+		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
 	}
 	return *state, nil
 }

@@ -65,7 +65,7 @@ func CreateGenerationHash(inst *lsv1alpha1.Installation) (string, error) {
 
 	for i, state := range inst.Status.Imports {
 		gen.Imports[i] = importState{
-			Key:        state.To,
+			Key:        state.Name, // todo: use dataobject ref name
 			Generation: state.ConfigGeneration,
 		}
 	}

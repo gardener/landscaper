@@ -15,21 +15,16 @@
 package imports
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha1"
-	"encoding/gob"
+	"errors"
 	"fmt"
 
+	"github.com/mandelsoft/spiff/spiffing"
+	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/utils"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // NewConstructor creates a new Import Constructor.
@@ -45,125 +40,171 @@ func NewConstructor(op *installations.Operation) *Constructor {
 
 // Construct loads all imported data from the data sources (either installations or the landscape config)
 // and creates the imported configuration.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) ([]*dataobjects.DataObject, interface{}, error) {
+func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) (map[string]interface{}, error) {
 	var (
-		fldPath     = field.NewPath(inst.Info.Name)
-		values      = make(map[string]interface{})
-		mappings    = inst.GetImportMappings()
-		dataObjects = make([]*dataobjects.DataObject, len(mappings))
+		fldPath = field.NewPath(inst.Info.Name)
+		imports = make(map[string]interface{})
 	)
 
-	for i, importMapping := range mappings {
-		impPath := fldPath.Index(i)
-		do, err := c.constructForMapping(ctx, impPath, inst, importMapping)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		dataObjects = append(dataObjects, do)
-
-		value, err := jsonpath.Construct(importMapping.To, do.Data)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to construct object with path %s for import %s: %w", importMapping.To, importMapping.Name, err)
-		}
-		values = utils.MergeMaps(values, value)
-	}
-
-	return dataObjects, values, nil
-}
-
-func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
-	do, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
-	if err == nil {
-		return do, nil
-	}
-	if !installations.IsImportNotFoundError(err) {
-		return nil, err
-	}
-
-	// get deploy item from current context
-	raw := &lsv1alpha1.DataObject{}
-	doName := lsv1alpha1helper.GenerateDataObjectName(c.Context().Name, mapping.From)
-	if err := c.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
-		return nil, err
-	}
-	do, err = dataobjects.NewFromDataObject(raw)
-	if err != nil {
-		return nil, err
-	}
-	// set new import metadata
-	do.SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
-	do.SetKey(mapping.To)
-
-	if err := c.updateImportStateForDatatObject(ctx, inst, mapping, do); err != nil {
-		return nil, err
-	}
-
-	return do, nil
-}
-
-func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
-	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
-		return nil, err
-	}
-
-	data, err := c.GetStaticData(ctx)
+	// read imports and construct internal templating imports
+	importedDataObjects, err := c.GetImportedDataObjects(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var val interface{}
-	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
-		// should not happen as it is already checked in checkStaticDataForMapping
-		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
-	}
-
-	var encData bytes.Buffer
-	if err := gob.NewEncoder(&encData).Encode(val); err != nil {
+	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects)
+	if err != nil {
 		return nil, err
 	}
-	h := sha1.New()
-	h.Write(encData.Bytes())
 
-	inst.ImportStatus().Update(lsv1alpha1.ImportState{
-		From: mapping.From,
-		To:   mapping.To,
-		SourceRef: &lsv1alpha1.ObjectReference{
-			Name:      inst.Info.Name,
-			Namespace: inst.Info.Namespace,
-		},
-		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
-	})
-	do := dataobjects.New().SetSourceType(lsv1alpha1.ImportDataObjectSourceType).SetKey(mapping.To).SetData(val)
-	return do, err
+	// add additional imports and targets
+	for _, importDef := range inst.Blueprint.Info.Imports {
+		// todo: implement target imports
+		// todo: validate schema
+		if importDef.Schema != nil {
+			if val, ok := templatedDataMappings[importDef.Name]; ok {
+				imports[importDef.Name] = val
+			} else if val, ok := importedDataObjects[importDef.Name]; ok {
+				imports[importDef.Name] = val.Data
+			}
+
+			if _, ok := imports[importDef.Name]; !ok {
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", importDef.Name)
+			}
+			if err := c.JSONSchemaValidator().ValidateGoStruct(importDef.Schema, imports[importDef.Name]); err != nil {
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", fldPath.String())
+			}
+			continue
+		}
+		if len(importDef.TargetType) != 0 {
+			return nil, errors.New("targets not implemented yet")
+		}
+		return nil, errors.New("whether target nor schema is defined")
+	}
+
+	return imports, nil
 }
 
-func (c *Constructor) updateImportStateForDatatObject(ctx context.Context, inst *installations.Installation, mapping installations.ImportMapping, do *dataobjects.DataObject) error {
-	state := lsv1alpha1.ImportState{
-		From: mapping.From,
-		To:   mapping.To,
+func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObjects map[string]*dataobjects.DataObject) (map[string]interface{}, error) {
+	templateValues := map[string]interface{}{}
+	for name, do := range importedDataObjects {
+		templateValues[name] = do.Data
 	}
-	owner := kutil.GetOwner(do.Raw.ObjectMeta)
-	var ref *lsv1alpha1.ObjectReference
-	if owner != nil {
-		ref = &lsv1alpha1.ObjectReference{
-			Name:      owner.Name,
-			Namespace: inst.Info.Namespace,
-		}
-	}
-	state.SourceRef = ref
-
-	if owner != nil && owner.Kind == "Installation" {
-		inst := &lsv1alpha1.Installation{}
-		if err := c.Client().Get(ctx, ref.NamespacedName(), inst); err != nil {
-			return fmt.Errorf("unable to fetch source of data object for import %s: %w", mapping.Name, err)
-		}
-		state.ConfigGeneration = inst.Status.ConfigGeneration
+	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(templateValues)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}
 
-	inst.ImportStatus().Update(state)
-	return nil
+	values := make(map[string]interface{})
+	for key, dataMapping := range c.Inst.Info.Spec.ImportDataMappings {
+		impPath := fldPath.Child(key)
+
+		tmpl, err := spiffyaml.Unmarshal(key, dataMapping)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse import mapping template %s: %w", impPath.String(), err)
+		}
+
+		res, err := spiff.Cascade(tmpl, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to template import mapping template %s: %w", impPath.String(), err)
+		}
+		values[key] = res.Value()
+	}
+	return values, nil
 }
+
+//func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
+//	do, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
+//	if err == nil {
+//		return do, nil
+//	}
+//	if !installations.IsImportNotFoundError(err) {
+//		return nil, err
+//	}
+//
+//	// get deploy item from current context
+//	raw := &lsv1alpha1.DataObject{}
+//	doName := lsv1alpha1helper.GenerateDataObjectName(c.Context().Name, mapping.From)
+//	if err := c.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
+//		return nil, err
+//	}
+//	do, err = dataobjects.NewFromDataObject(raw)
+//	if err != nil {
+//		return nil, err
+//	}
+//	// set new import metadata
+//	do.SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+//	do.SetKey(mapping.To)
+//
+//	if err := c.updateImportStateForDatatObject(ctx, inst, mapping, do); err != nil {
+//		return nil, err
+//	}
+//
+//	return do, nil
+//}
+//
+//func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
+//	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
+//		return nil, err
+//	}
+//
+//	data, err := c.GetStaticData(ctx)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var val interface{}
+//	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
+//		// should not happen as it is already checked in checkStaticDataForMapping
+//		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
+//	}
+//
+//	var encData bytes.Buffer
+//	if err := gob.NewEncoder(&encData).Encode(val); err != nil {
+//		return nil, err
+//	}
+//	h := sha1.New()
+//	h.Write(encData.Bytes())
+//
+//	inst.ImportStatus().Update(lsv1alpha1.ImportState{
+//		From: mapping.From,
+//		To:   mapping.To,
+//		SourceRef: &lsv1alpha1.ObjectReference{
+//			Name:      inst.Info.Name,
+//			Namespace: inst.Info.Namespace,
+//		},
+//		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
+//	})
+//	do := dataobjects.New().SetSourceType(lsv1alpha1.ImportDataObjectSourceType).SetKey(mapping.To).SetData(val)
+//	return do, err
+//}
+//
+//func (c *Constructor) updateImportStateForDatatObject(ctx context.Context, inst *installations.Installation, mapping installations.ImportMapping, do *dataobjects.DataObject) error {
+//	state := lsv1alpha1.ImportState{
+//		From: mapping.From,
+//		To:   mapping.To,
+//	}
+//	owner := kutil.GetOwner(do.Raw.ObjectMeta)
+//	var ref *lsv1alpha1.ObjectReference
+//	if owner != nil {
+//		ref = &lsv1alpha1.ObjectReference{
+//			Name:      owner.Name,
+//			Namespace: inst.Info.Namespace,
+//		}
+//	}
+//	state.SourceRef = ref
+//
+//	if owner != nil && owner.Kind == "Installation" {
+//		inst := &lsv1alpha1.Installation{}
+//		if err := c.Client().Get(ctx, ref.NamespacedName(), inst); err != nil {
+//			return fmt.Errorf("unable to fetch source of data object for import %s: %w", mapping.Name, err)
+//		}
+//		state.ConfigGeneration = inst.Status.ConfigGeneration
+//	}
+//
+//	inst.ImportStatus().Update(state)
+//	return nil
+//}
 
 func (c *Constructor) IsRoot() bool {
 	return c.parent == nil

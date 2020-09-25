@@ -16,22 +16,23 @@ spec:
       resourceName: root
 
   imports:
-  - from: ext.a
-    to: root.a
+    data:
+    - name: root.a
+      dataRef: ext.a
 
   exports:
-  - from: root.z
-    to: root.z
-  - from: root.y
-    to: root.y
+    data:
+    - name: root.y
+      dataRef: root.y
+    - name: root.z
+      dataRef: root.z
 
 status:
   phase: Progressing
   configGeneration: ""
 
   imports:
-  - from: ext.a
-    to: root.a
+  - name: root.a
     configGeneration: ""
     sourceRef:
       name: root

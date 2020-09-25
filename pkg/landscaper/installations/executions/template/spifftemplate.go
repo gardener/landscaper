@@ -33,8 +33,8 @@ func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExe
 		return nil, err
 	}
 	values := map[string]interface{}{
-		"imports":    imports,
-		"components": components,
+		"imports": imports,
+		"cd":      components,
 	}
 
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithFileSystem(blueprint.Fs).WithValues(values)

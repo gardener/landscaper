@@ -14,19 +14,25 @@
 
 package cdutils
 
-import cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+import (
+	"fmt"
 
-// MappedComponentDescriptor defines a landscaper internal representation of the component descriptor.
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+)
+
+// {{ .cd.componentReferences.my-comp.localReources }}
+
+// ResolvedComponentDescriptor defines a landscaper internal representation of the component descriptor.
 // It is only used for templating and easier access of resources.
-type MappedComponentDescriptor struct {
+type ResolvedComponentDescriptor struct {
 	// Metadata specifies the schema version of the component.
 	Metadata cdv2.Metadata `json:"meta"`
 	// Spec contains the specification of the component.
-	MappedComponentSpec `json:"component"`
+	ResolvedComponentSpec `json:"component"`
 }
 
-// MappedComponentSpec defines a component spec with mapped resources instead of arrays.
-type MappedComponentSpec struct {
+// ResolvedComponentSpec defines a component spec with mapped resources instead of arrays.
+type ResolvedComponentSpec struct {
 	cdv2.ObjectMeta `json:",inline"`
 	// RepositoryContexts defines the previous repositories of the component
 	RepositoryContexts []cdv2.RepositoryContext `json:"repositoryContexts"`
@@ -36,26 +42,51 @@ type MappedComponentSpec struct {
 	// Sources defines sources that produced the component
 	Sources map[string]cdv2.Resource `json:"sources"`
 	// ComponentReferences references component dependencies that can be resolved in the current context.
-	ComponentReferences map[string]cdv2.ObjectMeta `json:"componentReferences"`
+	ComponentReferences map[string]ResolvedComponentDescriptor `json:"componentReferences"`
 	// LocalResources defines internal resources that are created by the component
 	LocalResources map[string]cdv2.Resource `json:"localResources"`
 	// ExternalResources defines external resources that are not produced by a third party.
 	ExternalResources map[string]cdv2.Resource `json:"externalResources"`
 }
 
-// ConvertFromComponentDescriptor converts a component descriptor to a mapped component descriptor.
-func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor) MappedComponentDescriptor {
-	mcd := MappedComponentDescriptor{}
+func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryContext {
+	return cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
+}
+
+type ResolveComponentReferenceFunc = func(meta cdv2.ObjectMeta) (cdv2.ComponentDescriptor, error)
+
+// ConvertFromComponentDescriptor converts a component descriptor to a resolved component descriptor.
+func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
+	mcd := ResolvedComponentDescriptor{}
 	mcd.ObjectMeta = cd.ObjectMeta
 	mcd.RepositoryContexts = cd.RepositoryContexts
 	mcd.Provider = cd.Provider
 
 	mcd.Sources = ResourceListToMap(cd.Sources)
-	mcd.ComponentReferences = ObjectMetaToMap(cd.ComponentReferences)
 	mcd.LocalResources = ResourceListToMap(cd.LocalResources)
 	mcd.ExternalResources = ResourceListToMap(cd.ExternalResources)
 
-	return mcd
+	var err error
+	mcd.ComponentReferences, err = ResolveComponentReferences(cd.ComponentReferences, refFunc)
+
+	return mcd, err
+}
+
+// ResolveComponentReferences resolves a list of component references to resolved components.
+func ResolveComponentReferences(refs []cdv2.ObjectMeta, refFunc ResolveComponentReferenceFunc) (map[string]ResolvedComponentDescriptor, error) {
+	resolvedComponentRefs := map[string]ResolvedComponentDescriptor{}
+	for _, ref := range refs {
+		cd, err := refFunc(ref)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve component: %w", err)
+		}
+		resolvedComponent, err := ConvertFromComponentDescriptor(cd, refFunc)
+		if err != nil {
+			return nil, fmt.Errorf("unable to convert component %s:%s in resolved component: %w", cd.Name, cd.Version, err)
+		}
+		resolvedComponentRefs[ref.Name] = resolvedComponent
+	}
+	return resolvedComponentRefs, nil
 }
 
 // ResourceListToMap converts a list of resources to a map of resources with the resources name as its key.

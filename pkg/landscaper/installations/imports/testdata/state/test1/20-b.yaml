@@ -22,20 +22,21 @@ spec:
       resourceName: b
 
   imports:
-  - from: a.z
-    to: b.a
+    data:
+    - name: b.a
+      dataRef: a.z
 
   exports:
-  - from: b.y
-    to: b.z
+    data:
+    - name: b.y
+      dataRef: b.z
 
 status:
   phase: Init
   configGeneration: "def"
 
   imports:
-  - from: a.z
-    to: b.a
+  - name: b.a
     configGeneration: "klm"
     sourceRef:
       name: a

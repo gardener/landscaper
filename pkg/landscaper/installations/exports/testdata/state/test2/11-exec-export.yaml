@@ -4,5 +4,6 @@ metadata:
   name: elmpnol5zsxhw72qcj2cldsx4vvznjc6
   namespace: test2
 data:
-  root:
-    "y": val-exec
+  deploy:
+    root.y: val-exec-y
+    root.z: val-exec-z

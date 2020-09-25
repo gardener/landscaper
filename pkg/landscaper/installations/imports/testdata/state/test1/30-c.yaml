@@ -22,28 +22,28 @@ spec:
       resourceName: c
 
   imports:
-  - from: a.z
-    to: c.a
-  - from: b.z
-    to: c.b
+    data:
+    - name: c.a
+      dataRef: a.z
+    - name: c.b
+      dataRef: b.z
 
   exports:
-  - from: c.y
-    to: root.y
+    data:
+    - name: c.y
+      dataRef: root.y
 
 status:
   phase: Init
   configGeneration: "ghi"
 
   imports:
-  - from: a.z
-    to: c.a
+  - name: c.a
     configGeneration: "klm"
     sourceRef:
       name: a
       namespace: test1
-  - from: b.z
-    to: c.b
+  - name: c.b
     configGeneration: ""
     sourceRef:
       name: b

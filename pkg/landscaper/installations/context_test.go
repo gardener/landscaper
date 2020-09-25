@@ -31,7 +31,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("SourceType", func() {
+var _ = g.Describe("Context", func() {
 
 	var (
 		op lsoperation.Interface
@@ -74,7 +74,7 @@ var _ = g.Describe("SourceType", func() {
 		Expect(lCtx.Siblings).To(HaveLen(0))
 	})
 
-	g.It("should show no parent and one sibling for the test2 a installation", func() {
+	g.It("should show no parent and one sibling for the test2/a installation", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 

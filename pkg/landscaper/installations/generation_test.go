@@ -31,13 +31,13 @@ var _ = Describe("config generation", func() {
 	BeforeEach(func() {
 		inst = &lsv1alpha1.Installation{}
 		inst.Generation = 5
-		inst.Status.Imports = []lsv1alpha1.ImportState{
+		inst.Status.Imports = []lsv1alpha1.ImportStatus{
 			{
-				To:               "a",
+				Name:             "a",
 				ConfigGeneration: "abc",
 			},
 			{
-				To:               "b",
+				Name:             "b",
 				ConfigGeneration: "def",
 			},
 		}
@@ -57,13 +57,13 @@ var _ = Describe("config generation", func() {
 		gen, err := installations.CreateGenerationHash(inst)
 		Expect(err).ToNot(HaveOccurred())
 
-		inst.Status.Imports = []lsv1alpha1.ImportState{
+		inst.Status.Imports = []lsv1alpha1.ImportStatus{
 			{
-				To:               "b",
+				Name:             "b",
 				ConfigGeneration: "def",
 			},
 			{
-				To:               "a",
+				Name:             "a",
 				ConfigGeneration: "abc",
 			},
 		}
@@ -90,9 +90,9 @@ var _ = Describe("config generation", func() {
 		gen, err := installations.CreateGenerationHash(inst)
 		Expect(err).ToNot(HaveOccurred())
 
-		inst.Status.Imports = []lsv1alpha1.ImportState{
+		inst.Status.Imports = []lsv1alpha1.ImportStatus{
 			{
-				To:               "b",
+				Name:             "b",
 				ConfigGeneration: "def",
 			},
 		}

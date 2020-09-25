@@ -4,5 +4,5 @@ metadata:
   name: 73cbsxuafmht3zu2redspvlyv64fiasd
   namespace: test3
 data:
-  root:
-    "y": val-exec
+  deploy:
+    root.y: val-exec

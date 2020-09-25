@@ -1,15 +1,16 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: BlueprintReference
+kind: InstallationTemplate
 
 name: def1
-ref:
-  componentName: "root"
-  kind: localResource
-  resourceName: def1
+
+blueprint:
+  ref: cd://localResources/def1
 
 imports:
-- from: a
-  to: b
+  data:
+  - name: a
+    dataRef: b
 exports:
-- from: c
-  to: d
+  data:
+  - name: c
+    dataRef: d

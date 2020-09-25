@@ -127,10 +127,6 @@ type InstallationSpec struct {
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
 	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
-
-	// StaticData contains a list of data sources that are used to satisfy imports
-	// +optional
-	StaticData []StaticDataSource `json:"staticData,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.
@@ -149,7 +145,7 @@ type InstallationStatus struct {
 	ConfigGeneration string `json:"configGeneration"`
 
 	// Imports contain the state of the imported values.
-	Imports []ImportState `json:"imports,omitempty"`
+	Imports []ImportStatus `json:"imports,omitempty"`
 
 	// InstallationReferences contain all references to sub-components
 	// that are created based on the component definition.
@@ -195,10 +191,6 @@ type InstallationTemplate struct {
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
 	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
-
-	// StaticData contains a list of data sources that are used to satisfy imports
-	// +optional
-	StaticData []BlueprintStaticDataSource `json:"staticData,omitempty"`
 }
 
 // InstallationTemplateBlueprintDefinition contains either a reference to a blueprint or an inline definition.
@@ -243,6 +235,7 @@ type DataImport struct {
 	Name string `json:"name"`
 
 	// DataRef is the name of the in-cluster data object.
+	// The reference can also be a namespaces name. E.g. "default/mydataref"
 	DataRef string `json:"dataRef"`
 
 	// Version specifies the imported data version.
@@ -265,7 +258,7 @@ type TargetImportExport struct {
 	// Name the internal name of the imported/exported target.
 	Name string `json:"name"`
 
-	// DataRef is the name of the in-cluster target object.
+	// Target is the name of the in-cluster target object.
 	Target string `json:"target"`
 }
 
@@ -276,7 +269,7 @@ type BlueprintDefinition struct {
 	Reference *RemoteBlueprintReference `json:"ref,omitempty"`
 	// Inline defines a inline yaml filesystem with a blueprint.
 	// +optional
-	Inline *InlineBlueprint `json:"inline,omitmepty"`
+	Inline *InlineBlueprint `json:"inline,omitempty"`
 }
 
 // RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.
@@ -348,15 +341,30 @@ type SecretLabelSelectorRef struct {
 	Key string `json:"key"`
 }
 
-// ImportState hold the state of a import.
-type ImportState struct {
+// ImportStatusType defines the type of a import status.
+type ImportStatusType string
+
+const (
+	DataImportStatusType   ImportStatusType = "dataobject"
+	TargetImportStatusType ImportStatusType = "target"
+)
+
+// ImportStatus hold the state of a import.
+type ImportStatus struct {
 	// Name is the distinct identifier of the import.
 	// Can be either from data or target imports
 	Name string `json:"name"`
-
+	// Type defines the kind of import.
+	// Can be either DataObject or Target
+	Type ImportStatusType `json:"type"`
+	// Target is the name of the in-cluster target object.
+	// +optional
+	Target string `json:"target,omitempty"`
+	// DataRef is the name of the in-cluster data object.
+	// +optional
+	DataRef string `json:"dataRef,omitempty"`
 	// SourceRef is the reference to the installation where the value is imported
-	SourceRef *TypedObjectReference `json:"sourceRef,omitempty"`
-
+	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 	// ConfigGeneration is the generation of the imported value.
 	ConfigGeneration string `json:"configGeneration"`
 }

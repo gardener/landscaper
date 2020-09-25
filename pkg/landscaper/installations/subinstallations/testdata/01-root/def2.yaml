@@ -1,8 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: BlueprintReference
+kind: InstallationTemplate
 
 name: def2
-ref:
-  componentName: "root"
-  kind: localResource
-  resourceName: def2
+
+blueprint:
+  ref: cd://localResources/def2

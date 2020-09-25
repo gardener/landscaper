@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
-  name: c
+  name: d
   namespace: test1
   labels:
     "landscaper.gardener.cloud/encompassed-by": root
@@ -15,31 +15,31 @@ spec:
     ref:
       repositoryContext:
         type: local
-        baseUrl: ""
+        baseUrl: "../testdata/registry"
       version: 1.0.0
       componentName: root
       kind: localResource
-      resourceName: c
+      resourceName: d
 
   imports:
-  - from: a.z
-    to: c.a
-  - from: b.z
-    to: c.b
+    data:
+    - name: d.a
+      dataRef: b.z
+    - name: d.b
+      dataRef: root.y
 
   exports:
-  - from: c.y
-    to: c.z
+    data:
+    - name: d.y
+      dataRef: root.z
 
 status:
   phase: Init
-  configGeneration: ""
+  configGeneration: "def"
 
   imports:
-  - from: a.z
-    to: c.a
+  - name: d.a
     configGeneration: ""
-  - from: b.z
-    to: c.b
+  - name: d.b
     configGeneration: ""
 

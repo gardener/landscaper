@@ -23,7 +23,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -48,10 +47,10 @@ func NewValidator(op *installations.Operation) *Validator {
 // satisfied with the correct version
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
-	fldPath := field.NewPath(inst.Info.Name)
+	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.Info.Name))
 
 	// check if parent has sibling installation dependencies that are not finished yet
-	completed, err := installations.CheckCompletedSiblingDependentsOfParent(ctx, v, v.parent)
+	completed, err := installations.CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
@@ -65,9 +64,9 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 		return installations.NewNotCompletedDependentsError("A parent or parent's parent sibling Installation dependency is not completed yet", nil)
 	}
 
-	for _, importMapping := range inst.GetImportMappings() {
-		impPath := fldPath.Child(importMapping.Name)
-		err = v.checkImportMappingIsSatisfied(ctx, impPath, inst, importMapping)
+	for _, dataImport := range inst.Info.Spec.Imports.Data {
+		impPath := fldPath.Child(dataImport.Name)
+		err = v.checkDataImportIsSatisfied(ctx, impPath, inst, dataImport)
 		if err != nil {
 			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				CheckImportsReason,
@@ -76,35 +75,33 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 		}
 	}
 
+	// todo: add target import validation
+
 	inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		CheckImportsReason,
 		"All imports are satisfied"))
 	return nil
 }
 
-func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
-	err := v.checkStaticDataForMapping(ctx, fldPath, inst, mapping)
-	if !installations.IsImportNotFoundError(err) {
-		return err
-	}
-	if err == nil {
-		return nil
-	}
+func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
+	//err := v.checkStaticDataForMapping(ctx, fldPath, inst, mapping)
+	//if !installations.IsImportNotFoundError(err) {
+	//	return err
+	//}
+	//if err == nil {
+	//	return nil
+	//}
 
 	// get deploy item from current context
 	// todo: find better name
 	raw := &lsv1alpha1.DataObject{}
-	doName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, mapping.From)
+	doName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, dataImport.DataRef)
 	if err := v.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
 		return err
 	}
 	do, err := dataobjects.NewFromDataObject(raw)
 	if err != nil {
 		return err
-	}
-
-	if err := v.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, do.Data); err != nil {
-		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected schema: %s", fldPath.String(), err.Error())
 	}
 
 	owner := kutil.GetOwner(do.Raw.ObjectMeta)
@@ -120,37 +117,33 @@ func (v *Validator) checkImportMappingIsSatisfied(ctx context.Context, fldPath *
 
 	// check if the data object comes from the parent
 	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
-		return v.checkStateForParentImport(fldPath, mapping)
+		return v.checkStateForParentImport(fldPath, dataImport.DataRef)
 	}
 
 	// otherwise validate as sibling export
-	return v.checkStateForSiblingExport(ctx, fldPath, ref, mapping)
+	return v.checkStateForSiblingDataExport(ctx, fldPath, ref, dataImport.DataRef)
 }
 
-func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) error {
-	if inst.Info.Spec.StaticData == nil {
-		return installations.NewImportNotFoundErrorf(nil, "%s: static data not defined", fldPath.String())
-	}
+//func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, key string) error {
+//	if inst.Info.Spec.StaticData == nil {
+//		return installations.NewImportNotFoundErrorf(nil, "%s: static data not defined", fldPath.String())
+//	}
+//
+//	data, err := v.GetStaticData(ctx)
+//	if err != nil {
+//		return err
+//	}
+//
+//	var val interface{}
+//	if err := jsonpath.GetValue(key, data, &val); err != nil {
+//		return installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
+//	}
+//	return nil
+//}
 
-	data, err := v.GetStaticData(ctx)
-	if err != nil {
-		return err
-	}
-
-	var val interface{}
-	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
-		return installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
-	}
-
-	if err := v.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, val); err != nil {
-		return installations.NewImportNotSatisfiedErrorf(err, "%s: imported datatype does not have the expected schema: %s", fldPath.String(), err.Error())
-	}
-	return nil
-}
-
-func (v *Validator) checkStateForParentImport(fldPath *field.Path, mapping installations.ImportMapping) error {
+func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName string) error {
 	// check if the parent also imports my import
-	_, err := v.parent.GetImportDefinition(mapping.From)
+	_, err := v.parent.GetImportDefinition(importName)
 	if err != nil {
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
@@ -161,16 +154,15 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, mapping insta
 	return nil
 }
 
-func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, mapping installations.ImportMapping) error {
+func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
 	sibling := v.getSiblingForObjectReference(siblingRef)
 	if sibling == nil {
 		return fmt.Errorf("%s: installation %s is not a sibling", fldPath.String(), siblingRef.NamespacedName().String())
 	}
 
 	// search in the sibling for the export mapping where importmap.from == exportmap.to
-	_, err := sibling.GetExportMappingTo(mapping.From)
-	if err != nil {
-		return installations.NewImportNotFoundErrorf(err, "%s: export in sibling not found", fldPath.String())
+	if !sibling.IsExportingData(importName) {
+		return installations.NewImportNotFoundErrorf(nil, "%s: export in sibling not found", fldPath.String())
 	}
 
 	if sibling.Info.Status.Phase != lsv1alpha1.ComponentPhaseSucceeded {
@@ -179,7 +171,7 @@ func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *fie
 
 	// todo: check generation of other components in the dependency tree
 	// we expect that no dependent siblings are running
-	isCompleted, err := installations.CheckCompletedSiblingDependents(ctx, v, sibling)
+	isCompleted, err := installations.CheckCompletedSiblingDependents(ctx, v.Operation, sibling)
 	if err != nil {
 		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet", fldPath.String())
 	}

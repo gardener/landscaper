@@ -57,8 +57,8 @@ func (_ *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	values := map[string]interface{}{
-		"imports":    imports,
-		"components": components,
+		"imports": imports,
+		"cd":      components,
 	}
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {

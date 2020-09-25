@@ -22,24 +22,21 @@ spec:
       resourceName: a
 
   imports:
-  - from: root.a
-    to: a.b
+    data:
+    - name: a.b
+      dataRef: root.a
 
   exports:
-  - from: a.x
-    to: a.z
+    data:
+    - name: a.x
+      dataRef: a.z
 
 status:
   phase: Succeeded
   configGeneration: ""
 
-  exportRef:
-    name: a-config
-    namespace: test2
-
   imports:
-  - from: root.a
-    to: a.b
+  - name: a.b
     configGeneration: ""
   observedGeneration: 0
 

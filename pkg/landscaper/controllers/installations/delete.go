@@ -26,12 +26,17 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
+var (
+	SiblingImportError      = errors.New("a sibling still imports some of the exports")
+	WaitingForDeletionError = errors.New("waiting for deletion")
+)
+
 func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 	op.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 	// check if suitable for deletion
 	// todo: replacements and internal deletions
 	if checkIfSiblingImports(op) {
-		return errors.New("a sibling still imports some of the exports")
+		return SiblingImportError
 	}
 
 	execDeleted, err := deleteExecution(ctx, op)
@@ -45,7 +50,7 @@ func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 	}
 
 	if !execDeleted || !subInstsDeleted {
-		return errors.New("waiting for deletion")
+		return WaitingForDeletionError
 	}
 
 	controllerutil.RemoveFinalizer(op.Inst.Info, lsv1alpha1.LandscaperFinalizer)
@@ -95,8 +100,13 @@ func deleteSubInstallations(ctx context.Context, op *installations.Operation) (b
 
 func checkIfSiblingImports(op *installations.Operation) bool {
 	for _, sibling := range op.Context().Siblings {
-		for _, exportMapping := range op.Inst.Info.Spec.Exports {
-			if _, err := sibling.GetImportMappingFrom(exportMapping.To); err == nil {
+		for _, dataImports := range op.Inst.Info.Spec.Exports.Data {
+			if sibling.IsImportingData(dataImports.DataRef) {
+				return true
+			}
+		}
+		for _, targetImport := range op.Inst.Info.Spec.Exports.Targets {
+			if sibling.IsImportingData(targetImport.Target) {
 				return true
 			}
 		}

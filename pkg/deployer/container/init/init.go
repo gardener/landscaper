@@ -131,12 +131,12 @@ func Run(ctx context.Context, log logr.Logger) error {
 		}
 
 		if cd != nil {
-			cdList, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
+			resolvedComponent, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, regAcc.ComponentsRegistry(), *cd)
 			if err != nil {
 				return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
 			}
 
-			cdListJSONBytes, err := json.Marshal(cdutils.ConvertFromComponentDescriptorList(cdList))
+			cdListJSONBytes, err := json.Marshal(resolvedComponent)
 			if err != nil {
 				return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
 			}

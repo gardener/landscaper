@@ -14,23 +14,33 @@ metadata:
   - finalizer.landscaper.gardener.cloud
 spec:
 
-  blueprintRef: a:1.0.0
+  blueprint:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: root
+      kind: localResource
+      resourceName: a
 
   imports:
-  - from: root.a
-    to: a.b
+    data:
+    - name: a.b
+      dataRef: root.a
+
 
   exports:
-  - from: a.x
-    to: a.z
+    data:
+    - name: a.x
+      dataRef: a.z
 
 status:
   phase: Progressing
   configGeneration: ""
 
   imports:
-  - from: root.a
-    to: a.b
+  - name: a.b
     configGeneration: ""
 
   installationRefs:

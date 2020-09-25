@@ -98,7 +98,7 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 }
 
 // CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
-func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op lsoperation.Interface, parent *Installation) (bool, error) {
+func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *Operation, parent *Installation) (bool, error) {
 	if parent == nil {
 		return true, nil
 	}
@@ -123,53 +123,82 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op lsoperation
 }
 
 // CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed
-func CheckCompletedSiblingDependents(ctx context.Context, op lsoperation.Interface, inst *Installation) (bool, error) {
+func CheckCompletedSiblingDependents(ctx context.Context, op *Operation, inst *Installation) (bool, error) {
 	if inst == nil {
 		return true, nil
 	}
-	// todo: may not depend on status of object
-	for _, impState := range inst.ImportStatus().GetStates() {
-		if impState.SourceRef != nil {
+	// todo: add target support
+	for _, dataImport := range inst.Info.Spec.Imports.Data {
+		sourceRef, err := getImportSource(ctx, op, inst, dataImport)
+		if err != nil {
+			return false, err
+		}
+		if sourceRef == nil {
+			continue
+		}
+		// check if the import is imported from myself or the parent
+		// and continue if so as we have a different check for the parent
+		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.Info) {
+			continue
+		}
 
-			// check if the import is imported from myself or the parent
-			// and continue if so as we have a different check for the parent
-			if lsv1alpha1helper.ReferenceIsObject(*impState.SourceRef, inst.Info) {
-				continue
-			}
+		parent, err := GetParent(ctx, op, inst)
+		if err != nil {
+			return false, err
+		}
+		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.Info) {
+			continue
+		}
 
-			parent, err := GetParent(ctx, op, inst)
-			if err != nil {
-				return false, err
-			}
-			if parent != nil && lsv1alpha1helper.ReferenceIsObject(*impState.SourceRef, parent.Info) {
-				continue
-			}
+		// we expect that the source ref is always a installation
+		inst := &lsv1alpha1.Installation{}
+		if err := op.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+			return false, err
+		}
 
-			// we expect that the source ref is always a installation
-			inst := &lsv1alpha1.Installation{}
-			if err := op.Client().Get(ctx, impState.SourceRef.NamespacedName(), inst); err != nil {
-				return false, err
-			}
+		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+			op.Log().V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
+			return false, nil
+		}
 
-			if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-				op.Log().V(3).Info("dependent installation not completed", "inst", impState.SourceRef.NamespacedName().String())
-				return false, nil
-			}
+		intInst, err := CreateInternalInstallation(ctx, op, inst)
+		if err != nil {
+			return false, err
+		}
 
-			intInst, err := CreateInternalInstallation(ctx, op, inst)
-			if err != nil {
-				return false, err
-			}
-
-			isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
-			if err != nil {
-				return false, err
-			}
-			if !isCompleted {
-				return false, nil
-			}
+		isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
+		if err != nil {
+			return false, err
+		}
+		if !isCompleted {
+			return false, nil
 		}
 	}
 
 	return true, nil
+}
+
+// getImportSource returns a reference to the owner of a data import.
+func getImportSource(ctx context.Context, op *Operation, inst *Installation, dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
+	status, err := inst.ImportStatus().GetData(dataImport.Name)
+	if err == nil && status.SourceRef != nil {
+		return status.SourceRef, nil
+	}
+
+	// we have to get the corresponding installation from the the cluster
+	do := &lsv1alpha1.DataObject{}
+	doName := lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, dataImport.DataRef)
+	if err := op.Client().Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), do); err != nil {
+		return nil, fmt.Errorf("unable to fetch data object %s (%s): %w", doName, dataImport.DataRef, err)
+	}
+	owner := kubernetes.GetOwner(do.ObjectMeta)
+	if owner == nil {
+		return nil, nil
+	}
+
+	// we cannot validate if the source is not an installation
+	if owner.Kind != "Installation" {
+		return nil, nil
+	}
+	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
 }

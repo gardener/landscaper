@@ -4,5 +4,5 @@ kind: Blueprint
 name: root
 version: 1.0.0
 
-blueprintRefs:
-- ./def1.yaml
+subinstallations:
+- file: ./def1.yaml

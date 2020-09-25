@@ -48,6 +48,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, error) {
 	var (
 		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
+		bpPath          = fldPath.Child(fmt.Sprintf("(Bueprint %s)", c.Inst.Blueprint.Info.Name))
 		internalExports = map[string]interface{}{
 			"di": struct{}{},
 			"do": struct{}{},
@@ -74,30 +75,38 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		return nil, err
 	}
 
-	mappings, err := c.Inst.GetExportMappings()
-	if err != nil {
-		return nil, err
+	// validate all exports
+	for name, data := range exports {
+		def, err := c.Inst.GetExportDefinition(name)
+		if err != nil {
+			// ignore additional exports
+			c.Log().V(5).Info("key exported that is not defined by the blueprint", "name", name)
+			continue
+		}
+
+		if len(def.Schema) != 0 {
+			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema, data); err != nil {
+				return nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
+			}
+		} else if len(def.TargetType) != 0 {
+			return nil, fmt.Errorf("target type validation not implemented yet; check %s", bpPath.Child("exports").Child(name).String())
+		}
 	}
 
 	// Resolve export mapping for all internalExports
-	dataObjects := make([]*dataobjects.DataObject, len(mappings)) // map of mapping key to data
-	for i, mapping := range mappings {
-		data, ok := exports[mapping.From]
+	// todo: add target support
+	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.Info.Spec.Exports.Data))
+	dataExportsPath := fldPath.Child("exports")
+	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
+		dataExportPath := dataExportsPath.Child(dataExport.Name)
+		data, ok := exports[dataExport.Name]
 		if !ok {
-			return nil, fmt.Errorf("%s: export %s is not defined", fldPath.String(), mapping.Name)
+			return nil, fmt.Errorf("%s: export is not defined", dataExportPath.String())
 		}
-
-		if err := c.JSONSchemaValidator().ValidateGoStruct(mapping.Schema, data); err != nil {
-			return nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
-		}
-
-		do := &dataobjects.DataObject{
-			FieldValue: mapping.FieldValueDefinition.DeepCopy(),
-			Data:       data,
-		}
-		do.SetSourceType(lsv1alpha1.ExportDataObjectSourceType)
-		do.SetKey(mapping.DefinitionExportMapping.To)
-
+		do := dataobjects.New().
+			SetSourceType(lsv1alpha1.ExportDataObjectSourceType).
+			SetKey(dataExport.DataRef).
+			SetData(data)
 		dataObjects[i] = do
 	}
 

@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +34,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Constructor", func() {
+var _ = Describe("Constructor", func() {
 
 	var (
 		op *installations.Operation
@@ -45,7 +45,7 @@ var _ = g.Describe("Constructor", func() {
 		fakeCompRepo      componentsregistry.Registry
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -65,7 +65,7 @@ var _ = g.Describe("Constructor", func() {
 		}
 	})
 
-	g.It("should construct the exported config from its execution", func() {
+	It("should construct the exported config from its execution", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/root"])
@@ -78,15 +78,26 @@ var _ = g.Describe("Constructor", func() {
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object for 2 exports")
 
-		Expect(res[0].Data).To(Equal("val-exec"))
-		Expect(res[0].Metadata.SourceType).To(Equal(lsv1alpha1.ExportDataObjectSourceType))
-		Expect(res[0].Metadata.Key).To(Equal("root.y"))
-		Expect(res[1].Data).To(Equal("val-exec"))
-		Expect(res[1].Metadata.SourceType).To(Equal(lsv1alpha1.ExportDataObjectSourceType))
-		Expect(res[1].Metadata.Key).To(Equal("root.z"))
+		id := func(element interface{}) string {
+			return element.(*dataobjects.DataObject).Metadata.Key
+		}
+		Expect(res).To(MatchAllElements(id, Elements{
+			"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
+				"Metadata": MatchFields(IgnoreExtras, Fields{
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+				}),
+				"Data": Equal("val-exec-y"),
+			})),
+			"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
+				"Metadata": MatchFields(IgnoreExtras, Fields{
+					"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+				}),
+				"Data": Equal("val-exec-z"),
+			})),
+		}))
 	})
 
-	g.It("should construct the exported config from a child", func() {
+	It("should construct the exported config from a child", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
@@ -109,9 +120,9 @@ var _ = g.Describe("Constructor", func() {
 
 		id := func(element interface{}) string {
 			do := element.(*dataobjects.DataObject)
-			return do.FieldValue.Name
+			return do.Metadata.Key
 		}
-		Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
+		Expect(res).To(MatchAllElements(id, Elements{
 			"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Data": Equal("val-b"),
 				"Metadata": MatchFields(IgnoreExtras, Fields{
@@ -129,7 +140,7 @@ var _ = g.Describe("Constructor", func() {
 		}))
 	})
 
-	g.It("should forbid the export from a child when the schema is not satisfied", func() {
+	It("should forbid the export from a child when the schema is not satisfied", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
@@ -149,7 +160,7 @@ var _ = g.Describe("Constructor", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	g.It("should construct the exported config from a siblings and the execution config", func() {
+	It("should construct the exported config from a siblings and the execution config", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
@@ -160,7 +171,7 @@ var _ = g.Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"root.y: {{ .exports.di.root.y }}\nroot.z: {{ index .exports.do \"root.z\" }}"`),
+				Template: []byte(`"root.y: {{ index .exports.di.deploy \"root.y\" }}\nroot.z: {{ index .exports.do \"root.z\" }}"`),
 			},
 		}
 
@@ -172,7 +183,7 @@ var _ = g.Describe("Constructor", func() {
 
 		id := func(element interface{}) string {
 			do := element.(*dataobjects.DataObject)
-			return do.FieldValue.Name
+			return do.Metadata.Key
 		}
 		Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
 			"root.y": PointTo(MatchFields(IgnoreExtras, Fields{

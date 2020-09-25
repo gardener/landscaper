@@ -1,13 +1,15 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-name: a
+name: b
 version: 1.0.0
 
 imports:
-- key: a.b
-  type: string
+- name: b.a
+  schema:
+    type: string
 
 exports:
-- key: a.z
-  type: number
+- name: b.z
+  schema:
+    type: string

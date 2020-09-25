@@ -24,6 +24,7 @@ const (
 	ImportNotSatisfied     ErrorReason = "ImportNotSatisfied"
 	NotCompletedDependents ErrorReason = "NotCompletedDependents"
 	ExportNotFound         ErrorReason = "ExportNotFound"
+	SchemaValidationFailed ErrorReason = "SchemaValidationFailed"
 )
 
 type Error struct {
@@ -130,6 +131,11 @@ func NewExportNotFoundErrorf(err error, format string, a ...interface{}) error {
 // IsExportNotFoundError checks if the provided error is of type ExportNotFound
 func IsExportNotFoundError(err error) bool {
 	return IsErrorForReason(err, ExportNotFound)
+}
+
+// IsSchemaValidationFailedError checks if the provided error is of type SchemaValidationFailed
+func IsSchemaValidationFailedError(err error) bool {
+	return IsErrorForReason(err, SchemaValidationFailed)
 }
 
 // IsErrorForReason checks if the error is a registry error and of the givne reason.

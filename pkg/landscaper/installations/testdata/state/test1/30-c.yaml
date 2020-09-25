@@ -2,7 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: c
-  namespace: test3
+  namespace: test1
   labels:
     "landscaper.gardener.cloud/encompassed-by": root
   ownerReferences:
@@ -15,27 +15,37 @@ spec:
     ref:
       repositoryContext:
         type: local
-        baseUrl: ""
+        baseUrl: "../testdata/registry"
       version: 1.0.0
       componentName: root
       kind: localResource
       resourceName: c
 
   imports:
-  - from: b.z
-    to: c.b
+    data:
+    - name: c.a
+      dataRef: a.z
+    - name: c.b
+      dataRef: b.z
 
   exports:
-  - from: c.y
-    to: c.z
+    data:
+    - name: c.y
+      dataRef: root.y
 
 status:
   phase: Init
-  configGeneration: ""
+  configGeneration: "ghi"
 
   imports:
-  - from: b.z
-    to: c.b
+  - name: c.a
+    configGeneration: "klm"
+    sourceRef:
+      name: a
+      namespace: test1
+  - name: c.b
     configGeneration: ""
-
+    sourceRef:
+      name: b
+      namespace: test1
 

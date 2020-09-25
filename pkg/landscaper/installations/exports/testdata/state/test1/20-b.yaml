@@ -22,23 +22,20 @@ spec:
       resourceName: b
 
   imports:
-  - from: a.z
-    to: b.a
+    data:
+    - name: b.a
+      dataRef: a.z
 
   exports:
-  - from: b.y
-    to: root.z
+    data:
+    - name: b.y
+      dataRef: root.z
 
 status:
   phase: Init
   configGeneration: ""
 
-  exportRef:
-    name: b-config
-    namespace: test1
-
   imports:
-  - from: a.z
-    to: b.a
+  - name: b.a
     configGeneration: ""
 

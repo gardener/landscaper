@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
@@ -40,7 +39,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -49,7 +47,7 @@ type Operation struct {
 
 	Inst                        *Installation
 	ComponentDescriptor         *cdv2.ComponentDescriptor
-	ResolvedComponentDescriptor cdv2.ComponentDescriptorList
+	ResolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor
 	context                     Context
 	staticData                  map[string]interface{}
 }
@@ -85,12 +83,12 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd)
+	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, o.ComponentsRegistry(), *cd)
 	if err != nil {
 		return err
 	}
 	o.ComponentDescriptor = cd
-	o.ResolvedComponentDescriptor = resolvedCD
+	o.ResolvedComponentDescriptor = &resolvedCD
 	return nil
 }
 
@@ -123,6 +121,34 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 		return err
 	}
 	return nil
+}
+
+// GetImportedDataObjects returns all imported data objects of the installation.
+func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dataobjects.DataObject, error) {
+	dataObjects := map[string]*dataobjects.DataObject{}
+	for _, def := range o.Inst.Info.Spec.Imports.Data {
+		do, err := o.GetImportedDataObjectForName(ctx, def.DataRef)
+		if err != nil {
+			return nil, err
+		}
+		dataObjects[def.Name] = do
+	}
+
+	return dataObjects, nil
+}
+
+// GetImportedDataObjectForName fetches the dataobject with a given name from the current context.
+func (o *Operation) GetImportedDataObjectForName(ctx context.Context, name string) (*dataobjects.DataObject, error) {
+	raw := &lsv1alpha1.DataObject{}
+	doName := lsv1alpha1helper.GenerateDataObjectName(o.Context().Name, name)
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), raw); err != nil {
+		return nil, fmt.Errorf("unable to fetch data object %s (%s): %w", doName, name, err)
+	}
+	do, err := dataobjects.NewFromDataObject(raw)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create internal data object for %s: %w", name, err)
+	}
+	return do, nil
 }
 
 // CreateEventFromCondition creates a new event based on the given condition
@@ -177,50 +203,50 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 	return installations, nil
 }
 
-// GetStaticData constructs the static data from the installation.
-func (o *Operation) GetStaticData(ctx context.Context) (map[string]interface{}, error) {
-	if o.staticData != nil {
-		return o.staticData, nil
-	}
-
-	if len(o.Inst.Info.Spec.StaticData) == 0 {
-		return nil, nil
-	}
-
-	data := make(map[string]interface{})
-	for _, source := range o.Inst.Info.Spec.StaticData {
-		if source.Value != nil {
-			var values map[string]interface{}
-			if err := yaml.Unmarshal(source.Value, &values); err != nil {
-				return nil, errors.Wrap(err, "unable to parse value into map")
-			}
-			data = utils.MergeMaps(data, values)
-			continue
-		}
-
-		if source.ValueFrom == nil {
-			continue
-		}
-
-		if source.ValueFrom.SecretKeyRef != nil {
-			values, err := GetDataFromSecretKeyRef(ctx, o.Client(), source.ValueFrom.SecretKeyRef, o.Inst.Info.Namespace)
-			if err != nil {
-				return nil, err
-			}
-			data = utils.MergeMaps(data, values)
-			continue
-		}
-		if source.ValueFrom.SecretLabelSelector != nil {
-			values, err := GetDataFromSecretLabelSelectorRef(ctx, o.Client(), source.ValueFrom.SecretLabelSelector, o.Inst.Info.Namespace)
-			if err != nil {
-				return nil, err
-			}
-			data = utils.MergeMaps(data, values)
-		}
-	}
-	o.staticData = data
-	return data, nil
-}
+//// GetStaticData constructs the static data from the installation.
+//func (o *Operation) GetStaticData(ctx context.Context) (map[string]interface{}, error) {
+//	if o.staticData != nil {
+//		return o.staticData, nil
+//	}
+//
+//	if len(o.Inst.Info.Spec.StaticData) == 0 {
+//		return nil, nil
+//	}
+//
+//	data := make(map[string]interface{})
+//	for _, source := range o.Inst.Info.Spec.StaticData {
+//		if source.Value != nil {
+//			var values map[string]interface{}
+//			if err := yaml.Unmarshal(source.Value, &values); err != nil {
+//				return nil, errors.Wrap(err, "unable to parse value into map")
+//			}
+//			data = utils.MergeMaps(data, values)
+//			continue
+//		}
+//
+//		if source.ValueFrom == nil {
+//			continue
+//		}
+//
+//		if source.ValueFrom.SecretKeyRef != nil {
+//			values, err := GetDataFromSecretKeyRef(ctx, o.Client(), source.ValueFrom.SecretKeyRef, o.Inst.Info.Namespace)
+//			if err != nil {
+//				return nil, err
+//			}
+//			data = utils.MergeMaps(data, values)
+//			continue
+//		}
+//		if source.ValueFrom.SecretLabelSelector != nil {
+//			values, err := GetDataFromSecretLabelSelectorRef(ctx, o.Client(), source.ValueFrom.SecretLabelSelector, o.Inst.Info.Namespace)
+//			if err != nil {
+//				return nil, err
+//			}
+//			data = utils.MergeMaps(data, values)
+//		}
+//	}
+//	o.staticData = data
+//	return data, nil
+//}
 
 // TriggerDependants triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
@@ -285,19 +311,33 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*da
 	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase, cond)
 }
 
-// CreateOrUpdateImports creates or updates the data objects that holds the imported values
+// CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
 // todo: make general import/export dataobject creation and update
-func (o *Operation) CreateOrUpdateImports(ctx context.Context, dataObjects []*dataobjects.DataObject) error {
+func (o *Operation) CreateOrUpdateImports(ctx context.Context, importedValues map[string]interface{}) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
-	for _, do := range dataObjects {
-		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).Build()
+
+	for _, importDef := range o.Inst.Blueprint.Info.Imports {
+		// skip targets
+		if len(importDef.TargetType) != 0 {
+			continue
+		}
+
+		importData, ok := importedValues[importDef.Name]
+		if !ok {
+			return fmt.Errorf("import %s not defined", importDef.Name)
+		}
+		raw, err := dataobjects.New().
+			SetNamespace(o.Inst.Info.Namespace).SetSource(src).
+			SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+			SetData(importData).
+			Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateDataObjects",
-					fmt.Sprintf("unable to create data object for import %s", do.Metadata.Key)))
-			return fmt.Errorf("unable to build data object for import %s: %w", do.Metadata.Key, err)
+					fmt.Sprintf("unable to create data object for import %s", importDef.Name)))
+			return fmt.Errorf("unable to build data object for import %s: %w", importDef.Name, err)
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
@@ -305,8 +345,8 @@ func (o *Operation) CreateOrUpdateImports(ctx context.Context, dataObjects []*da
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateDataObjects",
-					fmt.Sprintf("unable to create data object for import %s", do.Metadata.Key)))
-			return fmt.Errorf("unable to create or update data object %s for import %s: %w", raw.Name, do.Metadata.Key, err)
+					fmt.Sprintf("unable to create data object for import %s", importDef.Name)))
+			return fmt.Errorf("unable to create or update data object %s for import %s: %w", raw.Name, importDef.Name, err)
 		}
 	}
 	return nil
@@ -323,9 +363,18 @@ func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjec
 }
 
 func importsAnyExport(exporter, importer *Installation) bool {
-	for _, export := range exporter.Info.Spec.Exports {
-		if _, err := importer.GetImportMappingFrom(export.To); err != nil {
-			return true
+	for _, export := range exporter.Info.Spec.Exports.Data {
+		for _, def := range importer.Info.Spec.Imports.Data {
+			if def.DataRef == export.DataRef {
+				return true
+			}
+		}
+	}
+	for _, export := range exporter.Info.Spec.Exports.Targets {
+		for _, def := range importer.Info.Spec.Imports.Targets {
+			if def.Target == export.Target {
+				return true
+			}
 		}
 	}
 	return false

@@ -16,12 +16,10 @@ package imports_test
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -34,7 +32,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Constructor", func() {
+var _ = Describe("Constructor", func() {
 
 	var (
 		op *installations.Operation
@@ -45,7 +43,7 @@ var _ = g.Describe("Constructor", func() {
 		fakeCompRepo      componentsregistry.Registry
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -65,52 +63,39 @@ var _ = g.Describe("Constructor", func() {
 		}
 	})
 
-	g.It("should directly construct the data from static data", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
-		op.Inst = inInstRoot
-		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+	//g.It("should directly construct the data from static data", func() {
+	//	ctx := context.Background()
+	//	defer ctx.Done()
+	//	inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+	//	Expect(err).ToNot(HaveOccurred())
+	//	op.Inst = inInstRoot
+	//	Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+	//
+	//	expectedConfig := map[string]interface{}{
+	//		"root": map[string]interface{}{
+	//			"a": "val-root-import",
+	//		},
+	//	}
+	//
+	//	Expect(op.SetInstallationContext(ctx)).To(Succeed())
+	//	c := imports.NewConstructor(op)
+	//	res, err := c.Construct(context.TODO(), inInstRoot)
+	//	Expect(err).ToNot(HaveOccurred())
+	//	Expect(res).ToNot(BeNil())
+	//
+	//	Expect(res).To(Equal(expectedConfig))
+	//	Expect(inInstRoot.ImportStatus().GetStatus()).To(ConsistOf(MatchAllFields(Fields{
+	//		"From": Equal("ext.a"),
+	//		"To":   Equal("root.a"),
+	//		"SourceRef": Equal(&lsv1alpha1.ObjectReference{
+	//			Name:      "root",
+	//			Namespace: "test1",
+	//		}),
+	//		"ConfigGeneration": BeAssignableToTypeOf(""),
+	//	})))
+	//})
 
-		value, err := json.Marshal(map[string]interface{}{
-			"ext": map[string]interface{}{
-				"a": "val1",
-			},
-		})
-		Expect(err).ToNot(HaveOccurred())
-		inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{
-			{
-				Value: value,
-			},
-		}
-		Expect(fakeClient.Status().Update(ctx, inInstRoot.Info))
-
-		expectedConfig := map[string]interface{}{
-			"root": map[string]interface{}{
-				"a": "val1",
-			},
-		}
-
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		c := imports.NewConstructor(op)
-		_, res, err := c.Construct(context.TODO(), inInstRoot)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
-
-		Expect(res).To(Equal(expectedConfig))
-		Expect(inInstRoot.ImportStatus().GetStates()).To(ConsistOf(MatchAllFields(Fields{
-			"From": Equal("ext.a"),
-			"To":   Equal("root.a"),
-			"SourceRef": Equal(&lsv1alpha1.ObjectReference{
-				Name:      "root",
-				Namespace: "test1",
-			}),
-			"ConfigGeneration": BeAssignableToTypeOf(""),
-		})))
-	})
-
-	g.It("should construct the imported config from a sibling", func() {
+	It("should construct the imported config from a sibling", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/b"])
@@ -119,54 +104,66 @@ var _ = g.Describe("Constructor", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		expectedConfig := map[string]interface{}{
-			"b": map[string]interface{}{
-				"a": "val-a",
-			},
+			"b.a": "val-a",
 		}
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		_, res, err := c.Construct(ctx, inInstB)
+		res, err := c.Construct(ctx, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
 	})
 
-	g.It("should construct the imported config from a sibling and the indirect parent import", func() {
+	It("should construct the imported config from a sibling and the indirect parent import", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/root"])
-		Expect(err).ToNot(HaveOccurred())
-
 		inInstC, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstC
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		value, err := json.Marshal(map[string]interface{}{
-			"ext": map[string]interface{}{
-				"a": "val1",
-			},
-		})
-		Expect(err).ToNot(HaveOccurred())
-		inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
-		Expect(fakeClient.Status().Update(ctx, inInstRoot.Info))
-
 		expectedConfig := map[string]interface{}{
-			"c": map[string]interface{}{
-				"a": "val-a",
-				"b": "val1",
-			},
+			"c.a": "val-a",
+			"c.b": "val-root-import", // from root import
 		}
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		_, res, err := c.Construct(ctx, inInstC)
+		res, err := c.Construct(ctx, inInstC)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 
 		Expect(res).To(Equal(expectedConfig))
+	})
+
+	Context("schema validation", func() {
+		It("should forbid when the import of a component does not satisfy the schema", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+			Expect(err).ToNot(HaveOccurred())
+
+			inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstA
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+			op.Context().Parent = inInstRoot
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			do := &lsv1alpha1.DataObject{}
+			do.Name = "jcmfrpcqy5fxd2bdahuo7zkzl7ifu4jm"
+			do.Namespace = inInstRoot.Info.Namespace
+			do.Data = []byte("7")
+			Expect(fakeClient.Update(ctx, do)).To(Succeed())
+
+			c := imports.NewConstructor(op)
+			_, err = c.Construct(ctx, inInstA)
+			Expect(err).To(HaveOccurred())
+			Expect(installations.IsSchemaValidationFailedError(err)).To(BeTrue())
+		})
 	})
 
 })

@@ -114,19 +114,19 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 
 	// only needed if execution are processed
 	constructor := imports.NewConstructor(op)
-	importDataObjects, importedValues, err := constructor.Construct(ctx, inst)
+	importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
 		a.Log().Error(err, "unable to collect imports")
 		return err
 	}
 
-	if err := op.CreateOrUpdateImports(ctx, importDataObjects); err != nil {
+	if err := op.CreateOrUpdateImports(ctx, importedValues); err != nil {
 		a.Log().Error(err, "unable to update import objects")
 		return err
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	inst.Info.Status.Imports = inst.ImportStatus().GetStates()
+	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
 	if err := op.SetExportConfigGeneration(ctx); err != nil {
 		return err
 	}

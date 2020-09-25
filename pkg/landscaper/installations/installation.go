@@ -27,23 +27,8 @@ type Installation struct {
 	Info      *lsv1alpha1.Installation
 	Blueprint *blueprints.Blueprint
 
-	imports map[string]lsv1alpha1.ImportDefinition
-	exports map[string]lsv1alpha1.ExportDefinition
-
 	// indexes the import state with from/to as key
 	importsStatus ImportStatus
-}
-
-// ImportMapping is the internal representation of a import mapping and its defintion
-type ImportMapping struct {
-	lsv1alpha1.DefinitionImportMapping
-	lsv1alpha1.ImportDefinition
-}
-
-// ExportMapping is the internal representation of a export mapping and its defintion
-type ExportMapping struct {
-	lsv1alpha1.DefinitionExportMapping
-	lsv1alpha1.ExportDefinition
 }
 
 // New creates a new internal representation of an installation
@@ -52,20 +37,10 @@ func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Insta
 		Info:      inst,
 		Blueprint: blueprint,
 
-		imports: make(map[string]lsv1alpha1.ImportDefinition, len(blueprint.Info.Imports)),
-		exports: make(map[string]lsv1alpha1.ExportDefinition, len(blueprint.Info.Exports)),
-
 		importsStatus: ImportStatus{
-			From: make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
-			To:   make(map[string]*lsv1alpha1.ImportState, len(inst.Status.Imports)),
+			Data:   make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
+			Target: make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
 		},
-	}
-
-	for _, importDef := range blueprint.Info.Imports {
-		internalInst.imports[importDef.Name] = importDef
-	}
-	for _, exportDef := range blueprint.Info.Exports {
-		internalInst.exports[exportDef.Name] = exportDef
 	}
 
 	for _, importStatus := range inst.Status.Imports {
@@ -82,122 +57,62 @@ func (i *Installation) ImportStatus() *ImportStatus {
 
 // GetImportDefinition return the import for a given key
 func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.ImportDefinition, error) {
-	def, ok := i.imports[key]
-	if !ok {
-		return lsv1alpha1.ImportDefinition{}, fmt.Errorf("import with key %s not found", key)
-	}
-	return def, nil
-}
-
-// GetImportMappings returns all import mappings of a installation.
-// If a import definition is not defined in the mappings it will be automatically added with the default mappings.
-// todo: check for unused mappings.
-func (i *Installation) GetImportMappings() []ImportMapping {
-	mappings := make([]ImportMapping, 0)
-	for _, obj := range i.Blueprint.Info.Imports {
-		def := obj.DeepCopy()
-		// try to get a import mapping
-		mapping, err := i.GetImportMappingTo(def.Name)
-		if err == nil {
-			mappings = append(mappings, ImportMapping{
-				ImportDefinition:        *def,
-				DefinitionImportMapping: mapping,
-			})
-			continue
-		}
-		mappings = append(mappings, ImportMapping{
-			ImportDefinition: *def,
-			DefinitionImportMapping: lsv1alpha1.DefinitionImportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: def.Name,
-					To:   def.Name,
-				},
-			},
-		})
-	}
-	return mappings
-}
-
-// GetExportMappings returns all exported mappings of a installation.
-// If a export definition is not defined in the mappings it will be automatically added with the default mappings.
-// todo: check for unused mappings.
-func (i *Installation) GetExportMappings() ([]ExportMapping, error) {
-	mappings := make([]ExportMapping, 0)
-	for _, obj := range i.Blueprint.Info.Exports {
-		def := obj.DeepCopy()
-		// try to get a import mapping
-		mapping, err := i.GetExportMappingTo(def.Name)
-		if err == nil {
-			mappings = append(mappings, ExportMapping{
-				ExportDefinition:        *def,
-				DefinitionExportMapping: mapping,
-			})
-			continue
-		}
-		mappings = append(mappings, ExportMapping{
-			ExportDefinition: *def,
-			DefinitionExportMapping: lsv1alpha1.DefinitionExportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-					From: def.Name,
-					To:   def.Name,
-				},
-			},
-		})
-	}
-	return mappings, nil
-}
-
-// GetImportMappingFrom returns the import mapping of the installation that imports data from the given key
-func (i *Installation) GetImportMappingFrom(key string) (lsv1alpha1.DefinitionImportMapping, error) {
-	for _, mapping := range i.Info.Spec.Imports {
-		if mapping.From == key {
-			return mapping, nil
+	for _, def := range i.Blueprint.Info.Imports {
+		if def.Name == key {
+			return def, nil
 		}
 	}
-
-	return lsv1alpha1.DefinitionImportMapping{}, fmt.Errorf("import mapping for key %s not found", key)
-}
-
-// GetImportMappingTo returns the import mapping of the installation that imports data to the given key
-func (i *Installation) GetImportMappingTo(key string) (lsv1alpha1.DefinitionImportMapping, error) {
-	for _, mapping := range i.Info.Spec.Imports {
-		if mapping.To == key {
-			return mapping, nil
-		}
-	}
-
-	return lsv1alpha1.DefinitionImportMapping{}, fmt.Errorf("import mapping for key %s not found", key)
+	return lsv1alpha1.ImportDefinition{}, fmt.Errorf("import with key %s not found", key)
 }
 
 // GetExportDefinition return the export definition for a given key
 func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.ExportDefinition, error) {
-	def, ok := i.exports[key]
-	if !ok {
-		return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
-	}
-	return def, nil
-}
-
-// GetExportMappingTo returns the export mapping of the installation that exports to the given key
-func (i *Installation) GetExportMappingTo(key string) (lsv1alpha1.DefinitionExportMapping, error) {
-	for _, mapping := range i.Info.Spec.Exports {
-		if mapping.To == key {
-			return mapping, nil
+	for _, def := range i.Blueprint.Info.Exports {
+		if def.Name == key {
+			return def, nil
 		}
 	}
-
-	return lsv1alpha1.DefinitionExportMapping{}, fmt.Errorf("export mapping for key %s not found", key)
+	return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
 }
 
-// GetExportMappingFrom returns the export mapping of the installation that exports from the given key
-func (i *Installation) GetExportMappingFrom(key string) (lsv1alpha1.DefinitionExportMapping, error) {
-	for _, mapping := range i.Info.Spec.Exports {
-		if mapping.From == key {
-			return mapping, nil
+// IsExportingData checks if the current component exports a data object with the given name.
+func (i *Installation) IsExportingData(name string) bool {
+	for _, def := range i.Info.Spec.Exports.Data {
+		if def.DataRef == name {
+			return true
 		}
 	}
+	return false
+}
 
-	return lsv1alpha1.DefinitionExportMapping{}, fmt.Errorf("export mapping for key %s not found", key)
+// IsExportingTarget checks if the current component exports a target with the given name.
+func (i *Installation) IsExportingTarget(name string) bool {
+	for _, def := range i.Info.Spec.Exports.Targets {
+		if def.Target == name {
+			return true
+		}
+	}
+	return false
+}
+
+// IsImportingData checks if the current component imports a data object with the given name.
+func (i *Installation) IsImportingData(name string) bool {
+	for _, def := range i.Info.Spec.Imports.Data {
+		if def.DataRef == name {
+			return true
+		}
+	}
+	return false
+}
+
+// IsImportingTarget checks if the current component imports a target with the given name.
+func (i *Installation) IsImportingTarget(name string) bool {
+	for _, def := range i.Info.Spec.Imports.Targets {
+		if def.Target == name {
+			return true
+		}
+	}
+	return false
 }
 
 // MergeConditions updates or adds the given condition to the installation's condition.

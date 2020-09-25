@@ -151,6 +151,8 @@ type ResourceKind string
 var UnknownResourceKindError = errors.New("UnknownResourceKind")
 
 const (
+	// ComponentResourceKind is the kind of a component.
+	ComponentResourceKind ResourceKind = "component"
 	// LocalResourceKind is the kind of a local resource.
 	LocalResourceKind ResourceKind = "localResource"
 	// ExternalResourceKind is the kind of a external resource.

@@ -5,9 +5,11 @@ name: def1
 version: 1.0.0
 
 imports:
-- key: "y"
-  type: string
+- name: "y"
+  schema:
+    type: string
 
 exports:
-- key: z
-  type: string
+- name: z
+  schema:
+    type: string

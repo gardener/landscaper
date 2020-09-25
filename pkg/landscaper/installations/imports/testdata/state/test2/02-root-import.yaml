@@ -8,4 +8,4 @@ metadata:
     kind: Installation
     name: a
     uid: xxx
-data: val1
+data: val-root-import

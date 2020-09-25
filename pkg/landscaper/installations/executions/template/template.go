@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -56,10 +55,10 @@ type templateExecution interface {
 }
 
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
-func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd cdv2.ComponentDescriptorList, imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
+func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd *cdutils.ResolvedComponentDescriptor, imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
 
 	// marshal and unmarshal resolved component descriptor
-	components, err := serializeResolvedComponentDescriptor(cdutils.ConvertFromComponentDescriptorList(cd).Components)
+	components, err := serializeResolvedComponentDescriptor(cd)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the resolved component descriptor: %w", err)
 	}
@@ -110,8 +109,8 @@ func (o *Templater) TemplateExportExecutions(blueprint *blueprints.Blueprint, ex
 	return exportData, nil
 }
 
-func serializeResolvedComponentDescriptor(list map[string]cdutils.MappedComponentDescriptor) (interface{}, error) {
-	data, err := json.Marshal(list)
+func serializeResolvedComponentDescriptor(cd *cdutils.ResolvedComponentDescriptor) (interface{}, error) {
+	data, err := json.Marshal(cd)
 	if err != nil {
 		return nil, err
 	}

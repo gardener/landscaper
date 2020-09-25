@@ -22,24 +22,24 @@ spec:
       resourceName: d
 
   imports:
-  - from: b.z
-    to: d.a
-  - from: root.y
-    to: d.b
+    data:
+    - name: d.a
+      dataRef: b.z
+    - name: d.b
+      dataRef: root.y
 
   exports:
-  - from: d.y
-    to: root.z
+    data:
+    - name: d.y
+      dataRef: root.z
 
 status:
   phase: Init
   configGeneration: "def"
 
   imports:
-  - from: b.z
-    to: d.a
+  - name: d.a
     configGeneration: ""
-  - from: c.z
-    to: d.b
+  - name: d.b
     configGeneration: ""
 

@@ -45,18 +45,6 @@ var _ = Describe("Resolve", func() {
 		ctrl.Finish()
 	})
 
-	It("should contain the component itself in the component list", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-		cd := cdv2.ComponentDescriptor{}
-		cd.RepositoryContexts = repoCtx
-		cdClient.EXPECT().Resolve(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-
-		list, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, cdClient, cd)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(list.Components).To(ConsistOf(cd))
-	})
-
 	It("should resolve 2 direct transitive components", func() {
 		ctx := context.Background()
 		defer ctx.Done()
@@ -82,9 +70,10 @@ var _ = Describe("Resolve", func() {
 		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0]).Return(&l11_CD, nil)
 		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[1]).Return(&l12_CD, nil)
 
-		list, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, cdClient, cd)
+		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(list.Components).To(ConsistOf(cd, l11_CD, l12_CD))
+		Expect(res.ComponentReferences).To(HaveKey("l11"))
+		Expect(res.ComponentReferences).To(HaveKey("l12"))
 	})
 
 	It("should recursively resolve transitive components", func() {
@@ -115,8 +104,9 @@ var _ = Describe("Resolve", func() {
 		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0]).Return(&l11_CD, nil)
 		cdClient.EXPECT().Resolve(ctx, repoCtx[0], l11_CD.ComponentReferences[0]).Return(&l111_CD, nil)
 
-		list, err := cdutils.ResolveEffectiveComponentDescriptorList(ctx, cdClient, cd)
+		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(list.Components).To(ConsistOf(cd, l11_CD, l111_CD))
+		Expect(res.ComponentReferences).To(HaveKey("l11"))
+		Expect(res.ComponentReferences["l11"].ComponentReferences).To(HaveKey("l111"))
 	})
 })

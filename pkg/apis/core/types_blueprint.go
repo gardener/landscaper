@@ -92,12 +92,17 @@ type ExportDefinition struct {
 }
 
 // FieldValueDefinition defines a im- or exported field.
+// Either schema or target type have to be defined
 type FieldValueDefinition struct {
 	// Name defines the field name to search for the value and map to exports.
 	// Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields
 	Name string `json:"name"`
 	// Schema defines the imported value as jsonschema.
-	Schema JSONSchemaDefinition `json:"schema"`
+	// +optional
+	Schema JSONSchemaDefinition `json:"schema,omitempty"`
+	// TargetType defines the type of the imported target.
+	// +optional
+	TargetType string `json:"targetType,omitempty"`
 }
 
 // Default defines a default value (future idea: also reference?).

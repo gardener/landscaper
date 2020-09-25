@@ -1,0 +1,38 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: root
+  version: 1.0.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: local
+    baseUrl: "../testdata"
+
+  localResources:
+  - name: root
+    type: blueprint
+    access:
+      type: local
+  - name: def1
+    type: blueprint
+    access:
+      type: local
+  - name: a
+    type: blueprint
+    access:
+      type: local
+  - name: b
+    type: blueprint
+    access:
+      type: local
+  - name: c
+    type: blueprint
+    access:
+      type: local
+  - name: d
+    type: blueprint
+    access:
+      type: local

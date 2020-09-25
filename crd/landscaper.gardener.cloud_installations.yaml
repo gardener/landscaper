@@ -150,7 +150,7 @@ spec:
                           description: Name the internal name of the imported/exported target.
                           type: string
                         target:
-                          description: DataRef is the name of the in-cluster target object.
+                          description: Target is the name of the in-cluster target object.
                           type: string
                       required:
                       - name
@@ -172,7 +172,7 @@ spec:
                       description: DataImport is a data object import.
                       properties:
                         dataRef:
-                          description: DataRef is the name of the in-cluster data object.
+                          description: DataRef is the name of the in-cluster data object. The reference can also be a namespaces name. E.g. "default/mydataref"
                           type: string
                         name:
                           description: Name the internal name of the imported/exported data.
@@ -194,7 +194,7 @@ spec:
                           description: Name the internal name of the imported/exported target.
                           type: string
                         target:
-                          description: DataRef is the name of the in-cluster target object.
+                          description: Target is the name of the in-cluster target object.
                           type: string
                       required:
                       - name
@@ -216,49 +216,6 @@ spec:
                   required:
                   - name
                   - namespace
-                  type: object
-                type: array
-              staticData:
-                description: StaticData contains a list of data sources that are used to satisfy imports
-                items:
-                  description: StaticDataSource defines a static data source
-                  properties:
-                    value:
-                      x-kubernetes-preserve-unknown-fields: true
-                    valueFrom:
-                      description: ValueFrom defines data from an external resource
-                      properties:
-                        secretKeyRef:
-                          description: Selects a key of a secret in the installations's namespace
-                          properties:
-                            key:
-                              description: The key of the secret to select from.  Must be a valid secret key.
-                              type: string
-                            name:
-                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
-                              type: string
-                            optional:
-                              description: Specify whether the Secret or its key must be defined
-                              type: boolean
-                          required:
-                          - key
-                          type: object
-                        secretLabelSelector:
-                          description: Selects a key from multiple secrets in the installations's namespace that matches the given labels.
-                          properties:
-                            key:
-                              description: The key of the secret to select from.  Must be a valid secret key.
-                              type: string
-                            selector:
-                              additionalProperties:
-                                type: string
-                              description: Selector is a map of labels to select specific secrets.
-                              type: object
-                          required:
-                          - key
-                          - selector
-                          type: object
-                      type: object
                   type: object
                 type: array
             required:
@@ -326,10 +283,13 @@ spec:
               imports:
                 description: Imports contain the state of the imported values.
                 items:
-                  description: ImportState hold the state of a import.
+                  description: ImportStatus hold the state of a import.
                   properties:
                     configGeneration:
                       description: ConfigGeneration is the generation of the imported value.
+                      type: string
+                    dataRef:
+                      description: DataRef is the name of the in-cluster data object.
                       type: string
                     name:
                       description: Name is the distinct identifier of the import. Can be either from data or target imports
@@ -337,12 +297,6 @@ spec:
                     sourceRef:
                       description: SourceRef is the reference to the installation where the value is imported
                       properties:
-                        apiVersion:
-                          description: APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.
-                          type: string
-                        kind:
-                          description: Kind is the type of resource being referenced
-                          type: string
                         name:
                           description: Name is the name of the kubernetes object.
                           type: string
@@ -350,14 +304,19 @@ spec:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
                       required:
-                      - apiVersion
-                      - kind
                       - name
                       - namespace
                       type: object
+                    target:
+                      description: Target is the name of the in-cluster target object.
+                      type: string
+                    type:
+                      description: Type defines the kind of import. Can be either DataObject or Target
+                      type: string
                   required:
                   - configGeneration
                   - name
+                  - type
                   type: object
                 type: array
               installationRefs:

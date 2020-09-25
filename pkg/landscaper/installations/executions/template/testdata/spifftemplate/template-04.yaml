@@ -6,4 +6,4 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        image: (( components.mycomp.component.externalResources.mycustomimage.access.imageReference ))
+        image: (( cd.component.externalResources.mycustomimage.access.imageReference ))

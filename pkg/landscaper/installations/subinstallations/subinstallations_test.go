@@ -22,7 +22,7 @@ import (
 	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -41,7 +41,7 @@ import (
 	"github.com/gardener/landscaper/test/utils"
 )
 
-var _ = g.Describe("SubInstallation", func() {
+var _ = Describe("SubInstallation", func() {
 
 	var (
 		op               *installations.Operation
@@ -56,9 +56,9 @@ var _ = g.Describe("SubInstallation", func() {
 		once sync.Once
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var err error
-		ctrl = gomock.NewController(g.GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		mockClient = k8smock.NewMockClient(ctrl)
 		mockStatusWriter = k8smock.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
@@ -87,13 +87,13 @@ var _ = g.Describe("SubInstallation", func() {
 		}
 	})
 
-	g.AfterEach(func() {
+	AfterEach(func() {
 		ctrl.Finish()
 	})
 
-	g.Context("Create subinstallations", func() {
+	Context("Create subinstallations", func() {
 
-		g.It("should not create any installations if no definition references are defined", func() {
+		It("should not create any installations if no definition references are defined", func() {
 			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(
 				func(ctx context.Context, inst *lsv1alpha1.Installation) {
 					Expect(len(inst.Status.Conditions)).To(Equal(1))
@@ -110,7 +110,7 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		g.It("should create one installation if a definition references is defined", func() {
+		It("should create one installation if a subinstallation is defined", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			var resInst *lsv1alpha1.Installation
@@ -126,7 +126,8 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
-			Expect(resInst.Spec.Blueprint).To(Equal(lsv1alpha1.RemoteBlueprintReference{
+			Expect(resInst.Spec.Blueprint.Reference).NotTo(BeNil())
+			Expect(resInst.Spec.Blueprint.Reference).To(Equal(&lsv1alpha1.RemoteBlueprintReference{
 				RepositoryContext: &cdv2.RepositoryContext{
 					Type:    "local",
 					BaseURL: "./testdata",
@@ -140,15 +141,17 @@ var _ = g.Describe("SubInstallation", func() {
 					Version: "1.0.0",
 				},
 			}))
-			Expect(resInst.Spec.Imports).To(ContainElement(lsv1alpha1.DefinitionImportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{From: "a", To: "b"},
+			Expect(resInst.Spec.Imports.Data).To(ContainElement(lsv1alpha1.DataImport{
+				Name:    "a",
+				DataRef: "b",
 			}))
-			Expect(resInst.Spec.Exports).To(ContainElement(lsv1alpha1.DefinitionExportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{From: "c", To: "d"},
+			Expect(resInst.Spec.Exports.Data).To(ContainElement(lsv1alpha1.DataExport{
+				Name:    "c",
+				DataRef: "d",
 			}))
 		})
 
-		g.It("should update the status and add the newly created sub installations", func() {
+		It("should update the status and add the newly created sub installations", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			var resInst *lsv1alpha1.Installation
@@ -174,30 +177,7 @@ var _ = g.Describe("SubInstallation", func() {
 			}))
 		})
 
-		g.It("should add undefined imports as mappings of the definition to a new created installation", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
-
-			var resInst *lsv1alpha1.Installation
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(
-				func(ctx context.Context, inst *lsv1alpha1.Installation) {
-					resInst = inst
-				},
-			)
-
-			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
-
-			Expect(resInst.Spec.Imports).To(ContainElement(lsv1alpha1.DefinitionImportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{From: "y", To: "y"},
-			}))
-			Expect(resInst.Spec.Exports).To(ContainElement(lsv1alpha1.DefinitionExportMapping{
-				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{From: "z", To: "z"},
-			}))
-		})
-
-		g.It("should create multiple installations for all definition references", func() {
+		It("should create multiple installations for all definition references", func() {
 			defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root2.yaml"
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
@@ -218,9 +198,9 @@ var _ = g.Describe("SubInstallation", func() {
 		})
 	})
 
-	g.Context("#Update", func() {
+	Context("#Update", func() {
 
-		g.It("should update a reference even if nothing has changed to trigger a reconcile", func() {
+		It("should update a reference even if nothing has changed to trigger a reconcile", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			rootInst.Status = lsv1alpha1.InstallationStatus{
@@ -239,19 +219,19 @@ var _ = g.Describe("SubInstallation", func() {
 			subinst.Name = "inst-def1"
 			subinst.Namespace = "default"
 			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
-			subinst.Spec.Imports = []lsv1alpha1.DefinitionImportMapping{
-				{
-					DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-						From: "a",
-						To:   "b",
+			subinst.Spec.Imports = &lsv1alpha1.InstallationImports{
+				Data: []lsv1alpha1.DataImport{
+					{
+						Name:    "b",
+						DataRef: "a",
 					},
 				},
 			}
-			subinst.Spec.Exports = []lsv1alpha1.DefinitionExportMapping{
-				{
-					DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-						From: "c",
-						To:   "d",
+			subinst.Spec.Exports = &lsv1alpha1.InstallationExports{
+				Data: []lsv1alpha1.DataExport{
+					{
+						Name:    "c",
+						DataRef: "d",
 					},
 				},
 			}
@@ -271,7 +251,7 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
 		})
 
-		g.It("should reinstall a subinstallation that does not exist anymore", func() {
+		It("should reinstall a subinstallation that does not exist anymore", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			rootInst.Status = lsv1alpha1.InstallationStatus{
@@ -294,7 +274,7 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
 		})
 
-		g.It("should not update until all subinstallations are not in progressing state", func() {
+		It("should not update until all subinstallations are not in progressing state", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 			rootInst.Status.InstallationReferences = []lsv1alpha1.NamedObjectReference{
 				{
@@ -323,9 +303,9 @@ var _ = g.Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(HaveOccurred(), "should throw a unable to update call")
 		})
 
-		g.Context("Cleanup", func() {
+		Context("Cleanup", func() {
 
-			g.It("should remove a subinstallation that is not referenced anymore", func() {
+			It("should remove a subinstallation that is not referenced anymore", func() {
 				defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root3.yaml"
 				rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 				rootInst.Status.InstallationReferences = []lsv1alpha1.NamedObjectReference{
