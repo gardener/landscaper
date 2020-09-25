@@ -56,19 +56,21 @@ var _ = Describe("Resolve", func() {
 
 		cd := cdv2.ComponentDescriptor{}
 		cd.RepositoryContexts = repoCtx
-		cd.ComponentReferences = []cdv2.ObjectMeta{
+		cd.ComponentReferences = []cdv2.ComponentReference{
 			{
-				Name:    "l11",
-				Version: "0.0.1",
+				Name:          "l11",
+				ComponentName: "l11",
+				Version:       "0.0.1",
 			},
 			{
-				Name:    "l12",
-				Version: "0.0.1",
+				Name:          "l12",
+				ComponentName: "l12",
+				Version:       "0.0.1",
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0]).Return(&l11_CD, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[1]).Return(&l12_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[0])).Return(&l11_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[1])).Return(&l12_CD, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())
@@ -85,24 +87,26 @@ var _ = Describe("Resolve", func() {
 
 		l11_CD := cdv2.ComponentDescriptor{}
 		l11_CD.RepositoryContexts = repoCtx
-		l11_CD.ComponentReferences = []cdv2.ObjectMeta{
+		l11_CD.ComponentReferences = []cdv2.ComponentReference{
 			{
-				Name:    "l111",
-				Version: "0.0.1",
+				Name:          "l111",
+				ComponentName: "l111",
+				Version:       "0.0.1",
 			},
 		}
 
 		cd := cdv2.ComponentDescriptor{}
 		cd.RepositoryContexts = repoCtx
-		cd.ComponentReferences = []cdv2.ObjectMeta{
+		cd.ComponentReferences = []cdv2.ComponentReference{
 			{
-				Name:    "l11",
-				Version: "0.0.1",
+				Name:          "l11",
+				ComponentName: "l11",
+				Version:       "0.0.1",
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0]).Return(&l11_CD, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], l11_CD.ComponentReferences[0]).Return(&l111_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[0])).Return(&l11_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(l11_CD.ComponentReferences[0])).Return(&l111_CD, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())

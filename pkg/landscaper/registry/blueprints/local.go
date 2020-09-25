@@ -47,7 +47,7 @@ type LocalAccess struct {
 	cdv2.ObjectType `json:",inline"`
 }
 
-var _ cdv2.AccessAccessor = &LocalAccess{}
+var _ cdv2.TypedObjectAccessor = &LocalAccess{}
 
 // GetData is the noop implementation for a local accessor
 func (l LocalAccess) GetData() ([]byte, error) {
@@ -58,15 +58,15 @@ func (l LocalAccess) GetData() ([]byte, error) {
 func (l LocalAccess) SetData(bytes []byte) error { return nil }
 
 // LocalAccessCodec implements the acccess codec for the local accessor.
-var LocalAccessCodec = &cdv2.AccessCodecWrapper{
-	AccessDecoder: cdv2.AccessDecoderFunc(func(data []byte) (cdv2.AccessAccessor, error) {
+var LocalAccessCodec = &cdv2.TypedObjectCodecWrapper{
+	TypedObjectDecoder: cdv2.TypedObjectDecoderFunc(func(data []byte) (cdv2.TypedObjectAccessor, error) {
 		var localAccess LocalAccess
 		if err := json.Unmarshal(data, &localAccess); err != nil {
 			return nil, err
 		}
 		return &localAccess, nil
 	}),
-	AccessEncoder: cdv2.AccessEncoderFunc(func(accessor cdv2.AccessAccessor) ([]byte, error) {
+	TypedObjectEncoder: cdv2.TypedObjectEncoderFunc(func(accessor cdv2.TypedObjectAccessor) ([]byte, error) {
 		localAccess, ok := accessor.(*LocalAccess)
 		if !ok {
 			return nil, fmt.Errorf("accessor is not of type %s", LocalAccessType)

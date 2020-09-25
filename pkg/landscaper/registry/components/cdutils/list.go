@@ -31,8 +31,8 @@ func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsr
 		return ResolvedComponentDescriptor{}, errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
-	return ConvertFromComponentDescriptor(cd, func(ref cdv2.ObjectMeta) (cdv2.ComponentDescriptor, error) {
-		cd, err := client.Resolve(ctx, repoCtx, ref)
+	return ConvertFromComponentDescriptor(cd, func(ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		cd, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(ref))
 		if err != nil {
 			return cdv2.ComponentDescriptor{}, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", ref.Name, ref.Version, err)
 		}
@@ -54,10 +54,10 @@ func ConvertFromComponentDescriptorList(list cdv2.ComponentDescriptorList) (Reso
 	mList.Metadata = list.Metadata
 	mList.Components = make(map[string]ResolvedComponentDescriptor, len(list.Components))
 
-	refFunc := func(meta cdv2.ObjectMeta) (cdv2.ComponentDescriptor, error) {
-		cd, err := list.GetComponent(meta.GetName(), meta.GetVersion())
+	refFunc := func(ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		cd, err := list.GetComponent(ref.GetName(), ref.GetVersion())
 		if err != nil {
-			return cdv2.ComponentDescriptor{}, fmt.Errorf("component %s:%s cannot be resolved: %w", meta.GetName(), meta.GetVersion(), err)
+			return cdv2.ComponentDescriptor{}, fmt.Errorf("component %s:%s cannot be resolved: %w", ref.GetName(), ref.GetVersion(), err)
 		}
 		return cd, nil
 	}

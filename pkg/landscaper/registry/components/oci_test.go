@@ -18,17 +18,19 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	logtesting "github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
 	mock_oci "github.com/gardener/landscaper/pkg/utils/oci/mock"
 )
 
@@ -73,9 +75,11 @@ var _ = Describe("Registry", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
 		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
-			data, err := ioutil.ReadFile("./testdata/comp1.tar")
+			var buf bytes.Buffer
+			absPath, err := filepath.Abs("./testdata/comp1")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = io.Copy(writer, bytes.NewBuffer(data))
+			Expect(utils.BuildTar(osfs.New(), absPath, &buf)).To(Succeed())
+			_, err = io.Copy(writer, &buf)
 			Expect(err).ToNot(HaveOccurred())
 		})
 

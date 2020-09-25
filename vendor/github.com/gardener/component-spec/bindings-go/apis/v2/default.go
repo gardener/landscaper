@@ -17,10 +17,10 @@ package v2
 // DefaultComponent applies defaults to a component
 func DefaultComponent(component *ComponentDescriptor) error {
 	if component.Sources == nil {
-		component.Sources = make([]Resource, 0)
+		component.Sources = make([]Source, 0)
 	}
 	if component.ComponentReferences == nil {
-		component.ComponentReferences = make([]ObjectMeta, 0)
+		component.ComponentReferences = make([]ComponentReference, 0)
 	}
 	if component.LocalResources == nil {
 		component.LocalResources = make([]Resource, 0)

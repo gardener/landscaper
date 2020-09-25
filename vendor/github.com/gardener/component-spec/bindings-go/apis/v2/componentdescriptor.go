@@ -62,9 +62,9 @@ type ComponentSpec struct {
 	// It can be external or internal.
 	Provider ProviderType `json:"provider"`
 	// Sources defines sources that produced the component
-	Sources []Resource `json:"sources"`
+	Sources []Source `json:"sources"`
 	// ComponentReferences references component dependencies that can be resolved in the current context.
-	ComponentReferences []ObjectMeta `json:"componentReferences"`
+	ComponentReferences []ComponentReference `json:"componentReferences"`
 	// LocalResources defines internal resources that are created by the component
 	LocalResources []Resource `json:"localResources"`
 	// ExternalResources defines external resources that are not produced by a third party.
@@ -85,6 +85,10 @@ type ObjectMeta struct {
 	Name string `json:"name"`
 	// Version is the semver version of the object.
 	Version string `json:"version"`
+	// Labels defines an optional set of additional labels
+	// describing the object.
+	// +optional
+	Labels []Label `json:"labels,omitempty"`
 }
 
 // GetName returns the name of the object.
@@ -107,6 +111,16 @@ func (o *ObjectMeta) SetVersion(version string) {
 	o.Version = version
 }
 
+// GetLabels returns the label of the object.
+func (o ObjectMeta) GetLabels() []Label {
+	return o.Labels
+}
+
+// SetLabels sets the labels of the object.
+func (o *ObjectMeta) SetLabels(labels []Label) {
+	o.Labels = labels
+}
+
 // ObjectType describes the type of a object
 type ObjectType struct {
 	// Type describes the type of the object.
@@ -123,19 +137,91 @@ func (t *ObjectType) SetType(ttype string) {
 	t.Type = ttype
 }
 
-type ObjectMetaAccessor interface {
-	// GetName returns the name of the access object.
+// Label is a label that can be set on objects.
+type Label struct {
+	// Name is the unique name of the label.
+	Name string `json:"name"`
+	// Value is the json/yaml data of the label
+	Value json.RawMessage `json:"value"`
+}
+
+// ComponentReference describes the reference to another component in the registry.	// Source is the definition of a component's source.
+type ComponentReference struct {
+	// Name is the context unique name of the object.
+	Name string `json:"name"`
+	// ComponentName describes the remote name of the referenced object
+	ComponentName string `json:"componentName"`
+	// Version is the semver version of the object.
+	Version string `json:"version"`
+	// Labels defines an optional set of additional labels
+	// describing the object.
+	// +optional
+	Labels []Label `json:"labels,omitempty"`
+}
+
+// GetName returns the name of the object.
+func (o ComponentReference) GetName() string {
+	return o.Name
+}
+
+// SetName sets the name of the object.
+func (o *ComponentReference) SetName(name string) {
+	o.Name = name
+}
+
+// GetVersion returns the version of the object.
+func (o ComponentReference) GetVersion() string {
+	return o.Version
+}
+
+// SetVersion sets the version of the object.
+func (o *ComponentReference) SetVersion(version string) {
+	o.Version = version
+}
+
+// GetLabels returns the label of the object.
+func (o ComponentReference) GetLabels() []Label {
+	return o.Labels
+}
+
+// SetLabels sets the labels of the object.
+func (o *ComponentReference) SetLabels(labels []Label) {
+	o.Labels = labels
+}
+
+// NameAccessor describes a accessor for a named object.
+type NameAccessor interface {
+	// GetName returns the name of the object.
 	GetName() string
-	// SetName sets the name of the access object.
+	// SetName sets the name of the object.
 	SetName(name string)
-	// GetVersion returns the version of the access object.
+}
+
+// VersionAccessor describes a accessor for a versioned object.
+type VersionAccessor interface {
+	// GetVersion returns the version of the object.
 	GetVersion() string
-	// SetVersion sets the version of the access object.
+	// SetVersion sets the version of the object.
 	SetVersion(version string)
 }
 
-// AccessAccessor defines the accessor for a component
-type AccessAccessor interface {
+// LabelsAccessor describes a accessor for a labeled object.
+type LabelsAccessor interface {
+	// GetLabels returns the labels of the object.
+	GetLabels() []Label
+	// SetLabels sets the labels of the object.
+	SetLabels(labels []Label)
+}
+
+// ObjectMetaAccessor describes a accessor for named and versioned object.
+type ObjectMetaAccessor interface {
+	NameAccessor
+	VersionAccessor
+	LabelsAccessor
+}
+
+// TypedObjectAccessor defines the accessor for a typed component with additional data.
+type TypedObjectAccessor interface {
 	// GetType returns the type of the access object.
 	GetType() string
 	// SetType sets the type of the access object.
@@ -146,91 +232,247 @@ type AccessAccessor interface {
 	SetData([]byte) error
 }
 
+// Source is the definition of a component's source.
+type Source struct {
+	Name                string `json:"name"`
+	TypedObjectAccessor `json:",inline"`
+	Access              TypedObjectAccessor `json:"access"`
+}
+
+// GetName returns the name of the source.
+func (s Source) GetName() string {
+	return s.Name
+}
+
+// SetName sets the name of the source.
+func (s *Source) SetName(name string) {
+	s.Name = name
+}
+
+// jsonSource is the internal representation of a Source
+// that is used to marshal the Resource.
+type jsonSource struct {
+	Name   string          `json:"name"`
+	Access json.RawMessage `json:"access,omitempty"`
+}
+
+// UnmarshalJSON implements a custom json unmarshal method for a Source.
+func (s *Source) UnmarshalJSON(data []byte) error {
+	var (
+		src     Source
+		jsonSrc jsonSource
+	)
+	if err := json.Unmarshal(data, &jsonSrc); err != nil {
+		return err
+	}
+
+	src.Name = jsonSrc.Name
+	acc, err := UnmarshalAccessAccessor(jsonSrc.Access)
+	if err != nil {
+		return err
+	}
+	src.Access = acc
+
+	var sourceJSON map[string]json.RawMessage
+	if err := json.Unmarshal(data, &sourceJSON); err != nil {
+		return err
+	}
+	// remove already parsed attributes
+	delete(sourceJSON, "access")
+	delete(sourceJSON, "name")
+
+	typedObjectJSONBytes, err := json.Marshal(sourceJSON)
+	if err != nil {
+		return err
+	}
+	src.TypedObjectAccessor, err = UnmarshalTypedObjectAccessor(typedObjectJSONBytes, KnownTypes{}, customCodec, nil)
+	if err != nil {
+		return err
+	}
+	*s = src
+	return err
+}
+
+// MarshalJSON implements a custom json marshal method for a source.
+func (s Source) MarshalJSON() ([]byte, error) {
+	var (
+		raw = map[string]json.RawMessage{}
+		err error
+	)
+
+	raw["name"], err = json.Marshal(s.Name)
+	if err != nil {
+		return nil, err
+	}
+	raw["access"], err = MarshalAccessAccessor(s.Access)
+	if err != nil {
+		return nil, err
+	}
+
+	typedObjJSONBytes, err := MarshalTypedObjectAccessor(s.TypedObjectAccessor, KnownTypes{}, customCodec, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var typedObjectJSON map[string]json.RawMessage
+	if err := json.Unmarshal(typedObjJSONBytes, &typedObjectJSON); err != nil {
+		return nil, err
+	}
+
+	for key, val := range typedObjectJSON {
+		raw[key] = val
+	}
+
+	return json.Marshal(raw)
+}
+
 // Resource describes a resource dependency of a component.
 type Resource struct {
-	// Version must be the same as the version of the containing component.
-	ObjectMeta `json:",inline"`
-	ObjectType `json:",inline"`
+	ObjectMeta          `json:",inline"`
+	TypedObjectAccessor `json:",inline"`
 
 	// Access describes the type specific method to
 	// access the defined resource.
-	Access AccessAccessor `json:"-"`
+	Access TypedObjectAccessor `json:"-"`
 }
 
 // jsonResource is the internal representation of a Resource
 // that is used to marshal the Resource.
 type jsonResource struct {
 	ObjectMeta `json:",inline"`
-	ObjectType `json:",inline"`
 	Access     json.RawMessage `json:"access,omitempty"`
 }
 
 // UnmarshalJSON implements a custom json unmarshal method for a Resource.
 func (r *Resource) UnmarshalJSON(data []byte) error {
+	res := Resource{}
 	jsonRes := &jsonResource{}
 	if err := json.Unmarshal(data, &jsonRes); err != nil {
 		return err
 	}
 
-	resource := &Resource{
-		ObjectMeta: jsonRes.ObjectMeta,
-		ObjectType: jsonRes.ObjectType,
-	}
-
-	accessType := &ObjectType{}
-	if err := json.Unmarshal(jsonRes.Access, accessType); err != nil {
-		return err
-	}
-
-	if err := ValidateAccessType(accessType.GetType()); err != nil {
-		return err
-	}
-
-	var (
-		aType AccessCodec
-		ok    bool
-	)
-	aType, ok = KnownAccessTypes[accessType.GetType()]
-	if !ok {
-		aType = customCodec
-	}
-
-	acc, err := aType.Decode(jsonRes.Access)
+	res.ObjectMeta = jsonRes.ObjectMeta
+	acc, err := UnmarshalAccessAccessor(jsonRes.Access)
 	if err != nil {
 		return err
 	}
+	res.Access = acc
 
-	resource.Access = acc
-	*r = *resource
+	var resourceJSON map[string]json.RawMessage
+	if err := json.Unmarshal(data, &resourceJSON); err != nil {
+		return err
+	}
+	// remove already parsed attributes
+	delete(resourceJSON, "access")
+	delete(resourceJSON, "name")
+	delete(resourceJSON, "version")
+
+	typedObjectJSONBytes, err := json.Marshal(resourceJSON)
+	if err != nil {
+		return err
+	}
+	res.TypedObjectAccessor, err = UnmarshalTypedObjectAccessor(typedObjectJSONBytes, KnownTypes{}, customCodec, nil)
+	if err != nil {
+		return err
+	}
+	*r = res
 	return nil
 }
 
 // MarshalJSON implements a custom json marshal method for a Resource.
 func (r Resource) MarshalJSON() ([]byte, error) {
-	if err := ValidateAccessType(r.Access.GetType()); err != nil {
-		return nil, err
-	}
-
-	var (
-		encoder AccessCodec
-		ok      bool
-	)
-
-	encoder, ok = KnownAccessTypes[r.Access.GetType()]
-	if !ok {
-		encoder = customCodec
-	}
-
-	acc, err := encoder.Encode(r.Access)
+	acc, err := MarshalAccessAccessor(r.Access)
 	if err != nil {
 		return nil, err
 	}
 
 	jsonRes := jsonResource{
 		ObjectMeta: r.ObjectMeta,
-		ObjectType: r.ObjectType,
 		Access:     acc,
 	}
 
+	var resourceJSON = map[string]json.RawMessage{}
+	if err := remarshal(jsonRes, &resourceJSON); err != nil {
+		return nil, err
+	}
+
+	typedObjJSONBytes, err := MarshalTypedObjectAccessor(r.TypedObjectAccessor, KnownTypes{}, customCodec, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var typedObjectJSON map[string]json.RawMessage
+	if err := json.Unmarshal(typedObjJSONBytes, &typedObjectJSON); err != nil {
+		return nil, err
+	}
+
+	for key, val := range typedObjectJSON {
+		resourceJSON[key] = val
+	}
 	return json.Marshal(jsonRes)
+}
+
+// UnmarshalTypedObjectAccessor unmarshals a type object into a valid json.
+// The given known types are used to decode the data into a specific.
+// The given defaultCodec is used if no matching type is known.
+// An error is returned when the type is unknown and the default codec is nil.
+func UnmarshalTypedObjectAccessor(data []byte, knownTypes KnownTypes, defaultCodec TypedObjectCodec, validationFunc KnownTypeValidationFunc) (TypedObjectAccessor, error) {
+	accessType := &ObjectType{}
+	if err := json.Unmarshal(data, accessType); err != nil {
+		return nil, err
+	}
+
+	if validationFunc != nil {
+		if err := validationFunc(accessType.GetType()); err != nil {
+			return nil, err
+		}
+	}
+
+	codec, ok := knownTypes[accessType.GetType()]
+	if !ok {
+		codec = defaultCodec
+	}
+
+	acc, err := codec.Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	return acc, nil
+}
+
+// MarshalTypedObjectAccessor marshals a type object into a valid json.
+// The given known types are used to decode the data into a specific.
+// The given defaultCodec is used if no matching type is known.
+// An error is returned when the type is unknown and the default codec is nil.
+func MarshalTypedObjectAccessor(acc TypedObjectAccessor, knownTypes KnownTypes, defaultCodec TypedObjectCodec, validationFunc KnownTypeValidationFunc) ([]byte, error) {
+	if validationFunc != nil {
+		if err := validationFunc(acc.GetType()); err != nil {
+			return nil, err
+		}
+	}
+
+	codec, ok := knownTypes[acc.GetType()]
+	if !ok {
+		codec = defaultCodec
+	}
+
+	return codec.Encode(acc)
+}
+
+// UnmarshalAccessAccessor unmarshals a json access accessor into a known go struct.
+func UnmarshalAccessAccessor(data []byte) (TypedObjectAccessor, error) {
+	return UnmarshalTypedObjectAccessor(data, KnownAccessTypes, customCodec, ValidateAccessType)
+}
+
+// MarshalAccessAccessor marshals a known access accessor into a valid json
+func MarshalAccessAccessor(acc TypedObjectAccessor) ([]byte, error) {
+	return MarshalTypedObjectAccessor(acc, KnownAccessTypes, customCodec, ValidateAccessType)
+}
+
+func remarshal(src, dst interface{}) error {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, dst)
 }

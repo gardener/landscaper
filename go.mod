@@ -8,7 +8,7 @@ require (
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
-	github.com/gardener/component-spec/bindings-go v0.0.0-00010101000000-000000000000
+	github.com/gardener/component-spec/bindings-go v0.0.0-20200925130340-816233f5893b
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -53,7 +53,6 @@ require (
 )
 
 replace (
-	github.com/gardener/component-spec/bindings-go => github.com/schrodit/component-spec/bindings-go v0.0.0-20200814142028-161f0f56a2f2
 	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega => github.com/onsi/gomega v1.5.0

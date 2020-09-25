@@ -19,7 +19,7 @@ import (
 // request to the specific implementations.
 type Interface interface {
 	blueprintsregistry.Registry
-	Set(schemaName string, scheme cdv2.AccessCodec, registry blueprintsregistry.Registry) error
+	Set(schemaName string, scheme cdv2.TypedObjectCodec, registry blueprintsregistry.Registry) error
 }
 
 // New creates a new blueprint registry manager
@@ -74,7 +74,7 @@ type manager struct {
 
 var _ Interface = &manager{}
 
-func (m *manager) Set(schemaName string, scheme cdv2.AccessCodec, registry blueprintsregistry.Registry) error {
+func (m *manager) Set(schemaName string, scheme cdv2.TypedObjectCodec, registry blueprintsregistry.Registry) error {
 	cdv2.KnownAccessTypes[schemaName] = scheme
 	m.registries[schemaName] = registry
 	return cache.InjectCacheInto(registry, m.sharedCache)

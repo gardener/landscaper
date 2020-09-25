@@ -34,10 +34,13 @@ var _ = Describe("mapped component descriptor", func() {
 
 	Context("#ResolvedComponentDescriptor", func() {
 
-		resolveFunc := func(meta cdv2.ObjectMeta) (cdv2.ComponentDescriptor, error) {
+		resolveFunc := func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return cdv2.ComponentDescriptor{
 				ComponentSpec: cdv2.ComponentSpec{
-					ObjectMeta: meta,
+					ObjectMeta: cdv2.ObjectMeta{
+						Name:    meta.ComponentName,
+						Version: meta.Version,
+					},
 				},
 			}, nil
 		}
@@ -54,6 +57,17 @@ var _ = Describe("mapped component descriptor", func() {
 					Name:    "r2",
 					Version: "1.5.0",
 				},
+			},
+		}
+
+		testSources := []cdv2.Source{
+			{
+				Name:                "s1",
+				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
+			},
+			{
+				Name:                "s2",
+				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
 			},
 		}
 
@@ -80,12 +94,12 @@ var _ = Describe("mapped component descriptor", func() {
 
 		It("should convert a list sources to a map by the resource name", func() {
 			cd := cdv2.ComponentDescriptor{}
-			cd.Sources = testResources
+			cd.Sources = testSources
 
 			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, nil)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(mcd.Sources).To(HaveKeyWithValue("r1", testResources[0]))
-			Expect(mcd.Sources).To(HaveKeyWithValue("r2", testResources[1]))
+			Expect(mcd.Sources).To(HaveKeyWithValue("s1", testSources[0]))
+			Expect(mcd.Sources).To(HaveKeyWithValue("s2", testSources[1]))
 		})
 
 		It("should convert a list local resources to a map by the resource name", func() {
@@ -110,14 +124,16 @@ var _ = Describe("mapped component descriptor", func() {
 
 		It("should convert a list component references to a map by the reference's name", func() {
 			cd := cdv2.ComponentDescriptor{}
-			cd.ComponentReferences = []cdv2.ObjectMeta{
+			cd.ComponentReferences = []cdv2.ComponentReference{
 				{
-					Name:    "ref1",
-					Version: "1.0.0",
+					Name:          "ref1",
+					ComponentName: "comp1",
+					Version:       "1.0.0",
 				},
 				{
-					Name:    "ref2",
-					Version: "1.0.1",
+					Name:          "ref2",
+					ComponentName: "comp2",
+					Version:       "1.0.1",
 				},
 			}
 
@@ -126,7 +142,7 @@ var _ = Describe("mapped component descriptor", func() {
 			Expect(mcd.ComponentReferences).To(HaveKeyWithValue("ref1", gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 				"ResolvedComponentSpec": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 					"ObjectMeta": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"Name":    Equal("ref1"),
+						"Name":    Equal("comp1"),
 						"Version": Equal("1.0.0"),
 					}),
 				}),
@@ -134,7 +150,7 @@ var _ = Describe("mapped component descriptor", func() {
 			Expect(mcd.ComponentReferences).To(HaveKeyWithValue("ref2", gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 				"ResolvedComponentSpec": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 					"ObjectMeta": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"Name":    Equal("ref2"),
+						"Name":    Equal("comp2"),
 						"Version": Equal("1.0.1"),
 					}),
 				}),

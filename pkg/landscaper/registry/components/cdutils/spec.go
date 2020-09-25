@@ -40,7 +40,7 @@ type ResolvedComponentSpec struct {
 	// It can be external or internal.
 	Provider cdv2.ProviderType `json:"provider"`
 	// Sources defines sources that produced the component
-	Sources map[string]cdv2.Resource `json:"sources"`
+	Sources map[string]cdv2.Source `json:"sources"`
 	// ComponentReferences references component dependencies that can be resolved in the current context.
 	ComponentReferences map[string]ResolvedComponentDescriptor `json:"componentReferences"`
 	// LocalResources defines internal resources that are created by the component
@@ -53,7 +53,7 @@ func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryC
 	return cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
 }
 
-type ResolveComponentReferenceFunc = func(meta cdv2.ObjectMeta) (cdv2.ComponentDescriptor, error)
+type ResolveComponentReferenceFunc = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error)
 
 // ConvertFromComponentDescriptor converts a component descriptor to a resolved component descriptor.
 func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
@@ -62,18 +62,17 @@ func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc Resolve
 	mcd.RepositoryContexts = cd.RepositoryContexts
 	mcd.Provider = cd.Provider
 
-	mcd.Sources = ResourceListToMap(cd.Sources)
+	mcd.Sources = SourceListToMap(cd.Sources)
 	mcd.LocalResources = ResourceListToMap(cd.LocalResources)
 	mcd.ExternalResources = ResourceListToMap(cd.ExternalResources)
 
 	var err error
 	mcd.ComponentReferences, err = ResolveComponentReferences(cd.ComponentReferences, refFunc)
-
 	return mcd, err
 }
 
 // ResolveComponentReferences resolves a list of component references to resolved components.
-func ResolveComponentReferences(refs []cdv2.ObjectMeta, refFunc ResolveComponentReferenceFunc) (map[string]ResolvedComponentDescriptor, error) {
+func ResolveComponentReferences(refs []cdv2.ComponentReference, refFunc ResolveComponentReferenceFunc) (map[string]ResolvedComponentDescriptor, error) {
 	resolvedComponentRefs := map[string]ResolvedComponentDescriptor{}
 	for _, ref := range refs {
 		cd, err := refFunc(ref)
@@ -94,6 +93,15 @@ func ResourceListToMap(list []cdv2.Resource) map[string]cdv2.Resource {
 	m := make(map[string]cdv2.Resource, len(list))
 	for _, res := range list {
 		m[res.GetName()] = res
+	}
+	return m
+}
+
+// ResourceListToMap converts a list of resources to a map of resources with the resources name as its key.
+func SourceListToMap(list []cdv2.Source) map[string]cdv2.Source {
+	m := make(map[string]cdv2.Source, len(list))
+	for _, src := range list {
+		m[src.GetName()] = src
 	}
 	return m
 }

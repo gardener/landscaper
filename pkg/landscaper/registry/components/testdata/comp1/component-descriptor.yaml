@@ -12,7 +12,8 @@ component:
 
   sources: []
   componentReferences:
-  - name: github.com/gardener/mcm
+  - name: mcm
+    componentName: github.com/gardener/mcm
     version: v1.2.3
     access:
       type: 'gardenerComponent'

@@ -166,3 +166,11 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 
 	return manifest, nil
 }
+
+// ComponentReferenceToObjectMeta converts a ComponentReference into a object meta
+func ComponentReferenceToObjectMeta(ref cdv2.ComponentReference) cdv2.ObjectMeta {
+	return cdv2.ObjectMeta{
+		Name:    ref.GetName(),
+		Version: ref.GetVersion(),
+	}
+}

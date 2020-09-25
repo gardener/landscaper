@@ -22,6 +22,13 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+// KnownAccessTypes contains all known access serializer
+var KnownAccessTypes = KnownTypes{
+	OCIRegistryType:  ociCodec,
+	GitHubAccessType: githubAccessCodec,
+	WebType:          webCodec,
+}
+
 // OCIRegistryType is the access type of a oci registry.
 const OCIRegistryType = "ociRegistry"
 
@@ -34,7 +41,7 @@ type OCIRegistryAccess struct {
 	ImageReference string `json:"imageReference"`
 }
 
-var _ AccessAccessor = &OCIRegistryAccess{}
+var _ TypedObjectAccessor = &OCIRegistryAccess{}
 
 func (O OCIRegistryAccess) GetData() ([]byte, error) {
 	return json.Marshal(O)
@@ -50,15 +57,15 @@ func (O *OCIRegistryAccess) SetData(bytes []byte) error {
 	return nil
 }
 
-var ociCodec = &AccessCodecWrapper{
-	AccessDecoder: AccessDecoderFunc(func(data []byte) (AccessAccessor, error) {
+var ociCodec = &TypedObjectCodecWrapper{
+	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
 		var ociImage OCIRegistryAccess
 		if err := json.Unmarshal(data, &ociImage); err != nil {
 			return nil, err
 		}
 		return &ociImage, nil
 	}),
-	AccessEncoder: AccessEncoderFunc(func(accessor AccessAccessor) ([]byte, error) {
+	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
 		ociImage, ok := accessor.(*OCIRegistryAccess)
 		if !ok {
 			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
@@ -78,7 +85,7 @@ type Web struct {
 	URL string `json:"url"`
 }
 
-var _ AccessAccessor = &Web{}
+var _ TypedObjectAccessor = &Web{}
 
 func (w Web) GetData() ([]byte, error) {
 	return yaml.Marshal(w)
@@ -94,15 +101,15 @@ func (w *Web) SetData(bytes []byte) error {
 	return nil
 }
 
-var webCodec = &AccessCodecWrapper{
-	AccessDecoder: AccessDecoderFunc(func(data []byte) (AccessAccessor, error) {
+var webCodec = &TypedObjectCodecWrapper{
+	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
 		var web Web
 		if err := json.Unmarshal(data, &web); err != nil {
 			return nil, err
 		}
 		return &web, nil
 	}),
-	AccessEncoder: AccessEncoderFunc(func(accessor AccessAccessor) ([]byte, error) {
+	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
 		web, ok := accessor.(*Web)
 		if !ok {
 			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
@@ -111,19 +118,79 @@ var webCodec = &AccessCodecWrapper{
 	}),
 }
 
-// CustomAccess describes a generic dependency of a resolvable component.
-type CustomAccess struct {
+// WebType is the type of a web component
+const GitHubAccessType = "github"
+
+// GitHubAccess describes a github respository resource access.
+type GitHubAccess struct {
+	ObjectType `json:",inline"`
+
+	// RepoURL is the url pointing to the remote repository.
+	RepoURL string `json:"repoUrl"`
+	// Ref describes the git reference.
+	Ref string `json:"ref"`
+}
+
+var _ TypedObjectAccessor = &GitHubAccess{}
+
+func (w GitHubAccess) GetData() ([]byte, error) {
+	return yaml.Marshal(w)
+}
+
+func (w *GitHubAccess) SetData(bytes []byte) error {
+	var newGitHubAccess GitHubAccess
+	if err := json.Unmarshal(bytes, &newGitHubAccess); err != nil {
+		return err
+	}
+
+	w.RepoURL = newGitHubAccess.RepoURL
+	w.Ref = newGitHubAccess.Ref
+	return nil
+}
+
+var githubAccessCodec = &TypedObjectCodecWrapper{
+	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
+		var github GitHubAccess
+		if err := json.Unmarshal(data, &github); err != nil {
+			return nil, err
+		}
+		return &github, nil
+	}),
+	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
+		github, ok := accessor.(*GitHubAccess)
+		if !ok {
+			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
+		}
+		return json.Marshal(github)
+	}),
+}
+
+// CustomType describes a generic dependency of a resolvable component.
+type CustomType struct {
 	ObjectType `json:",inline"`
 	Data       map[string]interface{} `json:"-"`
 }
 
-var _ AccessAccessor = &CustomAccess{}
+// NewTypeOnly creates a new typed object without additional data.
+func NewTypeOnly(ttype string) TypedObjectAccessor {
+	return NewCustomType(ttype, nil)
+}
 
-func (c CustomAccess) GetData() ([]byte, error) {
+// NewCustomType creates a new custom typed object.
+func NewCustomType(ttype string, data map[string]interface{}) TypedObjectAccessor {
+	ct := CustomType{}
+	ct.SetType(ttype)
+	ct.Data = data
+	return &ct
+}
+
+var _ TypedObjectAccessor = &CustomType{}
+
+func (c CustomType) GetData() ([]byte, error) {
 	return json.Marshal(c.Data)
 }
 
-func (c *CustomAccess) SetData(data []byte) error {
+func (c *CustomType) SetData(data []byte) error {
 	var values map[string]interface{}
 	if err := yaml.Unmarshal(data, &values); err != nil {
 		return err
@@ -132,9 +199,9 @@ func (c *CustomAccess) SetData(data []byte) error {
 	return nil
 }
 
-var customCodec = &AccessCodecWrapper{
-	AccessDecoder: AccessDecoderFunc(func(data []byte) (AccessAccessor, error) {
-		var acc CustomAccess
+var customCodec = &TypedObjectCodecWrapper{
+	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
+		var acc CustomType
 		if err := yaml.Unmarshal(data, &acc); err != nil {
 			return nil, err
 		}
@@ -143,12 +210,11 @@ var customCodec = &AccessCodecWrapper{
 		if err := json.Unmarshal(data, &values); err != nil {
 			return nil, err
 		}
-
 		acc.Data = values
 		return &acc, nil
 	}),
-	AccessEncoder: AccessEncoderFunc(func(accessor AccessAccessor) ([]byte, error) {
-		custom, ok := accessor.(*CustomAccess)
+	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
+		custom, ok := accessor.(*CustomType)
 		if !ok {
 			return nil, errors.New("accessor is not a custom type %s")
 		}

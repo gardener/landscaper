@@ -97,7 +97,7 @@ func (c *localClient) searchInPath(path string, ref cdv2.ObjectMeta) (*cdv2.Comp
 			return nil
 		}
 
-		if tmpCD.ObjectMeta == ref {
+		if tmpCD.GetName() == ref.GetName() && tmpCD.GetVersion() == ref.GetVersion() {
 			cd = tmpCD
 			return foundErr
 		}

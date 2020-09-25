@@ -146,6 +146,7 @@ func runTestSuite(testdataDir string) {
 								Name:    "mycustomimage",
 								Version: "1.0.0",
 							},
+							TypedObjectAccessor: cdv2.NewTypeOnly(cdv2.OCIImageType),
 							Access: &cdv2.OCIRegistryAccess{
 								ObjectType: cdv2.ObjectType{
 									Type: cdv2.OCIRegistryType,

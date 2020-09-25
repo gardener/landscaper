@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package executions
+package v2
 
-import (
-	"testing"
+// ComponentDescriptorOCIMediaType is the media type containing the tared component descriptor in an oci registry.
+const ComponentDescriptorOCIMediaType = "application/sap-cnudie+tar"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-)
-
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Installations Executions Test Suite")
-}
+// ComponentDescriptorOCIFileName is the name of the file in the tar.
+const ComponentDescriptorOCIFileName = "component-descriptor.yaml"

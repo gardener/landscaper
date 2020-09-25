@@ -151,7 +151,7 @@ func newLocalComponent(name, version string) cdv2.Resource {
 			Name:    name,
 			Version: version,
 		},
-		ObjectType: cdv2.ObjectType{Type: lsv1alpha1.BlueprintResourceType},
-		Access:     &blueprintsregistry.LocalAccess{ObjectType: cdv2.ObjectType{Type: blueprintsregistry.LocalAccessType}},
+		TypedObjectAccessor: cdv2.NewTypeOnly(lsv1alpha1.BlueprintResourceType),
+		Access:              &blueprintsregistry.LocalAccess{ObjectType: cdv2.ObjectType{Type: blueprintsregistry.LocalAccessType}},
 	}
 }

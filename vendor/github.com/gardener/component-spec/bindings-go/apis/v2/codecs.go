@@ -19,52 +19,52 @@ import (
 	"strings"
 )
 
-// KnownAccessTypes contains all known access serializer
-var KnownAccessTypes = map[string]AccessCodec{
-	OCIRegistryType: ociCodec,
-	WebType:         webCodec,
+// KnownTypes defines a set of known types.
+type KnownTypes map[string]TypedObjectCodec
+
+// KnownTypeValidationFunc defines a function that can optionally validate types.
+type KnownTypeValidationFunc func(ttype string) error
+
+// TypedObjectCodec describes a known component type and how it is decoded and encoded
+type TypedObjectCodec interface {
+	TypedObjectDecoder
+	TypedObjectEncoder
 }
 
-// AccessCodec describes a known component type and how it is decoded and encoded
-type AccessCodec interface {
-	AccessDecoder
-	AccessEncoder
+// TypedObjectCodecWrapper is a simple struct that implements the TypedObjectCodec interface
+type TypedObjectCodecWrapper struct {
+	TypedObjectDecoder
+	TypedObjectEncoder
 }
 
-// AccessCodecWrapper is a simple struct that implements the AccessCodec interface
-type AccessCodecWrapper struct {
-	AccessDecoder
-	AccessEncoder
+// TypedObjectDecoder defines a decoder for a typed object.
+type TypedObjectDecoder interface {
+	Decode(data []byte) (TypedObjectAccessor, error)
 }
 
-// AccessDecoder decodes a component dependency.
-type AccessDecoder interface {
-	Decode(data []byte) (AccessAccessor, error)
+// TypedObjectEncoder defines a encoder for a typed object.
+type TypedObjectEncoder interface {
+	Encode(accessor TypedObjectAccessor) ([]byte, error)
 }
 
-// AccessEncoder encodes a component dependency.
-type AccessEncoder interface {
-	Encode(accessor AccessAccessor) ([]byte, error)
-}
+// TypedObjectDecoderFunc is a simple function that implements the TypedObjectDecoder interface.
+type TypedObjectDecoderFunc func(data []byte) (TypedObjectAccessor, error)
 
-// AccessDecoderFunc is a simple function that implements the AccessDecoder interface.
-type AccessDecoderFunc func(data []byte) (AccessAccessor, error)
-
-// Decode is the Decode implementation of the AccessDecoder interface.
-func (e AccessDecoderFunc) Decode(data []byte) (AccessAccessor, error) {
+// Decode is the Decode implementation of the TypedObjectDecoder interface.
+func (e TypedObjectDecoderFunc) Decode(data []byte) (TypedObjectAccessor, error) {
 	return e(data)
 }
 
-// AccessEncoderFunc is a simple function that implements the AccessEncoder interface.
-type AccessEncoderFunc func(accessor AccessAccessor) ([]byte, error)
+// TypedObjectEncoderFunc is a simple function that implements the TypedObjectEncoder interface.
+type TypedObjectEncoderFunc func(accessor TypedObjectAccessor) ([]byte, error)
 
-// Encode is the Encode implementation of the AccessEncoder interface.
-func (e AccessEncoderFunc) Encode(accessor AccessAccessor) ([]byte, error) {
+// Encode is the Encode implementation of the TypedObjectEncoder interface.
+func (e TypedObjectEncoderFunc) Encode(accessor TypedObjectAccessor) ([]byte, error) {
 	return e(accessor)
 }
 
 // ValidateAccessType validates that a type is known or of a generic type.
-// todo: revisit currently "x-" specifies a generic type
+// todo: revisit; currently "x-" specifies a generic type
 func ValidateAccessType(ttype string) error {
 	if _, ok := KnownAccessTypes[ttype]; ok {
 		return nil

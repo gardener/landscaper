@@ -14,5 +14,8 @@
 
 package v2
 
-// OCIImageType is the type of an oci image component
+// OCIImageType is the type of an oci image component.
 const OCIImageType = "ociImage"
+
+// GitType is the type a git repository resource.
+const GitType = "git"
