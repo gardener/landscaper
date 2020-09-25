@@ -97,7 +97,7 @@ type DeployItemTemplate struct {
 	Type ExecutionType `json:"type"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
-	Configuration runtime.RawExtension `json:"config"`
+	Configuration *runtime.RawExtension `json:"config"`
 
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`

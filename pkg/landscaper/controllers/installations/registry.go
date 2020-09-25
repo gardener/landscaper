@@ -29,41 +29,64 @@ import (
 
 // setupRegistries sets up components and blueprints registries for the current reconcile
 func (a *actuator) setupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference) error {
+	var (
+		componentsOCIRegistry componentsregistry.TypedRegistry
+		blueprintsOCIRegistry blueprintsregistry.Registry
+	)
 	// resolve all pull secrets
 	secrets, err := a.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
 		return err
 	}
 
-	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, a.registriesConfig.Components.OCI.ConfigFiles)
-	if err != nil {
-		return err
+	if a.registriesConfig.Components.OCI == nil {
+		var err error
+		componentsOCIRegistry, err = componentsregistry.NewLocalClient(a.Log(), a.registriesConfig.Components.Local.ConfigPaths...)
+		if err != nil {
+			return err
+		}
+		if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+			return err
+		}
+	} else {
+		ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, a.registriesConfig.Components.OCI.ConfigFiles)
+		if err != nil {
+			return err
+		}
+		ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.registriesConfig.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
+		if err != nil {
+			return err
+		}
+		componentsOCIRegistry, err = componentsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+		if err != nil {
+			return err
+		}
 	}
 
-	ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.registriesConfig.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
-	if err != nil {
-		return err
+	if a.registriesConfig.Blueprints.OCI == nil {
+		blueprintsOCIRegistry, err = blueprintsregistry.NewLocalRegistry(a.Log(), a.registriesConfig.Blueprints.Local.ConfigPaths...)
+		if err != nil {
+			return err
+		}
+	} else {
+		ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, a.registriesConfig.Blueprints.OCI.ConfigFiles)
+		if err != nil {
+			return err
+		}
+		ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.registriesConfig.Blueprints.OCI), oci.WithResolver{Resolver: ociKeyring})
+		if err != nil {
+			return err
+		}
+		blueprintsOCIRegistry, err = blueprintsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+		if err != nil {
+			return err
+		}
 	}
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
-	if err != nil {
-		return err
-	}
+
 	if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 		return err
 	}
 
-	ociKeyring, err = credentials.CreateOCIRegistryKeyring(secrets, a.registriesConfig.Blueprints.OCI.ConfigFiles)
-	if err != nil {
-		return err
-	}
-	ociClient, err = oci.NewClient(a.Log(), oci.WithConfiguration(a.registriesConfig.Blueprints.OCI), oci.WithResolver{Resolver: ociKeyring})
-	if err != nil {
-		return err
-	}
-	blueprintsOCIRegistry, err := blueprintsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
-	if err != nil {
-		return err
-	}
 	return a.blueprintRegistryMgr.Set(cdv2.OCIRegistryType, cdv2.KnownAccessTypes[cdv2.OCIRegistryType], blueprintsOCIRegistry)
 }
 

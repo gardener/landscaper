@@ -54,6 +54,9 @@ func New(sharedCache cache.Cache, clients ...TypedRegistry) (*Manager, error) {
 
 // Set adds registries to the manager.
 func (m *Manager) Set(registries ...TypedRegistry) error {
+	if m.registries == nil {
+		m.registries = map[string]Registry{}
+	}
 	for _, registry := range registries {
 		if err := cache.InjectCacheInto(registry, m.sharedCache); err != nil {
 			return err

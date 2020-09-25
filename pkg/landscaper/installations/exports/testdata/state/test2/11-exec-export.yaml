@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: elmpnol5zsxhw72qcj2cldsx4vvznjc6
+  name: {{ executionDataObjectNameExec "test2" "root" }}
   namespace: test2
 data:
   deploy:

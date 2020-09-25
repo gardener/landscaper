@@ -12,9 +12,6 @@ metadata:
   name: my-nginx
 spec:
   type: Helm
-  importRef:
-    name: secret-item1
-    namespace: default
 
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1

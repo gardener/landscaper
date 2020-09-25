@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
@@ -112,18 +113,22 @@ func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.De
 // It also returns all removed deploy items that are not defined by the execution anymore.
 func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
 	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
-	orphaned := items
+	managed := sets.NewInt()
 	for i, exec := range o.exec.Spec.DeployItems {
 		execItem := executionItem{
 			Info: *exec.DeepCopy(),
 		}
-		if j, ok := getDeployItemIndexByManagedName(orphaned, exec.Name); ok {
+		if j, found := getDeployItemIndexByManagedName(items, exec.Name); found {
+			managed.Insert(j)
 			execItem.DeployItem = items[j].DeepCopy()
-			copy(orphaned[i:], orphaned[j+1:])
-			orphaned[len(orphaned)-1] = lsv1alpha1.DeployItem{}
-			orphaned = orphaned[:len(orphaned)-1]
 		}
 		execItems[i] = execItem
+	}
+	orphaned := make([]lsv1alpha1.DeployItem, 0)
+	for i, item := range items {
+		if !managed.Has(i) {
+			orphaned = append(orphaned, item)
+		}
 	}
 	return execItems, orphaned
 }
@@ -142,6 +147,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 		item.DeployItem.Spec.Type = item.Info.Type
 		item.DeployItem.Spec.Configuration = item.Info.Configuration
 		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
+		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameAnnotation, item.Info.Name)
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
 		return err

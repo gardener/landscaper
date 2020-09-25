@@ -15,6 +15,8 @@
 package envtest
 
 import (
+	"bytes"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -54,7 +56,17 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 			return errors.Wrapf(err, "unable to read file %s", path)
 		}
 
-		objects, err = decodeAndAppendLSObject(data, objects, state)
+		// template files
+		tmpl, err := template.New("init").Funcs(templatingFunctions).Parse(string(data))
+		if err != nil {
+			return err
+		}
+		buf := bytes.NewBuffer([]byte{})
+		if err := tmpl.Execute(buf, map[string]string{"Namespace": state.Namespace}); err != nil {
+			return err
+		}
+
+		objects, err = decodeAndAppendLSObject(buf.Bytes(), objects, state)
 		if err != nil {
 			return errors.Wrapf(err, "unable to decode file %s", path)
 		}

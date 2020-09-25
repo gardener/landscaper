@@ -1,0 +1,35 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+name: root-a
+version: 1.0.0
+
+imports:
+- name: imp-a
+  schema:
+    type: string
+
+exports:
+- name: exp-a
+  schema:
+    type: string
+
+deployExecutions:
+- type: GoTemplate
+  template: |
+    - name: main
+      type: Mock
+      config:
+        apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        providerStatus:
+          apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+          kind: ProviderStatus
+          imp: {{ index .imports "imp-a" }}
+        export:
+          exp-a: exp-mock
+
+exportExecutions:
+- type: GoTemplate
+  template: |
+    exp-a: {{ index .exports.di.main "exp-a" }}

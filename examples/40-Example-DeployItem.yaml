@@ -6,16 +6,10 @@ spec:
 
   type: container | helm | manifest
 
-  importRef:
-    name: secret-item1
-    key: key
-
   config:
     xxx: abc
 
 status:
   phase: Reconciled
 
-  exports:
-    value: xxx
-    secretRef: abc
+  observedGeneration: 0

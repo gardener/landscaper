@@ -50,6 +50,8 @@ spec:
                     config:
                       description: ProviderConfiguration contains the type specific configuration for the execution.
                       type: object
+                      x-kubernetes-embedded-resource: true
+                      x-kubernetes-preserve-unknown-fields: true
                     dependsOn:
                       description: DependsOn lists deploy items that need to be executed before this one
                       items:

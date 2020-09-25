@@ -279,7 +279,7 @@ func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.Export
 	return nil
 }
 
-func encodeStatus(status *helmv1alpha1.ProviderStatus) (runtime.RawExtension, error) {
+func encodeStatus(status *helmv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
 		APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
 		Kind:       "ProviderStatus",
@@ -288,7 +288,7 @@ func encodeStatus(status *helmv1alpha1.ProviderStatus) (runtime.RawExtension, er
 	raw := &runtime.RawExtension{}
 	obj := status.DeepCopyObject()
 	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
-		return runtime.RawExtension{}, err
+		return nil, err
 	}
-	return *raw, nil
+	return raw, nil
 }

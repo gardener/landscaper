@@ -89,7 +89,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			return err
 		}
 
-		c.DeployItem.Status.ProviderStatus = *encStatus
+		c.DeployItem.Status.ProviderStatus = encStatus
 		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		if operation == container.OperationDelete {
@@ -120,7 +120,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		return err
 	}
 
-	c.DeployItem.Status.ProviderStatus = *encStatus
+	c.DeployItem.Status.ProviderStatus = encStatus
 	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 	if err := c.kubeClient.Status().Update(ctx, c.DeployItem); err != nil {
 		return err

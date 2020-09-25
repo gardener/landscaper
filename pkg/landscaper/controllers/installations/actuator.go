@@ -98,6 +98,16 @@ func NewActuator(log logr.Logger, regConfig *config.RegistriesConfiguration) (re
 	}, nil
 }
 
+// NewTestActuator creates a new actuator that is only meant for testing.
+func NewTestActuator(op operation.Interface, configuration *config.RegistriesConfiguration) *actuator {
+	return &actuator{
+		Interface:             op,
+		registriesConfig:      configuration,
+		componentsRegistryMgr: &componentsregistry.Manager{},
+		blueprintRegistryMgr:  manager.New(nil),
+	}
+}
+
 type actuator struct {
 	operation.Interface
 	registriesConfig      *config.RegistriesConfiguration

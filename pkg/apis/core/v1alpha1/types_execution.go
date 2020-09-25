@@ -110,7 +110,9 @@ type DeployItemTemplate struct {
 	Type ExecutionType `json:"type"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
-	Configuration runtime.RawExtension `json:"config"`
+	// +kubebuilder:validation:XEmbeddedResource
+	// +kubebuilder:validation:XPreserveUnknownFields
+	Configuration *runtime.RawExtension `json:"config"`
 
 	// DependsOn lists deploy items that need to be executed before this one
 	DependsOn []string `json:"dependsOn,omitempty"`

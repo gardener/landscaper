@@ -15,6 +15,8 @@
 package dataobjects
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
@@ -81,6 +83,28 @@ func GetMetadataFromObject(objAcc metav1.Object) DataObjectMetadata {
 	return meta
 }
 
+// SetMetadataFromObject sets the given metadata as the object's labels and annotations
+func SetMetadataFromObject(meta DataObjectMetadata, objAcc metav1.Object) {
+	labels := objAcc.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	if len(meta.Context) != 0 {
+		labels[lsv1alpha1.DataObjectContextLabel] = meta.Context
+	}
+	if len(meta.SourceType) != 0 {
+		labels[lsv1alpha1.DataObjectSourceTypeLabel] = string(meta.SourceType)
+	}
+	if len(meta.Source) != 0 {
+		labels[lsv1alpha1.DataObjectSourceLabel] = meta.Source
+	}
+	if len(meta.Key) != 0 {
+		labels[lsv1alpha1.DataObjectKeyLabel] = meta.Key
+	}
+
+	objAcc.SetLabels(labels)
+}
+
 // GetData searches its data for the given Javascript Object Notation path
 // and unmarshals it into the given object
 func (do *DataObject) GetData(path string, out interface{}) error {
@@ -131,9 +155,10 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 	)
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Key)
 	raw.Namespace = do.Metadata.Namespace
-	raw.Data, err = yaml.Marshal(do.Data)
+	raw.Data, err = json.MarshalIndent(do.Data, "", "  ")
 	if err != nil {
 		return nil, err
 	}
+	SetMetadataFromObject(do.Metadata, raw)
 	return raw, nil
 }

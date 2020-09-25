@@ -1,0 +1,6 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: {{ dataObjectName ""  "root.key1" }}
+  namespace: {{ .Namespace }}
+data: val1

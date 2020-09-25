@@ -21,14 +21,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	mockv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -126,7 +127,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 	}
 
 	if config.ProviderStatus != nil {
-		deployItem.Status.ProviderStatus = *config.ProviderStatus
+		deployItem.Status.ProviderStatus = config.ProviderStatus
 	}
 
 	deployItem.Status.ObservedGeneration = deployItem.Generation
@@ -150,7 +151,7 @@ func (a *actuator) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployIt
 	return nil
 }
 
-func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem, config *Configuration) error {
+func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem, config *mockv1alpha1.ProviderConfiguration) error {
 	if config.Export == nil {
 		return nil
 	}
@@ -181,9 +182,9 @@ func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 	return a.c.Status().Update(ctx, item)
 }
 
-func (a *actuator) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*Configuration, error) {
-	config := &Configuration{}
-	if err := yaml.Unmarshal(item.Spec.Configuration.Raw, config); err != nil {
+func (a *actuator) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
+	config := &mockv1alpha1.ProviderConfiguration{}
+	if _, _, err := serializer.NewCodecFactory(Mockscheme).UniversalDecoder().Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		a.log.Error(err, "unable to unmarshal config")
 		item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionFalse,
 			"FailedUnmarshal", err.Error())

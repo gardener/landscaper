@@ -13,15 +13,16 @@ metadata:
   name: my-nginx
 spec:
   type: Mock
-  importRef:
-    name: secret-item1
-    namespace: default
 
   config:
+    apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
     # Specifies the phase of this DeployItem
     phase: Init
     # Specifies the provider specific status
     providerStatus:
+      apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderStatus
       key1: val1
     # Specifies the exported data that will be reconciled into the exportRef.
     export:

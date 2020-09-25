@@ -53,7 +53,7 @@ type DeployItemSpec struct {
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
 	// ProviderConfiguration contains the deployer type specific configuration.
-	Configuration runtime.RawExtension `json:"config,omitempty"`
+	Configuration *runtime.RawExtension `json:"config,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item
@@ -71,7 +71,7 @@ type DeployItemStatus struct {
 
 	// ProviderStatus contains the provider specific status
 	// +optional
-	ProviderStatus runtime.RawExtension `json:"providerStatus,omitempty"`
+	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional

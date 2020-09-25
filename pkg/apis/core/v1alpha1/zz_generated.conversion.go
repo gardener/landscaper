@@ -893,7 +893,7 @@ func Convert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemL
 func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, out *core.DeployItemSpec, s conversion.Scope) error {
 	out.Type = core.ExecutionType(in.Type)
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
-	out.Configuration = in.Configuration
+	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	return nil
 }
 
@@ -905,7 +905,7 @@ func Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, 
 func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemSpec, out *DeployItemSpec, s conversion.Scope) error {
 	out.Type = ExecutionType(in.Type)
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
-	out.Configuration = in.Configuration
+	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	return nil
 }
 
@@ -918,7 +918,7 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.Phase = core.ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
-	out.ProviderStatus = in.ProviderStatus
+	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }
@@ -932,7 +932,7 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.Phase = ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
-	out.ProviderStatus = in.ProviderStatus
+	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
 }
@@ -945,7 +945,7 @@ func Convert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.DeployI
 func autoConvert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *DeployItemTemplate, out *core.DeployItemTemplate, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Type = core.ExecutionType(in.Type)
-	out.Configuration = in.Configuration
+	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
 }
@@ -958,7 +958,7 @@ func Convert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *DeployIt
 func autoConvert_core_DeployItemTemplate_To_v1alpha1_DeployItemTemplate(in *core.DeployItemTemplate, out *DeployItemTemplate, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Type = ExecutionType(in.Type)
-	out.Configuration = in.Configuration
+	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
 }

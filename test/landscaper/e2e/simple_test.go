@@ -22,15 +22,19 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
+	"github.com/gardener/landscaper/pkg/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -38,27 +42,32 @@ import (
 var _ = Describe("Simple", func() {
 
 	var (
-		state        *envtest.State
-		fakeRegistry blueprintsregistry.Registry
+		state                 *envtest.State
+		fakeBlueprintRegistry blueprintsregistry.Registry
+		fakeComponentRegistry componentsregistry.Registry
 
 		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")})
+		fakeBlueprintRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "01-simple", "definitions"))
+		Expect(err).ToNot(HaveOccurred())
+		fakeComponentRegistry, err = componentsregistry.NewLocalClient(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "01-simple"))
 		Expect(err).ToNot(HaveOccurred())
 
-		instActuator, err = instctlr.NewActuator(fakeRegistry)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.ClientInto(testenv.Client, instActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.SchemeInto(kubernetes.LandscaperScheme, instActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.LoggerInto(testing.NullLogger{}, instActuator)
-		Expect(err).ToNot(HaveOccurred())
+		op := operation.NewOperation(log.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeBlueprintRegistry, fakeComponentRegistry)
 
-		execActuator, err = execctlr.NewActuator(fakeRegistry)
+		instActuator = instctlr.NewTestActuator(op, &config.RegistriesConfiguration{
+			Blueprints: config.RegistryConfiguration{
+				Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")}},
+			},
+			Components: config.RegistryConfiguration{
+				Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple")}},
+			},
+		})
+
+		execActuator, err = execctlr.NewActuator(fakeBlueprintRegistry)
 		Expect(err).ToNot(HaveOccurred())
 		_, err = inject.ClientInto(testenv.Client, execActuator)
 		Expect(err).ToNot(HaveOccurred())
@@ -146,7 +155,6 @@ var _ = Describe("Simple", func() {
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
 		Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
-		Expect(inst.Status.ExportReference).ToNot(BeNil())
 
 		By("delete resource")
 		Expect(testenv.Client.Delete(ctx, inst)).ToNot(HaveOccurred())

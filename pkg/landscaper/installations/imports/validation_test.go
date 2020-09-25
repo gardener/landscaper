@@ -18,10 +18,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
@@ -30,15 +29,13 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Validation", func() {
+var _ = Describe("Validation", func() {
 
 	var (
-		defaultTestInstallationConfig *utils.TestInstallationConfig
-		op                            *installations.Operation
+		op *installations.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
@@ -46,7 +43,7 @@ var _ = g.Describe("Validation", func() {
 		fakeCompRepo      componentsregistry.Registry
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -64,48 +61,9 @@ var _ = g.Describe("Validation", func() {
 		op = &installations.Operation{
 			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
 		}
-		defaultTestInstallationConfig = &utils.TestInstallationConfig{
-			RemoteBlueprintBaseURL: "../testdata/registry",
-		}
 	})
 
-	g.Context("root", func() {
-		//g.It("should import data from the static config", func() {
-		//	defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
-		//	defaultTestInstallationConfig.BlueprintFilePath = "../testdata/registry/root/blueprint.yaml"
-		//	defaultTestInstallationConfig.BlueprintContentPath = "../testdata/registry/root"
-		//	_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
-		//
-		//	value, err := yaml.Marshal(map[string]interface{}{
-		//		"ext": map[string]interface{}{
-		//			"a": "val1",
-		//		},
-		//	})
-		//	Expect(err).ToNot(HaveOccurred())
-		//	inInstRoot.Info.Spec.StaticData = []lsv1alpha1.StaticDataSource{{Value: value}}
-		//
-		//	val := imports.NewValidator(instOp)
-		//	Expect(val.Validate(context.TODO(), inInstRoot)).To(Succeed())
-		//})
-
-		g.It("should reject the import from static data if the import is of the wrong type", func() {
-			defaultTestInstallationConfig.Installation = fakeInstallations["test1/root"]
-			defaultTestInstallationConfig.BlueprintContentPath = "../testdata/registry/root"
-			_, inInstRoot, _, instOp := utils.CreateTestInstallationResources(op, *defaultTestInstallationConfig)
-
-			_, err := yaml.Marshal(map[string]interface{}{
-				"ext": map[string]interface{}{
-					"a": true,
-				},
-			})
-			Expect(err).ToNot(HaveOccurred())
-
-			val := imports.NewValidator(instOp)
-			Expect(val.Validate(context.TODO(), inInstRoot)).To(HaveOccurred())
-		})
-	})
-
-	g.It("should successfully validate when the import of a component is defined by its parent", func() {
+	It("should successfully validate when the import of a component is defined by its parent", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
@@ -123,7 +81,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(val.Validate(ctx, inInstA)).To(Succeed())
 	})
 
-	g.It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {
+	It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
@@ -146,7 +104,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(val.Validate(ctx, inInstB)).To(Succeed())
 	})
 
-	g.It("should reject the validation when the parent component is not progressing", func() {
+	It("should reject the validation when the parent component is not progressing", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
@@ -167,7 +125,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
 
-	g.It("should reject when a direct sibling dependency is still running", func() {
+	It("should reject when a direct sibling dependency is still running", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
@@ -190,7 +148,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	g.It("should reject when a dependent sibling has not finished yet", func() {
+	It("should reject when a dependent sibling has not finished yet", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
@@ -222,7 +180,7 @@ var _ = g.Describe("Validation", func() {
 		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 	})
 
-	g.It("should reject when a dependent sibling of my parent that has not finished yet", func() {
+	It("should reject when a dependent sibling of my parent that has not finished yet", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/a"])

@@ -18,10 +18,7 @@ import lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 
 func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string) (int, bool) {
 	for i, item := range items {
-		if item.Annotations == nil {
-			continue
-		}
-		if ann := item.Annotations[lsv1alpha1.ExecutionManagedNameAnnotation]; ann == name {
+		if ann := item.Labels[lsv1alpha1.ExecutionManagedNameAnnotation]; ann == name {
 			return i, true
 		}
 	}

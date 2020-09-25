@@ -102,7 +102,11 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *Operation,
 	if parent == nil {
 		return true, nil
 	}
-	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, op, parent)
+	parentsOperation, err := NewInstallationOperationFromOperation(ctx, op, parent)
+	if err != nil {
+		return false, fmt.Errorf("unable to create parent operation: %w", err)
+	}
+	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, parent)
 	if err != nil {
 		return false, err
 	}
@@ -119,7 +123,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *Operation,
 	if parentsParent == nil {
 		return true, nil
 	}
-	return CheckCompletedSiblingDependentsOfParent(ctx, op, parentsParent)
+	return CheckCompletedSiblingDependentsOfParent(ctx, parentsOperation, parentsParent)
 }
 
 // CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed

@@ -54,7 +54,12 @@ func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.Execution
 
 // CreateOrUpdateDataObject creates or updates a dataobject from a object reference
 func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values interface{}) error {
-	do, err := dataobjects.New().SetNamespace(o.exec.Namespace).SetSource(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).SetData(values).Build()
+	do, err := dataobjects.New().
+		SetNamespace(o.exec.Namespace).
+		SetSource(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).
+		SetContext(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).
+		SetData(values).
+		Build()
 	if err != nil {
 		return err
 	}

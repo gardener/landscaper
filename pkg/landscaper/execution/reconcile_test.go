@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,7 +29,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Reconcile", func() {
+var _ = Describe("Reconcile", func() {
 
 	var (
 		op operation.Interface
@@ -39,7 +39,7 @@ var _ = g.Describe("Reconcile", func() {
 		fakeClient      client.Client
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -52,7 +52,7 @@ var _ = g.Describe("Reconcile", func() {
 		op = operation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, nil, nil)
 	})
 
-	g.It("should deploy the specified deploy items", func() {
+	It("should deploy the specified deploy items", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test1/exec-1"]
@@ -71,7 +71,7 @@ var _ = g.Describe("Reconcile", func() {
 		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
 	})
 
-	g.It("should not deploy a deployitem when dependent ones haven't finished yet", func() {
+	It("should not deploy a deployitem when dependent ones haven't finished yet", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
@@ -90,7 +90,7 @@ var _ = g.Describe("Reconcile", func() {
 		}
 	})
 
-	g.It("should deploy the next deployitem when the previous one successfully finished", func() {
+	It("should deploy the next deployitem when the previous one successfully finished", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
@@ -113,7 +113,7 @@ var _ = g.Describe("Reconcile", func() {
 		Expect(exec.Status.DeployItemReferences[1].Reference.ObservedGeneration).To(Equal(exec.Generation))
 	})
 
-	g.It("should set the status of the execution to failed if a execution failed", func() {
+	It("should set the status of the execution to failed if a execution failed", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
@@ -128,7 +128,7 @@ var _ = g.Describe("Reconcile", func() {
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
 	})
 
-	g.It("should not deploy new items if a execution failed", func() {
+	It("should not deploy new items if a execution failed", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]

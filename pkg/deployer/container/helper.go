@@ -24,7 +24,7 @@ import (
 )
 
 // DecodeProviderStatus decodes a RawExtension to a container status.
-func DecodeProviderStatus(raw runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
+func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
 	status := &containerv1alpha1.ProviderStatus{}
 	if len(raw.Raw) != 0 {
 		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(raw.Raw, nil, status); err != nil {

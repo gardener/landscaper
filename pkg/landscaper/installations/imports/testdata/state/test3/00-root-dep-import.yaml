@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: wllaeqbgmxi3psfmu3dvh2zcyyy6ny5n
+  name: {{ dataObjectName ""  "ext.a" }}
   namespace: test3
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1

@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DataObject
 metadata:
-  name: c6i5lyudgyphkfle5pd76r4mtmtfozhq
+  name: {{ dataObjectName ( dataObjectContext "test2" "root" )  "root.a" }}
   namespace: test2
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1

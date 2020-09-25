@@ -62,7 +62,7 @@ type DeployItemSpec struct {
 	// ProviderConfiguration contains the deployer type specific configuration.
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:XPreserveUnknownFields
-	Configuration runtime.RawExtension `json:"config,omitempty"`
+	Configuration *runtime.RawExtension `json:"config,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item.
@@ -83,7 +83,7 @@ type DeployItemStatus struct {
 	// +optional
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:XPreserveUnknownFields
-	ProviderStatus runtime.RawExtension `json:"providerStatus,omitempty"`
+	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional

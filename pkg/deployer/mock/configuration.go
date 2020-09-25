@@ -15,25 +15,17 @@
 package helm
 
 import (
-	"encoding/json"
-
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	mockinstall "github.com/gardener/landscaper/pkg/apis/deployer/mock/install"
 )
 
 // Type is the type name of the deployer.
 const Type lsv1alpha1.ExecutionType = "Mock"
 
-// ProviderConfiguration is the configuration of a helm deploy item.
-// todo: use versioned configuration
-type Configuration struct {
-	// Phase sets the phase of the DeployItem
-	Phase *lsv1alpha1.ExecutionPhase `json:"phase,omitempty"`
+var Mockscheme = runtime.NewScheme()
 
-	// ProviderStatus sets the provider status to the given value
-	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
-
-	// Export sets the exported configuration to the given value
-	Export *json.RawMessage `json:"export,omitempty"`
+func init() {
+	mockinstall.Install(Mockscheme)
 }

@@ -32,8 +32,6 @@ spec:
     data:
     - name: c.y
       dataRef: root.y
-    - name: root.y
-      dataRef: root.y
 
 status:
   phase: Init

@@ -133,7 +133,7 @@ func (s *State) Backup(ctx context.Context) error {
 		if err != nil {
 			return false, err
 		}
-		deployItem.Status.ProviderStatus = *encStatus
+		deployItem.Status.ProviderStatus = encStatus
 		if err := s.kubeClient.Status().Update(ctx, deployItem); err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, err

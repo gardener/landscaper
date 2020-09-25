@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
@@ -97,6 +98,7 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		Installations: make(map[string]*lsv1alpha1.Installation),
 		Executions:    make(map[string]*lsv1alpha1.Execution),
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
+		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
 	// create a new testing namespace
@@ -218,7 +220,7 @@ func parseResources(path string, state *State) ([]runtime.Object, error) {
 		}
 
 		// template files
-		tmpl, err := template.New("init").Parse(string(data))
+		tmpl, err := template.New("init").Funcs(templatingFunctions).Parse(string(data))
 		if err != nil {
 			return err
 		}
@@ -308,4 +310,20 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
 	return nil, allErrors
+}
+
+var templatingFunctions = template.FuncMap{
+	"dataObjectContext": func(namespace, name string) string {
+		return lsv1alpha1helper.DataObjectSourceFromInstallation(&lsv1alpha1.Installation{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		})
+	},
+	"executionDataObjectNameExec": func(namespace, name string) string {
+		return lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromExecution(&lsv1alpha1.Execution{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		}), "")
+	},
+	"dataObjectName": func(context, name string) string {
+		return lsv1alpha1helper.GenerateDataObjectName(context, name)
+	},
 }
