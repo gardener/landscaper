@@ -16,6 +16,14 @@ component:
     type: blueprint
     access:
       type: local
+  - name: root-2
+    type: blueprint
+    access:
+      type: local
+  - name: root-3
+    type: blueprint
+    access:
+      type: local
   - name: def1
     type: blueprint
     access:
@@ -33,6 +41,14 @@ component:
     access:
       type: local
   - name: d
+    type: blueprint
+    access:
+      type: local
+  - name: e
+    type: blueprint
+    access:
+      type: local
+  - name: f
     type: blueprint
     access:
       type: local

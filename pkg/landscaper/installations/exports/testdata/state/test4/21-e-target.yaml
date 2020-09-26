@@ -1,0 +1,16 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: {{ dataObjectName ( dataObjectContext "test4" "root" )  "root.z" }}
+  namespace: test4
+  labels:
+    dataobjects.landscaper.gardener.cloud/context: "Installation.test4.root"
+    dataobjects.landscaper.gardener.cloud/key: "root.z"
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: a
+    uid: xxx
+spec:
+  type: landscaper.gardener.cloud/mock
+  config: val-e

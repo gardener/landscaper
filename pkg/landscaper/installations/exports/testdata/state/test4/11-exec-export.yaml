@@ -1,0 +1,10 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  name: {{ executionDataObjectNameExec "test4" "root" }}
+  namespace: test4
+data:
+  deploy:
+    root.y:
+      type: landscaper.gardener.cloud/mock
+      config: val-a

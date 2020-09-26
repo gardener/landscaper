@@ -34,8 +34,9 @@ type DeployItemList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// DeployItem defines a DeployItem that should be processed by a external deployer
+// DeployItem defines a resource that should be processed by a external deployer
 // +kubebuilder:resource:path="deployitems",scope="Namespaced",shortName="di",singular="deployitem"
+// +kubebuilder:printcolumn:JSONPath=".spec.type",name=Type,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
 // +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
@@ -52,14 +53,14 @@ type DeployItem struct {
 
 // DeployItemSpec contains the definition of a deploy item.
 type DeployItemSpec struct {
-	// DataType is the type of the deployer that should handle the item.
+	// Type is the type of the deployer that should handle the item.
 	Type ExecutionType `json:"type"`
 	// Target specifies an optional target of the deploy item.
 	// In most cases it contains the secrets to access a evironment.
 	// It is also used by the deployers to determine the ownernship.
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
-	// ProviderConfiguration contains the deployer type specific configuration.
+	// Configuration contains the deployer type specific configuration.
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:XPreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"config,omitempty"`

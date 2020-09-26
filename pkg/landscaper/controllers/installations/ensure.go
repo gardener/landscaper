@@ -78,13 +78,13 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 		return nil
 	}
 
-	exportedValues, err := exports.NewConstructor(op).Construct(ctx)
+	dataExports, targetExports, err := exports.NewConstructor(op).Construct(ctx)
 	if err != nil {
 		a.Log().Error(err, "error during export construction")
 		return err
 	}
 
-	if err := op.CreateOrUpdateExports(ctx, exportedValues); err != nil {
+	if err := op.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
 		a.Log().Error(err, "error during export validation")
 		return err
 	}

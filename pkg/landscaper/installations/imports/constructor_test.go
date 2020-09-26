@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -63,38 +64,6 @@ var _ = Describe("Constructor", func() {
 			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo),
 		}
 	})
-
-	//g.It("should directly construct the data from static data", func() {
-	//	ctx := context.Background()
-	//	defer ctx.Done()
-	//	inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
-	//	Expect(err).ToNot(HaveOccurred())
-	//	op.Inst = inInstRoot
-	//	Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-	//
-	//	expectedConfig := map[string]interface{}{
-	//		"root": map[string]interface{}{
-	//			"a": "val-root-import",
-	//		},
-	//	}
-	//
-	//	Expect(op.SetInstallationContext(ctx)).To(Succeed())
-	//	c := imports.NewConstructor(op)
-	//	res, err := c.Construct(context.TODO(), inInstRoot)
-	//	Expect(err).ToNot(HaveOccurred())
-	//	Expect(res).ToNot(BeNil())
-	//
-	//	Expect(res).To(Equal(expectedConfig))
-	//	Expect(inInstRoot.ImportStatus().GetStatus()).To(ConsistOf(MatchAllFields(Fields{
-	//		"From": Equal("ext.a"),
-	//		"To":   Equal("root.a"),
-	//		"SourceRef": Equal(&lsv1alpha1.ObjectReference{
-	//			Name:      "root",
-	//			Namespace: "test1",
-	//		}),
-	//		"ConfigGeneration": BeAssignableToTypeOf(""),
-	//	})))
-	//})
 
 	It("should construct the imported config from a sibling", func() {
 		ctx := context.Background()
@@ -164,6 +133,52 @@ var _ = Describe("Constructor", func() {
 			_, err = c.Construct(ctx, inInstA)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsSchemaValidationFailedError(err)).To(BeTrue())
+		})
+	})
+
+	Context("Targets", func() {
+		It("should construct import from a manually added target", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			c := imports.NewConstructor(op)
+			res, err := c.Construct(ctx, inInstRoot)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+
+			Expect(res).To(HaveKeyWithValue("root.a", MatchKeys(IgnoreExtras, Keys{
+				"spec": MatchKeys(IgnoreExtras, Keys{
+					"type":   Equal("landscaper.gardener.cloud/mock"),
+					"config": Equal("val-e"),
+				}),
+			})))
+		})
+
+		It("should construct import from a parent import", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstF, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/f"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstF
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			c := imports.NewConstructor(op)
+			res, err := c.Construct(ctx, inInstF)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+
+			Expect(res).To(HaveKeyWithValue("f.a", MatchKeys(IgnoreExtras, Keys{
+				"spec": MatchKeys(IgnoreExtras, Keys{
+					"type":   Equal("landscaper.gardener.cloud/mock"),
+					"config": Equal("val-e"),
+				}),
+			})))
 		})
 	})
 

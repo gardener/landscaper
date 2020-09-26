@@ -16,6 +16,7 @@ package exports_test
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
@@ -24,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -31,6 +33,7 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -73,7 +76,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst = inInstRoot
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(ctx)
+		res, _, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object for 2 exports")
@@ -113,7 +116,7 @@ var _ = Describe("Constructor", func() {
 		}
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(ctx)
+		res, _, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object from b and c")
@@ -156,7 +159,7 @@ var _ = Describe("Constructor", func() {
 		}
 
 		c := exports.NewConstructor(op)
-		_, err = c.Construct(ctx)
+		_, _, err = c.Construct(ctx)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -176,10 +179,11 @@ var _ = Describe("Constructor", func() {
 		}
 
 		c := exports.NewConstructor(op)
-		res, err := c.Construct(ctx)
+		res, targets, err := c.Construct(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(res).ToNot(BeNil())
 		Expect(res).To(HaveLen(2), "should export 2 data object from execution and a")
+		Expect(targets).To(HaveLen(0))
 
 		id := func(element interface{}) string {
 			do := element.(*dataobjects.DataObject)
@@ -201,6 +205,74 @@ var _ = Describe("Constructor", func() {
 				}),
 			})),
 		}))
+	})
+
+	Context("Target Export", func() {
+		It("should export a target from a template and a subinstallation", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			c := exports.NewConstructor(op)
+			_, res, err := c.Construct(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			Expect(res).To(HaveLen(2), "should export 2 targets from execution and installation e")
+
+			id := func(element interface{}) string {
+				do := element.(*dataobjects.Target)
+				return do.Metadata.Key
+			}
+			Expect(res).To(MatchElements(id, IgnoreExtras, Elements{
+				"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
+					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
+						"Spec": MatchFields(IgnoreExtras, Fields{
+							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
+							"Configuration": Equal(json.RawMessage(`"val-a"`)),
+						}),
+					})),
+					"Metadata": MatchFields(IgnoreExtras, Fields{
+						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+						"Key":        Equal("root.y"),
+					}),
+				})),
+				"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
+					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
+						"Spec": MatchFields(IgnoreExtras, Fields{
+							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
+							"Configuration": Equal(json.RawMessage(`"val-e"`)),
+						}),
+					})),
+					"Metadata": MatchFields(IgnoreExtras, Fields{
+						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+						"Key":        Equal("root.z"),
+					}),
+				})),
+			}))
+		})
+
+		It("should forbid export of a wrong target type", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			target := &lsv1alpha1.Target{}
+			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.z")
+			key := kutil.ObjectKey(targetName, "test4")
+			Expect(fakeClient.Get(ctx, key, target)).To(Succeed())
+			target.Spec.Type = "unknownType"
+			Expect(fakeClient.Update(ctx, target))
+
+			c := exports.NewConstructor(op)
+			_, _, err = c.Construct(ctx)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 })

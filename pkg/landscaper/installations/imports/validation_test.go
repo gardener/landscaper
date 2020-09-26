@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
@@ -199,6 +200,46 @@ var _ = Describe("Validation", func() {
 		err = val.Validate(ctx, inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
+	})
+
+	Context("Targets", func() {
+		It("should forbid if a target import from a manually added target is not present", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			target := &lsv1alpha1.Target{}
+			target.Name = lsv1alpha1helper.GenerateDataObjectName("", "ext.a")
+			target.Namespace = "test4"
+			Expect(fakeClient.Delete(ctx, target))
+
+			c := imports.NewValidator(op)
+			err = c.Validate(ctx, inInstRoot)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should forbid if a import from a parent import is not present", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstF, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/f"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstF
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			target := &lsv1alpha1.Target{}
+			target.Name = lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, "ext.a")
+			target.Namespace = "test4"
+			Expect(fakeClient.Delete(ctx, target))
+
+			c := imports.NewValidator(op)
+			err = c.Validate(ctx, inInstF)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 })

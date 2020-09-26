@@ -27,5 +27,6 @@ type State struct {
 	Executions    map[string]*lsv1alpha1.Execution
 	DeployItems   map[string]*lsv1alpha1.DeployItem
 	DataObjects   map[string]*lsv1alpha1.DataObject
+	Targets       map[string]*lsv1alpha1.Target
 	Secrets       map[string]*corev1.Secret
 }

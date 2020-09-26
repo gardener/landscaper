@@ -31,7 +31,7 @@ type DeployItemList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// DeployItem defines a DeployItem that should be processed by a external deployer
+// DeployItem defines a resource that should be processed by a external deployer
 // +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -45,14 +45,14 @@ type DeployItem struct {
 
 // DeployItemSpec contains the definition of a deploy item.
 type DeployItemSpec struct {
-	// DataType is the type of the deployer that should handle the item.
+	// Type is the type of the deployer that should handle the item.
 	Type ExecutionType `json:"type"`
 	// Target specifies an optional target of the deploy item.
 	// In most cases it contains the secrets to access a evironment.
 	// It is also used by the deployers to determine the ownernship.
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
-	// ProviderConfiguration contains the deployer type specific configuration.
+	// Configuration contains the deployer type specific configuration.
 	Configuration *runtime.RawExtension `json:"config,omitempty"`
 }
 

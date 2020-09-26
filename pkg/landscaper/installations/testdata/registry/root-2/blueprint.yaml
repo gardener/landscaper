@@ -1,0 +1,22 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+name: root-2
+version: 1.0.0
+
+exports:
+- name: root.y
+  targetType: landscaper.gardener.cloud/mock
+- name: root.z
+  targetType: landscaper.gardener.cloud/mock
+
+exportExecutions:
+- type: GoTemplate
+  template: |
+    root.y:
+    {{ toYaml (index .exports.di.deploy "root.y") | indent 2 }}
+
+    {{ $target := index .exports.targets "root.z" }}
+    root.z:
+      type: {{ $target.spec.type }}
+      config: {{ $target.spec.config }}

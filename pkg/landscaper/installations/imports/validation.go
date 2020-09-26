@@ -75,7 +75,16 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 		}
 	}
 
-	// todo: add target import validation
+	for _, targetImport := range inst.Info.Spec.Imports.Targets {
+		impPath := fldPath.Child(targetImport.Name)
+		err = v.checkTargetImportIsSatisfied(ctx, impPath, inst, targetImport)
+		if err != nil {
+			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				CheckImportsReason,
+				fmt.Sprintf("Waiting until all imports are satisfied: %s", err.Error())))
+			return err
+		}
+	}
 
 	inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		CheckImportsReason,
@@ -84,16 +93,7 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 }
 
 func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
-	//err := v.checkStaticDataForMapping(ctx, fldPath, inst, mapping)
-	//if !installations.IsImportNotFoundError(err) {
-	//	return err
-	//}
-	//if err == nil {
-	//	return nil
-	//}
-
 	// get deploy item from current context
-	// todo: find better name
 	raw := &lsv1alpha1.DataObject{}
 	doName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, dataImport.DataRef)
 	if err := v.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
@@ -124,22 +124,33 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 	return v.checkStateForSiblingDataExport(ctx, fldPath, ref, dataImport.DataRef)
 }
 
-//func (v *Validator) checkStaticDataForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, key string) error {
-//	if inst.Info.Spec.StaticData == nil {
-//		return installations.NewImportNotFoundErrorf(nil, "%s: static data not defined", fldPath.String())
-//	}
-//
-//	data, err := v.GetStaticData(ctx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	var val interface{}
-//	if err := jsonpath.GetValue(key, data, &val); err != nil {
-//		return installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
-//	}
-//	return nil
-//}
+func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) error {
+	// get deploy item from current context
+	raw := &lsv1alpha1.Target{}
+	targetName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, targetImport.Target)
+	if err := v.Client().Get(ctx, kutil.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+		return err
+	}
+
+	owner := kutil.GetOwner(raw.ObjectMeta)
+	if owner == nil {
+		return nil
+	}
+
+	// we cannot validate if the source is not an installation
+	if owner.Kind != "Installation" {
+		return nil
+	}
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+
+	// check if the data object comes from the parent
+	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
+		return v.checkStateForParentImport(fldPath, targetImport.Target)
+	}
+
+	// otherwise validate as sibling export
+	return v.checkStateForSiblingDataExport(ctx, fldPath, ref, targetImport.Target)
+}
 
 func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName string) error {
 	// check if the parent also imports my import

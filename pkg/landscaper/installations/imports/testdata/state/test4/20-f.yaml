@@ -1,0 +1,37 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: f
+  namespace: test4
+  labels:
+    "landscaper.gardener.cloud/encompassed-by": root
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: root
+spec:
+
+  blueprint:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: root
+      kind: localResource
+      resourceName: f
+
+  imports:
+    targets:
+    - name: f.a
+      target: root.a
+
+status:
+  phase: Completed
+  configGeneration: ""
+
+  imports:
+  - name: a.b
+    configGeneration: ""
+  observedGeneration: 0
+

@@ -99,6 +99,7 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		Executions:    make(map[string]*lsv1alpha1.Execution),
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
 		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
+		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
 	// create a new testing namespace
@@ -292,6 +293,14 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 	}
 	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
 
+	target := &lsv1alpha1.Target{}
+	_, _, err = decoder.Decode(data, nil, target)
+	if err == nil {
+		state.Targets[types.NamespacedName{Name: target.Name, Namespace: target.Namespace}.String()] = target
+		return append(objects, target), nil
+	}
+	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
+
 	secret := &corev1.Secret{}
 	_, _, err = decoder.Decode(data, nil, secret)
 	if err == nil {
@@ -324,6 +333,7 @@ var templatingFunctions = template.FuncMap{
 		}), "")
 	},
 	"dataObjectName": func(context, name string) string {
-		return lsv1alpha1helper.GenerateDataObjectName(context, name)
+		n := lsv1alpha1helper.GenerateDataObjectName(context, name)
+		return n
 	},
 }

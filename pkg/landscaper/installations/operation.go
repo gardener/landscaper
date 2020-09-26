@@ -150,6 +150,34 @@ func (o *Operation) GetImportedDataObjectForName(ctx context.Context, name strin
 	return do, nil
 }
 
+// GetImportedDataObjects returns all imported data objects of the installation.
+func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
+	targets := map[string]*dataobjects.Target{}
+	for _, def := range o.Inst.Info.Spec.Imports.Targets {
+		target, err := o.GetImportedTarget(ctx, def.Target)
+		if err != nil {
+			return nil, err
+		}
+		targets[def.Name] = target
+	}
+
+	return targets, nil
+}
+
+// GetImportedDataObjectForName fetches the dataobject with a given name from the current context.
+func (o *Operation) GetImportedTarget(ctx context.Context, name string) (*dataobjects.Target, error) {
+	raw := &lsv1alpha1.Target{}
+	targetName := lsv1alpha1helper.GenerateDataObjectName(o.Context().Name, name)
+	if err := o.Client().Get(ctx, kutil.ObjectKey(targetName, o.Inst.Info.Namespace), raw); err != nil {
+		return nil, fmt.Errorf("unable to fetch target %s (%s): %w", targetName, name, err)
+	}
+	target, err := dataobjects.NewFromTarget(raw)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create internal target for %s: %w", name, err)
+	}
+	return target, nil
+}
+
 // CreateEventFromCondition creates a new event based on the given condition
 func (o *Operation) CreateEventFromCondition(ctx context.Context, inst *lsv1alpha1.Installation, cond lsv1alpha1.Condition) error {
 	event := &corev1.Event{}
@@ -274,7 +302,7 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
-func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*dataobjects.DataObject) error {
+func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.Target) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateExportsCondition)
 
 	configGen, err := CreateGenerationHash(o.Inst.Info)
@@ -287,7 +315,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*da
 	}
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
-	for _, do := range dataObjects {
+	for _, do := range dataExports {
 		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName()).Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
@@ -300,8 +328,28 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataObjects []*da
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
-				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects", fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects",
+					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
 			return fmt.Errorf("unable to create or update data object %s for export %s: %w", raw.Name, do.Metadata.Key, err)
+		}
+	}
+
+	for _, target := range targetExports {
+		raw, err := target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName()).Build()
+		if err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+					"CreateTargets",
+					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
+			return fmt.Errorf("unable to build target for export %s: %w", target.Metadata.Key, err)
+		}
+
+		// we do not need to set controller ownership as we anyway need a separate garbage collection.
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
+					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
+			return fmt.Errorf("unable to create or update target %s for export %s: %w", raw.Name, target.Metadata.Key, err)
 		}
 	}
 

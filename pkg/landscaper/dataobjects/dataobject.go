@@ -31,12 +31,12 @@ type DataObject struct {
 	Data interface{}
 
 	FieldValue *lsv1alpha1.FieldValueDefinition
-	Metadata   DataObjectMetadata
+	Metadata   Metadata
 }
 
-// DataObjectMetadata describes the metadata of a data object.
+// Metadata describes the metadata of a data object.
 // This metadata is also represented as annotations/labels at the object.
-type DataObjectMetadata struct {
+type Metadata struct {
 	Namespace  string
 	Context    string
 	SourceType lsv1alpha1.DataObjectSourceType
@@ -63,8 +63,8 @@ func NewFromDataObject(do *lsv1alpha1.DataObject) (*DataObject, error) {
 }
 
 // GetMetadataFromObject read optional metadata from object's labels and annotations
-func GetMetadataFromObject(objAcc metav1.Object) DataObjectMetadata {
-	meta := DataObjectMetadata{}
+func GetMetadataFromObject(objAcc metav1.Object) Metadata {
+	meta := Metadata{}
 	if objAcc.GetLabels() != nil {
 		labels := objAcc.GetLabels()
 		if context, ok := labels[lsv1alpha1.DataObjectContextLabel]; ok {
@@ -84,7 +84,7 @@ func GetMetadataFromObject(objAcc metav1.Object) DataObjectMetadata {
 }
 
 // SetMetadataFromObject sets the given metadata as the object's labels and annotations
-func SetMetadataFromObject(meta DataObjectMetadata, objAcc metav1.Object) {
+func SetMetadataFromObject(objAcc metav1.Object, meta Metadata) {
 	labels := objAcc.GetLabels()
 	if labels == nil {
 		labels = map[string]string{}
@@ -159,6 +159,6 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 	if err != nil {
 		return nil, err
 	}
-	SetMetadataFromObject(do.Metadata, raw)
+	SetMetadataFromObject(raw, do.Metadata)
 	return raw, nil
 }

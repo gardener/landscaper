@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -107,6 +109,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem) map[string]interface{} {
 	return map[string]interface{}{
 		"readFile": readFileFunc(fs),
 		"readDir":  readDir(fs),
+		"toYaml":   toYAML,
 	}
 }
 
@@ -132,4 +135,17 @@ func readDir(fs vfs.FileSystem) func(path string) []os.FileInfo {
 		}
 		return files
 	}
+}
+
+// toYAML takes an interface, marshals it to yaml, and returns a string. It will
+// always return a string, even on marshal error (empty string).
+//
+// This is designed to be called from a template.
+func toYAML(v interface{}) string {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		// Swallow errors inside of a template.
+		return ""
+	}
+	return strings.TrimSuffix(string(data), "\n")
 }

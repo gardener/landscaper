@@ -1,0 +1,46 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: test4
+spec:
+
+  blueprint:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: root
+      kind: localResource
+      resourceName: root-2
+
+  exports:
+    targets:
+    - name: root.y
+      target: root.y
+    - name: root.z
+      target: root.z
+
+status:
+  phase: Progressing
+  configGeneration: ""
+
+  imports:
+  - name: root.a
+    configGeneration: ""
+    sourceRef:
+      name: root
+      namespace: test3
+
+  installationRefs:
+  - name: a
+    ref:
+      name: a
+      namespace: test3
+
+  executionRef:
+    name: root
+    namespace: test3
+
+  observedGeneration: 0

@@ -41,6 +41,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		Executions:    make(map[string]*lsv1alpha1.Execution),
 		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
 		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
+		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
 	}
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {

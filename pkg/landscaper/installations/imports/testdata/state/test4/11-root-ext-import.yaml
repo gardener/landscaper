@@ -1,0 +1,11 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: {{ dataObjectName ""  "ext.a" }}
+  namespace: test4
+  labels:
+    dataobjects.landscaper.gardener.cloud/context: ""
+    dataobjects.landscaper.gardener.cloud/key: "ext.a"
+spec:
+  type: landscaper.gardener.cloud/mock
+  config: val-e
