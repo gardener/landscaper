@@ -28,7 +28,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
 // Constructor is a struct that contains all values
@@ -111,23 +110,6 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	return dataObjects, nil
-}
-
-func (c *Constructor) getSubInstallations(ctx context.Context, inst *installations.Installation) ([]*installations.Installation, error) {
-	subInstsMap, err := subinstallations.New(c.Operation).GetSubInstallations(ctx, inst.Info)
-	if err != nil {
-		return nil, err
-	}
-
-	subInsts := make([]*installations.Installation, 0)
-	for _, inst := range subInstsMap {
-		inInst, err := installations.CreateInternalInstallation(ctx, c.Operation, inst)
-		if err != nil {
-			return nil, err
-		}
-		subInsts = append(subInsts, inInst)
-	}
-	return subInsts, nil
 }
 
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {

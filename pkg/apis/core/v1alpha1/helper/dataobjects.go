@@ -34,7 +34,7 @@ const SourceDelimiter = "/"
 func GenerateDataObjectName(context string, key string) string {
 	name := fmt.Sprintf("%s/%s", context, key)
 	h := sha1.New()
-	h.Write([]byte(name))
+	_, _ = h.Write([]byte(name))
 	// we need base32 encoding as some base64 (even url safe base64) characters are not supported by k8s
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
 	return base32.NewEncoding(Base32EncodeStdLowerCase).WithPadding(base32.NoPadding).EncodeToString(h.Sum(nil))

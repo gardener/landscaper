@@ -26,7 +26,6 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	blueprintregistrymanager "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/manager"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -34,9 +33,8 @@ type options struct {
 	log        logr.Logger
 	configPath string
 
-	config           *config.LandscaperConfiguration
-	registry         blueprintregistrymanager.Interface
-	cRegistryManager *componentsregistry.Manager
+	config   *config.LandscaperConfiguration
+	registry blueprintregistrymanager.Interface
 }
 
 func NewOptions() *options {
@@ -67,35 +65,6 @@ func (o *options) Complete() error {
 
 	return nil
 }
-
-//func (o *options) setupRegistry() error {
-//	r, err := blueprintregistrymanager.NewWithConfig(o.log, &o.config.Registry)
-//	if err != nil {
-//		return err
-//	}
-//	o.registry = r
-//	return errors.New("no registry defined")
-//}
-
-//func (o *options) setupComponentsRegistryManager() error {
-//	clients := make([]componentsregistry.TypedRegistry, 0)
-//	if o.config.ComponentDescriptorRepository.Local != nil {
-//		localClient, err := componentsregistry.NewLocalClient(o.log, o.config.ComponentDescriptorRepository.Local.Paths...)
-//		if err != nil {
-//			return err
-//		}
-//		clients = append(clients, localClient)
-//	}
-//	if o.config.ComponentDescriptorRepository.OCI != nil {
-//		localClient, err := componentsregistry.NewOCIRegistry(o.log, o.config.ComponentDescriptorRepository.OCI)
-//		if err != nil {
-//			return err
-//		}
-//		clients = append(clients, localClient)
-//	}
-//	o.cRegistryManager = componentsregistry.New(nil, clients...)
-//	return nil
-//}
 
 func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {
 	decoder := serializer.NewCodecFactory(kubernetes.ConfigScheme).UniversalDecoder()

@@ -180,8 +180,8 @@ func (s *State) Restore(ctx context.Context) error {
 		if uuidStr == newestUuid {
 			continue
 		}
+		wg.Add(1)
 		go func(ctx context.Context, secrets []*corev1.Secret) {
-			wg.Add(1)
 			defer wg.Done()
 			s.gcOldSecrets(ctx, secrets)
 		}(ctx, sc)

@@ -158,6 +158,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: handle abort..
+		a.Log().Info("do abort")
 	}
 
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {

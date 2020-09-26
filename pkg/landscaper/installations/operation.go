@@ -49,7 +49,6 @@ type Operation struct {
 	ComponentDescriptor         *cdv2.ComponentDescriptor
 	ResolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor
 	context                     Context
-	staticData                  map[string]interface{}
 }
 
 // NewInstallationOperation creates a new installation operation

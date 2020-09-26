@@ -113,26 +113,27 @@ func (lc *layeredCache) Add(desc ocispecv1.Descriptor, reader io.ReadCloser) err
 	return err
 }
 
-func (lc *layeredCache) info(dgst string) (os.FileInfo, error) {
-	lc.mux.RLock()
-	defer lc.mux.RUnlock()
-
-	// first search in the overlayFs layer
-	if lc.overlayFs != nil {
-		if info, err := lc.overlayFs.Stat(dgst); err == nil {
-			return info, nil
-		}
-	}
-
-	info, err := lc.baseFs.Stat(dgst)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	return info, nil
-}
+//
+//func (lc *layeredCache) info(dgst string) (os.FileInfo, error) {
+//	lc.mux.RLock()
+//	defer lc.mux.RUnlock()
+//
+//	// first search in the overlayFs layer
+//	if lc.overlayFs != nil {
+//		if info, err := lc.overlayFs.Stat(dgst); err == nil {
+//			return info, nil
+//		}
+//	}
+//
+//	info, err := lc.baseFs.Stat(dgst)
+//	if err != nil {
+//		if os.IsNotExist(err) {
+//			return nil, ErrNotFound
+//		}
+//		return nil, err
+//	}
+//	return info, nil
+//}
 
 func (lc *layeredCache) get(dgst string) (os.FileInfo, vfs.File, error) {
 	lc.mux.RLock()

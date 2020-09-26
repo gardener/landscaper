@@ -77,6 +77,8 @@ func CreateGenerationHash(inst *lsv1alpha1.Installation) (string, error) {
 	}
 
 	h := sha1.New()
-	h.Write(data.Bytes())
+	if _, err := h.Write(data.Bytes()); err != nil {
+		return "", err
+	}
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
