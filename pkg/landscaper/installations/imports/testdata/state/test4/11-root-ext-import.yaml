@@ -4,8 +4,8 @@ metadata:
   name: {{ dataObjectName ""  "ext.a" }}
   namespace: test4
   labels:
-    dataobjects.landscaper.gardener.cloud/context: ""
-    dataobjects.landscaper.gardener.cloud/key: "ext.a"
+    data.landscaper.gardener.cloud/context: ""
+    data.landscaper.gardener.cloud/key: "ext.a"
 spec:
   type: landscaper.gardener.cloud/mock
   config: val-e

@@ -29,7 +29,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/bputils"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
@@ -50,7 +50,7 @@ func NewPushCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "push",
 		Args:    cobra.ExactArgs(2),
-		Example: "landscapercli definitions push [ref] [path to Blueprint directory]",
+		Example: "landscapercli blueprints push [ref] [path to Blueprint directory]",
 		Short:   "command to interact with definitions of an oci registry",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := opts.Complete(args); err != nil {

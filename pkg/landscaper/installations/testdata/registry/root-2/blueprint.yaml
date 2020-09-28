@@ -14,7 +14,7 @@ exportExecutions:
 - type: GoTemplate
   template: |
     root.y:
-    {{ toYaml (index .exports.di.deploy "root.y") | indent 2 }}
+    {{ toYaml (index .exports.deployitems.deploy "root.y") | indent 2 }}
 
     {{ $target := index .exports.targets "root.z" }}
     root.z:

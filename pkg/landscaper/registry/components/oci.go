@@ -78,12 +78,10 @@ func (r *ociClient) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext,
 	if repoCtx.Type != cdv2.OCIRegistryType {
 		return nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, cdv2.OCIRegistryType)
 	}
-	u, err := url.Parse(repoCtx.BaseURL)
+	refPath, err := OCIRef(repoCtx, ref)
 	if err != nil {
 		return nil, err
 	}
-	u.Path = path.Join(u.Path, ref.Name)
-	refPath := fmt.Sprintf("%s:%s", u.String(), ref.Version)
 
 	manifest, err := r.oci.GetManifest(ctx, refPath)
 	if err != nil {
@@ -113,6 +111,16 @@ func (r *ociClient) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext,
 	}
 
 	return cd, nil
+}
+
+// OCIRef returns the oci artifacts uri for a repository context and object metadata
+func OCIRef(repoCtx cdv2.RepositoryContext, ref cdv2.ObjectMeta) (string, error) {
+	u, err := url.Parse(repoCtx.BaseURL)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Join(u.Path, ref.Name)
+	return fmt.Sprintf("%s:%s", u.String(), ref.Version), nil
 }
 
 func readCompDescFromTar(data io.Reader) ([]byte, error) {

@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/blueprints"
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app/componentdescriptor"
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/config"
 	"github.com/gardener/landscaper/pkg/logger"
 
@@ -28,8 +29,8 @@ import (
 
 func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "landscapercli",
-		Short: "Landscaper cli",
+		Use:   "landscaper-cli",
+		Short: "landscaper cli",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			log, err := logger.NewCliLogger()
 			if err != nil {
@@ -39,15 +40,13 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 			}
 			logger.SetLogger(log)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
 	}
 
 	logger.InitFlags(cmd.Flags())
 
 	cmd.AddCommand(config.NewConfigCommand(ctx))
 	cmd.AddCommand(blueprints.NewBlueprintsCommand(ctx))
+	cmd.AddCommand(componentdescriptor.NewComponentsCommand(ctx))
 
 	return cmd
 }

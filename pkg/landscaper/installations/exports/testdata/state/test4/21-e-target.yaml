@@ -4,8 +4,8 @@ metadata:
   name: {{ dataObjectName ( dataObjectContext "test4" "root" )  "root.z" }}
   namespace: test4
   labels:
-    dataobjects.landscaper.gardener.cloud/context: "Installation.test4.root"
-    dataobjects.landscaper.gardener.cloud/key: "root.z"
+    data.landscaper.gardener.cloud/context: "Installation.test4.root"
+    data.landscaper.gardener.cloud/key: "root.z"
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation

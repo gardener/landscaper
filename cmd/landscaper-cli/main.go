@@ -17,8 +17,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gardener/landscaper/cmd/landscaper-cli/app"
 	"os"
+
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app"
 )
 
 func main() {

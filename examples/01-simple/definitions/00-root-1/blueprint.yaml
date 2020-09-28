@@ -32,4 +32,4 @@ deployExecutions:
 exportExecutions:
 - type: GoTemplate
   template: |
-    exp-a: {{ index .exports.di.main "exp-a" }}
+    exp-a: {{ index .exports.deployitems.main "exp-a" }}

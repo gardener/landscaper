@@ -18,7 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
 var _ = Describe("Utils", func() {

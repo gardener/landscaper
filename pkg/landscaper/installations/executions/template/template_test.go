@@ -168,6 +168,23 @@ func runTestSuite(testdataDir string) {
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
 		})
+
+		It("should throw an error when the template tries to template a undefined value", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-08.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{})
+
+			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.0"})
+			Expect(err).To(HaveOccurred())
+		})
 	})
 
 	Context("TemplateExportExecutions", func() {

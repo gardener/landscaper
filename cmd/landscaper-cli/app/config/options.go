@@ -17,13 +17,15 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/gardener/landscaper/pkg/apis/core"
-	"github.com/gardener/landscaper/pkg/apis/core/install"
-	flag "github.com/spf13/pflag"
 	"io/ioutil"
+	"os"
+
+	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"os"
+
+	"github.com/gardener/landscaper/pkg/apis/core"
+	"github.com/gardener/landscaper/pkg/apis/core/install"
 )
 
 // Format of the generated configuration

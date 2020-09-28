@@ -29,7 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
 	mock_oci "github.com/gardener/landscaper/pkg/utils/oci/mock"
 )

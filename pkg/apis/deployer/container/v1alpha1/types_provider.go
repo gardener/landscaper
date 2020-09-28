@@ -56,7 +56,7 @@ type ProviderConfiguration struct {
 	Args []string `json:"args,omitempty"`
 	// ImportValues contains the import values for the container.
 	// +optional
-	ImportValues json.RawMessage `json:"importRef,omitempty"`
+	ImportValues json.RawMessage `json:"importValues,omitempty"`
 	// Blueprint is the resolved reference to the definition
 	// +optional
 	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprintRef,omitempty"`

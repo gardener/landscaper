@@ -162,3 +162,18 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 	SetMetadataFromObject(raw, do.Metadata)
 	return raw, nil
 }
+
+// Apply applies data and metadata to a existing object.
+func (do DataObject) Apply(raw *lsv1alpha1.DataObject) error {
+	var (
+		err error
+	)
+	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Key)
+	raw.Namespace = do.Metadata.Namespace
+	raw.Data, err = json.MarshalIndent(do.Data, "", "  ")
+	if err != nil {
+		return err
+	}
+	SetMetadataFromObject(raw, do.Metadata)
+	return nil
+}

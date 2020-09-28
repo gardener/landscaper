@@ -30,6 +30,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -146,7 +147,7 @@ func (s *State) Backup(ctx context.Context) error {
 }
 
 // Restore restores the latest state from the k8s cluster to the configured state path.
-func (s *State) Restore(ctx context.Context) error {
+func (s *State) Restore(ctx context.Context, fs vfs.FileSystem) error {
 	secretList := &corev1.SecretList{}
 	labels := client.MatchingLabels{
 		container.ContainerDeployerNameLabel: s.deployItem.Name,
@@ -170,7 +171,7 @@ func (s *State) Restore(ctx context.Context) error {
 		return nil
 	}
 	newestUuid := newest.Annotations[container.ContainerDeployerStateUUIDAnnotation]
-	if err := s.restoreFromSecrets(secrets[newestUuid]); err != nil {
+	if err := s.restoreFromSecrets(secrets[newestUuid], fs); err != nil {
 		return err
 	}
 
@@ -191,7 +192,7 @@ func (s *State) Restore(ctx context.Context) error {
 	return nil
 }
 
-func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
+func (s *State) restoreFromSecrets(secrets []*corev1.Secret, fs vfs.FileSystem) error {
 	sort.Sort(stateSecretsList(secrets))
 
 	var data bytes.Buffer
@@ -203,7 +204,7 @@ func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
 		data.Write(chunk)
 	}
 
-	return utils.ExtractTarGzip(&data, osfs.New(), s.path)
+	return utils.ExtractTarGzip(&data, fs, s.path)
 }
 
 func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {

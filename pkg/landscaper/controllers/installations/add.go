@@ -24,7 +24,7 @@ import (
 
 // AddActuatorToManager register the installation in a manager.
 func AddActuatorToManager(mgr manager.Manager, regConfig *config.RegistriesConfiguration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ComponentInstallations"), regConfig)
+	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("Installations"), regConfig)
 	if err != nil {
 		return err
 	}

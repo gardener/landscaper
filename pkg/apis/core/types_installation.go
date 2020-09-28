@@ -96,6 +96,9 @@ type InstallationStatus struct {
 	// Conditions contains the actual condition of a installation
 	Conditions []Condition `json:"conditions,omitempty"`
 
+	// LastError describes the last error that occurred.
+	LastError *Error `json:"lastError,omitempty"`
+
 	// ConfigGeneration is the generation of the exported values.
 	ConfigGeneration string `json:"configGeneration"`
 

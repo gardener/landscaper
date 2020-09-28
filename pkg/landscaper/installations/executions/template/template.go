@@ -77,7 +77,7 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 
 		var items []lsv1alpha1.DeployItemTemplate
 		if err := yaml.Unmarshal(executionItemsBytes, &items); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error while decoding templated execution: %w", err)
 		}
 		executionItems = append(executionItems, items...)
 	}

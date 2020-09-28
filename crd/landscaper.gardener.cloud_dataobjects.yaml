@@ -15,9 +15,16 @@ spec:
     - do
     - dobj
     singular: dataobject
-  scope: Cluster
+  scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/context']
+      name: Context
+      type: string
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/key']
+      name: Key
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DataObject are resources that can hold any kind json or yaml data.
@@ -37,3 +44,4 @@ spec:
         type: object
     served: true
     storage: true
+    subresources: {}

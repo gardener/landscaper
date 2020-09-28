@@ -50,7 +50,7 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f 
 	key := client.ObjectKey{Namespace: accessor.GetNamespace(), Name: accessor.GetName()}
 
 	if accessor.GetName() == "" && accessor.GetGenerateName() != "" {
-		if err := mutate(f, key, obj); err != nil {
+		if err := Mutate(f, key, obj); err != nil {
 			return controllerutil.OperationResultNone, err
 		}
 		if err := c.Create(ctx, obj); err != nil {
@@ -62,13 +62,13 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f 
 	return controllerutil.CreateOrUpdate(ctx, c, obj, f)
 }
 
-// mutate wraps a MutateFn and applies validation to its result
-func mutate(f controllerutil.MutateFn, key client.ObjectKey, obj runtime.Object) error {
+// Mutate wraps a MutateFn and applies validation to its result
+func Mutate(f controllerutil.MutateFn, key client.ObjectKey, obj runtime.Object) error {
 	if err := f(); err != nil {
 		return err
 	}
 	if newKey, err := client.ObjectKeyFromObject(obj); err != nil || key != newKey {
-		return fmt.Errorf("MutateFn cannot mutate object name and/or object namespace")
+		return fmt.Errorf("MutateFn cannot Mutate object name and/or object namespace")
 	}
 	return nil
 }

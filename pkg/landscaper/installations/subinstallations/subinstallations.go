@@ -141,7 +141,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 		}
 
 		// delete installation
-		o.Log().V(5).Info("delete orphaned installation", "name", subInst.Name)
+		o.Log().V(3).Info("delete orphaned installation", "name", subInst.Name)
 		if err := o.Client().Delete(ctx, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue

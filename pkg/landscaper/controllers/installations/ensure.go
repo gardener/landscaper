@@ -16,6 +16,7 @@ package installations
 
 import (
 	"context"
+	"fmt"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
@@ -80,13 +81,19 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 
 	dataExports, targetExports, err := exports.NewConstructor(op).Construct(ctx)
 	if err != nil {
-		a.Log().Error(err, "error during export construction")
-		return err
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"ConstructExports",
+			"error during export construction",
+			err.Error())
+		return fmt.Errorf("error during export construction: %w", err)
 	}
 
 	if err := op.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
-		a.Log().Error(err, "error during export validation")
-		return err
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"CreateExports",
+			"unable to create exported dataobjects and targets",
+			err.Error())
+		return fmt.Errorf("unable to create exported dataobjects and targets: %w", err)
 	}
 
 	// update import status
@@ -121,8 +128,11 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	}
 
 	if err := op.CreateOrUpdateImports(ctx, importedValues); err != nil {
-		a.Log().Error(err, "unable to update import objects")
-		return err
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"CreateImports",
+			"unable to update import objects",
+			err.Error())
+		return fmt.Errorf("unable to update import objects: %w", err)
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing

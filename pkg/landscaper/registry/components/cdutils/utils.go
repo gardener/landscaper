@@ -174,3 +174,54 @@ func ComponentReferenceToObjectMeta(ref cdv2.ComponentReference) cdv2.ObjectMeta
 		Version: ref.GetVersion(),
 	}
 }
+
+// BuildNewDefinition creates a ocispec Manifest from a component definition.
+func BuildNewManifest(cache cache.Cache, data []byte) (*ocispecv1.Manifest, error) {
+	memfs := memoryfs.New()
+	if err := vfs.WriteFile(memfs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), data, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("unable to write component descriptor to memory fs: %w", err)
+	}
+
+	var blob bytes.Buffer
+	if err := utils.BuildTar(memfs, "/", &blob); err != nil {
+		return nil, err
+	}
+
+	desc := ocispecv1.Descriptor{
+		MediaType: componentsregistry.ComponentDescriptorMediaType,
+		Digest:    digest.FromBytes(blob.Bytes()),
+		Size:      int64(blob.Len()),
+	}
+	if err := cache.Add(desc, ioutil.NopCloser(&blob)); err != nil {
+		return nil, fmt.Errorf("unable to add layer to internal cache: %w", err)
+	}
+
+	dummyDesc, err := AddDummyDescriptor(cache)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add dummy descriptor: %w", err)
+	}
+
+	manifest := &ocispecv1.Manifest{
+		Versioned: specs.Versioned{SchemaVersion: 2},
+		Config:    dummyDesc,
+		Layers: []ocispecv1.Descriptor{
+			desc,
+		},
+	}
+
+	return manifest, nil
+}
+
+// AddDummyDescriptor adds a empty json dummy descriptor.
+func AddDummyDescriptor(c cache.Cache) (ocispecv1.Descriptor, error) {
+	dummyData := []byte("{}")
+	dummyDesc := ocispecv1.Descriptor{
+		MediaType: "application/json",
+		Digest:    digest.FromBytes(dummyData),
+		Size:      int64(len(dummyData)),
+	}
+	if err := c.Add(dummyDesc, ioutil.NopCloser(bytes.NewBuffer(dummyData))); err != nil {
+		return ocispecv1.Descriptor{}, err
+	}
+	return dummyDesc, nil
+}

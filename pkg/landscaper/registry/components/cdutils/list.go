@@ -21,7 +21,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 // ResolveEffectiveComponentDescriptor transitively resolves all referenced components of a component descriptor and

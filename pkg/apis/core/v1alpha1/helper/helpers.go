@@ -133,6 +133,23 @@ func IsConditionStatus(conditions []v1alpha1.Condition, status v1alpha1.Conditio
 	return true
 }
 
+// UpdatedError updates the properties of a error.
+func UpdatedError(lastError *v1alpha1.Error, operation, reason, message string, codes ...v1alpha1.ErrorCode) *v1alpha1.Error {
+	newError := &v1alpha1.Error{
+		Operation:          operation,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Now(),
+		LastUpdateTime:     metav1.Now(),
+		Codes:              codes,
+	}
+
+	if lastError != nil && lastError.Operation == operation {
+		newError.LastTransitionTime = lastError.LastTransitionTime
+	}
+	return newError
+}
+
 // DecimalToFloat64 converts a decimal to a float64.
 func DecimalToFloat64(dec v1alpha1.Decimal) (float64, error) {
 	return strconv.ParseFloat(string(dec), 64)

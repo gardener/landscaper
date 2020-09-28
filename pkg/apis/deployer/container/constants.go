@@ -57,7 +57,7 @@ var SharedBasePath = filepath.Join(BasePath, "shared")
 const ImportsPathName = "IMPORTS_PATH"
 
 // ImportsPath is the path to the imports file.
-var ImportsPath = filepath.Join(BasePath, "imports", "imports.json")
+var ImportsPath = filepath.Join(SharedBasePath, "imports", "imports.json")
 
 // ExportsPathName is the name of the env var that points to the exports file.
 const ExportsPathName = "EXPORTS_PATH"

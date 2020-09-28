@@ -18,14 +18,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +40,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -52,7 +51,7 @@ import (
 // Run downloads the import config, the component descriptor and the blob content
 // to the paths defined by the env vars.
 // It also creates all needed directories.
-func Run(ctx context.Context, log logr.Logger) error {
+func Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
 	opts := &options{}
 	opts.Complete(ctx)
 	if err := opts.Validate(); err != nil {
@@ -78,6 +77,10 @@ func Run(ctx context.Context, log logr.Logger) error {
 	}); err != nil {
 		return err
 	}
+	return run(ctx, log, opts, kubeClient, fs)
+}
+
+func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := kubeClient.Get(ctx, opts.DeployItemKey.NamespacedName(), deployItem); err != nil {
 		return err
@@ -95,16 +98,19 @@ func Run(ctx context.Context, log logr.Logger) error {
 
 	// create all directories
 	log.Info("create directories")
-	if err := os.MkdirAll(path.Dir(opts.ExportsFilePath), os.ModePerm); err != nil {
+	if err := fs.MkdirAll(path.Dir(opts.ImportsFilePath), os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(path.Dir(opts.ComponentDescriptorFilePath), os.ModePerm); err != nil {
+	if err := fs.MkdirAll(path.Dir(opts.ExportsFilePath), os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(opts.ContentDirPath, os.ModePerm); err != nil {
+	if err := fs.MkdirAll(path.Dir(opts.ComponentDescriptorFilePath), os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(opts.StateDirPath, os.ModePerm); err != nil {
+	if err := fs.MkdirAll(opts.ContentDirPath, os.ModePerm); err != nil {
+		return err
+	}
+	if err := fs.MkdirAll(opts.StateDirPath, os.ModePerm); err != nil {
 		return err
 	}
 	log.Info("all directories have been successfully created")
@@ -140,20 +146,20 @@ func Run(ctx context.Context, log logr.Logger) error {
 			if err != nil {
 				return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
 			}
-			if err := ioutil.WriteFile(opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
+			if err := vfs.WriteFile(fs, opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
 				return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
 			}
 		}
 
 		log.Info("get blueprint content")
-		fs, err := projectionfs.New(osfs.New(), opts.ContentDirPath)
+		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
 		}
 		if providerConfig.Blueprint.Reference != nil {
 			log.Info(fmt.Sprintf("fetching blueprint for %#v", providerConfig.Blueprint.Reference))
 			// resolve is only used to download the blueprint's content to the filesystem
-			_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, fs)
+			_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, contentFS)
 			if err != nil {
 				return fmt.Errorf("unable to fetch blueprint from registry: %w", err)
 			}
@@ -166,7 +172,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 				return fmt.Errorf("unable to create yaml filesystem from internal config: %w", err)
 			}
 			// copy yaml filesystem to conatiner filesystem
-			if err := utils.CopyFS(blueprintFs, fs, "/", "/"); err != nil {
+			if err := utils.CopyFS(blueprintFs, contentFS, "/", "/"); err != nil {
 				return fmt.Errorf("unabel to copy inline blueprint filesystem to container filesystem: %w", err)
 			}
 		}
@@ -174,13 +180,13 @@ func Run(ctx context.Context, log logr.Logger) error {
 
 	if providerConfig.ImportValues != nil {
 		log.Info("write import values")
-		if err := ioutil.WriteFile(opts.ImportsFilePath, providerConfig.ImportValues, os.ModePerm); err != nil {
+		if err := vfs.WriteFile(fs, opts.ImportsFilePath, providerConfig.ImportValues, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write imported values: %w", err)
 		}
 	}
 
 	log.Info("restore state")
-	if err := state.New(log, kubeClient, opts.DeployItemKey, opts.StateDirPath).Restore(ctx); err != nil {
+	if err := state.New(log, kubeClient, opts.DeployItemKey, opts.StateDirPath).Restore(ctx, fs); err != nil {
 		return err
 	}
 	log.Info("state has been successfully restored")

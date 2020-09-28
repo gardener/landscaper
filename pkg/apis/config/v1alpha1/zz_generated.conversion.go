@@ -22,9 +22,10 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	config "github.com/gardener/landscaper/pkg/apis/config"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	config "github.com/gardener/landscaper/pkg/apis/config"
 )
 
 func init() {

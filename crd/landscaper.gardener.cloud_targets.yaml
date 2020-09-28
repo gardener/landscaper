@@ -21,6 +21,12 @@ spec:
     - jsonPath: .spec.type
       name: Type
       type: string
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/context']
+      name: Context
+      type: string
+    - jsonPath: .metadata.labels['data\.landscaper\.gardener\.cloud\/key']
+      name: Key
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date

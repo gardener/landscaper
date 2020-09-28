@@ -22,6 +22,7 @@ import (
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
@@ -138,103 +139,19 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 		if err != nil {
 			return nil, fmt.Errorf("unable to template import mapping template %s: %w", impPath.String(), err)
 		}
-		values[key] = res.Value()
+
+		dataBytes, err := spiffyaml.Marshal(res)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal templated import mapping %s: %w", impPath.String(), err)
+		}
+		var data interface{}
+		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal templated import mapping %s: %w", impPath.String(), err)
+		}
+		values[key] = data
 	}
 	return values, nil
 }
-
-//func (c *Constructor) constructForMapping(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
-//	do, err := c.tryToConstructFromStaticData(ctx, fldPath, inst, mapping)
-//	if err == nil {
-//		return do, nil
-//	}
-//	if !installations.IsImportNotFoundError(err) {
-//		return nil, err
-//	}
-//
-//	// get deploy item from current context
-//	raw := &lsv1alpha1.DataObject{}
-//	doName := lsv1alpha1helper.GenerateDataObjectName(c.Context().Name, mapping.From)
-//	if err := c.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
-//		return nil, err
-//	}
-//	do, err = dataobjects.NewFromDataObject(raw)
-//	if err != nil {
-//		return nil, err
-//	}
-//	// set new import metadata
-//	do.SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
-//	do.SetKey(mapping.To)
-//
-//	if err := c.updateImportStateForDatatObject(ctx, inst, mapping, do); err != nil {
-//		return nil, err
-//	}
-//
-//	return do, nil
-//}
-//
-//func (c *Constructor) tryToConstructFromStaticData(ctx context.Context, fldPath *field.Path, inst *installations.Installation, mapping installations.ImportMapping) (*dataobjects.DataObject, error) {
-//	if err := c.validator.checkStaticDataForMapping(ctx, fldPath, inst, mapping); err != nil {
-//		return nil, err
-//	}
-//
-//	data, err := c.GetStaticData(ctx)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var val interface{}
-//	if err := jsonpath.GetValue(mapping.From, data, &val); err != nil {
-//		// should not happen as it is already checked in checkStaticDataForMapping
-//		return nil, installations.NewImportNotFoundErrorf(err, "%s: import in landscape config not found", fldPath.String())
-//	}
-//
-//	var encData bytes.Buffer
-//	if err := gob.NewEncoder(&encData).Encode(val); err != nil {
-//		return nil, err
-//	}
-//	h := sha1.New()
-//	h.Write(encData.Bytes())
-//
-//	inst.ImportStatus().Update(lsv1alpha1.ImportState{
-//		From: mapping.From,
-//		To:   mapping.To,
-//		SourceRef: &lsv1alpha1.ObjectReference{
-//			Name:      inst.Info.Name,
-//			Namespace: inst.Info.Namespace,
-//		},
-//		ConfigGeneration: fmt.Sprintf("%x", h.Sum(nil)),
-//	})
-//	do := dataobjects.New().SetSourceType(lsv1alpha1.ImportDataObjectSourceType).SetKey(mapping.To).SetData(val)
-//	return do, err
-//}
-//
-//func (c *Constructor) updateImportStateForDatatObject(ctx context.Context, inst *installations.Installation, mapping installations.ImportMapping, do *dataobjects.DataObject) error {
-//	state := lsv1alpha1.ImportState{
-//		From: mapping.From,
-//		To:   mapping.To,
-//	}
-//	owner := kutil.GetOwner(do.Raw.ObjectMeta)
-//	var ref *lsv1alpha1.ObjectReference
-//	if owner != nil {
-//		ref = &lsv1alpha1.ObjectReference{
-//			Name:      owner.Name,
-//			Namespace: inst.Info.Namespace,
-//		}
-//	}
-//	state.SourceRef = ref
-//
-//	if owner != nil && owner.Kind == "Installation" {
-//		inst := &lsv1alpha1.Installation{}
-//		if err := c.Client().Get(ctx, ref.NamespacedName(), inst); err != nil {
-//			return fmt.Errorf("unable to fetch source of data object for import %s: %w", mapping.Name, err)
-//		}
-//		state.ConfigGeneration = inst.Status.ConfigGeneration
-//	}
-//
-//	inst.ImportStatus().Update(state)
-//	return nil
-//}
 
 func (c *Constructor) IsRoot() bool {
 	return c.parent == nil

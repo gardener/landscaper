@@ -30,7 +30,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
+	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.

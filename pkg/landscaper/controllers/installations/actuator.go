@@ -174,24 +174,11 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	old := inst.DeepCopy()
 
-	if err := a.setupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
-		return err
-	}
-
-	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.Blueprint, nil)
+	instOp, err := a.initPrerequisites(ctx, inst)
 	if err != nil {
 		return err
 	}
-
-	internalInstallation, err := installations.New(inst, intBlueprint)
-	if err != nil {
-		return errors.Wrap(err, "unable to create internal representation of installation")
-	}
-
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, internalInstallation)
-	if err != nil {
-		return errors.Wrap(err, "unable to create installation operation")
-	}
+	internalInstallation := instOp.Inst
 
 	if !inst.DeletionTimestamp.IsZero() {
 		err := EnsureDeletion(ctx, instOp)
@@ -204,21 +191,8 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := a.StartNewReconcile(ctx, instOp, internalInstallation); err != nil {
-			return err
-		}
-
-		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.Client().Update(ctx, inst); err != nil {
-			return err
-		}
-
-		inst.Status.ObservedGeneration = inst.Generation
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-
 		// need to return and not continue with export validation
-		return err
+		return a.forceReconcile(ctx, instOp, internalInstallation)
 	}
 
 	err = a.Ensure(ctx, instOp, internalInstallation)
@@ -231,4 +205,43 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		}
 	}
 	return err
+}
+
+func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+	if err := a.setupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
+		return nil, err
+	}
+
+	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.Blueprint, nil)
+	if err != nil {
+		// todo: set to failed and set last Error
+		return nil, err
+	}
+
+	internalInstallation, err := installations.New(inst, intBlueprint)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create internal representation of installation")
+	}
+
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, internalInstallation)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create installation operation")
+	}
+	return instOp, nil
+}
+
+func (a *actuator) forceReconcile(ctx context.Context, instOp *installations.Operation, inst *installations.Installation) error {
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
+	if err := a.StartNewReconcile(ctx, instOp, inst); err != nil {
+		return err
+	}
+
+	delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
+	if err := a.Client().Update(ctx, inst.Info); err != nil {
+		return err
+	}
+
+	inst.Info.Status.ObservedGeneration = inst.Info.Generation
+	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	return nil
 }

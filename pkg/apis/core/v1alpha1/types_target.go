@@ -39,6 +39,8 @@ type TargetList struct {
 // Every deploy item can have a target which is used by the deployer to install the specific application.
 // +kubebuilder:resource:path="targets",scope="Namespaced",shortName={"tg","tgt"},singular="target"
 // +kubebuilder:printcolumn:JSONPath=".spec.type",name=Type,type=string
+// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`,name=Context,type=string
+// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`,name=Key,type=string
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 type Target struct {
 	metav1.TypeMeta   `json:",inline"`

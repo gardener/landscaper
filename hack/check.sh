@@ -38,9 +38,11 @@ go vet -mod=vendor $@
 echo "Executing gofmt"
 folders=()
 for f in $@; do
-  folders+=( "$(echo $f | sed 's/\.\/\(.*\)\/\.\.\./\1/')" )
+  echo $f
+  folders+=( "$(echo $f | sed 's/\(.*\)\/\.\.\./\1/')" )
 done
-unformatted_files="$(gofmt -l ${folders[*]})"
+echo $folders
+unformatted_files="$(goimports -l -local=github.com/gardener/landscaper ${folders[*]})"
 if [[ "$unformatted_files" ]]; then
   echo "Unformatted files detected:"
   echo "$unformatted_files"

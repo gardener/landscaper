@@ -16,10 +16,8 @@ package executions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -67,31 +65,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 
 	if len(executions) == 0 {
 		return nil
-	}
-
-	o.Log().V(3).Info("create secret with imported values for execution")
-	data, err := json.MarshalIndent(imports, "", "  ")
-	if err != nil {
-		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-			CreateOrUpdateImportsReason, "Unable to marshal imports"))
-		return fmt.Errorf("unable to marshal imported values: %w", err)
-	}
-	secret := &corev1.Secret{}
-	secret.Name = fmt.Sprintf("%s.imports", inst.Info.Name)
-	secret.Namespace = inst.Info.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), secret, func() error {
-		secret.Data = map[string][]byte{
-			lsv1alpha1.DataObjectSecretDataKey: data,
-		}
-		if err := controllerutil.SetControllerReference(inst.Info, secret, kubernetes.LandscaperScheme); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-			CreateOrUpdateImportsReason, "Unable to create or update import secret for execution")
-		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
-		return err
 	}
 
 	exec := &lsv1alpha1.Execution{}

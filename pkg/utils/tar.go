@@ -29,7 +29,10 @@ import (
 // The tar is written to the given io.Writer.
 func BuildTarGzip(fs vfs.FileSystem, root string, buf io.Writer) error {
 	zr := gzip.NewWriter(buf)
-	return BuildTar(fs, root, zr)
+	if err := BuildTar(fs, root, zr); err != nil {
+		return err
+	}
+	return zr.Close()
 }
 
 // BuildTar creates a new tar based on a filesystem and a path.
@@ -78,7 +81,7 @@ func BuildTar(fs vfs.FileSystem, root string, buf io.Writer) error {
 		return err
 	}
 
-	return tw.Close()
+	return nil
 }
 
 // ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path

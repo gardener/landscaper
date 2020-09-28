@@ -18,9 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -52,8 +52,10 @@ func (_ *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 		return nil, fmt.Errorf("no template found")
 	}
 
-	// we only start with go template + sprig
-	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs)).Parse(rawTemplate)
+	tmpl, err := template.New("execution").
+		Funcs(template.FuncMap(sprig.FuncMap())).Funcs(LandscaperTplFuncMap(blueprint.Fs)).
+		Option("missingkey=zero").
+		Parse(rawTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +90,7 @@ func (_ *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	// we only start with go template + sprig
-	tmpl, err := template.New("execution").Funcs(sprig.FuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs)).Parse(rawTemplate)
+	tmpl, err := template.New("execution").Funcs(template.FuncMap(sprig.FuncMap())).Funcs(LandscaperTplFuncMap(blueprint.Fs)).Parse(rawTemplate)
 	if err != nil {
 		return nil, err
 	}

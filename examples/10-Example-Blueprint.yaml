@@ -46,8 +46,8 @@ exportExecutors:
 - name: default # has to return a list of deploy item templates
   type: GoTemplate
   template: |
-    a.b: {{ .exports.di.my-script.mykey }} # template from own deploy items
-    ijk: {{ .exports.do.my-sub-component.ijk }} # export from sub installations
+    a.b: {{ .exports.deployitems.my-script.mykey }} # template from own deploy items
+    ijk: {{ .exports.dataobjects.my-sub-component.ijk }} # export from sub installations
 # - type: go-template
 #   file: /my/path/cc # virtual filesystem
 #   template: |

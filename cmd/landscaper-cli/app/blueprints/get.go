@@ -48,7 +48,7 @@ func NewGetCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "get",
 		Args:    cobra.MinimumNArgs(1),
-		Example: "landscapercli definitions get [ref]",
+		Example: "landscapercli blueprints get [ref]",
 		Short:   "command to interact with definitions of an oci registry",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := opts.Complete(args); err != nil {

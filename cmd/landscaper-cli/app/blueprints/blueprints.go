@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewBlueprintsCommand creates a new definitions command.
+// NewBlueprintsCommand creates a new blueprints command.
 func NewBlueprintsCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "blueprints",

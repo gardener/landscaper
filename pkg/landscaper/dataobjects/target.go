@@ -86,12 +86,22 @@ func (t *Target) SetKey(key string) *Target {
 
 // Build creates a new data object based on the given data and metadata.
 func (t Target) Build() (*lsv1alpha1.Target, error) {
-	raw := &lsv1alpha1.Target{}
+	newTarget := &lsv1alpha1.Target{}
+	newTarget.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
+	newTarget.Namespace = t.Metadata.Namespace
+	SetMetadataFromObject(newTarget, t.Metadata)
 	if t.Raw != nil {
-		raw = t.Raw
+		newTarget.Spec = t.Raw.Spec
 	}
+	t.Raw = newTarget
+	return newTarget, nil
+}
+
+// Apply applies data and metadata to a existing target.
+func (t Target) Apply(raw *lsv1alpha1.Target) error {
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	raw.Namespace = t.Metadata.Namespace
+	raw.Spec = t.Raw.Spec
 	SetMetadataFromObject(raw, t.Metadata)
-	return raw, nil
+	return nil
 }

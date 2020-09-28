@@ -46,7 +46,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 	}
 
-	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation {
+	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation || apierrors.IsNotFound(err) {
 		// ensure new pod
 		if err := c.ensureServiceAccounts(ctx); err != nil {
 			return err

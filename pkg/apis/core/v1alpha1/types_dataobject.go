@@ -31,19 +31,19 @@ const (
 )
 
 // DataObjectTypeAnnotation defines the name of the annotation that specifies the type of the dataobject.
-const DataObjectTypeAnnotation = "dataobjects.landscaper.gardener.cloud/type"
+const DataObjectTypeAnnotation = "data.landscaper.gardener.cloud/type"
 
 // DataObjectContextLabel defines the name of the label that specifies the context of the dataobject.
-const DataObjectContextLabel = "dataobjects.landscaper.gardener.cloud/context"
+const DataObjectContextLabel = "data.landscaper.gardener.cloud/context"
 
 // DataObjectSourceTypeLabel defines the name of the label that specifies the source type (import or export) of the dataobject.
-const DataObjectSourceTypeLabel = "dataobjects.landscaper.gardener.cloud/sourceType"
+const DataObjectSourceTypeLabel = "data.landscaper.gardener.cloud/sourceType"
 
 // DataObjectKeyLabel defines the name of the label that specifies the export or imported key of the dataobject.
-const DataObjectKeyLabel = "dataobjects.landscaper.gardener.cloud/key"
+const DataObjectKeyLabel = "data.landscaper.gardener.cloud/key"
 
 // DataObjectSourceLabel defines the name of the label that specifies the source of the dataobject.
-const DataObjectSourceLabel = "dataobjects.landscaper.gardener.cloud/source"
+const DataObjectSourceLabel = "data.landscaper.gardener.cloud/source"
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -58,7 +58,9 @@ type DataObjectList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataObject are resources that can hold any kind json or yaml data.
-// +kubebuilder:resource:path="dataobjects",scope="Cluster",shortName={"do","dobj"},singular="dataobject"
+// +kubebuilder:resource:path="dataobjects",scope="Namespaced",shortName={"do","dobj"},singular="dataobject"
+// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`,name=Context,type=string
+// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`,name=Key,type=string
 type DataObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

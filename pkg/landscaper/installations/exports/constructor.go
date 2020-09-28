@@ -51,9 +51,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	var (
 		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
-			"di":      struct{}{},
-			"do":      struct{}{},
-			"targets": struct{}{},
+			"deployitems": struct{}{},
+			"dataobjects": struct{}{},
+			"targets":     struct{}{},
 		}
 	)
 
@@ -62,14 +62,14 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		return nil, nil, err
 	}
 	if execDo != nil {
-		internalExports["di"] = execDo.Data
+		internalExports["deployitems"] = execDo.Data
 	}
 
 	dataObjectMap, err := c.aggregateDataObjectsInContext(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to aggregate data object: %w", err)
 	}
-	internalExports["do"] = dataObjectMap
+	internalExports["dataobjects"] = dataObjectMap
 	targetsMap, err := c.aggregateTargetsInContext(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to aggregate target: %w", err)

@@ -6,4 +6,4 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        image: my-custom-image:{{ toString (readFile "./VERSION") }}
+        image: my-custom-image:{{ toString (readFile "/VERSION") }}

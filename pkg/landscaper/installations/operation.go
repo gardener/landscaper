@@ -16,6 +16,7 @@ package installations
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -25,10 +26,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -38,7 +41,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -316,7 +319,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
 	for _, do := range dataExports {
-		raw, err := do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName()).Build()
+		do = do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		raw, err := do.Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -326,7 +330,12 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+				return err
+			}
+			return do.Apply(raw)
+		}); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects",
 					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
@@ -335,7 +344,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		raw, err := target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName()).Build()
+		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		raw, err := target.Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -345,7 +355,12 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+				return err
+			}
+			return target.Apply(raw)
+		}); err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
 					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
@@ -359,43 +374,114 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 }
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
-// todo: make general import/export dataobject creation and update
 func (o *Operation) CreateOrUpdateImports(ctx context.Context, importedValues map[string]interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
-
 	for _, importDef := range o.Inst.Blueprint.Info.Imports {
-		// skip targets
-		if len(importDef.TargetType) != 0 {
-			continue
-		}
-
 		importData, ok := importedValues[importDef.Name]
 		if !ok {
 			return fmt.Errorf("import %s not defined", importDef.Name)
 		}
-		raw, err := dataobjects.New().
-			SetNamespace(o.Inst.Info.Namespace).SetSource(src).
-			SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
-			SetData(importData).
-			Build()
-		if err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
-				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-					"CreateDataObjects",
-					fmt.Sprintf("unable to create data object for import %s", importDef.Name)))
-			return fmt.Errorf("unable to build data object for import %s: %w", importDef.Name, err)
+
+		if len(importDef.TargetType) != 0 {
+			if err := o.createOrUpdateTargetImport(ctx, src, importDef, importData); err != nil {
+				return fmt.Errorf("unable to create or update target import '%s': %w", importDef.Name, err)
+			}
+			continue
 		}
 
-		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error { return nil }); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
-				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-					"CreateDataObjects",
-					fmt.Sprintf("unable to create data object for import %s", importDef.Name)))
-			return fmt.Errorf("unable to create or update data object %s for import %s: %w", raw.Name, importDef.Name, err)
+		if err := o.createOrUpdateDataImport(ctx, src, importDef, importData); err != nil {
+			return fmt.Errorf("unable to create or update data import '%s': %w", importDef.Name, err)
 		}
 	}
+	return nil
+}
+
+func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, importData interface{}) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	do := dataobjects.New().
+		SetNamespace(o.Inst.Info.Namespace).SetSource(src).
+		SetContext(src).
+		SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
+		SetData(importData)
+	raw, err := do.Build()
+	if err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateDataObjects",
+				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
+		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+			"CreateDataObjects", fmt.Sprintf("unable to create dataobjects for import '%s'", importDef.Name),
+			err.Error())
+		return fmt.Errorf("unable to build data object for import '%s': %w", importDef.Name, err)
+	}
+
+	// we do not need to set controller ownership as we anyway need a separate garbage collection.
+	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+			return err
+		}
+		return do.Apply(raw)
+	}); err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateDataObjects",
+				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
+		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+			"CreateDatatObjects", fmt.Sprintf("unable to create data objects for import '%s'", importDef.Name),
+			err.Error())
+		return fmt.Errorf("unable to create or update data object '%s' for import '%s': %w", raw.Name, importDef.Name, err)
+	}
+	return nil
+}
+
+func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values interface{}) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	data, err := json.Marshal(values)
+	if err != nil {
+		return err
+	}
+	target := &lsv1alpha1.Target{}
+	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, target); err != nil {
+		return err
+	}
+	intTarget, err := dataobjects.NewFromTarget(target)
+	if err != nil {
+		return err
+	}
+	intTarget.SetNamespace(o.Inst.Info.Namespace).
+		SetContext(src).
+		SetKey(importDef.Name).
+		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+
+	target, err = intTarget.Build()
+	if err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateTargets",
+				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
+		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
+			err.Error())
+		return fmt.Errorf("unable to build target for import '%s': %w", importDef.Name, err)
+	}
+
+	// we do not need to set controller ownership as we anyway need a separate garbage collection.
+	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, kubernetes.LandscaperScheme); err != nil {
+			return err
+		}
+		return intTarget.Apply(target)
+	}); err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateTargets",
+				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
+		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
+			err.Error())
+		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
+	}
+
 	return nil
 }
 

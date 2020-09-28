@@ -57,9 +57,9 @@ deployExecutions:
 exportExecutions:
 - type: go-template
   template: |
-    ingressClass: {{ .exports.di.deploy.ingressClass }}
+    ingressClass: {{ .exports.deployitems.deploy.ingressClass }}
     exported-cluster:
       labels: {}
       annotations: {}
       config:
-        kubeconfig: {{ .exports.di.deploy.kubeconfig  }}
+        kubeconfig: {{ .exports.deployitems.deploy.kubeconfig  }}

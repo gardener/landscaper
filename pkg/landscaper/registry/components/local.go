@@ -93,7 +93,7 @@ func (c *localClient) searchInPath(path string, ref cdv2.ObjectMeta) (*cdv2.Comp
 
 		tmpCD := &cdv2.ComponentDescriptor{}
 		if err := codec.Decode(data, tmpCD); err != nil {
-			c.log.V(3).Info(err.Error())
+			c.log.V(7).Info(fmt.Sprintf("unable to decode file: %s", err.Error()), "file", path)
 			return nil
 		}
 
