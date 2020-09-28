@@ -41,7 +41,8 @@ landscaper:
       traits:
         draft_release: ~
     release:
-      version:
-        preprocess: 'finalize'
-      release:
-        nextversion: 'bump_minor'
+      traits:
+        version:
+          preprocess: 'finalize'
+        release:
+          nextversion: 'bump_minor'
