@@ -1,0 +1,47 @@
+landscaper:
+  template: 'default'
+  base_definition:
+    repo: ~
+    traits:
+      version:
+        preprocess: 'inject-commit-hash'
+        inject_effective_version: true
+      component_descriptor: ~
+      publish:
+        dockerimages:
+          landscaper-controller:
+            registry: 'gcr-readwrite'
+            target: 'landscaper-controller'
+            image: eu.gcr.io/gardener-project/landscaper/landscaper-controller
+          helm-deployer-controller:
+            registry: 'gcr-readwrite'
+            target: 'helm-deployer-controller'
+            image: eu.gcr.io/gardener-project/landscaper/helm-deployer-controller
+          container-deployer-controller:
+            registry: 'gcr-readwrite'
+            target: 'container-deployer-controller'
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-controller
+          container-deployer-init:
+            registry: 'gcr-readwrite'
+            target: 'container-deployer-init'
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-init
+          container-deployer-wait:
+            registry: 'gcr-readwrite'
+            target: 'container-deployer-wait'
+            image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
+    steps:
+      verify:
+        image: 'golang:1.14.2'
+
+  jobs:
+    head-update:
+      traits:
+        draft_release: ~
+    pull-request:
+      traits:
+        draft_release: ~
+    release:
+      version:
+        preprocess: 'finalize'
+      release:
+        nextversion: 'bump_minor'

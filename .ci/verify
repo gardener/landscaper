@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+cd "$(dirname $0)/.."
+
+mkdir -p /go/src/github.com/gardener/landscaper
+cp -r . /go/src/github.com/gardener/landscaper
+cd /go/src/github.com/gardener/landscaper
+
+make install-requirements
+make test
+make verify

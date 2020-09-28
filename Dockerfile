@@ -11,7 +11,14 @@ RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 #### BASE ####
 FROM alpine:3.11.6 AS base
 
-#### Container Deployer ####
+#### Helm Deployer Controller ####
+FROM base as landscaper-controller
+
+COPY --from=builder /go/bin/landscaper-controller /landscaper-controller
+
+WORKDIR /
+
+ENTRYPOINT ["/landscaper-controller"]
 
 #### Container Deployer Controller ####
 FROM base as container-deployer-controller
@@ -39,4 +46,13 @@ COPY --from=builder /go/bin/container-deployer-wait /container-deployer-wait
 WORKDIR /
 
 ENTRYPOINT ["/container-deployer-wait"]
+
+#### Helm Deployer Controller ####
+FROM base as helm-deployer-controller
+
+COPY --from=builder /go/bin/helm-deployer-controller /helm-deployer-controller
+
+WORKDIR /
+
+ENTRYPOINT ["/helm-deployer-controller"]
 
