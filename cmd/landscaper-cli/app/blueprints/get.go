@@ -17,6 +17,7 @@ package blueprints
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/logger"
@@ -40,6 +42,9 @@ import (
 type showOptions struct {
 	// ref is the oci reference where the definition should eb uploaded.
 	ref string
+
+	// cacheDir defines the oci cache directory
+	cacheDir string
 }
 
 // NewGetCommand shows definitions and their configuration.
@@ -69,7 +74,7 @@ func NewGetCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
-	cache, err := cache.NewCache(log)
+	cache, err := cache.NewCache(log, cache.WithBasePath(o.cacheDir))
 	if err != nil {
 		return err
 	}
@@ -114,8 +119,20 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 }
 
 func (o *showOptions) Complete(args []string) error {
-	// todo: validate args
 	o.ref = args[0]
+
+	landscaperCliHomeDir, err := constants.LandscaperCliHomeDir()
+	if err != nil {
+		return err
+	}
+	o.cacheDir = filepath.Join(landscaperCliHomeDir, "blueprints")
+	if err := os.MkdirAll(o.cacheDir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create cache directory %s: %w", o.cacheDir, err)
+	}
+
+	if len(o.cacheDir) == 0 {
+		return errors.New("a oci cache directory must be defined")
+	}
 	return nil
 }
 

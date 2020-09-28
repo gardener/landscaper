@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -27,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
@@ -46,6 +48,8 @@ type pushOptions struct {
 
 	// ref is the oci artifact uri reference to the uploaded component descriptor
 	ref string
+	// cacheDir defines the oci cache directory
+	cacheDir string
 }
 
 // NewPushCommand creates a new definition command to push definitions
@@ -77,7 +81,7 @@ func NewPushCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
-	cache, err := cache.NewCache(log)
+	cache, err := cache.NewCache(log, cache.WithBasePath(o.cacheDir))
 	if err != nil {
 		return err
 	}
@@ -101,11 +105,19 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 }
 
 func (o *pushOptions) Complete(args []string) error {
-	// todo: validate args
 	o.baseUrl = args[0]
 	o.componentName = args[1]
 	o.version = args[2]
 	o.componentPath = args[3]
+
+	landscaperCliHomeDir, err := constants.LandscaperCliHomeDir()
+	if err != nil {
+		return err
+	}
+	o.cacheDir = filepath.Join(landscaperCliHomeDir, "components")
+	if err := os.MkdirAll(o.cacheDir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create cache directory %s: %w", o.cacheDir, err)
+	}
 
 	repoCtx := cdv2.RepositoryContext{
 		Type:    cdv2.OCIRegistryType,
@@ -115,7 +127,6 @@ func (o *pushOptions) Complete(args []string) error {
 		Name:    o.componentName,
 		Version: o.version,
 	}
-	var err error
 	o.ref, err = componentsregistry.OCIRef(repoCtx, obj)
 	if err != nil {
 		return fmt.Errorf("invalid component reference: %w", err)
@@ -136,6 +147,9 @@ func (o *pushOptions) Validate() error {
 	}
 	if len(o.componentPath) == 0 {
 		return errors.New("a path to the component descriptor must be defined")
+	}
+	if len(o.cacheDir) == 0 {
+		return errors.New("a oci cache directory must be defined")
 	}
 
 	data, err := ioutil.ReadFile(o.componentPath)

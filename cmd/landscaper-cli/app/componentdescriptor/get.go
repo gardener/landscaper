@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
@@ -26,6 +27,7 @@ import (
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
@@ -39,6 +41,9 @@ type showOptions struct {
 	componentName string
 	// version is the component version in the oci registry.
 	version string
+
+	// cacheDir defines the oci cache directory
+	cacheDir string
 }
 
 // NewGetCommand shows definitions and their configuration.
@@ -68,7 +73,7 @@ func NewGetCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
-	cache, err := cache.NewCache(log)
+	cache, err := cache.NewCache(log, cache.WithBasePath(o.cacheDir))
 	if err != nil {
 		return err
 	}
@@ -114,6 +119,16 @@ func (o *showOptions) Complete(args []string) error {
 	o.baseUrl = args[0]
 	o.componentName = args[1]
 	o.version = args[2]
+
+	landscaperCliHomeDir, err := constants.LandscaperCliHomeDir()
+	if err != nil {
+		return err
+	}
+	o.cacheDir = filepath.Join(landscaperCliHomeDir, "components")
+	if err := os.MkdirAll(o.cacheDir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create cache directory %s: %w", o.cacheDir, err)
+	}
+
 	if len(o.baseUrl) == 0 {
 		return errors.New("the base url must be defined")
 	}
@@ -122,6 +137,9 @@ func (o *showOptions) Complete(args []string) error {
 	}
 	if len(o.version) == 0 {
 		return errors.New("a component's version must be defined")
+	}
+	if len(o.cacheDir) == 0 {
+		return errors.New("a cache directory must be defined")
 	}
 	return nil
 }

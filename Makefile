@@ -52,13 +52,17 @@ verify: check format
 generate:
 	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg...
 
+.PHONY: install-cli
+install-cli:
+	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) ./hack/install-cli.sh
+
 #################################################################
 # Rules related to binary build, docker image build and release #
 #################################################################
 
 .PHONY: install
 install:
-	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) ./hack/install.sh ./...
+	@EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) ./hack/install.sh
 
 .PHONY: docker-images
 docker-images:
