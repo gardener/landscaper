@@ -1,0 +1,29 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "landscaper.serviceAccountName" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - landscaper.gardener.cloud
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - ""
+  resources:
+  - "events"
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - "secrets"
+  verbs:
+  - get
+  - list
+  - watch
+{{- end }}

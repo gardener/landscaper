@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "landscaper.fullname" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "landscaper.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "landscaper.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "landscaper.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          - "--config=/app/ls/registry/config/config.yaml"
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          volumeMounts:
+          - name: config
+            mountPath: /app/ls/registry/config
+          {{- if .Values.landscaper.registrySecrets.blueprints }}
+          - name: blueprintsregistry
+            mountPath: /app/ls/registry/blueprints
+          {{- end }}
+          {{- if .Values.landscaper.registrySecrets.components }}
+          - name: blueprintsregistry
+            mountPath: /app/ls/registry/components
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: config
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-config
+      {{- if .Values.landscaper.registrySecrets.blueprints }}
+      - name: blueprintsregistry
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-registry-blueprints
+      {{- end }}
+      {{- if .Values.landscaper.registrySecrets.components }}
+      - name: componentsregistry
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-registry-components
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

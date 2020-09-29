@@ -46,7 +46,7 @@ test:
 	@go test -mod=vendor $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
 
 .PHONY: verify
-verify: check format
+verify: check
 
 .PHONY: generate
 generate:
