@@ -44,7 +44,10 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("unable to list managed deploy items: %w", err)
 	}
 	// todo: remove orphaned items and also remove them from the status
-	executionItems, _ := o.getExecutionItems(managedItems)
+	executionItems, orphaned := o.getExecutionItems(managedItems)
+	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
+		return err
+	}
 
 	var phase lsv1alpha1.ExecutionPhase
 	for _, item := range executionItems {
