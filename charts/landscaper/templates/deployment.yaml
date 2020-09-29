@@ -33,18 +33,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/registry/config/config.yaml"
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          {{- if .Values.landscaper.deployers }}
+          - "--deployers={{  .Values.landscaper.deployers | join "," }}"
+          {{- end }}
           volumeMounts:
           - name: config
             mountPath: /app/ls/registry/config

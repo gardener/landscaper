@@ -9,6 +9,11 @@ landscaper:
     components: {}
 #      <name>: <docker config json>
 
+  deployers: []
+#  - container
+#  - helm
+#  - mock
+
 replicaCount: 1
 
 image:

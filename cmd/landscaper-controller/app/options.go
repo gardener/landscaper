@@ -17,6 +17,7 @@ package app
 import (
 	goflag "flag"
 	"io/ioutil"
+	"strings"
 
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
@@ -32,9 +33,11 @@ import (
 type options struct {
 	log        logr.Logger
 	configPath string
+	deployers  string
 
-	config   *config.LandscaperConfiguration
-	registry blueprintregistrymanager.Interface
+	config           *config.LandscaperConfiguration
+	registry         blueprintregistrymanager.Interface
+	enabledDeployers []string
 }
 
 func NewOptions() *options {
@@ -43,6 +46,10 @@ func NewOptions() *options {
 
 func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.configPath, "config", "", "Specify the path to the configuration file")
+	fs.StringVar(&o.deployers, "deployers", "",
+		`Specify additional deployers that should be enabled.
+Controllers are specified as a comma separated list of controller names.
+Available deployers are mock,helm,container.`)
 	logger.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
@@ -62,6 +69,8 @@ func (o *options) Complete() error {
 	if err != nil {
 		return err
 	}
+
+	o.enabledDeployers = strings.Split(o.deployers, ",")
 
 	return nil
 }
