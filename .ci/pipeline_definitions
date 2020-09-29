@@ -39,6 +39,7 @@ landscaper:
         draft_release: ~
     pull-request:
       traits:
+        pull-request: ~
         draft_release: ~
     release:
       traits:
