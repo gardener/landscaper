@@ -31,7 +31,7 @@ landscaper:
             image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
     steps:
       verify:
-        image: 'golang:1.14.2'
+        image: 'golang:1.15.2'
 
   jobs:
     head-update:
