@@ -24,10 +24,16 @@ import (
 // todo: add conversion
 const ExecutionManagedByLabel = "execution.landscaper.gardener.cloud/managed-by"
 
-// ExecutionManagedNameAnnotation is the unique identifier of the deploy item managed by a execution.
+// ExecutionManagedNameLabel is the unique identifier of the deploy item managed by a execution.
 // It corresponds to the execution item name.
 // todo: add conversion
-const ExecutionManagedNameAnnotation = "execution.landscaper.gardener.cloud/name"
+const ExecutionManagedNameLabel = "execution.landscaper.gardener.cloud/name"
+
+// ExecutionDependsOnAnnotation is name of the annotation that holds the dependsOn data
+// defined in the execution.
+// This annotation is mainly to correctly cleanup orphaned deploy items that are not part of the execution anymore.
+// todo: add conversion
+const ExecutionDependsOnAnnotation = "execution.landscaper.gardener.cloud/dependsOn"
 
 // ExecutionType defines the type of the execution
 type ExecutionType string

@@ -19,7 +19,7 @@ set -e
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
-curl -sfL "https://install.goreleaser.com/github.com/golangci/golangci-lint.sh" | sh -s -- -b $(go env GOPATH)/bin v1.24.0
+curl -sfL "https://install.goreleaser.com/github.com/golangci/golangci-lint.sh" | sh -s -- -b $(go env GOPATH)/bin v1.31.0
 
 GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 

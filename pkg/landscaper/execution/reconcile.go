@@ -17,16 +17,16 @@ package execution
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // executionItem is the internal representation of a execution item with its deployitem and status
@@ -97,41 +97,6 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	return o.UpdateStatus(ctx, phase, cond)
 }
 
-// listManagedDeployItems collects all deploy items that are managed by the execution.
-// The managed execution is identified by the managed by label and the ownership.
-func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
-	deployItemList := &lsv1alpha1.DeployItemList{}
-	// todo: maybe use name and namespace
-	if err := o.Client().List(ctx, deployItemList, client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name}, client.InNamespace(o.exec.Namespace)); err != nil {
-		return nil, err
-	}
-	return deployItemList.Items, nil
-}
-
-// getExecutionItems creates an internal representation for all execution items.
-// It also returns all removed deploy items that are not defined by the execution anymore.
-func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
-	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
-	managed := sets.NewInt()
-	for i, exec := range o.exec.Spec.DeployItems {
-		execItem := executionItem{
-			Info: *exec.DeepCopy(),
-		}
-		if j, found := getDeployItemIndexByManagedName(items, exec.Name); found {
-			managed.Insert(j)
-			execItem.DeployItem = items[j].DeepCopy()
-		}
-		execItems[i] = execItem
-	}
-	orphaned := make([]lsv1alpha1.DeployItem, 0)
-	for i, item := range items {
-		if !managed.Has(i) {
-			orphaned = append(orphaned, item)
-		}
-	}
-	return execItems, orphaned
-}
-
 // deployOrTrigger creates a new deploy item or triggers it if it already exists.
 func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) error {
 
@@ -141,12 +106,13 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 		item.DeployItem.Namespace = o.exec.Namespace
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
+	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
 		lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
 		item.DeployItem.Spec.Type = item.Info.Type
 		item.DeployItem.Spec.Configuration = item.Info.Configuration
-		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
-		kubernetesutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameAnnotation, item.Info.Name)
+		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
+		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, item.Info.Name)
+		metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionDependsOnAnnotation, strings.Join(item.Info.DependsOn, ","))
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
 		return err
