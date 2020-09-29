@@ -71,7 +71,7 @@ registries:
   {{- if .Values.landscaper.registrySecrets.components }}
     oci:
       configFiles:
-      {{- range $key := .Values.landscaper.registrySecrets.components }}
+      {{- range $key, $value := .Values.landscaper.registrySecrets.components }}
       - /app/ls/registry/components/{{ $key }}
       {{- end }}
   {{- end }}
@@ -79,7 +79,7 @@ registries:
     {{- if .Values.landscaper.registrySecrets.blueprints }}
     oci:
       configFiles:
-      {{- range $key := .Values.landscaper.registrySecrets.blueprints }}
+      {{- range $key, $value := .Values.landscaper.registrySecrets.blueprints }}
       - /app/ls/registry/blueprints/{{ $key }}
       {{- end }}
     {{- end }}

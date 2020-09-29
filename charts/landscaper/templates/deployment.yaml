@@ -11,10 +11,12 @@ spec:
       {{- include "landscaper.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-    {{- with .Values.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+        checksum/config: {{ include "landscaper-config" . |  sha256sum }}
+        checksum/registrysecrets: {{ toJson .Values.landscaper.registrySecrets |  sha256sum }}
+        {{ range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value}}
+        {{- end }}
       labels:
         {{- include "landscaper.selectorLabels" . | nindent 8 }}
     spec:

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate ../../hack/generate-code.sh
-//go:generate controller-gen output:crd:artifacts:config=../../crd crd:crdVersions=v1 object:headerFile="../../hack/boilerplate.go.txt" paths="../../pkg/apis/core/v1alpha1"
-//go:generate go run -mod=vendor ../../hack/post-crd-generate ../../crd
+//go:generate controller-gen output:crd:artifacts:config=../../charts/templates/crd crd:crdVersions=v1 object:headerFile="../../hack/boilerplate.go.txt" paths="../../pkg/apis/core/v1alpha1"
+//go:generate go run -mod=vendor ../../hack/post-crd-generate ../../charts/templates/crd
 
 package apis
