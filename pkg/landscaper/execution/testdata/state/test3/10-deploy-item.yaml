@@ -4,6 +4,9 @@ metadata:
   name: di-a
   namespace: test3
   generation: 1
+  labels:
+    execution.landscaper.gardener.cloud/managed-by: exec-1
+    execution.landscaper.gardener.cloud/name: a
 spec:
   type: Helm
   config:

@@ -16,47 +16,75 @@ package execution
 
 import (
 	"context"
+	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 )
 
 // Delete handles the delete flow for a execution
 func (o *Operation) Delete(ctx context.Context) error {
 	// set state to deleting
-	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
-	for i := len(o.exec.Spec.DeployItems) - 1; i >= 0; i-- {
-		item := o.exec.Spec.DeployItems[i]
-		ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Name)
-		if !ok {
+	managedItems, err := o.listManagedDeployItems(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to list managed deploy items: %w", err)
+	}
+	// todo: remove orphaned items and also remove them from the status
+	executionItems, _ := o.getExecutionItems(managedItems)
+
+	allDeleted := true
+	for _, item := range executionItems {
+		if item.DeployItem == nil {
+			continue
+		}
+		allDeleted = false
+
+		if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(item, executionItems) {
+			if err := o.Client().Delete(ctx, item.DeployItem); err != nil {
+				if !apierrors.IsNotFound(err) {
+					return fmt.Errorf("unable to delete deploy item %s of step %s: %w", item.DeployItem.Name, item.Info.Name, err)
+				}
+				allDeleted = true
+			}
 			continue
 		}
 
-		deployItem := &lsv1alpha1.DeployItem{}
-		if err := o.Client().Get(ctx, ref.Reference.NamespacedName(), deployItem); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return err
-		}
-
-		if deployItem.DeletionTimestamp.IsZero() {
-			// todo: set operation to deleting item
-			return o.Client().Delete(ctx, deployItem)
-		}
-
-		// update state
-		if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+		if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		}
+	}
 
+	if !allDeleted {
 		return nil
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
 	return o.Client().Update(ctx, o.exec)
+}
+
+// checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
+func (o *Operation) checkDeletable(item executionItem, items []executionItem) bool {
+	for _, exec := range items {
+		if exec.Info.Name == item.Info.Name {
+			continue
+		}
+		dependsOn := sets.NewString(exec.Info.DependsOn...)
+		if !dependsOn.Has(item.Info.Name) {
+			continue
+		}
+
+		// it is expected that the deploy item is already deleted as all deploy items are listed at the beginning of
+		// the reconcile loop.
+		// Therefore, it should not be necessary to check again against the api server.
+		if exec.DeployItem != nil {
+			o.Log().V(3).Info("deploy item %s depends on %s and is still present", exec.DeployItem.Name, item.Info.Name)
+			return false
+		}
+	}
+	return true
 }

@@ -15,6 +15,8 @@ spec:
       my-val: val1
   - name: b
     type: Container
+    dependsOn:
+    - a
     config:
       my-val: val1
 

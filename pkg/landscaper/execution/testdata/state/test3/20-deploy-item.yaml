@@ -4,11 +4,10 @@ metadata:
   name: di-b
   namespace: test3
   generation: 1
+  labels:
+    execution.landscaper.gardener.cloud/managed-by: exec-1
+    execution.landscaper.gardener.cloud/name: b
 spec:
-
-  importRef:
-    name: exec-1-import
-    namespace: test3
 
   type: Container
   config:

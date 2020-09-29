@@ -39,7 +39,6 @@ type executionItem struct {
 func (o *Operation) Reconcile(ctx context.Context) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 
-	// todo: make it possible to specify a dag
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to list managed deploy items: %w", err)

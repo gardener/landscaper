@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Delete", func() {
+var _ = Describe("Delete", func() {
 
 	var (
 		op operation.Interface
@@ -41,7 +41,7 @@ var _ = g.Describe("Delete", func() {
 		fakeClient      client.Client
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -54,7 +54,7 @@ var _ = g.Describe("Delete", func() {
 		op = operation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, nil, nil)
 	})
 
-	g.It("should block deletion if deploy items still exist", func() {
+	It("should block deletion if deploy items still exist", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
@@ -65,7 +65,7 @@ var _ = g.Describe("Delete", func() {
 		Expect(exec.Finalizers).To(HaveLen(1))
 	})
 
-	g.It("should delete the execution if no deploy items exist", func() {
+	It("should delete the execution if no deploy items exist", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test1/exec-1"]
@@ -76,7 +76,7 @@ var _ = g.Describe("Delete", func() {
 		Expect(exec.Finalizers).To(HaveLen(0))
 	})
 
-	g.It("should delete all deploy items in reverse order", func() {
+	It("should delete all deploy items in reverse order", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
@@ -109,7 +109,7 @@ var _ = g.Describe("Delete", func() {
 		Expect(exec.Finalizers).To(HaveLen(0))
 	})
 
-	g.It("should wait until a deploy item is deleted", func() {
+	It("should wait until a deploy item is deleted", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
@@ -133,7 +133,7 @@ var _ = g.Describe("Delete", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	g.It("should propagate an failure in a deploy item to the execution", func() {
+	It("should propagate an failure in a deploy item to the execution", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
