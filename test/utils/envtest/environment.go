@@ -66,7 +66,7 @@ func New(projectRoot string) (*Environment, error) {
 	}
 	return &Environment{
 		Env: &envtest.Environment{
-			CRDDirectoryPaths: []string{filepath.Join(projectRoot, "crd")},
+			CRDDirectoryPaths: []string{filepath.Join(projectRoot, ".crd")},
 		},
 	}, nil
 }
