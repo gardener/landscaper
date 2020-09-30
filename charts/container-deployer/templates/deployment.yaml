@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "landscaper.fullname" . }}
+  name: {{ include "deployer.fullname" . }}
   labels:
-    {{- include "landscaper.labels" . | nindent 4 }}
+    {{- include "deployer.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "landscaper.selectorLabels" . | nindent 6 }}
+      {{- include "deployer.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include "landscaper-config" . |  sha256sum }}
-        checksum/registrysecrets: {{ toJson .Values.landscaper.registrySecrets |  sha256sum }}
+        checksum/config: {{ include "deployer-config" . |  sha256sum }}
+        checksum/registrysecrets: {{ toJson .Values.deployer.oci |  sha256sum }}
         {{ range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
       labels:
-        {{- include "landscaper.selectorLabels" . | nindent 8 }}
+        {{- include "deployer.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "landscaper.serviceAccountName" . }}
+      serviceAccountName: {{ include "deployer.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -35,35 +35,23 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/config/config.yaml"
-          {{- if .Values.landscaper.deployers }}
-          - "--deployers={{  .Values.landscaper.deployers | join "," }}"
-          {{- end }}
           volumeMounts:
           - name: config
             mountPath: /app/ls/config
-          {{- if .Values.landscaper.registrySecrets.blueprints }}
-          - name: blueprintsregistry
-            mountPath: /app/ls/registry/blueprints
-          {{- end }}
-          {{- if .Values.landscaper.registrySecrets.components }}
-          - name: blueprintsregistry
-            mountPath: /app/ls/registry/components
+          {{- if .Values.deployer.oci }}
+          - name: ociregistry
+            mountPath: /app/ls/registry/
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
       - name: config
         secret:
-          secretName: {{ include "landscaper.fullname" . }}-config
-      {{- if .Values.landscaper.registrySecrets.blueprints }}
-      - name: blueprintsregistry
+          secretName: {{ include "deployer.fullname" . }}-config
+      {{- if .Values.deployer.oci }}
+      - name: ociregistry
         secret:
-          secretName: {{ include "landscaper.fullname" . }}-registry-blueprints
-      {{- end }}
-      {{- if .Values.landscaper.registrySecrets.components }}
-      - name: componentsregistry
-        secret:
-          secretName: {{ include "landscaper.fullname" . }}-registry-components
+          secretName: {{ include "deployer.fullname" . }}-registry
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
