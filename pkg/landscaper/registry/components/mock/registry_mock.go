@@ -6,9 +6,10 @@ package mock_components
 
 import (
 	context "context"
+	reflect "reflect"
+
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockRegistry is a mock of Registry interface

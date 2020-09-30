@@ -6,10 +6,11 @@ package mock_oci
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	io "io"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // MockClient is a mock of Client interface

@@ -213,7 +213,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 			go func(obj unstructured.Unstructured) {
 				defer wg.Done()
 				if err := kubeClient.Delete(ctx, &obj); err != nil {
-					allErrs = append(allErrs, fmt.Errorf("unable to delete %s %s/%s: %w", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace()), err)
+					allErrs = append(allErrs, fmt.Errorf("unable to delete %s %s/%s: %w", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace(), err))
 				}
 				// todo: wait for deletion
 			}(obj)

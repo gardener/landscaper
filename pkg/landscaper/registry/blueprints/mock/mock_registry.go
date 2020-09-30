@@ -6,11 +6,13 @@ package mock_blueprints
 
 import (
 	context "context"
+	reflect "reflect"
+
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	v1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	gomock "github.com/golang/mock/gomock"
 	vfs "github.com/mandelsoft/vfs/pkg/vfs"
-	reflect "reflect"
+
+	v1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // MockRegistry is a mock of Registry interface

@@ -26,11 +26,8 @@ import (
 // ValidateProviderConfiguration validates a helm deployer configuration
 func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) error {
 	allErrs := field.ErrorList{}
-	if len(config.Repository) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("repository"), "must not be empty"))
-	}
-	if len(config.Version) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("version"), "must not be empty"))
+	if len(config.Chart.Ref) == 0 && len(config.Chart.Tar) == 0 {
+		allErrs = append(allErrs, field.Required(field.NewPath("chart").Child("ref", "tar"), "must not be empty"))
 	}
 
 	expPath := field.NewPath("exportsFromManifests")
