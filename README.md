@@ -14,6 +14,15 @@ The Landscaper is a kubernetes controller that can be easily installed via helm 
 helm install -n ls-system landscaper ./charts/landscaper
 ```
 
+We also build oci charts so the landscaper can also be installed with a specific version with:
+```
+export HELM_EXPERIMENTAL_OCI=1
+export LS_VERSION="0.1.0"
+helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION
+helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION ./charts
+helm install ./charts
+```
+
 The chart can be configured via the values file:
 ```yaml
 image:

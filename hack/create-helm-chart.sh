@@ -43,6 +43,9 @@ cli.py config attribute --cfg-type container_registry --cfg-name gcr-readwrite -
 
 echo "> Creating helm chart ${CHART_NAME}:${EFFECTIVE_VERSION} from $CHART_PATH"
 
+# update version and appVersion
+sed -i -e "s/0.1.0/${EFFECTIVE_VERSION}" ${PROJECT_ROOT}/${CHART_PATH}/Chart.yaml
+
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login eu.gcr.io -u _json_key -p "$(cat /tmp/serviceaccount.yaml)"
 
