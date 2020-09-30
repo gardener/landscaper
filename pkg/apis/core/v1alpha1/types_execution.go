@@ -115,6 +115,10 @@ type DeployItemTemplate struct {
 	// DataType is the DeployItem type of the execution.
 	Type ExecutionType `json:"type"`
 
+	// Target is the object reference to the target that the deploy item should deploy to.
+	// +optional
+	Target *ObjectReference `json:"target,omitempty"`
+
 	// ProviderConfiguration contains the type specific configuration for the execution.
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:XPreserveUnknownFields

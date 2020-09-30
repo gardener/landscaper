@@ -112,6 +112,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
 		lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
 		item.DeployItem.Spec.Type = item.Info.Type
+		item.DeployItem.Spec.Target = item.Info.Target
 		item.DeployItem.Spec.Configuration = item.Info.Configuration
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, item.Info.Name)

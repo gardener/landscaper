@@ -16,9 +16,10 @@ spec:
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
-
-    repository: myrepo/charts/nginx-ingress
-    version: 0.5.2
+    
+    chart:
+      ref: myrepo.example.com/charts/nginx-ingress:0.5.2
+#      tar: "" #  base64 encoded helm chart tar
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
