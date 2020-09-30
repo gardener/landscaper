@@ -84,6 +84,7 @@ func (o *options) run(ctx context.Context) error {
 			config := &containerv1alpha1.Configuration{
 				OCI: o.config.Registries.Blueprints.OCI,
 			}
+			containerv1alpha1.SetDefaults_Configuration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
