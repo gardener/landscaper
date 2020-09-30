@@ -20,6 +20,14 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/config"
 )
 
+// ManagedInstanceLabel describes label that is added to every helm deployer managed resource
+// to define its corresponding instance.
+const ManagedInstanceLabel = "helm.deployer.landscaper.gardener.cloud/instance"
+
+// ManagedDeployItemLabel describes label that is added to every helm deployer managed resource
+// to define its source deploy item.
+const ManagedDeployItemLabel = "helm.deployer.landscaper.gardener.cloud/deployitem"
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderConfiguration is the helm deployer configuration that configures the controller

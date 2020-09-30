@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/gardener/landscaper/pkg/apis/core"
 )
 
 // TargetType defines the type of the target.
@@ -78,4 +80,18 @@ type TargetTemplate struct {
 	// More info: http://kubernetes.io/docs/user-guide/annotations
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+//////////////////////////////
+//     Target Types         //
+//////////////////////////////
+// todo: refactor to own package
+
+// KubernetesClusterTargetType defines the landscaper kubernetes cluster target.
+const KubernetesClusterTargetType TargetType = core.GroupName + "/kubernetes-cluster"
+
+// KubernetesClusterTargetConfig defines the landscaper kubenretes cluster target config.
+type KubernetesClusterTargetConfig struct {
+	// Kubeconfig defines kubeconfig as string.
+	Kubeconfig string `json:"kubeconfig"`
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -27,7 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -40,7 +43,7 @@ import (
 )
 
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
-	_, kubeClient, err := h.TargetClient()
+	_, targetClient, err := h.TargetClient()
 	if err != nil {
 		return err
 	}
@@ -57,9 +60,14 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			if err != nil {
 				return err
 			}
+			h.injectLabels(obj)
 		}
 
 		objects = append(objects, decodedObjects...)
+	}
+
+	if err := h.cleanupOrphanedResources(ctx, targetClient, objects); err != nil {
+		return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
 	}
 
 	status := &helmv1alpha1.ProviderStatus{
@@ -70,7 +78,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
 	}
 	for i, obj := range objects {
-		_, err = kubernetesutil.CreateOrUpdate(ctx, kubeClient, obj, func() error {
+		_, err = kubernetesutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
 			return nil
 		})
 
@@ -189,6 +197,49 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	return h.kubeClient.Update(ctx, h.DeployItem)
 }
 
+// cleanupOrphanedResources removes all managed resources that are not rendered anymore.
+func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, currentObjects []*unstructured.Unstructured) error {
+	objectList := &unstructured.UnstructuredList{}
+	if err := kubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
+		return fmt.Errorf("unable to list all managed resources: %w", err)
+	}
+	var (
+		allErrs []error
+		wg      sync.WaitGroup
+	)
+	for _, obj := range objectList.Items {
+		if !containsUnstructuredObject(&obj, currentObjects) {
+			wg.Add(1)
+			go func(obj unstructured.Unstructured) {
+				defer wg.Done()
+				if err := kubeClient.Delete(ctx, &obj); err != nil {
+					allErrs = append(allErrs, fmt.Errorf("unable to delete %s %s/%s: %w", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace()), err)
+				}
+				// todo: wait for deletion
+			}(obj)
+		}
+	}
+	wg.Wait()
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+	return apimacherrors.NewAggregate(allErrs)
+}
+
+func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
+	for _, found := range objects {
+		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
+		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
+			continue
+		}
+		if found.GetName() == obj.GetName() && found.GetNamespace() == obj.GetNamespace() {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstructured, error) {
 	var (
 		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
@@ -236,6 +287,15 @@ func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[st
 	}
 
 	return exports, nil
+}
+
+func (h *Helm) injectLabels(obj *unstructured.Unstructured) {
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labels[helmv1alpha1.ManagedDeployItemLabel] = h.DeployItem.Name
+	obj.SetLabels(labels)
 }
 
 func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstructured) (map[string]interface{}, error) {

@@ -90,7 +90,14 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if err := a.reconcile(ctx, deployItem); err != nil {
+	var target *lsv1alpha1.Target
+	if deployItem.Spec.Target != nil {
+		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+			a.log.Error(err, "unable to get target for deploy item", "target", deployItem.Spec.Target.NamespacedName().String())
+		}
+	}
+
+	if err := a.reconcile(ctx, deployItem, target); err != nil {
 		a.log.Error(err, "unable to reconcile deploy item")
 		return reconcile.Result{}, err
 	}
@@ -98,8 +105,8 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
-	helm, err := New(a.log, a.c, a.registryClient, deployItem)
+func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	helm, err := New(a.log, a.c, a.registryClient, deployItem, target)
 	if err != nil {
 		return err
 	}
@@ -118,6 +125,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 	if err != nil {
 		return err
 	}
+
 	exports, err := helm.constructExportsFromValues(values)
 	if err != nil {
 		return err

@@ -28,14 +28,13 @@ import (
 type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Kubeconfig is the base64 encoded kubeconfig file
+	// Kubeconfig is the base64 encoded kubeconfig file.
+	// By default the configured target is used to deploy the resources
+	// +optional
 	Kubeconfig string `json:"kubeconfig"`
 
-	// Repository is the repository name in the oci registry
-	Repository string `json:"repository"`
-
-	// Version is the chart version in the oci registry.
-	Version string `json:"version"`
+	// Chart defines helm chart to be templated and applied.
+	Chart Chart `json:"chart"`
 
 	// Name is the release name of the chart
 	Name string `json:"name"`
@@ -49,6 +48,17 @@ type ProviderConfiguration struct {
 	// ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
 	ExportsFromManifests []ExportFromManifestItem `json:"exportsFromManifests,omitempty"`
+}
+
+// Chart defines the helm chart to render and apply.
+type Chart struct {
+	// Ref defines the reference to a helm chart in a oci repository.
+	// +optional
+	Ref string `json:"ref,omitempty"`
+	// Tar defines a tarred helm chart as base64 encoded string.
+	// Either a chart or a tar has to be defined
+	// +optional
+	Tar string `json:"tar,omitempty"`
 }
 
 // ExportFromManifestItem describes one export that is read from the templates values or a templated resource.

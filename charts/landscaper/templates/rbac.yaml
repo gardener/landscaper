@@ -53,12 +53,30 @@ rules:
   verbs:
   - "*"
 - apiGroups:
-  - rbac.authorization.k8s.io
+  - ""
   resources:
   - "serviceaccounts"
   verbs:
   - get
   - list
+  - create
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - "secrets"
+  verbs:
+  - "*"
+- apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+  - "roles"
+  - "rolebindings"
+  verbs:
+  - get
+  - list
+  - create
   - update
   - delete
 - apiGroups:

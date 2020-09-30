@@ -17,6 +17,8 @@ package helm
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -53,11 +55,12 @@ type Helm struct {
 	registryClient *registry.Client
 
 	DeployItem    *lsv1alpha1.DeployItem
+	Target        *lsv1alpha1.Target
 	Configuration *helmv1alpha1.ProviderConfiguration
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem) (*Helm, error) {
+func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Helm, error) {
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
@@ -73,6 +76,7 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 		kubeClient:     kubeClient,
 		registryClient: client,
 		DeployItem:     item,
+		Target:         target,
 		Configuration:  config,
 	}, nil
 }
@@ -87,7 +91,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ch, err := h.registryClient.GetChart(ctx, fmt.Sprintf("%s:%s", h.Configuration.Repository, h.Configuration.Version))
+	ch, err := h.registryClient.GetChart(ctx, h.Configuration.Chart.Ref)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,22 +122,46 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 }
 
 func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
-	kubeconfig, err := base64.StdEncoding.DecodeString(h.Configuration.Kubeconfig)
-	if err != nil {
-		return nil, nil, err
-	}
-	cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
-	if err != nil {
-		return nil, nil, err
-	}
-	restConfig, err := cConfig.ClientConfig()
-	if err != nil {
-		return nil, nil, err
-	}
+	// use the configured kubeconfig over the target if defined
+	if len(h.Configuration.Kubeconfig) != 0 {
+		kubeconfig, err := base64.StdEncoding.DecodeString(h.Configuration.Kubeconfig)
+		if err != nil {
+			return nil, nil, err
+		}
+		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
+		if err != nil {
+			return nil, nil, err
+		}
+		restConfig, err := cConfig.ClientConfig()
+		if err != nil {
+			return nil, nil, err
+		}
 
-	kubeClient, err := client.New(restConfig, client.Options{})
-	if err != nil {
-		return nil, nil, err
+		kubeClient, err := client.New(restConfig, client.Options{})
+		if err != nil {
+			return nil, nil, err
+		}
+		return restConfig, kubeClient, nil
 	}
-	return restConfig, kubeClient, nil
+	if h.Target != nil {
+		targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
+		if err := json.Unmarshal(h.Target.Spec.Configuration, targetConfig); err != nil {
+			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+		}
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(targetConfig.Kubeconfig))
+		if err != nil {
+			return nil, nil, err
+		}
+		restConfig, err := kubeconfig.ClientConfig()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		kubeClient, err := client.New(restConfig, client.Options{})
+		if err != nil {
+			return nil, nil, err
+		}
+		return restConfig, kubeClient, nil
+	}
+	return nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
