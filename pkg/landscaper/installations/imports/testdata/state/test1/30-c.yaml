@@ -39,6 +39,7 @@ status:
 
   imports:
   - name: c.a
+    type: dataobject
     configGeneration: "klm"
     sourceRef:
       name: a

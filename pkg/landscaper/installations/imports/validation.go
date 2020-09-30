@@ -17,7 +17,9 @@ package imports
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -43,6 +45,35 @@ func NewValidator(op *installations.Operation) *Validator {
 	}
 }
 
+// OutdatedImports validates whether a imported data object or target is outdated.
+func (v *Validator) OutdatedImports(ctx context.Context, inst *installations.Installation) (bool, error) {
+	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.Info.Name))
+
+	for _, dataImport := range inst.Info.Spec.Imports.Data {
+		impPath := fldPath.Child(dataImport.Name)
+		outdated, err := v.checkDataImportIsOutdated(ctx, impPath, inst, dataImport)
+		if err != nil {
+			return false, err
+		}
+		if outdated {
+			return true, nil
+		}
+	}
+
+	for _, targetImport := range inst.Info.Spec.Imports.Targets {
+		impPath := fldPath.Child(targetImport.Name)
+		outdated, err := v.checkTargetImportIsOutdated(ctx, impPath, inst, targetImport)
+		if err != nil {
+			return false, err
+		}
+		if outdated {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // Validate traverses through all components and validates if all imports are
 // satisfied with the correct version
 func (v *Validator) Validate(ctx context.Context, inst *installations.Installation) error {
@@ -50,7 +81,7 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.Info.Name))
 
 	// check if parent has sibling installation dependencies that are not finished yet
-	completed, err := installations.CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
+	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
@@ -92,19 +123,74 @@ func (v *Validator) Validate(ctx context.Context, inst *installations.Installati
 	return nil
 }
 
-func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
+func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) (bool, error) {
 	// get deploy item from current context
-	raw := &lsv1alpha1.DataObject{}
-	doName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, dataImport.DataRef)
-	if err := v.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
-		return err
-	}
-	do, err := dataobjects.NewFromDataObject(raw)
+	do, owner, err := v.getDataImport(ctx, inst, dataImport.DataRef)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
+	}
+	importStatus, err := inst.ImportStatus().GetData(dataImport.Name)
+	if err != nil {
+		return true, nil
 	}
 
-	owner := kutil.GetOwner(do.Raw.ObjectMeta)
+	// we cannot validate if the source is not an installation
+	if owner == nil || owner.Kind != "Installation" {
+		if strconv.Itoa(int(do.Raw.Generation)) != importStatus.ConfigGeneration {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	src := &lsv1alpha1.Installation{}
+	if err := v.Client().Get(ctx, ref.NamespacedName(), src); err != nil {
+		return false, fmt.Errorf("%s: unable to get source installation %s for '%s': %w", fldPath.String(), ref.NamespacedName().String(), dataImport.Name, err)
+	}
+	if src.Status.ConfigGeneration != importStatus.ConfigGeneration {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) (bool, error) {
+	// get deploy item from current context
+	target, owner, err := v.getTargetImport(ctx, inst, targetImport.Target)
+	if err != nil {
+		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), targetImport.Name, err)
+	}
+	importStatus, err := inst.ImportStatus().GetData(targetImport.Name)
+	if err != nil {
+		return true, nil
+	}
+
+	// we cannot validate if the source is not an installation
+	if owner == nil || owner.Kind != "Installation" {
+		if strconv.Itoa(int(target.Generation)) != importStatus.ConfigGeneration {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	src := &lsv1alpha1.Installation{}
+	if err := v.Client().Get(ctx, ref.NamespacedName(), src); err != nil {
+		return false, fmt.Errorf("%s: unable to get source installation %s for '%s': %w", fldPath.String(), ref.NamespacedName().String(), targetImport.Name, err)
+	}
+	if src.Status.ConfigGeneration != importStatus.ConfigGeneration {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
+	// get deploy item from current context
+	_, owner, err := v.getDataImport(ctx, inst, dataImport.DataRef)
+	if err != nil {
+		return fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
+	}
 	if owner == nil {
 		return nil
 	}
@@ -126,13 +212,10 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 
 func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) error {
 	// get deploy item from current context
-	raw := &lsv1alpha1.Target{}
-	targetName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, targetImport.Target)
-	if err := v.Client().Get(ctx, kutil.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
-		return err
+	_, owner, err := v.getTargetImport(ctx, inst, targetImport.Target)
+	if err != nil {
+		return fmt.Errorf("%s: unable to get target for '%s': %w", fldPath.String(), targetImport.Name, err)
 	}
-
-	owner := kutil.GetOwner(raw.ObjectMeta)
 	if owner == nil {
 		return nil
 	}
@@ -182,7 +265,7 @@ func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath 
 
 	// todo: check generation of other components in the dependency tree
 	// we expect that no dependent siblings are running
-	isCompleted, err := installations.CheckCompletedSiblingDependents(ctx, v.Operation, sibling)
+	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation, sibling)
 	if err != nil {
 		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet", fldPath.String())
 	}
@@ -191,6 +274,34 @@ func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath 
 	}
 
 	return nil
+}
+
+func (v *Validator) getDataImport(ctx context.Context, inst *installations.Installation, dataRef string) (*dataobjects.DataObject, *metav1.OwnerReference, error) {
+	// get deploy item from current context
+	raw := &lsv1alpha1.DataObject{}
+	doName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, dataRef)
+	if err := v.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), raw); err != nil {
+		return nil, nil, err
+	}
+	do, err := dataobjects.NewFromDataObject(raw)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	owner := kutil.GetOwner(do.Raw.ObjectMeta)
+	return do, owner, nil
+}
+
+func (v *Validator) getTargetImport(ctx context.Context, inst *installations.Installation, target string) (*lsv1alpha1.Target, *metav1.OwnerReference, error) {
+	// get deploy item from current context
+	raw := &lsv1alpha1.Target{}
+	targetName := lsv1alpha1helper.GenerateDataObjectName(v.Context().Name, target)
+	if err := v.Client().Get(ctx, kutil.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+		return nil, nil, err
+	}
+
+	owner := kutil.GetOwner(raw.ObjectMeta)
+	return raw, owner, nil
 }
 
 func (v *Validator) getSiblingForObjectReference(ref lsv1alpha1.ObjectReference) *installations.Installation {

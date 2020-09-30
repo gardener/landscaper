@@ -6,6 +6,11 @@ metadata:
   labels:
     data.landscaper.gardener.cloud/context: ""
     data.landscaper.gardener.cloud/key: "ext.a"
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: root
+    uid: xxx
 spec:
   type: landscaper.gardener.cloud/mock
   config: val-e

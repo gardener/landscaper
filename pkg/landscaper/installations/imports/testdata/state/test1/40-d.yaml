@@ -39,7 +39,9 @@ status:
 
   imports:
   - name: d.a
+    type: dataobject
     configGeneration: ""
   - name: d.b
+    type: dataobject
     configGeneration: ""
 

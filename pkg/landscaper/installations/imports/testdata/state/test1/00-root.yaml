@@ -33,7 +33,8 @@ status:
 
   imports:
   - name: root.a
-    configGeneration: "efg"
+    type: dataobject
+    configGeneration: "2"
     sourceRef:
       name: root
       namespace: test1

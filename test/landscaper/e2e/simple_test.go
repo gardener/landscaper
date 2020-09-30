@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -113,6 +114,11 @@ var _ = Describe("Simple", func() {
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
 		Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseProgressing))
 		Expect(inst.Status.ExecutionReference).ToNot(BeNil())
+		Expect(inst.Status.Imports).To(HaveLen(1))
+		Expect(inst.Status.Imports[0]).To(MatchFields(IgnoreExtras, Fields{
+			"Name": Equal("imp-a"),
+			"Type": Equal(lsv1alpha1.DataImportStatusType),
+		}))
 
 		execReq := request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
 		exec := &lsv1alpha1.Execution{}

@@ -232,7 +232,7 @@ var _ = Describe("Validation", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			target := &lsv1alpha1.Target{}
-			target.Name = lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, "ext.a")
+			target.Name = lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, "root.a")
 			target.Namespace = "test4"
 			Expect(fakeClient.Delete(ctx, target))
 

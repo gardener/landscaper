@@ -198,7 +198,7 @@ var _ = Describe("SubInstallation", func() {
 		})
 	})
 
-	Context("#Update", func() {
+	Context("#ApplyUpdate", func() {
 
 		It("should update a reference even if nothing has changed to trigger a reconcile", func() {
 			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)

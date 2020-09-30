@@ -3,4 +3,5 @@ kind: DataObject
 metadata:
   name: {{ dataObjectName ""  "ext.a" }}
   namespace: test1
+  generation: 2
 data: val-root-import

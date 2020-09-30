@@ -9,7 +9,7 @@ metadata:
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation
-    name: a
+    name: root
     uid: xxx
 spec:
   type: landscaper.gardener.cloud/mock

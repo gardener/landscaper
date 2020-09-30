@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
@@ -126,6 +127,7 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 }
 
 // GetImportedDataObjects returns all imported data objects of the installation.
+// It also updates the imports.
 func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dataobjects.DataObject, error) {
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.Info.Spec.Imports.Data {
@@ -134,6 +136,32 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			return nil, err
 		}
 		dataObjects[def.Name] = do
+
+		var (
+			sourceRef *lsv1alpha1.ObjectReference
+			configGen = strconv.Itoa(int(do.Raw.Generation))
+			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
+		)
+		if owner != nil && owner.Kind == "Installation" {
+			sourceRef = &lsv1alpha1.ObjectReference{
+				Name:      owner.Name,
+				Namespace: o.Inst.Info.Namespace,
+			}
+			inst := &lsv1alpha1.Installation{}
+			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
+					sourceRef.NamespacedName().String(), def.Name, err)
+			}
+			configGen = inst.Status.ConfigGeneration
+		}
+
+		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+			Name:             def.Name,
+			Type:             lsv1alpha1.DataImportStatusType,
+			DataRef:          def.DataRef,
+			SourceRef:        sourceRef,
+			ConfigGeneration: configGen,
+		})
 	}
 
 	return dataObjects, nil
@@ -153,7 +181,7 @@ func (o *Operation) GetImportedDataObjectForName(ctx context.Context, name strin
 	return do, nil
 }
 
-// GetImportedDataObjects returns all imported data objects of the installation.
+// GetImportedTargets returns all imported targets of the installation.
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
 	targets := map[string]*dataobjects.Target{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
@@ -162,6 +190,31 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			return nil, err
 		}
 		targets[def.Name] = target
+
+		var (
+			sourceRef *lsv1alpha1.ObjectReference
+			configGen = strconv.Itoa(int(target.Raw.Generation))
+			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
+		)
+		if owner != nil && owner.Kind == "Installation" {
+			sourceRef = &lsv1alpha1.ObjectReference{
+				Name:      owner.Name,
+				Namespace: o.Inst.Info.Namespace,
+			}
+			inst := &lsv1alpha1.Installation{}
+			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
+					sourceRef.NamespacedName().String(), def.Name, err)
+			}
+			configGen = inst.Status.ConfigGeneration
+		}
+		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+			Name:             def.Name,
+			Type:             lsv1alpha1.DataImportStatusType,
+			DataRef:          def.Target,
+			SourceRef:        sourceRef,
+			ConfigGeneration: configGen,
+		})
 	}
 
 	return targets, nil
@@ -300,7 +353,7 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
-	o.Inst.Info.Status.ConfigGeneration = "abc"
+	o.Inst.Info.Status.ConfigGeneration = ""
 	return o.Client().Status().Update(ctx, o.Inst.Info)
 }
 

@@ -37,6 +37,7 @@ status:
 
   imports:
   - name: a.b
+    type: dataobject
     configGeneration: "efg"
     sourceRef:
       name: root

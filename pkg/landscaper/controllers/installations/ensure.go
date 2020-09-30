@@ -60,10 +60,15 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	}
 
 	// check if the spec has changed
-	// todo: or if our imports have changed since last reconcile => check if config hash has changed
-	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
+	eligibleToUpdate, err := a.eligibleToUpdate(ctx, op, inst)
+	if err != nil {
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"EligibleForUpdate", "EligibleForUpdate", err.Error())
+		return err
+	}
+	if eligibleToUpdate {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := a.StartNewReconcile(ctx, op, inst); err != nil {
+		if err := a.ApplyUpdate(ctx, op, inst); err != nil {
 			return err
 		}
 
@@ -109,21 +114,26 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	return nil
 }
 
-func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
-	validator := imports.NewValidator(op)
-	if err := validator.Validate(ctx, inst); err != nil {
-		a.Log().Error(err, "unable to validate imports")
-		return err
+// eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
+// The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
+func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
+	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
+		return true, nil
 	}
+	return imports.NewValidator(op).OutdatedImports(ctx, inst)
+}
 
+// ApplyUpdate redeploys subinstallations and deploy items.
+func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
-
-	// only needed if execution are processed
 	constructor := imports.NewConstructor(op)
 	importedValues, err := constructor.Construct(ctx, inst)
 	if err != nil {
-		a.Log().Error(err, "unable to collect imports")
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"CreateImports",
+			"unable to collect imports",
+			err.Error())
 		return err
 	}
 
@@ -136,24 +146,34 @@ func (a *actuator) StartNewReconcile(ctx context.Context, op *installations.Oper
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
-	if err := op.SetExportConfigGeneration(ctx); err != nil {
-		return err
-	}
 
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx, inst.Info, inst.Blueprint); err != nil {
-		a.Log().Error(err, "unable to ensure sub installations")
-		return err
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"ReconcileSubinstallations",
+			"unable to ensure sub installations",
+			err.Error())
+		return fmt.Errorf("unable to ensure sub installations: %w", err)
 	}
 
 	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
-		return err
+		return fmt.Errorf("unable to trigger subinstallations: %w", err)
 	}
 
 	exec := executions.New(op)
 	if err := exec.Ensure(ctx, inst, importedValues); err != nil {
-		a.Log().Error(err, "unable to ensure execution")
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"ReconcileSubinstallations",
+			"unable to ensure sub installations",
+			err.Error())
+		return fmt.Errorf("unable to ensure execution: %w", err)
+	}
+	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
+	if err := a.Client().Status().Update(ctx, inst.Info); err != nil {
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"ApplyUpdate",
+			"unable to update installation status",
+			err.Error())
 		return err
 	}
 	return nil

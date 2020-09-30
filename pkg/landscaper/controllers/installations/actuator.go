@@ -232,7 +232,7 @@ func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Insta
 
 func (a *actuator) forceReconcile(ctx context.Context, instOp *installations.Operation, inst *installations.Installation) error {
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := a.StartNewReconcile(ctx, instOp, inst); err != nil {
+	if err := a.ApplyUpdate(ctx, instOp, inst); err != nil {
 		return err
 	}
 
