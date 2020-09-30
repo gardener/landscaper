@@ -30,11 +30,17 @@ const Base32EncodeStdLowerCase = "abcdefghijklmnopqrstuvwxyz234567"
 
 const SourceDelimiter = "/"
 
+const NonContextifiedPrefix = "#"
+
 // GenerateDataObjectName generates the unique name for a data object exported or imported by a installation.
-func GenerateDataObjectName(context string, key string) string {
-	name := fmt.Sprintf("%s/%s", context, key)
+// It returns a non contextified data name if the name starts with a "#".
+func GenerateDataObjectName(context string, name string) string {
+	if strings.HasPrefix(name, NonContextifiedPrefix) {
+		return strings.TrimPrefix(name, NonContextifiedPrefix)
+	}
+	doName := fmt.Sprintf("%s/%s", context, name)
 	h := sha1.New()
-	_, _ = h.Write([]byte(name))
+	_, _ = h.Write([]byte(doName))
 	// we need base32 encoding as some base64 (even url safe base64) characters are not supported by k8s
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
 	return base32.NewEncoding(Base32EncodeStdLowerCase).WithPadding(base32.NoPadding).EncodeToString(h.Sum(nil))
