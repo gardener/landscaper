@@ -19,6 +19,10 @@ set -e
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
+if [[ $EFFECTIVE_VERSION == "" ]]; then
+  $EFFECTIVE_VERSION=$(cat $PROJECT_ROOT/VERSION)
+fi
+
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on \
   go install -mod=vendor \
   -ldflags "-X github.com/gardener/landscaper/pkg/version.gitVersion=$EFFECTIVE_VERSION \

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 REPO_ROOT                                      := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-VERSION                                        := $(shell cat VERSION)
+VERSION                                        := $(shell cat $(REPO_ROOT)/VERSION)
 EFFECTIVE_VERSION                              := $(VERSION)-$(shell git rev-parse HEAD)
 
 REGISTRY                                       := eu.gcr.io/gardener-project/landscaper
