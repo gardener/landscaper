@@ -51,8 +51,18 @@ func WaitContainerServiceAccountName(di *lsv1alpha1.DeployItem) string {
 }
 
 // ExportSecretName generates the secret name for the exported secret
-func ExportSecretName(di *lsv1alpha1.DeployItem) string {
-	return fmt.Sprintf("%s-export", di.Name)
+func ExportSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-export", deployItemNamespace, deployItemName)
+}
+
+// ExportSecretName generates the secret name for the exported secret
+func DeployItemExportSecretName(deployItemName string) string {
+	return fmt.Sprintf("%s-export", deployItemName)
+}
+
+// ConfigurationSecretName generates the secret name for the imported secret.
+func ConfigurationSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-config", deployItemNamespace, deployItemName)
 }
 
 // PodOptions contains the configuration that is needed for the scheduled pod
@@ -62,6 +72,7 @@ type PodOptions struct {
 	WaitContainer                     containerv1alpha1.ContainerSpec
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
+	ConfigurationSecretName           string
 
 	Name      string
 	Namespace string
@@ -95,15 +106,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		},
 	}
 	sharedVolumeMount := corev1.VolumeMount{
-		Name:      "shared-volume",
+		Name:      sharedVolume.Name,
 		MountPath: container.SharedBasePath,
 	}
 
-	initServiceAccountMount := corev1.VolumeMount{
-		Name:      "serviceaccount-init",
-		ReadOnly:  true,
-		MountPath: filepath.Dir(PodTokenPath),
-	}
 	initServiceAccountVolume := corev1.Volume{
 		Name: "serviceaccount-init",
 		VolumeSource: corev1.VolumeSource{
@@ -111,6 +117,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 				SecretName: opts.InitContainerServiceAccountSecret.Name,
 			},
 		},
+	}
+	initServiceAccountMount := corev1.VolumeMount{
+		Name:      initServiceAccountVolume.Name,
+		ReadOnly:  true,
+		MountPath: filepath.Dir(PodTokenPath),
 	}
 
 	waitServiceAccountMount := corev1.VolumeMount{
@@ -127,7 +138,25 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		},
 	}
 
+	configurationVolume := corev1.Volume{
+		Name: "configuration",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: opts.ConfigurationSecretName,
+			},
+		},
+	}
+	configurationVolumeMount := corev1.VolumeMount{
+		Name:      configurationVolume.Name,
+		ReadOnly:  true,
+		MountPath: filepath.Dir(container.ConfigurationPath),
+	}
+
 	additionalInitEnvVars := []corev1.EnvVar{
+		{
+			Name:  container.ConfigurationPathName,
+			Value: container.ConfigurationPath,
+		},
 		{
 			Name:  container.DeployItemName,
 			Value: opts.Name,
@@ -158,6 +187,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		initServiceAccountVolume,
 		waitServiceAccountVolume,
 		sharedVolume,
+		configurationVolume,
 	}
 
 	initContainer := corev1.Container{
@@ -168,8 +198,8 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		Env:                      append(container.DefaultEnvVars, additionalInitEnvVars...),
 		Resources:                corev1.ResourceRequirements{},
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
-		VolumeMounts:             []corev1.VolumeMount{initServiceAccountMount, sharedVolumeMount},
+		ImagePullPolicy:          opts.InitContainer.ImagePullPolicy,
+		VolumeMounts:             []corev1.VolumeMount{configurationVolumeMount, initServiceAccountMount, sharedVolumeMount},
 	}
 
 	waitContainer := corev1.Container{
@@ -180,7 +210,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		Env:                      append(container.DefaultEnvVars, additionalSidecarEnvVars...),
 		Resources:                corev1.ResourceRequirements{},
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
+		ImagePullPolicy:          opts.WaitContainer.ImagePullPolicy,
 		VolumeMounts: []corev1.VolumeMount{
 			waitServiceAccountMount,
 			sharedVolumeMount,
@@ -224,11 +254,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 
 func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 	podList := &corev1.PodList{}
-	if err := c.kubeClient.List(ctx, podList, client.InNamespace(c.DeployItem.Namespace), client.MatchingLabels{container.ContainerDeployerNameLabel: c.DeployItem.Name}); err != nil {
+	if err := c.hostClient.List(ctx, podList, client.InNamespace(c.DeployItem.Namespace), client.MatchingLabels{container.ContainerDeployerNameLabel: c.DeployItem.Name}); err != nil {
 		return nil, err
 	}
 
-	// todo: handle multiple containers
 	if len(podList.Items) == 0 {
 		return nil, apierrors.NewNotFound(schema.GroupResource{
 			Group:    corev1.SchemeGroupVersion.Group,
@@ -253,7 +282,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	initSA := &corev1.ServiceAccount{}
 	initSA.Name = InitContainerServiceAccountName(c.DeployItem)
 	initSA.Namespace = c.DeployItem.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, c.kubeClient, initSA, func() error { return nil }); err != nil {
+	if _, err := kutil.CreateOrUpdate(ctx, c.hostClient, initSA, func() error { return nil }); err != nil {
 		return err
 	}
 
@@ -261,7 +290,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role := &rbacv1.Role{}
 	role.Name = initSA.Name
 	role.Namespace = initSA.Namespace
-	_, err := kutil.CreateOrUpdate(ctx, c.kubeClient, role, func() error {
+	_, err := kutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
@@ -292,7 +321,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding := &rbacv1.RoleBinding{}
 	rolebinding.Name = initSA.Name
 	rolebinding.Namespace = initSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.kubeClient, rolebinding, func() error {
+	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
@@ -313,15 +342,14 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	c.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.kubeClient, initSA)
+	c.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.hostClient, initSA)
 	if err != nil {
 		return err
 	}
-
 	waitSA := &corev1.ServiceAccount{}
 	waitSA.Name = WaitContainerServiceAccountName(c.DeployItem)
 	waitSA.Namespace = c.DeployItem.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, c.kubeClient, waitSA, func() error { return nil }); err != nil {
+	if _, err := kutil.CreateOrUpdate(ctx, c.hostClient, waitSA, func() error { return nil }); err != nil {
 		return err
 	}
 
@@ -329,7 +357,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role = &rbacv1.Role{}
 	role.Name = waitSA.Name
 	role.Namespace = waitSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.kubeClient, role, func() error {
+	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
@@ -349,7 +377,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
 				Resources:     []string{"secrets"},
 				Verbs:         []string{"update", "get"},
-				ResourceNames: []string{ExportSecretName(c.DeployItem)},
+				ResourceNames: []string{ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name)},
 			},
 			{
 				APIGroups: []string{corev1.SchemeGroupVersion.Group},
@@ -366,7 +394,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding = &rbacv1.RoleBinding{}
 	rolebinding.Name = waitSA.Name
 	rolebinding.Namespace = waitSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.kubeClient, rolebinding, func() error {
+	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
@@ -387,7 +415,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	c.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.kubeClient, waitSA)
+	c.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.hostClient, waitSA)
 	if err != nil {
 		return err
 	}

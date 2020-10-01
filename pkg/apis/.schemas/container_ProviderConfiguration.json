@@ -71,13 +71,12 @@
       "type": "object"
     },
     "ProviderConfiguration": {
-      "required": [
-        "TypeMeta"
-      ],
       "properties": {
-        "TypeMeta": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/TypeMeta"
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
         },
         "image": {
           "type": "string"
@@ -162,18 +161,6 @@
           "type": "string"
         },
         "resourceName": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "TypeMeta": {
-      "properties": {
-        "kind": {
-          "type": "string"
-        },
-        "apiVersion": {
           "type": "string"
         }
       },

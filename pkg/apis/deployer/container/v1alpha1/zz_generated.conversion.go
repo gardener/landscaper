@@ -23,6 +23,7 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
+	v1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
@@ -103,6 +104,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 
 func autoConvert_v1alpha1_Configuration_To_container_Configuration(in *Configuration, out *container.Configuration, s conversion.Scope) error {
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
+	out.Namespace = in.Namespace
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	if err := Convert_v1alpha1_ContainerSpec_To_container_ContainerSpec(&in.DefaultImage, &out.DefaultImage, s); err != nil {
 		return err
@@ -124,6 +126,7 @@ func Convert_v1alpha1_Configuration_To_container_Configuration(in *Configuration
 func autoConvert_container_Configuration_To_v1alpha1_Configuration(in *container.Configuration, out *Configuration, s conversion.Scope) error {
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
+	out.Namespace = in.Namespace
 	if err := Convert_container_ContainerSpec_To_v1alpha1_ContainerSpec(&in.DefaultImage, &out.DefaultImage, s); err != nil {
 		return err
 	}
@@ -145,6 +148,7 @@ func autoConvert_v1alpha1_ContainerSpec_To_container_ContainerSpec(in *Container
 	out.Image = in.Image
 	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImagePullPolicy = v1.PullPolicy(in.ImagePullPolicy)
 	return nil
 }
 
@@ -157,6 +161,7 @@ func autoConvert_container_ContainerSpec_To_v1alpha1_ContainerSpec(in *container
 	out.Image = in.Image
 	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImagePullPolicy = v1.PullPolicy(in.ImagePullPolicy)
 	return nil
 }
 

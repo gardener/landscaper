@@ -54,13 +54,13 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	rolebinding.Name = sa.Name
 	rolebinding.Namespace = sa.Namespace
 
-	if err := c.kubeClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.kubeClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.kubeClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 	c.log.V(3).Info("successfully removed init container rbac resources")
@@ -77,13 +77,13 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	rolebinding.Name = sa.Name
 	rolebinding.Namespace = sa.Namespace
 
-	if err := c.kubeClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.kubeClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.kubeClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
@@ -93,16 +93,33 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 }
 
 func (c *Container) cleanupDeployItem(ctx context.Context) error {
-	// delete the referenced export secret if there is one
-	if c.DeployItem.Status.ExportReference != nil {
-		secret := &corev1.Secret{}
-		secret.Name = c.DeployItem.Status.ExportReference.Name
-		secret.Namespace = c.DeployItem.Status.ExportReference.Namespace
-		if err := c.kubeClient.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+	// delete config secret
+	secret := &corev1.Secret{}
+	secret.Name = ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
+	secret.Namespace = c.Configuration.Namespace
+	if err := c.hostClient.Delete(ctx, secret); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	// delete the referenced export secret if there is one as well as the secret in the host cluster
+	secret = &corev1.Secret{}
+	secret.Name = ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
+	secret.Namespace = c.Configuration.Namespace
+	if err := c.hostClient.Delete(ctx, secret); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	secret = &corev1.Secret{}
+	secret.Name = DeployItemExportSecretName(c.DeployItem.Name)
+	secret.Namespace = c.DeployItem.Namespace
+	if err := c.lsClient.Delete(ctx, secret); err != nil {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
 
 	controllerutil.RemoveFinalizer(c.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return c.kubeClient.Update(ctx, c.DeployItem)
+	return c.lsClient.Update(ctx, c.DeployItem)
 }

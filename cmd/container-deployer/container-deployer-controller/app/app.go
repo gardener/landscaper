@@ -56,22 +56,47 @@ func (o *options) run(ctx context.Context) {
 		MetricsBindAddress: "0", // disable the metrics serving by default
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+	hostClusterMgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
 	if err != nil {
-		o.log.Error(err, "unable to setup manager")
+		o.log.Error(err, "unable to setup manager for host cluster")
 		os.Exit(1)
 	}
 
-	install.Install(mgr.GetScheme())
+	landscaperClusterMgr := hostClusterMgr
+	if o.landscaperClusterRestConfig != nil {
+		landscaperClusterMgr, err = ctrl.NewManager(o.landscaperClusterRestConfig, opts)
+		if err != nil {
+			o.log.Error(err, "unable to setup manager for landscaper cluster")
+			os.Exit(1)
+		}
+	}
+	install.Install(landscaperClusterMgr.GetScheme())
 
-	if err := containeractuator.AddActuatorToManager(mgr, o.config); err != nil {
+	if err := containeractuator.AddActuatorToManager(hostClusterMgr, landscaperClusterMgr, o.config); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}
 
-	o.log.Info(fmt.Sprintf("starting the controller with version %s", version.Get().GitVersion))
-	if err := mgr.Start(ctx.Done()); err != nil {
+	o.log.Info(fmt.Sprintf("starting the controllers with version %s", version.Get().GitVersion))
+
+	if landscaperClusterMgr != hostClusterMgr {
+		go func() {
+			if err := hostClusterMgr.Start(ctx.Done()); err != nil {
+				o.log.Error(err, "error while running manager")
+				os.Exit(1)
+			}
+		}()
+		o.log.Info("Waiting for host cluster cache to sync")
+		if !hostClusterMgr.GetCache().WaitForCacheSync(ctx.Done()) {
+			o.log.Info("Unable to sync host cluster cache")
+			os.Exit(1)
+		}
+
+		o.log.Info("Cache of host cluster successfully synced")
+	}
+	if err := landscaperClusterMgr.Start(ctx.Done()); err != nil {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)
 	}
+
 }

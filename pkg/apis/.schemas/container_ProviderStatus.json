@@ -123,14 +123,15 @@
     },
     "ProviderStatus": {
       "required": [
-        "TypeMeta",
         "lastOperation",
         "podStatus"
       ],
       "properties": {
-        "TypeMeta": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/TypeMeta"
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
         },
         "lastOperation": {
           "type": "string"
@@ -162,18 +163,6 @@
     },
     "Time": {
       "properties": {},
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "TypeMeta": {
-      "properties": {
-        "kind": {
-          "type": "string"
-        },
-        "apiVersion": {
-          "type": "string"
-        }
-      },
       "additionalProperties": false,
       "type": "object"
     }

@@ -85,7 +85,7 @@ func (o *options) run(ctx context.Context) error {
 				OCI: o.config.Registries.Blueprints.OCI,
 			}
 			containerv1alpha1.SetDefaults_Configuration(config)
-			if err := containerctlr.AddActuatorToManager(mgr, config); err != nil {
+			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
 		} else if deployerName == "helm" {

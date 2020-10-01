@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 
 deployer:
+#  namespace: ""
   initContainer:
     repository: eu.gcr.io/gardener-project/landscaper/container-deployer-init
   waitContainer:

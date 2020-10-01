@@ -4,19 +4,24 @@
   "definitions": {
     "Configuration": {
       "required": [
-        "TypeMeta",
+        "namespace",
         "defaultImage",
         "initContainer",
         "waitContainer"
       ],
       "properties": {
-        "TypeMeta": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/TypeMeta"
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
         },
         "oci": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
+        },
+        "namespace": {
+          "type": "string"
         },
         "targetSelector": {
           "items": {
@@ -55,6 +60,9 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "imagePullPolicy": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -121,18 +129,6 @@
             "$ref": "#/definitions/Requirement"
           },
           "type": "array"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "TypeMeta": {
-      "properties": {
-        "kind": {
-          "type": "string"
-        },
-        "apiVersion": {
-          "type": "string"
         }
       },
       "additionalProperties": false,

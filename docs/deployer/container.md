@@ -18,6 +18,9 @@ spec:
     kind: ProviderConfiguration
 
     blueprintRef: <abc....>
+    
+    importValues: 
+      {{ toJson . | indent 2 }}
 
     image: <image ref>
     command: ["my command"]

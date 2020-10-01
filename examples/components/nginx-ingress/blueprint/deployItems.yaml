@@ -1,6 +1,16 @@
 - name: deploy
-  type: helm
+  type: Helm
   config:
+    apiVersion: helm.deployer.landscaper...
+    kind: ProviderConfiguration
+
+    aws-secrets:
+      kubeconfig:  {{ .imports.aws-credentials }}
+      name: {{ .imports.aws-credetnails-name }}
+      namespace: {{ .imports.aws.ns }}
+
+
+
     chartRef: {{ .cd.externalResources.controller-chart.access.ref }}
     kubeconfig: {{ .imports.cluster.kubeconfig }}
     values:

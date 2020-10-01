@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/landscaper/pkg/version"
@@ -28,6 +29,9 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 
 // SetDefaults_Configuration sets the defaults for the container deployer configuration.
 func SetDefaults_Configuration(obj *Configuration) {
+	if len(obj.Namespace) == 0 {
+		obj.Namespace = metav1.NamespaceDefault
+	}
 	if len(obj.DefaultImage.Image) == 0 {
 		obj.DefaultImage.Image = "ubuntu:18:04"
 	}

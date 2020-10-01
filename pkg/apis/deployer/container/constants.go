@@ -56,8 +56,11 @@ var SharedBasePath = filepath.Join(BasePath, "shared")
 // ImportsPathName is the name of the env var that points to the imports file.
 const ImportsPathName = "IMPORTS_PATH"
 
+// ImportsFilename is the name of the file that contains the import values as json.
+const ImportsFilename = "import.json"
+
 // ImportsPath is the path to the imports file.
-var ImportsPath = filepath.Join(SharedBasePath, "imports", "imports.json")
+var ImportsPath = filepath.Join(SharedBasePath, "imports", ImportsFilename)
 
 // ExportsPathName is the name of the env var that points to the exports file.
 const ExportsPathName = "EXPORTS_PATH"
@@ -82,6 +85,15 @@ const StatePathName = "STATE_PATH"
 
 // StatePath is the path to the state directory.
 var StatePath = filepath.Join(SharedBasePath, "state")
+
+// ConfigurationPathName is the name of the env var that points to the provider configuration file.
+const ConfigurationPathName = "CONFIGURATION_PATH"
+
+// ConfigurationFilename is the name of the file that contains the provider configuration as json.
+const ConfigurationFilename = "configuration.json"
+
+// ConfigurationPath is the path to the configuration file.
+var ConfigurationPath = filepath.Join(BasePath, "internal", ConfigurationFilename)
 
 // PodName is the name of the env var that contains the name of the pod.
 const PodName = "POD_NAME"

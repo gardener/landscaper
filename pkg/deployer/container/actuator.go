@@ -17,6 +17,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
@@ -50,10 +50,11 @@ func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reco
 }
 
 type actuator struct {
-	log    logr.Logger
-	c      client.Client
-	scheme *runtime.Scheme
-	config *containerv1alpha1.Configuration
+	log        logr.Logger
+	lsClient   client.Client
+	hostClient client.Client
+	scheme     *runtime.Scheme
+	config     *containerv1alpha1.Configuration
 
 	registry blueprintsregistry.Registry
 }
@@ -64,7 +65,13 @@ var _ inject.Scheme = &actuator{}
 
 // InjectClients injects the current kubernetes registry into the actuator
 func (a *actuator) InjectClient(c client.Client) error {
-	a.c = c
+	a.lsClient = c
+	return nil
+}
+
+// InjectHostClient injects the current host kubernetes registry into the actuator
+func (a *actuator) InjectHostClient(c client.Client) error {
+	a.hostClient = c
 	return nil
 }
 
@@ -80,7 +87,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	deployItem := &lsv1alpha1.DeployItem{}
-	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
+	if err := a.lsClient.Get(ctx, req.NamespacedName, deployItem); err != nil {
 		if apierrors.IsNotFound(err) {
 			a.log.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -92,14 +99,9 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if err := a.reconcile(ctx, deployItem); err != nil {
-		a.log.Error(err, "unable to reconcile deploy item")
-		return reconcile.Result{}, err
-	}
-
 	if deployItem.Spec.Target != nil {
 		target := &lsv1alpha1.Target{}
-		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+		if err := a.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
 		}
 		if len(a.config.TargetSelector) != 0 {
@@ -115,34 +117,37 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		}
 	}
 
+	if err := a.reconcile(ctx, deployItem); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
 }
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
-	containerOp, err := New(a.log, a.c, a.registry, a.config, deployItem)
+	old := deployItem.DeepCopy()
+	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.registry, a.config, deployItem)
 	if err != nil {
 		return err
 	}
 
-	if !deployItem.DeletionTimestamp.IsZero() {
-		return containerOp.Delete(ctx)
-	} else if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, deployItem); err != nil {
+		if err := a.lsClient.Update(ctx, deployItem); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		// remove reconcile annotation and set status to init
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-		if err := a.c.Status().Update(ctx, deployItem); err != nil {
-			return err
-		}
-		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
-		return a.c.Update(ctx, deployItem)
+	if !deployItem.DeletionTimestamp.IsZero() {
+		return containerOp.Delete(ctx)
 	}
 
-	return containerOp.Reconcile(ctx, container.OperationReconcile)
+	err = containerOp.Reconcile(ctx, container.OperationReconcile)
+	if !reflect.DeepEqual(old.Status, deployItem.Status) {
+		if err := a.lsClient.Status().Update(ctx, deployItem); err != nil {
+			a.log.Error(err, "unable to update status")
+		}
+	}
+	return err
 }

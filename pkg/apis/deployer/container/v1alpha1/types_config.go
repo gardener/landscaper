@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
@@ -30,6 +31,11 @@ type Configuration struct {
 	// OCI configures the oci client of the controller
 	// +optional
 	OCI *config.OCIConfiguration `json:"oci,omitempty"`
+
+	// Namespace defines the namespace where the pods should be executed.
+	// Defaults to default
+	// +optional
+	Namespace string `json:"namespace"`
 
 	// TargetSelector describes all selectors the deployer should depend on.
 	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
@@ -74,4 +80,11 @@ type ContainerSpec struct {
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
 	Args []string `json:"args,omitempty"`
+	// Image pull policy.
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }

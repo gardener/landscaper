@@ -81,13 +81,13 @@ func Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
 }
 
 func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
-	deployItem := &lsv1alpha1.DeployItem{}
-	if err := kubeClient.Get(ctx, opts.DeployItemKey.NamespacedName(), deployItem); err != nil {
-		return err
+	providerConfigBytes, err := vfs.ReadFile(fs, opts.ConfigurationFilePath)
+	if err != nil {
+		return fmt.Errorf("unable to read provider configuration: %w", err)
 	}
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(container.Scheme).UniversalDecoder()
-	if _, _, err := decoder.Decode(deployItem.Spec.Configuration.Raw, nil, providerConfig); err != nil {
+	if _, _, err := decoder.Decode(providerConfigBytes, nil, providerConfig); err != nil {
 		return err
 	}
 

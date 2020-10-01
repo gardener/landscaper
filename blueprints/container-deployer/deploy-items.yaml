@@ -1,0 +1,14 @@
+- name: deploy
+  type: Helm
+  target:
+    name: {{ .imports.cluster.metadata.name }}
+    namespace: {{ .imports.cluster.metadata.namespace }}
+  config:
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+
+    chart:
+      ref: {{ .cd.component.localResources.container-deployer-chart.access.imageReference }}
+
+    name: container-deployer
+    namespace: ls-system

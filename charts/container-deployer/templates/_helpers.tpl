@@ -66,6 +66,8 @@ Create the name of the service account to use
 apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
 
+namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
+
 initContainer:
   image: "{{ .Values.deployer.initContainer.repository }}:{{ .Values.deployer.initContainer.tag | default .Chart.AppVersion }}"
 waitContainer:

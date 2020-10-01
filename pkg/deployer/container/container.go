@@ -43,7 +43,8 @@ func init() {
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
 	log           logr.Logger
-	kubeClient    client.Client
+	lsClient      client.Client
+	hostClient    client.Client
 	registry      blueprintsregistry.Registry
 	Configuration *containerv1alpha1.Configuration
 
@@ -56,7 +57,7 @@ type Container struct {
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, client blueprintsregistry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
+func New(log logr.Logger, lsClient, hostClient client.Client, registry blueprintsregistry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
@@ -76,8 +77,9 @@ func New(log logr.Logger, kubeClient client.Client, client blueprintsregistry.Re
 
 	return &Container{
 		log:                   log,
-		kubeClient:            kubeClient,
-		registry:              client,
+		lsClient:              lsClient,
+		hostClient:            hostClient,
+		registry:              registry,
 		Configuration:         config,
 		DeployItem:            item,
 		ProviderStatus:        status,
