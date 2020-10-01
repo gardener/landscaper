@@ -33,6 +33,8 @@ landscaper:
       verify:
         image: 'golang:1.15.2'
       publish-helm-charts:
+        depends:
+        - verify
 
   jobs:
     head-update:

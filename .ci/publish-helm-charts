@@ -7,4 +7,4 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller charts/landscaper
-$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller charts/container
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller charts/container-deployer

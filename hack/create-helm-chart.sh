@@ -36,6 +36,7 @@ if ! which openssl 1>/dev/null; then
   apk add openssl
 fi
 
+echo -n "Installing helm... "
 export DESIRED_VERSION=v3.2.1
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
