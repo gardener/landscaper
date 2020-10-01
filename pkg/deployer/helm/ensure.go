@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
@@ -43,8 +44,11 @@ import (
 )
 
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
+	currOp := "ApplyFile"
 	_, targetClient, err := h.TargetClient()
 	if err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "TargetClusterClient", err.Error())
 		return err
 	}
 
@@ -52,12 +56,16 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	for name, content := range files {
 		decodedObjects, err := h.decodeObjects(name, []byte(content))
 		if err != nil {
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "DecodeHelmTemplatedObjects", err.Error())
 			return err
 		}
 		// add possible export
 		for _, obj := range decodedObjects {
 			exports, err = h.addExport(exports, obj)
 			if err != nil {
+				h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+					currOp, "ReadExportValues", err.Error())
 				return err
 			}
 			h.injectLabels(obj)
@@ -67,6 +75,8 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	}
 
 	if err := h.cleanupOrphanedResources(ctx, targetClient, objects); err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "CleanupOrphanedResources", err.Error())
 		return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
 	}
 
@@ -81,8 +91,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		_, err = kubernetesutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
 			return nil
 		})
-
 		if err != nil {
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "CreateObject", err.Error())
 			return err
 		}
 
@@ -98,10 +109,14 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 
 	statusData, err := encodeStatus(status)
 	if err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "ProviderStatus", err.Error())
 		return err
 	}
 
 	if err := h.createOrUpdateExport(ctx, exports); err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "CreateExport", err.Error())
 		return err
 	}
 

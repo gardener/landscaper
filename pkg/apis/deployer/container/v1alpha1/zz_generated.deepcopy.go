@@ -37,6 +37,13 @@ func (in *Configuration) DeepCopyInto(out *Configuration) {
 		*out = new(config.OCIConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TargetSelector != nil {
+		in, out := &in.TargetSelector, &out.TargetSelector
+		*out = make([]corev1alpha1.TargetSelector, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	in.DefaultImage.DeepCopyInto(&out.DefaultImage)
 	in.InitContainer.DeepCopyInto(&out.InitContainer)
 	in.WaitContainer.DeepCopyInto(&out.WaitContainer)

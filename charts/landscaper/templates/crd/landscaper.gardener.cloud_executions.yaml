@@ -60,6 +60,19 @@ spec:
                     name:
                       description: Name is the unique name of the execution.
                       type: string
+                    target:
+                      description: Target is the object reference to the target that the deploy item should deploy to.
+                      properties:
+                        name:
+                          description: Name is the name of the kubernetes object.
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of kubernetes object.
+                          type: string
+                      required:
+                      - name
+                      - namespace
+                      type: object
                     type:
                       description: DataType is the DeployItem type of the execution.
                       type: string

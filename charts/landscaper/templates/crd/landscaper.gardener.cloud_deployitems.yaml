@@ -125,6 +125,39 @@ spec:
                 - name
                 - namespace
                 type: object
+              lastError:
+                description: LastError describes the last error that occurred.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports a problem.
+                    items:
+                      description: ErrorCode is a string alias.
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error ocurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - lastTransitionTime
+                - lastUpdateTime
+                - message
+                - operation
+                - reason
+                type: object
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed for this DeployItem. It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
                 format: int64

@@ -115,6 +115,7 @@ func Convert_helm_Chart_To_v1alpha1_Chart(in *helm.Chart, out *Chart, s conversi
 
 func autoConvert_v1alpha1_Configuration_To_helm_Configuration(in *Configuration, out *helm.Configuration, s conversion.Scope) error {
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
+	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }
 
@@ -125,6 +126,7 @@ func Convert_v1alpha1_Configuration_To_helm_Configuration(in *Configuration, out
 
 func autoConvert_helm_Configuration_To_v1alpha1_Configuration(in *helm.Configuration, out *Configuration, s conversion.Scope) error {
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
+	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }
 

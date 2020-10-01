@@ -108,6 +108,7 @@ type ExecutionStatus struct {
 }
 
 // DeployItemTemplate defines a execution element that is translated into a deploy item.
+// +k8s:deepcopy-gen=true
 type DeployItemTemplate struct {
 	// Name is the unique name of the execution.
 	Name string `json:"name"`

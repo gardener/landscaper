@@ -17,6 +17,7 @@ package core
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -69,6 +70,9 @@ type DeployItemStatus struct {
 	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
 
+	// LastError describes the last error that occurred.
+	LastError *Error `json:"lastError,omitempty"`
+
 	// ProviderStatus contains the provider specific status
 	// +optional
 	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
@@ -76,4 +80,27 @@ type DeployItemStatus struct {
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
+}
+
+// TargetSelector describes a selector that matches specific targets.
+// +k8s:deepcopy-gen=true
+type TargetSelector struct {
+	// Annotations matches a target based on annotations.
+	// +optional
+	Annotations []Requirement `json:"annotations,omitempty"`
+}
+
+// Requirement contains values, a key, and an operator that relates the key and values.
+// The zero value of Requirement is invalid.
+// Requirement implements both set based match and exact match
+// Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.
+// +k8s:deepcopy-gen=true
+type Requirement struct {
+	Key      string             `json:"key"`
+	Operator selection.Operator `json:"operator"`
+	// In huge majority of cases we have at most one value here.
+	// It is generally faster to operate on a single-element slice
+	// than on a single-element map, so we have a slice here.
+	// +optional
+	Values []string `json:"Values,omitempty"`
 }

@@ -16,6 +16,7 @@ package helm
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +29,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
+	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -93,7 +95,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	var target *lsv1alpha1.Target
 	if deployItem.Spec.Target != nil {
 		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-			a.log.Error(err, "unable to get target for deploy item", "target", deployItem.Spec.Target.NamespacedName().String())
+			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
+		}
+		if len(a.config.TargetSelector) != 0 {
+			matched, err := targetselector.Match(target, a.config.TargetSelector)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("unable to match target selector: %w", err)
+			}
+			if !matched {
+				a.log.V(5).Info("the deploy item's target has not matched the given target selector",
+					"deployItem", deployItem.Name, "target", target.Name)
+				return reconcile.Result{}, nil
+			}
 		}
 	}
 

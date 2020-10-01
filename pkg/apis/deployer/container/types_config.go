@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -29,6 +30,9 @@ type Configuration struct {
 	// OCI configures the oci client of the controller
 	// +optional
 	OCI *config.OCIConfiguration `json:"oci,omitempty"`
+
+	// TargetSelector describes all selectors the deployer should depend on.
+	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
 
 	// DefaultImage configures the default images that is used if the DeployItem
 	// does not specify one.
