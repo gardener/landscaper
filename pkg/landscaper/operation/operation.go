@@ -27,6 +27,7 @@ import (
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -36,6 +37,8 @@ type Interface interface {
 	DirectReader() client.Reader
 	Scheme() *runtime.Scheme
 	RegistriesAccessor
+	// OCIClient returns a oci client to interact with various oci registries.
+	OCIClient() oci.Client
 	// InjectLogger is used to inject Loggers into components that need them
 	// and don't otherwise have opinions.
 	InjectLogger(l logr.Logger) error
@@ -47,10 +50,12 @@ type Interface interface {
 	// InjectScheme is used by the ControllerManager to inject Scheme into Sources, EventHandlers, Predicates, and
 	// Reconciles
 	InjectScheme(scheme *runtime.Scheme) error
-	// InjectRegistry is used to inject a blueprint registry.
+	// InjectRegistry is used to inject a blueprint blueprintsRegistry.
 	InjectBlueprintsRegistry(blueprintsregistry.Registry) error
 	// InjectComponentRepository is used to inject a component repository.
 	InjectComponentsRegistry(componentsregistry.Registry) error
+	// InjectUniversalOCIClient is used to inject a oci client.
+	InjectUniversalOCIClient(oci.Client) error
 	// CreateOrUpdate creates or updates the given object in the Kubernetes
 	// cluster.
 	// It uses the internal clients to perform the api calls.
@@ -59,29 +64,30 @@ type Interface interface {
 
 // RegistriesAccessor is a getter interface for available registries.
 type RegistriesAccessor interface {
-	// BlueprintsRegistry returns a blueprints registry instance.
+	// BlueprintsRegistry returns a blueprints blueprintsRegistry instance.
 	BlueprintsRegistry() blueprintsregistry.Registry
-	// ComponentsRegistry returns a components registry instance.
+	// ComponentsRegistry returns a components blueprintsRegistry instance.
 	ComponentsRegistry() componentsregistry.Registry
 }
 
 type Operation struct {
-	log                 logr.Logger
-	client              client.Client
-	directReader        client.Reader
-	scheme              *runtime.Scheme
-	registry            blueprintsregistry.Registry
-	componentRepository componentsregistry.Registry
+	log                logr.Logger
+	client             client.Client
+	directReader       client.Reader
+	scheme             *runtime.Scheme
+	blueprintsRegistry blueprintsregistry.Registry
+	componentRegistry  componentsregistry.Registry
+	universalOCIClient oci.Client
 }
 
 // NewOperation creates a new internal installation Operation object.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, registry blueprintsregistry.Registry, compRepo componentsregistry.Registry) Interface {
+func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, blueRegistry blueprintsregistry.Registry, compRegistry componentsregistry.Registry) Interface {
 	return &Operation{
-		log:                 log,
-		client:              c,
-		scheme:              scheme,
-		registry:            registry,
-		componentRepository: compRepo,
+		log:                log,
+		client:             c,
+		scheme:             scheme,
+		blueprintsRegistry: blueRegistry,
+		componentRegistry:  compRegistry,
 	}
 }
 
@@ -134,23 +140,34 @@ func (o *Operation) InjectScheme(scheme *runtime.Scheme) error {
 
 // Registry returns a Registry instance
 func (o *Operation) BlueprintsRegistry() blueprintsregistry.Registry {
-	return o.registry
+	return o.blueprintsRegistry
 }
 
 // InjectRegistry injects a Registry into the actuator
 func (o *Operation) InjectBlueprintsRegistry(r blueprintsregistry.Registry) error {
-	o.registry = r
+	o.blueprintsRegistry = r
 	return nil
 }
 
-// ComponentRepository returns a component registry instance
+// ComponentRepository returns a component blueprintsRegistry instance
 func (o *Operation) ComponentsRegistry() componentsregistry.Registry {
-	return o.componentRepository
+	return o.componentRegistry
 }
 
-// InjectComponentRepository injects a component registry into the operation
+// InjectComponentRepository injects a component blueprintsRegistry into the operation
 func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) error {
-	o.componentRepository = c
+	o.componentRegistry = c
+	return nil
+}
+
+// OCIClient returns the oci client for the current instance.
+func (o *Operation) OCIClient() oci.Client {
+	return o.universalOCIClient
+}
+
+// InjectUniversalOCIClient injects a oci client into the operation.
+func (o *Operation) InjectUniversalOCIClient(c oci.Client) error {
+	o.universalOCIClient = c
 	return nil
 }
 

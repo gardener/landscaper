@@ -109,8 +109,10 @@ func (o *Operation) InstallationContextName() string {
 func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 	return &jsonschema.Validator{
 		Config: &jsonschema.LoaderConfig{
-			LocalTypes:  o.Inst.Blueprint.Info.LocalTypes,
-			BlueprintFs: o.Inst.Blueprint.Fs,
+			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
+			BlueprintFs:         o.Inst.Blueprint.Fs,
+			OciClient:           o.OCIClient(),
+			ComponentDescriptor: o.ResolvedComponentDescriptor,
 		},
 	}
 }

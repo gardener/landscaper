@@ -15,19 +15,27 @@
 package jsonschema
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 	"path/filepath"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/xeipuuv/gojsonreference"
 	"github.com/xeipuuv/gojsonschema"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
+// JSONSchemaMediaType is the custom media type for a jsonschema in a oci registry
+const JSONSchemaMediaType = "application/json+jsonschema"
+
+// LoaderWrapper wraps a JSONLoader with a landscaper loader.
 type LoaderWrapper struct {
 	LoaderConfig
 	gojsonschema.JSONLoader
@@ -64,6 +72,10 @@ type LoaderConfig struct {
 	LocalTypes map[string]lsv1alpha1.JSONSchemaDefinition
 	// BlueprintFs is the virtual filesystem that is used to resolve "blueprint" refs
 	BlueprintFs vfs.FileSystem
+	// ComponentDescriptor contains the current blueprint's component descriptor.
+	ComponentDescriptor *cdutils.ResolvedComponentDescriptor
+	// OciClient is the oci client to resolve resources of the component descriptor
+	OciClient oci.Client
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
 	DefaultLoader gojsonschema.JSONLoader
 }
@@ -101,6 +113,8 @@ func (l *Loader) LoadJSON() (interface{}, error) {
 		schemaJSONBytes, err = l.loadLocalReference(refURL)
 	case "blueprint":
 		schemaJSONBytes, err = l.loadBlueprintReference(refURL)
+	case "cd":
+		schemaJSONBytes, err = l.loadComponentDescriptorReference(refURL)
 	default:
 		if l.DefaultLoader == nil {
 			return nil, fmt.Errorf("unsupported ref %s", refURL.String())
@@ -153,4 +167,35 @@ func (l *Loader) loadBlueprintReference(refURL *url.URL) ([]byte, error) {
 		return nil, fmt.Errorf("unable to read local schema from %s: %w", filePath, err)
 	}
 	return schemaBytes, nil
+}
+
+func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, error) {
+	if l.ComponentDescriptor == nil {
+		return nil, errors.New("no component descriptor defined to read from resolve the ref")
+	}
+	uri, err := cdutils.ParseURI(refURL.String())
+	if err != nil {
+		return nil, err
+	}
+	kind, res, err := uri.Get(*l.ComponentDescriptor)
+	if err != nil {
+		return nil, err
+	}
+	if kind == lsv1alpha1.ComponentResourceKind {
+		return nil, fmt.Errorf("expected a resource but reference resolves to a component")
+	}
+	resource := res.(cdv2.Resource)
+	if resource.GetType() != cdv2.OCIRegistryType {
+		return nil, fmt.Errorf("only jsonschemas of type %s can be resolved, but got %s", cdv2.OCIRegistryType, resource.GetType())
+	}
+	ociRegistryAccess := resource.Access.(*cdv2.OCIRegistryAccess)
+
+	ctx := context.Background()
+	defer ctx.Done()
+	JSONSchemaBytes, err := FetchFromOCIRegistry(ctx, l.OciClient, ociRegistryAccess.ImageReference)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", refURL.String(), err)
+	}
+
+	return JSONSchemaBytes, nil
 }
