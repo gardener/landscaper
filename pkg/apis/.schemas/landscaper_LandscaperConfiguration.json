@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/LandscaperConfiguration",
+  "definitions": {
+    "LandscaperConfiguration": {
+      "required": [
+        "registries"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "registries": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RegistriesConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "LocalRegistryConfiguration": {
+      "required": [
+        "configPaths"
+      ],
+      "properties": {
+        "configPaths": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "OCICacheConfiguration": {
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "useInMemoryOverlay": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "OCIConfiguration": {
+      "properties": {
+        "configFiles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "cache": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCICacheConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RegistriesConfiguration": {
+      "required": [
+        "blueprints",
+        "components"
+      ],
+      "properties": {
+        "blueprints": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RegistryConfiguration"
+        },
+        "components": {
+          "$ref": "#/definitions/RegistryConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RegistryConfiguration": {
+      "properties": {
+        "local": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/LocalRegistryConfiguration"
+        },
+        "oci": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCIConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/ProviderStatus",
+  "definitions": {
+    "ContainerState": {
+      "properties": {
+        "waiting": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ContainerStateWaiting"
+        },
+        "running": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ContainerStateRunning"
+        },
+        "terminated": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ContainerStateTerminated"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ContainerStateRunning": {
+      "properties": {
+        "startedAt": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Time"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ContainerStateTerminated": {
+      "required": [
+        "exitCode"
+      ],
+      "properties": {
+        "exitCode": {
+          "type": "integer"
+        },
+        "signal": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "startedAt": {
+          "$ref": "#/definitions/Time"
+        },
+        "finishedAt": {
+          "$ref": "#/definitions/Time"
+        },
+        "containerID": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ContainerStateWaiting": {
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectReference": {
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "PodStatus": {
+      "required": [
+        "podName",
+        "image",
+        "imageID"
+      ],
+      "properties": {
+        "podName": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "state": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ContainerState"
+        },
+        "image": {
+          "type": "string"
+        },
+        "imageID": {
+          "type": "string"
+        },
+        "exitCode": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ProviderStatus": {
+      "required": [
+        "lastOperation",
+        "podStatus"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "lastOperation": {
+          "type": "string"
+        },
+        "podStatus": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/PodStatus"
+        },
+        "state": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/StateStatus"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "StateStatus": {
+      "properties": {
+        "data": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ObjectReference"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Time": {
+      "properties": {},
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

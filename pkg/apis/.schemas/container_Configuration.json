@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/Configuration",
+  "definitions": {
+    "Configuration": {
+      "required": [
+        "TypeMeta",
+        "defaultImage",
+        "initContainer",
+        "waitContainer"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "oci": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCIConfiguration"
+        },
+        "targetSelector": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/TargetSelector"
+          },
+          "type": "array"
+        },
+        "defaultImage": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ContainerSpec"
+        },
+        "initContainer": {
+          "$ref": "#/definitions/ContainerSpec"
+        },
+        "waitContainer": {
+          "$ref": "#/definitions/ContainerSpec"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ContainerSpec": {
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "command": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "OCICacheConfiguration": {
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "useInMemoryOverlay": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "OCIConfiguration": {
+      "properties": {
+        "configFiles": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "cache": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCICacheConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Requirement": {
+      "required": [
+        "key",
+        "operator"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "Values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TargetSelector": {
+      "properties": {
+        "annotations": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Requirement"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

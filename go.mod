@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Masterminds/sprig/v3 v3.1.0
+	github.com/alecthomas/jsonschema v0.0.0-20200530073317-71f438968921
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1

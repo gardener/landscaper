@@ -22,7 +22,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
 // Blueprint is the internal resolved type of a blueprint.
@@ -57,7 +56,7 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 		if len(subInstTmpl.File) == 0 {
 			return fmt.Errorf("neither a inline installtion template nor a file is defined in index %d", i)
 		}
-		data, err := ioutil.ReadFile(blueprint.Fs, subInstTmpl.File)
+		data, err := vfs.ReadFile(blueprint.Fs, subInstTmpl.File)
 		if err != nil {
 			return err
 		}

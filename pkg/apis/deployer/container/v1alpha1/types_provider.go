@@ -27,7 +27,7 @@ import (
 
 // ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
 type ProviderConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 
 	// Docker image name.
 	// More info: https://kubernetes.io/docs/concepts/containers/images
@@ -72,7 +72,7 @@ type ProviderConfiguration struct {
 
 // ProviderStatus is the helm provider specific status
 type ProviderStatus struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 	// LastOperation defines the last run operation of the pod.
 	// The operation can be either reconcile or deletion.
 	LastOperation string `json:"lastOperation"`

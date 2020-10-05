@@ -20,7 +20,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 	// Registries configures the landscaper registries.
 	Registries RegistriesConfiguration `json:"registries"`
 }

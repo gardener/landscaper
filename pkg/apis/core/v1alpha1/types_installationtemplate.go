@@ -26,7 +26,7 @@ import (
 // InstallationTemplate defines a subinstallation in a blueprint.
 // +kubebuilder:skip
 type InstallationTemplate struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 
 	// Name is the unique name of the step
 	Name string `json:"name"`

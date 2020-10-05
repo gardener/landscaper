@@ -1,0 +1,351 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/Blueprint",
+  "definitions": {
+    "Blueprint": {
+      "required": [
+        "name",
+        "version",
+        "jsonSchemaVersion"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "jsonSchemaVersion": {
+          "type": "string"
+        },
+        "localTypes": {
+          "patternProperties": {
+            ".*": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "imports": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ImportDefinition"
+          },
+          "type": "array"
+        },
+        "exports": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ExportDefinition"
+          },
+          "type": "array"
+        },
+        "subinstallations": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/SubinstallationTemplate"
+          },
+          "type": "array"
+        },
+        "deployExecutions": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/TemplateExecutor"
+          },
+          "type": "array"
+        },
+        "exportExecutions": {
+          "items": {
+            "$ref": "#/definitions/TemplateExecutor"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "DataExport": {
+      "required": [
+        "name",
+        "dataRef"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dataRef": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "DataImport": {
+      "required": [
+        "name",
+        "dataRef"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dataRef": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Default": {
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ExportDefinition": {
+      "required": [
+        "FieldValueDefinition"
+      ],
+      "properties": {
+        "FieldValueDefinition": {
+          "$ref": "#/definitions/FieldValueDefinition"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "FieldValueDefinition": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "schema": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "targetType": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ImportDefinition": {
+      "required": [
+        "FieldValueDefinition",
+        "required"
+      ],
+      "properties": {
+        "FieldValueDefinition": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/FieldValueDefinition"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Default"
+        },
+        "imports": {
+          "items": {
+            "$ref": "#/definitions/ImportDefinition"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "InstallationExports": {
+      "properties": {
+        "data": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/DataExport"
+          },
+          "type": "array"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/definitions/TargetImportExport"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "InstallationImports": {
+      "properties": {
+        "data": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/DataImport"
+          },
+          "type": "array"
+        },
+        "targets": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/TargetImportExport"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "InstallationTemplate": {
+      "required": [
+        "name",
+        "blueprint"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "blueprint": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/InstallationTemplateBlueprintDefinition"
+        },
+        "imports": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/InstallationImports"
+        },
+        "importDataMappings": {
+          "patternProperties": {
+            ".*": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "exports": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/InstallationExports"
+        },
+        "exportDataMappings": {
+          "patternProperties": {
+            ".*": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "InstallationTemplateBlueprintDefinition": {
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "filesystem": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "SubinstallationTemplate": {
+      "required": [
+        "InstallationTemplate"
+      ],
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "InstallationTemplate": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/InstallationTemplate"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TargetImportExport": {
+      "required": [
+        "name",
+        "target"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TemplateExecutor": {
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "template": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

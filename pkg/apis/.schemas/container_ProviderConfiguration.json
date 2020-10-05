@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/ProviderConfiguration",
+  "definitions": {
+    "BlueprintDefinition": {
+      "properties": {
+        "ref": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RemoteBlueprintReference"
+        },
+        "inline": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/InlineBlueprint"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentDescriptorReference": {
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "repositoryContext": {
+          "$ref": "#/definitions/RepositoryContext"
+        },
+        "componentName": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "InlineBlueprint": {
+      "required": [
+        "filesystem"
+      ],
+      "properties": {
+        "cdRef": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ComponentDescriptorReference"
+        },
+        "filesystem": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectReference": {
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ProviderConfiguration": {
+      "required": [
+        "TypeMeta"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "image": {
+          "type": "string"
+        },
+        "command": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "importValues": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "blueprintRef": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/BlueprintDefinition"
+        },
+        "registryPullSecrets": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ObjectReference"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RemoteBlueprintReference": {
+      "required": [
+        "VersionedResourceReference"
+      ],
+      "properties": {
+        "VersionedResourceReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/VersionedResourceReference"
+        },
+        "repositoryContext": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RepositoryContext"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RepositoryContext": {
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ResourceReference": {
+      "required": [
+        "componentName",
+        "kind",
+        "resourceName"
+      ],
+      "properties": {
+        "componentName": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "resourceName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "VersionedResourceReference": {
+      "required": [
+        "ResourceReference",
+        "version"
+      ],
+      "properties": {
+        "ResourceReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ResourceReference"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

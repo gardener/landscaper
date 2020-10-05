@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/ProviderConfiguration",
+  "definitions": {
+    "Chart": {
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "tar": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ExportFromManifestItem": {
+      "required": [
+        "key",
+        "jsonPath"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "jsonPath": {
+          "type": "string"
+        },
+        "fromResource": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypedObjectReference"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectReference": {
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ProviderConfiguration": {
+      "required": [
+        "TypeMeta",
+        "kubeconfig",
+        "chart",
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "kubeconfig": {
+          "type": "string"
+        },
+        "chart": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Chart"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "exportsFromManifests": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ExportFromManifestItem"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypedObjectReference": {
+      "required": [
+        "apiVersion",
+        "kind",
+        "ObjectReference"
+      ],
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "ObjectReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ObjectReference"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

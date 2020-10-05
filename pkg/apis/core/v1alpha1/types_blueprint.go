@@ -29,7 +29,7 @@ const BlueprintResourceType = "blueprint"
 // Blueprint contains the configuration of a component
 // +kubebuilder:skip
 type Blueprint struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 
 	// Name is the name of the definition.
 	Name string `json:"name"`

@@ -22,6 +22,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -31,7 +32,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	vfsutil "github.com/gardener/landscaper/pkg/utils/ioutil"
 )
 
 func TestConfig(t *testing.T) {
@@ -110,7 +110,7 @@ func runTestSuite(testdataDir string) {
 			op := New(&installations.Operation{})
 
 			memFs := memoryfs.New()
-			err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
@@ -235,7 +235,7 @@ func runTestSuite(testdataDir string) {
 			op := New(&installations.Operation{})
 
 			memFs := memoryfs.New()
-			err = vfsutil.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
+			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{

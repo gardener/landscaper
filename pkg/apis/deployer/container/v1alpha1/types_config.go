@@ -25,7 +25,7 @@ import (
 
 // ProviderConfiguration is the container deployer configuration that configures the controller
 type Configuration struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 
 	// OCI configures the oci client of the controller
 	// +optional
