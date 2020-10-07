@@ -17,19 +17,22 @@ package init
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	logtesting "github.com/go-logr/logr/testing"
+	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
-	"github.com/gardener/landscaper/test/utils/envtest"
+	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 func TestConfig(t *testing.T) {
@@ -40,31 +43,37 @@ func TestConfig(t *testing.T) {
 var _ = Describe("Constructor", func() {
 
 	var (
-		fakeClient client.Client
+		ctrl       *gomock.Controller
+		fakeClient *mock_client.MockClient
 	)
 
 	BeforeEach(func() {
-		var (
-			err error
-		)
-		fakeClient, _, err = envtest.NewFakeClientFromPath("./testdata")
-		Expect(err).ToNot(HaveOccurred())
-
+		ctrl = gomock.NewController(GinkgoT())
+		fakeClient = mock_client.NewMockClient(ctrl)
 		// set default env vars
+		Expect(os.Setenv(container.ConfigurationPathName, container.ConfigurationPath)).To(Succeed())
 		Expect(os.Setenv(container.ImportsPathName, container.ImportsPath)).To(Succeed())
 		Expect(os.Setenv(container.ExportsPathName, container.ExportsPath)).To(Succeed())
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 	})
 
-	It("should fetch import values from DeployItem and write them to 'import.json'", func() {
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	It("should fetch import values from DeployItem's configuration and write them to 'import.json'", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		Expect(os.Setenv(container.DeployItemName, "di-01")).To(Succeed())
-		Expect(os.Setenv(container.DeployItemNamespaceName, "default")).To(Succeed())
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 		opts := &options{}
 		opts.Complete(ctx)
 		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/00-di-simple.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
 		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
 
 		dataBytes, err := vfs.ReadFile(memFs, container.ImportsPath)

@@ -1,13 +1,5 @@
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: DeployItem
-metadata:
-  name: di-01
-  namespace: default
-spec:
-  type: Container
-  config:
-    apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
-    kind: ProviderConfiguration
+apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+kind: ProviderConfiguration
 
-    importValues:
-      key: val1
+importValues:
+  key: val1

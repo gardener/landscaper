@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
@@ -88,10 +89,6 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, nil
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation {
-		return reconcile.Result{}, nil
-	}
-
 	var target *lsv1alpha1.Target
 	if deployItem.Spec.Target != nil {
 		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
@@ -110,9 +107,22 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		}
 	}
 
+	if deployItem.Status.ObservedGeneration == deployItem.Generation || !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		return reconcile.Result{}, nil
+	}
+
 	if err := a.reconcile(ctx, deployItem, target); err != nil {
 		a.log.Error(err, "unable to reconcile deploy item")
 		return reconcile.Result{}, err
+	}
+
+	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, deployItem); err != nil {
+			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
+				"Reconcile", "RemoveReconcileAnnotation", err.Error())
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{}, nil
@@ -124,14 +134,16 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return err
 	}
 
-	if !deployItem.DeletionTimestamp.IsZero() {
-		return helm.DeleteFiles(ctx)
-	} else if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
+	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
 			return err
 		}
 		return nil
+	}
+
+	if !deployItem.DeletionTimestamp.IsZero() {
+		return helm.DeleteFiles(ctx)
 	}
 
 	files, values, err := helm.Template(ctx)
