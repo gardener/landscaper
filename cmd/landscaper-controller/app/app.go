@@ -26,8 +26,10 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	manifestv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
+	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
@@ -93,6 +95,11 @@ func (o *options) run(ctx context.Context) error {
 				OCI: o.config.Registries.Blueprints.OCI,
 			}
 			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
+				return fmt.Errorf("unable to add helm deployer: %w", err)
+			}
+		} else if deployerName == "manifest" {
+			config := &manifestv1alpha1.Configuration{}
+			if err := manifestctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "mock" {

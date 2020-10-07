@@ -13,6 +13,10 @@ metadata:
 spec:
   type: Container
 
+  target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
+    name: my-cluster
+    namespace: test
+
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud
     kind: ProviderConfiguration
