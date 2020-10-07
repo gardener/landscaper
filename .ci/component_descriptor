@@ -7,3 +7,5 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 
 ls -la "${COMPONENT_DESCRIPTOR_PATH}"
+
+cp "${BASE_DEFINITION_PATH}" "${COMPONENT_DESCRIPTOR_PATH}"
