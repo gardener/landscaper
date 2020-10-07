@@ -74,12 +74,6 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		objects = append(objects, decodedObjects...)
 	}
 
-	if err := h.cleanupOrphanedResources(ctx, targetClient, objects); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-			currOp, "CleanupOrphanedResources", err.Error())
-		return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-	}
-
 	status := &helmv1alpha1.ProviderStatus{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
@@ -105,6 +99,12 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 				Namespace: obj.GetNamespace(),
 			},
 		}
+	}
+
+	if err := h.cleanupOrphanedResources(ctx, targetClient, objects); err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "CleanupOrphanedResources", err.Error())
+		return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
 	}
 
 	statusData, err := encodeStatus(status)
@@ -244,6 +244,12 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 
 func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
 	for _, found := range objects {
+		if len(obj.GetUID()) != 0 && len(found.GetUID()) != 0 {
+			if obj.GetUID() == found.GetUID() {
+				return true
+			}
+			continue
+		}
 		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
 		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
 			continue
