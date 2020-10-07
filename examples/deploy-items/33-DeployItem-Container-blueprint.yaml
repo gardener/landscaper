@@ -12,7 +12,7 @@ spec:
     blueprint:
       ref:
         repositoryContext:
-          baseUrl: eu.gcr.io/sap-se-gcp-scp-k8s-dev/gci-test
+          baseUrl: eu.gcr.io/myproject/gci-test
           type: ociRegistry
         componentName: simple
         version: 0.1.0

@@ -48,7 +48,7 @@ component:
   - type: github
     name: github.com/gardener/gardener
     version: 1.0.0
-    repository: github.wdf.sap.corp/gardener/gardener
+    repository: github.com/gardener/gardener
 
 - type: ComponentDefinition
   name: topology

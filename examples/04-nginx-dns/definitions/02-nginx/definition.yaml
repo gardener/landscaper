@@ -33,7 +33,7 @@ executors: |
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration
 
-      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/nginx-ingress
+      repository: eu.gcr.io/myproject/charts/nginx-ingress
       version: 0.5.2
 
       name: ingress

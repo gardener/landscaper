@@ -1,0 +1,40 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+deployExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    - name: deploy
+      type: Helm
+      target:
+        name: {{ .imports.cluster.metadata.name }}
+        namespace: {{ .imports.cluster.metadata.namespace }}
+      config:
+        apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+
+        chart:
+          ref: {{ index .cd.component.externalResources "ingress-nginx-chart" "access" "imageReference" }}
+
+        name: test
+        namespace: default
+
+        exportsFromManifests:
+        - key: ingressClass
+          jsonPath: .Values.controller.ingressClass
+
+exportExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    ingressClass: {{ .exports.deployitems.deploy.ingressClass }}
+
+exports:
+- name: ingressClass
+  schema:
+    type: string
