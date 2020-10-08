@@ -70,7 +70,9 @@ func (o *options) Complete() error {
 		return err
 	}
 
-	o.enabledDeployers = strings.Split(o.deployers, ",")
+	if len(o.deployers) != 0 {
+		o.enabledDeployers = strings.Split(o.deployers, ",")
+	}
 
 	return nil
 }
