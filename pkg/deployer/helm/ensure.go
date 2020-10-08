@@ -76,10 +76,20 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 
 	managedResources := make([]lsv1alpha1.TypedObjectReference, len(objects))
 	for i, obj := range objects {
-		_, err = kubernetesutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
+		// need to default the namespace if it is not given, as some helmcharts
+		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
+		// todo: check for clusterwide resources
+		if len(obj.GetNamespace()) == 0 {
+			obj.SetNamespace(h.Configuration.Namespace)
+		}
+		_, err = controllerutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
+			if len(obj.GetNamespace()) == 0 {
+				obj.SetNamespace(h.Configuration.Namespace)
+			}
 			return nil
 		})
 		if err != nil {
+			err = fmt.Errorf("unable to create object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
 			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
 				currOp, "CreateObject", err.Error())
 			return err
@@ -240,7 +250,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return err
+			return fmt.Errorf("unable to get object %s %s: %w", uObj.GroupVersionKind().String(), uObj.GetName(), err)
 		}
 
 		if !containsUnstructuredObject(&uObj, currentObjects) {

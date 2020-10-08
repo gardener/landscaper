@@ -58,7 +58,7 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		err := eOp.Delete(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -69,7 +69,7 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test1/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		err := eOp.Delete(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -80,7 +80,7 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		err := eOp.Delete(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -113,7 +113,7 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemB := fakeDeployItems["test3/di-b"]
 		delTime := metav1.Now()
@@ -137,7 +137,7 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemB := fakeDeployItems["test3/di-b"]
 		delTime := metav1.Now()

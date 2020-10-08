@@ -56,7 +56,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test1/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		err := eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -75,7 +75,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		err := eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -94,7 +94,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemA := fakeDeployItems["test2/di-a"]
 		deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
@@ -117,7 +117,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemA := fakeDeployItems["test2/di-a"]
 		deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
@@ -132,7 +132,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
-		eOp := execution.NewOperation(op, exec)
+		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemA := fakeDeployItems["test2/di-a"]
 		deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseFailed

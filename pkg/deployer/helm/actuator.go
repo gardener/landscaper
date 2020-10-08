@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -137,14 +138,29 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	// set failed state if the last error lasts for more than 5 minutes
+	defer func() {
+		if deployItem.Status.LastError == nil {
+			return
+		}
+		d := deployItem.Status.LastError.LastUpdateTime.Sub(deployItem.Status.LastError.LastTransitionTime.Time)
+		if d.Minutes() > (5 * time.Minute).Minutes() {
+			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		}
+	}()
+
 	helm, err := New(a.log, a.c, a.registryClient, deployItem, target)
 	if err != nil {
+		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
+			"InitHelmOperation", "", err.Error())
 		return err
 	}
 
 	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
+			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
+				"AddFinalizer", "", err.Error())
 			return err
 		}
 		return nil
@@ -163,6 +179,8 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 
 	exports, err := helm.constructExportsFromValues(values)
 	if err != nil {
+		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
+			"ConstructExportFromValues", "", err.Error())
 		return err
 	}
 	return helm.ApplyFiles(ctx, files, exports)
