@@ -57,6 +57,7 @@ type Helm struct {
 	DeployItem    *lsv1alpha1.DeployItem
 	Target        *lsv1alpha1.Target
 	Configuration *helmv1alpha1.ProviderConfiguration
+	Status        *helmv1alpha1.ProviderStatus
 }
 
 // New creates a new internal helm item
@@ -71,6 +72,14 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 		return nil, err
 	}
 
+	var status *helmv1alpha1.ProviderStatus
+	if item.Status.ProviderStatus != nil {
+		status = &helmv1alpha1.ProviderStatus{}
+		if _, _, err := helmdecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
+			return nil, err
+		}
+	}
+
 	return &Helm{
 		log:            log,
 		kubeClient:     kubeClient,
@@ -78,6 +87,7 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 		DeployItem:     item,
 		Target:         target,
 		Configuration:  config,
+		Status:         status,
 	}, nil
 }
 

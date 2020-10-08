@@ -17,6 +17,7 @@ package helm
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -91,6 +92,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	var target *lsv1alpha1.Target
 	if deployItem.Spec.Target != nil {
+		target = &lsv1alpha1.Target{}
 		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
 		}
@@ -107,12 +109,18 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		}
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation || !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	if deployItem.Status.ObservedGeneration == deployItem.Generation && !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		return reconcile.Result{}, nil
 	}
 
-	if err := a.reconcile(ctx, deployItem, target); err != nil {
-		a.log.Error(err, "unable to reconcile deploy item")
+	old := deployItem.DeepCopy()
+	err := a.reconcile(ctx, deployItem, target)
+	if !reflect.DeepEqual(old.Status, deployItem.Status) {
+		if err := a.c.Status().Update(ctx, deployItem); err != nil {
+			a.log.Error(err, "unable to update status")
+		}
+	}
+	if err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -148,6 +156,8 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 
 	files, values, err := helm.Template(ctx)
 	if err != nil {
+		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
+			"TemplateChart", "", err.Error())
 		return err
 	}
 

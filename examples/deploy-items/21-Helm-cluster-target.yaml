@@ -1,7 +1,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Target
 metadata:
-  name: subinst-123-my-cluster
+  name: my-cluster
   annotations:
     abc...
 spec:

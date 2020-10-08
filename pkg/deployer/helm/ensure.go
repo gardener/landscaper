@@ -74,13 +74,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		objects = append(objects, decodedObjects...)
 	}
 
-	status := &helmv1alpha1.ProviderStatus{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
-			Kind:       "ProviderStatus",
-		},
-		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
-	}
+	managedResources := make([]lsv1alpha1.TypedObjectReference, len(objects))
 	for i, obj := range objects {
 		_, err = kubernetesutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
 			return nil
@@ -91,7 +85,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			return err
 		}
 
-		status.ManagedResources[i] = lsv1alpha1.TypedObjectReference{
+		managedResources[i] = lsv1alpha1.TypedObjectReference{
 			APIVersion: obj.GetAPIVersion(),
 			Kind:       obj.GetKind(),
 			ObjectReference: lsv1alpha1.ObjectReference{
@@ -101,12 +95,21 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		}
 	}
 
-	if err := h.cleanupOrphanedResources(ctx, targetClient, objects); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-			currOp, "CleanupOrphanedResources", err.Error())
-		return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
+	if h.Status != nil {
+		if err := h.cleanupOrphanedResources(ctx, targetClient, h.Status.ManagedResources, objects); err != nil {
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "CleanupOrphanedResources", err.Error())
+			return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
+		}
 	}
 
+	status := &helmv1alpha1.ProviderStatus{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
+			Kind:       "ProviderStatus",
+		},
+		ManagedResources: managedResources,
+	}
 	statusData, err := encodeStatus(status)
 	if err != nil {
 		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
@@ -213,17 +216,34 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, currentObjects []*unstructured.Unstructured) error {
-	objectList := &unstructured.UnstructuredList{}
-	if err := kubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
-		return fmt.Errorf("unable to list all managed resources: %w", err)
-	}
+func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []lsv1alpha1.TypedObjectReference, currentObjects []*unstructured.Unstructured) error {
+	//objectList := &unstructured.UnstructuredList{}
+	//if err := kubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
+	//	return fmt.Errorf("unable to list all managed resources: %w", err)
+	//}
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
 	)
-	for _, obj := range objectList.Items {
-		if !containsUnstructuredObject(&obj, currentObjects) {
+	for _, ref := range oldObjects {
+		uObj := unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": ref.APIVersion,
+				"kind":       ref.Kind,
+				"metadata": map[string]interface{}{
+					"name":      ref.Name,
+					"namespace": ref.Namespace,
+				},
+			},
+		}
+		if err := h.kubeClient.Get(ctx, kubernetesutil.ObjectKey(ref.Name, ref.Namespace), &uObj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
+
+		if !containsUnstructuredObject(&uObj, currentObjects) {
 			wg.Add(1)
 			go func(obj unstructured.Unstructured) {
 				defer wg.Done()
@@ -231,7 +251,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 					allErrs = append(allErrs, fmt.Errorf("unable to delete %s %s/%s: %w", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace(), err))
 				}
 				// todo: wait for deletion
-			}(obj)
+			}(uObj)
 		}
 	}
 	wg.Wait()
