@@ -88,13 +88,33 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 	old := exec.DeepCopy()
 
-	// remove the reconcile annotation if it exists
 	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		a.log.Info("reconcile annotation found", "execution", req.String())
 		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := a.c.Update(ctx, exec); err != nil {
 			return reconcile.Result{Requeue: true}, err
 		}
 		err := a.Ensure(ctx, exec)
+		if !reflect.DeepEqual(exec.Status, old.Status) {
+			if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
+				if err != nil {
+					err2 = errors.Wrapf(err, "update error: %s", err.Error())
+				}
+				return reconcile.Result{}, err2
+			}
+		}
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		a.log.Info("force reconcile annotation found", "execution", req.String())
+		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := a.c.Update(ctx, exec); err != nil {
+			return reconcile.Result{Requeue: true}, err
+		}
+		err := a.ForceReconcile(ctx, exec)
 		if !reflect.DeepEqual(exec.Status, old.Status) {
 			if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
 				if err != nil {
@@ -125,12 +145,27 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec)
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec, false)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, exec)
 	}
+
+	if !exec.DeletionTimestamp.IsZero() {
+		return op.Delete(ctx)
+	}
+
+	if err := op.Reconcile(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ForceReconcile force reconciles the execution and its deploy items
+func (a *actuator) ForceReconcile(ctx context.Context, exec *lsv1alpha1.Execution) error {
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec, true)
 
 	if !exec.DeletionTimestamp.IsZero() {
 		return op.Delete(ctx)

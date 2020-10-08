@@ -43,7 +43,6 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to list managed deploy items: %w", err)
 	}
-	// todo: remove orphaned items and also remove them from the status
 	executionItems, orphaned := o.getExecutionItems(managedItems)
 	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
 		return err
@@ -51,7 +50,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	var phase lsv1alpha1.ExecutionPhase
 	for _, item := range executionItems {
-		if item.DeployItem != nil {
+		if item.DeployItem != nil && !o.forceReconcile {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
 			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) {
 				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
