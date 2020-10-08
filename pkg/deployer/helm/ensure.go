@@ -155,14 +155,14 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 	}
 
 	secret := &corev1.Secret{}
-	secret.GenerateName = "mock-export-"
+	secret.Name = fmt.Sprintf("%s-export", h.DeployItem.Name)
 	secret.Namespace = h.DeployItem.Namespace
 	if h.DeployItem.Status.ExportReference != nil {
 		secret.Name = h.DeployItem.Status.ExportReference.Name
 		secret.Namespace = h.DeployItem.Status.ExportReference.Namespace
 	}
 
-	_, err = kubernetesutil.CreateOrUpdate(ctx, h.kubeClient, secret, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, h.kubeClient, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
@@ -252,7 +252,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 				},
 			},
 		}
-		if err := h.kubeClient.Get(ctx, kubernetesutil.ObjectKey(ref.Name, ref.Namespace), &uObj); err != nil {
+		if err := kubeClient.Get(ctx, kubernetesutil.ObjectKey(ref.Name, ref.Namespace), &uObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
