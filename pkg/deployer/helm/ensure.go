@@ -136,7 +136,13 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	h.DeployItem.Status.ProviderStatus = statusData
 	h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
-	return h.kubeClient.Status().Update(ctx, h.DeployItem)
+	if err := h.kubeClient.Status().Update(ctx, h.DeployItem); err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "UpdateStatus", err.Error())
+		return err
+	}
+	h.DeployItem.Status.LastError = nil
+	return nil
 }
 
 func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]interface{}) error {
