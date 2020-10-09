@@ -1,0 +1,26 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: github.com/gardener/landscaper/ingress-nginx
+  version: v0.1.0
+
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: eu.gcr.io/myproject
+
+  localResources:
+  - type: blueprint
+    name: ingress-nginx-blueprint
+    access:
+      type: ociRegistry
+      imageReference: myregistry/mypath/ingress-nginx:v0.1.0
+  externalResources:
+  - type: helm
+    name: ingress-nginx-chart
+    version: v0.1.0
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0

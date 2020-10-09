@@ -32,7 +32,7 @@ executors: |
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration
 
-      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/external-dns-management
+      repository: eu.gcr.io/myproject/charts/external-dns-management
       version: 0.7.11
 
       name: host
@@ -54,7 +54,7 @@ executors: |
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration
 
-      repository: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/generic-manifests
+      repository: eu.gcr.io/myproject/charts/generic-manifests
       version: 0.1.0
 
       name: host

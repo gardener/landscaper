@@ -6,7 +6,7 @@ The Landscaper's conceptual model is made up of various entities:
 - [`DeployItem`](#deployitem)
 - [`DataType`](#datatype)
 
-![entities](./images/entities.png)
+![entities](../images/entities.png)
 
 ## `ComponentDefinition`
 A `ComponentDefinition` ([detailed documentation](Blueprints.md)) is a _building block_ or piece of a functioning Gardener installation.
@@ -22,7 +22,7 @@ The `ComponentDefinition` resides in an OCI compliant registry. Although it look
 
 
 ## `Installation`
-An `Installation` ([detailed documentation](./Installations.md)) references one [`ComponentDefinition`](#ComponentDefinition). It is an _instruction_ to the Landscaper to install the respective component.
+An `Installation` ([detailed documentation](Installations.md)) references one [`ComponentDefinition`](#ComponentDefinition). It is an _instruction_ to the Landscaper to install the respective component.
 It is a CR that is deployed by an administrator into the cluster that hosts the Landscaper.
 In addition, the landscaper automatically creates Installation CRs corresponding to aggregated ComponentDefinitions.
 
@@ -39,4 +39,4 @@ The Landscaper uses various controllers that watch for new `DeployItems` and sch
 
 
 ## `DataType`
-A `DataType` ([detailed documentation](./DataTypes.md)) defines via OpenAPIv3 the format of a piece of configuration that is either used as an _Input_ or _Output_ in a [`ComponentDefinition`](#ComponentDefinition).
+A `DataType` ([detailed documentation](DataTypes.md)) defines via OpenAPIv3 the format of a piece of configuration that is either used as an _Input_ or _Output_ in a [`ComponentDefinition`](#ComponentDefinition).
