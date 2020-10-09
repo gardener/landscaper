@@ -74,7 +74,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 
 		inst.Info.Status.ObservedGeneration = inst.Info.Generation
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-
+		inst.Info.Status.LastError = nil
 		// need to return and not continue with export validation
 		return nil
 	}
@@ -108,9 +108,14 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	// todo: check if this is a must, maybe track what we already successfully triggered
 	// maybe we also need to increase the generation manually to signal a new config version
 	if err := op.TriggerDependants(ctx); err != nil {
-		a.Log().Error(err, "error during dependant trigger")
+		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"TriggerDependents",
+			"",
+			err.Error())
 		return err
 	}
+	inst.Info.Status.LastError = nil
 	return nil
 }
 

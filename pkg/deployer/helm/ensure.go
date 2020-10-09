@@ -181,6 +181,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 }
 
 func (h *Helm) DeleteFiles(ctx context.Context) error {
+	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 	status := &helmv1alpha1.ProviderStatus{}
 	if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus.Raw, nil, status); err != nil {
 		return err
@@ -191,12 +192,12 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 		return h.kubeClient.Update(ctx, h.DeployItem)
 	}
 
-	_, kubeClient, err := h.TargetClient()
+	_, targetClient, err := h.TargetClient()
 	if err != nil {
 		return err
 	}
 
-	objects := make([]*unstructured.Unstructured, 0)
+	completed := true
 	for _, ref := range status.ManagedResources {
 		obj := &unstructured.Unstructured{
 			Object: map[string]interface{}{
@@ -208,12 +209,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 				},
 			},
 		}
-		objects = append(objects, obj)
-	}
-
-	completed := true
-	for _, obj := range objects {
-		if err := kubeClient.Delete(ctx, obj); err != nil {
+		if err := targetClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
