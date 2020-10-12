@@ -1,3 +1,5 @@
+<img src="./logo/landscaper.svg" width="221">
+
 # Landscaper
 **Work in progress... partial and unfinished documentation ahead!**
 
