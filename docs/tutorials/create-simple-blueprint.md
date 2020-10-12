@@ -333,7 +333,6 @@ exports:
     dataRef: "myIngressClass"
 ```
 
-
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
@@ -360,4 +359,158 @@ spec:
     data:
     - name: ingressClass
       dataRef: "myIngressClass"
+```
+
+When the `Target` and the Installation CRs are properly configured, they can be applied to the kubernetes cluster running the landscaper.
+
+```shell script
+kubectl create -f docs/tutorials/resources/my-target.yaml
+kubectl create -f docs/tutorials/resources/installation.yaml
+```
+
+The landscaper will then immediately start to reconcile the installation as all imports are satisfied.
+
+The first resources that will be created is the execution object which is a helper resource that contains the rendered deployitems.
+The status shows the one specified Helm deploy item which has been automatically created by the landscaper.
+```shell script
+$ kubectl get inst
+NAME                        PHASE       CONFIGGEN   EXECUTION                   AGE
+my-ingress                  Succeeded               my-ingress                  4m11s
+
+$ kubectl get exec my-execution -oyaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  ...
+spec:
+  deployItems:
+  - config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      chart:
+        ref: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+      exportsFromManifests:
+      - jsonPath: .Values.controller.ingressClass
+        key: ingressClass
+      kind: ProviderConfiguration
+      name: test
+      namespace: default
+    name: deploy
+    target:
+      name: ts-test-cluster
+      namespace: default
+    type: Helm
+status:
+status:
+  ...
+  deployItemRefs:
+  - name: deploy
+    ref:
+      name: my-ingress-deploy-xxx
+      namespace: default
+      observedGeneration: 1
+  ...
+```
+
+The newly created deploy item will be reconciled by the Helm deployer.
+The helm deployer actually creates and updates the configured resources of the helm chart in the target cluster.
+When the deployer successfully reconciles the deploy item, the phase is set to `Succeeded` and the all managed resources are added to the DeployItem's status.
+
+```shell script
+$ kubectl get di my-ingress-deploy-xxx -oyaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  ...
+spec:
+  config:
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+    chart:
+      ref: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+    exportsFromManifests:
+    - jsonPath: .Values.controller.ingressClass
+      key: ingressClass
+    kind: ProviderConfiguration
+    name: test
+    namespace: default
+  target:
+    name: ts-test-cluster
+    namespace: default
+  type: Helm
+status:
+  exportRef:
+    name: my-ingress-deploy-5stgr-export
+    namespace: default
+  phase: Succeeded
+  providerStatus:
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderStatus
+    managedResources:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      name: test-ingress-nginx
+      namespace: default
+    ...
+```
+
+The blueprint also configures export values.
+Therefore, the helm deployer also creates a secret that contains the exported values.
+
+```shell script
+# A kubectl plugin is used to automatically decode the base64 encoded secret
+$ kubectl ksd get secret my-ingress-deploy-5stgr-export -oyaml
+apiVersion: v1
+kind: Secret
+metadata:
+  ...
+stringData:
+  config: |
+    ingressClass: nginx
+type: Opaque
+```
+
+This exported value is then propagated to the execution object and then used in the `exportExecutions` to create the exports.
+The execution resource combines all deployitem exports into a data object.
+```shell script
+$ kubectl get exec my-execution
+NAME                        PHASE       EXPORTREF                          AGE
+my-ingress                  Succeeded   3a4cwhagjhl5i6iu3vvljkjkzffxbk4p   5m
+
+$ kubectl get do 3a4cwhagjhl5i6iu3vvljkjkzffxbk4p -oyaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DataObject
+metadata:
+  ...
+data:
+  deploy:
+    ingressClass: nginx
+```
+
+The landscaper collects the export from the execution and creates the configured exported dataobject `myIngressClass`.
+The exported dataobject is a contextified dataobject, which means that it can only be imported by other installations in the same context.
+The dataobject's context is the root context `""` so that all root installations could use the export as import.
+
+Contextified dataobjects name is a hash of the exported key and the context, so that they can be unqiely identified by the landscaper.
+:warning: Note: also targets are contextified but global target/dataobjects can be referenced with a prefix `#` as in the current target import.
+
+```shell script
+$ kubectl get do -l data.landscaper.gardener.cloud/key=myIngressClass
+NAME                               CONTEXT   KEY
+dole6tby5kerlxruq2n2efxiql6onp3h             myIngressClass
+
+$ kubectl get do -l data.landscaper.gardener.cloud/key=myIngressClass -oyaml
+apiVersion: v1
+kind: List
+items:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: DataObject
+  metadata:
+    creationTimestamp: "2020-10-12T10:11:01Z"
+    generation: 1
+    labels:
+      data.landscaper.gardener.cloud/key: myIngressClass
+      data.landscaper.gardener.cloud/source: Installation.default.my-ingress
+      data.landscaper.gardener.cloud/sourceType: export
+    name: dole6tby5kerlxruq2n2efxiql6onp3h
+    namespace: default
+  data: nginx
 ```
