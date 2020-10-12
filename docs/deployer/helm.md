@@ -12,6 +12,10 @@ metadata:
   name: my-nginx
 spec:
   type: Helm
+  
+  target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
+    name: my-cluster
+    namespace: test
 
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
