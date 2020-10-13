@@ -1,25 +1,23 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
-  name: my-ingress
+  name: my-echo-server
 spec:
   blueprint:
     ref:
       repositoryContext:
         type: ociRegistry
         baseUrl: eu.gcr.io/my-project/comp
-      componentName: github.com/gardener/landscaper/ingress-nginx
+      componentName: github.com/gardener/landscaper/echo-server
       version: v0.1.0
       kind: localResource
-      resourceName: ingress-nginx-blueprint
+      resourceName: echo-server-blueprint
 
   imports:
     targets:
     - name: cluster
       # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
       target: "#my-cluster"
-
-  exports:
     data:
     - name: ingressClass
       dataRef: "myIngressClass"

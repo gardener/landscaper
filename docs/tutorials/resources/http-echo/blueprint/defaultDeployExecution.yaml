@@ -1,0 +1,30 @@
+- name: deploy
+  type: Manifest
+  target:
+    name: {{ .imports.cluster.metadata.name }}
+    namespace: {{ .imports.cluster.metadata.namespace }}
+  config:
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+    manifests:
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: echo-server
+          namespace: default
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: echo-server
+          template:
+            metadata:
+              labels:
+                app: echo-server
+            spec:
+              containers:
+                - image: {{ index .cd.component.externalResources "echo-server-image" "access" "imageReference" }}
+                  imagePullPolicy: IfNotPresent
+                  name: echo-server
+                  ports:
+                    - containerPort: 5678
