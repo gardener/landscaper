@@ -1,6 +1,9 @@
 <img src="./logo/landscaper.svg" width="221">
 
 # Landscaper
+
+[![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
+
 **Work in progress... partial and unfinished documentation ahead!**
 
 The _Landscaper_ is an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) to install, update & manage a Gardener deployment.
