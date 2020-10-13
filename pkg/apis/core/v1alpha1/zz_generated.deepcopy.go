@@ -835,11 +835,7 @@ func (in *InstallationSpec) DeepCopyInto(out *InstallationSpec) {
 		*out = make([]ObjectReference, len(*in))
 		copy(*out, *in)
 	}
-	if in.Imports != nil {
-		in, out := &in.Imports, &out.Imports
-		*out = new(InstallationImports)
-		(*in).DeepCopyInto(*out)
-	}
+	in.Imports.DeepCopyInto(&out.Imports)
 	if in.ImportDataMappings != nil {
 		in, out := &in.ImportDataMappings, &out.ImportDataMappings
 		*out = make(map[string]json.RawMessage, len(*in))
@@ -855,11 +851,7 @@ func (in *InstallationSpec) DeepCopyInto(out *InstallationSpec) {
 			(*out)[key] = outVal
 		}
 	}
-	if in.Exports != nil {
-		in, out := &in.Exports, &out.Exports
-		*out = new(InstallationExports)
-		(*in).DeepCopyInto(*out)
-	}
+	in.Exports.DeepCopyInto(&out.Exports)
 	if in.ExportDataMappings != nil {
 		in, out := &in.ExportDataMappings, &out.ExportDataMappings
 		*out = make(map[string]json.RawMessage, len(*in))
@@ -936,11 +928,7 @@ func (in *InstallationTemplate) DeepCopyInto(out *InstallationTemplate) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.Blueprint.DeepCopyInto(&out.Blueprint)
-	if in.Imports != nil {
-		in, out := &in.Imports, &out.Imports
-		*out = new(InstallationImports)
-		(*in).DeepCopyInto(*out)
-	}
+	in.Imports.DeepCopyInto(&out.Imports)
 	if in.ImportDataMappings != nil {
 		in, out := &in.ImportDataMappings, &out.ImportDataMappings
 		*out = make(map[string]json.RawMessage, len(*in))
@@ -956,11 +944,7 @@ func (in *InstallationTemplate) DeepCopyInto(out *InstallationTemplate) {
 			(*out)[key] = outVal
 		}
 	}
-	if in.Exports != nil {
-		in, out := &in.Exports, &out.Exports
-		*out = new(InstallationExports)
-		(*in).DeepCopyInto(*out)
-	}
+	in.Exports.DeepCopyInto(&out.Exports)
 	if in.ExportDataMappings != nil {
 		in, out := &in.ExportDataMappings, &out.ExportDataMappings
 		*out = make(map[string]json.RawMessage, len(*in))

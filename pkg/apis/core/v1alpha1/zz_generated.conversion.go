@@ -1353,9 +1353,13 @@ func autoConvert_v1alpha1_InstallationSpec_To_core_InstallationSpec(in *Installa
 		return err
 	}
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
-	out.Imports = (*core.InstallationImports)(unsafe.Pointer(in.Imports))
+	if err := Convert_v1alpha1_InstallationImports_To_core_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
+		return err
+	}
 	out.ImportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ImportDataMappings))
-	out.Exports = (*core.InstallationExports)(unsafe.Pointer(in.Exports))
+	if err := Convert_v1alpha1_InstallationExports_To_core_InstallationExports(&in.Exports, &out.Exports, s); err != nil {
+		return err
+	}
 	out.ExportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ExportDataMappings))
 	return nil
 }
@@ -1370,9 +1374,13 @@ func autoConvert_core_InstallationSpec_To_v1alpha1_InstallationSpec(in *core.Ins
 		return err
 	}
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
-	out.Imports = (*InstallationImports)(unsafe.Pointer(in.Imports))
+	if err := Convert_core_InstallationImports_To_v1alpha1_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
+		return err
+	}
 	out.ImportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ImportDataMappings))
-	out.Exports = (*InstallationExports)(unsafe.Pointer(in.Exports))
+	if err := Convert_core_InstallationExports_To_v1alpha1_InstallationExports(&in.Exports, &out.Exports, s); err != nil {
+		return err
+	}
 	out.ExportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ExportDataMappings))
 	return nil
 }
@@ -1421,9 +1429,13 @@ func autoConvert_v1alpha1_InstallationTemplate_To_core_InstallationTemplate(in *
 	if err := Convert_v1alpha1_InstallationTemplateBlueprintDefinition_To_core_InstallationTemplateBlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.Imports = (*core.InstallationImports)(unsafe.Pointer(in.Imports))
+	if err := Convert_v1alpha1_InstallationImports_To_core_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
+		return err
+	}
 	out.ImportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ImportDataMappings))
-	out.Exports = (*core.InstallationExports)(unsafe.Pointer(in.Exports))
+	if err := Convert_v1alpha1_InstallationExports_To_core_InstallationExports(&in.Exports, &out.Exports, s); err != nil {
+		return err
+	}
 	out.ExportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ExportDataMappings))
 	return nil
 }
@@ -1438,9 +1450,13 @@ func autoConvert_core_InstallationTemplate_To_v1alpha1_InstallationTemplate(in *
 	if err := Convert_core_InstallationTemplateBlueprintDefinition_To_v1alpha1_InstallationTemplateBlueprintDefinition(&in.Blueprint, &out.Blueprint, s); err != nil {
 		return err
 	}
-	out.Imports = (*InstallationImports)(unsafe.Pointer(in.Imports))
+	if err := Convert_core_InstallationImports_To_v1alpha1_InstallationImports(&in.Imports, &out.Imports, s); err != nil {
+		return err
+	}
 	out.ImportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ImportDataMappings))
-	out.Exports = (*InstallationExports)(unsafe.Pointer(in.Exports))
+	if err := Convert_core_InstallationExports_To_v1alpha1_InstallationExports(&in.Exports, &out.Exports, s); err != nil {
+		return err
+	}
 	out.ExportDataMappings = *(*map[string]json.RawMessage)(unsafe.Pointer(&in.ExportDataMappings))
 	return nil
 }

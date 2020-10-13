@@ -219,7 +219,7 @@ var _ = Describe("SubInstallation", func() {
 			subinst.Name = "inst-def1"
 			subinst.Namespace = "default"
 			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
-			subinst.Spec.Imports = &lsv1alpha1.InstallationImports{
+			subinst.Spec.Imports = lsv1alpha1.InstallationImports{
 				Data: []lsv1alpha1.DataImport{
 					{
 						Name:    "b",
@@ -227,7 +227,7 @@ var _ = Describe("SubInstallation", func() {
 					},
 				},
 			}
-			subinst.Spec.Exports = &lsv1alpha1.InstallationExports{
+			subinst.Spec.Exports = lsv1alpha1.InstallationExports{
 				Data: []lsv1alpha1.DataExport{
 					{
 						Name:    "c",

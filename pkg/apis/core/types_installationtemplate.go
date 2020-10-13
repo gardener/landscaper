@@ -36,7 +36,7 @@ type InstallationTemplate struct {
 
 	// Imports define the imported data objects and targets.
 	// +optional
-	Imports *InstallationImports `json:"imports,omitempty"`
+	Imports InstallationImports `json:"imports,omitempty"`
 
 	// ImportDataMappings contains a template for restructuring imports.
 	// It is expected to contain a key for every blueprint-defined data import.
@@ -47,7 +47,7 @@ type InstallationTemplate struct {
 
 	// Exports define the exported data objects and targets.
 	// +optional
-	Exports *InstallationExports `json:"exports,omitempty"`
+	Exports InstallationExports `json:"exports,omitempty"`
 
 	// ExportDataMappings contains a template for restructuring exports.
 	// It is expected to contain a key for every blueprint-defined data export.
