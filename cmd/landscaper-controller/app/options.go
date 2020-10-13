@@ -26,7 +26,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	blueprintregistrymanager "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/manager"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -36,7 +35,6 @@ type options struct {
 	deployers  string
 
 	config           *config.LandscaperConfiguration
-	registry         blueprintregistrymanager.Interface
 	enabledDeployers []string
 }
 

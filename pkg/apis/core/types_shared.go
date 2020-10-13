@@ -15,12 +15,31 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
+
+// JSONSchemaDefinition defines a jsonschema.
+type JSONSchemaDefinition json.RawMessage
+
+// MarshalJSON implements the json marshaling for a JSON
+func (s JSONSchemaDefinition) MarshalJSON() ([]byte, error) {
+	return json.RawMessage(s).MarshalJSON()
+}
+
+// UnmarshalJSON implements json unmarshaling for a JSON
+func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
+	raw := json.RawMessage{}
+	if err := raw.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	*s = JSONSchemaDefinition(raw)
+	return nil
+}
 
 // ConditionStatus is the status of a condition.
 type ConditionStatus string

@@ -15,8 +15,6 @@
 package helper
 
 import (
-	"strconv"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -148,11 +146,6 @@ func UpdatedError(lastError *v1alpha1.Error, operation, reason, message string, 
 		newError.LastTransitionTime = lastError.LastTransitionTime
 	}
 	return newError
-}
-
-// DecimalToFloat64 converts a decimal to a float64.
-func DecimalToFloat64(dec v1alpha1.Decimal) (float64, error) {
-	return strconv.ParseFloat(string(dec), 64)
 }
 
 // CreateOrUpdateVersionedObjectReferences creates or updates a element in versioned objectReference slice.

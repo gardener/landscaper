@@ -99,6 +99,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(in *LandscaperConfiguration, out *config.LandscaperConfiguration, s conversion.Scope) error {
+	out.DefaultOCI = (*config.OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(&in.Registries, &out.Registries, s); err != nil {
 		return err
 	}
@@ -111,6 +112,7 @@ func Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(
 }
 
 func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfiguration(in *config.LandscaperConfiguration, out *LandscaperConfiguration, s conversion.Scope) error {
+	out.DefaultOCI = (*OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_config_RegistriesConfiguration_To_v1alpha1_RegistriesConfiguration(&in.Registries, &out.Registries, s); err != nil {
 		return err
 	}
@@ -187,7 +189,7 @@ func Convert_config_OCIConfiguration_To_v1alpha1_OCIConfiguration(in *config.OCI
 }
 
 func autoConvert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(in *RegistriesConfiguration, out *config.RegistriesConfiguration, s conversion.Scope) error {
-	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Blueprints, &out.Blueprints, s); err != nil {
+	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Artifacts, &out.Artifacts, s); err != nil {
 		return err
 	}
 	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Components, &out.Components, s); err != nil {
@@ -202,7 +204,7 @@ func Convert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(
 }
 
 func autoConvert_config_RegistriesConfiguration_To_v1alpha1_RegistriesConfiguration(in *config.RegistriesConfiguration, out *RegistriesConfiguration, s conversion.Scope) error {
-	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Blueprints, &out.Blueprints, s); err != nil {
+	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Artifacts, &out.Artifacts, s); err != nil {
 		return err
 	}
 	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Components, &out.Components, s); err != nil {

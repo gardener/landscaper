@@ -31,21 +31,17 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator(registry blueprintsregistry.Registry) (reconcile.Reconciler, error) {
-	return &actuator{
-		registry: registry,
-	}, nil
+func NewActuator() (reconcile.Reconciler, error) {
+	return &actuator{}, nil
 }
 
 type actuator struct {
-	log      logr.Logger
-	c        client.Client
-	scheme   *runtime.Scheme
-	registry blueprintsregistry.Registry
+	log    logr.Logger
+	c      client.Client
+	scheme *runtime.Scheme
 }
 
 var _ inject.Client = &actuator{}
@@ -145,7 +141,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec, false)
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil, nil), exec, false)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
@@ -165,7 +161,7 @@ func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution) error
 
 // ForceReconcile force reconciles the execution and its deploy items
 func (a *actuator) ForceReconcile(ctx context.Context, exec *lsv1alpha1.Execution) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, a.registry, nil), exec, true)
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil, nil), exec, true)
 
 	if !exec.DeletionTimestamp.IsZero() {
 		return op.Delete(ctx)

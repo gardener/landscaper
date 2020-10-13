@@ -13,6 +13,10 @@
         "apiVersion": {
           "type": "string"
         },
+        "defaultOCI": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCIConfiguration"
+        },
         "registries": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/RegistriesConfiguration"
@@ -91,7 +95,6 @@
           "$ref": "#/definitions/LocalRegistryConfiguration"
         },
         "oci": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
         }
       },

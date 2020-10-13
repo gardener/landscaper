@@ -50,5 +50,5 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&LandscaperConfiguration{},
 	)
-	return nil
+	return addDefaultingFuncs(scheme)
 }

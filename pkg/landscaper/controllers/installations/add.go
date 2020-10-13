@@ -23,8 +23,8 @@ import (
 )
 
 // AddActuatorToManager register the installation in a manager.
-func AddActuatorToManager(mgr manager.Manager, regConfig *config.RegistriesConfiguration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("Installations"), regConfig)
+func AddActuatorToManager(mgr manager.Manager, config *config.LandscaperConfiguration) error {
+	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("Installations"), config)
 	if err != nil {
 		return err
 	}

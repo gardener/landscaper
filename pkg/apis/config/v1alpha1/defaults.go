@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package execution
+package v1alpha1
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
-	if err != nil {
-		return err
-	}
+func addDefaultingFuncs(scheme *runtime.Scheme) error {
+	return RegisterDefaults(scheme)
+}
 
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("Execution"), a); err != nil {
-		return err
+// SetDefaults_LandscaperConfiguration sets the defaults for the landscaper configuration.
+func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
+	if obj.DefaultOCI != nil {
+		if obj.Registries.Components.OCI == nil {
+			obj.Registries.Components.OCI = obj.DefaultOCI
+		}
+		if obj.Registries.Artifacts.OCI == nil {
+			obj.Registries.Artifacts.OCI = obj.DefaultOCI
+		}
 	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&lsv1alpha1.Execution{}).
-		Owns(&lsv1alpha1.DeployItem{}).
-		Complete(a)
 }

@@ -1,4 +1,4 @@
-package manager
+package blueprintsregistry
 
 import (
 	"context"
@@ -10,30 +10,29 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
-// Interface describes the interface for a regapi manager.
-// A regapi manager exposes itself a regapi api and delegates the
+// Manager describes the interface for a blueprints registry manager.
+// A blueprints registry manager exposes itself a blueprints registry api and delegates the
 // request to the specific implementations.
-type Interface interface {
-	blueprintsregistry.Registry
-	Set(schemaName string, scheme cdv2.TypedObjectCodec, registry blueprintsregistry.Registry) error
+type Manager interface {
+	Registry
+	Set(schemaName string, scheme cdv2.TypedObjectCodec, registry Registry) error
 }
 
 // New creates a new blueprint registry manager
-func New(sharedCache cache.Cache) Interface {
+func New(sharedCache cache.Cache) Manager {
 	return &manager{
-		registries:  map[string]blueprintsregistry.Registry{},
+		registries:  map[string]Registry{},
 		sharedCache: sharedCache,
 	}
 }
 
 // NewWithConfig creates a new regapi manager or the given regapi configuration
-func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Interface, error) {
+func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Manager, error) {
 	m := &manager{
-		registries: map[string]blueprintsregistry.Registry{},
+		registries: map[string]Registry{},
 	}
 
 	if config.OCI.Cache != nil {
@@ -45,7 +44,7 @@ func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Inter
 	}
 
 	if config.OCI != nil {
-		ociReg, err := blueprintsregistry.NewOCIRegistry(log, nil) // use the shared cache
+		ociReg, err := NewOCIRegistry(log, nil) // use the shared cache
 		if err != nil {
 			return nil, fmt.Errorf("unable to setup oci regapi: %w", err)
 		}
@@ -55,11 +54,11 @@ func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Inter
 	}
 
 	if config.Local != nil {
-		local, err := blueprintsregistry.NewLocalRegistry(log, config.Local.ConfigPaths...)
+		local, err := NewLocalRegistry(log, config.Local.ConfigPaths...)
 		if err != nil {
 			return nil, fmt.Errorf("unable to setup local regapi: %w", err)
 		}
-		if err := m.Set(blueprintsregistry.LocalAccessType, blueprintsregistry.LocalAccessCodec, local); err != nil {
+		if err := m.Set(LocalAccessType, LocalAccessCodec, local); err != nil {
 			return nil, err
 		}
 	}
@@ -68,13 +67,13 @@ func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Inter
 }
 
 type manager struct {
-	registries  map[string]blueprintsregistry.Registry
+	registries  map[string]Registry
 	sharedCache cache.Cache
 }
 
-var _ Interface = &manager{}
+var _ Manager = &manager{}
 
-func (m *manager) Set(schemaName string, scheme cdv2.TypedObjectCodec, registry blueprintsregistry.Registry) error {
+func (m *manager) Set(schemaName string, scheme cdv2.TypedObjectCodec, registry Registry) error {
 	cdv2.KnownAccessTypes[schemaName] = scheme
 	m.registries[schemaName] = registry
 	return cache.InjectCacheInto(registry, m.sharedCache)
@@ -89,7 +88,7 @@ func (m *manager) SharedCache() cache.Cache {
 func (m *manager) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha1.Blueprint, error) {
 	reg, ok := m.registries[ref.Access.GetType()]
 	if !ok {
-		return nil, blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return nil, NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
 	return reg.GetBlueprint(ctx, ref)
 }
@@ -97,7 +96,7 @@ func (m *manager) GetBlueprint(ctx context.Context, ref cdv2.Resource) (*v1alpha
 func (m *manager) GetContent(ctx context.Context, ref cdv2.Resource, fs vfs.FileSystem) error {
 	reg, ok := m.registries[ref.Access.GetType()]
 	if !ok {
-		return blueprintsregistry.NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
+		return NewWrongTypeError(ref.Access.GetType(), ref.Name, ref.Version, nil)
 	}
 	return reg.GetContent(ctx, ref, fs)
 }

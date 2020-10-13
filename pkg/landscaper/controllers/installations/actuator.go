@@ -22,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
@@ -32,17 +31,19 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/manager"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
-func NewActuator(log logr.Logger, regConfig *config.RegistriesConfiguration) (reconcile.Reconciler, error) {
+func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 	op := &operation.Operation{}
 	_ = op.InjectLogger(log)
 
-	var sharedCache cache.Cache
+	var (
+		regConfig   = &lsConfig.Registries
+		sharedCache cache.Cache
+	)
 	if regConfig.Components.OCI != nil && regConfig.Components.OCI.Cache != nil {
 		var err error
 		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Components.OCI.Cache))
@@ -56,62 +57,42 @@ func NewActuator(log logr.Logger, regConfig *config.RegistriesConfiguration) (re
 	}
 	_ = op.InjectComponentsRegistry(componentRegistryMgr)
 
-	// add once a local registry
-	if regConfig.Components.Local != nil {
-		localReg, err := componentsregistry.NewLocalClient(log, regConfig.Components.Local.ConfigPaths...)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to create local components registry")
-		}
-		if err := componentRegistryMgr.Set(localReg); err != nil {
-			return nil, errors.Wrap(err, "unable to add local components registry to manager")
-		}
-	}
 	log.V(3).Info("setup components registry")
 
-	if regConfig.Blueprints.OCI != nil && regConfig.Blueprints.OCI.Cache != nil {
+	if regConfig.Artifacts.OCI != nil && regConfig.Artifacts.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Blueprints.OCI.Cache))
+		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Artifacts.OCI.Cache))
 		if err != nil {
 			return nil, err
 		}
 	}
-	blueprintsRegistryMgr := manager.New(sharedCache)
+	blueprintsRegistryMgr := blueprintsregistry.New(sharedCache)
 	_ = op.InjectBlueprintsRegistry(blueprintsRegistryMgr)
-
-	// add once a local registry
-	if regConfig.Blueprints.Local != nil {
-		localReg, err := blueprintsregistry.NewLocalRegistry(log, regConfig.Blueprints.Local.ConfigPaths...)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to create local blueprint registry")
-		}
-		if err := blueprintsRegistryMgr.Set(blueprintsregistry.LocalAccessType, blueprintsregistry.LocalAccessCodec, localReg); err != nil {
-			return nil, errors.Wrap(err, "unable to add local blueprint registry to manager")
-		}
-	}
 	log.V(3).Info("setup blueprints registry")
 
 	return &actuator{
 		Interface:             op,
-		registriesConfig:      regConfig,
+		lsConfig:              lsConfig,
 		componentsRegistryMgr: componentRegistryMgr,
 		blueprintRegistryMgr:  blueprintsRegistryMgr,
 	}, nil
 }
 
 // NewTestActuator creates a new actuator that is only meant for testing.
-func NewTestActuator(op operation.Interface, configuration *config.RegistriesConfiguration) *actuator {
-	return &actuator{
+func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *actuator {
+	a := &actuator{
 		Interface:             op,
-		registriesConfig:      configuration,
+		lsConfig:              configuration,
 		componentsRegistryMgr: &componentsregistry.Manager{},
-		blueprintRegistryMgr:  manager.New(nil),
+		blueprintRegistryMgr:  blueprintsregistry.New(nil),
 	}
+	return a
 }
 
 type actuator struct {
 	operation.Interface
-	registriesConfig      *config.RegistriesConfiguration
-	blueprintRegistryMgr  manager.Interface
+	lsConfig              *config.LandscaperConfiguration
+	blueprintRegistryMgr  blueprintsregistry.Manager
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
@@ -208,7 +189,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 }
 
 func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
-	if err := a.setupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
+	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
 		return nil, err
 	}
 

@@ -59,16 +59,18 @@ var _ = Describe("Simple", func() {
 
 		op := operation.NewOperation(log.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeBlueprintRegistry, fakeComponentRegistry)
 
-		instActuator = instctlr.NewTestActuator(op, &config.RegistriesConfiguration{
-			Blueprints: config.RegistryConfiguration{
-				Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")}},
-			},
-			Components: config.RegistryConfiguration{
-				Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple")}},
+		instActuator = instctlr.NewTestActuator(op, &config.LandscaperConfiguration{
+			Registries: config.RegistriesConfiguration{
+				Artifacts: config.RegistryConfiguration{
+					Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")}},
+				},
+				Components: config.RegistryConfiguration{
+					Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple")}},
+				},
 			},
 		})
 
-		execActuator, err = execctlr.NewActuator(fakeBlueprintRegistry)
+		execActuator, err = execctlr.NewActuator()
 		Expect(err).ToNot(HaveOccurred())
 		_, err = inject.ClientInto(testenv.Client, execActuator)
 		Expect(err).ToNot(HaveOccurred())

@@ -21,15 +21,19 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
 	metav1.TypeMeta
+	// DefaultOCI defines the default oci configuration which is used
+	// if it's not overwritten by more specific configuration.
+	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
 	// Registries configures the landscaper registries.
 	Registries RegistriesConfiguration `json:"registries"`
 }
 
 // RegistriesConfiguration contains the configuration options for blueprint and component registries
 type RegistriesConfiguration struct {
-	// Blueprints contains the configuration for the used blueprint
-	Blueprints RegistryConfiguration `json:"blueprints"`
-	// Blueprints contains the configuration for the used component descriptor registry
+	// Artifacts contains the configuration to fetch blueprints and jsonschemas
+	// from local or remote registries.
+	Artifacts RegistryConfiguration `json:"blueprints"`
+	// Artifacts contains the configuration for the used component descriptor registry.
 	Components RegistryConfiguration `json:"components"`
 }
 

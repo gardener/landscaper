@@ -73,18 +73,18 @@ func (o *options) run(ctx context.Context) error {
 
 	install.Install(mgr.GetScheme())
 
-	if err := installationsactuator.AddActuatorToManager(mgr, &o.config.Registries); err != nil {
+	if err := installationsactuator.AddActuatorToManager(mgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactuator.AddActuatorToManager(mgr, o.registry); err != nil {
+	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
 	for _, deployerName := range o.enabledDeployers {
 		if deployerName == "container" {
 			config := &containerv1alpha1.Configuration{
-				OCI: o.config.Registries.Blueprints.OCI,
+				OCI: o.config.Registries.Artifacts.OCI,
 			}
 			containerv1alpha1.SetDefaults_Configuration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
@@ -92,7 +92,7 @@ func (o *options) run(ctx context.Context) error {
 			}
 		} else if deployerName == "helm" {
 			config := &helmv1alpha1.Configuration{
-				OCI: o.config.Registries.Blueprints.OCI,
+				OCI: o.config.Registries.Artifacts.OCI,
 			}
 			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
