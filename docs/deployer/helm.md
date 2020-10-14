@@ -28,6 +28,8 @@ spec:
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
 
+    updateStrategy: update | patch # optional; defaults to update
+
     # Name of the release: helm install [name]
     name: my-release
     # Namespace of the release: helm --namespace

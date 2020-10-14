@@ -20,6 +20,8 @@ spec:
   config:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
+
+    updateStrategy: update | patch # optional; defaults to update
     
     manifests: # list of kubernetes manifests
     - apiVersion: v1

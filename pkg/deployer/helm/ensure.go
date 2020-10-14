@@ -40,7 +40,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
@@ -80,18 +80,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
 		// todo: check for clusterwide resources
 		if len(obj.GetNamespace()) == 0 {
-			obj.SetNamespace(h.Configuration.Namespace)
+			obj.SetNamespace(h.ProviderConfiguration.Namespace)
 		}
-		_, err = controllerutil.CreateOrUpdate(ctx, targetClient, obj, func() error {
-			if len(obj.GetNamespace()) == 0 {
-				obj.SetNamespace(h.Configuration.Namespace)
-			}
-			return nil
-		})
-		if err != nil {
-			err = fmt.Errorf("unable to create object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-				currOp, "CreateObject", err.Error())
+		if err := h.ApplyObject(ctx, targetClient, obj); err != nil {
 			return err
 		}
 
@@ -105,8 +96,8 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		}
 	}
 
-	if h.Status != nil {
-		if err := h.cleanupOrphanedResources(ctx, targetClient, h.Status.ManagedResources, objects); err != nil {
+	if h.ProviderStatus != nil {
+		if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
 			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
 				currOp, "CleanupOrphanedResources", err.Error())
 			return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
@@ -227,6 +218,48 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	return h.kubeClient.Update(ctx, h.DeployItem)
 }
 
+// ApplyObject applies a managed resource to the target cluster.
+func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured) error {
+	currOp := "ApplyObjects"
+	currObj := obj.NewEmptyInstance()
+	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
+	if err := kubeClient.Get(ctx, key, currObj); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		if err := kubeClient.Create(ctx, obj); err != nil {
+			err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "CreateObject", err.Error())
+			return err
+		}
+		return nil
+	}
+
+	switch h.ProviderConfiguration.UpdateStrategy {
+	case helmv1alpha1.UpdateStrategyUpdate:
+		if err := kubeClient.Update(ctx, obj); err != nil {
+			err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "ApplyObject", err.Error())
+			return err
+		}
+	case helmv1alpha1.UpdateStrategyPatch:
+		if err := kubeClient.Patch(ctx, currObj, client.MergeFrom(obj)); err != nil {
+			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "ApplyObject", err.Error())
+			return err
+		}
+	default:
+		err := fmt.Errorf("%s is not a valid update strategy", h.ProviderConfiguration.UpdateStrategy)
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "ApplyObject", err.Error())
+		return err
+	}
+	return nil
+}
+
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
 func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []lsv1alpha1.TypedObjectReference, currentObjects []*unstructured.Unstructured) error {
 	//objectList := &unstructured.UnstructuredList{}
@@ -248,7 +281,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 				},
 			},
 		}
-		if err := kubeClient.Get(ctx, kubernetesutil.ObjectKey(ref.Name, ref.Namespace), &uObj); err != nil {
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(ref.Name, ref.Namespace), &uObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -321,7 +354,7 @@ func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstruct
 func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {
 	exports := make(map[string]interface{})
 
-	for _, export := range h.Configuration.ExportsFromManifests {
+	for _, export := range h.ProviderConfiguration.ExportsFromManifests {
 		if export.FromResource != nil {
 			continue
 		}
@@ -371,7 +404,7 @@ func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstr
 }
 
 func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.ExportFromManifestItem {
-	for _, export := range h.Configuration.ExportsFromManifests {
+	for _, export := range h.ProviderConfiguration.ExportsFromManifests {
 		if export.FromResource == nil {
 			continue
 		}

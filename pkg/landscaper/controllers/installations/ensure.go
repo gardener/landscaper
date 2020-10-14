@@ -169,7 +169,7 @@ func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation,
 	if err := exec.Ensure(ctx, inst, importedValues); err != nil {
 		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
 			"ReconcileDeployItems",
-			"unable to ensure sub installations",
+			"unable to reconcile execution",
 			err.Error())
 		return fmt.Errorf("unable to ensure execution: %w", err)
 	}

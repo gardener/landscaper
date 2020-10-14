@@ -52,5 +52,5 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ProviderConfiguration{},
 		&Configuration{},
 	)
-	return nil
+	return addDefaultingFuncs(scheme)
 }

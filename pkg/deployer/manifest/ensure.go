@@ -69,25 +69,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
 	}
 	for i, obj := range objects {
-		currObj := obj.NewEmptyInstance()
-		key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-		if err := targetClient.Get(ctx, key, currObj); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
-			if err := targetClient.Create(ctx, obj); err != nil {
-				err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
-				m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
-					currOp, "CreateObject", err.Error())
-				return err
-			}
-		} else {
-			if err := targetClient.Update(ctx, obj); err != nil {
-				err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-				m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
-					currOp, "UpdateObject", err.Error())
-				return err
-			}
+		if err := m.ApplyObject(ctx, targetClient, obj); err != nil {
+			return err
 		}
 
 		status.ManagedResources[i] = lsv1alpha1.TypedObjectReference{
@@ -169,6 +152,48 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	// remove finalizer
 	controllerutil.RemoveFinalizer(&m.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
 	return m.kubeClient.Update(ctx, m.DeployItem)
+}
+
+// ApplyObject applies a managed resource to the target cluster.
+func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured) error {
+	currOp := "ApplyObjects"
+	currObj := obj.NewEmptyInstance()
+	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
+	if err := kubeClient.Get(ctx, key, currObj); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		if err := kubeClient.Create(ctx, obj); err != nil {
+			err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
+			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+				currOp, "CreateObject", err.Error())
+			return err
+		}
+		return nil
+	}
+
+	switch m.ProviderConfiguration.UpdateStrategy {
+	case manifestv1alpha1.UpdateStrategyUpdate:
+		if err := kubeClient.Update(ctx, obj); err != nil {
+			err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+				currOp, "ApplyObject", err.Error())
+			return err
+		}
+	case manifestv1alpha1.UpdateStrategyPatch:
+		if err := kubeClient.Patch(ctx, currObj, client.MergeFrom(obj)); err != nil {
+			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+				currOp, "ApplyObject", err.Error())
+			return err
+		}
+	default:
+		err := fmt.Errorf("%s is not a valid update strategy", m.ProviderConfiguration.UpdateStrategy)
+		m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+			currOp, "ApplyObject", err.Error())
+		return err
+	}
+	return nil
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.

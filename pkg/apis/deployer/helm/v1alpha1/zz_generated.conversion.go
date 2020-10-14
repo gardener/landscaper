@@ -161,6 +161,7 @@ func Convert_helm_ExportFromManifestItem_To_v1alpha1_ExportFromManifestItem(in *
 
 func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in *ProviderConfiguration, out *helm.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = helm.UpdateStrategy(in.UpdateStrategy)
 	if err := Convert_v1alpha1_Chart_To_helm_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err
 	}
@@ -178,6 +179,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in *Pr
 
 func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *helm.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	if err := Convert_helm_Chart_To_v1alpha1_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err
 	}

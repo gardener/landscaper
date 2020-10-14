@@ -54,10 +54,10 @@ type Helm struct {
 	kubeClient     client.Client
 	registryClient *registry.Client
 
-	DeployItem    *lsv1alpha1.DeployItem
-	Target        *lsv1alpha1.Target
-	Configuration *helmv1alpha1.ProviderConfiguration
-	Status        *helmv1alpha1.ProviderStatus
+	DeployItem            *lsv1alpha1.DeployItem
+	Target                *lsv1alpha1.Target
+	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
+	ProviderStatus        *helmv1alpha1.ProviderStatus
 }
 
 // New creates a new internal helm item
@@ -81,13 +81,13 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 	}
 
 	return &Helm{
-		log:            log,
-		kubeClient:     kubeClient,
-		registryClient: client,
-		DeployItem:     item,
-		Target:         target,
-		Configuration:  config,
-		Status:         status,
+		log:                   log,
+		kubeClient:            kubeClient,
+		registryClient:        client,
+		DeployItem:            item,
+		Target:                target,
+		ProviderConfiguration: config,
+		ProviderStatus:        status,
 	}, nil
 }
 
@@ -101,21 +101,21 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ch, err := h.registryClient.GetChart(ctx, h.Configuration.Chart.Ref)
+	ch, err := h.registryClient.GetChart(ctx, h.ProviderConfiguration.Chart.Ref)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	//template chart
 	options := chartutil.ReleaseOptions{
-		Name:      h.Configuration.Name,
-		Namespace: h.Configuration.Namespace,
+		Name:      h.ProviderConfiguration.Name,
+		Namespace: h.ProviderConfiguration.Namespace,
 		Revision:  0,
 		IsInstall: true,
 	}
 
 	values := make(map[string]interface{})
-	if err := yaml.Unmarshal(h.Configuration.Values, &values); err != nil {
+	if err := yaml.Unmarshal(h.ProviderConfiguration.Values, &values); err != nil {
 		return nil, nil, err
 	}
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
@@ -133,8 +133,8 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 	// use the configured kubeconfig over the target if defined
-	if len(h.Configuration.Kubeconfig) != 0 {
-		kubeconfig, err := base64.StdEncoding.DecodeString(h.Configuration.Kubeconfig)
+	if len(h.ProviderConfiguration.Kubeconfig) != 0 {
+		kubeconfig, err := base64.StdEncoding.DecodeString(h.ProviderConfiguration.Kubeconfig)
 		if err != nil {
 			return nil, nil, err
 		}

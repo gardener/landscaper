@@ -33,6 +33,11 @@ type ProviderConfiguration struct {
 	// +optional
 	Kubeconfig string `json:"kubeconfig"`
 
+	// UpdateStrategy defines the strategy how the manifest are updated in the cluster.
+	// Defaults to "update".
+	// +optional
+	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
+
 	// Chart defines helm chart to be templated and applied.
 	Chart Chart `json:"chart"`
 
@@ -49,6 +54,14 @@ type ProviderConfiguration struct {
 	// +optional
 	ExportsFromManifests []ExportFromManifestItem `json:"exportsFromManifests,omitempty"`
 }
+
+// UpdateStrategy defines the strategy that is used to apply resources to the cluster.
+type UpdateStrategy string
+
+const (
+	UpdateStrategyUpdate UpdateStrategy = "update"
+	UpdateStrategyPatch  UpdateStrategy = "patch"
+)
 
 // Chart defines the helm chart to render and apply.
 type Chart struct {

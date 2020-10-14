@@ -30,9 +30,20 @@ type ProviderConfiguration struct {
 	// By default the configured target is used to deploy the resources
 	// +optional
 	Kubeconfig string `json:"kubeconfig"`
+	// UpdateStrategy defines the strategy how the manifest are updated in the cluster.
+	// +optional
+	UpdateStrategy UpdateStrategy `json:"updateStrategy"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []*runtime.RawExtension `json:"manifests,omitempty"`
 }
+
+// UpdateStrategy defines the strategy that is used to apply resources to the cluster.
+type UpdateStrategy string
+
+const (
+	UpdateStrategyUpdate UpdateStrategy = "update"
+	UpdateStrategyPatch  UpdateStrategy = "patch"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

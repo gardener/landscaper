@@ -91,6 +91,7 @@ func Convert_manifest_Configuration_To_v1alpha1_Configuration(in *manifest.Confi
 
 func autoConvert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
 	out.Manifests = *(*[]*runtime.RawExtension)(unsafe.Pointer(&in.Manifests))
 	return nil
 }
@@ -102,6 +103,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 
 func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	out.Manifests = *(*[]*runtime.RawExtension)(unsafe.Pointer(&in.Manifests))
 	return nil
 }

@@ -67,6 +67,9 @@
         "kubeconfig": {
           "type": "string"
         },
+        "updateStrategy": {
+          "type": "string"
+        },
         "chart": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/Chart"
