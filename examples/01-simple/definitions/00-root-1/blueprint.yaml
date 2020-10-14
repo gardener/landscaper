@@ -18,7 +18,7 @@ deployExecutions:
 - type: GoTemplate
   template: |
     - name: main
-      type: Mock
+      type: landscaper.gardener.cloud/mock
       config:
         apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
         kind: ProviderConfiguration

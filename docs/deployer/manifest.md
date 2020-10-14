@@ -11,7 +11,7 @@ kind: DeployItem
 metadata:
   name: my-manifests
 spec:
-  type: Manifest
+  type: landscaper.gardener.cloud/kubernetes-manifest
 
   target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
     name: my-cluster

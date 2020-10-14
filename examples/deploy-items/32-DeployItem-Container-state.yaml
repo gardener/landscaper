@@ -3,7 +3,7 @@ kind: DeployItem
 metadata:
   name: state
 spec:
-  type: Container
+  type: landscaper.gardener.cloud/container
 
   config:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1

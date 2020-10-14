@@ -93,13 +93,13 @@ deployExecutors: # has to be idempotent
   type: GoTemplate
   template: |
     - name: init
-      type: container # also extensions resource
+      type: landscaper.gardener.cloud/container
       config:
         image: my-custom-image:version
         command: ["run-component"]
         args: []
     - name: my-script
-      type: script
+      type: landscaper.gardener.cloud/script
       environment: ls-abc
       config:
         mount:
@@ -117,13 +117,13 @@ deployExecutors: # has to be idempotent
           yaml.dump(export)
         image: ubuntu:latest
     - name: my-container
-      type: container
+      type: landscaper.gardener.cloud/container
       config:
         image: my-custom-image:version
         command: ["run-component"]
         args: []
     - name: deploy-chart
-      type: helm
+      type: landscaper.gardener.cloud/helm
       config:
         chartRepository: my-repo
         version: 1.0.0
@@ -131,7 +131,7 @@ deployExecutors: # has to be idempotent
         valueRef:
           secretRef: abc
     - name: deploy-other-chart
-      type: helm
+      type: landscaper.gardener.cloud/helm
       config:
         chartRepository: my-repo/dns-controller
         version: 1.0.0
@@ -141,7 +141,7 @@ deployExecutors: # has to be idempotent
         valueRef:
           secretRef: abc
     - name: deploy-manifest
-      type: manifest
+      type: landscaper.gardener.cloud/kubernetes-manifest
       config:
       - apiVersion: v1
         kind: Secret

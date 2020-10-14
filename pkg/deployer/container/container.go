@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Type lsv1alpha1.ExecutionType = "Container"
+	Type lsv1alpha1.ExecutionType = "landscaper.gardener.cloud/container"
 )
 
 var (

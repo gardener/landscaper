@@ -8,15 +8,15 @@ spec:
 
   deployItems:
   - name: a
-    type: Helm
+    type: landscaper.gardener.cloud/helm
     config:
       my-val: val1
   - name: b
-    type: Container
+    type: landscaper.gardener.cloud/helm
     config:
       my-val: val1
   - name: c
-    type: Container
+    type: landscaper.gardener.cloud/helm
     config:
       my-val: val1
     dependsOn:

@@ -22,7 +22,7 @@ import (
 )
 
 // Type is the type name of the deployer.
-const Type lsv1alpha1.ExecutionType = "Mock"
+const Type lsv1alpha1.ExecutionType = "landscaper.gardener.cloud/mock"
 
 var Mockscheme = runtime.NewScheme()
 

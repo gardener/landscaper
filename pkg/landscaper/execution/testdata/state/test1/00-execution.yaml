@@ -7,7 +7,7 @@ spec:
 
   deployItems:
   - name: a
-    type: Helm
+    type: landscaper.gardener.cloud/helm
     config:
       my-val: val1
 

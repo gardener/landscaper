@@ -13,7 +13,7 @@ Therefore, DeployItems need to specify a deployer that reside in the fenced envi
 kind: DeployItem
 
 spec:
-  type: Helm
+  type: landscaper.gardener.cloud/helm
 
   target: <name of the target> # maybe also whole target
 ```
@@ -96,7 +96,7 @@ providerConfig: any
 ```yaml
 kind: DeployItem
 spec:
-  type: Helm
+  type: landscaper.gardener.cloud/helm
   targetRef: fenced-env-1
 ```
 

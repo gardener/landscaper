@@ -9,7 +9,7 @@ metadata:
     execution.landscaper.gardener.cloud/name: b
 spec:
 
-  type: Container
+  type: landscaper.gardener.cloud/container
   config:
     my-val: val1
 

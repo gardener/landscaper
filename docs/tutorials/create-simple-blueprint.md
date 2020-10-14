@@ -117,7 +117,7 @@ DeployItems are templated in the `deployExecutions` section by specifying differ
 Each template step has to output a list of deploy item templates of the following form:
 ```yaml
 - name: "unique name of the deployitem"
-  type: Helm | Container | ... # deployer identifier
+  type: landscaper.gardener.cloud/helm | landscaper.gardener.cloud/container | ... # deployer identifier
   # names of other deployitems that the deploy item depends on.
   # If a item depends on another, the landscaper ensures that dependencies are executed and reconciled before the item.
   dependsOn: []
@@ -174,7 +174,7 @@ deployExecutions:
   type: GoTemplate
   template: |
     - name: deploy
-      type: Helm
+      type: landscaper.gardener.cloud/helm
       target: 
         name: {{ .imports.cluster.metadata.name }}
         namespace: {{ .imports.cluster.metadata.namespace }}
@@ -398,7 +398,7 @@ spec:
     target:
       name: ts-test-cluster
       namespace: default
-    type: Helm
+    type: landscaper.gardener.cloud/helm
 status:
 status:
   ...
@@ -435,7 +435,7 @@ spec:
   target:
     name: ts-test-cluster
     namespace: default
-  type: Helm
+  type: landscaper.gardener.cloud/helm
 status:
   exportRef:
     name: my-ingress-deploy-5stgr-export

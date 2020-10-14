@@ -1,9 +1,9 @@
 # Deployer
 
 The landscaper does offload most work to so called Deployers.
-These deployers are ment to have specific deploy, install and update logic.
+These deployers are meant to have specific deploy, install and update logic.
 
-## List of Component
+## List of Deployers
 
 - [Mock](mock.md)
 - [Helm](helm.md)

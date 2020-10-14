@@ -14,7 +14,7 @@ exports:
 
 executors: | # has to be idempotent
   - name: main
-    type: Mock
+    type: landscaper.gardener.cloud/mock
     config:
       providerStatus:
         imp: {{ index .imports "imp-a" }}

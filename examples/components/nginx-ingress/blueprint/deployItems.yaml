@@ -1,5 +1,5 @@
 - name: deploy
-  type: Helm
+  type: landscaper.gardener.cloud/helm
   config:
     apiVersion: helm.deployer.landscaper...
     kind: ProviderConfiguration

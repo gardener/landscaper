@@ -11,7 +11,7 @@ kind: DeployItem
 metadata:
   name: my-nginx
 spec:
-  type: Helm
+  type: landscaper.gardener.cloud/helm
   
   target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
     name: my-cluster

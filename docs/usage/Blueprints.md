@@ -187,6 +187,7 @@ deployExecutors:
   type: GoTemplate
   template: |
     - name: deploy
+      type: landscaper.gardener.cloud/helm
       target:
         name: {{ .imports.cluster.metadata.name }} # will resolve to "dev-cluster"
         namespace: {{ .imports.cluster.metadata.namespace  }} # will resolve to "default"

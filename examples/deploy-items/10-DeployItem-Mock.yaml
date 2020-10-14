@@ -3,7 +3,7 @@ kind: DeployItem
 metadata:
   name: my-mock-item
 spec:
-  type: Mock
+  type: landscaper.gardener.cloud/mock
   config:
     phase: Init
     providerStatus:

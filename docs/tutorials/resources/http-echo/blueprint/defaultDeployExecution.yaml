@@ -1,7 +1,7 @@
 {{ $name :=  "echo-server" }}
 {{ $namespace :=  "default" }}
 - name: deploy
-  type: Manifest
+  type: landscaper.gardener.cloud/kubernetes-manifest
   target:
     name: {{ .imports.cluster.metadata.name }}
     namespace: {{ .imports.cluster.metadata.namespace }}

@@ -12,7 +12,7 @@ kind: DeployItem
 metadata:
   name: my-nginx
 spec:
-  type: Mock
+  type: landscaper.gardener.cloud/mock
 
   config:
     apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1

@@ -3,7 +3,7 @@ kind: DeployItem
 metadata:
   name: my-nginx
 spec:
-  type: Helm
+  type: landscaper.gardener.cloud/helm
   target:
     name: my-cluster
     namespace: default

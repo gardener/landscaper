@@ -28,7 +28,7 @@ exports:
 
 executors: |
   - name: controller
-    type: Helm
+    type: landscaper.gardener.cloud/helm
     config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration

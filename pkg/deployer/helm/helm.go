@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	Type lsv1alpha1.ExecutionType = "Helm"
+	Type lsv1alpha1.ExecutionType = "landscaper.gardener.cloud/helm"
 )
 
 var Helmscheme = runtime.NewScheme()

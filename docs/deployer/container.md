@@ -11,7 +11,7 @@ kind: DeployItem
 metadata:
   name: my-custom-container
 spec:
-  type: Container
+  type: landscaper.gardener.cloud/container
 
   target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
     name: my-cluster

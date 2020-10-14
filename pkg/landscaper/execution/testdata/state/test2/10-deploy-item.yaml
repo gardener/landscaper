@@ -8,7 +8,7 @@ metadata:
     execution.landscaper.gardener.cloud/name: a
   generation: 1
 spec:
-  type: Helm
+  type: landscaper.gardener.cloud/helm
   config:
     my-val: val1
 
