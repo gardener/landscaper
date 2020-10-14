@@ -4,6 +4,7 @@
 
 {{ $name :=  "echo-server" }}
 {{ $namespace :=  "default" }}
+deployItems:
 - name: deploy
   type: landscaper.gardener.cloud/kubernetes-manifest
   target:

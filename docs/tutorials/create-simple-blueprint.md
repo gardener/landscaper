@@ -152,7 +152,7 @@ If a target is exported the following structure is expected to be exported:
 
 In order to export values of deploy items and installations, the landscaper give access to these values via templating imports:
 ```yaml
-exports:
+values:
   deployitems:
     <deploy item name>: <deploy item export value (is type specific)>
   dataobjects:
@@ -173,6 +173,7 @@ deployExecutions:
 - name: default
   type: GoTemplate
   template: |
+    deployItems:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target: 
@@ -184,7 +185,9 @@ deployExecutions:
         
         chart:
           ref: {{ index .cd.component.externalResources "ingress-nginx-chart" "access" "imageReference" }}
-    
+        
+        updateStrategy: patch
+        
         name: test
         namespace: default
         
@@ -196,7 +199,8 @@ exportExecutions:
 - name: default
   type: GoTemplate
   template: |
-    ingressClass: {{ .exports.deployitems.deploy.ingressClass }}
+    exports:
+      ingressClass: {{ .values.deployitems.deploy.ingressClass }}
 
 exports:
 - name: ingressClass

@@ -44,6 +44,11 @@ type templateExecution interface {
 	TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) ([]byte, error)
 }
 
+// DeployExecutorOutput describes the output of deploy executior.
+type DeployExecutorOutput struct {
+	DeployItems []lsv1alpha1.DeployItemTemplate `json:"deployItems"`
+}
+
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
 func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd *cdutils.ResolvedComponentDescriptor, imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
 
@@ -65,14 +70,22 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 			return nil, err
 		}
 
-		var items []lsv1alpha1.DeployItemTemplate
-		if err := yaml.Unmarshal(executionItemsBytes, &items); err != nil {
+		output := &DeployExecutorOutput{}
+		if err := yaml.Unmarshal(executionItemsBytes, output); err != nil {
 			return nil, fmt.Errorf("error while decoding templated execution: %w", err)
 		}
-		executionItems = append(executionItems, items...)
+		if output.DeployItems == nil {
+			continue
+		}
+		executionItems = append(executionItems, output.DeployItems...)
 	}
 
 	return executionItems, nil
+}
+
+// ExportExecutorOutput describes the output of export executor.
+type ExportExecutorOutput struct {
+	Exports map[string]interface{} `json:"exports"`
 }
 
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
@@ -89,11 +102,11 @@ func (o *Templater) TemplateExportExecutions(blueprint *blueprints.Blueprint, ex
 		if err != nil {
 			return nil, err
 		}
-		var exportDataJSON map[string]interface{}
-		if err := yaml.Unmarshal(exportDataJSONBytes, &exportDataJSON); err != nil {
+		output := &ExportExecutorOutput{}
+		if err := yaml.Unmarshal(exportDataJSONBytes, output); err != nil {
 			return nil, err
 		}
-		exportData = utils.MergeMaps(exportData, exportDataJSON)
+		exportData = utils.MergeMaps(exportData, output.Exports)
 	}
 
 	return exportData, nil

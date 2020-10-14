@@ -46,7 +46,7 @@ func (t *SpiffTemplate) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExe
 	}
 
 	values := map[string]interface{}{
-		"exports": exports,
+		"values": exports,
 	}
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithFileSystem(blueprint.Fs).WithValues(values)
 	if err != nil {

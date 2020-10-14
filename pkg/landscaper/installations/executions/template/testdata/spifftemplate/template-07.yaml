@@ -5,4 +5,5 @@
 - name: one
   type: Spiff
   template:
+    exports:
       image: (( "my-custom-image:" read("./VERSION", "text") ))

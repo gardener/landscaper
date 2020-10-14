@@ -34,56 +34,6 @@ spec:
     - name: "namespace"
       dataRef: "common-namespace"
 
-  - from: .virtual.etcd.backup.active
-    to: .backup.active
-
-  - from: .virtual.etcd.backup.bucketPrefix
-    to: .backup.bucketPrefix
-  - from: .blobstore.credentials # from techincal-users
-    to: .backup.blobstore.credentials
-  - from: .virtual.etcd.backup.blobstore.credentialRef # one pointer in the above credentials
-    to: .backup.blobstore.credentialRef
-  - from: .virtual.etcd.backup.blobstore.region
-    to: .backup.blobstore.region
-    # TODO: define default only if this region can be used by other components
-  - from: .virtual.etcd.backup.blobstore.providerConfig # (i.e. resourcegroup on az)
-    to: .backup.blobstore.providerConfig
-
-  ###  kube-apiserver
-  - from: .dns.domains.gardenSystem.virtual.domain
-    to: .base.domain
-
-  - from: .dns.domainPrefixes.virtual-apiserver
-    to: .prefix.domain
-
-  - from: .networkpolicies.active
-    to: .networkpolicies.active
-
-  - from: .dns.class # used to register the kube-apiserver domain, exported from dns component
-    to: .dnsClass
-
-  - from: .virtual.vpa.active
-    to: .vpaActive
-    # TODO: provide imports for vpa config + what about hvpa?
-
-  - from: .auditlog.active
-    to: .auditlog.active
-  - from: .auditlog.kubeconfig # i.e. from sap-auditlog component
-    to: .auditlog.kubeconfig
-  - from: .virtual.auditlog.policy
-    to: .policy
-
-  - from: .identity.active # from static export of identity component
-    to: .identity.active
-  - from: .identity.issuerURL # for dashboard/api-server auth callbacks
-    to: .identity.issuerURL
-  - from: .identity.api.endpoint # for dashboard/api-server doing grcp to add themself
-    to: .identity.api.endpoint
-  - from: .identity.api.caPrivatefrom # clients to api.endpoint will need to have a client cert signed by this caPrivatefrom
-    to: .identity.api.caPrivatefrom
-  - from: .identity.cert # identity server side cert (chain)
-    to: .identity.cert
-
   exports:
     data:
     - name: "etcd-main"
@@ -107,15 +57,11 @@ status:
   imports:
   - name: namespace
     sourceRef:
-      apiVersion: "landscaper.gardener.cloud/v1alpha1"
-      kind: "DataObject"
       name: common-namespace
       namespace: default
     configGeneration: "asdfasdf"
   - name: host-cluster
     sourceRef:
-      apiVersion: "landscaper.gardener.cloud/v1alpha1"
-      kind: "Target"
       name: gke-cluster
       namespace: default
     configGeneration: ""

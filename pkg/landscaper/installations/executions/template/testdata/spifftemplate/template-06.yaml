@@ -5,4 +5,5 @@
 - name: one
   type: Spiff
   template:
-    image: (( "my-custom-image:" exports.version ))
+    exports:
+      image: (( "my-custom-image:" values.version ))

@@ -19,7 +19,6 @@ spec:
     type: script
     dependsOn:
     - init
-    environment: ls-abc
     config:
       mount:
         artifact: xyz

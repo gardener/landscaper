@@ -17,10 +17,11 @@ exports:
 exportExecutions:
 - type: GoTemplate
   template: |
-    root.y:
-    {{ toYaml (index .exports.deployitems.deploy "root.y") | indent 2 }}
+    exports:
+      root.y:
+    {{ toYaml (index .values.deployitems.deploy "root.y") | indent 4 }}
 
-    {{ $target := index .exports.targets "root.z" }}
-    root.z:
-      type: {{ $target.spec.type }}
-      config: {{ $target.spec.config }}
+      {{ $target := index .values.targets "root.z" }}
+      root.z:
+        type: {{ $target.spec.type }}
+        config: {{ $target.spec.config }}

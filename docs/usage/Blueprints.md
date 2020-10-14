@@ -125,6 +125,7 @@ A deploy item template exposes specific deploy item fields and will be rendered 
 
 __DeployItem Template__:
 ```yaml
+deployItems:
 - name: deploy-item-name # unique identifier of the step
   target:
     name: ""
@@ -186,6 +187,7 @@ deployExecutors:
 - name: default
   type: GoTemplate
   template: |
+    deployItems:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target:
@@ -210,12 +212,13 @@ Multiple template executor exports will be merged in the defined order, whereas 
 
 __exports__:
 ```yaml
-export-name: export-value
-target-export-name:
-  labels: {}
-  annotations: {}
-  type: "" # target type
-  config: any # target specific config data
+exports:
+  export-name: export-value
+  target-export-name:
+    labels: {}
+    annotations: {}
+    type: "" # target type
+    config: any # target specific config data
 ```
 
 All template executors are given the same input data that can be used while templating.
@@ -224,7 +227,7 @@ The input consists of the deploy items export values and all exports of subinsta
 For the specific documentation about the available templating engines see [Template Executors](./TemplateExecutors.md).
 
 ```yaml
-exports:
+values:
   deployitems:
     <deployitem step name>: <exported values>
   dataobjects:
@@ -239,7 +242,7 @@ All list of deployitem templates of all template executors are appended to one l
 
 Input values:
 ```yaml
-exports:
+values:
   deployitems:
     deploy:
       ingressPrefix: my-pref
@@ -264,10 +267,11 @@ exportExecutors:
 - name: default
   type: GoTemplate
   template: |
-    url: http://{{ .exports.deployitems.ingressPrefix  }}.{{ .exports.dataobjects.domain }} # resolves to http://my-pref.example.com
-    cluster:
-      type: {{ .exports.targets.dev-cluster.spec.type  }}
-      config: {{ .exports.targets.dev-cluster.spec.config  }}
+    exports:
+      url: http://{{ .values.deployitems.ingressPrefix  }}.{{ .values.dataobjects.domain }} # resolves to http://my-pref.example.com
+      cluster:
+        type: {{ .values.targets.dev-cluster.spec.type  }}
+        config: {{ .values.targets.dev-cluster.spec.config  }}
 ```
 
 

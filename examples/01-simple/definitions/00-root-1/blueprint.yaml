@@ -21,6 +21,7 @@ exports:
 deployExecutions:
 - type: GoTemplate
   template: |
+    deployItems:
     - name: main
       type: landscaper.gardener.cloud/mock
       config:
@@ -36,4 +37,5 @@ deployExecutions:
 exportExecutions:
 - type: GoTemplate
   template: |
-    exp-a: {{ index .exports.deployitems.main "exp-a" }}
+    exports:
+      exp-a: {{ index .values.deployitems.main "exp-a" }}

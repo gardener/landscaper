@@ -11,9 +11,10 @@ spec:
   type: container | helm | manifest
 
   config:
-    xxx: abc
+    apiVersion: mydeplyoer/v1
+    kind: ProviderConfiguration
+    ...
 
 status:
-  phase: Reconciled
-
+  phase: Succeeded
   observedGeneration: 0

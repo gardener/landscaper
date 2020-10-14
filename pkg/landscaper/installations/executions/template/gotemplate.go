@@ -86,7 +86,7 @@ func (_ *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	values := map[string]interface{}{
-		"exports": exports,
+		"values": exports,
 	}
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {

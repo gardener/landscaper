@@ -101,7 +101,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"root.y: {{ index .exports.dataobjects \"root.y\" }}\nroot.z: {{ index .exports.dataobjects \"root.z\" }}"`),
+				Template: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`),
 			},
 		}
 
@@ -144,7 +144,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"root.y: true\nroot.z: {{ index .exports.dataobjects \"root.z\" }}"`),
+				Template: []byte(`"root.y: true\nroot.z: {{ index .values.dataobjects \"root.z\" }}"`),
 			},
 		}
 
@@ -164,7 +164,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"root.y: {{ index .exports.deployitems.deploy \"root.y\" }}\nroot.z: {{ index .exports.dataobjects \"root.z\" }}"`),
+				Template: []byte(`"exports:\n  root.y: {{ index .values.deployitems.deploy \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`),
 			},
 		}
 

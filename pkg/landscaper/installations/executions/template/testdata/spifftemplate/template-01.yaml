@@ -5,6 +5,7 @@
 - name: one
   type: Spiff
   template:
+    deployItems:
     - name: init
       type: container
       config:

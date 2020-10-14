@@ -5,6 +5,7 @@
 - name: one
   type: GoTemplate
   template: |
+    deployItems:
     - name: init
       type: container
       config:

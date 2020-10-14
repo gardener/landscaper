@@ -13,6 +13,7 @@ deployExecutions:
 - name: default
   type: GoTemplate
   template: |
+    deployItems:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target:
@@ -25,6 +26,8 @@ deployExecutions:
         chart:
           ref: {{ index .cd.component.externalResources "ingress-nginx-chart" "access" "imageReference" }}
 
+        updateStrategy: patch
+
         name: test
         namespace: default
 
@@ -36,7 +39,8 @@ exportExecutions:
 - name: default
   type: GoTemplate
   template: |
-    ingressClass: {{ .exports.deployitems.deploy.ingressClass }}
+    exports:
+      ingressClass: {{ .values.deployitems.deploy.ingressClass }}
 
 exports:
 - name: ingressClass

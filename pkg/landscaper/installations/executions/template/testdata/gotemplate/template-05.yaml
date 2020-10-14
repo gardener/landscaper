@@ -5,4 +5,5 @@
 - name: one
   type: GoTemplate
   template: |
-    testKey: myval
+    exports:
+      testKey: myval
