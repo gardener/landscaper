@@ -225,6 +225,8 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
+			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+				currOp, "GetObject", err.Error())
 			return err
 		}
 		if err := kubeClient.Create(ctx, obj); err != nil {

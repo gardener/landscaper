@@ -161,6 +161,8 @@ func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, ob
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
+			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+				currOp, "GetObject", err.Error())
 			return err
 		}
 		if err := kubeClient.Create(ctx, obj); err != nil {
