@@ -18,3 +18,4 @@
 ### Tutorials
 - [Simple NGINX Ingress blueprint](tutorials/01-create-simple-blueprint.md)
 - [HTTP Echo Server with Import from nginx ingress blueprint](tutorials/02-simple-import.md)
+- [Aggregated Blueprint that includes the nginx-ingress and the echo-server](tutorials/03-aggregated-blueprint.md)
