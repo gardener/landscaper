@@ -42,6 +42,8 @@ helm chart push $CHART_REF
 A component descriptor contains all resources that are used by the application installation.
 Resources are in this example the ingress-nginx helm chart but could also be `oci images` or even `node modules`.
 
+For more information about the component descriptor and the usage of the different fields see the [component descriptor docs](https://github.com/gardener/component-spec).
+
 ```yaml
 meta:
   schemaVersion: v2
@@ -88,6 +90,8 @@ component:
 
 Blueprints describe the imports that are used to template the deployitems and exports that result from the executed deploy items.
 
+For detailed documentation about the blueprint and see [docs/usage/Blueprints.md](/docs/usage/Blueprints.md).
+
 The imports are describes as list of import definitions.
 A import is defined by a unique name and a type definition.
 The type definition is either a jsonschema definition or a `targetType`.
@@ -128,6 +132,8 @@ Each template step has to output a list of deploy item templates of the followin
 ```
 
 Currently `GoTemplate` and `Spiff` are supported templating engines.
+For detailed information about the template executors see [here](/docs/usage/TemplateExecutors.md).
+
 The landscaper offers access to the imports and the component descriptor in the following structure.
 ```yaml
 imports:
@@ -518,3 +524,12 @@ items:
     namespace: default
   data: nginx
 ```
+
+### Summary
+- A blueprint has been created that describes how a nginx ingress can be deployed into a kubernetes cluster.
+- A component descriptor has been created that contains the blueprint and another external resources as resources.
+- The blueprint and the component descriptor are uploaded to the oci registry.
+- A installation has been defined and applied to the cluster which resulted in teh deployed nginx application. 
+
+### Up Next
+In the [next tutorial](./02-simple-import.md), another application is deployed that used the exported ingressClass data.

@@ -1,6 +1,6 @@
 # Container Deployer
 
-The container deployer is a controller that reconciles DeployItems of type `Container`.
+The container deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/container`.
 It executes the given container spec with the injected imports and collect exports from a predefined path.
 
 ### Configuration

@@ -7,5 +7,5 @@ These deployers are meant to have specific deploy, install and update logic.
 
 - [Mock](mock.md)
 - [Helm](helm.md)
-- [Manifest](manifest.md)
+- [Kubernetes Manifest](manifest.md)
 - [Container](container.md)

@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: aggCluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+exports:
+- name: aggIngressClass
+  schema:
+    type: string
+
+exportExecutions:
+- name: export
+  type: GoTemplate
+  template: |
+    exports:
+      aggIngressClass: {{ .values.dataobjects.myIngressClass }}
+
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+
+  blueprint:
+    ref: cd://componentReference/ingress/localResources/ingress-nginx-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      target: aggCluster
+
+  exports:
+    data:
+    - name: ingressClass
+      dataRef: myIngressClass
+
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+
+  blueprint:
+    ref: cd://componentReference/server/localResources/echo-server-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      target: aggCluster
+    data:
+    - name: ingressClass
+      dataRef: myIngressClass

@@ -1,6 +1,6 @@
 # Mock Deployer
 
-The mock deployer is a controller that reconciles DeployItems of type `Mock`.<br>
+The mock deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/mock`.<br>
 This deployer is only ment for testing and demo purposes to simluate specific behavior of deploy item.
 Therefore, the Configuration part configures the state that should be reconciled by the mock.
 

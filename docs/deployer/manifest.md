@@ -1,6 +1,6 @@
-# Manifest Deployer
+# Kubernetes Manifest Deployer
 
-The manifest deployer is a controller that reconciles DeployItems of type `Manifest`.
+The kubernetes manifest deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/kubernetes-manifest`.
 It deploys the configured kubernetes manifest into the target cluster.
 
 ### Configuration
