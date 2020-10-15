@@ -5,12 +5,20 @@ These steps can consist of deploy items or other blueprints which are assembled 
 
 A Blueprint is a filesystem that contains the blueprint definition at `/blueprint.yaml`.
 Other files can be optionally added.
+Every Blueprint must have a corresponding component descriptor that is used to reference tht blueprint and define the dependencies of the blueprint.
 ```
 my-blueprint
 ├── data
 │   └── myadditional data
 └── blueprint.yaml
 ```
+
+**Index**:
+- [Blueprint Definition](#blueprintyaml-definition)
+- [DeployExecutions](#deployexecutions)
+- [ExportExecutions](#exportexecutions)
+- [Installation Templates](#installation-templates)
+- [Storage / Access](#remote-access)
 
 ## blueprint.yaml Definition
 
@@ -20,7 +28,7 @@ The blueprint is a versioned configuration file that consists of
 - exports
 - deployExecutions
 - exportExecution
-- 
+- subinstallation
 
 See [.schemas/landscaper_Blueprint.json](../../.schemas/landscaper_Blueprint.json) for the automatically generated jsonschema definition.
 
