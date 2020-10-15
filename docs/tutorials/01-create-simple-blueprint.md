@@ -374,8 +374,8 @@ spec:
 When the `Target` and the Installation CRs are properly configured, they can be applied to the kubernetes cluster running the landscaper.
 
 ```shell script
-kubectl create -f docs/tutorials/resources/my-target.yaml
-kubectl create -f docs/tutorials/resources/installation.yaml
+kubectl create -f docs/tutorials/resources/ingress-nginx/my-target.yaml
+kubectl create -f docs/tutorials/resources/ingress-nginx/installation.yaml
 ```
 
 The landscaper will then immediately start to reconcile the installation as all imports are satisfied.

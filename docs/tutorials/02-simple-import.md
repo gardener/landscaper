@@ -14,6 +14,8 @@ __Prerequisites__:
 
 All example resources can be found in [docs/tutorials/resources/echo-server](./resources/echo-server).
 
+### Resources
+
 #### Build the Blueprint
 
 The http echo server consists of a deployment, a service and a ingress object that are istalled using the [kubernetes manifest deployer](/docs/deployer/manifest.md)
@@ -178,6 +180,51 @@ landscaper-cli cd push eu.gcr.io/my-project/comp github.com/gardener/landscaper/
 ### Installation
 
 The same target as in the first tutorial is used as the resources have to be deployed into the same kubernetes cluster.
+The only resource that has to be defined is a Installation for the echo-server blueprint.
+
+The echo-server installation is the same as it was previously created for the nginx ingress blueprint.
+
+In addition, the `ingressClass` import has to be defined.
+The nginx installation exports ìts ingressClass to `myIngressClass`, so this dataobject has to be used as import for the echo server.
+
+```yaml
+imports:
+  data:
+  - name: ingressClass
+    dataRef: "myIngressClass"
+```
+
+*Complete Installation*:
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-echo-server
+spec:
+  blueprint:
+    ref:
+      repositoryContext:
+        type: ociRegistry
+        baseUrl: eu.gcr.io/my-project/comp
+      componentName: github.com/gardener/landscaper/echo-server
+      version: v0.1.0
+      kind: localResource
+      resourceName: echo-server-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
+      target: "#my-cluster"
+    data:
+    - name: ingressClass
+      dataRef: "myIngressClass"
+```
+
+The echo-server can now be installed by applying the installation to the landscaper cluster.
+```shell script
+kubectl create -f docs/tutorials/resources/echo-server/installation.yaml
+```
 
 ### Summary
 
@@ -185,4 +232,4 @@ The same target as in the first tutorial is used as the resources have to be dep
 
 ### Up next
 
-In the [next tutorial](03-aggregated-blueprint.md), a aggregated blueprint will be developed.
+In the [next tutorial](./03-aggregated-blueprint.md), a aggregated blueprint will be developed.

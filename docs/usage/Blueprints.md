@@ -274,6 +274,48 @@ exportExecutors:
         config: {{ .values.targets.dev-cluster.spec.config  }}
 ```
 
+### Installation Templates
+Installation Templates are used to include subinstallation in a blueprint.
+As the name suggest, they are templates for installation which means that the landscaper will 
+create installation based on these templates.
+
+These subinstallations have a context that is defined by the parent installation.
+Context means that subinstallations can only import data that is also imported by the parent or exported by other subinstallations with the same parent.
+
+Installation templates offer the same configuration as real installation 
+expect that blueprints have to be defined in the component descriptor of the blueprint (either as resource or by a component reference).
+Inline blueprints are also possible.
+
+Subinstallations can also be defined in a separate file.
+ That file is expected to contain a InstallationTemplate.
+
+```yaml
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: my-subinstallation # must be unique
+  blueprint:
+    ref: cd://componentReferences/ingress/localResources/blueprint #cd://localResources/myblueprint
+#    filesystem:
+#      blueprint.yaml: abc...
+  
+  # define imported dataobjects and target from other installations or the 
+  # parents import.
+  # It's the same syntax as for default installations.
+  imports:
+    data:
+    - name: "" # data import name
+      dataRef: "" # dataobject name
+    targets:
+    - name: "" # target import name
+      target: "" # target name
+  #importMappings: {}
+
+  exports:
+    targets:
+    - name: "" # target export name
+      target: "" # target name
+  #exportMappings: {}
+```
 
 ## Remote Access
 
