@@ -25,8 +25,10 @@ subinstallations:
 - apiVersion: landscaper.gardener.cloud/v1alpha1
   kind: InstallationTemplate
 
+  name: ingress
+
   blueprint:
-    ref: cd://componentReference/ingress/localResources/ingress-nginx-blueprint
+    ref: cd://componentReferences/ingress/localResources/ingress-nginx-blueprint
 
   imports:
     targets:
@@ -41,8 +43,10 @@ subinstallations:
 - apiVersion: landscaper.gardener.cloud/v1alpha1
   kind: InstallationTemplate
 
+  name: server
+
   blueprint:
-    ref: cd://componentReference/server/localResources/echo-server-blueprint
+    ref: cd://componentReferences/server/localResources/echo-server-blueprint
 
   imports:
     targets:

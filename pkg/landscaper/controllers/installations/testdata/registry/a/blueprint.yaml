@@ -5,8 +5,9 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-name: a
-version: 1.0.0
+annotations:
+  local/name: a
+  local/version: 1.0.0
 
 imports:
 - name: a.b

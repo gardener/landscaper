@@ -20,11 +20,10 @@ const BlueprintResourceType = "blueprint"
 type Blueprint struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Name is the name of the definition.
-	Name string `json:"name"`
-
-	// Version is the semver version of the definition.
-	Version string `json:"version"`
+	// Annotations is an unstructured key value map stored with a resource that may be
+	// set by external tools to store and retrieve arbitrary metadata.
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty" protobuf:"bytes,12,rep,name=annotations"`
 
 	// JSONSchemaVersion defines the default jsonschema version of the blueprint.
 	// e.g. "https://json-schema.org/draft/2019-09/schema"

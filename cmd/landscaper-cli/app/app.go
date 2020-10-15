@@ -11,7 +11,6 @@ import (
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/blueprints"
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/componentdescriptor"
-	"github.com/gardener/landscaper/cmd/landscaper-cli/app/config"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/version"
 
@@ -36,7 +35,6 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 	logger.InitFlags(cmd.Flags())
 
 	cmd.AddCommand(NewVersionCommand())
-	cmd.AddCommand(config.NewConfigCommand(ctx))
 	cmd.AddCommand(blueprints.NewBlueprintsCommand(ctx))
 	cmd.AddCommand(componentdescriptor.NewComponentsCommand(ctx))
 

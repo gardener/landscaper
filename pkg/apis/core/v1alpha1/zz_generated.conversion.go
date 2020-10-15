@@ -573,8 +573,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Blueprint, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Version = in.Version
+	out.Annotations = *(*map[string]string)(unsafe.Pointer(&in.Annotations))
 	out.JSONSchemaVersion = in.JSONSchemaVersion
 	out.LocalTypes = *(*map[string]core.JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*[]core.ImportDefinition)(unsafe.Pointer(&in.Imports))
@@ -591,8 +590,7 @@ func Convert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.Bluep
 }
 
 func autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *Blueprint, s conversion.Scope) error {
-	out.Name = in.Name
-	out.Version = in.Version
+	out.Annotations = *(*map[string]string)(unsafe.Pointer(&in.Annotations))
 	out.JSONSchemaVersion = in.JSONSchemaVersion
 	out.LocalTypes = *(*map[string]JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*[]ImportDefinition)(unsafe.Pointer(&in.Imports))

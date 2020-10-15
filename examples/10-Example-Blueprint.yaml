@@ -5,7 +5,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
-jsonSchemaVersion:
+jsonSchemaVersion: ""
 
 imports:
 - name: dnsControllerClass | common.dnsControllerClass

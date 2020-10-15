@@ -93,7 +93,7 @@ subinstallations:
   kind: InstallationTemplate
   name: ingress # must be unique
   blueprint:
-    ref: cd://componentReference/ingress/localResources/blueprint #cd://localResources/myblueprint
+    ref: cd://componentReferences/ingress/localResources/blueprint #cd://localResources/myblueprint
 #    filesystem:
 #      blueprint.yaml: abc...
   

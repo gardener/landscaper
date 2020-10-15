@@ -153,7 +153,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	if subInst == nil {
 		subInst = &lsv1alpha1.Installation{}
-		subInst.GenerateName = fmt.Sprintf("%s-%s-", blueprint.Info.Name, subInstTmpl.Name)
+		subInst.GenerateName = fmt.Sprintf("%s-", subInstTmpl.Name)
 		subInst.Namespace = inst.Namespace
 	}
 

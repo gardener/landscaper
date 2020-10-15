@@ -4,8 +4,6 @@
   "definitions": {
     "Blueprint": {
       "required": [
-        "name",
-        "version",
         "jsonSchemaVersion"
       ],
       "properties": {
@@ -15,11 +13,13 @@
         "apiVersion": {
           "type": "string"
         },
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
+        "annotations": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
         },
         "jsonSchemaVersion": {
           "type": "string"

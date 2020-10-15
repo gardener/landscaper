@@ -22,6 +22,13 @@ import (
 func (in *Blueprint) DeepCopyInto(out *Blueprint) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
+	if in.Annotations != nil {
+		in, out := &in.Annotations, &out.Annotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.LocalTypes != nil {
 		in, out := &in.LocalTypes, &out.LocalTypes
 		*out = make(map[string]JSONSchemaDefinition, len(*in))

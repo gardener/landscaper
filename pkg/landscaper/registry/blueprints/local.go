@@ -75,6 +75,10 @@ blob.yaml --> url: xxx
 // BlueprintFileName is the filename of a component definition on a local path
 const BlueprintFileName = "blueprint.yaml"
 
+const BlueprintNameAnnotation = "local/name"
+
+const BlueprintVersionAnnotation = "local/version"
+
 type localRegistry struct {
 	log   logr.Logger
 	paths []string
@@ -98,15 +102,15 @@ func NewLocalRegistry(log logr.Logger, paths ...string) (*localRegistry, error) 
 		Index:   Index{},
 	}
 
-	if err := r.setDefinitions(); err != nil {
+	if err := r.setBlueprints(); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (r *localRegistry) setDefinitions() error {
+func (r *localRegistry) setBlueprints() error {
 	for _, path := range r.paths {
-		index, err := r.findDefinitionsInPath(path)
+		index, err := r.findBlueprintsInPath(path)
 		if err != nil {
 			return err
 		}
@@ -115,9 +119,9 @@ func (r *localRegistry) setDefinitions() error {
 	return nil
 }
 
-// findDefinitionsInPath walks the given path and tries to parse each file with the BlueprintFileName.
+// findBlueprintsInPath walks the given path and tries to parse each file with the BlueprintFileName.
 // The component definition's directory is set as its corresponding blob.
-func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
+func (r *localRegistry) findBlueprintsInPath(path string) (Index, error) {
 	index := Index{}
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -134,14 +138,16 @@ func (r *localRegistry) findDefinitionsInPath(path string) (Index, error) {
 			return fmt.Errorf("unable to read file %s: %w", path, err)
 		}
 
-		definition := &v1alpha1.Blueprint{}
-		if _, _, err := r.decoder.Decode(data, nil, definition); err != nil {
+		blueprint := &v1alpha1.Blueprint{}
+		if _, _, err := r.decoder.Decode(data, nil, blueprint); err != nil {
 			return fmt.Errorf("unable to decode blueprint from file %s: %w", path, err)
 		}
 
 		index.Add(LocalBlueprintReference{
 			SourcePath: path,
-			Blueprint:  definition,
+			Name:       blueprint.Annotations[BlueprintNameAnnotation],
+			Version:    blueprint.Annotations[BlueprintVersionAnnotation],
+			Blueprint:  blueprint,
 			blobPath:   filepath.Dir(path),
 		})
 
@@ -193,6 +199,8 @@ func (r *localRegistry) GetContent(ctx context.Context, ref cdv2.Resource, fs vf
 // BlueprintReferenceTemplate is the reference to a local definition
 type LocalBlueprintReference struct {
 	SourcePath string
+	Name       string
+	Version    string
 	Blueprint  *v1alpha1.Blueprint
 	blobPath   string
 }
@@ -210,12 +218,11 @@ type Index map[string]map[string]LocalBlueprintReference
 
 // Add adds or updates a definition reference in the Index.
 func (i Index) Add(ref LocalBlueprintReference) {
-	def := ref.Blueprint
-	if _, ok := i[def.Name]; !ok {
-		i[def.Name] = make(map[string]LocalBlueprintReference)
+	if _, ok := i[ref.Name]; !ok {
+		i[ref.Name] = make(map[string]LocalBlueprintReference)
 	}
 
-	i[def.Name][def.Version] = ref
+	i[ref.Name][ref.Version] = ref
 }
 
 // Merge merges the Index a in into the current Index.
