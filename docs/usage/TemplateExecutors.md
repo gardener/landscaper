@@ -19,6 +19,8 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
 - __readDir(path string)__: returns all files and directories in the given directory of the blueprint's filesystem.
 - __toYaml(interface{})__: converts the given object to valid yaml
 
+:warning: Note that OS functions are not available for security reasons.
+
 The template can be either defined inline as string or a file can be referenced.
 ```yaml
 - type: GoTemplate
@@ -27,6 +29,36 @@ The template can be either defined inline as string or a file can be referenced.
 
 - type: GoTemplate
   file: /file/path
+```
+
+#### State handling
+
+The GoTemplate executor also offers the possibility to write and read from a state.
+The state is read before the templating and can be accessed in addition to all other input values with:
+```yaml
+otherinputs: 
+otherinputs2:
+
+state:
+  mystate:
+```
+
+Values in this state can be stored by provding an additional output in the executor.
+```yaml
+myexports:
+
+state: 
+  mystate:
+```
+
+**Example**
+```yaml
+# read and write to state in the deploy executor
+{{ $myval := {{ default .state.stateval1 (genPrivateKey rsa) }} }}
+deployItems:
+- myitems: {{ $myval }}
+state:
+  stateval1: {{ $myval }}
 ```
 
 ### Spiff

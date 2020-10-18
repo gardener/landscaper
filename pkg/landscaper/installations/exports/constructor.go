@@ -66,7 +66,10 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 	internalExports["targets"] = targetsMap
 
-	templater := template.New(c.Operation)
+	templater := template.New(c.Operation, template.KubernetesStateHandler{
+		KubeClient: c.Client(),
+		Inst:       c.Inst.Info,
+	})
 	exports, err := templater.TemplateExportExecutions(c.Inst.Blueprint, internalExports)
 	if err != nil {
 		return nil, nil, err

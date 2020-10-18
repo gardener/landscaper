@@ -18,19 +18,20 @@ import (
 )
 
 // Templater implements all available template executors.
-// todo: implement state handling
 type Templater struct {
 	lsoperation.Interface
-	impl map[lsv1alpha1.TemplateType]templateExecution
+	stateHdlr GenericStateHandler
+	impl      map[lsv1alpha1.TemplateType]templateExecution
 }
 
-// New creates a new instance of a templator.
-func New(op lsoperation.Interface) *Templater {
+// New creates a new instance of a templater.
+func New(op lsoperation.Interface, state GenericStateHandler) *Templater {
 	return &Templater{
 		Interface: op,
+		stateHdlr: state,
 		impl: map[lsv1alpha1.TemplateType]templateExecution{
-			lsv1alpha1.GOTemplateType:    &GoTemplateExecution{},
-			lsv1alpha1.SpiffTemplateType: &SpiffTemplate{},
+			lsv1alpha1.GOTemplateType:    &GoTemplateExecution{state: state},
+			lsv1alpha1.SpiffTemplateType: &SpiffTemplate{state: state},
 		},
 	}
 }
@@ -44,7 +45,7 @@ type templateExecution interface {
 	TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) ([]byte, error)
 }
 
-// DeployExecutorOutput describes the output of deploy executior.
+// DeployExecutorOutput describes the output of deploy executor.
 type DeployExecutorOutput struct {
 	DeployItems []lsv1alpha1.DeployItemTemplate `json:"deployItems"`
 }
