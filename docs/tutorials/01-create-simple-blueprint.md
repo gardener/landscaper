@@ -265,7 +265,7 @@ component:
 Then the component descriptor can be uploaded to a oci registry using again the landscaper cli.
 When the upload succeeds, the component should be accessible at `eu.gcr.io/my-project/comp/github.com/gardener/landscaper/ingress-nginx/v0.1.0` in the registry.
 ```shell script
-landscaper-cli cd push eu.gcr.io/my-project/comp github.com/gardener/landscaper/ingress-nginx v0.1.0 docs/tutorials/resources/ingress-nginx/component-descriptor.yaml
+landscaper-cli cd push docs/tutorials/resources/ingress-nginx/component-descriptor.yaml
 ```
 
 ### Installation

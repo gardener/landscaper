@@ -174,7 +174,7 @@ component:
 ```
 
 ```shell script
-landscaper-cli cd push eu.gcr.io/my-project/comp github.com/gardener/landscaper/echo-server v0.1.0 docs/tutorials/resources/echo-server/component-descriptor.yaml
+landscaper-cli cd push docs/tutorials/resources/echo-server/component-descriptor.yaml
 ```
 
 ### Installation
