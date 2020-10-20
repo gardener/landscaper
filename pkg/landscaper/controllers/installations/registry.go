@@ -19,64 +19,72 @@ import (
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
 func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference) error {
-	var (
-		componentsOCIRegistry componentsregistry.TypedRegistry
-		blueprintsOCIRegistry blueprintsregistry.Registry
-	)
 	// resolve all pull secrets
 	secrets, err := a.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
 		return err
 	}
 
-	if a.lsConfig.Registries.Components.OCI == nil {
-		var err error
-		componentsOCIRegistry, err = componentsregistry.NewLocalClient(a.Log(), a.lsConfig.Registries.Components.Local.ConfigPaths...)
+	if a.lsConfig.Registries.Components.Local != nil {
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(a.Log(), a.lsConfig.Registries.Components.Local.ConfigPaths...)
 		if err != nil {
 			return err
 		}
 		if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 			return err
 		}
-	} else {
-		ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, a.lsConfig.Registries.Components.OCI.ConfigFiles)
-		if err != nil {
-			return err
-		}
-		ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
-		if err != nil {
-			return err
-		}
-		componentsOCIRegistry, err = componentsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
-		if err != nil {
-			return err
-		}
 	}
 
-	if a.lsConfig.Registries.Artifacts.OCI == nil {
-		blueprintsOCIRegistry, err = blueprintsregistry.NewLocalRegistry(a.Log(), a.lsConfig.Registries.Artifacts.Local.ConfigPaths...)
-		if err != nil {
-			return err
-		}
-	} else {
-		ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, a.lsConfig.Registries.Artifacts.OCI.ConfigFiles)
-		if err != nil {
-			return err
-		}
-		ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI), oci.WithResolver{Resolver: ociKeyring})
-		if err != nil {
-			return err
-		}
-		blueprintsOCIRegistry, err = blueprintsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
-		if err != nil {
-			return err
-		}
-		if err := a.InjectUniversalOCIClient(ociClient); err != nil {
-			return err
-		}
+	// always add a oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if a.lsConfig.Registries.Artifacts.OCI != nil {
+		ociConfigFiles = a.lsConfig.Registries.Components.OCI.ConfigFiles
 	}
-
+	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
+	if err != nil {
+		return err
+	}
+	ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
+	if err != nil {
+		return err
+	}
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+	if err != nil {
+		return err
+	}
 	if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+		return err
+	}
+
+	if a.lsConfig.Registries.Artifacts.Local != nil {
+		blueprintsOCIRegistry, err := blueprintsregistry.NewLocalRegistry(a.Log(), a.lsConfig.Registries.Artifacts.Local.ConfigPaths...)
+		if err != nil {
+			return err
+		}
+		if err := a.blueprintRegistryMgr.Set(blueprintsregistry.LocalAccessType, blueprintsregistry.LocalAccessCodec, blueprintsOCIRegistry); err != nil {
+			return err
+		}
+
+	}
+
+	// always add a oci client to support unauthenticated requests
+	ociConfigFiles = make([]string, 0)
+	if a.lsConfig.Registries.Artifacts.OCI != nil {
+		ociConfigFiles = a.lsConfig.Registries.Artifacts.OCI.ConfigFiles
+	}
+	ociKeyring, err = credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
+	if err != nil {
+		return err
+	}
+	ociClient, err = oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI), oci.WithResolver{Resolver: ociKeyring})
+	if err != nil {
+		return err
+	}
+	blueprintsOCIRegistry, err := blueprintsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+	if err != nil {
+		return err
+	}
+	if err := a.InjectUniversalOCIClient(ociClient); err != nil {
 		return err
 	}
 

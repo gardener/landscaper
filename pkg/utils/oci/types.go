@@ -65,7 +65,9 @@ type Option interface {
 // and then returns itself (for convenient chaining).
 func (o *Options) ApplyOptions(opts []Option) *Options {
 	for _, opt := range opts {
-		opt.ApplyOption(o)
+		if opt != nil {
+			opt.ApplyOption(o)
+		}
 	}
 	return o
 }
