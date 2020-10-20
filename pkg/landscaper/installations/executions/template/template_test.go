@@ -5,6 +5,8 @@
 package template
 
 import (
+	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,6 +46,12 @@ var _ = Describe("TemplateDeployExecutions", func() {
 })
 
 func runTestSuite(testdataDir string) {
+	var stateHandler GenericStateHandler
+
+	BeforeEach(func() {
+		stateHandler = NewMemoryStateHandler()
+	})
+
 	Context("TemplateDeployExecutions", func() {
 		It("should return the raw template if no templating funcs are defined", func() {
 			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-01.yaml"))
@@ -53,7 +61,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -75,7 +83,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -97,7 +105,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -123,7 +131,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 			cd := &cdutils.ResolvedComponentDescriptor{
 				ResolvedComponentSpec: cdutils.ResolvedComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -167,13 +175,43 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
 			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.0"})
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should use the state to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-09.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(&installations.Operation{}, stateHandler)
+
+			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.1"})
+			Expect(err).ToNot(HaveOccurred())
+
+			state := map[string]string{
+				"version": "0.0.2",
+			}
+			stateBytes, err := json.Marshal(state)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stateHandler.Store(context.TODO(), exec[0].Name, stateBytes)).To(Succeed())
+			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+				Fs:   nil,
+			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.2"})
+
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -186,7 +224,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -204,7 +242,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -222,7 +260,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{})
+			op := New(&installations.Operation{}, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)

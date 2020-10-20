@@ -47,7 +47,11 @@ func New(op *installations.Operation) *ExecutionOperation {
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
-	executions, err := template.New(o).TemplateDeployExecutions(inst.Blueprint, o.ResolvedComponentDescriptor, imports)
+	templateStateHandler := template.KubernetesStateHandler{
+		KubeClient: o.Client(),
+		Inst:       inst.Info,
+	}
+	executions, err := template.New(o, templateStateHandler).TemplateDeployExecutions(inst.Blueprint, o.ResolvedComponentDescriptor, imports)
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))

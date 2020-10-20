@@ -5,6 +5,7 @@
 package template
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mandelsoft/spiff/spiffing"
@@ -15,13 +16,22 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
-type SpiffTemplate struct{}
+type SpiffTemplate struct {
+	state GenericStateHandler
+}
 
 func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, components, imports interface{}) ([]byte, error) {
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
 	}
+	ctx := context.Background()
+	defer ctx.Done()
+	stateNode, err := t.getState(ctx, tmplExec)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load state: %w", err)
+	}
+
 	values := map[string]interface{}{
 		"imports": imports,
 		"cd":      components,
@@ -32,8 +42,11 @@ func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExe
 		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}
 
-	res, err := spiff.Cascade(rawTemplate, nil)
+	res, err := spiff.Cascade(rawTemplate, nil, stateNode)
 	if err != nil {
+		return nil, err
+	}
+	if err := t.storeState(ctx, tmplExec, spiff, res); err != nil {
 		return nil, err
 	}
 	return spiffyaml.Marshal(res)
@@ -44,20 +57,29 @@ func (t *SpiffTemplate) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExe
 	if err != nil {
 		return nil, err
 	}
+	ctx := context.Background()
+	defer ctx.Done()
+	stateNode, err := t.getState(ctx, tmplExec)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load state: %w", err)
+	}
 
 	values := map[string]interface{}{
 		"values": exports,
 	}
-	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithFileSystem(blueprint.Fs).WithValues(values)
+	spiff, err := spiffing.New().WithFileSystem(blueprint.Fs).WithValues(values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}
 
-	res, err := spiff.Cascade(rawTemplate, nil)
+	res, err := spiff.Cascade(rawTemplate, nil, stateNode)
 	if err != nil {
 		return nil, err
 	}
 
+	if err := t.storeState(ctx, tmplExec, spiff, res); err != nil {
+		return nil, err
+	}
 	return spiffyaml.Marshal(res)
 }
 
@@ -73,4 +95,32 @@ func (t *SpiffTemplate) templateNode(tmplExec lsv1alpha1.TemplateExecutor, bluep
 		return spiffyaml.Unmarshal("template", rawTemplateBytes)
 	}
 	return nil, fmt.Errorf("no template found")
+}
+
+func (t *SpiffTemplate) getState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (spiffyaml.Node, error) {
+	if t.state == nil {
+		return spiffyaml.NewNode(map[string]interface{}{}, "state"), nil
+	}
+	stateBytes, err := t.state.Get(ctx, tmplExec.Name)
+	if err != nil {
+		if err != StateNotFoundErr {
+			return spiffyaml.NewNode(map[string]interface{}{}, "state"), nil
+		}
+	}
+	return spiffyaml.Unmarshal("stateHdl", stateBytes)
+}
+
+func (t *SpiffTemplate) storeState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, spiff spiffing.Spiff, res spiffyaml.Node) error {
+	if t.state == nil {
+		return nil
+	}
+	stateBytes, err := spiffyaml.Marshal(spiff.DetermineState(res))
+	if err != nil {
+		return fmt.Errorf("unable to marshal state: %w", err)
+	}
+
+	if err := t.state.Store(ctx, tmplExec.Name, stateBytes); err != nil {
+		return fmt.Errorf("unabel to persists state: %w", err)
+	}
+	return nil
 }
