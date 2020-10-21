@@ -27,7 +27,7 @@ func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExe
 	}
 	ctx := context.Background()
 	defer ctx.Done()
-	stateNode, err := t.getState(ctx, tmplExec)
+	stateNode, err := t.getDeployExecutionState(ctx, tmplExec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
@@ -46,7 +46,7 @@ func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExe
 	if err != nil {
 		return nil, err
 	}
-	if err := t.storeState(ctx, tmplExec, spiff, res); err != nil {
+	if err := t.storeDeployExecutionState(ctx, tmplExec, spiff, res); err != nil {
 		return nil, err
 	}
 	return spiffyaml.Marshal(res)
@@ -59,7 +59,7 @@ func (t *SpiffTemplate) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExe
 	}
 	ctx := context.Background()
 	defer ctx.Done()
-	stateNode, err := t.getState(ctx, tmplExec)
+	stateNode, err := t.getExportExecutionState(ctx, tmplExec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
@@ -77,7 +77,7 @@ func (t *SpiffTemplate) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExe
 		return nil, err
 	}
 
-	if err := t.storeState(ctx, tmplExec, spiff, res); err != nil {
+	if err := t.storeExportExecutionState(ctx, tmplExec, spiff, res); err != nil {
 		return nil, err
 	}
 	return spiffyaml.Marshal(res)
@@ -97,11 +97,27 @@ func (t *SpiffTemplate) templateNode(tmplExec lsv1alpha1.TemplateExecutor, bluep
 	return nil, fmt.Errorf("no template found")
 }
 
-func (t *SpiffTemplate) getState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (spiffyaml.Node, error) {
+func (t *SpiffTemplate) getDeployExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (spiffyaml.Node, error) {
+	return t.getState(ctx, "deploy", tmplExec)
+}
+
+func (t *SpiffTemplate) storeDeployExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, spiff spiffing.Spiff, res spiffyaml.Node) error {
+	return t.storeState(ctx, "deploy", tmplExec, spiff, res)
+}
+
+func (t *SpiffTemplate) getExportExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (spiffyaml.Node, error) {
+	return t.getState(ctx, "export", tmplExec)
+}
+
+func (t *SpiffTemplate) storeExportExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, spiff spiffing.Spiff, res spiffyaml.Node) error {
+	return t.storeState(ctx, "export", tmplExec, spiff, res)
+}
+
+func (t *SpiffTemplate) getState(ctx context.Context, prefix string, tmplExec lsv1alpha1.TemplateExecutor) (spiffyaml.Node, error) {
 	if t.state == nil {
 		return spiffyaml.NewNode(map[string]interface{}{}, "state"), nil
 	}
-	stateBytes, err := t.state.Get(ctx, tmplExec.Name)
+	stateBytes, err := t.state.Get(ctx, prefix+tmplExec.Name)
 	if err != nil {
 		if err != StateNotFoundErr {
 			return spiffyaml.NewNode(map[string]interface{}{}, "state"), nil
@@ -110,7 +126,7 @@ func (t *SpiffTemplate) getState(ctx context.Context, tmplExec lsv1alpha1.Templa
 	return spiffyaml.Unmarshal("stateHdl", stateBytes)
 }
 
-func (t *SpiffTemplate) storeState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, spiff spiffing.Spiff, res spiffyaml.Node) error {
+func (t *SpiffTemplate) storeState(ctx context.Context, prefix string, tmplExec lsv1alpha1.TemplateExecutor, spiff spiffing.Spiff, res spiffyaml.Node) error {
 	if t.state == nil {
 		return nil
 	}
@@ -119,7 +135,7 @@ func (t *SpiffTemplate) storeState(ctx context.Context, tmplExec lsv1alpha1.Temp
 		return fmt.Errorf("unable to marshal state: %w", err)
 	}
 
-	if err := t.state.Store(ctx, tmplExec.Name, stateBytes); err != nil {
+	if err := t.state.Store(ctx, prefix+tmplExec.Name, stateBytes); err != nil {
 		return fmt.Errorf("unabel to persists state: %w", err)
 	}
 	return nil

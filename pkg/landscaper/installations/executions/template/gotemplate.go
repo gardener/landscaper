@@ -52,7 +52,7 @@ func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 
 	ctx := context.Background()
 	defer ctx.Done()
-	state, err := t.getState(ctx, tmplExec)
+	state, err := t.getDeployExecutionState(ctx, tmplExec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
@@ -74,7 +74,7 @@ func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 	if err := tmpl.Execute(data, values); err != nil {
 		return nil, err
 	}
-	if err := t.storeState(ctx, tmplExec, data.Bytes()); err != nil {
+	if err := t.storeDeployExecutionState(ctx, tmplExec, data.Bytes()); err != nil {
 		return nil, fmt.Errorf("unable to store state: %w", err)
 	}
 	return data.Bytes(), nil
@@ -100,7 +100,7 @@ func (t *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 
 	ctx := context.Background()
 	defer ctx.Done()
-	state, err := t.getState(ctx, tmplExec)
+	state, err := t.getExportExecutionState(ctx, tmplExec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
@@ -121,17 +121,33 @@ func (t *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 	if err := tmpl.Execute(data, values); err != nil {
 		return nil, err
 	}
-	if err := t.storeState(ctx, tmplExec, data.Bytes()); err != nil {
+	if err := t.storeExportExecutionState(ctx, tmplExec, data.Bytes()); err != nil {
 		return nil, fmt.Errorf("unable to store state: %w", err)
 	}
 	return data.Bytes(), nil
 }
 
-func (t *GoTemplateExecution) getState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (interface{}, error) {
+func (t *GoTemplateExecution) getDeployExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (interface{}, error) {
+	return t.getState(ctx, "deploy", tmplExec)
+}
+
+func (t *GoTemplateExecution) storeDeployExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, data []byte) error {
+	return t.storeState(ctx, "deploy", tmplExec, data)
+}
+
+func (t *GoTemplateExecution) getExportExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor) (interface{}, error) {
+	return t.getState(ctx, "export", tmplExec)
+}
+
+func (t *GoTemplateExecution) storeExportExecutionState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, data []byte) error {
+	return t.storeState(ctx, "export", tmplExec, data)
+}
+
+func (t *GoTemplateExecution) getState(ctx context.Context, prefix string, tmplExec lsv1alpha1.TemplateExecutor) (interface{}, error) {
 	if t.state == nil {
 		return map[string]interface{}{}, nil
 	}
-	data, err := t.state.Get(ctx, tmplExec.Name)
+	data, err := t.state.Get(ctx, prefix+tmplExec.Name)
 	if err != nil {
 		if err == StateNotFoundErr {
 			return map[string]interface{}{}, nil
@@ -146,7 +162,7 @@ func (t *GoTemplateExecution) getState(ctx context.Context, tmplExec lsv1alpha1.
 	return state, nil
 }
 
-func (t *GoTemplateExecution) storeState(ctx context.Context, tmplExec lsv1alpha1.TemplateExecutor, data []byte) error {
+func (t *GoTemplateExecution) storeState(ctx context.Context, prefix string, tmplExec lsv1alpha1.TemplateExecutor, data []byte) error {
 	if t.state == nil {
 		return nil
 	}
@@ -154,7 +170,7 @@ func (t *GoTemplateExecution) storeState(ctx context.Context, tmplExec lsv1alpha
 	if err := yaml.Unmarshal(data, res); err != nil {
 		return err
 	}
-	return t.state.Store(ctx, tmplExec.Name, res.State)
+	return t.state.Store(ctx, prefix+tmplExec.Name, res.State)
 }
 
 // LandscaperSprigFuncMap returns the sanitized spring function map.
