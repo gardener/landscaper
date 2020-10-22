@@ -14,12 +14,15 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
+	"github.com/gardener/landscaper/pkg/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/bputils"
@@ -38,7 +41,7 @@ type pushOptions struct {
 	cacheDir string
 }
 
-// NewPushCommand creates a new definition command to push definitions
+// NewPushCommand creates a new blueprint command to push blueprints
 func NewPushCommand(ctx context.Context) *cobra.Command {
 	opts := &pushOptions{}
 	cmd := &cobra.Command{
@@ -110,12 +113,19 @@ func (o *pushOptions) Validate() error {
 	if err != nil {
 		return err
 	}
-	blueprint := &lsv1alpha1.Blueprint{}
+	blueprint := &core.Blueprint{}
 	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, blueprint); err != nil {
 		return err
 	}
 
-	// todo: validate references exist
+	blueprintFs, err := projectionfs.New(osfs.New(), o.blueprintPath)
+	if err != nil {
+		return fmt.Errorf("unable to construct blueprint filesystem: %w", err)
+	}
+	if errList := validation.ValidateBlueprint(blueprintFs, blueprint); len(errList) != 0 {
+		return errList.ToAggregate()
+	}
+
 	return nil
 }
 

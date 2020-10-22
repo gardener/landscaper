@@ -61,7 +61,7 @@ deployExecutions:
 #   command: "asdf"
 
 - name: my-exec
-  type: spiff
+  type: Spiff
   stubs:
   - "/my/stubfile/..."
   - "cd://componentReference/my-other-comp/localResource/..."
@@ -75,7 +75,7 @@ exportExecutions:
 #   file: /my/path/cc # virtual filesystem
 #   template: |
 #     my template: {{ .Values.abc }}
- - type: go-template
+ - type: GoTemplate
    template: |
      dnsClass: {{ .deployitem.installer.myexports }}
      url: https://{{ .deployitem.installer.myexports }}:{{ .dataobjects.port }}

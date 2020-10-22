@@ -24,9 +24,8 @@ import (
 // ValidateInstallation validates an Installation
 func ValidateInstallation(inst *core.Installation) field.ErrorList {
 	allErrs := field.ErrorList{}
-
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&inst.ObjectMeta, true, apivalidation.NameIsDNSLabel, field.NewPath("metadata"))...)
-
+	allErrs = append(allErrs, ValidateInstallationSpec(&inst.Spec, field.NewPath("spec"))...)
 	return allErrs
 }
 
@@ -52,7 +51,7 @@ func ValidateInstallationSpec(spec *core.InstallationSpec, fldPath *field.Path) 
 }
 
 // ValidateInstallationImports validates the imports of an Installation
-func ValidateInstallationImports(imports *core.InstallationImports, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, ValidateInstallationDataImports(imports.Data, fldPath.Child("data"))...)
@@ -106,7 +105,7 @@ func ValidateInstallationTargetImports(imports []core.TargetImportExport, fldPat
 }
 
 // ValidateInstallationExports validates the exports of an Installation
-func ValidateInstallationExports(exports *core.InstallationExports, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationExports(exports core.InstallationExports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, ValidateInstallationDataExports(exports.Data, fldPath.Child("data"))...)

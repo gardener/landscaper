@@ -104,7 +104,7 @@ var _ = Describe("Installation", func() {
 
 	Context("InstallationImports", func() {
 		It("should pass if imports are valid", func() {
-			imp := &core.InstallationImports{
+			imp := core.InstallationImports{
 				Data: []core.DataImport{{
 					Name:    "foo",
 					DataRef: "fooRef",
@@ -120,7 +120,7 @@ var _ = Describe("Installation", func() {
 		})
 
 		It("should fail if imports contain duplicate values", func() {
-			imp := &core.InstallationImports{
+			imp := core.InstallationImports{
 				Data: []core.DataImport{
 					{
 						Name:    "foo",
@@ -155,7 +155,7 @@ var _ = Describe("Installation", func() {
 		})
 
 		It("should fail if imports contain empty values", func() {
-			imp := &core.InstallationImports{
+			imp := core.InstallationImports{
 				Data: []core.DataImport{
 					{
 						Name:    "",
