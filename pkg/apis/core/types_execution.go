@@ -93,7 +93,7 @@ type DeployItemTemplate struct {
 
 	// Labels is the map of labels to be added to the deploy item.
 	// +optional
-	Labels map[string]string  `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
 	Configuration *runtime.RawExtension `json:"config"`
