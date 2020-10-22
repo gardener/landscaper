@@ -14,16 +14,19 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 )
 
 // GoTemplateExecution is the go template implementation for landscaper templating.
 type GoTemplateExecution struct {
-	state GenericStateHandler
+	artifactRegistry artifactsregistry.Registry
+	state            GenericStateHandler
 }
 
 // GoTemplateResult describes the result of go templating.
@@ -58,7 +61,7 @@ func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	tmpl, err := template.New("execution").
-		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs)).
+		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, t.artifactRegistry)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
@@ -106,7 +109,7 @@ func (t *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	tmpl, err := template.New("execution").
-		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs)).
+		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, t.artifactRegistry)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
@@ -183,11 +186,12 @@ func LandscaperSprigFuncMap() template.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem) map[string]interface{} {
+func LandscaperTplFuncMap(fs vfs.FileSystem, registry artifactsregistry.Registry) map[string]interface{} {
 	return map[string]interface{}{
 		"readFile": readFileFunc(fs),
 		"readDir":  readDir(fs),
 		"toYaml":   toYAML,
+		"resolve":  resolveArtifactFunc(registry),
 	}
 }
 
@@ -226,4 +230,25 @@ func toYAML(v interface{}) string {
 		return ""
 	}
 	return strings.TrimSuffix(string(data), "\n")
+}
+
+// resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
+func resolveArtifactFunc(registry artifactsregistry.Registry) func(access map[string]interface{}) []byte {
+	return func(access map[string]interface{}) []byte {
+		accessBytes, err := json.Marshal(access)
+		if err != nil {
+			panic(err)
+		}
+		acc, err := cdv2.UnmarshalTypedObjectAccessor(accessBytes, cdv2.KnownAccessTypes, nil, nil)
+		if err != nil {
+			panic(err)
+		}
+		ctx := context.Background()
+		defer ctx.Done()
+		var data bytes.Buffer
+		if _, err := registry.GetBlob(ctx, acc, &data); err != nil {
+			panic(err)
+		}
+		return data.Bytes()
+	}
 }

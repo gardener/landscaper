@@ -19,7 +19,7 @@ type Registry interface {
 	Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext, ref cdv2.ObjectMeta) (*cdv2.ComponentDescriptor, error)
 }
 
-// TypedRegistry describes a repository ociClient that can handle the given type.
+// TypedRegistry describes a registry that can handle the given type.
 type TypedRegistry interface {
 	Registry
 	Type() string

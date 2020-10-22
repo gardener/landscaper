@@ -17,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
@@ -142,6 +143,6 @@ func newLocalComponent(name, version string) cdv2.Resource {
 			Version: version,
 		},
 		TypedObjectAccessor: cdv2.NewTypeOnly(lsv1alpha1.BlueprintResourceType),
-		Access:              &blueprintsregistry.LocalAccess{ObjectType: cdv2.ObjectType{Type: blueprintsregistry.LocalAccessType}},
+		Access:              &artifactsregistry.LocalAccess{ObjectType: cdv2.ObjectType{Type: artifactsregistry.LocalAccessType}},
 	}
 }

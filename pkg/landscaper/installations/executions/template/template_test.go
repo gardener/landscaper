@@ -23,6 +23,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -61,7 +62,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -83,7 +84,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -105,7 +106,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -131,7 +132,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 			cd := &cdutils.ResolvedComponentDescriptor{
 				ResolvedComponentSpec: cdutils.ResolvedComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -175,7 +176,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -192,7 +193,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -224,7 +225,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -242,7 +243,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -260,7 +261,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{}, stateHandler)
+			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)

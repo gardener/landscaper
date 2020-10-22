@@ -5,6 +5,7 @@
 package jsonschema
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -18,8 +19,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 // JSONSchemaMediaType is the custom media type for a jsonschema in a oci registry
@@ -64,8 +65,8 @@ type LoaderConfig struct {
 	BlueprintFs vfs.FileSystem
 	// ComponentDescriptor contains the current blueprint's component descriptor.
 	ComponentDescriptor *cdutils.ResolvedComponentDescriptor
-	// OciClient is the oci client to resolve resources of the component descriptor
-	OciClient oci.Client
+	// ArtifactsRegistry is the registry to resolve resources of the component descriptor.
+	ArtifactsRegistry artifactsregistry.Registry
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
 	DefaultLoader gojsonschema.JSONLoader
 }
@@ -175,17 +176,14 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 		return nil, fmt.Errorf("expected a resource but reference resolves to a component")
 	}
 	resource := res.(cdv2.Resource)
-	if resource.GetType() != cdv2.OCIRegistryType {
-		return nil, fmt.Errorf("only jsonschemas of type %s can be resolved, but got %s", cdv2.OCIRegistryType, resource.GetType())
-	}
-	ociRegistryAccess := resource.Access.(*cdv2.OCIRegistryAccess)
 
 	ctx := context.Background()
 	defer ctx.Done()
-	JSONSchemaBytes, err := FetchFromOCIRegistry(ctx, l.OciClient, ociRegistryAccess.ImageReference)
+	var JSONSchemaBuf bytes.Buffer
+	_, err = l.ArtifactsRegistry.GetBlob(ctx, resource.Access, &JSONSchemaBuf)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", refURL.String(), err)
 	}
 
-	return JSONSchemaBytes, nil
+	return JSONSchemaBuf.Bytes(), nil
 }

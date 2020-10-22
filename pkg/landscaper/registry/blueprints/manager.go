@@ -14,6 +14,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/config"
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
@@ -62,7 +63,7 @@ func NewWithConfig(log logr.Logger, config *config.RegistryConfiguration) (Manag
 		if err != nil {
 			return nil, fmt.Errorf("unable to setup local regapi: %w", err)
 		}
-		if err := m.Set(LocalAccessType, LocalAccessCodec, local); err != nil {
+		if err := m.Set(artifactsregistry.LocalAccessType, artifactsregistry.LocalAccessCodec, local); err != nil {
 			return nil, err
 		}
 	}

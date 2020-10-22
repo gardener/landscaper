@@ -101,7 +101,7 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 		Config: &jsonschema.LoaderConfig{
 			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
 			BlueprintFs:         o.Inst.Blueprint.Fs,
-			OciClient:           o.OCIClient(),
+			ArtifactsRegistry:   o.ArtifactsRegistry(),
 			ComponentDescriptor: o.ResolvedComponentDescriptor,
 		},
 	}

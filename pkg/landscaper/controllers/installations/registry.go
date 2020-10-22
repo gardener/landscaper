@@ -8,9 +8,11 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/oci"
@@ -57,14 +59,18 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	}
 
 	if a.lsConfig.Registries.Artifacts.Local != nil {
-		blueprintsOCIRegistry, err := blueprintsregistry.NewLocalRegistry(a.Log(), a.lsConfig.Registries.Artifacts.Local.ConfigPaths...)
+		blueprintsRegistry, err := blueprintsregistry.NewLocalRegistry(a.Log(), a.lsConfig.Registries.Artifacts.Local.ConfigPaths...)
 		if err != nil {
 			return err
 		}
-		if err := a.blueprintRegistryMgr.Set(blueprintsregistry.LocalAccessType, blueprintsregistry.LocalAccessCodec, blueprintsOCIRegistry); err != nil {
+		if err := a.blueprintRegistryMgr.Set(artifactsregistry.LocalAccessType, artifactsregistry.LocalAccessCodec, blueprintsRegistry); err != nil {
 			return err
 		}
 
+		artifactsRegistry := artifactsregistry.NewLocalRegistry(osfs.New(), a.lsConfig.Registries.Artifacts.Local.ConfigPaths...)
+		if err := a.artifactsRegistryMgr.Add(artifactsRegistry); err != nil {
+			return err
+		}
 	}
 
 	// always add a oci client to support unauthenticated requests
@@ -84,11 +90,18 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	if err := a.InjectUniversalOCIClient(ociClient); err != nil {
+	if err := a.blueprintRegistryMgr.Set(cdv2.OCIRegistryType, cdv2.KnownAccessTypes[cdv2.OCIRegistryType], blueprintsOCIRegistry); err != nil {
+		return err
+	}
+	artifactsRegistry, err := artifactsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+	if err != nil {
+		return err
+	}
+	if err := a.artifactsRegistryMgr.Add(artifactsRegistry); err != nil {
 		return err
 	}
 
-	return a.blueprintRegistryMgr.Set(cdv2.OCIRegistryType, cdv2.KnownAccessTypes[cdv2.OCIRegistryType], blueprintsOCIRegistry)
+	return nil
 }
 
 func (a *actuator) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {

@@ -9,7 +9,11 @@ import "k8s.io/apimachinery/pkg/util/sets"
 // MediaTypeTarGzip is the media type for a gzipped tar
 const MediaTypeTarGzip = "application/tar+gzip"
 
+// MediaTypeTar is the media type for a tar
+const MediaTypeTar = "application/tar"
+
 // DefaultKnownMediaTypes contain also known media types of the landscaper oci client
 var DefaultKnownMediaTypes = sets.NewString(
 	MediaTypeTarGzip,
+	MediaTypeTar,
 )

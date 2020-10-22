@@ -5,19 +5,13 @@
 package operation
 
 import (
-	"context"
-
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -27,8 +21,6 @@ type Interface interface {
 	DirectReader() client.Reader
 	Scheme() *runtime.Scheme
 	RegistriesAccessor
-	// OCIClient returns a oci client to interact with various oci registries.
-	OCIClient() oci.Client
 	// InjectLogger is used to inject Loggers into components that need them
 	// and don't otherwise have opinions.
 	InjectLogger(l logr.Logger) error
@@ -44,20 +36,18 @@ type Interface interface {
 	InjectBlueprintsRegistry(blueprintsregistry.Registry) error
 	// InjectComponentRepository is used to inject a component repository.
 	InjectComponentsRegistry(componentsregistry.Registry) error
-	// InjectUniversalOCIClient is used to inject a oci client.
-	InjectUniversalOCIClient(oci.Client) error
-	// CreateOrUpdate creates or updates the given object in the Kubernetes
-	// cluster.
-	// It uses the internal clients to perform the api calls.
-	CreateOrUpdate(ctx context.Context, obj runtime.Object, f controllerutil.MutateFn) (controllerutil.OperationResult, error)
+	// InjectArtifactsRegistry is used to inject a artifact repository.
+	InjectArtifactsRegistry(artifactsregistry.Registry) error
 }
 
 // RegistriesAccessor is a getter interface for available registries.
 type RegistriesAccessor interface {
-	// BlueprintsRegistry returns a blueprints blueprintsRegistry instance.
+	// BlueprintsRegistry returns a blueprints registry instance.
 	BlueprintsRegistry() blueprintsregistry.Registry
-	// ComponentsRegistry returns a components blueprintsRegistry instance.
+	// ComponentsRegistry returns a components registry instance.
 	ComponentsRegistry() componentsregistry.Registry
+	// ArtifactsRegistry returns a artifacts registry instance.
+	ArtifactsRegistry() artifactsregistry.Registry
 }
 
 type Operation struct {
@@ -67,7 +57,7 @@ type Operation struct {
 	scheme             *runtime.Scheme
 	blueprintsRegistry blueprintsregistry.Registry
 	componentRegistry  componentsregistry.Registry
-	universalOCIClient oci.Client
+	artifactRegistry   artifactsregistry.Registry
 }
 
 // NewOperation creates a new internal installation Operation object.
@@ -150,54 +140,13 @@ func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) erro
 	return nil
 }
 
-// OCIClient returns the oci client for the current instance.
-func (o *Operation) OCIClient() oci.Client {
-	return o.universalOCIClient
+// ComponentRepository returns a component blueprintsRegistry instance
+func (o *Operation) ArtifactsRegistry() artifactsregistry.Registry {
+	return o.artifactRegistry
 }
 
-// InjectUniversalOCIClient injects a oci client into the operation.
-func (o *Operation) InjectUniversalOCIClient(c oci.Client) error {
-	o.universalOCIClient = c
+// InjectComponentRepository injects a component blueprintsRegistry into the operation
+func (o *Operation) InjectArtifactsRegistry(r artifactsregistry.Registry) error {
+	o.artifactRegistry = r
 	return nil
-}
-
-// CreateOrUpdate creates or updates the given object in the Kubernetes
-// cluster. The object's desired state must be reconciled with the existing
-// state inside the passed in callback MutateFn.
-//
-// The MutateFn is called regardless of creating or updating an object.
-//
-// It returns the executed operation and an error.
-func (o *Operation) CreateOrUpdate(ctx context.Context, obj runtime.Object, f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
-	key, err := client.ObjectKeyFromObject(obj)
-	if err != nil {
-		return controllerutil.OperationResultNone, err
-	}
-
-	if err := o.DirectReader().Get(ctx, key, obj); err != nil {
-		if !errors.IsNotFound(err) {
-			return controllerutil.OperationResultNone, err
-		}
-		if err := kutil.Mutate(f, key, obj); err != nil {
-			return controllerutil.OperationResultNone, err
-		}
-		if err := o.Client().Create(ctx, obj); err != nil {
-			return controllerutil.OperationResultNone, err
-		}
-		return controllerutil.OperationResultCreated, nil
-	}
-
-	existing := obj.DeepCopyObject()
-	if err := kutil.Mutate(f, key, obj); err != nil {
-		return controllerutil.OperationResultNone, err
-	}
-
-	if equality.Semantic.DeepEqual(existing, obj) {
-		return controllerutil.OperationResultNone, nil
-	}
-
-	if err := o.Client().Update(ctx, obj); err != nil {
-		return controllerutil.OperationResultNone, err
-	}
-	return controllerutil.OperationResultUpdated, nil
 }

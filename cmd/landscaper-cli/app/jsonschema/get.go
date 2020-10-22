@@ -5,19 +5,21 @@
 package jsonschema
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
-	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -66,14 +68,20 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 	if err != nil {
 		return err
 	}
-
-	jsonSchemaBytes, err := jsonschema.FetchFromOCIRegistry(ctx, ociClient, o.ref)
+	reg, err := artifactsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
 	if err != nil {
+		return err
+	}
+	var jsonSchemaBytes bytes.Buffer
+	if _, err := reg.GetBlob(ctx, &cdv2.OCIRegistryAccess{
+		ObjectType:     cdv2.ObjectType{Type: cdv2.OCIRegistryType},
+		ImageReference: o.ref,
+	}, &jsonSchemaBytes); err != nil {
 		return err
 	}
 
 	var jsonSchema interface{}
-	if err := yaml.Unmarshal(jsonSchemaBytes, &jsonSchema); err != nil {
+	if err := yaml.Unmarshal(jsonSchemaBytes.Bytes(), &jsonSchema); err != nil {
 		return err
 	}
 

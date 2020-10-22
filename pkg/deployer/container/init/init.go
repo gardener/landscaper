@@ -30,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
@@ -188,6 +189,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 type registries struct {
 	blueprintsRegistry blueprintsregistry.Registry
 	componentsRegistry componentsregistry.Registry
+	artifactsRegistry  artifactsregistry.Registry
 }
 
 var _ lsoperation.RegistriesAccessor = &registries{}
@@ -198,6 +200,10 @@ func (r registries) BlueprintsRegistry() blueprintsregistry.Registry {
 
 func (r registries) ComponentsRegistry() componentsregistry.Registry {
 	return r.componentsRegistry
+}
+
+func (r registries) ArtifactsRegistry() artifactsregistry.Registry {
+	return r.artifactsRegistry
 }
 
 // todo: add retries
@@ -225,6 +231,10 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, ku
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup blueprints registry")
 	}
+	artifactsRegistry, err := artifactsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to setup blueprints registry")
+	}
 	componentsRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup components registry")
@@ -233,5 +243,6 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, ku
 	return &registries{
 		blueprintsRegistry: blueprintsRegistry,
 		componentsRegistry: componentsRegistry,
+		artifactsRegistry:  artifactsRegistry,
 	}, nil
 }

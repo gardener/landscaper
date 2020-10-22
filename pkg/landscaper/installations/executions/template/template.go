@@ -30,7 +30,10 @@ func New(op lsoperation.Interface, state GenericStateHandler) *Templater {
 		Interface: op,
 		stateHdlr: state,
 		impl: map[lsv1alpha1.TemplateType]templateExecution{
-			lsv1alpha1.GOTemplateType:    &GoTemplateExecution{state: state},
+			lsv1alpha1.GOTemplateType: &GoTemplateExecution{
+				artifactRegistry: op.ArtifactsRegistry(),
+				state:            state,
+			},
 			lsv1alpha1.SpiffTemplateType: &SpiffTemplate{state: state},
 		},
 	}

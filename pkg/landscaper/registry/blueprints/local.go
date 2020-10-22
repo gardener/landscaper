@@ -6,7 +6,6 @@ package blueprintsregistry
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,46 +23,6 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils"
 )
-
-// LocalAccessType is the name of the local access type
-const LocalAccessType = "local"
-
-func init() {
-	cdv2.KnownAccessTypes[LocalAccessType] = LocalAccessCodec
-}
-
-// LocalAccess describes the local access for a landscaper blueprint
-type LocalAccess struct {
-	cdv2.ObjectType `json:",inline"`
-}
-
-var _ cdv2.TypedObjectAccessor = &LocalAccess{}
-
-// GetData is the noop implementation for a local accessor
-func (l LocalAccess) GetData() ([]byte, error) {
-	return []byte{}, nil
-}
-
-// SetData is the noop implementation for a local accessor
-func (l LocalAccess) SetData(bytes []byte) error { return nil }
-
-// LocalAccessCodec implements the acccess codec for the local accessor.
-var LocalAccessCodec = &cdv2.TypedObjectCodecWrapper{
-	TypedObjectDecoder: cdv2.TypedObjectDecoderFunc(func(data []byte) (cdv2.TypedObjectAccessor, error) {
-		var localAccess LocalAccess
-		if err := json.Unmarshal(data, &localAccess); err != nil {
-			return nil, err
-		}
-		return &localAccess, nil
-	}),
-	TypedObjectEncoder: cdv2.TypedObjectEncoderFunc(func(accessor cdv2.TypedObjectAccessor) ([]byte, error) {
-		localAccess, ok := accessor.(*LocalAccess)
-		if !ok {
-			return nil, fmt.Errorf("accessor is not of type %s", LocalAccessType)
-		}
-		return json.Marshal(localAccess)
-	}),
-}
 
 /**
 

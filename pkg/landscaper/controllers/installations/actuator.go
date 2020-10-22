@@ -21,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -61,21 +62,31 @@ func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (rec
 	_ = op.InjectBlueprintsRegistry(blueprintsRegistryMgr)
 	log.V(3).Info("setup blueprints registry")
 
+	artifactsRegistryMgr, err := artifactsregistry.New(sharedCache)
+	if err != nil {
+		return nil, err
+	}
+	_ = op.InjectArtifactsRegistry(artifactsRegistryMgr)
+	log.V(3).Info("setup artifacts registry")
+
 	return &actuator{
 		Interface:             op,
 		lsConfig:              lsConfig,
 		componentsRegistryMgr: componentRegistryMgr,
 		blueprintRegistryMgr:  blueprintsRegistryMgr,
+		artifactsRegistryMgr:  artifactsRegistryMgr,
 	}, nil
 }
 
 // NewTestActuator creates a new actuator that is only meant for testing.
 func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *actuator {
+	artifactsRegistry, _ := artifactsregistry.New(nil)
 	a := &actuator{
 		Interface:             op,
 		lsConfig:              configuration,
 		componentsRegistryMgr: &componentsregistry.Manager{},
 		blueprintRegistryMgr:  blueprintsregistry.New(nil),
+		artifactsRegistryMgr:  artifactsRegistry,
 	}
 	return a
 }
@@ -85,6 +96,7 @@ type actuator struct {
 	lsConfig              *config.LandscaperConfiguration
 	blueprintRegistryMgr  blueprintsregistry.Manager
 	componentsRegistryMgr *componentsregistry.Manager
+	artifactsRegistryMgr  *artifactsregistry.Manager
 }
 
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
