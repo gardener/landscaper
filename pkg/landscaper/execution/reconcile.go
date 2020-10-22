@@ -103,6 +103,9 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 		item.DeployItem.Spec.Type = item.Info.Type
 		item.DeployItem.Spec.Target = item.Info.Target
 		item.DeployItem.Spec.Configuration = item.Info.Configuration
+		for k, v := range item.Info.Labels {
+			kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, k, v)
+		}
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, item.Info.Name)
 		metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionDependsOnAnnotation, strings.Join(item.Info.DependsOn, ","))

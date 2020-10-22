@@ -57,6 +57,11 @@ spec:
                       items:
                         type: string
                       type: array
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is the map of labels to be added to the deploy item.
+                      type: object
                     name:
                       description: Name is the unique name of the execution.
                       type: string

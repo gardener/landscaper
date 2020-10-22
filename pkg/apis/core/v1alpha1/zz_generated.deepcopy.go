@@ -447,6 +447,13 @@ func (in *DeployItemTemplate) DeepCopyInto(out *DeployItemTemplate) {
 		*out = new(ObjectReference)
 		**out = **in
 	}
+	if in.Labels != nil {
+		in, out := &in.Labels, &out.Labels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Configuration != nil {
 		in, out := &in.Configuration, &out.Configuration
 		*out = new(runtime.RawExtension)
