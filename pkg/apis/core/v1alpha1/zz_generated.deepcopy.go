@@ -12,9 +12,8 @@ package v1alpha1
 
 import (
 	"encoding/json"
-
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	v1 "k8s.io/api/core/v1"
+	"github.com/gardener/component-spec/bindings-go/apis/v2"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -446,6 +445,13 @@ func (in *DeployItemTemplate) DeepCopyInto(out *DeployItemTemplate) {
 		in, out := &in.Target, &out.Target
 		*out = new(ObjectReference)
 		**out = **in
+	}
+	if in.Labels != nil {
+		in, out := &in.Labels, &out.Labels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	if in.Configuration != nil {
 		in, out := &in.Configuration, &out.Configuration

@@ -110,6 +110,10 @@ type DeployItemTemplate struct {
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
 
+	// Labels is the map of labels to be added to the deploy item.
+	// +optional
+	Labels map[string]string  `json:"labels,omitempty"`
+
 	// ProviderConfiguration contains the type specific configuration for the execution.
 	// +kubebuilder:validation:XEmbeddedResource
 	// +kubebuilder:validation:XPreserveUnknownFields
