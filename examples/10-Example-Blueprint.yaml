@@ -29,24 +29,58 @@ exports:
   schema:
     type: number
 
-blueprintRefs:
-- name: my-sub-component # defaulted to the name of the component
-  ref: my-sub-component:1.1.0 # 1.0.0-dev-abcdefg # --> gitlink://my-sub-component --> gitlink://my-sub-component:1.0.0-dev
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: my-sub-component
+
+  blueprint:
+    ref: cd://localResources/my-blueprint
+#    filesystem:
+#      blueprint.yaml: |
+#        apiVersion: landscaper.gardener.cloud/v1alpha1
+#        kind: Blueprint
+#        ...
+
   imports:
-  - from: abc
-    to: yxz
-    default: abc
+    data: []
+    targets: []
+
   exports:
-  - from: efg
-    to: ijk
-- name: my-other-sub
-  ref: my-other-sub-component:0.0.5
-  imports:
-  - from: abc2
-    to: yxz2
-  exports:
-  - from: efg2
-    to: ijk2
+    data: [ ]
+    targets: [ ]
+
+- file: /path/to/installation-template # must be inside the blueprints filesystem
+
+deployExecutors: # has to be idempotent
+- name: default # has to return a list of deploy item templates
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: init
+      type: landscaper.gardener.cloud/container
+      config:
+        apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        image: my-custom-image:version
+        command: ["run-component"]
+        args: []
+    - name: my-container
+      type: landscaper.gardener.cloud/container
+      config:
+        apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        image: my-custom-image:version
+        command: ["run-component"]
+        args: []
+    - name: deploy-chart
+      type: landscaper.gardener.cloud/helm
+      config:
+        apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        chart:
+          ref: my-repo:1.0.0
+        values: {{ .exports.mykey.x }}
 
 exportExecutors:
 - name: default # has to return a list of deploy item templates
@@ -73,86 +107,3 @@ exportExecutors:
 # template:
 #   a:
 #     b: (( readFile() ))
-
-deployExecutors: # has to be idempotent
-# - type: go-template
-#   file: /my/path/cc # virtual filesystem
-#   template: |
-#     my template: {{ .Values.abc }}
-#
-# - type: container
-#   image: localResource/my-templater
-#   command: "asdf"
-#
-#- name: my-exec
-#  type: spiff
-#  stubs:
-#  - "/my/stubfile/..."
-#  - "cd://componentReference/my-other-comp/localResource/..."
-#  file: /installer.yaml # virtual filesystem
-  # template:
-  #   a:
-  #     b: (( readFile() ))
-
-- name: default # has to return a list of deploy item templates
-  type: GoTemplate
-  template: |
-    deployItems:
-    - name: init
-      type: landscaper.gardener.cloud/container
-      config:
-        image: my-custom-image:version
-        command: ["run-component"]
-        args: []
-    - name: my-script
-      type: landscaper.gardener.cloud/script
-      environment: ls-abc
-      config:
-        mount:
-          artifact: xyz
-          path: /repo
-        script: |
-          #!/bin/python3
-
-          import os
-
-          yaml.load(os.genenv('IMPORT_CONFIG'))
-
-          doStuff()
-
-          yaml.dump(export)
-        image: ubuntu:latest
-    - name: my-container
-      type: landscaper.gardener.cloud/container
-      config:
-        image: my-custom-image:version
-        command: ["run-component"]
-        args: []
-    - name: deploy-chart
-      type: landscaper.gardener.cloud/helm
-      config:
-        chartRepository: my-repo
-        version: 1.0.0
-        values: {{ .exports.mykey.x }}
-        valueRef:
-          secretRef: abc
-    - name: deploy-other-chart
-      type: landscaper.gardener.cloud/helm
-      config:
-        chartRepository: my-repo/dns-controller
-        version: 1.0.0
-        values:
-          instanceID: {{ .imports.dnsController }}
-          ca: {{ state "key" function }}
-        valueRef:
-          secretRef: abc
-    - name: deploy-manifest
-      type: landscaper.gardener.cloud/kubernetes-manifest
-      config:
-      - apiVersion: v1
-        kind: Secret
-        metdata:
-          name: abc
-        data:
-          value1: {{ .import.my-import.value1 }}
-          value2: (( .import.my-import.value2 ))

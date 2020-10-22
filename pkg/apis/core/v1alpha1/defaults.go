@@ -13,6 +13,13 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
+// SetDefaults_Blueprint sets default values for blueprint objects
+func SetDefaults_Blueprint(obj *Blueprint) {
+	if len(obj.JSONSchemaVersion) == 0 {
+		obj.JSONSchemaVersion = "https://json-schema.org/draft/2019-09/schema"
+	}
+}
+
 // SetDefaults_DefinitionImport sets default values for the ImportDefinition objects
 func SetDefaults_DefinitionImport(obj *ImportDefinition) {
 	if obj.Required == nil {
