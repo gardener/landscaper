@@ -5,6 +5,8 @@
 package helper
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -136,6 +138,19 @@ func UpdatedError(lastError *v1alpha1.Error, operation, reason, message string, 
 		newError.LastTransitionTime = lastError.LastTransitionTime
 	}
 	return newError
+}
+
+// GetPhaseForLastError returns a failed installation phase if the given
+// error lasts longer than the specified time.
+func GetPhaseForLastError(phase v1alpha1.ComponentInstallationPhase, lastError *v1alpha1.Error, d time.Duration) v1alpha1.ComponentInstallationPhase {
+	if lastError == nil {
+		return phase
+	}
+
+	if lastError.LastUpdateTime.Sub(lastError.LastTransitionTime.Time).Seconds() > d.Seconds() {
+		return v1alpha1.ComponentPhaseFailed
+	}
+	return phase
 }
 
 // CreateOrUpdateVersionedObjectReferences creates or updates a element in versioned objectReference slice.

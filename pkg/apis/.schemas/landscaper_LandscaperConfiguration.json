@@ -13,6 +13,10 @@
         "apiVersion": {
           "type": "string"
         },
+        "repositoryContext": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RepositoryContext"
+        },
         "defaultOCI": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
@@ -96,6 +100,22 @@
         },
         "oci": {
           "$ref": "#/definitions/OCIConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RepositoryContext": {
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
         }
       },
       "additionalProperties": false,

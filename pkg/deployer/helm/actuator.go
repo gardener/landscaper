@@ -130,13 +130,10 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	// set failed state if the last error lasts for more than 5 minutes
 	defer func() {
-		if deployItem.Status.LastError == nil {
-			return
-		}
-		d := deployItem.Status.LastError.LastUpdateTime.Sub(deployItem.Status.LastError.LastTransitionTime.Time)
-		if d.Minutes() > (5 * time.Minute).Minutes() {
-			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		}
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
+			deployItem.Status.LastError,
+			5*time.Minute))
 	}()
 
 	helm, err := New(a.log, a.c, a.registryClient, deployItem, target)

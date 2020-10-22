@@ -51,6 +51,9 @@ func Resolve(ctx context.Context, op operation.RegistriesAccessor, def lsv1alpha
 	}
 
 	reference := def.Reference
+	if reference.RepositoryContext == nil {
+		return nil, fmt.Errorf("no respository context defined")
+	}
 	cd, err := op.ComponentsRegistry().Resolve(ctx, *reference.RepositoryContext, reference.ObjectMeta())
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", reference, err)

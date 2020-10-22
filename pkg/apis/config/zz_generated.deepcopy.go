@@ -10,6 +10,7 @@ SPDX-License-Identifier: Apache-2.0
 package config
 
 import (
+	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -17,6 +18,11 @@ import (
 func (in *LandscaperConfiguration) DeepCopyInto(out *LandscaperConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
+	if in.RepositoryContext != nil {
+		in, out := &in.RepositoryContext, &out.RepositoryContext
+		*out = new(v2.RepositoryContext)
+		**out = **in
+	}
 	if in.DefaultOCI != nil {
 		in, out := &in.DefaultOCI, &out.DefaultOCI
 		*out = new(OCIConfiguration)

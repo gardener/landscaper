@@ -6,10 +6,11 @@ package installations
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -145,6 +146,19 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	old := inst.DeepCopy()
 
+	defer func() {
+		inst.Status.Phase = lsv1alpha1helper.GetPhaseForLastError(
+			inst.Status.Phase,
+			inst.Status.LastError,
+			5*time.Minute,
+		)
+		if !reflect.DeepEqual(inst.Status, old.Status) {
+			if err := a.Client().Status().Update(ctx, inst); err != nil {
+				a.Log().Error(err, "unable to update installation")
+			}
+		}
+	}()
+
 	instOp, err := a.initPrerequisites(ctx, inst)
 	if err != nil {
 		return err
@@ -152,13 +166,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 	internalInstallation := instOp.Inst
 
 	if !inst.DeletionTimestamp.IsZero() {
-		err := EnsureDeletion(ctx, instOp)
-		if err != nil && !reflect.DeepEqual(inst.Status, old.Status) {
-			if err2 := a.Client().Status().Update(ctx, inst); err2 != nil {
-				return errors.Wrapf(err, "update error: %s", err2.Error())
-			}
-		}
-		return err
+		return EnsureDeletion(ctx, instOp)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
@@ -166,37 +174,42 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return a.forceReconcile(ctx, instOp, internalInstallation)
 	}
 
-	err = a.Ensure(ctx, instOp, internalInstallation)
-	if !reflect.DeepEqual(inst.Status, old.Status) {
-		if err2 := a.Client().Status().Update(ctx, inst); err2 != nil {
-			if err != nil {
-				err2 = errors.Wrapf(err, "update error: %s", err.Error())
-			}
-			return err2
-		}
-	}
-	return err
+	return a.Ensure(ctx, instOp, internalInstallation)
 }
 
 func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
+		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
+			"InitPrerequisites", "SetupRegistries", err.Error())
 		return nil, err
+	}
+
+	// default repository context if not defined
+	if inst.Spec.Blueprint.Reference != nil && inst.Spec.Blueprint.Reference.RepositoryContext == nil {
+		inst.Spec.Blueprint.Reference.RepositoryContext = a.lsConfig.RepositoryContext
 	}
 
 	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.Blueprint, nil)
 	if err != nil {
-		// todo: set to failed and set last Error
+		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
+			"InitPrerequisites", "ResolveBlueprint", err.Error())
 		return nil, err
 	}
 
 	internalInstallation, err := installations.New(inst, intBlueprint)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create internal representation of installation")
+		err = fmt.Errorf("unable to create internal representation of installation: %w", err)
+		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
+			"InitPrerequisites", "InitInstallation", err.Error())
+		return nil, err
 	}
 
 	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, internalInstallation)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create installation operation")
+		err = fmt.Errorf("unable to create installation operation: %w", err)
+		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
+			"InitPrerequisites", "InitInstallationOperation", err.Error())
+		return nil, err
 	}
 	return instOp, nil
 }

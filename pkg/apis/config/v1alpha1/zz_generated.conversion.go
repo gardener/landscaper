@@ -12,6 +12,7 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
+	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
@@ -89,6 +90,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(in *LandscaperConfiguration, out *config.LandscaperConfiguration, s conversion.Scope) error {
+	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
 	out.DefaultOCI = (*config.OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(&in.Registries, &out.Registries, s); err != nil {
 		return err
@@ -102,6 +104,7 @@ func Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(
 }
 
 func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfiguration(in *config.LandscaperConfiguration, out *LandscaperConfiguration, s conversion.Scope) error {
+	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
 	out.DefaultOCI = (*OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_config_RegistriesConfiguration_To_v1alpha1_RegistriesConfiguration(&in.Registries, &out.Registries, s); err != nil {
 		return err

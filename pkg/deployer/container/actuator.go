@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
@@ -116,6 +118,13 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
 	old := deployItem.DeepCopy()
+	// set failed state if the last error lasts for more than 5 minutes
+	defer func() {
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
+			deployItem.Status.LastError,
+			5*time.Minute))
+	}()
 	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.registry, a.config, deployItem)
 	if err != nil {
 		return err
