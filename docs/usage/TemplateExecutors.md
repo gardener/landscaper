@@ -15,9 +15,23 @@ enhanced with [sprig](http://masterminds.github.io/sprig/) functions.
 
 In addition to the `sprig` functions, landscaper specific functions are offered:
 
-- __readFile(path string)__: reads a file from the blueprints filesystem
-- __readDir(path string)__: returns all files and directories in the given directory of the blueprint's filesystem.
-- __toYaml(interface{})__: converts the given object to valid yaml
+- __readFile(path string): []byte__: reads a file from the blueprints filesystem
+- __readDir(path string): []FileInfo__: returns all files and directories in the given directory of the blueprint's filesystem.
+- __toYaml(interface{}): string__: converts the given object to valid yaml
+- __parseOCIRef(ref string): [2]string__: parses an oci reference and returns the repository and the version.
+  `e.g. host:5000/myrepo/myimage:1.0.0 -> ["host:5000/myrepo/myimage", "1.0.0"]`
+- __ociRefRepo(ref string): string__: parses an oci reference and returns the repository.
+  `e.g. host:5000/myrepo/myimage:1.0.0 -> "host:5000/myrepo/myimage"`
+- __ociRefVersion(ref string): string__: parses an oci reference and returns the version.
+  `e.g. host:5000/myrepo/myimage:1.0.0 -> "1.0.0"`
+- __resolve(access Access): []byte__: resolves an artifact defined by a typed access definition.<br>
+   The resolve function is currently able to handle artifacts of type `ociRegistry`, others may be added in teh future.
+   The function always returns a byte array of the artifact response<br>
+   ```
+   # e.g for a oci registry artifact
+   type: ociRegistry
+   imageReference: host:5000/myrepo/myimage:1.0.0
+   ```
 
 :warning: Note that OS functions are not available for security reasons.
 
