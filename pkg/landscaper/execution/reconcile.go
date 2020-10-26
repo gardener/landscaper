@@ -47,16 +47,19 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 				continue
 			}
-			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
-				// TODO: check if need to wait for other deploy items to finish
-				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
-			}
+
 			// get last applied status from own status
 			var lastAppliedGeneration int64
 			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
 				lastAppliedGeneration = ref.Reference.ObservedGeneration
 			}
+
+			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
+				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
+				// TODO: check if need to wait for other deploy items to finish
+				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
+			}
+
 			if lastAppliedGeneration == o.exec.Generation {
 				continue
 			}

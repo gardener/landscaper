@@ -228,9 +228,6 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 		empty   = true
 	)
 	for _, phase := range phases {
-		if phase == v1alpha1.ComponentPhaseProgressing || phase == v1alpha1.ComponentPhasePending || phase == v1alpha1.ComponentPhaseDeleting {
-			return v1alpha1.ComponentPhaseProgressing
-		}
 		switch phase {
 		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting:
 			return v1alpha1.ComponentPhaseProgressing
