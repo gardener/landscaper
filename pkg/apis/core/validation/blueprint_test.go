@@ -57,7 +57,7 @@ var _ = Describe("Blueprint", func() {
 			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("b"), []core.ImportDefinition{importDefinition})
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("b.myimport"),
+				"Field": Equal("b[0][myimport]"),
 			}))))
 		})
 	})
@@ -89,7 +89,7 @@ var _ = Describe("Blueprint", func() {
 			allErrs := validation.ValidateBlueprintExportDefinitions(field.NewPath("b"), []core.ExportDefinition{exportDefinition})
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("b.myimport"),
+				"Field": Equal("b[0][myimport]"),
 			}))))
 		})
 	})
@@ -121,7 +121,7 @@ var _ = Describe("Blueprint", func() {
 			allErrs := validation.ValidateTemplateExecutorList(field.NewPath("b"), []core.TemplateExecutor{executor})
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("b.myname.type"),
+				"Field": Equal("b[0][myname].type"),
 			}))))
 		})
 	})

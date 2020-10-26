@@ -8,9 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
@@ -62,7 +65,7 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 		return nil, fmt.Errorf("error during serializing of the resolved component descriptor: %w", err)
 	}
 
-	executionItems := make([]lsv1alpha1.DeployItemTemplate, 0)
+	executionItems := lsv1alpha1.DeployItemTemplateList{}
 	for _, tmplExec := range blueprint.Info.DeployExecutions {
 		impl, ok := o.impl[tmplExec.Type]
 		if !ok {
@@ -84,7 +87,19 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 		executionItems = append(executionItems, output.DeployItems...)
 	}
 
+	if err := validateDeployItemList(field.NewPath("deployExecutions"), executionItems); err != nil {
+		return nil, err
+	}
+
 	return executionItems, nil
+}
+
+func validateDeployItemList(fldPath *field.Path, list lsv1alpha1.DeployItemTemplateList) error {
+	coreList := core.DeployItemTemplateList{}
+	if err := lsv1alpha1.Convert_v1alpha1_DeployItemTemplateList_To_core_DeployItemTemplateList(&list, &coreList, nil); err != nil {
+		return err
+	}
+	return validation.ValidateDeployItemTemplateList(fldPath, coreList).ToAggregate()
 }
 
 // ExportExecutorOutput describes the output of export executor.

@@ -53,7 +53,7 @@ type Execution struct {
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
 	// DeployItems defines all execution items that need to be scheduled.
-	DeployItems []DeployItemTemplate `json:"deployItems,omitempty"`
+	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
 }
 
 // ExecutionStatus contains the current status of a execution.
@@ -77,6 +77,9 @@ type ExecutionStatus struct {
 	// The observed generation is here the generation of the Execution not the DeployItem.
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
+
+// DeployItemTemplateList is a list of deploy item templates
+type DeployItemTemplateList []DeployItemTemplate
 
 // DeployItemTemplate defines a execution element that is translated into a deploy item.
 // +k8s:deepcopy-gen=true

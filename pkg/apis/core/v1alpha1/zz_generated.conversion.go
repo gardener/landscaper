@@ -219,16 +219,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ExecutionSpec)(nil), (*core.ExecutionSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(a.(*ExecutionSpec), b.(*core.ExecutionSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*core.ExecutionSpec)(nil), (*ExecutionSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(a.(*core.ExecutionSpec), b.(*ExecutionSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*ExecutionStatus)(nil), (*core.ExecutionStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(a.(*ExecutionStatus), b.(*core.ExecutionStatus), scope)
 	}); err != nil {
@@ -566,6 +556,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*core.VersionedResourceReference)(nil), (*VersionedResourceReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_core_VersionedResourceReference_To_v1alpha1_VersionedResourceReference(a.(*core.VersionedResourceReference), b.(*VersionedResourceReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*core.DeployItemTemplateList)(nil), (*DeployItemTemplateList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(a.(*core.DeployItemTemplateList), b.(*DeployItemTemplateList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*core.ExecutionSpec)(nil), (*ExecutionSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(a.(*core.ExecutionSpec), b.(*ExecutionSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*DeployItemTemplateList)(nil), (*core.DeployItemTemplateList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_DeployItemTemplateList_To_core_DeployItemTemplateList(a.(*DeployItemTemplateList), b.(*core.DeployItemTemplateList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*ExecutionSpec)(nil), (*core.ExecutionSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(a.(*ExecutionSpec), b.(*core.ExecutionSpec), scope)
 	}); err != nil {
 		return err
 	}
@@ -948,6 +958,7 @@ func autoConvert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *Depl
 	out.Name = in.Name
 	out.Type = core.ExecutionType(in.Type)
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
+	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
@@ -962,6 +973,7 @@ func autoConvert_core_DeployItemTemplate_To_v1alpha1_DeployItemTemplate(in *core
 	out.Name = in.Name
 	out.Type = ExecutionType(in.Type)
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
+	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	out.DependsOn = *(*[]string)(unsafe.Pointer(&in.DependsOn))
 	return nil
@@ -1036,7 +1048,17 @@ func Convert_core_Execution_To_v1alpha1_Execution(in *core.Execution, out *Execu
 
 func autoConvert_v1alpha1_ExecutionList_To_core_ExecutionList(in *ExecutionList, out *core.ExecutionList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]core.Execution)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]core.Execution, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_Execution_To_core_Execution(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1047,7 +1069,17 @@ func Convert_v1alpha1_ExecutionList_To_core_ExecutionList(in *ExecutionList, out
 
 func autoConvert_core_ExecutionList_To_v1alpha1_ExecutionList(in *core.ExecutionList, out *ExecutionList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Execution)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]Execution, len(*in))
+		for i := range *in {
+			if err := Convert_core_Execution_To_v1alpha1_Execution(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -1057,23 +1089,13 @@ func Convert_core_ExecutionList_To_v1alpha1_ExecutionList(in *core.ExecutionList
 }
 
 func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out *core.ExecutionSpec, s conversion.Scope) error {
-	out.DeployItems = *(*[]core.DeployItemTemplate)(unsafe.Pointer(&in.DeployItems))
+	out.DeployItems = *(*core.DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	return nil
-}
-
-// Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec is an autogenerated conversion function.
-func Convert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec, out *core.ExecutionSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in, out, s)
 }
 
 func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.ExecutionSpec, out *ExecutionSpec, s conversion.Scope) error {
-	out.DeployItems = *(*[]DeployItemTemplate)(unsafe.Pointer(&in.DeployItems))
+	out.DeployItems = *(*DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	return nil
-}
-
-// Convert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec is an autogenerated conversion function.
-func Convert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.ExecutionSpec, out *ExecutionSpec, s conversion.Scope) error {
-	return autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in, out, s)
 }
 
 func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionStatus, out *core.ExecutionStatus, s conversion.Scope) error {

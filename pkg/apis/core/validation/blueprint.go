@@ -44,9 +44,9 @@ func ValidateBlueprintImportDefinitions(fldPath *field.Path, imports []core.Impo
 
 	importNames := sets.NewString()
 	for i, importDef := range imports {
-		defPath := fldPath.Child(importDef.Name)
-		if len(importDef.Name) == 0 {
-			defPath = fldPath.Index(i)
+		defPath := fldPath.Index(i)
+		if len(importDef.Name) != 0 {
+			defPath = defPath.Key(importDef.Name)
 		}
 
 		allErrs = append(allErrs, ValidateFieldValueDefinition(defPath, importDef.FieldValueDefinition)...)
@@ -66,18 +66,18 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 	allErrs := field.ErrorList{}
 
 	exportNames := sets.NewString()
-	for i, importDef := range exports {
-		defPath := fldPath.Child(importDef.Name)
-		if len(importDef.Name) == 0 {
-			defPath = fldPath.Index(i)
+	for i, exportDef := range exports {
+		defPath := fldPath.Index(i)
+		if len(exportDef.Name) != 0 {
+			defPath = defPath.Key(exportDef.Name)
 		}
 
-		allErrs = append(allErrs, ValidateFieldValueDefinition(defPath, importDef.FieldValueDefinition)...)
+		allErrs = append(allErrs, ValidateFieldValueDefinition(defPath, exportDef.FieldValueDefinition)...)
 
-		if len(importDef.Name) != 0 && exportNames.Has(importDef.Name) {
+		if len(exportDef.Name) != 0 && exportNames.Has(exportDef.Name) {
 			allErrs = append(allErrs, field.Duplicate(defPath, "duplicated export name"))
 		}
-		exportNames.Insert(importDef.Name)
+		exportNames.Insert(exportDef.Name)
 	}
 
 	return allErrs
@@ -111,10 +111,11 @@ func ValidateTemplateExecutorList(fldPath *field.Path, list []core.TemplateExecu
 	allErrs := field.ErrorList{}
 	names := sets.NewString()
 	for i, exec := range list {
-		execPath := fldPath.Child(exec.Name)
+		execPath := fldPath.Index(i)
 		if len(exec.Name) == 0 {
-			execPath = fldPath.Index(i)
 			allErrs = append(allErrs, field.Required(execPath.Child("name"), "name must be defined"))
+		} else {
+			execPath = execPath.Key(exec.Name)
 		}
 
 		if len(exec.Type) == 0 {
