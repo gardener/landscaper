@@ -92,6 +92,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		return reconcile.Result{}, nil
 	}
 
 	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
@@ -112,6 +113,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		return reconcile.Result{}, nil
 	}
 
 	err := a.Ensure(ctx, exec)
