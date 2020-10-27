@@ -69,7 +69,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		Expect(val.Validate(ctx, inInstA)).To(Succeed())
+		Expect(val.ImportsSatisfied(ctx, inInstA)).To(Succeed())
 	})
 
 	It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		Expect(val.Validate(ctx, inInstB)).To(Succeed())
+		Expect(val.ImportsSatisfied(ctx, inInstB)).To(Succeed())
 	})
 
 	It("should reject the validation when the parent component is not progressing", func() {
@@ -111,7 +111,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		err = val.Validate(ctx, inInstA)
+		err = val.ImportsSatisfied(ctx, inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
 	})
@@ -135,7 +135,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		err = val.Validate(ctx, inInstB)
+		err = val.ImportsSatisfied(ctx, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -166,30 +166,32 @@ var _ = Describe("Validation", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		err = val.Validate(ctx, inInstD)
+		err = val.ImportsSatisfied(ctx, inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 	})
 
-	It("should reject when a dependent sibling of my parent that has not finished yet", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/a"])
-		Expect(err).ToNot(HaveOccurred())
-		op.Inst = inInstA
-		Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
+	Context("CheckDependentInstallations", func() {
+		It("should reject when a dependent sibling of my parent that has not finished yet", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/a"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstA
+			Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
 
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
-		Expect(err).ToNot(HaveOccurred())
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
+			Expect(err).ToNot(HaveOccurred())
 
-		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.Installation{inInstA}
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			op.Context().Parent = inInstRoot
+			op.Context().Siblings = []*installations.Installation{inInstA}
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
-		err = val.Validate(ctx, inInstA)
-		Expect(err).To(HaveOccurred())
-		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
+			val := imports.NewValidator(op)
+			ok, err := val.CheckDependentInstallations(ctx, inInstA)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
 	})
 
 	Context("Targets", func() {
@@ -208,7 +210,7 @@ var _ = Describe("Validation", func() {
 			Expect(fakeClient.Delete(ctx, target))
 
 			c := imports.NewValidator(op)
-			err = c.Validate(ctx, inInstRoot)
+			err = c.ImportsSatisfied(ctx, inInstRoot)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -227,7 +229,7 @@ var _ = Describe("Validation", func() {
 			Expect(fakeClient.Delete(ctx, target))
 
 			c := imports.NewValidator(op)
-			err = c.Validate(ctx, inInstF)
+			err = c.ImportsSatisfied(ctx, inInstF)
 			Expect(err).To(HaveOccurred())
 		})
 	})
