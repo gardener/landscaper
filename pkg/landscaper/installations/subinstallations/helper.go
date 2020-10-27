@@ -5,94 +5,71 @@
 package subinstallations
 
 import (
+	"fmt"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/pkg/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
-//// AddDefaultImports adds all default mappings of im and exports if they are not already defined
-//func AddDefaultImports(inst *lsv1alpha1.Installation, blueprint *lsv1alpha1.Blueprint) {
-//	dataImports := sets.NewString()
-//	targetImports := sets.NewString()
-//	for _, dataImport := range inst.Spec.Imports.Data {
-//		dataImports.Insert(dataImport.Name)
-//	}
-//	for _, targetImport := range inst.Spec.Imports.Targets {
-//		targetImports.Insert(targetImport.Name)
-//	}
-//	for _, importDef := range blueprint.Imports {
-//		if !dataImports.Has(importDef.Name) {
-//			inst.Spec.Imports = append(inst.Spec.Imports, lsv1alpha1.DefinitionImportMapping{
-//				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-//					From: importDef.Name,
-//					To:   importDef.Name,
-//				},
-//			})
-//		}
-//	}
-//
-//	dataImports = sets.NewString()
-//	for _, mapping := range inst.Spec.Exports {
-//		dataImports.Insert(mapping.From)
-//	}
-//	for _, importDef := range blueprint.Exports {
-//		if !dataImports.Has(importDef.Name) {
-//			inst.Spec.Exports = append(inst.Spec.Exports, lsv1alpha1.DefinitionExportMapping{
-//				DefinitionFieldMapping: lsv1alpha1.DefinitionFieldMapping{
-//					From: importDef.Name,
-//					To:   importDef.Name,
-//				},
-//			})
-//		}
-//	}
-//}
+func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, resolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor) (*lsv1alpha1.BlueprintDefinition, error) {
+	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
+	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
+	if len(subInstTmpl.Blueprint.Filesystem) != 0 {
+		subBlueprint.Inline = &lsv1alpha1.InlineBlueprint{
+			Filesystem: subInstTmpl.Blueprint.Filesystem,
+		}
+		if inst.Spec.Blueprint.Reference != nil {
+			// uses the parent component descriptor
+			subBlueprint.Inline.ComponentDescriptorReference = &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: inst.Spec.Blueprint.Reference.RepositoryContext,
+				ComponentName:     inst.Spec.Blueprint.Reference.ComponentName,
+				Version:           inst.Spec.Blueprint.Reference.Version,
+			}
+		}
+	}
+	if len(subInstTmpl.Blueprint.Ref) != 0 {
+		uri, err := cdutils.ParseURI(subInstTmpl.Blueprint.Ref)
+		if err != nil {
+			return nil, err
+		}
+		if resolvedComponentDescriptor == nil {
+			return nil, errors.New("no component descriptor defined to resolve the blueprint ref")
+		}
+		kind, res, err := uri.Get(*resolvedComponentDescriptor)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", resolvedComponentDescriptor.Name, err)
+		}
+		// the result of the uri has to be an resource
+		resource, ok := res.(cdv2.Resource)
+		if !ok {
+			return nil, fmt.Errorf("expected a resource from the component descriptor %s", resolvedComponentDescriptor.Name)
+		}
 
-//// installationNeedsUpdate check if a definition reference has been updated
-//func installationNeedsUpdate(def lsv1alpha1.BlueprintReferenceTemplate, inst *lsv1alpha1.Installation) bool {
-//	// check if the reference itself has changed
-//	if def.Info != inst.Spec.Blueprint {
-//		return true
-//	}
-//
-//	for _, mapping := range def.Imports {
-//		if !hasMappingOfImports(mapping, inst.Spec.Imports) {
-//			return true
-//		}
-//	}
-//
-//	for _, mapping := range def.Exports {
-//		if !hasMappingOfExports(mapping, inst.Spec.Exports) {
-//			return true
-//		}
-//	}
-//
-//	if len(inst.Spec.Imports) != len(def.Imports) {
-//		return true
-//	}
-//
-//	if len(inst.Spec.Exports) != len(def.Exports) {
-//		return true
-//	}
-//
-//	return false
-//}
-//
-//func hasMappingOfImports(search lsv1alpha1.DefinitionImportMapping, mappings []lsv1alpha1.DefinitionImportMapping) bool {
-//	for _, mapping := range mappings {
-//		if mapping.To == search.To && mapping.From == search.From {
-//			return true
-//		}
-//	}
-//	return false
-//}
-//
-//func hasMappingOfExports(search lsv1alpha1.DefinitionExportMapping, mappings []lsv1alpha1.DefinitionExportMapping) bool {
-//	for _, mapping := range mappings {
-//		if mapping.To == search.To && mapping.From == search.From {
-//			return true
-//		}
-//	}
-//	return false
-//}
+		cd, err := uri.GetComponent(*resolvedComponentDescriptor)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", resolvedComponentDescriptor.Name, err)
+		}
+
+		latestRepoCtx := resolvedComponentDescriptor.LatestRepositoryContext()
+		subBlueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
+			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
+				ResourceReference: lsv1alpha1.ResourceReference{
+					ComponentName: cd.Name,
+					Kind:          kind,
+					ResourceName:  resource.Name,
+				},
+				Version: cd.Version,
+			},
+			RepositoryContext: &latestRepoCtx,
+		}
+	}
+
+	return subBlueprint, nil
+}
 
 // getDefinitionReference returns the definition reference by name
 func getDefinitionReference(blueprint *blueprints.Blueprint, name string) (*lsv1alpha1.InstallationTemplate, bool) {

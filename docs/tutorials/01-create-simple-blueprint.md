@@ -14,6 +14,17 @@ __Prerequisites__:
 All example resources can be found in [./resources/ingress-nginx](./resources/ingress-nginx).
 :warning: note that the files are examples and the correct oci references have to be added.
 
+Structure:
+- [Resources](#resources)
+    - [Prepare nginx helm chart](#prepare-nginx-helm-chart)
+    - [Define Component Descriptor](#define-the-component-descriptor)
+    - [Create Blueprint](#create-blueprint)
+    - [Render and Validate](#render-and-validate-locally)
+- [Remote Upload](#remote-upload)
+- [Installation](#installation)
+- [Summary](#summary)
+- [Up next](#up-next)
+
 ### Resources
 
 #### Prepare nginx helm chart
@@ -37,7 +48,7 @@ helm chart save /tmp/ingress-nginx $CHART_REF
 helm chart push $CHART_REF
 ```
 
-#### Build the Component Descriptor
+#### Define the Component Descriptor
 
 A component descriptor contains all resources that are used by the application installation.
 Resources are in this example the ingress-nginx helm chart but could also be `oci images` or even `node modules`.
@@ -86,7 +97,7 @@ component:
         imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
 ```
 
-#### Build Blueprint
+#### Create Blueprint
 
 Blueprints describe the imports that are used to template the deployitems and exports that result from the executed deploy items.
 
@@ -118,7 +129,7 @@ The target will be used as the target cluster for the helm chart.
 As a simple export, the ingress class of the ingress is exported as type string.
 
 DeployItems are templated in the `deployExecutions` section by specifying different templating steps.
-Each template step has to output a list of deploy item templates of the following form:
+Each template step has to output a list of deploy item templates of the following form.
 ```yaml
 - name: "unique name of the deployitem"
   type: landscaper.gardener.cloud/helm | landscaper.gardener.cloud/container | ... # deployer identifier
@@ -214,13 +225,74 @@ exports:
     type: string
 ```
 
+A blueprint is defined by a directory that contains the above described Blueprint Manifest as file called `blueprint.yaml`.
+The directory can contain any other data that is necessary for the deployment/templating.
+For an example see [./resources/ingress-nginx/blueprint](resources/ingress-nginx/blueprint).
+
+##### Render and Validate locally
+
+The blueprint will result in a deploy item of helm that is templated using one import.
+This resulting deploy item can be rendered and the templating can be tested by 
+1. providing some sample import as file (e.g. docs/tutorials/resources/ingress-nginx/import-values.yaml)
+   ```
+   imports:
+     cluster:
+       metadata:
+         name: my-target
+         namespace: test
+       spec:
+         type: ""
+         config:
+           kubeconfig: |
+             apiVersion: ...
+   ```
+2. and render the blueprint with the component descriptor: 
+   ```
+   landscaper-cli blueprints render ./docs/tutorials/resources/ingress-nginx/blueprint \
+      -c ./docs/tutorials/resources/ingress-nginx/component-descriptor.yaml \
+      -f ./docs/tutorials/resources/ingress-nginx/import-values.yaml
+   ```
+   
+   ```
+   --------------------------------------
+   -- deployitems deploy
+   --------------------------------------
+   apiVersion: landscaper.gardener.cloud/v1alpha1
+   kind: DeployItem
+   metadata:
+     annotations:
+       execution.landscaper.gardener.cloud/dependsOn: ""
+       landscaper.gardener.cloud/operation: reconcile
+     creationTimestamp: null
+     labels:
+       execution.landscaper.gardener.cloud/name: deploy
+   spec:
+     config:
+       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+       chart:
+         ref: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+       exportsFromManifests:
+       - jsonPath: .Values.controller.ingressClass
+         key: ingressClass
+       kind: ProviderConfiguration
+       name: test
+       namespace: default
+       updateStrategy: patch
+     target:
+       name: my-cluster
+       namespace: <no value>
+     type: landscaper.gardener.cloud/helm
+   status:
+     observedGeneration: 0
+   ```
+
+
+### Remote Upload
+
 After the blueprint is build it has to be uploaded to the oci registry and the reference needs to be added to the component descriptor.
 The blueprint can be easily uploaded by using the landscaper cli tool which packages the blueprint and uploads to the given oci registry.
 
 To install the landscaper see [Landscaper CLI Installation](../gettingstarted/install-landscaper-cli.md)
-
-The above described blueprint has to be a file called `blueprint.yaml` in a directory that is then uploaded.
-For an example see [./resources/ingress-nginx/blueprint](resources/ingress-nginx/blueprint).
 
 ```shell script
 landscaper-cli blueprints push myregistry/mypath/ingress-nginx:v0.1.0 docs/tutorials/resources/ingress-nginx/blueprint

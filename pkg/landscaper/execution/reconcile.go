@@ -7,10 +7,8 @@ package execution
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -102,16 +100,8 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	}
 
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
-		lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
-		item.DeployItem.Spec.Type = item.Info.Type
-		item.DeployItem.Spec.Target = item.Info.Target
-		item.DeployItem.Spec.Configuration = item.Info.Configuration
-		for k, v := range item.Info.Labels {
-			kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, k, v)
-		}
+		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
-		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, item.Info.Name)
-		metav1.SetMetaDataAnnotation(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionDependsOnAnnotation, strings.Join(item.Info.DependsOn, ","))
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
 		return err

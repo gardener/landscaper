@@ -99,20 +99,20 @@ func (s KubernetesStateHandler) secretName(name string) string {
 	return base32.NewEncoding(lsv1alpha1helper.Base32EncodeStdLowerCase).WithPadding(base32.NoPadding).EncodeToString(h.Sum(nil))
 }
 
-type memoryStateHandler map[string][]byte
+type MemoryStateHandler map[string][]byte
 
-var _ GenericStateHandler = memoryStateHandler{}
+var _ GenericStateHandler = MemoryStateHandler{}
 
-func NewMemoryStateHandler() GenericStateHandler {
-	return memoryStateHandler{}
+func NewMemoryStateHandler() MemoryStateHandler {
+	return MemoryStateHandler{}
 }
 
-func (m memoryStateHandler) Store(_ context.Context, name string, data []byte) error {
+func (m MemoryStateHandler) Store(_ context.Context, name string, data []byte) error {
 	m[name] = data
 	return nil
 }
 
-func (m memoryStateHandler) Get(_ context.Context, name string) ([]byte, error) {
+func (m MemoryStateHandler) Get(_ context.Context, name string) ([]byte, error) {
 	data, ok := m[name]
 	if !ok {
 		return nil, StateNotFoundErr
