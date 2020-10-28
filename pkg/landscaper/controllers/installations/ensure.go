@@ -115,11 +115,28 @@ func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Opera
 	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
 		return true, nil
 	}
-	return imports.NewValidator(op).OutdatedImports(ctx, inst)
+
+	validator := imports.NewValidator(op)
+	run, err := validator.OutdatedImports(ctx, inst)
+	if err != nil {
+		return run, err
+	}
+	if !run {
+		return false, nil
+	}
+
+	return validator.CheckDependentInstallations(ctx, inst)
 }
 
 // ApplyUpdate redeploys subinstallations and deploy items.
 func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
+	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {
+		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+			"ImportsSatisfied",
+			"unable to check that all imports are satisfied",
+			err.Error())
+		return err
+	}
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 	constructor := imports.NewConstructor(op)
