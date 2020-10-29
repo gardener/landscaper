@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package manifest
+package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,19 +15,20 @@ import (
 
 // ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
 type ProviderConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 	// Kubeconfig is the base64 encoded kubeconfig file.
 	// By default the configured target is used to deploy the resources
 	// +optional
 	Kubeconfig string `json:"kubeconfig"`
 	// UpdateStrategy defines the strategy how the manifest are updated in the cluster.
+	// Defaults to "update".
 	// +optional
-	UpdateStrategy UpdateStrategy `json:"updateStrategy"`
+	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []Manifest `json:"manifests,omitempty"`
 }
 
-// ManifestPolicy defines the strategy how a manifest should be managed
+// ManifestPolicy defines the strategy how a mnifest should be managed
 // by the deployer.
 type ManifestPolicy string
 

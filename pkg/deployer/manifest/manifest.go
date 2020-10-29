@@ -19,7 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	manifestinstall "github.com/gardener/landscaper/pkg/apis/deployer/manifest/install"
-	manifestv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha2"
 )
 
 const (
@@ -39,21 +39,21 @@ type Manifest struct {
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
-	ProviderConfiguration *manifestv1alpha1.ProviderConfiguration
-	ProviderStatus        *manifestv1alpha1.ProviderStatus
+	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
+	ProviderStatus        *manifestv1alpha2.ProviderStatus
 }
 
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
-	config := &manifestv1alpha1.ProviderConfiguration{}
+	config := &manifestv1alpha2.ProviderConfiguration{}
 	manifestdecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
 	if _, _, err := manifestdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, err
 	}
 
-	var status *manifestv1alpha1.ProviderStatus
+	var status *manifestv1alpha2.ProviderStatus
 	if item.Status.ProviderStatus != nil {
-		status = &manifestv1alpha1.ProviderStatus{}
+		status = &manifestv1alpha2.ProviderStatus{}
 		if _, _, err := manifestdecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
 			return nil, err
 		}

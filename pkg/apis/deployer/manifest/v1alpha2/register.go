@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
@@ -13,7 +13,7 @@ import (
 const GroupName = "manifest.deployer.landscaper.gardener.cloud"
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha2"}
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -42,8 +42,5 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ProviderConfiguration{},
 		&Configuration{},
 	)
-	if err := addDefaultingFuncs(scheme); err != nil {
-		return err
-	}
-	return addConversionFuncs(scheme)
+	return addDefaultingFuncs(scheme)
 }
