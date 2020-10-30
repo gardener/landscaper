@@ -27,7 +27,7 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
-// ValidateInstallation validates an Installation
+// ValidateBlueprint validates a Blueprint
 func ValidateBlueprint(fs vfs.FileSystem, blueprint *core.Blueprint) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBlueprintImportDefinitions(field.NewPath("imports"), blueprint.Imports)...)
