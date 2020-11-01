@@ -241,6 +241,39 @@ blueprint:
 			}))))
 		})
 
+		It("should fail if a secret or configmap reference is used in a InstallationTemplate", func() {
+			subinstallation := core.SubinstallationTemplate{
+				File: "mypath",
+			}
+			fs := memoryfs.New()
+			installationTemplateBytes := []byte(`
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+name: my-tmpl
+blueprint:
+  ref: myref
+imports:
+  data:
+  - name: myimport
+    secretRef:
+      name: mysecret
+  - name: mysecondimport
+    configMapRef:
+      name: mycm
+`)
+			Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
+
+			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeForbidden),
+				"Field": Equal("b[0].imports.data[0].secretRef"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeForbidden),
+				"Field": Equal("b[0].imports.data[1].configMapRef"),
+			}))))
+		})
+
 		Context("Import Satisfaction", func() {
 			It("should pass if a data import of a subinstallation is imported by its parent", func() {
 				imports := []core.ImportDefinition{

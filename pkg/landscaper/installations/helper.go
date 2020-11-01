@@ -9,13 +9,17 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	lscheme "github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -83,4 +87,70 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
 	return New(inst, blue)
+}
+
+// GetDataImport fetches the data import from the cluster.
+func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, dataRef lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
+	var rawDataObject *lsv1alpha1.DataObject
+	// get deploy item from current context
+	if len(dataRef.DataRef) != 0 {
+		rawDataObject = &lsv1alpha1.DataObject{}
+		doName := helper.GenerateDataObjectName(contextName, dataRef.DataRef)
+		if err := op.Client().Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
+			return nil, nil, err
+		}
+	}
+	if dataRef.SecretRef != nil {
+		secret := &corev1.Secret{}
+		if err := op.Client().Get(ctx, dataRef.SecretRef.NamespacedName(), secret); err != nil {
+			return nil, nil, err
+		}
+		data, ok := secret.Data[dataRef.SecretRef.Key]
+		if !ok {
+			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
+		}
+		rawDataObject = &lsv1alpha1.DataObject{}
+		rawDataObject.Data = data
+		// set the generation as it is used to detect outdated imports.
+		rawDataObject.SetGeneration(secret.Generation)
+	}
+	if dataRef.ConfigMapRef != nil {
+		cm := &corev1.ConfigMap{}
+		if err := op.Client().Get(ctx, dataRef.ConfigMapRef.NamespacedName(), cm); err != nil {
+			return nil, nil, err
+		}
+		data, ok := cm.Data[dataRef.ConfigMapRef.Key]
+		if !ok {
+			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
+		}
+		rawDataObject = &lsv1alpha1.DataObject{}
+		rawDataObject.Data = []byte(data)
+		// set the generation as it is used to detect outdated imports.
+		rawDataObject.SetGeneration(cm.Generation)
+	}
+
+	do, err := dataobjects.NewFromDataObject(rawDataObject)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	owner := kubernetes.GetOwner(do.Raw.ObjectMeta)
+	return do, owner, nil
+}
+
+// GetTargetImport fetches the target import from the cluster.
+func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, targetName string) (*dataobjects.Target, *v1.OwnerReference, error) {
+	// get deploy item from current context
+	raw := &lsv1alpha1.Target{}
+	targetName = helper.GenerateDataObjectName(contextName, targetName)
+	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+		return nil, nil, err
+	}
+
+	owner := kubernetes.GetOwner(raw.ObjectMeta)
+	target, err := dataobjects.NewFromTarget(raw)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
+	}
+	return target, owner, nil
 }

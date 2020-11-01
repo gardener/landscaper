@@ -264,8 +264,50 @@ func ValidateInstallationTemplate(fldPath *field.Path, template *core.Installati
 		allErrs = append(allErrs, field.Required(fldPath.Child("blueprint"), "a blueprint must be defined"))
 	}
 
-	allErrs = append(allErrs, ValidateInstallationImports(template.Imports, fldPath.Child("imports"))...)
+	allErrs = append(allErrs, ValidateInstallationTemplateImports(template.Imports, fldPath.Child("imports"))...)
 	allErrs = append(allErrs, ValidateInstallationExports(template.Exports, fldPath.Child("exports"))...)
+
+	return allErrs
+}
+
+// ValidateInstallationTemplateImports validates the imports of an InstallationTemplate
+func ValidateInstallationTemplateImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, ValidateInstallationTemplateDataImports(imports.Data, fldPath.Child("data"))...)
+	allErrs = append(allErrs, ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"))...)
+
+	return allErrs
+}
+
+// ValidateInstallationTemplateDataImports validates the data imports of an InstallationTemplate
+func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	importNames := map[string]bool{}
+	for idx, imp := range imports {
+		impPath := fldPath.Index(idx)
+
+		if imp.DataRef == "" {
+			allErrs = append(allErrs, field.Required(impPath.Child("dataRef"), "dataRef must not be empty"))
+		}
+
+		if imp.SecretRef != nil {
+			allErrs = append(allErrs, field.Forbidden(impPath.Child("secretRef"), "secret references are not allowed in a installation template"))
+		}
+		if imp.ConfigMapRef != nil {
+			allErrs = append(allErrs, field.Forbidden(impPath.Child("configMapRef"), "configMap references are not allowed in a installation template"))
+		}
+
+		if imp.Name == "" {
+			allErrs = append(allErrs, field.Required(impPath.Child("name"), "name must not be empty"))
+			continue
+		}
+		if importNames[imp.Name] {
+			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
+		}
+		importNames[imp.Name] = true
+	}
 
 	return allErrs
 }

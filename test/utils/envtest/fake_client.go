@@ -33,6 +33,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
 		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
+		ConfigMaps:    make(map[string]*corev1.ConfigMap),
 	}
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

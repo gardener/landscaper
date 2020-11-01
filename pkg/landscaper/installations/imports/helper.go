@@ -13,7 +13,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
@@ -111,10 +111,10 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	// we have to get the corresponding installation from the the cluster
 	do := &lsv1alpha1.DataObject{}
 	doName := lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, dataImport.DataRef)
-	if err := op.Client().Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), do); err != nil {
+	if err := op.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), do); err != nil {
 		return nil, fmt.Errorf("unable to fetch data object %s (%s): %w", doName, dataImport.DataRef, err)
 	}
-	owner := kubernetes.GetOwner(do.ObjectMeta)
+	owner := kutil.GetOwner(do.ObjectMeta)
 	if owner == nil {
 		return nil, nil
 	}

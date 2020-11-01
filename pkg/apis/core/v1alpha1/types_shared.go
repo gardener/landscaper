@@ -170,6 +170,22 @@ type VersionedNamedObjectReference struct {
 	Reference VersionedObjectReference `json:"ref"`
 }
 
+// SecretReference is reference to data in a secret.
+// The secret can also be in a different namespace.
+type SecretReference struct {
+	ObjectReference `json:",inline"`
+	// Key is the name of the key in the secret that holds the data.
+	Key string `json:"key"`
+}
+
+// ConfigMapReference is reference to data in a configmap.
+// The configmap can also be in a different namespace.
+type ConfigMapReference struct {
+	ObjectReference `json:",inline"`
+	// Key is the name of the key in the configmap that holds the data.
+	Key string `json:"key"`
+}
+
 // ResourceKind is the kind of a resource.
 // It can be local or external.
 type ResourceKind string

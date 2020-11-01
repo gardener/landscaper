@@ -8,17 +8,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
@@ -248,53 +249,54 @@ func parseResources(path string, state *State) ([]runtime.Object, error) {
 }
 
 func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State) ([]runtime.Object, error) {
-	var allErrors *multierror.Error
 	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
 
-	inst := &lsv1alpha1.Installation{}
-	_, _, err := decoder.Decode(data, nil, inst)
-	if err == nil {
+	_, gvk, err := decoder.Decode(data, nil, &unstructured.Unstructured{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode object into unstructured: %w", err)
+	}
+
+	switch gvk.Kind {
+	case InstallationGVK.Kind:
+		inst := &lsv1alpha1.Installation{}
+		if _, _, err := decoder.Decode(data, nil, inst); err != nil {
+			return nil, fmt.Errorf("unable to decode file as installation: %w", err)
+		}
 		state.Installations[types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}.String()] = inst
 		return append(objects, inst), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	exec := &lsv1alpha1.Execution{}
-	_, _, err = decoder.Decode(data, nil, exec)
-	if err == nil {
+	case ExecutionGVK.Kind:
+		exec := &lsv1alpha1.Execution{}
+		if _, _, err := decoder.Decode(data, nil, exec); err != nil {
+			return nil, fmt.Errorf("unable to decode file as execution: %w", err)
+		}
 		state.Executions[types.NamespacedName{Name: exec.Name, Namespace: exec.Namespace}.String()] = exec
 		return append(objects, exec), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	deployItem := &lsv1alpha1.DeployItem{}
-	_, _, err = decoder.Decode(data, nil, deployItem)
-	if err == nil {
+	case DeployItemGVK.Kind:
+		deployItem := &lsv1alpha1.DeployItem{}
+		if _, _, err := decoder.Decode(data, nil, deployItem); err != nil {
+			return nil, fmt.Errorf("unable to decode file as deploy item: %w", err)
+		}
 		state.DeployItems[types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String()] = deployItem
 		return append(objects, deployItem), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	dataObject := &lsv1alpha1.DataObject{}
-	_, _, err = decoder.Decode(data, nil, dataObject)
-	if err == nil {
+	case DataObjectGVK.Kind:
+		dataObject := &lsv1alpha1.DataObject{}
+		if _, _, err := decoder.Decode(data, nil, dataObject); err != nil {
+			return nil, fmt.Errorf("unable to decode file as data object: %w", err)
+		}
 		state.DataObjects[types.NamespacedName{Name: dataObject.Name, Namespace: dataObject.Namespace}.String()] = dataObject
 		return append(objects, dataObject), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	target := &lsv1alpha1.Target{}
-	_, _, err = decoder.Decode(data, nil, target)
-	if err == nil {
+	case TargetGVK.Kind:
+		target := &lsv1alpha1.Target{}
+		if _, _, err := decoder.Decode(data, nil, target); err != nil {
+			return nil, fmt.Errorf("unable to decode file as target: %w", err)
+		}
 		state.Targets[types.NamespacedName{Name: target.Name, Namespace: target.Namespace}.String()] = target
 		return append(objects, target), nil
-	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	secret := &corev1.Secret{}
-	_, _, err = decoder.Decode(data, nil, secret)
-	if err == nil {
-
+	case SecretGVK.Kind:
+		secret := &corev1.Secret{}
+		if _, _, err := decoder.Decode(data, nil, secret); err != nil {
+			return nil, fmt.Errorf("unable to decode file as secret: %w", err)
+		}
 		// add stringdata and data
 		if secret.Data == nil {
 			secret.Data = make(map[string][]byte)
@@ -305,10 +307,16 @@ func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State
 
 		state.Secrets[types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}.String()] = secret
 		return append(objects, secret), nil
+	case ConfigMapGVK.Kind:
+		cm := &corev1.ConfigMap{}
+		if _, _, err := decoder.Decode(data, nil, cm); err != nil {
+			return nil, fmt.Errorf("unable to decode file as configmap: %w", err)
+		}
+		state.ConfigMaps[types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}.String()] = cm
+		return append(objects, cm), nil
+	default:
+		return objects, nil
 	}
-	allErrors = multierror.Append(allErrors, errors.Wrap(err, "unable to decode file"))
-
-	return nil, allErrors
 }
 
 var templatingFunctions = template.FuncMap{

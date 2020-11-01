@@ -137,6 +137,16 @@ type DataImport struct {
 	// defaults to "v1"
 	// +optional
 	Version string `json:"version,omitempty"`
+
+	// SecretRef defines a data reference from a secret.
+	// This method is not allowed in installation templates.
+	// +optional
+	SecretRef *SecretReference `json:"secretRef,omitempty"`
+
+	// ConfigMapRef defines a data reference from a configmap.
+	// This method is not allowed in installation templates.
+	// +optional
+	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
 }
 
 // DataImportExport is a data object export.

@@ -119,6 +119,48 @@ var _ = Describe("Constructor", func() {
 		Expect(res).To(Equal(expectedConfig))
 	})
 
+	It("should construct the imported config from a secret", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test6/root"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
+		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+		expectedConfig := map[string]interface{}{
+			"root.a": "val-root-import",
+		}
+
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		c := imports.NewConstructor(op)
+		res, err := c.Construct(ctx, inInstRoot)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(res).ToNot(BeNil())
+
+		Expect(res).To(Equal(expectedConfig))
+	})
+
+	It("should construct the imported config from a configmap", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test7/root"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstRoot
+		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+		expectedConfig := map[string]interface{}{
+			"root.a": "val-root-import",
+		}
+
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		c := imports.NewConstructor(op)
+		res, err := c.Construct(ctx, inInstRoot)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(res).ToNot(BeNil())
+
+		Expect(res).To(Equal(expectedConfig))
+	})
+
 	Context("schema validation", func() {
 		It("should forbid when the import of a component does not satisfy the schema", func() {
 			ctx := context.Background()
