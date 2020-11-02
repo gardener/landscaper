@@ -66,11 +66,30 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 
 	importNames := map[string]bool{}
 	for idx, imp := range imports {
-		if imp.DataRef == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("dataRef"), "dataRef must not be empty"))
+		impPath := fldPath.Index(idx)
+
+		if imp.DataRef == "" && imp.SecretRef == nil && imp.ConfigMapRef == nil {
+			allErrs = append(allErrs, field.Required(impPath, "either dataRef, secretRef or configMapRef must not be empty"))
 		}
+
+		if imp.SecretRef != nil {
+			secRefField := impPath.Child("secretRef")
+			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, secRefField)...)
+			if imp.DataRef != "" || imp.ConfigMapRef != nil {
+				allErrs = append(allErrs, field.Forbidden(secRefField, "multiple data references are defined"))
+			}
+		}
+
+		if imp.ConfigMapRef != nil {
+			cmRefField := impPath.Child("configMapRef")
+			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, cmRefField)...)
+			if imp.DataRef != "" || imp.SecretRef != nil {
+				allErrs = append(allErrs, field.Forbidden(cmRefField, "multiple data references are defined"))
+			}
+		}
+
 		if imp.Name == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("name"), "name must not be empty"))
+			allErrs = append(allErrs, field.Required(impPath.Child("name"), "name must not be empty"))
 			continue
 		}
 		if importNames[imp.Name] {
@@ -93,7 +112,6 @@ func ValidateInstallationTargetImports(imports []core.TargetImportExport, fldPat
 		}
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("name"), "name must not be empty"))
-			continue
 		}
 		if importNames[imp.Name] {
 			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
@@ -178,6 +196,30 @@ func ValidateObjectReferenceList(orl []core.ObjectReference, fldPath *field.Path
 
 	for i, e := range orl {
 		allErrs = append(allErrs, ValidateObjectReference(e, fldPath.Index(i))...)
+	}
+
+	return allErrs
+}
+
+// ValidateSecretReference validates that the secret reference is valid
+func ValidateSecretReference(sr core.SecretReference, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, ValidateObjectReference(sr.ObjectReference, fldPath)...)
+	if sr.Key == "" {
+		allErrs = append(allErrs, field.Required(fldPath.Child("key"), "key must not be empty"))
+	}
+
+	return allErrs
+}
+
+// ValidateConfigMapReference validates that the secret reference is valid
+func ValidateConfigMapReference(cmr core.ConfigMapReference, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, ValidateObjectReference(cmr.ObjectReference, fldPath)...)
+	if cmr.Key == "" {
+		allErrs = append(allErrs, field.Required(fldPath.Child("key"), "key must not be empty"))
 	}
 
 	return allErrs

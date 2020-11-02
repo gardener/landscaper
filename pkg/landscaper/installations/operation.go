@@ -123,7 +123,8 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dataobjects.DataObject, error) {
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.Info.Spec.Imports.Data {
-		do, err := o.GetImportedDataObjectForName(ctx, def.DataRef)
+
+		do, _, err := GetDataImport(ctx, o, o.Context().Name, o.Inst, def)
 		if err != nil {
 			return nil, err
 		}
@@ -159,25 +160,11 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 	return dataObjects, nil
 }
 
-// GetImportedDataObjectForName fetches the dataobject with a given name from the current context.
-func (o *Operation) GetImportedDataObjectForName(ctx context.Context, name string) (*dataobjects.DataObject, error) {
-	raw := &lsv1alpha1.DataObject{}
-	doName := lsv1alpha1helper.GenerateDataObjectName(o.Context().Name, name)
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), raw); err != nil {
-		return nil, fmt.Errorf("unable to fetch data object %s (%s): %w", doName, name, err)
-	}
-	do, err := dataobjects.NewFromDataObject(raw)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create internal data object for %s: %w", name, err)
-	}
-	return do, nil
-}
-
 // GetImportedTargets returns all imported targets of the installation.
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
 	targets := map[string]*dataobjects.Target{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
-		target, err := o.GetImportedTarget(ctx, def.Target)
+		target, _, err := GetTargetImport(ctx, o, o.Context().Name, o.Inst, def.Target)
 		if err != nil {
 			return nil, err
 		}
@@ -210,20 +197,6 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 	}
 
 	return targets, nil
-}
-
-// GetImportedDataObjectForName fetches the dataobject with a given name from the current context.
-func (o *Operation) GetImportedTarget(ctx context.Context, name string) (*dataobjects.Target, error) {
-	raw := &lsv1alpha1.Target{}
-	targetName := lsv1alpha1helper.GenerateDataObjectName(o.Context().Name, name)
-	if err := o.Client().Get(ctx, kutil.ObjectKey(targetName, o.Inst.Info.Namespace), raw); err != nil {
-		return nil, fmt.Errorf("unable to fetch target %s (%s): %w", targetName, name, err)
-	}
-	target, err := dataobjects.NewFromTarget(raw)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create internal target for %s: %w", name, err)
-	}
-	return target, nil
 }
 
 // CreateEventFromCondition creates a new event based on the given condition

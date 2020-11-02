@@ -105,10 +105,32 @@ var _ = Describe("Installation", func() {
 	Context("InstallationImports", func() {
 		It("should pass if imports are valid", func() {
 			imp := core.InstallationImports{
-				Data: []core.DataImport{{
-					Name:    "foo",
-					DataRef: "fooRef",
-				}},
+				Data: []core.DataImport{
+					{
+						Name:    "foo",
+						DataRef: "fooRef",
+					},
+					{
+						Name: "bar",
+						SecretRef: &core.SecretReference{
+							ObjectReference: core.ObjectReference{
+								Name:      "mysecret",
+								Namespace: "default",
+							},
+							Key: "config",
+						},
+					},
+					{
+						Name: "foobar",
+						ConfigMapRef: &core.ConfigMapReference{
+							ObjectReference: core.ObjectReference{
+								Name:      "myconfigmap",
+								Namespace: "default",
+							},
+							Key: "config",
+						},
+					},
+				},
 				Targets: []core.TargetImportExport{{
 					Name:   "foo",
 					Target: "fooTarget",
@@ -177,7 +199,7 @@ var _ = Describe("Installation", func() {
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.data[0].dataRef"),
+				"Field": Equal("imports.data[0]"),
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
@@ -186,6 +208,78 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.targets[0].target"),
+			}))))
+		})
+
+		It("should fail if secret imports contain empty values", func() {
+			imp := core.InstallationImports{
+				Data: []core.DataImport{
+					{
+						Name:      "imp",
+						SecretRef: &core.SecretReference{},
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].secretRef.name"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].secretRef.namespace"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].secretRef.key"),
+			}))))
+		})
+
+		It("should fail if secret imports contain empty values", func() {
+			imp := core.InstallationImports{
+				Data: []core.DataImport{
+					{
+						Name:         "imp",
+						ConfigMapRef: &core.ConfigMapReference{},
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].configMapRef.name"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].configMapRef.namespace"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.data[0].configMapRef.key"),
+			}))))
+		})
+
+		It("should fail if a secret and a configmap is defined for the same import", func() {
+			imp := core.InstallationImports{
+				Data: []core.DataImport{
+					{
+						Name:         "imp",
+						SecretRef:    &core.SecretReference{},
+						ConfigMapRef: &core.ConfigMapReference{},
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeForbidden),
+				"Field": Equal("imports.data[0].secretRef"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeForbidden),
+				"Field": Equal("imports.data[0].configMapRef"),
 			}))))
 		})
 	})
