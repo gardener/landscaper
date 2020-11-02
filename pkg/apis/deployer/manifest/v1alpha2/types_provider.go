@@ -51,7 +51,7 @@ type Manifest struct {
 	// Policy defines the manage policy for that resource.
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Manifest defines the raw k8s manifest.
-	Manifest *runtime.RawExtension
+	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
