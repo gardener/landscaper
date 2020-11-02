@@ -10,10 +10,12 @@ import (
 
 	"github.com/gardener/landscaper/pkg/apis/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
+	"github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha2"
 )
 
 var (
 	schemeBuilder = runtime.NewSchemeBuilder(
+		v1alpha2.AddToScheme,
 		v1alpha1.AddToScheme,
 		manifest.AddToScheme,
 		setVersionPriority,
@@ -23,7 +25,7 @@ var (
 )
 
 func setVersionPriority(scheme *runtime.Scheme) error {
-	return scheme.SetVersionPriority(v1alpha1.SchemeGroupVersion)
+	return scheme.SetVersionPriority(v1alpha2.SchemeGroupVersion)
 }
 
 // Install installs all APIs in the scheme.
