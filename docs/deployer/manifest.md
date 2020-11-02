@@ -24,16 +24,26 @@ spec:
     updateStrategy: update | patch # optional; defaults to update
     
     manifests: # list of kubernetes manifests
-    - apiVersion: v1
-      kind: Secret
-      metadata:
-         name: my-secret
-         namespace: default
-      data:
-        config: abc
+    - policy: manage | fallback | ignore | keep
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: my-secret
+          namespace: default
+        data:
+          config: abc
     - ...
     
 ```
+
+__Policy__:
+
+- `manage`: create, update and delete (occupies already managed resources)
+- `fallback`: create, update and delete (only if not already managed by someone else: check for annotation with landscaper identity, deployitem name + namespace)
+- `keep`: create, update
+- `ignore`: forget
+
 
 ### Status
 This section describes the provider specific status of the resource

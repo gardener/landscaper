@@ -22,7 +22,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
-	manifestv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha2"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -37,39 +37,44 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	objects := make([]*unstructured.Unstructured, 0)
-	objDecoder := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+	var (
+		objects    = make([]*unstructured.Unstructured, len(m.ProviderConfiguration.Manifests))
+		objDecoder = serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+		status     = &manifestv1alpha2.ProviderStatus{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
+				Kind:       "ProviderStatus",
+			},
+			ManagedResources: make([]manifestv1alpha2.ManagedResourceStatus, len(objects)),
+		}
+	)
+
 	for i, manifestData := range m.ProviderConfiguration.Manifests {
 		uObj := &unstructured.Unstructured{}
-		if _, _, err := objDecoder.Decode(manifestData.Raw, nil, uObj); err != nil {
+		if _, _, err := objDecoder.Decode(manifestData.Manifest.Raw, nil, uObj); err != nil {
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
-				currOp, "DecodeManifest", fmt.Sprintf("error while decoding manifest at iundex %d: %s", i, err.Error()))
-			return err
-		}
-		// inject manifest specific labels
-		m.injectLabels(uObj)
-		objects = append(objects, uObj)
-	}
-
-	status := &manifestv1alpha1.ProviderStatus{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: manifestv1alpha1.SchemeGroupVersion.String(),
-			Kind:       "ProviderStatus",
-		},
-		ManagedResources: make([]lsv1alpha1.TypedObjectReference, len(objects)),
-	}
-	for i, obj := range objects {
-		if err := m.ApplyObject(ctx, targetClient, obj); err != nil {
+				currOp, "DecodeManifest", fmt.Sprintf("error while decoding manifest at index %d: %s", i, err.Error()))
 			return err
 		}
 
-		status.ManagedResources[i] = lsv1alpha1.TypedObjectReference{
-			APIVersion: obj.GetAPIVersion(),
-			Kind:       obj.GetKind(),
-			ObjectReference: lsv1alpha1.ObjectReference{
-				Name:      obj.GetName(),
-				Namespace: obj.GetNamespace(),
+		status.ManagedResources[i] = manifestv1alpha2.ManagedResourceStatus{
+			Policy: manifestData.Policy,
+			Resource: lsv1alpha1.TypedObjectReference{
+				APIVersion: uObj.GetAPIVersion(),
+				Kind:       uObj.GetKind(),
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Name:      uObj.GetName(),
+					Namespace: uObj.GetNamespace(),
+				},
 			},
+		}
+
+		if manifestData.Policy == manifestv1alpha2.IgnorePolicy {
+			continue
+		}
+		objects[i] = uObj
+		if err := m.ApplyObject(ctx, targetClient, manifestData.Policy, uObj); err != nil {
+			return err
 		}
 	}
 
@@ -112,7 +117,11 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	}
 
 	completed := true
-	for _, ref := range m.ProviderStatus.ManagedResources {
+	for _, mr := range m.ProviderStatus.ManagedResources {
+		if mr.Policy == manifestv1alpha2.IgnorePolicy || mr.Policy == manifestv1alpha2.KeepPolicy {
+			continue
+		}
+		ref := mr.Resource
 		obj := &unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": ref.APIVersion,
@@ -145,7 +154,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 }
 
 // ApplyObject applies a managed resource to the target cluster.
-func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured) error {
+func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, policy manifestv1alpha2.ManifestPolicy, obj *unstructured.Unstructured) error {
 	currOp := "ApplyObjects"
 	currObj := obj.NewEmptyInstance()
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
@@ -155,6 +164,8 @@ func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, ob
 				currOp, "GetObject", err.Error())
 			return err
 		}
+		// inject manifest specific labels
+		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name)
 		if err := kubeClient.Create(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
@@ -164,15 +175,24 @@ func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, ob
 		return nil
 	}
 
+	// if fallback policy is set and the resource is already managed by another deployer
+	// we are not allowed to manage that resource
+	if policy == manifestv1alpha2.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name) {
+		m.log.Info("resource is already managed", "resource", key.String())
+		return nil
+	}
+	// inject manifest specific labels
+	kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, m.DeployItem.Name)
+
 	switch m.ProviderConfiguration.UpdateStrategy {
-	case manifestv1alpha1.UpdateStrategyUpdate:
+	case manifestv1alpha2.UpdateStrategyUpdate:
 		if err := kubeClient.Update(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
 				currOp, "ApplyObject", err.Error())
 			return err
 		}
-	case manifestv1alpha1.UpdateStrategyPatch:
+	case manifestv1alpha2.UpdateStrategyPatch:
 		if err := kubeClient.Patch(ctx, currObj, client.MergeFrom(obj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
@@ -189,16 +209,16 @@ func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, ob
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (m *Manifest) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []lsv1alpha1.TypedObjectReference, currentObjects []*unstructured.Unstructured) error {
-	//objectList := &unstructured.UnstructuredList{}
-	//if err := kubeClient.List(ctx, objectList, client.MatchingLabels{manifestv1alpha1.ManagedDeployItemLabel: m.DeployItem.Name}); err != nil {
-	//	return fmt.Errorf("unable to list all managed resources: %w", err)
-	//}
+func (m *Manifest) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []manifestv1alpha2.ManagedResourceStatus, currentObjects []*unstructured.Unstructured) error {
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
 	)
-	for _, ref := range oldObjects {
+	for _, mr := range oldObjects {
+		if mr.Policy == manifestv1alpha2.IgnorePolicy || mr.Policy == manifestv1alpha2.KeepPolicy {
+			continue
+		}
+		ref := mr.Resource
 		uObj := unstructured.Unstructured{
 			Object: map[string]interface{}{
 				"apiVersion": ref.APIVersion,
@@ -254,18 +274,9 @@ func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstr
 	return false
 }
 
-func (m *Manifest) injectLabels(obj *unstructured.Unstructured) {
-	labels := obj.GetLabels()
-	if labels == nil {
-		labels = map[string]string{}
-	}
-	labels[manifestv1alpha1.ManagedDeployItemLabel] = m.DeployItem.Name
-	obj.SetLabels(labels)
-}
-
-func encodeStatus(status *manifestv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
+func encodeStatus(status *manifestv1alpha2.ProviderStatus) (*runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: manifestv1alpha1.SchemeGroupVersion.String(),
+		APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
 		Kind:       "ProviderStatus",
 	}
 

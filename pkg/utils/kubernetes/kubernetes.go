@@ -143,9 +143,34 @@ func HasFinalizer(obj metav1.Object, finalizer string) bool {
 }
 
 // SetMetaDataLabel sets the label and value
-func SetMetaDataLabel(obj *metav1.ObjectMeta, lab string, value string) {
-	if obj.Labels == nil {
-		obj.Labels = make(map[string]string)
+func SetMetaDataLabel(obj metav1.Object, lab string, value string) {
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
 	}
-	obj.Labels[lab] = value
+	labels[lab] = value
+	obj.SetLabels(labels)
+}
+
+// HasLabel checks if the objects has a label
+func HasLabel(obj metav1.Object, lab string) bool {
+	labels := obj.GetLabels()
+	if labels == nil {
+		return false
+	}
+	_, ok := labels[lab]
+	return ok
+}
+
+// HasLabelWithValue checks if the objects has a label with a value
+func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
+	labels := obj.GetLabels()
+	if labels == nil {
+		return false
+	}
+	val, ok := labels[lab]
+	if !ok {
+		return false
+	}
+	return val == value
 }
