@@ -18,8 +18,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	manifest "github.com/gardener/landscaper/pkg/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/pkg/apis/deployer/manifest/install"
-	manifestv1alpha2 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/pkg/apis/deployer/manifest/validation"
 )
 
 const (
@@ -39,21 +40,25 @@ type Manifest struct {
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
-	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
-	ProviderStatus        *manifestv1alpha2.ProviderStatus
+	ProviderConfiguration *manifest.ProviderConfiguration
+	ProviderStatus        *manifest.ProviderStatus
 }
 
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
-	config := &manifestv1alpha2.ProviderConfiguration{}
+	config := &manifest.ProviderConfiguration{}
 	manifestdecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
 	if _, _, err := manifestdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, err
 	}
 
-	var status *manifestv1alpha2.ProviderStatus
+	if err := validation.ValidateProviderConfiguration(config); err != nil {
+		return nil, err
+	}
+
+	var status *manifest.ProviderStatus
 	if item.Status.ProviderStatus != nil {
-		status = &manifestv1alpha2.ProviderStatus{}
+		status = &manifest.ProviderStatus{}
 		if _, _, err := manifestdecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
 			return nil, err
 		}
