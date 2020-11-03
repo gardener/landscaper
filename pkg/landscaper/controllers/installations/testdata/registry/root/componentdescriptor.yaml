@@ -12,31 +12,46 @@ component:
   provider: internal
 
   repositoryContexts:
-  - type: local
+  - type: ociRegistry
     baseUrl: "../testdata"
 
-  localResources:
+  sources: []
+  componentReferences: []
+
+  resources:
   - name: root
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local
   - name: def1
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local
   - name: a
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local
   - name: b
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local
   - name: c
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local
   - name: d
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local

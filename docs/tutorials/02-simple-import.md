@@ -57,7 +57,7 @@ As the kubernetes manifest deployer is used to deploy the kubernetes object, one
 
 It contains all the 3 resources that are needed for the echo server deployment.<br>
 The imported `ingressClass` is used in the ingress resource to define the class annotation: `kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"`.<br>
-Also the http echo server oci image is taken from the component descriptor as external resource: `image: {{ index .cd.component.externalResources "echo-server-image" "access" "imageReference" }}`.
+Also the http echo server oci image is taken from the component descriptor as external resource: `image: {{ index .cd.component.resources "echo-server-image" "access" "imageReference" }}`.
 
 *defaultDeployExecution.yaml*:
 ```helmyaml
@@ -92,7 +92,7 @@ deployItems:
                 app: echo-server
             spec:
               containers:
-                - image: {{ index .cd.component.externalResources "echo-server-image" "access" "imageReference" }}
+                - image: {{ index .cd.component.resources "echo-server-image" "access" "imageReference" }}
                   imagePullPolicy: IfNotPresent
                   name: echo-server
                   args:
@@ -158,19 +158,20 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/myproject
 
-  localResources:
+  resources:
   - type: blueprint
     name: echo-server-blueprint
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/echo-server:v0.1.0
-  externalResources:
-    - type: ociImage
-      name: echo-server-image
-      version: v0.2.3
-      access:
-        type: ociRegistry
-        imageReference: hashicorp/http-echo:0.2.3
+  - type: ociImage
+    name: echo-server-image
+    version: v0.2.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: hashicorp/http-echo:0.2.3
 ```
 
 ```shell script

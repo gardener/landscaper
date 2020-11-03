@@ -101,7 +101,7 @@ subinstallations:
   kind: InstallationTemplate
   name: ingress # must be unique
   blueprint:
-    ref: cd://componentReferences/ingress/localResources/blueprint #cd://localResources/myblueprint
+    ref: cd://componentReferences/ingress/resources/blueprint #cd://resources/myblueprint
 #    filesystem:
 #      blueprint.yaml: abc...
   
@@ -180,10 +180,11 @@ cd:
   component:
     name: my-component
     version: v1.0.0
-    externalResources:
+    resources:
       nginx-ingress-chart:
         name: nginx-ingress-chart
         version: 0.30.0
+        relation: external
         acccess:
           type: ociRegistry
           imageReference: nginx:0.30.0
@@ -206,7 +207,7 @@ deployExecutors:
         kind: ProviderConfiguration
         
         chart:
-          ref: {{ index .cd.component.externalResources "nginx-ingress-chart" "access" "imageReference" }} # resolves to nginx:0.30.0
+          ref: {{ index .cd.component.resources "nginx-ingress-chart" "access" "imageReference" }} # resolves to nginx:0.30.0
         
         values:
           replicas: {{ .imports.replicas  }} # will resolve to 3
@@ -302,7 +303,7 @@ Subinstallations can also be defined in a separate file.
   kind: InstallationTemplate
   name: my-subinstallation # must be unique
   blueprint:
-    ref: cd://componentReferences/ingress/localResources/blueprint #cd://localResources/myblueprint
+    ref: cd://componentReferences/ingress/resources/blueprint #cd://resources/myblueprint
 #    filesystem:
 #      blueprint.yaml: abc...
   

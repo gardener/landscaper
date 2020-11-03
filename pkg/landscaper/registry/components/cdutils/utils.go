@@ -48,27 +48,11 @@ func FindResourceInComponentByVersionedReference(comp cdv2.ComponentDescriptor, 
 		return cdv2.Resource{}, cdv2.NotFound
 	}
 
-	if ref.Kind != lsv1alpha1.LocalResourceKind && ref.Kind != lsv1alpha1.ExternalResourceKind {
-		return cdv2.Resource{}, fmt.Errorf("unexpected resource kind %s: %w", ref.Kind, lsv1alpha1.UnknownResourceKindError)
+	res, err := comp.GetResource(ttype, ref.ResourceName, ref.Version)
+	if err != nil {
+		return cdv2.Resource{}, err
 	}
-
-	if ref.Kind == lsv1alpha1.LocalResourceKind {
-		res, err := comp.GetLocalResource(ttype, ref.ResourceName, ref.Version)
-		if err != nil {
-			return cdv2.Resource{}, err
-		}
-		return res, nil
-	}
-
-	if ref.Kind == lsv1alpha1.ExternalResourceKind {
-		res, err := comp.GetExternalResource(ttype, ref.ResourceName, ref.Version)
-		if err != nil {
-			return cdv2.Resource{}, err
-		}
-		return res, nil
-	}
-
-	return cdv2.Resource{}, cdv2.NotFound
+	return res, nil
 }
 
 // FindResourceByReference searches all given components for the defined resource ref.
@@ -91,27 +75,11 @@ func FindResourceInComponentByReference(comp cdv2.ComponentDescriptor, ttype str
 		return cdv2.Resource{}, cdv2.NotFound
 	}
 
-	if ref.Kind != lsv1alpha1.LocalResourceKind && ref.Kind != lsv1alpha1.ExternalResourceKind {
-		return cdv2.Resource{}, fmt.Errorf("unexpected resource kind %s: %w", ref.Kind, lsv1alpha1.UnknownResourceKindError)
+	resources := comp.GetResourcesByName(ttype, ref.ResourceName)
+	if len(resources) == 0 {
+		return cdv2.Resource{}, cdv2.NotFound
 	}
-
-	if ref.Kind == lsv1alpha1.LocalResourceKind {
-		resources := comp.GetLocalResourcesByName(ttype, ref.ResourceName)
-		if len(resources) == 0 {
-			return cdv2.Resource{}, cdv2.NotFound
-		}
-		return resources[0], nil
-	}
-
-	if ref.Kind == lsv1alpha1.ExternalResourceKind {
-		resources := comp.GetExternalResourcesByName(ttype, ref.ResourceName)
-		if len(resources) == 0 {
-			return cdv2.Resource{}, cdv2.NotFound
-		}
-		return resources[0], nil
-	}
-
-	return cdv2.Resource{}, cdv2.NotFound
+	return resources[0], nil
 }
 
 // BuildComponentDescriptorManifest creates a new manifest from a component descriptor

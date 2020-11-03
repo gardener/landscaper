@@ -139,12 +139,13 @@ func runTestSuite(testdataDir string) {
 						Name:    "mycomp",
 						Version: "1.0.0",
 					},
-					ExternalResources: map[string]cdv2.Resource{
+					Resources: map[string]cdv2.Resource{
 						"mycustomimage": {
 							ObjectMeta: cdv2.ObjectMeta{
 								Name:    "mycustomimage",
 								Version: "1.0.0",
 							},
+							Relation:            cdv2.ExternalRelation,
 							TypedObjectAccessor: cdv2.NewTypeOnly(cdv2.OCIImageType),
 							Access: &cdv2.OCIRegistryAccess{
 								ObjectType: cdv2.ObjectType{

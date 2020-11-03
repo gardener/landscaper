@@ -92,24 +92,14 @@ var _ = Describe("mapped component descriptor", func() {
 			Expect(mcd.Sources).To(HaveKeyWithValue("s2", testSources[1]))
 		})
 
-		It("should convert a list local resources to a map by the resource name", func() {
+		It("should convert a list resources to a map by the resource name", func() {
 			cd := cdv2.ComponentDescriptor{}
-			cd.LocalResources = testResources
+			cd.Resources = testResources
 
 			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, resolveFunc)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(mcd.LocalResources).To(HaveKeyWithValue("r1", testResources[0]))
-			Expect(mcd.LocalResources).To(HaveKeyWithValue("r2", testResources[1]))
-		})
-
-		It("should convert a list external resources to a map by the resource name", func() {
-			cd := cdv2.ComponentDescriptor{}
-			cd.ExternalResources = testResources
-
-			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, nil)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(mcd.ExternalResources).To(HaveKeyWithValue("r1", testResources[0]))
-			Expect(mcd.ExternalResources).To(HaveKeyWithValue("r2", testResources[1]))
+			Expect(mcd.Resources).To(HaveKeyWithValue("r1", testResources[0]))
+			Expect(mcd.Resources).To(HaveKeyWithValue("r2", testResources[1]))
 		})
 
 		It("should convert a list component references to a map by the reference's name", func() {

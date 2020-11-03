@@ -13,7 +13,6 @@ spec:
     ref:
       componentName: github.com/gardener/virtual-cluster
       version: v1.7.2
-      kind: LocalResource
       resourceName: my-installation-blueprint
     inline:
       cdRef:

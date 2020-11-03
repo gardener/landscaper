@@ -12,6 +12,7 @@ component:
   repositoryContexts:
     - type: 'ociRegistry'
       baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+  sources: []
 
   provider: 'internal'
 
@@ -20,9 +21,11 @@ component:
     componentName: github.com/gardener/external-dns-management-schemas
     version: v1
 
-  localResources:
+  resources:
   - name: blueprint
     type: blueprint
+    version: 'v0.30.0'
+    relation: local
     access:
       type: github
       url: https://github.com/gardener/external-dns-management
@@ -30,6 +33,8 @@ component:
       path: blueprint
   - name: controller
     type: ociImage
+    version: 'v0.30.0'
+    relation: local
     access:
       type: ociRegistry
-      imageRef: eu.gcr.io/gardener-project/external-dns-management:v0.30.0
+      imageReference: eu.gcr.io/gardener-project/external-dns-management:v0.30.0

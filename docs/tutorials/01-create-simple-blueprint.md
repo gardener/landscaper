@@ -65,10 +65,11 @@ component:
 
   provider: internal
 
-  externalResources:
+  resources:
   - type: helm
     name: ingress-nginx-chart
     version: v0.1.0
+    relation: external
     access:
       type: ociRegistry
       imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
@@ -87,11 +88,12 @@ component:
 
   provider: internal
 
-  externalResources:
+  resources:
     ingress-nginx-chart:
       type: helm
       name: ingress-nginx-chart
       version: v0.1.0
+      relation: external
       access:
         type: ociRegistry
         imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
@@ -151,7 +153,7 @@ imports:
   <import name>: <data value> or <target cr>
 cd:
  component:
-   localResources: ...
+   resources: ...
 ```
 
 Exports can be described the same way as imports.
@@ -201,7 +203,7 @@ deployExecutions:
         kind: ProviderConfiguration
         
         chart:
-          ref: {{ index .cd.component.externalResources "ingress-nginx-chart" "access" "imageReference" }}
+          ref: {{ index .cd.component.resources "ingress-nginx-chart" "access" "imageReference" }}
         
         updateStrategy: patch
         
@@ -319,16 +321,17 @@ component:
     baseUrl: eu.gcr.io/my-project/comp
 
     
-  localResources:
+  resources:
   - type: blueprint
     name: ingress-nginx-blueprint
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/ingress-nginx:v0.1.0
-  externalResources:
   - type: helm
     name: ingress-nginx-chart
     version: v0.1.0
+    relation: external
     access:
       type: ociRegistry
       imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
@@ -370,7 +373,9 @@ An Installation is an instance of a blueprint, which means that it is the runtim
 The installation consists of a blueprint, imports and exports.<br>
 __blueprint__:
 To reference the previously uploaded Blueprint, the component descriptor is referenced by specifying the repository context, the component name and version.
-With that, the landscaper is able to resolve the component descriptor from the oci registry and the reference inside the component descriptor to the blueprint can be specified.
+With that, the landscaper is able to resolve the component descriptor from the oci registry.<br>
+The Blueprint artifact in the component descriptor is specified as resources with the unique name `ingress-nginx-blueprint` 
+which can be referenced with `resourceName: ingress-nginx-blueprint`
 ```yaml
 spec:
   blueprint:
@@ -381,9 +386,6 @@ spec:
       componentName: github.com/gardener/landscaper/ingress-nginx
       version: v0.1.0
 ```
-
-The Blueprint artifact in the component descriptor is specified as local resources with the unique name `ingress-nginx-blueprint` 
-which can be referenced with `kind: localResource` and `resourceName: ingress-nginx-blueprint`
 
 __imports__:
 The blueprint needs a target import of type kubernetes cluster.

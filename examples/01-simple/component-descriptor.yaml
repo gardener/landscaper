@@ -12,11 +12,16 @@ component:
   provider: internal
 
   repositoryContexts:
-  - type: local
+  - type: ociRegistry
     baseUrl: "/"
 
-  localResources:
+  sources: []
+  componentReferences: []
+
+  resources:
   - name: root-a
     type: blueprint
+    version: 1.0.0
+    relation: local
     access:
       type: local

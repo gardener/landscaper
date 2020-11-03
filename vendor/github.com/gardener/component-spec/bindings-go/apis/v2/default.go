@@ -22,16 +22,13 @@ func DefaultComponent(component *ComponentDescriptor) error {
 	if component.ComponentReferences == nil {
 		component.ComponentReferences = make([]ComponentReference, 0)
 	}
-	if component.LocalResources == nil {
-		component.LocalResources = make([]Resource, 0)
-	}
-	if component.ExternalResources == nil {
-		component.ExternalResources = make([]Resource, 0)
+	if component.Resources == nil {
+		component.Resources = make([]Resource, 0)
 	}
 
-	for i, res := range component.LocalResources {
-		if len(res.Version) == 0 {
-			component.LocalResources[i].Version = component.GetVersion()
+	for i, res := range component.Resources {
+		if res.Relation == LocalRelation && len(res.Version) == 0 {
+			component.Resources[i].Version = component.GetVersion()
 		}
 	}
 	return nil

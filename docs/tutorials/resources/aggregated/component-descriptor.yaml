@@ -15,9 +15,13 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/myproject
 
-  localResources:
+  sources: []
+
+  resources:
   - type: blueprint
     name: echo-server-blueprint
+    version: v0.1.0
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/simple-aggregated:v0.1.0

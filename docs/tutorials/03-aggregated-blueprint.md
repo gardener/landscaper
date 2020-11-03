@@ -92,7 +92,7 @@ subinstallations:
   name: ingress
 
   blueprint:
-    ref: cd://componentReferences/ingress/localResources/ingress-nginx-blueprint
+    ref: cd://componentReferences/ingress/resources/ingress-nginx-blueprint
 
   imports:
     targets:
@@ -110,7 +110,7 @@ subinstallations:
   name: server
 
   blueprint:
-    ref: cd://componentReferences/server/localResources/echo-server-blueprint
+    ref: cd://componentReferences/server/resources/echo-server-blueprint
 
   imports:
     targets:
@@ -162,7 +162,7 @@ subinstallations:
   name: ingress
 
   blueprint:
-    ref: cd://componentReferences/ingress/localResources/ingress-nginx-blueprint
+    ref: cd://componentReferences/ingress/resources/ingress-nginx-blueprint
 
   imports:
     targets:
@@ -180,7 +180,7 @@ subinstallations:
   name: server
 
   blueprint:
-    ref: cd://componentReferences/server/localResources/echo-server-blueprint
+    ref: cd://componentReferences/server/resources/echo-server-blueprint
 
   imports:
     targets:
@@ -215,9 +215,10 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/myproject
 
-  localResources:
+  resources:
   - type: blueprint
     name: echo-server-blueprint
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/simple-aggregated:v0.1.0

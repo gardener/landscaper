@@ -69,7 +69,7 @@ imports:
   optional: false
 - name: D
   schema:
-    $ref: "cd:///componentReferences/etcd/localResources/my-type" # path in component descriptor
+    $ref: "cd:///componentReferences/etcd/resources/my-type" # path in component descriptor
   optional: false
 
 exports:

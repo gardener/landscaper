@@ -12,17 +12,20 @@ component:
   repositoryContexts:
     - type: 'ociRegistry'
       baseUrl: 'eu.gcr.io/gardener-project/components/dev'
+  sources: []
 
   provider: 'internal'
 
   componentReferences:
   - name: schemas
     componentName: github.com/gardener/aws-schemas
-    version: v1
+    version: 'v1'
 
-  localResources:
+  resources:
   - name: schemas
     type: JSONSchema
+    version: 'v1'
+    relation: local
     access:
       type: github
       url: https://github.com/gardener/external-dns-management-schemas

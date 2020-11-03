@@ -15,16 +15,21 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/myproject
 
-  localResources:
+  sources: []
+  componentReferences: []
+
+  resources:
   - type: blueprint
     name: echo-server-blueprint
+    version: v0.1.0
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/echo-server:v0.1.0
-  externalResources:
-    - type: ociImage
-      name: echo-server-image
-      version: v0.2.3
-      access:
-        type: ociRegistry
-        imageReference: hashicorp/http-echo:0.2.3
+  - type: ociImage
+    name: echo-server-image
+    version: v0.2.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: hashicorp/http-echo:0.2.3

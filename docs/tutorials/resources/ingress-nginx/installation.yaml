@@ -14,7 +14,6 @@ spec:
         baseUrl: eu.gcr.io/my-project/comp
       componentName: github.com/gardener/landscaper/ingress-nginx
       version: v0.1.0
-      kind: localResource
       resourceName: ingress-nginx-blueprint
 
   imports:

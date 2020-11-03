@@ -11,4 +11,4 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        image: {{ .cd.component.externalResources.mycustomimage.access.imageReference }}
+        image: {{ .cd.component.resources.mycustomimage.access.imageReference }}

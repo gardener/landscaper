@@ -116,5 +116,6 @@ var _ = Describe("Constructor", func() {
 
 		cd := &cdv2.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
+		Expect(cd.Components).To(HaveLen(1))
 	})
 })

@@ -25,12 +25,14 @@ var _ = Describe("URI", func() {
 					Name:    "r1",
 					Version: "1.5.5",
 				},
+				Relation: cdv2.LocalRelation,
 			},
 			"r2": {
 				ObjectMeta: cdv2.ObjectMeta{
 					Name:    "r2",
 					Version: "1.5.0",
 				},
+				Relation: cdv2.ExternalRelation,
 			},
 		}
 	)
@@ -48,18 +50,18 @@ var _ = Describe("URI", func() {
 	})
 
 	It("should resolve a direct local resource", func() {
-		cd.LocalResources = testResources
-		uri, err := cdutils.ParseURI("cd://localResources/r1")
+		cd.Resources = testResources
+		uri, err := cdutils.ParseURI("cd://resources/r1")
 		Expect(err).ToNot(HaveOccurred())
 		kind, res, err := uri.Get(cd)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(kind).To(Equal(lsv1alpha1.LocalResourceKind))
+		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources["r1"]))
 	})
 
 	It("should return an error if a keyword is unknown or wrong", func() {
-		cd.LocalResources = testResources
-		uri, err := cdutils.ParseURI("cd://localResource/r1")
+		cd.Resources = testResources
+		uri, err := cdutils.ParseURI("cd://resources/r3")
 		Expect(err).ToNot(HaveOccurred())
 		_, _, err = uri.Get(cd)
 		Expect(err).To(HaveOccurred())
@@ -95,17 +97,17 @@ var _ = Describe("URI", func() {
 				ObjectMeta: cdv2.ObjectMeta{
 					Name: "comp1",
 				},
-				LocalResources: testResources,
+				Resources: testResources,
 			},
 		}
 		cd.ComponentReferences = map[string]cdutils.ResolvedComponentDescriptor{
 			"comp1": comp1,
 		}
-		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/localResources/r1")
+		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/resources/r1")
 		Expect(err).ToNot(HaveOccurred())
 		kind, res, err := uri.Get(cd)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(kind).To(Equal(lsv1alpha1.LocalResourceKind))
+		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources["r1"]))
 	})
 })

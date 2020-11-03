@@ -31,10 +31,8 @@ type ResolvedComponentSpec struct {
 	Sources map[string]cdv2.Source `json:"sources"`
 	// ComponentReferences references component dependencies that can be resolved in the current context.
 	ComponentReferences map[string]ResolvedComponentDescriptor `json:"componentReferences"`
-	// LocalResources defines internal resources that are created by the component
-	LocalResources map[string]cdv2.Resource `json:"localResources"`
-	// ExternalResources defines external resources that are not produced by a third party.
-	ExternalResources map[string]cdv2.Resource `json:"externalResources"`
+	// Resources defines internal and external resources that are created by the component.
+	Resources map[string]cdv2.Resource `json:"resources"`
 }
 
 func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryContext {
@@ -52,8 +50,7 @@ func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc Resolve
 	mcd.Provider = cd.Provider
 
 	mcd.Sources = SourceListToMap(cd.Sources)
-	mcd.LocalResources = ResourceListToMap(cd.LocalResources)
-	mcd.ExternalResources = ResourceListToMap(cd.ExternalResources)
+	mcd.Resources = ResourceListToMap(cd.Resources)
 
 	var err error
 	mcd.ComponentReferences, err = ResolveComponentReferences(cd.ComponentReferences, refFunc)

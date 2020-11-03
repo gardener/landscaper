@@ -8,4 +8,4 @@ kind: InstallationTemplate
 name: def2
 
 blueprint:
-  ref: cd://localResources/def2
+  ref: cd://resources/def2

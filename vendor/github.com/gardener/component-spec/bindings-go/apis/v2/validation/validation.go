@@ -59,11 +59,8 @@ func validate(fldPath *field.Path, component *v2.ComponentDescriptor) field.Erro
 	refPath := compPath.Child("componentReferences")
 	allErrs = append(allErrs, validateComponentReferences(refPath, component.ComponentReferences)...)
 
-	localPath := compPath.Child("localResources")
-	allErrs = append(allErrs, validateResources(localPath, component.LocalResources, component.GetVersion())...)
-
-	extPath := compPath.Child("externalResources")
-	allErrs = append(allErrs, validateResources(extPath, component.ExternalResources, "")...)
+	resourcePath := compPath.Child("resources")
+	allErrs = append(allErrs, validateResources(resourcePath, component.Resources, component.GetVersion())...)
 
 	return allErrs
 }
@@ -182,14 +179,14 @@ func validateResources(fldPath *field.Path, resources []v2.Resource, componentVe
 		allErrs = append(allErrs, validateResource(localPath, res)...)
 
 		// only validate the component version if it is defined
-		if len(componentVersion) != 0 {
+		if res.Relation == v2.LocalRelation && len(componentVersion) != 0 {
 			if res.GetVersion() != componentVersion {
 				allErrs = append(allErrs, field.Invalid(localPath.Child("version"), "invalid version",
 					"version of local resources must match the component version"))
 			}
 		}
 		if _, ok := resourceNames[res.Name]; ok {
-			allErrs = append(allErrs, field.Duplicate(localPath, "duplicated local resource"))
+			allErrs = append(allErrs, field.Duplicate(localPath, "duplicated resource"))
 			continue
 		}
 		resourceNames[res.Name] = struct{}{}

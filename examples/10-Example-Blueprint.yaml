@@ -35,7 +35,7 @@ subinstallations:
   name: my-sub-component
 
   blueprint:
-    ref: cd://localResources/my-blueprint
+    ref: cd://resources/my-blueprint
 #    filesystem:
 #      blueprint.yaml: |
 #        apiVersion: landscaper.gardener.cloud/v1alpha1

@@ -15,16 +15,21 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/myproject
 
-  localResources:
+  sources: [ ]
+  componentReferences: [ ]
+
+  resources:
   - type: blueprint
     name: ingress-nginx-blueprint
+    version: v0.1.0
+    relation: local
     access:
       type: ociRegistry
       imageReference: myregistry/mypath/ingress-nginx:v0.1.0
-  externalResources:
   - type: helm
     name: ingress-nginx-chart
     version: v0.1.0
+    relation: external
     access:
       type: ociRegistry
       imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0

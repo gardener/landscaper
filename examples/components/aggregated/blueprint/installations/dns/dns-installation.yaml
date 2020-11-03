@@ -8,7 +8,7 @@ kind: InstallationTemplate
 name: application-dns-controller
 
 blueprint:
-  ref: cd://componentReference/dns/localResources/blueprint #cd://localResources/myblueprint
+  ref: cd://componentReference/dns/resources/blueprint #cd://resources/myblueprint
   #    filesystem:
   #      blueprint.yaml: abc...
 

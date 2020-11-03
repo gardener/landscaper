@@ -33,7 +33,7 @@ deployItems:
                 app: echo-server
             spec:
               containers:
-                - image: {{ index .cd.component.externalResources "echo-server-image" "access" "imageReference" }}
+                - image: {{ index .cd.component.resources "echo-server-image" "access" "imageReference" }}
                   imagePullPolicy: IfNotPresent
                   name: echo-server
                   args:

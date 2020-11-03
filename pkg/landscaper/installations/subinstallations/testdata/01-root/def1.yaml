@@ -8,7 +8,7 @@ kind: InstallationTemplate
 name: def1
 
 blueprint:
-  ref: cd://localResources/def1
+  ref: cd://resources/def1
 
 imports:
   data:

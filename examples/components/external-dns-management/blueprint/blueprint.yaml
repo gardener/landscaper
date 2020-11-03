@@ -13,7 +13,7 @@ imports:
   schema:
     type: array
     items:
-      $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # cd://componentReferences/github.com/gardener/external-dns-management-schemas/localResources/schemas#definitions/provider
+      $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # cd://componentReferences/github.com/gardener/external-dns-management-schemas/resources/schemas#definitions/provider
 
 - name: dnsClass
   optional: true

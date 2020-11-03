@@ -88,9 +88,6 @@ spec:
                       componentName:
                         description: ComponentName defines the unique of the component containing the resource.
                         type: string
-                      kind:
-                        description: Kind defines the kind resource kind where the resource is defined.
-                        type: string
                       repositoryContext:
                         description: RepositoryContext defines the context of the component repository to resolve blueprints.
                         properties:
@@ -112,7 +109,6 @@ spec:
                         type: string
                     required:
                     - componentName
-                    - kind
                     - resourceName
                     - version
                     type: object

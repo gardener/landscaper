@@ -119,13 +119,12 @@ var _ = Describe("SubInstallation", func() {
 			Expect(resInst.Spec.Blueprint.Reference).NotTo(BeNil())
 			Expect(resInst.Spec.Blueprint.Reference).To(Equal(&lsv1alpha1.RemoteBlueprintReference{
 				RepositoryContext: &cdv2.RepositoryContext{
-					Type:    "local",
+					Type:    "ociRegistry",
 					BaseURL: "./testdata",
 				},
 				VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 					ResourceReference: lsv1alpha1.ResourceReference{
 						ComponentName: "root",
-						Kind:          "localResource",
 						ResourceName:  "def1",
 					},
 					Version: "1.0.0",
