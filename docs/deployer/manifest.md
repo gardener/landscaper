@@ -18,7 +18,7 @@ spec:
     namespace: test
 
   config:
-    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
     kind: ProviderConfiguration
 
     updateStrategy: update | patch # optional; defaults to update
