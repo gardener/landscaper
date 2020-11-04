@@ -39,6 +39,7 @@ func ResolveToComponentDescriptorList(ctx context.Context, client componentsregi
 		return cdList, errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
+	cdList.Components = []cdv2.ComponentDescriptor{cd}
 
 	for _, compRef := range cd.ComponentReferences {
 		resolvedComponent, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(compRef))
