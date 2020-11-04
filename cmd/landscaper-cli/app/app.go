@@ -21,7 +21,7 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "landscaper-cli",
 		Short: "landscaper cli",
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			log, err := logger.NewCliLogger()
 			if err != nil {
 				fmt.Println("unable to setup logger")
@@ -32,7 +32,7 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	logger.InitFlags(cmd.Flags())
+	logger.InitFlags(cmd.PersistentFlags())
 
 	cmd.AddCommand(NewVersionCommand())
 	cmd.AddCommand(blueprints.NewBlueprintsCommand(ctx))

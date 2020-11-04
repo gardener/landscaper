@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -19,7 +18,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
@@ -74,7 +72,7 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, b
 	for _, subInstTmpl := range blueprint.Subinstallations {
 		subInst := subInstallations[subInstTmpl.Name]
 
-		_, err := o.createOrUpdateNewInstallation(ctx, inst, blueprint, subInstTmpl, subInst)
+		_, err := o.createOrUpdateNewInstallation(ctx, inst, subInstTmpl, subInst)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create installation for %s", subInstTmpl.Name)
 		}
@@ -148,7 +146,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 	return nil, deleted
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint, subInstTmpl *lsv1alpha1.InstallationTemplate, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
@@ -164,65 +162,18 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	//	return nil, err
 	//}
 
-	subBlueprint := lsv1alpha1.BlueprintDefinition{}
-	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
-	if len(subInstTmpl.Blueprint.Filesystem) != 0 {
-		subBlueprint.Inline = &lsv1alpha1.InlineBlueprint{
-			Filesystem: subInstTmpl.Blueprint.Filesystem,
-		}
-		if inst.Spec.Blueprint.Reference != nil {
-			// uses the parent component descriptor
-			subBlueprint.Inline.ComponentDescriptorReference = &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: inst.Spec.Blueprint.Reference.RepositoryContext,
-				ComponentName:     inst.Spec.Blueprint.Reference.ComponentName,
-				Version:           inst.Spec.Blueprint.Reference.Version,
-			}
-		}
-	}
-	if len(subInstTmpl.Blueprint.Ref) != 0 {
-		uri, err := cdutils.ParseURI(subInstTmpl.Blueprint.Ref)
-		if err != nil {
-			return nil, err
-		}
-		if o.ResolvedComponentDescriptor == nil {
-			return nil, errors.New("no component descriptor defined to resolve the blueprint ref")
-		}
-		kind, res, err := uri.Get(*o.ResolvedComponentDescriptor)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", o.ResolvedComponentDescriptor.Name, err)
-		}
-		// the result of the uri has to be an resource
-		resource, ok := res.(cdv2.Resource)
-		if !ok {
-			return nil, fmt.Errorf("expected a resource from the component descriptor %s", o.ResolvedComponentDescriptor.Name)
-		}
-
-		cd, err := uri.GetComponent(*o.ResolvedComponentDescriptor)
-		if err != nil {
-			return nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", o.ResolvedComponentDescriptor.Name, err)
-		}
-
-		latestRepoCtx := o.ResolvedComponentDescriptor.LatestRepositoryContext()
-		subBlueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
-			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-				ResourceReference: lsv1alpha1.ResourceReference{
-					ComponentName: cd.Name,
-					Kind:          kind,
-					ResourceName:  resource.Name,
-				},
-				Version: cd.Version,
-			},
-			RepositoryContext: &latestRepoCtx,
-		}
+	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst, subInstTmpl, o.ResolvedComponentDescriptor)
+	if err != nil {
+		return nil, err
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
+	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
 		subInst.Labels = map[string]string{lsv1alpha1.EncompassedByLabel: inst.Name}
 		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
-			Blueprint:           subBlueprint,
+			Blueprint:           *subBlueprint,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			Imports:             subInstTmpl.Imports,
 			ImportDataMappings:  subInstTmpl.ImportDataMappings,

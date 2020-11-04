@@ -6,12 +6,29 @@ package execution
 
 import (
 	"context"
+	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
+
+// ApplyDeployItemTemplate sets and updates the values defined by deploy item template on a deploy item.
+func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployItemTemplate) {
+	lsv1alpha1helper.SetOperation(&di.ObjectMeta, lsv1alpha1.ReconcileOperation)
+	di.Spec.Type = tmpl.Type
+	di.Spec.Target = tmpl.Target
+	di.Spec.Configuration = tmpl.Configuration
+	for k, v := range tmpl.Labels {
+		kutil.SetMetaDataLabel(&di.ObjectMeta, k, v)
+	}
+	kutil.SetMetaDataLabel(&di.ObjectMeta, lsv1alpha1.ExecutionManagedNameLabel, tmpl.Name)
+	metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.ExecutionDependsOnAnnotation, strings.Join(tmpl.DependsOn, ","))
+}
 
 func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string) (int, bool) {
 	for i, item := range items {
