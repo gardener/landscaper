@@ -49,7 +49,7 @@ type ProviderConfiguration struct {
 	ImportValues json.RawMessage `json:"importValues,omitempty"`
 	// Blueprint is the resolved reference to the definition
 	// +optional
-	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprintRef,omitempty"`
+	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprint,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints and component descriptors from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

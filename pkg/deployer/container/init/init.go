@@ -106,7 +106,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	}
 	log.Info("all directories have been successfully created")
 
-	if providerConfig.Blueprint != nil && providerConfig.Blueprint.Reference != nil {
+	if providerConfig.Blueprint != nil {
 		var (
 			cd  *cdv2.ComponentDescriptor
 			err error
@@ -119,7 +119,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 				return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
 			}
 		}
-		if providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
+		if providerConfig.Blueprint.Inline != nil && providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
 			log.Info("get component descriptor")
 			cd, err = regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext, providerConfig.Blueprint.Inline.ComponentDescriptorReference.ObjectMeta())
 			if err != nil {

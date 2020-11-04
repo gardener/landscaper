@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
@@ -51,6 +52,7 @@ func DeployItemExportSecretName(deployItemName string) string {
 }
 
 // ConfigurationSecretName generates the secret name for the imported secret.
+// todo: use container identity
 func ConfigurationSecretName(deployItemNamespace, deployItemName string) string {
 	return fmt.Sprintf("%s-%s-config", deployItemNamespace, deployItemName)
 }
@@ -64,8 +66,10 @@ type PodOptions struct {
 	WaitContainerServiceAccountSecret types.NamespacedName
 	ConfigurationSecretName           string
 
-	Name      string
-	Namespace string
+	Name                string
+	Namespace           string
+	DeployItemName      string
+	DeployItemNamespace string
 
 	Operation       container.OperationType
 	encBlueprintRef []byte
@@ -228,7 +232,9 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.GenerateName = opts.Name + "-"
 	pod.Namespace = opts.Namespace
 	pod.Labels = map[string]string{
-		container.ContainerDeployerNameLabel: opts.Name,
+		container.ContainerDeployerNameLabel:                opts.Name,
+		container.ContainerDeployerDeployItemNameLabel:      opts.DeployItemName,
+		container.ContainerDeployerDeployItemNamespaceLabel: opts.DeployItemNamespace,
 	}
 	pod.Finalizers = []string{container.ContainerDeployerFinalizer}
 
@@ -244,7 +250,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 
 func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 	podList := &corev1.PodList{}
-	if err := c.hostClient.List(ctx, podList, client.InNamespace(c.DeployItem.Namespace), client.MatchingLabels{container.ContainerDeployerNameLabel: c.DeployItem.Name}); err != nil {
+	if err := c.hostClient.List(ctx, podList, client.InNamespace(c.Configuration.Namespace), client.MatchingLabels{
+		container.ContainerDeployerDeployItemNameLabel:      c.DeployItem.Name,
+		container.ContainerDeployerDeployItemNamespaceLabel: c.DeployItem.Namespace,
+	}); err != nil {
 		return nil, err
 	}
 
@@ -271,7 +280,7 @@ func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	initSA := &corev1.ServiceAccount{}
 	initSA.Name = InitContainerServiceAccountName(c.DeployItem)
-	initSA.Namespace = c.DeployItem.Namespace
+	initSA.Namespace = c.Configuration.Namespace
 	if _, err := kutil.CreateOrUpdate(ctx, c.hostClient, initSA, func() error { return nil }); err != nil {
 		return err
 	}
@@ -280,15 +289,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role := &rbacv1.Role{}
 	role.Name = initSA.Name
 	role.Namespace = initSA.Namespace
-	_, err := kutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
-		role.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
-				Resources:     []string{"deployitems"},
-				Verbs:         []string{"get"},
-				ResourceNames: []string{c.DeployItem.Name},
-			},
-		}
+	_, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
 		// todo: consider different namespace of secrets
 		if len(c.ProviderConfiguration.RegistryPullSecrets) != 0 {
 			rule := rbacv1.PolicyRule{
@@ -311,7 +312,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding := &rbacv1.RoleBinding{}
 	rolebinding.Name = initSA.Name
 	rolebinding.Namespace = initSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
@@ -338,8 +339,8 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	}
 	waitSA := &corev1.ServiceAccount{}
 	waitSA.Name = WaitContainerServiceAccountName(c.DeployItem)
-	waitSA.Namespace = c.DeployItem.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, c.hostClient, waitSA, func() error { return nil }); err != nil {
+	waitSA.Namespace = c.Configuration.Namespace
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, waitSA, func() error { return nil }); err != nil {
 		return err
 	}
 
@@ -347,7 +348,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role = &rbacv1.Role{}
 	role.Name = waitSA.Name
 	role.Namespace = waitSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
 		role.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
@@ -384,7 +385,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding = &rbacv1.RoleBinding{}
 	rolebinding.Name = waitSA.Name
 	rolebinding.Namespace = waitSA.Namespace
-	_, err = kutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",

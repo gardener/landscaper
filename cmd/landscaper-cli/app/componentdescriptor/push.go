@@ -83,7 +83,7 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	data, err := codec.Encode(o.cd)
+	data, err := ioutil.ReadFile(o.componentPath)
 	if err != nil {
 		return err
 	}

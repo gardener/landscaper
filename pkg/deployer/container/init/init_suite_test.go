@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
@@ -71,5 +72,25 @@ var _ = Describe("Constructor", func() {
 		var data interface{}
 		Expect(json.Unmarshal(dataBytes, &data)).To(Succeed())
 		Expect(data).To(HaveKeyWithValue("key", "val1"))
+	})
+
+	It("should fetch blueprint values from DeployItem's configuration and write them to the content path", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(info).To(HaveLen(1))
+		Expect(info[0].Name()).To(Equal(blueprintsregistry.BlueprintFileName))
 	})
 })

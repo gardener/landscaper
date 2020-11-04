@@ -1,0 +1,21 @@
+apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+kind: ProviderConfiguration
+
+blueprint:
+  ref:
+    repositoryContext:
+      baseUrl: eu.gcr.io/gardener-project/landscaper/dev/components
+      type: ociRegistry
+    componentName: github.com/gardener/landscaper/ingress-nginx
+    version: v0.1.0
+    kind: localResource
+    resourceName: ingress-nginx-blueprint
+
+importValues: abc
+
+image: alpine
+command: ["sh", "-c"]
+args:
+- |
+  env
+  ls -laR $CONTENT_PATH

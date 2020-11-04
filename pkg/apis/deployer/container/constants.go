@@ -13,11 +13,17 @@ import (
 // ContainerDeployerFinalizer is the finalizer that is set by the container deployer
 const ContainerDeployerFinalizer = "container.deployer.landscaper.gardener.cloud/finalizer"
 
-// ContainerDeployerNameLabel is the name label that is used to identify managed pods.
+// ContainerDeployerNameLabel is the name of the label that is used to identify managed pods.
 const ContainerDeployerNameLabel = "container.deployer.landscaper.gardener.cloud/name"
 
 // ContainerDeployerTypeLabel is a label that is used to identify secrets that contain the state of a container.
 const ContainerDeployerTypeLabel = "container.deployer.landscaper.gardener.cloud/type"
+
+// ContainerDeployerDeployItemNameLabel is the name of the label that is used to identify the deploy item of a pod.
+const ContainerDeployerDeployItemNameLabel = "deployitem.container.deployer.landscaper.gardener.cloud/name"
+
+// ContainerDeployerDeployItemNamespaceLabel is the name of the label that is used to identify the deploy item of a pod.
+const ContainerDeployerDeployItemNamespaceLabel = "deployitem.container.deployer.landscaper.gardener.cloud/namespace"
 
 // InitContainerConditionType defines the condition for the current init container
 const InitContainerConditionType = "InitContainer"

@@ -34,7 +34,7 @@ func (c *Container) Delete(ctx context.Context) error {
 func (c *Container) cleanupRBAC(ctx context.Context) error {
 	sa := &corev1.ServiceAccount{}
 	sa.Name = InitContainerServiceAccountName(c.DeployItem)
-	sa.Namespace = c.DeployItem.Namespace
+	sa.Namespace = c.Configuration.Namespace
 
 	role := &rbacv1.Role{}
 	role.Name = sa.Name
@@ -57,7 +57,7 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 
 	sa = &corev1.ServiceAccount{}
 	sa.Name = WaitContainerServiceAccountName(c.DeployItem)
-	sa.Namespace = c.DeployItem.Namespace
+	sa.Namespace = c.Configuration.Namespace
 
 	role = &rbacv1.Role{}
 	role.Name = sa.Name

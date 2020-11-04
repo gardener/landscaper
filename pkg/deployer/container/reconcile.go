@@ -61,8 +61,10 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			WaitContainerServiceAccountSecret: c.WaitContainerServiceAccountSecret,
 			ConfigurationSecretName:           ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
 
-			Name:      c.DeployItem.Name,
-			Namespace: c.Configuration.Namespace,
+			Name:                c.DeployItem.Name,
+			Namespace:           c.Configuration.Namespace,
+			DeployItemName:      c.DeployItem.Name,
+			DeployItemNamespace: c.DeployItem.Namespace,
 
 			Operation: operation,
 			Debug:     true,
@@ -71,10 +73,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		if err != nil {
 			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
 				operationName, "PodGeneration", err.Error())
-			return err
-		}
-
-		if err := controllerutil.SetControllerReference(c.DeployItem, pod, kubernetes.LandscaperScheme); err != nil {
 			return err
 		}
 
