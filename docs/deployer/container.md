@@ -35,13 +35,30 @@ spec:
 
 In order for the container deployer to interact with the landscaper a contract for imports, exports and the state has to be defined.
 
-The current operation that the image should execute is defined by the env var `OPERATION` which can be `RECONCILE` or `DELETE`.<br>
-*Imports* can be expected as a json file at the path given by the env var `IMPORTS_PATH`.<br>
-*Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.<br>
-The optional *state* should be written to the directory given by the env var `STATE_PATH`.
-The complete state directory will be tarred and managed by the landscaper(:warning: no symlinks)<br>
-The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`.<br>
-The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env var `CONTENT_PATH`.
+- The current operation that the image should execute is defined by the env var `OPERATION` which can be `RECONCILE` or `DELETE`.
+- *Imports* can be expected as a json file at the path given by the env var `IMPORTS_PATH`.
+- *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.
+- The optional *state* should be written to the directory given by the env var `STATE_PATH`.
+- The complete state directory will be tarred and managed by the landscaper(:warning: no symlinks)
+- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`.
+  The json file contains a resolved component descriptor list which means that all transitive component descriptors are included in a list.
+  ```json
+  {
+    "meta":{
+      "schemaVersion": "v2"
+    },
+    "components": [
+      {
+        "meta":{
+          "schemaVersion": "v2"
+        },
+        "component": {}
+      }
+      ...
+    ]
+  }
+  ```
+- The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env var `CONTENT_PATH`.
 
 ### Status
 This section describes the provider specific status of the resource

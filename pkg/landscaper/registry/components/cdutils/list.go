@@ -30,6 +30,31 @@ func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsr
 	})
 }
 
+// ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
+// return a list containing all resolved component descriptors.
+func ResolveToComponentDescriptorList(ctx context.Context, client componentsregistry.Registry, cd cdv2.ComponentDescriptor) (cdv2.ComponentDescriptorList, error) {
+	cdList := cdv2.ComponentDescriptorList{}
+	cdList.Metadata = cd.Metadata
+	if len(cd.RepositoryContexts) == 0 {
+		return cdList, errors.New("component descriptor must at least contain one repository context with a base url")
+	}
+	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
+
+	for _, compRef := range cd.ComponentReferences {
+		resolvedComponent, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(compRef))
+		if err != nil {
+			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
+		}
+		cdList.Components = append(cdList.Components, *resolvedComponent)
+		resolvedComponentReferences, err := ResolveToComponentDescriptorList(ctx, client, *resolvedComponent)
+		if err != nil {
+			return cdList, fmt.Errorf("unable to resolve component references for component descriptor %s with version %s: %w", compRef.Name, compRef.Version, err)
+		}
+		cdList.Components = append(cdList.Components, resolvedComponentReferences.Components...)
+	}
+	return cdList, nil
+}
+
 // ResolvedComponentDescriptorList contains a map of mapped component description.
 type ResolvedComponentDescriptorList struct {
 	// Metadata specifies the schema version of the component.

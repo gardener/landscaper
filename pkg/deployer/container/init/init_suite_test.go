@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/codec"
 	logtesting "github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -22,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
@@ -47,6 +48,7 @@ var _ = Describe("Constructor", func() {
 		Expect(os.Setenv(container.ExportsPathName, container.ExportsPath)).To(Succeed())
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
+		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
 	})
 
 	AfterEach(func() {
@@ -74,7 +76,7 @@ var _ = Describe("Constructor", func() {
 		Expect(data).To(HaveKeyWithValue("key", "val1"))
 	})
 
-	It("should fetch blueprint values from DeployItem's configuration and write them to the content path", func() {
+	It("should fetch component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
@@ -88,9 +90,10 @@ var _ = Describe("Constructor", func() {
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
 		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
 
-		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(info).To(HaveLen(1))
-		Expect(info[0].Name()).To(Equal(blueprintsregistry.BlueprintFileName))
+
+		cd := &cdv2.ComponentDescriptorList{}
+		Expect(codec.Decode(data, cd)).To(Succeed())
 	})
 })

@@ -128,12 +128,12 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 		}
 
 		if cd != nil {
-			resolvedComponent, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, regAcc.ComponentsRegistry(), *cd)
+			resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
 			if err != nil {
 				return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
 			}
 
-			cdListJSONBytes, err := json.Marshal(resolvedComponent)
+			cdListJSONBytes, err := json.Marshal(resolvedComponents)
 			if err != nil {
 				return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
 			}

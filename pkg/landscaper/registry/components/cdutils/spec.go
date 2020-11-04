@@ -10,8 +10,6 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 )
 
-// {{ .cd.componentReferences.my-comp.localReources }}
-
 // ResolvedComponentDescriptor defines a landscaper internal representation of the component descriptor.
 // It is only used for templating and easier access of resources.
 type ResolvedComponentDescriptor struct {
@@ -48,6 +46,7 @@ type ResolveComponentReferenceFunc = func(meta cdv2.ComponentReference) (cdv2.Co
 // ConvertFromComponentDescriptor converts a component descriptor to a resolved component descriptor.
 func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
 	mcd := ResolvedComponentDescriptor{}
+	mcd.Metadata = cd.Metadata
 	mcd.ObjectMeta = cd.ObjectMeta
 	mcd.RepositoryContexts = cd.RepositoryContexts
 	mcd.Provider = cd.Provider
