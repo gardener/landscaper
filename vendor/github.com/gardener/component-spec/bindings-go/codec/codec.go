@@ -24,6 +24,7 @@ import (
 
 	"github.com/gardener/component-spec/bindings-go/apis"
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/jsonscheme"
 	"github.com/gardener/component-spec/bindings-go/apis/v2/validation"
 )
 
@@ -47,7 +48,9 @@ func Decode(data []byte, obj interface{}) error {
 
 	// handle v2
 	if metadata.Version == v2.SchemaVersion && objType.Elem() == reflect.TypeOf(v2.ComponentDescriptor{}) {
-		// todo: validate against jsonscheme
+		if err := jsonscheme.Validate(data); err != nil {
+			return err
+		}
 		if err := yaml.Unmarshal(data, obj); err != nil {
 			return err
 		}

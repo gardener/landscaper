@@ -28,7 +28,7 @@ subinstallations:
   name: ingress
 
   blueprint:
-    ref: cd://componentReferences/ingress/localResources/ingress-nginx-blueprint
+    ref: cd://componentReferences/ingress/resources/ingress-nginx-blueprint
 
   imports:
     targets:
@@ -46,7 +46,7 @@ subinstallations:
   name: server
 
   blueprint:
-    ref: cd://componentReferences/server/localResources/echo-server-blueprint
+    ref: cd://componentReferences/server/resources/echo-server-blueprint
 
   imports:
     targets:

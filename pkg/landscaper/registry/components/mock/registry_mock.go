@@ -12,30 +12,30 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockRegistry is a mock of Registry interface.
+// MockRegistry is a mock of Registry interface
 type MockRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockRegistryMockRecorder
 }
 
-// MockRegistryMockRecorder is the mock recorder for MockRegistry.
+// MockRegistryMockRecorder is the mock recorder for MockRegistry
 type MockRegistryMockRecorder struct {
 	mock *MockRegistry
 }
 
-// NewMockRegistry creates a new mock instance.
+// NewMockRegistry creates a new mock instance
 func NewMockRegistry(ctrl *gomock.Controller) *MockRegistry {
 	mock := &MockRegistry{ctrl: ctrl}
 	mock.recorder = &MockRegistryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRegistry) EXPECT() *MockRegistryMockRecorder {
 	return m.recorder
 }
 
-// Resolve mocks base method.
+// Resolve mocks base method
 func (m *MockRegistry) Resolve(arg0 context.Context, arg1 v2.RepositoryContext, arg2 v2.ObjectMeta) (*v2.ComponentDescriptor, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Resolve", arg0, arg1, arg2)
@@ -44,7 +44,7 @@ func (m *MockRegistry) Resolve(arg0 context.Context, arg1 v2.RepositoryContext, 
 	return ret0, ret1
 }
 
-// Resolve indicates an expected call of Resolve.
+// Resolve indicates an expected call of Resolve
 func (mr *MockRegistryMockRecorder) Resolve(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockRegistry)(nil).Resolve), arg0, arg1, arg2)

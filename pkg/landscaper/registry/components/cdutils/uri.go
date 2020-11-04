@@ -21,8 +21,7 @@ const PathDelimiter = "/"
 // path keywords
 const (
 	ComponentReferences = "componentReferences"
-	LocalResources      = "localResources"
-	ExternalResources   = "externalResources"
+	Resources           = "resources"
 )
 
 type Path struct {
@@ -76,7 +75,7 @@ func ParseURI(cdURI string) (*URI, error) {
 
 // Get resolves to a resource or component descriptor specified by the URI.
 // It also returns the resource kind.
-func (u *URI) Get(cd ResolvedComponentDescriptor) (lsv1alpha1.ResourceKind, interface{}, error) {
+func (u *URI) Get(cd ResolvedComponentDescriptor) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
 	component := cd
 	for i, elem := range u.Path {
 		isLast := len(u.Path) == i+1
@@ -90,24 +89,15 @@ func (u *URI) Get(cd ResolvedComponentDescriptor) (lsv1alpha1.ResourceKind, inte
 			if isLast {
 				return lsv1alpha1.ComponentResourceKind, component, nil
 			}
-		case LocalResources:
-			res, ok := component.LocalResources[elem.Value]
-			if !ok {
-				return "", nil, fmt.Errorf("local resource %s cannot be found", elem.Value)
-			}
-			if !isLast {
-				return "", nil, fmt.Errorf("the selector seems to contain more path segements after a local resource")
-			}
-			return lsv1alpha1.LocalResourceKind, res, nil
-		case ExternalResources:
-			res, ok := component.LocalResources[elem.Value]
+		case Resources:
+			res, ok := component.Resources[elem.Value]
 			if !ok {
 				return "", nil, fmt.Errorf("local resource %s cannot be found", elem.Value)
 			}
 			if !isLast {
 				return "", nil, fmt.Errorf("the selector seems to contain more path segements after a external resource")
 			}
-			return lsv1alpha1.ExternalResourceKind, res, nil
+			return lsv1alpha1.ResourceKind, res, nil
 		default:
 			return "", nil, fmt.Errorf("unknown keyword %s", elem.Keyword)
 		}
@@ -131,14 +121,9 @@ func (u *URI) GetComponent(cd ResolvedComponentDescriptor) (ResolvedComponentDes
 			if isLast {
 				return component, nil
 			}
-		case LocalResources:
+		case Resources:
 			if !isLast {
-				return ResolvedComponentDescriptor{}, fmt.Errorf("the selector seems to contain more path segements after a local resource")
-			}
-			return component, nil
-		case ExternalResources:
-			if !isLast {
-				return ResolvedComponentDescriptor{}, fmt.Errorf("the selector seems to contain more path segements after a external resource")
+				return ResolvedComponentDescriptor{}, fmt.Errorf("the selector seems to contain more path segements after a resource")
 			}
 			return component, nil
 		default:

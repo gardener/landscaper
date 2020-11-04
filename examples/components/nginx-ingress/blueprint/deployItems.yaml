@@ -15,12 +15,12 @@
 
 
 
-    chartRef: {{ .cd.externalResources.controller-chart.access.ref }}
+    chartRef: {{ .cd.resources.controller-chart.access.ref }}
     kubeconfig: {{ .imports.cluster.kubeconfig }}
     values:
       ingressClass: nginx
       image:
-        ref: {{ .cd.externalResources.controller.ref }}
+        ref: {{ .cd.resources.controller.ref }}
       dnsControllerClass: {{ .imports.dnsClass }}
       {{ if .imports.resources }}
       resources:

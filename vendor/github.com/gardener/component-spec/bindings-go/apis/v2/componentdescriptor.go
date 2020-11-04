@@ -44,6 +44,19 @@ const (
 	ExternalProvider ProviderType = "external"
 )
 
+// ResourceRelation describes the type of a resource.
+// Defines whether the component is created by a third party or internally.
+type ResourceRelation string
+
+const (
+	// LocalRelation defines a internal relation
+	// which describes a internally maintained resource in the origin's context.
+	LocalRelation ResourceRelation = "local"
+	// ExternalRelation defines a external relation
+	// which describes a resource maintained by a third party vendor in the origin's context.
+	ExternalRelation ResourceRelation = "external"
+)
+
 // Spec defines a versioned virtual component with a source and dependencies.
 type ComponentDescriptor struct {
 	// Metadata specifies the schema version of the component.
@@ -65,10 +78,8 @@ type ComponentSpec struct {
 	Sources []Source `json:"sources"`
 	// ComponentReferences references component dependencies that can be resolved in the current context.
 	ComponentReferences []ComponentReference `json:"componentReferences"`
-	// LocalResources defines internal resources that are created by the component
-	LocalResources []Resource `json:"localResources"`
-	// ExternalResources defines external resources that are not produced by a third party.
-	ExternalResources []Resource `json:"externalResources"`
+	// Resources defines all resources that are created by the component and by a third party.
+	Resources []Resource `json:"resources"`
 }
 
 // RepositoryContext describes a repository context.
@@ -331,6 +342,10 @@ type Resource struct {
 	ObjectMeta          `json:",inline"`
 	TypedObjectAccessor `json:",inline"`
 
+	// Relation describes the relation of the resource to the component.
+	// Can be a local or external resource
+	Relation ResourceRelation `json:"relation,omitempty"`
+
 	// Access describes the type specific method to
 	// access the defined resource.
 	Access TypedObjectAccessor `json:"-"`
@@ -340,7 +355,8 @@ type Resource struct {
 // that is used to marshal the Resource.
 type jsonResource struct {
 	ObjectMeta `json:",inline"`
-	Access     json.RawMessage `json:"access,omitempty"`
+	Relation   ResourceRelation `json:"relation,omitempty"`
+	Access     json.RawMessage  `json:"access,omitempty"`
 }
 
 // UnmarshalJSON implements a custom json unmarshal method for a Resource.
@@ -352,6 +368,7 @@ func (r *Resource) UnmarshalJSON(data []byte) error {
 	}
 
 	res.ObjectMeta = jsonRes.ObjectMeta
+	res.Relation = jsonRes.Relation
 	acc, err := UnmarshalAccessAccessor(jsonRes.Access)
 	if err != nil {
 		return err
@@ -366,6 +383,7 @@ func (r *Resource) UnmarshalJSON(data []byte) error {
 	delete(resourceJSON, "access")
 	delete(resourceJSON, "name")
 	delete(resourceJSON, "version")
+	delete(resourceJSON, "relation")
 
 	typedObjectJSONBytes, err := json.Marshal(resourceJSON)
 	if err != nil {
@@ -409,7 +427,7 @@ func (r Resource) MarshalJSON() ([]byte, error) {
 	for key, val := range typedObjectJSON {
 		resourceJSON[key] = val
 	}
-	return json.Marshal(jsonRes)
+	return json.Marshal(resourceJSON)
 }
 
 // UnmarshalTypedObjectAccessor unmarshals a type object into a valid json.

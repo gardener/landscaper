@@ -10,11 +10,11 @@ jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 imports:
 - name: aws-dev-account-credentials
   schema:
-    $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/localResources/schemas#definitions/provider
+    $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/resources/schemas#definitions/provider
 
 - name: gcp-dev-account-credentials
   schema:
-    $ref: cd://componentReferences/schemas/localResources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/localResources/schemas#definitions/provider
+    $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/resources/schemas#definitions/provider
 
 - name: dnsClass
   optional: true
@@ -41,7 +41,7 @@ subinstallations: # installation templates
   kind: InstallationTemplate
   name: ingress # must be unique
   blueprint:
-    ref: cd://componentReference/ingress/localResources/blueprint #cd://localResources/myblueprint
+    ref: cd://componentReference/ingress/resources/blueprint #cd://resources/myblueprint
 #    filesystem:
 #      blueprint.yaml: abc...
 

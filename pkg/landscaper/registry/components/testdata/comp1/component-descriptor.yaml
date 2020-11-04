@@ -23,12 +23,12 @@ component:
       type: 'gardenerComponent'
       # image_reference attribute is implied by `ociImage` type
       baseUrl: 'github.com/gardener/mcm'
-  localResources: []
 
-  externalResources:
+  resources:
   - name: 'hyperkube'
     version: 'v1.16.4'
     type: 'ociImage'
+    relation: external
     access:
       type: 'ociRegistry'
       # image_reference attribute is implied by `ociImage` type

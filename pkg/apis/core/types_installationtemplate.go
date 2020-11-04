@@ -51,7 +51,7 @@ type InstallationTemplate struct {
 type InstallationTemplateBlueprintDefinition struct {
 	// Ref is a reference to a blueprint.
 	// Only blueprints that are defined by the component descriptor of the current blueprint can be referenced here.
-	// Example: cd://componentReference/dns/localResources/blueprint
+	// Example: cd://componentReference/dns/resources/blueprint
 	// +optional
 	Ref string `json:"ref,omitempty"`
 

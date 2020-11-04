@@ -150,14 +150,10 @@
     "ResourceReference": {
       "required": [
         "componentName",
-        "kind",
         "resourceName"
       ],
       "properties": {
         "componentName": {
-          "type": "string"
-        },
-        "kind": {
           "type": "string"
         },
         "resourceName": {

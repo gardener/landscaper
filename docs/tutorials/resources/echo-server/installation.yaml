@@ -14,7 +14,6 @@ spec:
         baseUrl: eu.gcr.io/my-project/comp
       componentName: github.com/gardener/landscaper/echo-server
       version: v0.1.0
-      kind: localResource
       resourceName: echo-server-blueprint
 
   imports:

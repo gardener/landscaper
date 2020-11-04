@@ -9,7 +9,7 @@ require (
 	github.com/containerd/containerd v1.3.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
-	github.com/gardener/component-spec/bindings-go v0.0.0-20200925130340-816233f5893b
+	github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
-	github.com/xeipuuv/gojsonschema v1.1.0
+	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect

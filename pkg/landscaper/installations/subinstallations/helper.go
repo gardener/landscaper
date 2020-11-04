@@ -39,7 +39,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 		if resolvedComponentDescriptor == nil {
 			return nil, errors.New("no component descriptor defined to resolve the blueprint ref")
 		}
-		kind, res, err := uri.Get(*resolvedComponentDescriptor)
+		_, res, err := uri.Get(*resolvedComponentDescriptor)
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", resolvedComponentDescriptor.Name, err)
 		}
@@ -59,7 +59,6 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 				ResourceReference: lsv1alpha1.ResourceReference{
 					ComponentName: cd.Name,
-					Kind:          kind,
 					ResourceName:  resource.Name,
 				},
 				Version: cd.Version,

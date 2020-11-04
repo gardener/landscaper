@@ -95,7 +95,6 @@ func LocalRemoteBlueprintRef(componentName, resourceName, version, baseUrl strin
 			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 				ResourceReference: lsv1alpha1.ResourceReference{
 					ComponentName: componentName,
-					Kind:          "localResource",
 					ResourceName:  resourceName,
 				},
 				Version: version,

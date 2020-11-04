@@ -1648,7 +1648,6 @@ func Convert_core_Requirement_To_v1alpha1_Requirement(in *core.Requirement, out 
 
 func autoConvert_v1alpha1_ResourceReference_To_core_ResourceReference(in *ResourceReference, out *core.ResourceReference, s conversion.Scope) error {
 	out.ComponentName = in.ComponentName
-	out.Kind = core.ResourceKind(in.Kind)
 	out.ResourceName = in.ResourceName
 	return nil
 }
@@ -1660,7 +1659,6 @@ func Convert_v1alpha1_ResourceReference_To_core_ResourceReference(in *ResourceRe
 
 func autoConvert_core_ResourceReference_To_v1alpha1_ResourceReference(in *core.ResourceReference, out *ResourceReference, s conversion.Scope) error {
 	out.ComponentName = in.ComponentName
-	out.Kind = ResourceKind(in.Kind)
 	out.ResourceName = in.ResourceName
 	return nil
 }

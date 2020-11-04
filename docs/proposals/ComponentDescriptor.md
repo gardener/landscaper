@@ -66,7 +66,7 @@ executors:
 - type: helm
   config:
     image: {{ imports.etcd.access.imageReference }}
-    image2: {{ compdesc."github.com/gardener/mcm".externalResources.etcd.access.ImageReference }}
+    image2: {{ compdesc."github.com/gardener/mcm".resources.etcd.access.ImageReference }}
 ```
 
 - the root installation specifies the component from where the component descriptor is fetched and the blueprint resource in this component desc.
@@ -128,14 +128,14 @@ component:
   sources: []
   componentReferences:
   - ...
-  localResources: 
+  resources: 
   - name: gardener
     type: blueprint
     access:
       type: ociRegistry
       reference: eu.gcr.io/gardener-project/blueprints/gardener:v1.7.2
 
-  externalResources:
+  resources:
   - name: 'hyperkube'
     version: 'v1.16.4'
     type: 'ociImage'

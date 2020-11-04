@@ -14,7 +14,6 @@ spec:
         baseUrl: eu.gcr.io/my-project/comp
       componentName: github.com/gardener/landscaper/simple-aggregated
       version: v0.1.0
-      kind: localResource
       resourceName: simple-aggregated
 
   imports:

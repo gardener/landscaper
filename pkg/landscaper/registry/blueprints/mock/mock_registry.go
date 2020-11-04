@@ -15,30 +15,30 @@ import (
 	v1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
 
-// MockRegistry is a mock of Registry interface.
+// MockRegistry is a mock of Registry interface
 type MockRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockRegistryMockRecorder
 }
 
-// MockRegistryMockRecorder is the mock recorder for MockRegistry.
+// MockRegistryMockRecorder is the mock recorder for MockRegistry
 type MockRegistryMockRecorder struct {
 	mock *MockRegistry
 }
 
-// NewMockRegistry creates a new mock instance.
+// NewMockRegistry creates a new mock instance
 func NewMockRegistry(ctrl *gomock.Controller) *MockRegistry {
 	mock := &MockRegistry{ctrl: ctrl}
 	mock.recorder = &MockRegistryMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRegistry) EXPECT() *MockRegistryMockRecorder {
 	return m.recorder
 }
 
-// GetBlueprint mocks base method.
+// GetBlueprint mocks base method
 func (m *MockRegistry) GetBlueprint(arg0 context.Context, arg1 v2.Resource) (*v1alpha1.Blueprint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlueprint", arg0, arg1)
@@ -47,13 +47,13 @@ func (m *MockRegistry) GetBlueprint(arg0 context.Context, arg1 v2.Resource) (*v1
 	return ret0, ret1
 }
 
-// GetBlueprint indicates an expected call of GetBlueprint.
+// GetBlueprint indicates an expected call of GetBlueprint
 func (mr *MockRegistryMockRecorder) GetBlueprint(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlueprint", reflect.TypeOf((*MockRegistry)(nil).GetBlueprint), arg0, arg1)
 }
 
-// GetContent mocks base method.
+// GetContent mocks base method
 func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.Resource, arg2 vfs.FileSystem) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetContent", arg0, arg1, arg2)
@@ -61,7 +61,7 @@ func (m *MockRegistry) GetContent(arg0 context.Context, arg1 v2.Resource, arg2 v
 	return ret0
 }
 
-// GetContent indicates an expected call of GetContent.
+// GetContent indicates an expected call of GetContent
 func (mr *MockRegistryMockRecorder) GetContent(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContent", reflect.TypeOf((*MockRegistry)(nil).GetContent), arg0, arg1, arg2)

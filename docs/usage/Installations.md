@@ -31,7 +31,6 @@ spec:
 #        baseUrl: eu.gcr.io/myproj
       componentName: github.com/gardener/gardener
       version: v1.7.2
-      kind: LocalResource
       resourceName: gardener
 #    inline:
 #      filesystem: # vfs filesystem
@@ -131,9 +130,10 @@ component:
   name: github.com/my-comp
   version: v0.0.1
   
-  localResources:
+  resources:
   - name: my-application
     type: blueprint
+    relation: external
     access:
       type: ociRegistry
       imageReference: registry.example.com/blueprints/my-application
@@ -151,7 +151,6 @@ spec:
 #        baseUrl: ""
       componentName: github.com/my-comp
       version: v0.0.1
-      kind: LocalResource
       resourceName: my-application
 ```
 

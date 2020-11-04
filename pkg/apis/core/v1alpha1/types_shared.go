@@ -186,27 +186,23 @@ type ConfigMapReference struct {
 	Key string `json:"key"`
 }
 
-// ResourceKind is the kind of a resource.
-// It can be local or external.
-type ResourceKind string
+// ComponentDescriptorKind is the kind of a component descriptor.
+// It can be a component or a resource.
+type ComponentDescriptorKind string
 
-var UnknownResourceKindError = errors.New("UnknownResourceKind")
+var UnknownComponentDescriptorKindKindError = errors.New("UnknownComponentDescriptorKindKind")
 
 const (
 	// ComponentResourceKind is the kind of a component.
-	ComponentResourceKind ResourceKind = "component"
+	ComponentResourceKind ComponentDescriptorKind = "component"
 	// LocalResourceKind is the kind of a local resource.
-	LocalResourceKind ResourceKind = "localResource"
-	// ExternalResourceKind is the kind of a external resource.
-	ExternalResourceKind ResourceKind = "externalResource"
+	ResourceKind ComponentDescriptorKind = "resource"
 )
 
 // ResourceReference defines the reference to a resource defined in a component descriptor.
 type ResourceReference struct {
 	// ComponentName defines the unique of the component containing the resource.
 	ComponentName string `json:"componentName"`
-	// Kind defines the kind resource kind where the resource is defined.
-	Kind ResourceKind `json:"kind"`
 	// ResourceName defines the name of the resource.
 	ResourceName string `json:"resourceName"`
 }

@@ -13,6 +13,8 @@ component:
     - type: 'ociRegistry'
       baseUrl: 'eu.gcr.io/gardener-project/components/dev'
 
+  sources: []
+
   provider: 'internal'
 
   componentReferences:
@@ -25,3 +27,5 @@ component:
   - name: schemas
     componentName: github.com/gardener/external-dns-management-schemas
     version: v1
+
+  resources: []
