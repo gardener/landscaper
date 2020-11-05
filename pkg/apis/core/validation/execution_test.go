@@ -75,6 +75,79 @@ var _ = Describe("Execution", func() {
 			}))))
 		})
 
+		It("should fail if cyclic dependencies are defined", func() {
+			templates := []core.DeployItemTemplate{
+				{
+					Name:      "a",
+					Type:      "foo",
+					DependsOn: []string{"a", "c", "y"},
+				},
+				{
+					Name:      "b",
+					Type:      "foo",
+					DependsOn: []string{"a"},
+				},
+				{
+					Name:      "c",
+					Type:      "foo",
+					DependsOn: []string{"b"},
+				},
+				{
+					Name:      "d",
+					Type:      "foo",
+					DependsOn: []string{"a", "f", "e", "z"},
+				},
+				{
+					Name:      "e",
+					Type:      "foo",
+					DependsOn: []string{"f"},
+				},
+				{
+					Name:      "f",
+					Type:      "foo",
+					DependsOn: []string{"e"},
+				},
+				{
+					Name:      "g",
+					Type:      "foo",
+					DependsOn: []string{"a", "b", "c"},
+				},
+			}
+
+			allErrs := validation.ValidateDeployItemTemplateList(field.NewPath("x"), templates)
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle a->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("a"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle a->c->b->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("a", "c", "b"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle e->f->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("e", "f"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x[0][a]"),
+				"BadValue": Equal("y"),
+				"Detail":   Equal("depends on undefined deploy item"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x[3][d]"),
+				"BadValue": Equal("z"),
+				"Detail":   Equal("depends on undefined deploy item"),
+			}))))
+			Expect(allErrs).To(HaveLen(5)) // no other validation errors except from the ones specified above
+		})
+
 	})
 
 })
