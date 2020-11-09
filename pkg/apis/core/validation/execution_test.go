@@ -1,16 +1,6 @@
-// Copyright 2019 Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file.
+// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package validation_test
 
@@ -83,6 +73,79 @@ var _ = Describe("Execution", func() {
 				"Field":    Equal("b[1]"),
 				"BadValue": Equal("test"),
 			}))))
+		})
+
+		It("should fail if cyclic dependencies are defined", func() {
+			templates := []core.DeployItemTemplate{
+				{
+					Name:      "a",
+					Type:      "foo",
+					DependsOn: []string{"a", "c", "y"},
+				},
+				{
+					Name:      "b",
+					Type:      "foo",
+					DependsOn: []string{"a"},
+				},
+				{
+					Name:      "c",
+					Type:      "foo",
+					DependsOn: []string{"b"},
+				},
+				{
+					Name:      "d",
+					Type:      "foo",
+					DependsOn: []string{"a", "f", "e", "z"},
+				},
+				{
+					Name:      "e",
+					Type:      "foo",
+					DependsOn: []string{"f"},
+				},
+				{
+					Name:      "f",
+					Type:      "foo",
+					DependsOn: []string{"e"},
+				},
+				{
+					Name:      "g",
+					Type:      "foo",
+					DependsOn: []string{"a", "b", "c"},
+				},
+			}
+
+			allErrs := validation.ValidateDeployItemTemplateList(field.NewPath("x"), templates)
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle a->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("a"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle a->c->b->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("a", "c", "b"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{ // cycle e->f->
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x"),
+				"BadValue": ConsistOf("e", "f"),
+				"Detail":   Equal("cycle found in dependencies"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x[0][a]"),
+				"BadValue": Equal("y"),
+				"Detail":   Equal("depends on undefined deploy item"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":     Equal(field.ErrorTypeInvalid),
+				"Field":    Equal("x[3][d]"),
+				"BadValue": Equal("z"),
+				"Detail":   Equal("depends on undefined deploy item"),
+			}))))
+			Expect(allErrs).To(HaveLen(5)) // no other validation errors except from the ones specified above
 		})
 
 	})
