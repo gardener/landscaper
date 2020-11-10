@@ -118,7 +118,7 @@ __Remote Reference__
 Like any other artifact, a blueprint can be a resource of a component.
 Therefore, it can be defined in a component descriptor.
 
-The landscaper uses the component descriptor's resource definitions and enhances it with another resource of type `blueprint`.
+The landscaper uses the component descriptor's resource definitions and enhances it with another resource of type `landscaper.gardener.cloud/blueprint`(alternatively `blueprint`).
 This resource definition is then used to reference the remote blueprint for the Installation.
 
 Given a component descriptor that defines a blueprint as resource:
