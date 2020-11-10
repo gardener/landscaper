@@ -99,7 +99,7 @@
           },
           "type": "array"
         },
-        "blueprintRef": {
+        "blueprint": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/BlueprintDefinition"
         },

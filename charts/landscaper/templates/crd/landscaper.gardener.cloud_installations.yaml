@@ -317,11 +317,17 @@ spec:
                     configGeneration:
                       description: ConfigGeneration is the generation of the imported value.
                       type: string
+                    configMapRef:
+                      description: ConfigMapRef is the name of the imported configmap.
+                      type: string
                     dataRef:
                       description: DataRef is the name of the in-cluster data object.
                       type: string
                     name:
                       description: Name is the distinct identifier of the import. Can be either from data or target imports
+                      type: string
+                    secretRef:
+                      description: SecretRef is the name of the secret.
                       type: string
                     sourceRef:
                       description: SourceRef is the reference to the installation where the value is imported

@@ -268,6 +268,12 @@ type ImportStatus struct {
 	// DataRef is the name of the in-cluster data object.
 	// +optional
 	DataRef string `json:"dataRef,omitempty"`
+	// SecretRef is the name of the secret.
+	// +optional
+	SecretRef string `json:"secretRef,omitempty"`
+	// ConfigMapRef is the name of the imported configmap.
+	// +optional
+	ConfigMapRef string `json:"configMapRef,omitempty"`
 	// SourceRef is the reference to the installation where the value is imported
 	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 	// ConfigGeneration is the generation of the imported value.

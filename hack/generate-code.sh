@@ -15,6 +15,8 @@ PROJECT_ROOT="${CURRENT_DIR}"/..
 
 chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*
 
+export GOFLAGS=-mod=vendor
+
 echo "> Generating groups for Landscaper"
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   deepcopy,defaulter,conversion \
