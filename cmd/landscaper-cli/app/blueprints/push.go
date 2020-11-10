@@ -34,6 +34,8 @@ import (
 type pushOptions struct {
 	// ref is the oci reference where the definition should eb uploaded.
 	ref string
+	// allowPlainHttp allows the fallback to http if the oci registry does not support https
+	allowPlainHttp bool
 
 	// blueprintPath is the path to the directory containing the definition.
 	blueprintPath string
@@ -80,7 +82,10 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(blueprintsregistry.ComponentDefinitionConfigMediaType))
+	ociClient, err := oci.NewClient(log,
+		oci.WithCache{Cache: cache},
+		oci.WithKnownMediaType(blueprintsregistry.ComponentDefinitionConfigMediaType),
+		oci.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
 	}
@@ -129,4 +134,6 @@ func (o *pushOptions) Validate() error {
 	return nil
 }
 
-func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {}
+func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.allowPlainHttp, "allow-plain-http", false, "allows the fallback to http if the oci registry does not support https")
+}

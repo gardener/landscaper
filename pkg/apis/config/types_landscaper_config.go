@@ -26,6 +26,8 @@ type LandscaperConfiguration struct {
 
 // RegistriesConfiguration contains the configuration options for blueprint and component registries
 type RegistriesConfiguration struct {
+	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
+	AllowPlainHttp bool `json:"allowPlainHttp"`
 	// Artifacts contains the configuration to fetch blueprints and jsonschemas
 	// from local or remote registries.
 	Artifacts RegistryConfiguration `json:"blueprints"`

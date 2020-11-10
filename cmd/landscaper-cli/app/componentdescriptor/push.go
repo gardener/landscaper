@@ -35,6 +35,8 @@ type pushOptions struct {
 	version string
 	// componentPath is the path to the directory containing the definition.
 	componentPath string
+	// allowPlainHttp allows the fallback to http if the oci registry does not support https
+	allowPlainHttp bool
 
 	// ref is the oci artifact uri reference to the uploaded component descriptor
 	ref string
@@ -93,7 +95,10 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(componentsregistry.ComponentDescriptorMediaType))
+	ociClient, err := oci.NewClient(log,
+		oci.WithCache{Cache: cache},
+		oci.WithKnownMediaType(componentsregistry.ComponentDescriptorMediaType),
+		oci.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
 	}
@@ -176,4 +181,6 @@ func (o *pushOptions) Validate() error {
 	return nil
 }
 
-func (o *pushOptions) AddFlags(_ *pflag.FlagSet) {}
+func (o *pushOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.allowPlainHttp, "allow-plain-http", false, "allows the fallback to http if the oci registry does not support https")
+}

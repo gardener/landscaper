@@ -40,6 +40,9 @@ type Options struct {
 	// Paths configures local paths to search for docker configuration files
 	Paths []string
 
+	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
+	AllowPlainHttp bool
+
 	// Resolver sets the used resolver.
 	// A default resolver will be created if not given.
 	Resolver Resolver
@@ -118,6 +121,13 @@ func (c WithKnownMediaType) ApplyOption(options *Options) {
 	}
 
 	options.CustomMediaTypes.Insert(string(c))
+}
+
+// AllowPlainHttp sets the allow plain http flag.
+type AllowPlainHttp bool
+
+func (c AllowPlainHttp) ApplyOption(options *Options) {
+	options.AllowPlainHttp = bool(c)
 }
 
 // WithConfiguration applies external oci configuration as internal options.

@@ -46,7 +46,10 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
+	ociClient, err := oci.NewClient(a.Log(),
+		oci.WithConfiguration(a.lsConfig.Registries.Components.OCI),
+		oci.WithResolver{Resolver: ociKeyring},
+		oci.AllowPlainHttp(a.lsConfig.Registries.AllowPlainHttp))
 	if err != nil {
 		return err
 	}
@@ -82,7 +85,10 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	ociClient, err = oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI), oci.WithResolver{Resolver: ociKeyring})
+	ociClient, err = oci.NewClient(a.Log(),
+		oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI),
+		oci.WithResolver{Resolver: ociKeyring},
+		oci.AllowPlainHttp(a.lsConfig.Registries.AllowPlainHttp))
 	if err != nil {
 		return err
 	}

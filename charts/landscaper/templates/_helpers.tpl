@@ -67,6 +67,7 @@ apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
 registries:
+  allowPlainHttp: {{ .Values.landscaper.allowPlainHttpRegistries }}
   components:
   {{- if .Values.landscaper.registrySecrets.components }}
     oci:

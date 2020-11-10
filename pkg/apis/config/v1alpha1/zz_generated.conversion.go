@@ -182,6 +182,7 @@ func Convert_config_OCIConfiguration_To_v1alpha1_OCIConfiguration(in *config.OCI
 }
 
 func autoConvert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(in *RegistriesConfiguration, out *config.RegistriesConfiguration, s conversion.Scope) error {
+	out.AllowPlainHttp = in.AllowPlainHttp
 	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Artifacts, &out.Artifacts, s); err != nil {
 		return err
 	}
@@ -197,6 +198,7 @@ func Convert_v1alpha1_RegistriesConfiguration_To_config_RegistriesConfiguration(
 }
 
 func autoConvert_config_RegistriesConfiguration_To_v1alpha1_RegistriesConfiguration(in *config.RegistriesConfiguration, out *RegistriesConfiguration, s conversion.Scope) error {
+	out.AllowPlainHttp = in.AllowPlainHttp
 	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Artifacts, &out.Artifacts, s); err != nil {
 		return err
 	}
