@@ -148,13 +148,22 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			configGen = inst.Status.ConfigGeneration
 		}
 
-		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+		importStatus := lsv1alpha1.ImportStatus{
 			Name:             def.Name,
 			Type:             lsv1alpha1.DataImportStatusType,
 			DataRef:          def.DataRef,
 			SourceRef:        sourceRef,
 			ConfigGeneration: configGen,
-		})
+		}
+		if len(def.DataRef) != 0 {
+			importStatus.DataRef = def.DataRef
+		} else if def.SecretRef != nil {
+			importStatus.SecretRef = fmt.Sprintf("%s#%s", def.SecretRef.NamespacedName().String(), def.SecretRef.Key)
+		} else if def.ConfigMapRef != nil {
+			importStatus.ConfigMapRef = fmt.Sprintf("%s#%s", def.ConfigMapRef.NamespacedName().String(), def.ConfigMapRef.Key)
+		}
+
+		o.Inst.ImportStatus().Update(importStatus)
 	}
 
 	return dataObjects, nil
@@ -189,8 +198,8 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
 			Name:             def.Name,
-			Type:             lsv1alpha1.DataImportStatusType,
-			DataRef:          def.Target,
+			Type:             lsv1alpha1.TargetImportStatusType,
+			Target:           def.Target,
 			SourceRef:        sourceRef,
 			ConfigGeneration: configGen,
 		})

@@ -1263,6 +1263,8 @@ func autoConvert_v1alpha1_ImportStatus_To_core_ImportStatus(in *ImportStatus, ou
 	out.Type = core.ImportStatusType(in.Type)
 	out.Target = in.Target
 	out.DataRef = in.DataRef
+	out.SecretRef = in.SecretRef
+	out.ConfigMapRef = in.ConfigMapRef
 	out.SourceRef = (*core.ObjectReference)(unsafe.Pointer(in.SourceRef))
 	out.ConfigGeneration = in.ConfigGeneration
 	return nil
@@ -1278,6 +1280,8 @@ func autoConvert_core_ImportStatus_To_v1alpha1_ImportStatus(in *core.ImportStatu
 	out.Type = ImportStatusType(in.Type)
 	out.Target = in.Target
 	out.DataRef = in.DataRef
+	out.SecretRef = in.SecretRef
+	out.ConfigMapRef = in.ConfigMapRef
 	out.SourceRef = (*ObjectReference)(unsafe.Pointer(in.SourceRef))
 	out.ConfigGeneration = in.ConfigGeneration
 	return nil
