@@ -50,6 +50,25 @@ var _ = Describe("Blueprint", func() {
 				"Field": Equal("b[0][myimport]"),
 			}))))
 		})
+
+		It("should fail if there are conditional imports on a required import", func() {
+			importDefinition := core.ImportDefinition{}
+			importDefinition.Name = "myimport"
+			importDefinition.TargetType = "test"
+			conImportDef := core.ImportDefinition{}
+			conImportDef.Name = "myConditionalImport"
+			conImportDef.TargetType = "test"
+			importDefinition.ConditionalImports = []core.ImportDefinition{
+				conImportDef,
+			}
+
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{importDefinition})
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("x[0][myimport]"),
+				"Detail": Equal("conditional imports on required import"),
+			}))))
+		})
 	})
 
 	Context("ExportDefinitions", func() {
