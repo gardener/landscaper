@@ -30,25 +30,39 @@ func ValidateBlueprint(fs vfs.FileSystem, blueprint *core.Blueprint) field.Error
 
 // ValidateBlueprintImportDefinitions validates a list of import definitions
 func ValidateBlueprintImportDefinitions(fldPath *field.Path, imports []core.ImportDefinition) field.ErrorList {
+	_, allErrs := validateBlueprintImportDefinitions(fldPath, imports, sets.NewString())
+	return allErrs
+}
+
+// validateBlueprintImportDefinitions validates a list of import definitions
+func validateBlueprintImportDefinitions(fldPath *field.Path, imports []core.ImportDefinition, importNames sets.String) (sets.String, field.ErrorList) {
 	allErrs := field.ErrorList{}
 
-	importNames := sets.NewString()
 	for i, importDef := range imports {
 		defPath := fldPath.Index(i)
 		if len(importDef.Name) != 0 {
 			defPath = defPath.Key(importDef.Name)
+			if importNames.Has(importDef.Name) {
+				allErrs = append(allErrs, field.Duplicate(defPath, "duplicate import name"))
+			}
+			importNames.Insert(importDef.Name)
+		}
+
+		required := true
+		if importDef.Required != nil {
+			required = *importDef.Required
+		}
+		if len(importDef.ConditionalImports) > 0 && required {
+			allErrs = append(allErrs, field.Invalid(defPath, importDef.Name, "conditional imports on required import"))
 		}
 
 		allErrs = append(allErrs, ValidateFieldValueDefinition(defPath, importDef.FieldValueDefinition)...)
-		allErrs = append(allErrs, ValidateBlueprintImportDefinitions(defPath.Child("conditionalImports"), importDef.ConditionalImports)...)
-
-		if len(importDef.Name) != 0 && importNames.Has(importDef.Name) {
-			allErrs = append(allErrs, field.Duplicate(defPath, "duplicated import name"))
-		}
-		importNames.Insert(importDef.Name)
+		conditionalImportNames, tmpErrs := validateBlueprintImportDefinitions(defPath.Child("conditionalImports"), importDef.ConditionalImports, importNames)
+		allErrs = append(allErrs, tmpErrs...)
+		importNames.Insert(conditionalImportNames.UnsortedList()...)
 	}
 
-	return allErrs
+	return importNames, allErrs
 }
 
 // ValidateBlueprintExportDefinitions validates a list of export definitions
