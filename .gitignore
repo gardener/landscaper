@@ -1,5 +1,8 @@
 tmp
 
+/dev
+.vscode
+
 .idea
 .DS_Store
 
