@@ -11,8 +11,10 @@ __Prerequisites__:
 - OCI compatible oci registry (e.g. GCR or Harbor)
 - Kubernetes Cluster (better use two different clusters: one for the landscaper and one for the installation)
 
-All example resources can be found in [./resources/ingress-nginx](./resources/ingress-nginx).
-:warning: note that the files are examples and the correct oci references have to be added.
+All example resources can be found in [./resources/ingress-nginx](./resources/ingress-nginx).<br>
+:warning: note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` is an example repository 
+and has to be replaced with your own registry if you want to upload your own artifacts.
+Although the artifacts are public readable so they can be used out-of-the-box without a need for your own oci registry.
 
 Structure:
 - [Resources](#resources)
@@ -40,8 +42,8 @@ helm repo update
 helm pull ingress-nginx/ingress-nginx --untar --destination /tmp
 
 # upload the oci artifact to a oci registry
-export OCI_REGISTRY="" # e.g. eu.gcr.io
-export CHART_REF="$OCI_REGISTRY/mychart/reference:my-version" # e.g. eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+export OCI_REGISTRY="eu.gcr.io" # replace with your own oci registry
+export CHART_REF="$OCI_REGISTRY/mychart/reference:my-version" # e.g. eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login -u myuser $OCI_REGISTRY
 helm chart save /tmp/ingress-nginx $CHART_REF
@@ -72,12 +74,13 @@ component:
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+      imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
 ```
 
 The component descriptor will be transformed into a "resolved" component descriptor by the landscaper during access.
 This is done to ease the accessibility of resources inside the component descriptor with a templating language.
 
+:warning: this might chage in the future.
 ```yaml
 meta:
   schemaVersion: v2
@@ -96,7 +99,7 @@ component:
       relation: external
       access:
         type: ociRegistry
-        imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+        imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
 ```
 
 #### Create Blueprint
@@ -297,7 +300,8 @@ The blueprint can be easily uploaded by using the landscaper cli tool which pack
 To install the landscaper see [Landscaper CLI Installation](../gettingstarted/install-landscaper-cli.md)
 
 ```shell script
-landscaper-cli blueprints push myregistry/mypath/ingress-nginx:v0.1.0 docs/tutorials/resources/ingress-nginx/blueprint
+# landscaper-cli blueprints push myregistry/mypath/ingress-nginx:v0.1.0 docs/tutorials/resources/ingress-nginx/blueprint
+landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.1.0 docs/tutorials/resources/ingress-nginx/blueprint
 ```
 
 Blueprints are also just resources/artifacts of a component descriptor.

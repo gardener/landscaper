@@ -11,7 +11,7 @@ spec:
     ref:
       repositoryContext:
         type: ociRegistry
-        baseUrl: eu.gcr.io/my-project/comp
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/ingress-nginx
       version: v0.1.0
       resourceName: ingress-nginx-blueprint
