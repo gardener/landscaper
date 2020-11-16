@@ -165,7 +165,7 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 	if err != nil {
 		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), targetImport.Name, err)
 	}
-	importStatus, err := inst.ImportStatus().GetData(targetImport.Name)
+	importStatus, err := inst.ImportStatus().GetTarget(targetImport.Name)
 	if err != nil {
 		return true, nil
 	}
