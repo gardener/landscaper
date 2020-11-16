@@ -207,7 +207,7 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
 
 	// check if the data object comes from the parent
-	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
+	if v.parent != nil && lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
 		return v.checkStateForParentImport(fldPath, dataImport.DataRef)
 	}
 
