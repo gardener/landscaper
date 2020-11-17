@@ -75,18 +75,27 @@
 
 #### _DataObject_
 
+  DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#_context_) and provide data to Imports / receive data from Exports. They can be considerd to be the implementation of the data flow in an installation. 
+
 #### _Target_
 
+  A Target defines the system in which Landscaper will run the installation steps. Target resources contain all relevant data to access this environment including credentials. 
+
 #### _DeployItem_
+
+  A DeployItem is the interface between the Landscaper controller and the [Deployers](#_deployer_). It contains input data and a set of Deployer-specific instructions on how to install a component (e.g. install a helm chart with some custom values). Additionally, it is used to record the status as returned by the Deployer.
+
+#### _Deployer_
+
+  Deployer are highly specialized controllers that act on [DeployItems](#_deployitem_) of a certain type. They execute the installation instructions and aim to maintain the declared desired state.
 
 #### _Context_
 
   A context defines the scope in which an Installation runs and all of its data lives.
-  Every Installation has its own dedicated context and data can only be accessed within the same context.
-  Data can be exchanged between contexts via Import and Export declaration.
+  For every Installation a dedicated context is created and data can only be accessed within the same context.
+  Data can be exchanged between contexts via Import and Export declarations.
 
-  <!-- todo rephrase -->
-  Consequently, contexts follow the same tree structure as their blueprint/subinstallation.
+  Since Installations can be nested, the resulting Contexts are nested as well.
 
   For more information see [here](./Context.md).
 
