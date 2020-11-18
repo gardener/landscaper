@@ -143,4 +143,5 @@ func (c *WithConfigurationStruct) ApplyOption(options *Options) {
 	if c.Cache != nil {
 		options.CacheConfig = c.Cache
 	}
+	c.AllowPlainHttp = options.AllowPlainHttp
 }

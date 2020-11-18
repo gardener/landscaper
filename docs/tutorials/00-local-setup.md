@@ -148,24 +148,27 @@ If the landscaper is deployed via helm, the credentials can be configured using 
 ```yaml
 landscaper:
   # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
-  allowPlainHttpRegistries: true
-  registrySecrets: # contains optional oci secrets
+  registryConfig: # contains optional oci secrets
     blueprints:
-      default: {
-                   "auths": {
-                       "http://registry-harbor-registry.harbor:5000/": {
-                           "auth": "${AUTH_TOKEN}"
-                       }
-                   }
-               }
+      allowPlainHttpRegistries: false
+      secrets:
+        default:  {
+                    "auths": {
+                      "http://registry-harbor-registry.harbor:5000/": {
+                        "auth": "${AUTH_TOKEN}"
+                      }
+                    }
+                  }
     components:
-      default: {
-                   "auths": {
-                       "http://registry-harbor-registry.harbor:5000/": {
-                           "auth": "${AUTH_TOKEN}"
-                       }
-                   }
-               }
+      allowPlainHttpRegistries: false
+      secrets:
+        default:  {
+                    "auths": {
+                      "http://registry-harbor-registry.harbor:5000/": {
+                        "auth": "${AUTH_TOKEN}"
+                      }
+                    }
+                  }
 ```
 
 ### Common Pitfalls

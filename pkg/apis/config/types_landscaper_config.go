@@ -26,8 +26,6 @@ type LandscaperConfiguration struct {
 
 // RegistriesConfiguration contains the configuration options for blueprint and component registries
 type RegistriesConfiguration struct {
-	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
-	AllowPlainHttp bool `json:"allowPlainHttp"`
 	// Artifacts contains the configuration to fetch blueprints and jsonschemas
 	// from local or remote registries.
 	Artifacts RegistryConfiguration `json:"blueprints"`
@@ -61,6 +59,9 @@ type OCIConfiguration struct {
 	// Cache holds configuration for the oci cache
 	// +optional
 	Cache *OCICacheConfiguration `json:"cache,omitempty"`
+
+	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
+	AllowPlainHttp bool `json:"allowPlainHttp"`
 }
 
 // OCICacheConfiguration contains the configuration for the oci cache
