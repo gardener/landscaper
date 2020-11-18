@@ -13,6 +13,8 @@ github.com/Masterminds/sprig/v3
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
+github.com/ahmetb/gen-crd-api-reference-docs
 # github.com/alecthomas/jsonschema v0.0.0-20200530073317-71f438968921
 github.com/alecthomas/jsonschema
 # github.com/beorn7/perks v1.0.1
@@ -291,6 +293,10 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/russross/blackfriday/v2 v2.0.1
+github.com/russross/blackfriday/v2
+# github.com/shurcooL/sanitized_anchor_name v1.0.0
+github.com/shurcooL/sanitized_anchor_name
 # github.com/sirupsen/logrus v1.4.2
 github.com/sirupsen/logrus
 # github.com/spf13/cast v1.3.1
