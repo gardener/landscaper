@@ -46,11 +46,11 @@ spec:
           volumeMounts:
           - name: config
             mountPath: /app/ls/config
-          {{- if .Values.landscaper.registrySecrets.blueprints }}
+          {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
           - name: blueprintsregistry
             mountPath: /app/ls/registry/blueprints
           {{- end }}
-          {{- if .Values.landscaper.registrySecrets.components }}
+          {{- if .Values.landscaper.registryConfig.components.secrets }}
           - name: blueprintsregistry
             mountPath: /app/ls/registry/components
           {{- end }}
@@ -60,12 +60,12 @@ spec:
       - name: config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-config
-      {{- if .Values.landscaper.registrySecrets.blueprints }}
+      {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
       - name: blueprintsregistry
         secret:
           secretName: {{ include "landscaper.fullname" . }}-registry-blueprints
       {{- end }}
-      {{- if .Values.landscaper.registrySecrets.components }}
+      {{- if .Values.landscaper.registryConfig.components.secrets }}
       - name: componentsregistry
         secret:
           secretName: {{ include "landscaper.fullname" . }}-registry-components
