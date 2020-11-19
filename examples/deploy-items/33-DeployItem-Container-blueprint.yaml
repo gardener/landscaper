@@ -16,12 +16,11 @@ spec:
     blueprint:
       ref:
         repositoryContext:
-          baseUrl: eu.gcr.io/myproject/gci-test
+          baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components/
           type: ociRegistry
-        componentName: simple
-        version: 0.1.0
-        kind: localResource
-        resourceName: simple
+        componentName: github.com/gardener/landscaper/ingress-nginx
+        version: v0.1.0
+        resourceName: ingress-nginx-blueprint
 
     registryPullSecrets:
     - name: gcr-dev
@@ -35,3 +34,4 @@ spec:
     - |
       env
       ls -laR $CONTENT_PATH
+      ls -laR $REGISTRY_SECRETS_DIR

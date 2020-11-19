@@ -15,7 +15,6 @@ import (
 	containerinstall "github.com/gardener/landscaper/pkg/apis/deployer/container/install"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
 const (
@@ -35,19 +34,19 @@ type Container struct {
 	log           logr.Logger
 	lsClient      client.Client
 	hostClient    client.Client
-	registry      blueprintsregistry.Registry
 	Configuration *containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	ProviderStatus        *containerv1alpha1.ProviderStatus
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
+	OciPullSecrets        []string
 
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
 }
 
-// New creates a new internal helm item
-func New(log logr.Logger, lsClient, hostClient client.Client, registry blueprintsregistry.Registry, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
+// New creates a new internal container item
+func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem, ociPullSecrets []string) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
@@ -69,11 +68,11 @@ func New(log logr.Logger, lsClient, hostClient client.Client, registry blueprint
 		log:                   log,
 		lsClient:              lsClient,
 		hostClient:            hostClient,
-		registry:              registry,
 		Configuration:         config,
 		DeployItem:            item,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
+		OciPullSecrets:        ociPullSecrets,
 	}, nil
 }
 

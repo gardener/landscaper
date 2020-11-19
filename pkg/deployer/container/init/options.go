@@ -29,6 +29,7 @@ type options struct {
 	ComponentDescriptorFilePath string
 	ContentDirPath              string
 	StateDirPath                string
+	RegistrySecretBasePath      string
 
 	deployItemName      string
 	deployItemNamespace string
@@ -44,6 +45,7 @@ func (o *options) Complete(ctx context.Context) {
 	o.ComponentDescriptorFilePath = os.Getenv(container.ComponentDescriptorPathName)
 	o.ContentDirPath = os.Getenv(container.ContentPathName)
 	o.StateDirPath = os.Getenv(container.StatePathName)
+	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
 
 	o.deployItemName = os.Getenv(container.DeployItemName)
 	o.deployItemNamespace = os.Getenv(container.DeployItemNamespaceName)

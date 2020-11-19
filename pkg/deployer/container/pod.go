@@ -46,7 +46,7 @@ func ExportSecretName(deployItemNamespace, deployItemName string) string {
 	return fmt.Sprintf("%s-%s-export", deployItemNamespace, deployItemName)
 }
 
-// ExportSecretName generates the secret name for the exported secret
+// DeployItemExportSecretName generates the secret name for the exported secret
 func DeployItemExportSecretName(deployItemName string) string {
 	return fmt.Sprintf("%s-export", deployItemName)
 }
@@ -57,6 +57,24 @@ func ConfigurationSecretName(deployItemNamespace, deployItemName string) string 
 	return fmt.Sprintf("%s-%s-config", deployItemNamespace, deployItemName)
 }
 
+// ImagePullSecretName generates the secret name for the image pull secret.
+// todo: use container identity
+func ImagePullSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-imgpullsec", deployItemNamespace, deployItemName)
+}
+
+// BluePrintPullSecretName generates the secret name for the image pull secret.
+// todo: use container identity
+func BluePrintPullSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-bppullsec", deployItemNamespace, deployItemName)
+}
+
+// ComponentDescriptorPullSecretName generates the secret name for the image pull secret.
+// todo: use container identity
+func ComponentDescriptorPullSecretName(deployItemNamespace, deployItemName string) string {
+	return fmt.Sprintf("%s-%s-cdpullsec", deployItemNamespace, deployItemName)
+}
+
 // PodOptions contains the configuration that is needed for the scheduled pod
 type PodOptions struct {
 	ProviderConfiguration             *containerv1alpha1.ProviderConfiguration
@@ -65,6 +83,9 @@ type PodOptions struct {
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
 	ConfigurationSecretName           string
+	ImagePullSecret                   string
+	BluePrintPullSecret               string
+	ComponentDescriptorPullSecret     string
 
 	Name                string
 	Namespace           string
@@ -77,6 +98,7 @@ type PodOptions struct {
 	Debug bool
 }
 
+// Complete completes the the Blueprint provider configuration
 func (o *PodOptions) Complete() error {
 	if o.ProviderConfiguration.Blueprint != nil {
 		raw, err := json.Marshal(o.ProviderConfiguration.Blueprint)
@@ -159,6 +181,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 			Name:  container.DeployItemNamespaceName,
 			Value: opts.Namespace,
 		},
+		{
+			Name:  container.RegistrySecretBasePathName,
+			Value: container.RegistrySecretBasePath,
+		},
 	}
 	additionalSidecarEnvVars := []corev1.EnvVar{
 		{
@@ -184,6 +210,29 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		configurationVolume,
 	}
 
+	initMounts := []corev1.VolumeMount{configurationVolumeMount, initServiceAccountMount, sharedVolumeMount}
+
+	for _, v := range []string{opts.BluePrintPullSecret, opts.ComponentDescriptorPullSecret} {
+		if len(v) == 0 {
+			continue
+		}
+
+		volumes = append(volumes, corev1.Volume{
+			Name: v,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: v,
+				},
+			},
+		})
+
+		initMounts = append(initMounts, corev1.VolumeMount{
+			Name:      v,
+			ReadOnly:  true,
+			MountPath: filepath.Join(container.RegistrySecretBasePath, v),
+		})
+	}
+
 	initContainer := corev1.Container{
 		Name:                     container.InitContainerName,
 		Image:                    opts.InitContainer.Image,
@@ -193,7 +242,7 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		Resources:                corev1.ResourceRequirements{},
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 		ImagePullPolicy:          opts.InitContainer.ImagePullPolicy,
-		VolumeMounts:             []corev1.VolumeMount{configurationVolumeMount, initServiceAccountMount, sharedVolumeMount},
+		VolumeMounts:             initMounts,
 	}
 
 	waitContainer := corev1.Container{
@@ -244,7 +293,13 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.Spec.Volumes = volumes
 	pod.Spec.InitContainers = []corev1.Container{initContainer}
 	pod.Spec.Containers = []corev1.Container{mainContainer, waitContainer}
-
+	if len(opts.ImagePullSecret) != 0 {
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+			{
+				Name: opts.ImagePullSecret,
+			},
+		}
+	}
 	return pod, nil
 }
 

@@ -7,9 +7,10 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/alecthomas/jsonschema v0.0.0-20200530073317-71f438968921
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.3.2
+	github.com/containerd/containerd v1.4.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
+	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce // indirect
 	github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1

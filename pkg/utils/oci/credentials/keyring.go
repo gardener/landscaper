@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -17,6 +16,8 @@ import (
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockercreds "github.com/docker/cli/cli/config/credentials"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -29,8 +30,8 @@ type OCIKeyring interface {
 	Resolver(ctx context.Context, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
 }
 
-// CreateOCIRegistryKeyring creates a new OCI registry keyring.
-func CreateOCIRegistryKeyring(pullSecrets []corev1.Secret, configFiles []string) (OCIKeyring, error) {
+// CreateOCIRegistryKeyringFromFileSytem creates a new OCI registry keyring from a given file system.
+func CreateOCIRegistryKeyringFromFilesystem(pullSecrets []corev1.Secret, configFiles []string, fs vfs.FileSystem) (OCIKeyring, error) {
 	store := &ociKeyring{
 		index: make([]string, 0),
 		store: map[string]dockerconfigtypes.AuthConfig{},
@@ -57,7 +58,7 @@ func CreateOCIRegistryKeyring(pullSecrets []corev1.Secret, configFiles []string)
 	}
 
 	for _, configFile := range configFiles {
-		dockerConfigBytes, err := ioutil.ReadFile(configFile)
+		dockerConfigBytes, err := vfs.ReadFile(fs, configFile)
 		if err != nil {
 			return nil, err
 		}
@@ -75,6 +76,12 @@ func CreateOCIRegistryKeyring(pullSecrets []corev1.Secret, configFiles []string)
 	}
 
 	return store, nil
+
+}
+
+// CreateOCIRegistryKeyring creates a new OCI registry keyring.
+func CreateOCIRegistryKeyring(pullSecrets []corev1.Secret, configFiles []string) (OCIKeyring, error) {
+	return CreateOCIRegistryKeyringFromFilesystem(pullSecrets, configFiles, osfs.New())
 }
 
 type ociKeyring struct {
