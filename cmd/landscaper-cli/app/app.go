@@ -43,8 +43,9 @@ func NewLandscaperCliCommand(ctx context.Context) *cobra.Command {
 
 func NewVersionCommand() *cobra.Command {
 	return &cobra.Command{
-		Use:   "version",
-		Short: "v",
+		Use:     "version",
+		Aliases: []string{"v"},
+		Short:   "displays the version",
 		Run: func(cmd *cobra.Command, args []string) {
 			v := version.Get()
 			fmt.Printf("%#v", v)

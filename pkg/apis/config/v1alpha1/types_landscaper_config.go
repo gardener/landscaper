@@ -59,6 +59,9 @@ type OCIConfiguration struct {
 	// Cache holds configuration for the oci cache
 	// +optional
 	Cache *OCICacheConfiguration `json:"cache,omitempty"`
+
+	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
+	AllowPlainHttp bool `json:"allowPlainHttp"`
 }
 
 // OCICacheConfiguration contains the configuration for the oci cache

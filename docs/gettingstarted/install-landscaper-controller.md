@@ -30,6 +30,8 @@ the oci secrets can be provided using a map of `<config-name>: <docker auth>`.
 The docker auth config should be a docker auth config. 
 See the kubernetes pull secret documentation for a comprehensive guide https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#log-in-to-docker.
 
+In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used.
+
 The landscaper does offload all deployment specific functionality like `helm` to deployers.
 For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by the landscaper.
 
@@ -40,23 +42,27 @@ image:
   tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
 
 landscaper:
-  registrySecrets: # contains optional oci secrets
+  registryConfig: # contains optional oci secrets
     blueprints:
-      default: {
-        "auths": {
-          "hostname": {
-            "auth": "my auth"
+      allowPlainHttpRegistries: false
+      secrets:
+        default: {
+          "auths": {
+            "hostname": {
+              "auth": "my auth"
+            }
           }
         }
-      }
     components:
-      default: {
-        "auths": {
-           "hostname": {
-             "auth": "my auth"
-           }
+      allowPlainHttpRegistries: false
+      secrets:
+        default: {
+          "auths": {
+            "hostname": {
+              "auth": "my auth"
+            }
+          }
         }
-      }
   
   # deploy with integrated deployers for quick start
   deployers: 

@@ -31,6 +31,8 @@ type showOptions struct {
 	componentName string
 	// version is the component version in the oci registry.
 	version string
+	// allowPlainHttp allows the fallback to http if the oci registry does not support https
+	allowPlainHttp bool
 
 	// cacheDir defines the oci cache directory
 	cacheDir string
@@ -68,7 +70,7 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache})
+	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
 	}
@@ -135,5 +137,5 @@ func (o *showOptions) Complete(args []string) error {
 }
 
 func (o *showOptions) AddFlags(fs *pflag.FlagSet) {
-
+	fs.BoolVar(&o.allowPlainHttp, "allow-plain-http", false, "allows the fallback to http if the oci registry does not support https")
 }

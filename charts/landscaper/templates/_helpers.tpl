@@ -68,19 +68,25 @@ kind: LandscaperConfiguration
 
 registries:
   components:
-  {{- if .Values.landscaper.registrySecrets.components }}
+  {{- if .Values.landscaper.registryConfig.components }}
     oci:
+      allowPlainHttp: {{ .Values.landscaper.registryConfig.components.allowPlainHttpRegistries }}
+      {{- if .Values.landscaper.registryConfig.components.secrets }}
       configFiles:
-      {{- range $key, $value := .Values.landscaper.registrySecrets.components }}
+      {{- range $key, $value := .Values.landscaper.registryConfig.components.secrets }}
       - /app/ls/registry/components/{{ $key }}
+      {{- end }}
       {{- end }}
   {{- end }}
   blueprints:
-    {{- if .Values.landscaper.registrySecrets.blueprints }}
+    {{- if .Values.landscaper.registryConfig.blueprints }}
     oci:
+      allowPlainHttp: {{ .Values.landscaper.registryConfig.blueprints.allowPlainHttpRegistries }}
+      {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
       configFiles:
-      {{- range $key, $value := .Values.landscaper.registrySecrets.blueprints }}
+      {{- range $key, $value := .Values.landscaper.registryConfig.blueprints.secrets }}
       - /app/ls/registry/blueprints/{{ $key }}
+      {{- end }}
       {{- end }}
     {{- end }}
 {{- end }}

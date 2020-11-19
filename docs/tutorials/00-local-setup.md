@@ -42,7 +42,9 @@ helm upgrade --install -n harbor registry harbor/harbor -f values.yaml
 ```
 
 In the example above, helm installs the registry in the `harbor` namespace.
-The registry can be used by the landscaper by referencing artifacts via it's internal service `registry-harbor-registry.harbor:5000`
+The registry can be used by the landscaper by referencing artifacts via it's internal service `registry-harbor-registry.harbor:5000`<br>
+:warning: The harbor registry and the Landscaper are deployed to the same cluster which means that their communication resides in the cluster's private network. 
+Therefore, it is not necessary to setup tls for the harbor registry but the Landscaper needs to be configured to allow connections to http registries. See the [landscaper configuration section](#configure-the-landscaper) for more details.
 
 The harbor is now only accessible from within the cluster, so the k8s proxy is needed to upload artifacts:
 ```shell script
@@ -130,6 +132,8 @@ apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
 registries:
+  # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
+  allowPlainHttp: true
   components:
     oci:
       configFiles:
@@ -143,23 +147,28 @@ registries:
 If the landscaper is deployed via helm, the credentials can be configured using the `values.yaml`:
 ```yaml
 landscaper:
-  registrySecrets: # contains optional oci secrets
+  # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
+  registryConfig: # contains optional oci secrets
     blueprints:
-      default: {
-                   "auths": {
-                       "http://registry-harbor-registry.harbor:5000/": {
-                           "auth": "${AUTH_TOKEN}"
-                       }
-                   }
-               }
+      allowPlainHttpRegistries: false
+      secrets:
+        default:  {
+                    "auths": {
+                      "http://registry-harbor-registry.harbor:5000/": {
+                        "auth": "${AUTH_TOKEN}"
+                      }
+                    }
+                  }
     components:
-      default: {
-                   "auths": {
-                       "http://registry-harbor-registry.harbor:5000/": {
-                           "auth": "${AUTH_TOKEN}"
-                       }
-                   }
-               }
+      allowPlainHttpRegistries: false
+      secrets:
+        default:  {
+                    "auths": {
+                      "http://registry-harbor-registry.harbor:5000/": {
+                        "auth": "${AUTH_TOKEN}"
+                      }
+                    }
+                  }
 ```
 
 ### Common Pitfalls

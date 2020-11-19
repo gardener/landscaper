@@ -162,6 +162,7 @@ func Convert_config_OCICacheConfiguration_To_v1alpha1_OCICacheConfiguration(in *
 func autoConvert_v1alpha1_OCIConfiguration_To_config_OCIConfiguration(in *OCIConfiguration, out *config.OCIConfiguration, s conversion.Scope) error {
 	out.ConfigFiles = *(*[]string)(unsafe.Pointer(&in.ConfigFiles))
 	out.Cache = (*config.OCICacheConfiguration)(unsafe.Pointer(in.Cache))
+	out.AllowPlainHttp = in.AllowPlainHttp
 	return nil
 }
 
@@ -173,6 +174,7 @@ func Convert_v1alpha1_OCIConfiguration_To_config_OCIConfiguration(in *OCIConfigu
 func autoConvert_config_OCIConfiguration_To_v1alpha1_OCIConfiguration(in *config.OCIConfiguration, out *OCIConfiguration, s conversion.Scope) error {
 	out.ConfigFiles = *(*[]string)(unsafe.Pointer(&in.ConfigFiles))
 	out.Cache = (*OCICacheConfiguration)(unsafe.Pointer(in.Cache))
+	out.AllowPlainHttp = in.AllowPlainHttp
 	return nil
 }
 

@@ -39,14 +39,16 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 
 	// always add a oci client to support unauthenticated requests
 	ociConfigFiles := make([]string, 0)
-	if a.lsConfig.Registries.Artifacts.OCI != nil {
+	if a.lsConfig.Registries.Components.OCI != nil {
 		ociConfigFiles = a.lsConfig.Registries.Components.OCI.ConfigFiles
 	}
 	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
 	if err != nil {
 		return err
 	}
-	ociClient, err := oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Components.OCI), oci.WithResolver{Resolver: ociKeyring})
+	ociClient, err := oci.NewClient(a.Log(),
+		oci.WithConfiguration(a.lsConfig.Registries.Components.OCI),
+		oci.WithResolver{Resolver: ociKeyring})
 	if err != nil {
 		return err
 	}
@@ -82,7 +84,9 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	ociClient, err = oci.NewClient(a.Log(), oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI), oci.WithResolver{Resolver: ociKeyring})
+	ociClient, err = oci.NewClient(a.Log(),
+		oci.WithConfiguration(a.lsConfig.Registries.Artifacts.OCI),
+		oci.WithResolver{Resolver: ociKeyring})
 	if err != nil {
 		return err
 	}

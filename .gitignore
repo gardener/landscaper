@@ -7,3 +7,5 @@ tmp
 .DS_Store
 
 *.report
+
+**/gomock_reflect_*

@@ -7,11 +7,17 @@
 # Declare variables to be passed into your templates.
 
 landscaper:
-  registrySecrets: # contains optional oci secrets
-    blueprints: {}
-#      <name>: <docker config json>
-    components: {}
-#      <name>: <docker config json>
+
+
+  registryConfig: # contains optional oci secrets
+    blueprints:
+      allowPlainHttpRegistries: false
+      secrets: {}
+#       <name>: <docker config json>
+    components:
+      allowPlainHttpRegistries: false
+      secrets: {}
+#       <name>: <docker config json>
 
   deployers: []
 #  - container
