@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #### BUILDER ####
-FROM golang:1.15.0 AS builder
+FROM eu.gcr.io/gardener-project/3rd/golang:1.15.5 AS builder
 
 WORKDIR /go/src/github.com/gardener/landscaper
 COPY . .
@@ -13,7 +13,7 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM alpine:3.11.6 AS base
+FROM eu.gcr.io/gardenlinux/gardenlinux:184.0 AS base
 
 #### Helm Deployer Controller ####
 FROM base as landscaper-controller
