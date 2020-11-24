@@ -40,7 +40,9 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	for _, item := range executionItems {
 		if item.DeployItem != nil && !o.forceReconcile {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
-			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) {
+			deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
+
+			if !(lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) && deployItemStatusUpToDate) {
 				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
 				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 				continue
