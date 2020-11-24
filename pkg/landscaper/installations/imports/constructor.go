@@ -39,16 +39,16 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	)
 
 	// read imports and construct internal templating imports
-	importedDataObjects, err := c.GetImportedDataObjects(ctx)
+	importedDataObjects, err := c.GetImportedDataObjects(ctx) // returns a map mapping logical names to data objects
 	if err != nil {
 		return nil, err
 	}
-	importedTargets, err := c.GetImportedTargets(ctx)
+	importedTargets, err := c.GetImportedTargets(ctx) // returns a map mapping logical names to targets
 	if err != nil {
 		return nil, err
 	}
 
-	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets)
+	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets) // returns a map mapping logical names to data content
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +63,9 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 				imports[def.Name] = val.Data
 			}
 			if _, ok := imports[def.Name]; !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
 				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
 			}
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema, imports[def.Name]); err != nil {
@@ -81,6 +84,9 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 			}
 			data, ok := imports[def.Name]
 			if !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
 				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
 			}
 
@@ -93,7 +99,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 			}
 			continue
 		}
-		return nil, errors.New("whether a target nor a schema is defined")
+		return nil, errors.New("neither a target nor a schema is defined")
 	}
 
 	return imports, nil
