@@ -18,3 +18,4 @@ spec:
 
 status:
   phase: Progressing
+  observedGeneration: 1

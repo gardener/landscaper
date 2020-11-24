@@ -42,9 +42,10 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
 			deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
 
-			if !(lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) && deployItemStatusUpToDate) {
+			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
 				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
 				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+				phase = lsv1alpha1.ExecutionPhaseProgressing
 				continue
 			}
 
@@ -57,6 +58,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
 				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
 				// TODO: check if need to wait for other deploy items to finish
+				o.exec.Status.ObservedGeneration = o.exec.Generation
 				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
 			}
 
