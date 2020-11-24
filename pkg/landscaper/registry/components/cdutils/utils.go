@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
@@ -20,7 +22,6 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
@@ -55,33 +56,6 @@ func FindResourceInComponentByVersionedReference(comp cdv2.ComponentDescriptor, 
 	return res, nil
 }
 
-// FindResourceByReference searches all given components for the defined resource ref.
-func FindResourceByReference(ttype string, ref lsv1alpha1.ResourceReference, components ...cdv2.ComponentDescriptor) (cdv2.Resource, error) {
-	for _, comp := range components {
-		res, err := FindResourceInComponentByReference(comp, ttype, ref)
-		if !errors.Is(err, cdv2.NotFound) {
-			return cdv2.Resource{}, err
-		}
-		if err == nil {
-			return res, nil
-		}
-	}
-	return cdv2.Resource{}, cdv2.NotFound
-}
-
-// FindResourceInComponentByReference searches the given component for the defined resource ref.
-func FindResourceInComponentByReference(comp cdv2.ComponentDescriptor, ttype string, ref lsv1alpha1.ResourceReference) (cdv2.Resource, error) {
-	if comp.GetName() != ref.ComponentName {
-		return cdv2.Resource{}, cdv2.NotFound
-	}
-
-	resources := comp.GetResourcesByName(ttype, ref.ResourceName)
-	if len(resources) == 0 {
-		return cdv2.Resource{}, cdv2.NotFound
-	}
-	return resources[0], nil
-}
-
 // BuildComponentDescriptorManifest creates a new manifest from a component descriptor
 func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispecv1.Manifest, error) {
 	// add dummy json as config to have valid json that is required in a oci manifest
@@ -96,7 +70,7 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 	}
 
 	memFs := memoryfs.New()
-	if err := vfs.WriteFile(memFs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), cdData, os.ModePerm); err != nil {
+	if err := vfs.WriteFile(memFs, filepath.Join("/", ctf.ComponentDescriptorFileName), cdData, os.ModePerm); err != nil {
 		return ocispecv1.Manifest{}, err
 	}
 	var blob bytes.Buffer
@@ -105,7 +79,7 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 	}
 
 	desc := ocispecv1.Descriptor{
-		MediaType: componentsregistry.ComponentDescriptorMediaType,
+		MediaType: cdoci.ComponentDescriptorTarMimeType,
 		Digest:    digest.FromBytes(blob.Bytes()),
 		Size:      int64(blob.Len()),
 	}
@@ -125,18 +99,10 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 	return manifest, nil
 }
 
-// ComponentReferenceToObjectMeta converts a ComponentReference into a object meta
-func ComponentReferenceToObjectMeta(ref cdv2.ComponentReference) cdv2.ObjectMeta {
-	return cdv2.ObjectMeta{
-		Name:    ref.ComponentName,
-		Version: ref.GetVersion(),
-	}
-}
-
 // BuildNewDefinition creates a ocispec Manifest from a component definition.
 func BuildNewManifest(cache cache.Cache, data []byte) (*ocispecv1.Manifest, error) {
 	memfs := memoryfs.New()
-	if err := vfs.WriteFile(memfs, filepath.Join("/", componentsregistry.ComponentDescriptorFileName), data, os.ModePerm); err != nil {
+	if err := vfs.WriteFile(memfs, filepath.Join("/", ctf.ComponentDescriptorFileName), data, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("unable to write component descriptor to memory fs: %w", err)
 	}
 
@@ -146,7 +112,7 @@ func BuildNewManifest(cache cache.Cache, data []byte) (*ocispecv1.Manifest, erro
 	}
 
 	desc := ocispecv1.Descriptor{
-		MediaType: componentsregistry.ComponentDescriptorMediaType,
+		MediaType: cdoci.ComponentDescriptorTarMimeType,
 		Digest:    digest.FromBytes(blob.Bytes()),
 		Size:      int64(blob.Len()),
 	}

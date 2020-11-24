@@ -101,12 +101,15 @@ github.com/emicklei/go-restful/log
 github.com/evanphx/json-patch
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e
+# github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e => /Users/d064999/go/src/github.com/gardener/component-spec/bindings-go
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
 github.com/gardener/component-spec/bindings-go/apis/v2/jsonscheme
 github.com/gardener/component-spec/bindings-go/apis/v2/validation
 github.com/gardener/component-spec/bindings-go/codec
+github.com/gardener/component-spec/bindings-go/ctf
+github.com/gardener/component-spec/bindings-go/oci
+github.com/gardener/component-spec/bindings-go/utils/selector
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-logr/logr v0.1.0
@@ -205,12 +208,11 @@ github.com/mandelsoft/spiff/flow
 github.com/mandelsoft/spiff/legacy/candiedyaml
 github.com/mandelsoft/spiff/spiffing
 github.com/mandelsoft/spiff/yaml
-# github.com/mandelsoft/vfs v0.0.0-20200915112109-4781252bc384
+# github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
 github.com/mandelsoft/vfs/pkg/memoryfs
 github.com/mandelsoft/vfs/pkg/osfs
 github.com/mandelsoft/vfs/pkg/projectionfs
 github.com/mandelsoft/vfs/pkg/readonlyfs
-github.com/mandelsoft/vfs/pkg/test
 github.com/mandelsoft/vfs/pkg/utils
 github.com/mandelsoft/vfs/pkg/vfs
 github.com/mandelsoft/vfs/pkg/yamlfs
@@ -273,7 +275,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/opencontainers/go-digest v1.0.0-rc1
+# github.com/opencontainers/go-digest v1.0.0
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
 github.com/opencontainers/image-spec/specs-go

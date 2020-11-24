@@ -6,9 +6,9 @@ package subinstallations_test
 
 import (
 	"context"
-	"sync"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -25,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	k8smock "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 	"github.com/gardener/landscaper/test/utils"
@@ -38,12 +37,9 @@ var _ = Describe("SubInstallation", func() {
 		ctrl             *gomock.Controller
 		mockClient       *k8smock.MockClient
 		mockStatusWriter *k8smock.MockStatusWriter
-		fakeRegistry     blueprintsregistry.Registry
-		fakeCompRepo     componentsregistry.Registry
+		fakeCompRepo     ctf.ComponentResolver
 
 		defaultTestConfig *utils.TestInstallationConfig
-
-		once sync.Once
 	)
 
 	BeforeEach(func() {
@@ -53,15 +49,10 @@ var _ = Describe("SubInstallation", func() {
 		mockStatusWriter = k8smock.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
-		once.Do(func() {
-			fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata")
-			Expect(err).ToNot(HaveOccurred())
+		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
+		Expect(err).ToNot(HaveOccurred())
 
-			fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		commonOp := lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo)
+		commonOp := lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeCompRepo)
 		op = &installations.Operation{Interface: commonOp}
 
 		defaultTestConfig = &utils.TestInstallationConfig{

@@ -37,13 +37,13 @@ var _ = Describe("mapped component descriptor", func() {
 
 		testResources := []cdv2.Resource{
 			{
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r1",
 					Version: "1.5.5",
 				},
 			},
 			{
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r2",
 					Version: "1.5.0",
 				},
@@ -52,12 +52,16 @@ var _ = Describe("mapped component descriptor", func() {
 
 		testSources := []cdv2.Source{
 			{
-				Name:                "s1",
-				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name: "s1",
+				},
+				Access: cdv2.NewUnstructuredType("custom", nil),
 			},
 			{
-				Name:                "s2",
-				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name: "s2",
+				},
+				Access: cdv2.NewUnstructuredType("custom", nil),
 			},
 		}
 

@@ -26,11 +26,7 @@ func DefaultComponent(component *ComponentDescriptor) error {
 		component.Resources = make([]Resource, 0)
 	}
 
-	for i, res := range component.Resources {
-		if res.Relation == LocalRelation && len(res.Version) == 0 {
-			component.Resources[i].Version = component.GetVersion()
-		}
-	}
+	DefaultResources(component)
 	return nil
 }
 
@@ -41,4 +37,28 @@ func DefaultList(list *ComponentDescriptorList) error {
 		}
 	}
 	return nil
+}
+
+// DefaultResources defaults a list of resources.
+// The version of the component is defaulted for local resources that do not contain a version.
+// adds the version as identity if the resource identity would clash otherwise.
+func DefaultResources(component *ComponentDescriptor) {
+	resourceIDs := map[string]struct{}{}
+	for i, res := range component.Resources {
+		if res.Relation == LocalRelation && len(res.Version) == 0 {
+			component.Resources[i].Version = component.GetVersion()
+		}
+
+		id := string(res.GetIdentityDigest())
+		if _, ok := resourceIDs[id]; ok {
+			identity := res.ExtraIdentity
+			identity[SystemIdentityVersion] = res.GetVersion()
+
+			if id != string(identity.Digest()) {
+				res.SetExtraIdentity(identity)
+				id = string(res.GetIdentityDigest())
+			}
+		}
+		resourceIDs[id] = struct{}{}
+	}
 }

@@ -54,7 +54,7 @@ func NewValidationCommand(_ context.Context) *cobra.Command {
 }
 
 func (o *validationOptions) run() error {
-	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath))
+	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
 		return err
 	}

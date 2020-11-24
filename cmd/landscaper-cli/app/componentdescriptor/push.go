@@ -14,13 +14,13 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -85,25 +85,27 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	data, err := ioutil.ReadFile(o.componentPath)
+	archive, err := ctf.ComponentArchiveFromPath(o.componentPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to build component archive: %w", err)
 	}
 
-	defManifest, err := cdutils.BuildNewManifest(cache, data)
+	manifest, err := cdoci.NewManifestBuilder(cache, archive).Build(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to build oci artifact for component acrchive: %w", err)
 	}
 
 	ociClient, err := oci.NewClient(log,
 		oci.WithCache{Cache: cache},
-		oci.WithKnownMediaType(componentsregistry.ComponentDescriptorMediaType),
+		oci.WithKnownMediaType(cdoci.ComponentDescriptorConfigMimeType),
+		oci.WithKnownMediaType(cdoci.ComponentDescriptorTarMimeType),
+		oci.WithKnownMediaType(cdoci.ComponentDescriptorJSONMimeType),
 		oci.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
 	}
 
-	return ociClient.PushManifest(ctx, o.ref, defManifest)
+	return ociClient.PushManifest(ctx, o.ref, manifest)
 }
 
 func (o *pushOptions) Complete(args []string) error {
@@ -130,7 +132,17 @@ func (o *pushOptions) Complete(args []string) error {
 		return err
 	}
 
-	data, err := ioutil.ReadFile(o.componentPath)
+	info, err := os.Stat(o.componentPath)
+	if err != nil {
+		return fmt.Errorf("unable to get info for %s: %w", o.componentPath, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf(`%s is not a directory. 
+It is expected that the given path points to a diectory that contains the component descriptor as file in "%s" 
+`, o.componentPath, ctf.ComponentDescriptorFileName)
+	}
+
+	data, err := ioutil.ReadFile(filepath.Join(o.componentPath, ctf.ComponentDescriptorFileName))
 	if err != nil {
 		return err
 	}
@@ -156,11 +168,7 @@ func (o *pushOptions) Complete(args []string) error {
 	}
 
 	repoCtx := o.cd.GetEffectiveRepositoryContext()
-	obj := cdv2.ObjectMeta{
-		Name:    o.cd.Name,
-		Version: o.cd.Version,
-	}
-	o.ref, err = componentsregistry.OCIRef(repoCtx, obj)
+	o.ref, err = cdoci.OCIRef(repoCtx, o.cd.Name, o.cd.Version)
 	if err != nil {
 		return fmt.Errorf("invalid component reference: %w", err)
 	}

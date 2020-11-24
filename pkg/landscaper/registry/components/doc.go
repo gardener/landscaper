@@ -2,6 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-//go:generate mockgen -destination=./mock/registry_mock.go github.com/gardener/landscaper/pkg/landscaper/registry/components Registry
+//go:generate mockgen -destination=./mock/resolver_mock.go github.com/gardener/component-spec/bindings-go/ctf ComponentResolver
 
 package componentsregistry

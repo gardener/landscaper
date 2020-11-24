@@ -5,17 +5,12 @@
 package componentsregistry
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"net/url"
-	"path"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/go-logr/logr"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
@@ -23,16 +18,11 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
-// ComponentDescriptorMediaType is the media type containing the component descriptor.
-const ComponentDescriptorMediaType = "application/sap-cnudie+tar"
-
-// ComponentDescriptorFileName is the name of the file
-const ComponentDescriptorFileName = "component-descriptor.yaml"
-
 // ociClient is a component descriptor repository implementation
 // that resolves component references stored in an oci repository.
 type ociClient struct {
-	oci oci.Client
+	ociClient oci.Client
+	resolver  *cdoci.Resolver
 }
 
 // NewOCIRegistry creates a new oci registry from a oci config.
@@ -43,14 +33,16 @@ func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration) (TypedRegi
 	}
 
 	return &ociClient{
-		oci: client,
+		ociClient: client,
+		resolver:  cdoci.NewResolver().WithOCIClient(client),
 	}, nil
 }
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
 func NewOCIRegistryWithOCIClient(log logr.Logger, client oci.Client) (TypedRegistry, error) {
 	return &ociClient{
-		oci: client,
+		ociClient: client,
+		resolver:  cdoci.NewResolver().WithOCIClient(client),
 	}, nil
 }
 
@@ -60,80 +52,19 @@ func (r *ociClient) Type() string {
 }
 
 func (r *ociClient) InjectCache(c cache.Cache) error {
-	return cache.InjectCacheInto(r.oci, c)
+	return cache.InjectCacheInto(r.ociClient, c)
 }
 
 // Get resolves a reference and returns the component descriptor.
-func (r *ociClient) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext, ref cdv2.ObjectMeta) (*cdv2.ComponentDescriptor, error) {
-	if repoCtx.Type != cdv2.OCIRegistryType {
-		return nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, cdv2.OCIRegistryType)
-	}
-	refPath, err := OCIRef(repoCtx, ref)
+func (r *ociClient) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+	cd, blobResolver, err := r.resolver.WithRepositoryContext(repoCtx).Resolve(ctx, name, version)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	manifest, err := r.oci.GetManifest(ctx, refPath)
+	// automatically add blueprint resolver
+	aggBlobResolver, err := ctf.AggregateBlobResolvers(blobResolver, &BlueprintResolver{ociClient: r.ociClient})
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("unable to add blueprint resolver")
 	}
-
-	if len(manifest.Layers) != 1 {
-		return nil, errors.New("manifest must contain 1 layer")
-	}
-	if manifest.Layers[0].MediaType != ComponentDescriptorMediaType {
-		return nil, fmt.Errorf("unexpected media type %s, expected %s", manifest.Layers[0].MediaType, ComponentDescriptorMediaType)
-	}
-
-	var data bytes.Buffer
-	if err := r.oci.Fetch(ctx, refPath, manifest.Layers[0], &data); err != nil {
-		return nil, err
-	}
-
-	compDescData, err := readCompDescFromTar(&data)
-	if err != nil {
-		return nil, err
-	}
-
-	cd := &cdv2.ComponentDescriptor{}
-	if err := codec.Decode(compDescData, cd); err != nil {
-		return nil, err
-	}
-
-	return cd, nil
-}
-
-// OCIRef returns the oci artifacts uri for a repository context and object metadata
-func OCIRef(repoCtx cdv2.RepositoryContext, ref cdv2.ObjectMeta) (string, error) {
-	u, err := url.Parse(repoCtx.BaseURL)
-	if err != nil {
-		return "", err
-	}
-	u.Path = path.Join(u.Path, ref.Name)
-	return fmt.Sprintf("%s:%s", u.String(), ref.Version), nil
-}
-
-func readCompDescFromTar(data io.Reader) ([]byte, error) {
-	tr := tar.NewReader(data)
-	for {
-		header, err := tr.Next()
-		if err != nil {
-			if err == io.EOF {
-				return nil, cdv2.NotFound
-			}
-			return nil, err
-		}
-
-		if header.Name != ComponentDescriptorFileName {
-			continue
-		}
-
-		if header.Typeflag == tar.TypeReg {
-			var compDescData bytes.Buffer
-			if _, err := io.Copy(&compDescData, tr); err != nil {
-				return nil, err
-			}
-			return compDescData.Bytes(), nil
-		}
-	}
+	return cd, aggBlobResolver, nil
 }

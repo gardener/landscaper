@@ -66,7 +66,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 	internalExports["targets"] = targetsMap
 
-	templater := template.New(c.Operation, template.KubernetesStateHandler{
+	templater := template.New(c.BlobResolver, template.KubernetesStateHandler{
 		KubeClient: c.Client(),
 		Inst:       c.Inst.Info,
 	})

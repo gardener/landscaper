@@ -20,17 +20,8 @@ type LandscaperConfiguration struct {
 	// DefaultOCI defines the default oci configuration which is used
 	// if it's not overwritten by more specific configuration.
 	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
-	// Registries configures the landscaper registries.
-	Registries RegistriesConfiguration `json:"registries"`
-}
-
-// RegistriesConfiguration contains the configuration options for blueprint and component registries
-type RegistriesConfiguration struct {
-	// Artifacts contains the configuration to fetch blueprints and jsonschemas
-	// from local or remote registries.
-	Artifacts RegistryConfiguration `json:"blueprints"`
-	// Components contains the configuration for the used component descriptor registry.
-	Components RegistryConfiguration `json:"components"`
+	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
+	Registry RegistryConfiguration `json:"registry"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
@@ -46,8 +37,9 @@ type RegistryConfiguration struct {
 
 // LocalRegistryConfiguration contains the configuration for a local registry
 type LocalRegistryConfiguration struct {
-	// ConfigPaths configures local file paths to look for resources.
-	ConfigPaths []string `json:"configPaths"`
+	// RootPath configures the root path of a local registry.
+	// This path is used to search for components locally.
+	RootPath string `json:"rootPath"`
 }
 
 // OCIConfiguration holds configuration for the oci registry

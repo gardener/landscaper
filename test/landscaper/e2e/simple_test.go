@@ -8,6 +8,7 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,7 +25,6 @@ import (
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -34,29 +34,21 @@ var _ = Describe("Simple", func() {
 
 	var (
 		state                 *envtest.State
-		fakeBlueprintRegistry blueprintsregistry.Registry
-		fakeComponentRegistry componentsregistry.Registry
+		fakeComponentRegistry ctf.ComponentResolver
 
 		execActuator, instActuator, mockActuator reconcile.Reconciler
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeBlueprintRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "01-simple", "definitions"))
-		Expect(err).ToNot(HaveOccurred())
 		fakeComponentRegistry, err = componentsregistry.NewLocalClient(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "01-simple"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(log.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeBlueprintRegistry, fakeComponentRegistry)
+		op := operation.NewOperation(log.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeComponentRegistry)
 
 		instActuator = instctlr.NewTestActuator(op, &config.LandscaperConfiguration{
-			Registries: config.RegistriesConfiguration{
-				Artifacts: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple", "definitions")}},
-				},
-				Components: config.RegistryConfiguration{
-					Local: &config.LocalRegistryConfiguration{ConfigPaths: []string{filepath.Join(projectRoot, "examples", "01-simple")}},
-				},
+			Registry: config.RegistryConfiguration{
+				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "01-simple")},
 			},
 		})
 

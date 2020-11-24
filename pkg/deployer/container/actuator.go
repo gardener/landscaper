@@ -27,7 +27,6 @@ import (
 )
 
 func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
-
 	return &actuator{
 		log:    log,
 		config: config,
@@ -117,10 +116,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			5*time.Minute))
 	}()
 
-	// construct []string with pullsecret names
-	var ociPullSecrets []string
-
-	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.config, deployItem, ociPullSecrets)
+	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.config, deployItem)
 	if err != nil {
 		return err
 	}

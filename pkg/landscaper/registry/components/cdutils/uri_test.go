@@ -21,14 +21,14 @@ var _ = Describe("URI", func() {
 		cd            cdutils.ResolvedComponentDescriptor
 		testResources = map[string]cdv2.Resource{
 			"r1": {
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r1",
 					Version: "1.5.5",
 				},
 				Relation: cdv2.LocalRelation,
 			},
 			"r2": {
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r2",
 					Version: "1.5.0",
 				},

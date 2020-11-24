@@ -24,10 +24,10 @@ require (
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mandelsoft/spiff v1.5.0
-	github.com/mandelsoft/vfs v0.0.0-20200915112109-4781252bc384
+	github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
-	github.com/opencontainers/go-digest v1.0.0-rc1
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1 // indirect
@@ -57,6 +57,7 @@ require (
 )
 
 replace (
+	github.com/gardener/component-spec/bindings-go => /Users/d064999/go/src/github.com/gardener/component-spec/bindings-go
 	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega => github.com/onsi/gomega v1.5.0

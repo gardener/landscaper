@@ -23,7 +23,7 @@
         },
         "registries": {
           "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/RegistriesConfiguration"
+          "$ref": "#/definitions/RegistryConfiguration"
         }
       },
       "additionalProperties": false,
@@ -31,14 +31,11 @@
     },
     "LocalRegistryConfiguration": {
       "required": [
-        "configPaths"
+        "rootPath"
       ],
       "properties": {
-        "configPaths": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "rootPath": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -76,23 +73,6 @@
         },
         "allowPlainHttp": {
           "type": "boolean"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "RegistriesConfiguration": {
-      "required": [
-        "blueprints",
-        "components"
-      ],
-      "properties": {
-        "blueprints": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/RegistryConfiguration"
-        },
-        "components": {
-          "$ref": "#/definitions/RegistryConfiguration"
         }
       },
       "additionalProperties": false,

@@ -28,6 +28,10 @@ import (
 	"github.com/gardener/component-spec/bindings-go/apis/v2/validation"
 )
 
+type serializer struct {
+	knownAccessTypes v2.KnownTypes
+}
+
 // Decode decodes a component into the given object.
 // The obj is expected to be of type v2.ComponentDescriptor or v2.ComponentDescriptorList.
 func Decode(data []byte, obj interface{}) error {

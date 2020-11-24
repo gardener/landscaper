@@ -12,10 +12,10 @@ import (
 	"path"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -28,12 +28,8 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
@@ -81,11 +77,6 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 		return err
 	}
 
-	regAcc, err := createRegistryFromDockerAuthConfig(ctx, log, kubeClient, opts.RegistrySecretBasePath, fs)
-	if err != nil {
-		return err
-	}
-
 	// create all directories
 	log.Info("create directories")
 	if err := fs.MkdirAll(path.Dir(opts.ImportsFilePath), os.ModePerm); err != nil {
@@ -106,39 +97,13 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	log.Info("all directories have been successfully created")
 
 	if providerConfig.Blueprint != nil {
-		var (
-			cd  *cdv2.ComponentDescriptor
-			err error
-		)
-
-		if providerConfig.Blueprint.Reference != nil {
-			log.Info("get component descriptor")
-			cd, err = regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Reference.RepositoryContext, providerConfig.Blueprint.Reference.ObjectMeta())
-			if err != nil {
-				return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
-			}
-		}
-		if providerConfig.Blueprint.Inline != nil && providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
-			log.Info("get component descriptor")
-			cd, err = regAcc.ComponentsRegistry().Resolve(ctx, *providerConfig.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext, providerConfig.Blueprint.Inline.ComponentDescriptorReference.ObjectMeta())
-			if err != nil {
-				return errors.Wrapf(err, "unable to resolve component descriptor for ref %#v", providerConfig.Blueprint)
-			}
+		compResolver, err := createRegistryFromDockerAuthConfig(ctx, log, fs, opts.RegistrySecretBasePath)
+		if err != nil {
+			return err
 		}
 
-		if cd != nil {
-			resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, regAcc.ComponentsRegistry(), *cd)
-			if err != nil {
-				return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
-			}
-
-			cdListJSONBytes, err := json.Marshal(resolvedComponents)
-			if err != nil {
-				return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
-			}
-			if err := vfs.WriteFile(fs, opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
-				return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
-			}
+		if err := fetchComponentDescriptor(ctx, log, compResolver, opts, fs, providerConfig); err != nil {
+			return fmt.Errorf("unable to fetch component descriptor: %w", err)
 		}
 
 		log.Info("get blueprint content")
@@ -146,25 +111,8 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 		if err != nil {
 			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
 		}
-		if providerConfig.Blueprint.Reference != nil {
-			log.Info(fmt.Sprintf("fetching blueprint for %#v", providerConfig.Blueprint.Reference))
-			// resolve is only used to download the blueprint's content to the filesystem
-			_, err = blueprints.Resolve(ctx, regAcc, *providerConfig.Blueprint, contentFS)
-			if err != nil {
-				return fmt.Errorf("unable to fetch blueprint from registry: %w", err)
-			}
-			log.Info(fmt.Sprintf("blueprint content successfully downloaded to %s", opts.ContentDirPath))
-		}
-		if providerConfig.Blueprint.Inline != nil {
-			log.Info("using inline blueprint definition")
-			blueprintFs, err := yamlfs.New(providerConfig.Blueprint.Inline.Filesystem)
-			if err != nil {
-				return fmt.Errorf("unable to create yaml filesystem from internal config: %w", err)
-			}
-			// copy yaml filesystem to conatiner filesystem
-			if err := utils.CopyFS(blueprintFs, contentFS, "/", "/"); err != nil {
-				return fmt.Errorf("unabel to copy inline blueprint filesystem to container filesystem: %w", err)
-			}
+		if _, err := blueprints.Resolve(ctx, compResolver, *providerConfig.Blueprint, contentFS); err != nil {
+			return fmt.Errorf("unable to resolve blueprint and component descriptor")
 		}
 	}
 
@@ -184,29 +132,54 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	return nil
 }
 
-// registries is a internal struct that implements the registry accessors interface
-type registries struct {
-	blueprintsRegistry blueprintsregistry.Registry
-	componentsRegistry componentsregistry.Registry
-	artifactsRegistry  artifactsregistry.Registry
-}
+func fetchComponentDescriptor(
+	ctx context.Context,
+	log logr.Logger,
+	resolver ctf.ComponentResolver,
+	opts *options,
+	fs vfs.FileSystem,
+	providerConfig *containerv1alpha1.ProviderConfiguration) error {
 
-var _ lsoperation.RegistriesAccessor = &registries{}
+	var (
+		repoCtx       *cdv2.RepositoryContext
+		name, version string
+	)
+	if providerConfig.Blueprint.Reference != nil {
+		repoCtx = providerConfig.Blueprint.Reference.RepositoryContext
+		name, version = providerConfig.Blueprint.Reference.ComponentName, providerConfig.Blueprint.Reference.Version
+	}
+	if providerConfig.Blueprint.Inline != nil && providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
+		repoCtx = providerConfig.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext
+		name, version = providerConfig.Blueprint.Inline.ComponentDescriptorReference.ComponentName, providerConfig.Blueprint.Inline.ComponentDescriptorReference.Version
+	}
 
-func (r registries) BlueprintsRegistry() blueprintsregistry.Registry {
-	return r.blueprintsRegistry
-}
+	if repoCtx == nil {
+		return nil
+	}
 
-func (r registries) ComponentsRegistry() componentsregistry.Registry {
-	return r.componentsRegistry
-}
+	log.Info("get component descriptor")
+	cd, _, err := resolver.Resolve(ctx, *repoCtx, name, version)
+	if err != nil {
+		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", repoCtx.BaseURL, name, version, err)
+	}
 
-func (r registries) ArtifactsRegistry() artifactsregistry.Registry {
-	return r.artifactsRegistry
+	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd)
+	if err != nil {
+		return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
+	}
+
+	cdListJSONBytes, err := json.Marshal(resolvedComponents)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshal mapped component descriptor")
+	}
+	if err := vfs.WriteFile(fs, opts.ComponentDescriptorFilePath, cdListJSONBytes, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "unable to write mapped component descriptor to file %s", opts.ComponentDescriptorFilePath)
+	}
+	return nil
 }
 
 // todo: add retries
-func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, kubeClient client.Client, registryPullSecretsDir string, fs vfs.FileSystem) (lsoperation.RegistriesAccessor, error) {
+func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ctf.ComponentResolver, error) {
 
 	var secrets []string
 
@@ -237,22 +210,10 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, ku
 		return nil, err
 	}
 
-	blueprintsRegistry, err := blueprintsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to setup blueprints registry")
-	}
-	artifactsRegistry, err := artifactsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to setup blueprints registry")
-	}
 	componentsRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup components registry")
 	}
 
-	return &registries{
-		blueprintsRegistry: blueprintsRegistry,
-		componentsRegistry: componentsRegistry,
-		artifactsRegistry:  artifactsRegistry,
-	}, nil
+	return componentsRegistry, nil
 }

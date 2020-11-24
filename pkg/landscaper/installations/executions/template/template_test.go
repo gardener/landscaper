@@ -22,8 +22,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -62,7 +60,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -84,7 +82,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -106,7 +104,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -132,7 +130,15 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
+
+			imageAccess, err := cdv2.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+				ObjectType: cdv2.ObjectType{
+					Type: cdv2.OCIRegistryType,
+				},
+				ImageReference: "quay.io/example/myimage:1.0.0",
+			})
+			Expect(err).ToNot(HaveOccurred())
 			cd := &cdutils.ResolvedComponentDescriptor{
 				ResolvedComponentSpec: cdutils.ResolvedComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -141,18 +147,13 @@ func runTestSuite(testdataDir string) {
 					},
 					Resources: map[string]cdv2.Resource{
 						"mycustomimage": {
-							ObjectMeta: cdv2.ObjectMeta{
+							IdentityObjectMeta: cdv2.IdentityObjectMeta{
 								Name:    "mycustomimage",
 								Version: "1.0.0",
+								Type:    cdv2.OCIImageType,
 							},
-							Relation:            cdv2.ExternalRelation,
-							TypedObjectAccessor: cdv2.NewTypeOnly(cdv2.OCIImageType),
-							Access: &cdv2.OCIRegistryAccess{
-								ObjectType: cdv2.ObjectType{
-									Type: cdv2.OCIRegistryType,
-								},
-								ImageReference: "quay.io/example/myimage:1.0.0",
-							},
+							Relation: cdv2.ExternalRelation,
+							Access:   imageAccess,
 						},
 					},
 				},
@@ -177,7 +178,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -194,7 +195,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -226,7 +227,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -244,7 +245,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -262,7 +263,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)

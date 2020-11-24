@@ -16,18 +16,17 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 
 	"github.com/ghodss/yaml"
 )
 
 // KnownAccessTypes contains all known access serializer
 var KnownAccessTypes = KnownTypes{
-	OCIRegistryType:  ociRegistryCodec,
-	OCIBlobType:      ociBlobCodec,
-	GitHubAccessType: githubAccessCodec,
-	WebType:          webCodec,
+	OCIRegistryType:         DefaultJSONTypedObjectCodec,
+	OCIBlobType:             DefaultJSONTypedObjectCodec,
+	GitHubAccessType:        DefaultJSONTypedObjectCodec,
+	WebType:                 DefaultJSONTypedObjectCodec,
+	LocalFilesystemBlobType: DefaultJSONTypedObjectCodec,
 }
 
 // OCIRegistryType is the access type of a oci registry.
@@ -42,7 +41,15 @@ type OCIRegistryAccess struct {
 	ImageReference string `json:"imageReference"`
 }
 
-var _ TypedObjectAccessor = &OCIRegistryAccess{}
+// NewOCIRegistryAccess creates a new OCIRegistryAccess accessor
+func NewOCIRegistryAccess(ref string) TypedObjectAccessor {
+	return &OCIRegistryAccess{
+		ObjectType: ObjectType{
+			Type: OCIBlobType,
+		},
+		ImageReference: ref,
+	}
+}
 
 func (O OCIRegistryAccess) GetData() ([]byte, error) {
 	return json.Marshal(O)
@@ -56,23 +63,6 @@ func (O *OCIRegistryAccess) SetData(bytes []byte) error {
 
 	O.ImageReference = newOCIImage.ImageReference
 	return nil
-}
-
-var ociRegistryCodec = &TypedObjectCodecWrapper{
-	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
-		var ociImage OCIRegistryAccess
-		if err := json.Unmarshal(data, &ociImage); err != nil {
-			return nil, err
-		}
-		return &ociImage, nil
-	}),
-	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
-		ociImage, ok := accessor.(*OCIRegistryAccess)
-		if !ok {
-			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
-		}
-		return json.Marshal(ociImage)
-	}),
 }
 
 // OCIBlobType is the access type of a oci blob in a manifest.
@@ -95,7 +85,18 @@ type OCIBlobAccess struct {
 	Size int64 `json:"size"`
 }
 
-var _ TypedObjectAccessor = &OCIBlobAccess{}
+// NewOCIBlobAccess creates a new OCIBlob accessor
+func NewOCIBlobAccess(ref, mediaType, digest string, size int64) TypedObjectAccessor {
+	return &OCIBlobAccess{
+		ObjectType: ObjectType{
+			Type: OCIBlobType,
+		},
+		Reference: ref,
+		MediaType: mediaType,
+		Digest:    digest,
+		Size:      size,
+	}
+}
 
 func (a OCIBlobAccess) GetData() ([]byte, error) {
 	return json.Marshal(a)
@@ -114,21 +115,71 @@ func (a *OCIBlobAccess) SetData(bytes []byte) error {
 	return nil
 }
 
-var ociBlobCodec = &TypedObjectCodecWrapper{
-	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
-		var ociLayer OCIBlobAccess
-		if err := json.Unmarshal(data, &ociLayer); err != nil {
-			return nil, err
-		}
-		return &ociLayer, nil
-	}),
-	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
-		ociLayer, ok := accessor.(*OCIBlobAccess)
-		if !ok {
-			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
-		}
-		return json.Marshal(ociLayer)
-	}),
+// LocalOCIBlobType is the access type of a oci blob in the current component descriptor manifest.
+const LocalOCIBlobType = "localOciBlob"
+
+// NewLocalOCIBlobAccess creates a new LocalOCIBlob accessor
+func NewLocalOCIBlobAccess(digest string) TypedObjectAccessor {
+	return &LocalOCIBlobAccess{
+		ObjectType: ObjectType{
+			Type: LocalOCIBlobType,
+		},
+		Digest: digest,
+	}
+}
+
+// LocalOCIBlobAccess describes the access for a blob that is stored in the component descriptors oci manifest.
+type LocalOCIBlobAccess struct {
+	ObjectType `json:",inline"`
+	// Digest is the digest of the targeted content.
+	Digest string `json:"digest"`
+}
+
+func (a LocalOCIBlobAccess) GetData() ([]byte, error) {
+	return json.Marshal(a)
+}
+
+func (a *LocalOCIBlobAccess) SetData(bytes []byte) error {
+	var newAccess OCIBlobAccess
+	if err := json.Unmarshal(bytes, &newAccess); err != nil {
+		return err
+	}
+	a.Digest = newAccess.Digest
+	return nil
+}
+
+// LocalBlobType is the access type of a oci blob in a manifest.
+const LocalFilesystemBlobType = "localFilesystemBlob"
+
+// NewLocalFilesystemBlobAccess creates a new localFilesystemBlob accessor.
+func NewLocalFilesystemBlobAccess(path string) TypedObjectAccessor {
+	return &LocalFilesystemBlobAccess{
+		ObjectType: ObjectType{
+			Type: LocalFilesystemBlobType,
+		},
+		Filename: path,
+	}
+}
+
+// LocalFilesystemBlobAccess describes the access for a blob on the filesystem.
+type LocalFilesystemBlobAccess struct {
+	ObjectType `json:",inline"`
+	// Filename is the name of the blob in the local filesystem.
+	// The blob is expected to be at <fs-root>/blobs/<name>
+	Filename string `json:"filename"`
+}
+
+func (a LocalFilesystemBlobAccess) GetData() ([]byte, error) {
+	return json.Marshal(a)
+}
+
+func (a *LocalFilesystemBlobAccess) SetData(bytes []byte) error {
+	var newAccess LocalFilesystemBlobAccess
+	if err := json.Unmarshal(bytes, &newAccess); err != nil {
+		return err
+	}
+	a.Filename = newAccess.Filename
+	return nil
 }
 
 // WebType is the type of a web component
@@ -142,7 +193,15 @@ type Web struct {
 	URL string `json:"url"`
 }
 
-var _ TypedObjectAccessor = &Web{}
+// NewWebAccess creates a new Web accessor
+func NewWebAccess(url string) TypedObjectAccessor {
+	return &Web{
+		ObjectType: ObjectType{
+			Type: OCIBlobType,
+		},
+		URL: url,
+	}
+}
 
 func (w Web) GetData() ([]byte, error) {
 	return yaml.Marshal(w)
@@ -158,23 +217,6 @@ func (w *Web) SetData(bytes []byte) error {
 	return nil
 }
 
-var webCodec = &TypedObjectCodecWrapper{
-	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
-		var web Web
-		if err := json.Unmarshal(data, &web); err != nil {
-			return nil, err
-		}
-		return &web, nil
-	}),
-	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
-		web, ok := accessor.(*Web)
-		if !ok {
-			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
-		}
-		return json.Marshal(web)
-	}),
-}
-
 // WebType is the type of a web component
 const GitHubAccessType = "github"
 
@@ -186,9 +228,22 @@ type GitHubAccess struct {
 	RepoURL string `json:"repoUrl"`
 	// Ref describes the git reference.
 	Ref string `json:"ref"`
+	// Commit describes the git commit of the referenced repository.
+	// +optional
+	Commit string `json:"commit,omitempty"`
 }
 
-var _ TypedObjectAccessor = &GitHubAccess{}
+// NewGitHubAccess creates a new Web accessor
+func NewGitHubAccess(url, ref, commit string) TypedObjectAccessor {
+	return &GitHubAccess{
+		ObjectType: ObjectType{
+			Type: GitHubAccessType,
+		},
+		RepoURL: url,
+		Ref:     ref,
+		Commit:  commit,
+	}
+}
 
 func (w GitHubAccess) GetData() ([]byte, error) {
 	return yaml.Marshal(w)
@@ -203,78 +258,4 @@ func (w *GitHubAccess) SetData(bytes []byte) error {
 	w.RepoURL = newGitHubAccess.RepoURL
 	w.Ref = newGitHubAccess.Ref
 	return nil
-}
-
-var githubAccessCodec = &TypedObjectCodecWrapper{
-	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
-		var github GitHubAccess
-		if err := json.Unmarshal(data, &github); err != nil {
-			return nil, err
-		}
-		return &github, nil
-	}),
-	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
-		github, ok := accessor.(*GitHubAccess)
-		if !ok {
-			return nil, fmt.Errorf("accessor is not of type %s", OCIImageType)
-		}
-		return json.Marshal(github)
-	}),
-}
-
-// CustomType describes a generic dependency of a resolvable component.
-type CustomType struct {
-	ObjectType `json:",inline"`
-	Data       map[string]interface{} `json:"-"`
-}
-
-// NewTypeOnly creates a new typed object without additional data.
-func NewTypeOnly(ttype string) TypedObjectAccessor {
-	return NewCustomType(ttype, nil)
-}
-
-// NewCustomType creates a new custom typed object.
-func NewCustomType(ttype string, data map[string]interface{}) TypedObjectAccessor {
-	ct := CustomType{}
-	ct.SetType(ttype)
-	ct.Data = data
-	return &ct
-}
-
-var _ TypedObjectAccessor = &CustomType{}
-
-func (c CustomType) GetData() ([]byte, error) {
-	return json.Marshal(c.Data)
-}
-
-func (c *CustomType) SetData(data []byte) error {
-	var values map[string]interface{}
-	if err := yaml.Unmarshal(data, &values); err != nil {
-		return err
-	}
-	c.Data = values
-	return nil
-}
-
-var customCodec = &TypedObjectCodecWrapper{
-	TypedObjectDecoder: TypedObjectDecoderFunc(func(data []byte) (TypedObjectAccessor, error) {
-		var acc CustomType
-		if err := yaml.Unmarshal(data, &acc); err != nil {
-			return nil, err
-		}
-
-		var values map[string]interface{}
-		if err := json.Unmarshal(data, &values); err != nil {
-			return nil, err
-		}
-		acc.Data = values
-		return &acc, nil
-	}),
-	TypedObjectEncoder: TypedObjectEncoderFunc(func(accessor TypedObjectAccessor) ([]byte, error) {
-		custom, ok := accessor.(*CustomType)
-		if !ok {
-			return nil, errors.New("accessor is not a custom type %s")
-		}
-		return json.Marshal(custom.Data)
-	}),
 }

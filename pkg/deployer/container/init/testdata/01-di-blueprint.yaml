@@ -4,10 +4,10 @@ kind: ProviderConfiguration
 blueprint:
   ref:
     repositoryContext:
-      baseUrl: eu.gcr.io/gardener-project/landscaper/dev/components
+      baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       type: ociRegistry
     componentName: github.com/gardener/landscaper/ingress-nginx
-    version: v0.1.0
+    version: v0.2.0
     resourceName: ingress-nginx-blueprint
 
 importValues: abc

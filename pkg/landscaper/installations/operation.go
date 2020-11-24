@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -25,14 +26,12 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 )
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -41,13 +40,14 @@ type Operation struct {
 
 	Inst                        *Installation
 	ComponentDescriptor         *cdv2.ComponentDescriptor
+	BlobResolver                ctf.BlobResolver
 	ResolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor
 	context                     Context
 }
 
 // NewInstallationOperation creates a new installation operation
-func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, bRegistry blueprintsregistry.Registry, cRegistry componentsregistry.Registry, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, bRegistry, cRegistry), inst)
+func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, cRegistry), inst)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
@@ -68,7 +68,7 @@ func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.I
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
 	if err != nil {
 		return err
 	}
@@ -81,6 +81,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return err
 	}
 	o.ComponentDescriptor = cd
+	o.BlobResolver = blobResolver
 	o.ResolvedComponentDescriptor = &resolvedCD
 	return nil
 }
@@ -101,7 +102,7 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 		Config: &jsonschema.LoaderConfig{
 			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
 			BlueprintFs:         o.Inst.Blueprint.Fs,
-			ArtifactsRegistry:   o.ArtifactsRegistry(),
+			BlobResolver:        o.BlobResolver,
 			ComponentDescriptor: o.ResolvedComponentDescriptor,
 		},
 	}

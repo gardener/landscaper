@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/yaml"
 
@@ -15,27 +16,24 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Templater implements all available template executors.
 type Templater struct {
-	lsoperation.Interface
 	stateHdlr GenericStateHandler
 	impl      map[lsv1alpha1.TemplateType]templateExecution
 }
 
 // New creates a new instance of a templater.
-func New(op lsoperation.Interface, state GenericStateHandler) *Templater {
+func New(blobResolver ctf.BlobResolver, state GenericStateHandler) *Templater {
 	return &Templater{
-		Interface: op,
 		stateHdlr: state,
 		impl: map[lsv1alpha1.TemplateType]templateExecution{
 			lsv1alpha1.GOTemplateType: &GoTemplateExecution{
-				artifactRegistry: op.ArtifactsRegistry(),
-				state:            state,
+				blobResolver: blobResolver,
+				state:        state,
 			},
 			lsv1alpha1.SpiffTemplateType: &SpiffTemplate{state: state},
 		},

@@ -15,6 +15,7 @@
 package v2
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 )
@@ -132,6 +133,98 @@ func (o *ObjectMeta) SetLabels(labels []Label) {
 	o.Labels = labels
 }
 
+const (
+	SystemIdentityName    = "name"
+	SystemIdentityVersion = "version"
+)
+
+// Identity describes the identity of an object.
+// Only ascii characters are allowed
+type Identity map[string]string
+
+// Digest returns the object digest of an identity
+func (i Identity) Digest() []byte {
+	data, _ := json.Marshal(i)
+	return data
+}
+
+// IdentityObjectMeta defines a object that is uniquely identified by its identity.
+type IdentityObjectMeta struct {
+	// Name is the context unique name of the object.
+	Name string `json:"name"`
+	// Version is the semver version of the object.
+	Version string `json:"version"`
+	// Type describes the type of the object.
+	Type string `json:"type"`
+	// ExtraIdentity is the identity of an object.
+	// An additional label with key "name" ist not allowed
+	ExtraIdentity Identity `json:"extraIdentity,omitempty"`
+	// Labels defines an optional set of additional labels
+	// describing the object.
+	// +optional
+	Labels []Label `json:"labels,omitempty"`
+}
+
+// GetName returns the name of the object.
+func (o IdentityObjectMeta) GetName() string {
+	return o.Name
+}
+
+// SetName sets the name of the object.
+func (o *IdentityObjectMeta) SetName(name string) {
+	o.Name = name
+}
+
+// GetVersion returns the version of the object.
+func (o IdentityObjectMeta) GetVersion() string {
+	return o.Version
+}
+
+// SetVersion sets the version of the object.
+func (o *IdentityObjectMeta) SetVersion(version string) {
+	o.Version = version
+}
+
+// GetType returns the type of the object.
+func (o IdentityObjectMeta) GetType() string {
+	return o.Type
+}
+
+// SetType sets the type of the object.
+func (o *IdentityObjectMeta) SetType(ttype string) {
+	o.Type = ttype
+}
+
+// GetLabels returns the label of the object.
+func (o IdentityObjectMeta) GetLabels() []Label {
+	return o.Labels
+}
+
+// SetLabels sets the labels of the object.
+func (o *IdentityObjectMeta) SetLabels(labels []Label) {
+	o.Labels = labels
+}
+
+// SetExtraIdentity sets the identity of the object.
+func (o *IdentityObjectMeta) SetExtraIdentity(identity Identity) {
+	o.ExtraIdentity = identity
+}
+
+// GetLabels returns the identity of the object.
+func (o *IdentityObjectMeta) GetIdentity() Identity {
+	identity := map[string]string{}
+	for k, v := range o.ExtraIdentity {
+		identity[k] = v
+	}
+	identity[SystemIdentityName] = o.Name
+	return identity
+}
+
+// GetIdentityDigest returns the digest of the object's identity.
+func (o *IdentityObjectMeta) GetIdentityDigest() []byte {
+	return o.GetIdentity().Digest()
+}
+
 // ObjectType describes the type of a object
 type ObjectType struct {
 	// Type describes the type of the object.
@@ -154,50 +247,6 @@ type Label struct {
 	Name string `json:"name"`
 	// Value is the json/yaml data of the label
 	Value json.RawMessage `json:"value"`
-}
-
-// ComponentReference describes the reference to another component in the registry.	// Source is the definition of a component's source.
-type ComponentReference struct {
-	// Name is the context unique name of the object.
-	Name string `json:"name"`
-	// ComponentName describes the remote name of the referenced object
-	ComponentName string `json:"componentName"`
-	// Version is the semver version of the object.
-	Version string `json:"version"`
-	// Labels defines an optional set of additional labels
-	// describing the object.
-	// +optional
-	Labels []Label `json:"labels,omitempty"`
-}
-
-// GetName returns the name of the object.
-func (o ComponentReference) GetName() string {
-	return o.Name
-}
-
-// SetName sets the name of the object.
-func (o *ComponentReference) SetName(name string) {
-	o.Name = name
-}
-
-// GetVersion returns the version of the object.
-func (o ComponentReference) GetVersion() string {
-	return o.Version
-}
-
-// SetVersion sets the version of the object.
-func (o *ComponentReference) SetVersion(version string) {
-	o.Version = version
-}
-
-// GetLabels returns the label of the object.
-func (o ComponentReference) GetLabels() []Label {
-	return o.Labels
-}
-
-// SetLabels sets the labels of the object.
-func (o *ComponentReference) SetLabels(labels []Label) {
-	o.Labels = labels
 }
 
 // NameAccessor describes a accessor for a named object.
@@ -243,254 +292,183 @@ type TypedObjectAccessor interface {
 	SetData([]byte) error
 }
 
+// NewEmptyUnstructured creates a new typed object without additional data.
+func NewEmptyUnstructured(ttype string) *UnstructuredAccessType {
+	return NewUnstructuredType(ttype, nil)
+}
+
+// NewCustomType creates a new custom typed object.
+func NewUnstructuredType(ttype string, data map[string]interface{}) *UnstructuredAccessType {
+	unstr := &UnstructuredAccessType{}
+	unstr.SetType(ttype)
+	unstr.Object = data
+	return unstr
+}
+
+// UnstructuredAccessType describes a generic access type.
+type UnstructuredAccessType struct {
+	ObjectType `json:",inline"`
+	Raw        []byte                 `json:"-"`
+	Object     map[string]interface{} `json:"object"`
+}
+
+func (u *UnstructuredAccessType) Decode(data []byte, into TypedObjectAccessor) error {
+	uObj, ok := into.(*UnstructuredAccessType)
+	if !ok {
+		return errors.New("unable to decode data into non unstructured type")
+	}
+
+	return json.Unmarshal(data, uObj)
+}
+
+func (u *UnstructuredAccessType) Encode(acc TypedObjectAccessor) ([]byte, error) {
+	uObj, ok := acc.(*UnstructuredAccessType)
+	if !ok {
+		return nil, errors.New("unable to decode data into non unstructured type")
+	}
+	return json.Marshal(uObj)
+}
+
+var _ TypedObjectCodec = &UnstructuredAccessType{}
+
+func (u UnstructuredAccessType) GetData() ([]byte, error) {
+	data, err := json.Marshal(u.Object)
+	if err != nil {
+		return nil, err
+	}
+	if n := bytes.Compare(data, u.Raw); n != 0 {
+		u.Raw = data
+	}
+	return u.Raw, nil
+}
+
+func (u *UnstructuredAccessType) SetData(data []byte) error {
+	obj := map[string]interface{}{}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+	u.Raw = data
+	u.Object = obj
+	return nil
+}
+
+// UnmarshalJSON implements a custom json unmarshal method for a unstructured typed object.
+func (u *UnstructuredAccessType) UnmarshalJSON(data []byte) error {
+	typedObj := ObjectType{}
+	if err := json.Unmarshal(data, &typedObj); err != nil {
+		return err
+	}
+
+	obj := UnstructuredAccessType{
+		ObjectType: typedObj,
+	}
+	if err := obj.SetData(data); err != nil {
+		return err
+	}
+	*u = obj
+	return nil
+}
+
+// MarshalJSON implements a custom json unmarshal method for a unstructured type.
+func (u *UnstructuredAccessType) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(u.Object)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 // Source is the definition of a component's source.
 type Source struct {
-	Name                string `json:"name"`
-	TypedObjectAccessor `json:",inline"`
-	Access              TypedObjectAccessor `json:"access"`
+	IdentityObjectMeta `json:",inline"`
+	Access             *UnstructuredAccessType `json:"access"`
 }
 
-// GetName returns the name of the source.
-func (s Source) GetName() string {
-	return s.Name
-}
-
-// SetName sets the name of the source.
-func (s *Source) SetName(name string) {
-	s.Name = name
-}
-
-// jsonSource is the internal representation of a Source
-// that is used to marshal the Resource.
-type jsonSource struct {
-	Name   string          `json:"name"`
-	Access json.RawMessage `json:"access,omitempty"`
-}
-
-// UnmarshalJSON implements a custom json unmarshal method for a Source.
-func (s *Source) UnmarshalJSON(data []byte) error {
-	var (
-		src     Source
-		jsonSrc jsonSource
-	)
-	if err := json.Unmarshal(data, &jsonSrc); err != nil {
-		return err
-	}
-
-	src.Name = jsonSrc.Name
-	acc, err := UnmarshalAccessAccessor(jsonSrc.Access)
-	if err != nil {
-		return err
-	}
-	src.Access = acc
-
-	var sourceJSON map[string]json.RawMessage
-	if err := json.Unmarshal(data, &sourceJSON); err != nil {
-		return err
-	}
-	// remove already parsed attributes
-	delete(sourceJSON, "access")
-	delete(sourceJSON, "name")
-
-	typedObjectJSONBytes, err := json.Marshal(sourceJSON)
-	if err != nil {
-		return err
-	}
-	src.TypedObjectAccessor, err = UnmarshalTypedObjectAccessor(typedObjectJSONBytes, KnownTypes{}, customCodec, nil)
-	if err != nil {
-		return err
-	}
-	*s = src
-	return err
-}
-
-// MarshalJSON implements a custom json marshal method for a source.
-func (s Source) MarshalJSON() ([]byte, error) {
-	var (
-		raw = map[string]json.RawMessage{}
-		err error
-	)
-
-	raw["name"], err = json.Marshal(s.Name)
-	if err != nil {
-		return nil, err
-	}
-	raw["access"], err = MarshalAccessAccessor(s.Access)
-	if err != nil {
-		return nil, err
-	}
-
-	typedObjJSONBytes, err := MarshalTypedObjectAccessor(s.TypedObjectAccessor, KnownTypes{}, customCodec, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var typedObjectJSON map[string]json.RawMessage
-	if err := json.Unmarshal(typedObjJSONBytes, &typedObjectJSON); err != nil {
-		return nil, err
-	}
-
-	for key, val := range typedObjectJSON {
-		raw[key] = val
-	}
-
-	return json.Marshal(raw)
+// SourceRef defines a reference to a source
+type SourceRef struct {
+	// IdentitySelector defines the identity that is used to match a source.
+	IdentitySelector map[string]string `json:"identitySelector,omitempty"`
+	// Labels defines an optional set of additional labels
+	// describing the object.
+	// +optional
+	Labels []Label `json:"labels,omitempty"`
 }
 
 // Resource describes a resource dependency of a component.
 type Resource struct {
-	ObjectMeta          `json:",inline"`
-	TypedObjectAccessor `json:",inline"`
+	IdentityObjectMeta `json:",inline"`
 
 	// Relation describes the relation of the resource to the component.
 	// Can be a local or external resource
 	Relation ResourceRelation `json:"relation,omitempty"`
 
+	// SourceRef defines a list of source names.
+	// These names reference the sources defines in `component.sources`.
+	SourceRef []SourceRef `json:"srcRef,omitempty"`
+
 	// Access describes the type specific method to
 	// access the defined resource.
-	Access TypedObjectAccessor `json:"-"`
+	Access *UnstructuredAccessType `json:"access"`
 }
 
-// jsonResource is the internal representation of a Resource
-// that is used to marshal the Resource.
-type jsonResource struct {
-	ObjectMeta `json:",inline"`
-	Relation   ResourceRelation `json:"relation,omitempty"`
-	Access     json.RawMessage  `json:"access,omitempty"`
+// ComponentReference describes the reference to another component in the registry.
+type ComponentReference struct {
+	// Name is the context unique name of the object.
+	Name string `json:"name"`
+	// ComponentName describes the remote name of the referenced object
+	ComponentName string `json:"componentName"`
+	// Version is the semver version of the object.
+	Version string `json:"version"`
+	// ExtraIdentity is the identity of an object.
+	// An additional label with key "name" ist not allowed
+	ExtraIdentity Identity `json:"extraIdentity,omitempty"`
+	// Labels defines an optional set of additional labels
+	// describing the object.
+	// +optional
+	Labels []Label `json:"labels,omitempty"`
 }
 
-// UnmarshalJSON implements a custom json unmarshal method for a Resource.
-func (r *Resource) UnmarshalJSON(data []byte) error {
-	res := Resource{}
-	jsonRes := &jsonResource{}
-	if err := json.Unmarshal(data, &jsonRes); err != nil {
-		return err
-	}
-
-	res.ObjectMeta = jsonRes.ObjectMeta
-	res.Relation = jsonRes.Relation
-	acc, err := UnmarshalAccessAccessor(jsonRes.Access)
-	if err != nil {
-		return err
-	}
-	res.Access = acc
-
-	var resourceJSON map[string]json.RawMessage
-	if err := json.Unmarshal(data, &resourceJSON); err != nil {
-		return err
-	}
-	// remove already parsed attributes
-	delete(resourceJSON, "access")
-	delete(resourceJSON, "name")
-	delete(resourceJSON, "version")
-	delete(resourceJSON, "relation")
-
-	typedObjectJSONBytes, err := json.Marshal(resourceJSON)
-	if err != nil {
-		return err
-	}
-	res.TypedObjectAccessor, err = UnmarshalTypedObjectAccessor(typedObjectJSONBytes, KnownTypes{}, customCodec, nil)
-	if err != nil {
-		return err
-	}
-	*r = res
-	return nil
+// GetName returns the name of the object.
+func (o ComponentReference) GetName() string {
+	return o.Name
 }
 
-// MarshalJSON implements a custom json marshal method for a Resource.
-func (r Resource) MarshalJSON() ([]byte, error) {
-	acc, err := MarshalAccessAccessor(r.Access)
-	if err != nil {
-		return nil, err
-	}
-
-	jsonRes := jsonResource{
-		ObjectMeta: r.ObjectMeta,
-		Access:     acc,
-	}
-
-	var resourceJSON = map[string]json.RawMessage{}
-	if err := remarshal(jsonRes, &resourceJSON); err != nil {
-		return nil, err
-	}
-
-	typedObjJSONBytes, err := MarshalTypedObjectAccessor(r.TypedObjectAccessor, KnownTypes{}, customCodec, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var typedObjectJSON map[string]json.RawMessage
-	if err := json.Unmarshal(typedObjJSONBytes, &typedObjectJSON); err != nil {
-		return nil, err
-	}
-
-	for key, val := range typedObjectJSON {
-		resourceJSON[key] = val
-	}
-	return json.Marshal(resourceJSON)
+// SetName sets the name of the object.
+func (o *ComponentReference) SetName(name string) {
+	o.Name = name
 }
 
-// UnmarshalTypedObjectAccessor unmarshals a type object into a valid json.
-// The given known types are used to decode the data into a specific.
-// The given defaultCodec is used if no matching type is known.
-// An error is returned when the type is unknown and the default codec is nil.
-func UnmarshalTypedObjectAccessor(data []byte, knownTypes KnownTypes, defaultCodec TypedObjectCodec, validationFunc KnownTypeValidationFunc) (TypedObjectAccessor, error) {
-	accessType := &ObjectType{}
-	if err := json.Unmarshal(data, accessType); err != nil {
-		return nil, err
-	}
-
-	if validationFunc != nil {
-		if err := validationFunc(accessType.GetType()); err != nil {
-			return nil, err
-		}
-	}
-
-	codec, ok := knownTypes[accessType.GetType()]
-	if !ok {
-		codec = defaultCodec
-	}
-
-	acc, err := codec.Decode(data)
-	if err != nil {
-		return nil, err
-	}
-	return acc, nil
+// GetVersion returns the version of the object.
+func (o ComponentReference) GetVersion() string {
+	return o.Version
 }
 
-// MarshalTypedObjectAccessor marshals a type object into a valid json.
-// The given known types are used to decode the data into a specific.
-// The given defaultCodec is used if no matching type is known.
-// An error is returned when the type is unknown and the default codec is nil.
-func MarshalTypedObjectAccessor(acc TypedObjectAccessor, knownTypes KnownTypes, defaultCodec TypedObjectCodec, validationFunc KnownTypeValidationFunc) ([]byte, error) {
-	if validationFunc != nil {
-		if err := validationFunc(acc.GetType()); err != nil {
-			return nil, err
-		}
-	}
-
-	codec, ok := knownTypes[acc.GetType()]
-	if !ok {
-		codec = defaultCodec
-	}
-
-	return codec.Encode(acc)
+// SetVersion sets the version of the object.
+func (o *ComponentReference) SetVersion(version string) {
+	o.Version = version
 }
 
-// UnmarshalAccessAccessor unmarshals a json access accessor into a known go struct.
-func UnmarshalAccessAccessor(data []byte) (TypedObjectAccessor, error) {
-	return UnmarshalTypedObjectAccessor(data, KnownAccessTypes, customCodec, ValidateAccessType)
+// GetLabels returns the label of the object.
+func (o ComponentReference) GetLabels() []Label {
+	return o.Labels
 }
 
-// MarshalAccessAccessor marshals a known access accessor into a valid json
-func MarshalAccessAccessor(acc TypedObjectAccessor) ([]byte, error) {
-	return MarshalTypedObjectAccessor(acc, KnownAccessTypes, customCodec, ValidateAccessType)
+// SetLabels sets the labels of the object.
+func (o *ComponentReference) SetLabels(labels []Label) {
+	o.Labels = labels
 }
 
-func remarshal(src, dst interface{}) error {
-	data, err := json.Marshal(src)
-	if err != nil {
-		return err
+// GetLabels returns the identity of the object.
+func (o *ComponentReference) GetIdentity() Identity {
+	identity := map[string]string{}
+	if o.ExtraIdentity != nil {
+		identity = o.ExtraIdentity
 	}
-	return json.Unmarshal(data, dst)
+	identity[SystemIdentityName] = o.Name
+	return identity
+}
+
+// GetIdentityDigest returns the digest of the object's identity.
+func (o *ComponentReference) GetIdentityDigest() []byte {
+	return o.GetIdentity().Digest()
 }

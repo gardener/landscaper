@@ -10,19 +10,18 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 )
 
 // ResolveEffectiveComponentDescriptor transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.
-func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsregistry.Registry, cd cdv2.ComponentDescriptor) (ResolvedComponentDescriptor, error) {
+func ResolveEffectiveComponentDescriptor(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor) (ResolvedComponentDescriptor, error) {
 	if len(cd.RepositoryContexts) == 0 {
 		return ResolvedComponentDescriptor{}, errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
 	return ConvertFromComponentDescriptor(cd, func(ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		cd, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(ref))
+		cd, _, err := client.Resolve(ctx, repoCtx, ref.Name, ref.Version)
 		if err != nil {
 			return cdv2.ComponentDescriptor{}, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", ref.Name, ref.Version, err)
 		}
@@ -32,7 +31,7 @@ func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsr
 
 // ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.
-func ResolveToComponentDescriptorList(ctx context.Context, client componentsregistry.Registry, cd cdv2.ComponentDescriptor) (cdv2.ComponentDescriptorList, error) {
+func ResolveToComponentDescriptorList(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor) (cdv2.ComponentDescriptorList, error) {
 	cdList := cdv2.ComponentDescriptorList{}
 	cdList.Metadata = cd.Metadata
 	if len(cd.RepositoryContexts) == 0 {
@@ -42,7 +41,7 @@ func ResolveToComponentDescriptorList(ctx context.Context, client componentsregi
 	cdList.Components = []cdv2.ComponentDescriptor{cd}
 
 	for _, compRef := range cd.ComponentReferences {
-		resolvedComponent, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(compRef))
+		resolvedComponent, _, err := client.Resolve(ctx, repoCtx, compRef.Name, compRef.Version)
 		if err != nil {
 			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
 		}

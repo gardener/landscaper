@@ -35,7 +35,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -123,10 +122,8 @@ func (o *renderOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.outDir, "write", "w", "", "The output directory where the rendered files should be written to")
 }
 
-func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
+func (o *renderOptions) run(_ context.Context, log logr.Logger) error {
 	log.V(3).Info(fmt.Sprintf("rendering %s", strings.Join(o.outputResources.List(), ", ")))
-
-	dummyOperation := &lsoperation.Operation{}
 
 	blueprint, err := blueprints.New(o.blueprint, o.blueprintFs)
 	if err != nil {
@@ -135,7 +132,7 @@ func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
 
 	if o.outputResources.Has(OutputResourceDeployItems) {
 		templateStateHandler := template.NewMemoryStateHandler()
-		deployItemTemplates, err := template.New(dummyOperation, templateStateHandler).TemplateDeployExecutions(blueprint, o.componentDescriptor, o.values.Imports)
+		deployItemTemplates, err := template.New(nil, templateStateHandler).TemplateDeployExecutions(blueprint, o.componentDescriptor, o.values.Imports)
 		if err != nil {
 			return fmt.Errorf("unable to template deploy executions: %w", err)
 		}
@@ -199,9 +196,9 @@ func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
 
 func (o *renderOptions) Complete(args []string) error {
 	o.blueprintPath = args[0]
-	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath))
+	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
-		return fmt.Errorf("unable to read blueprint from %s: %w", filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath), err)
+		return fmt.Errorf("unable to read blueprint from %s: %w", filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName), err)
 	}
 	o.blueprint = &lsv1alpha1.Blueprint{}
 	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, o.blueprint); err != nil {

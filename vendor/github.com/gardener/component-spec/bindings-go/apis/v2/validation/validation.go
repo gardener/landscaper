@@ -15,6 +15,9 @@
 package validation
 
 import (
+	"regexp"
+	"unicode"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -79,18 +82,37 @@ func validateObjectMeta(fldPath *field.Path, om v2.ObjectMetaAccessor) field.Err
 	return allErrs
 }
 
+func validateIdentity(fldPath *field.Path, id v2.Identity) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for key := range id {
+		if key == v2.SystemIdentityName {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Key(v2.SystemIdentityName), "name is a reserved system identity label"))
+		}
+
+		if !IsASCII(key) {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Key(key), "key contains non-ascii characters"))
+		}
+		if !identityKeyValidationRegexp.Match([]byte(key)) {
+			allErrs = append(allErrs, field.Invalid(fldPath.Key(key), key, identityKeyValidationErrMsg))
+		}
+	}
+	return allErrs
+}
+
 func validateSources(fldPath *field.Path, sources []v2.Source) field.ErrorList {
 	allErrs := field.ErrorList{}
-	srcNames := make(map[string]struct{})
+	sourceIDs := make(map[string]struct{})
 	for i, src := range sources {
 		srcPath := fldPath.Index(i)
 		allErrs = append(allErrs, validateSource(srcPath, src)...)
 
-		if _, ok := srcNames[src.Name]; ok {
+		id := string(src.GetIdentityDigest())
+		if _, ok := sourceIDs[id]; ok {
 			allErrs = append(allErrs, field.Duplicate(srcPath, "duplicate source"))
 			continue
 		}
-		srcNames[src.Name] = struct{}{}
+		sourceIDs[id] = struct{}{}
 	}
 	return allErrs
 }
@@ -103,6 +125,7 @@ func validateSource(fldPath *field.Path, src v2.Source) field.ErrorList {
 	if len(src.GetType()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("type"), "must specify a type"))
 	}
+	allErrs = append(allErrs, validateIdentity(fldPath.Child("extraIdentity"), src.ExtraIdentity)...)
 	return allErrs
 }
 
@@ -110,9 +133,14 @@ func validateResource(fldPath *field.Path, res v2.Resource) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, validateObjectMeta(fldPath, &res)...)
 
-	if res.TypedObjectAccessor == nil || len(res.GetType()) == 0 {
+	if !identityKeyValidationRegexp.Match([]byte(res.Name)) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), res.Name, identityKeyValidationErrMsg))
+	}
+
+	if len(res.GetType()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("type"), "must specify a type"))
 	}
+	allErrs = append(allErrs, validateIdentity(fldPath.Child("extraIdentity"), res.ExtraIdentity)...)
 
 	return allErrs
 }
@@ -157,23 +185,24 @@ func validateComponentReference(fldPath *field.Path, cr v2.ComponentReference) f
 
 func validateComponentReferences(fldPath *field.Path, refs []v2.ComponentReference) field.ErrorList {
 	allErrs := field.ErrorList{}
-	refNames := make(map[string]struct{})
+	refIDs := make(map[string]struct{})
 	for i, ref := range refs {
 		refPath := fldPath.Index(i)
 		allErrs = append(allErrs, validateComponentReference(refPath, ref)...)
 
-		if _, ok := refNames[ref.Name]; ok {
+		id := string(ref.GetIdentityDigest())
+		if _, ok := refIDs[id]; ok {
 			allErrs = append(allErrs, field.Duplicate(refPath, "duplicate component reference name"))
 			continue
 		}
-		refNames[ref.Name] = struct{}{}
+		refIDs[id] = struct{}{}
 	}
 	return allErrs
 }
 
 func validateResources(fldPath *field.Path, resources []v2.Resource, componentVersion string) field.ErrorList {
 	allErrs := field.ErrorList{}
-	resourceNames := make(map[string]struct{})
+	resourceIDs := make(map[string]struct{})
 	for i, res := range resources {
 		localPath := fldPath.Index(i)
 		allErrs = append(allErrs, validateResource(localPath, res)...)
@@ -185,11 +214,27 @@ func validateResources(fldPath *field.Path, resources []v2.Resource, componentVe
 					"version of local resources must match the component version"))
 			}
 		}
-		if _, ok := resourceNames[res.Name]; ok {
+
+		id := string(res.GetIdentityDigest())
+		if _, ok := resourceIDs[id]; ok {
 			allErrs = append(allErrs, field.Duplicate(localPath, "duplicated resource"))
 			continue
 		}
-		resourceNames[res.Name] = struct{}{}
+		resourceIDs[id] = struct{}{}
 	}
 	return allErrs
+}
+
+const identityKeyValidationErrMsg string = "a identity label or name must consist of lower case alphanumeric characters, '-', '_' or '+', and must start and end with an alphanumeric character"
+
+var identityKeyValidationRegexp = regexp.MustCompile("^[a-z0-9]([-_+a-z0-9]*[a-z0-9])?$")
+
+// IsAscii checks whether a string only contains ascii characters
+func IsASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }

@@ -7,6 +7,7 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,7 +18,6 @@ import (
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -28,18 +28,15 @@ var _ = Describe("Delete", func() {
 		op lsoperation.Interface
 
 		state        *envtest.State
-		fakeRegistry blueprintsregistry.Registry
-		fakeCompRepo componentsregistry.Registry
+		fakeCompRepo ctf.ComponentResolver
 	)
 
 	BeforeEach(func() {
 		var err error
-		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
-		Expect(err).ToNot(HaveOccurred())
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo)
+		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeCompRepo)
 	})
 
 	AfterEach(func() {
