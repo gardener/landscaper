@@ -64,7 +64,9 @@ type LoaderConfig struct {
 	// BlueprintFs is the virtual filesystem that is used to resolve "blueprint" refs
 	BlueprintFs vfs.FileSystem
 	// ComponentDescriptor contains the current blueprint's component descriptor.
-	ComponentDescriptor *cdutils.ResolvedComponentDescriptor
+	ComponentDescriptor *cdv2.ComponentDescriptor
+	// ComponentReferenceResolver is a function that resolves component references
+	ComponentReferenceResolver cdutils.ResolveComponentReferenceFunc
 	// BlobResolver is the registry to resolve resources of the component descriptor.
 	BlobResolver ctf.BlobResolver
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
@@ -162,13 +164,19 @@ func (l *Loader) loadBlueprintReference(refURL *url.URL) ([]byte, error) {
 
 func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, error) {
 	if l.ComponentDescriptor == nil {
-		return nil, errors.New("no component descriptor defined to read from resolve the ref")
+		return nil, errors.New("no component descriptor defined to resolve the ref")
+	}
+	if l.ComponentReferenceResolver == nil {
+		return nil, errors.New("no component reference resolver defined to resolve the ref")
+	}
+	if l.BlobResolver == nil {
+		return nil, errors.New("no blobl resolver defined to resolve the ref")
 	}
 	uri, err := cdutils.ParseURI(refURL.String())
 	if err != nil {
 		return nil, err
 	}
-	kind, res, err := uri.Get(*l.ComponentDescriptor)
+	kind, res, err := uri.Get(l.ComponentDescriptor, l.ComponentReferenceResolver)
 	if err != nil {
 		return nil, err
 	}

@@ -38,11 +38,11 @@ import (
 type Operation struct {
 	lsoperation.Interface
 
-	Inst                        *Installation
-	ComponentDescriptor         *cdv2.ComponentDescriptor
-	BlobResolver                ctf.BlobResolver
-	ResolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor
-	context                     Context
+	Inst                            *Installation
+	ComponentDescriptor             *cdv2.ComponentDescriptor
+	BlobResolver                    ctf.BlobResolver
+	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
+	context                         Context
 }
 
 // NewInstallationOperation creates a new installation operation
@@ -76,13 +76,13 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, o.ComponentsRegistry(), *cd)
+	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd)
 	if err != nil {
 		return err
 	}
 	o.ComponentDescriptor = cd
 	o.BlobResolver = blobResolver
-	o.ResolvedComponentDescriptor = &resolvedCD
+	o.ResolvedComponentDescriptorList = &resolvedCD
 	return nil
 }
 
@@ -100,10 +100,11 @@ func (o *Operation) InstallationContextName() string {
 func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 	return &jsonschema.Validator{
 		Config: &jsonschema.LoaderConfig{
-			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
-			BlueprintFs:         o.Inst.Blueprint.Fs,
-			BlobResolver:        o.BlobResolver,
-			ComponentDescriptor: o.ResolvedComponentDescriptor,
+			LocalTypes:                 o.Inst.Blueprint.Info.LocalTypes,
+			BlueprintFs:                o.Inst.Blueprint.Fs,
+			BlobResolver:               o.BlobResolver,
+			ComponentDescriptor:        o.ComponentDescriptor,
+			ComponentReferenceResolver: cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList),
 		},
 	}
 }

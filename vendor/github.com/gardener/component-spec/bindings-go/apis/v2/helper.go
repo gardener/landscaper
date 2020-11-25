@@ -76,9 +76,36 @@ func (c ComponentDescriptor) GetEffectiveRepositoryContext() RepositoryContext {
 	return c.RepositoryContexts[len(c.RepositoryContexts)-1]
 }
 
+// GetComponentReferences returns all component references that matches the given selectors.
+func (c ComponentDescriptor) GetComponentReferences(selectors ...IdentitySelector) ([]ComponentReference, error) {
+	refs := make([]ComponentReference, 0)
+	for _, ref := range c.ComponentReferences {
+		ok, err := selector.MatchSelectors(ref.GetIdentity(), selectors...)
+		if err != nil {
+			return nil, fmt.Errorf("unable to match selector for resource %s: %w", ref.Name, err)
+		}
+		if ok {
+			refs = append(refs, ref)
+		}
+	}
+	if len(refs) == 0 {
+		return refs, NotFound
+	}
+	return refs, nil
+}
+
+// GetComponentReferencesByName returns all component references with a given name.
+func (c ComponentDescriptor) GetComponentReferencesByName(name string) ([]ComponentReference, error) {
+	return c.GetComponentReferences(NewNameSelector(name))
+}
+
 // GetResourceByDefaultSelector returns resources that match the given selectors.
-func (c ComponentDescriptor) GetResourceByJSONScheme(sel interface{}) ([]Resource, error) {
-	return nil, nil
+func (c ComponentDescriptor) GetResourceByJSONScheme(src interface{}) ([]Resource, error) {
+	sel, err := selector.NewJSONSchemaSelectorFromGoStruct(src)
+	if err != nil {
+		return nil, err
+	}
+	return c.GetResourcesBySelector(sel)
 }
 
 // GetResourceByDefaultSelector returns resources that match the given selectors.
@@ -87,11 +114,11 @@ func (c ComponentDescriptor) GetResourceByDefaultSelector(sel interface{}) ([]Re
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse selector: %w", err)
 	}
-	return c.GetResourceBySelector(identitySelector)
+	return c.GetResourcesBySelector(identitySelector)
 }
 
-// GetResourceBySelector returns resources that match the given selector.
-func (c ComponentDescriptor) GetResourceBySelector(selectors ...IdentitySelector) ([]Resource, error) {
+// GetResourcesBySelector returns resources that match the given selector.
+func (c ComponentDescriptor) GetResourcesBySelector(selectors ...IdentitySelector) ([]Resource, error) {
 	resources := make([]Resource, 0)
 	for _, res := range c.Resources {
 		ok, err := selector.MatchSelectors(res.GetIdentity(), selectors...)
@@ -108,7 +135,7 @@ func (c ComponentDescriptor) GetResourceBySelector(selectors ...IdentitySelector
 	return resources, nil
 }
 
-// GetResourceBySelector returns resources that match the given selector.
+// GetResourcesBySelector returns resources that match the given selector.
 func (c ComponentDescriptor) getResourceBySelectors(selectors []IdentitySelector, resourceSelectors []ResourceSelectorFunc) ([]Resource, error) {
 	resources := make([]Resource, 0)
 	for _, res := range c.Resources {
@@ -132,16 +159,6 @@ func (c ComponentDescriptor) getResourceBySelectors(selectors []IdentitySelector
 		return resources, NotFound
 	}
 	return resources, nil
-}
-
-// GetResource returns a external or local resource with the given type, name and version.
-func (c ComponentDescriptor) GetResource(rtype, name, version string) (Resource, error) {
-	for _, res := range c.Resources {
-		if res.GetType() == rtype && res.GetName() == name && res.GetVersion() == version {
-			return res, nil
-		}
-	}
-	return Resource{}, NotFound
 }
 
 // GetExternalResources returns a external resource with the given type, name and version.

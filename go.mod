@@ -11,7 +11,7 @@ require (
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce // indirect
-	github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e
+	github.com/gardener/component-spec/bindings-go v0.0.0-20201127224544-4fd6d604604f
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -57,7 +57,6 @@ require (
 )
 
 replace (
-	github.com/gardener/component-spec/bindings-go => /Users/d064999/go/src/github.com/gardener/component-spec/bindings-go
 	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega => github.com/onsi/gomega v1.5.0

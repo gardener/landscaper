@@ -141,6 +141,15 @@ func NewJSONSchemaSelectorFromString(src string) (JSONSchemaSelector, error) {
 	return NewJSONSchemaSelectorFromBytes([]byte(src))
 }
 
+// NewJSONSchemaSelectorFromString creates a new jsonschema selector from a gojsonschema
+func NewJSONSchemaSelectorFromGoStruct(src interface{}) (JSONSchemaSelector, error) {
+	scheme, err := gojsonschema.NewSchema(gojsonschema.NewGoLoader(src))
+	if err != nil {
+		return JSONSchemaSelector{}, err
+	}
+	return NewJSONSchemaSelector(scheme), nil
+}
+
 var _ Interface = JSONSchemaSelector{}
 
 func (J JSONSchemaSelector) Match(obj map[string]string) (bool, error) {

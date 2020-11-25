@@ -9,6 +9,11 @@ __Prerequisites__:
 - [simple blueprint tutorial](01-create-simple-blueprint.md)
 - [import blueprint tutorial](02-simple-import.md)
 
+:warning: note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` is an example repository 
+and has to be replaced with your own registry if you want to upload your own artifacts.
+Although the artifacts are public readable so they can be used out-of-the-box without a need for your own oci registry.
+
+
 ### Resources
 
 #### Build the aggregated blueprint
@@ -213,7 +218,7 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/myproject
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
   resources:
   - type: blueprint
@@ -221,7 +226,7 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: myregistry/mypath/simple-aggregated:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.0
 
   componentReferences:
   - name: ingress

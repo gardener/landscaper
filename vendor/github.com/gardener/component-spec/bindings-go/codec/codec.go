@@ -94,7 +94,7 @@ func Encode(obj interface{}) ([]byte, error) {
 		if err := v2.DefaultComponent(comp); err != nil {
 			return nil, err
 		}
-		return yaml.Marshal(comp)
+		return json.Marshal(comp)
 	}
 
 	if objType.Elem() == reflect.TypeOf(v2.ComponentDescriptorList{}) {
@@ -103,7 +103,7 @@ func Encode(obj interface{}) ([]byte, error) {
 		if err := v2.DefaultList(list); err != nil {
 			return nil, err
 		}
-		return yaml.Marshal(list)
+		return json.Marshal(list)
 	}
 
 	// todo: implement conversion

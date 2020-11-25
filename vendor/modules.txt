@@ -101,7 +101,7 @@ github.com/emicklei/go-restful/log
 github.com/evanphx/json-patch
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e => /Users/d064999/go/src/github.com/gardener/component-spec/bindings-go
+# github.com/gardener/component-spec/bindings-go v0.0.0-20201127224544-4fd6d604604f
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
 github.com/gardener/component-spec/bindings-go/apis/v2/jsonscheme

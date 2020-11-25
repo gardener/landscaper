@@ -165,12 +165,12 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	//// get version for referenced reference
 	//// todo: revisit for subinstallations
-	//remoteRef, err := subInstTmpl.RemoteBlueprintReference(o.ResolvedComponentDescriptor)
+	//remoteRef, err := subInstTmpl.RemoteBlueprintReference(o.ResolvedComponentDescriptorList)
 	//if err != nil {
 	//	return nil, err
 	//}
 
-	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst, subInstTmpl, o.ResolvedComponentDescriptor)
+	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst, subInstTmpl, o.ComponentDescriptor, o.ResolvedComponentDescriptorList)
 	if err != nil {
 		return nil, err
 	}

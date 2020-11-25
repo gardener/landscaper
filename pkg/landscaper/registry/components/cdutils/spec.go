@@ -41,6 +41,13 @@ func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryC
 
 type ResolveComponentReferenceFunc = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error)
 
+// ComponentReferenceResolverFromList creates a component reference resolver from a list of components.
+func ComponentReferenceResolverFromList(list *cdv2.ComponentDescriptorList) ResolveComponentReferenceFunc {
+	return func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		return list.GetComponent(meta.Name, meta.Version)
+	}
+}
+
 // ConvertFromComponentDescriptor converts a component descriptor to a resolved component descriptor.
 func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
 	mcd := ResolvedComponentDescriptor{}

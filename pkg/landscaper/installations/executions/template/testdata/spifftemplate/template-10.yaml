@@ -3,13 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 - name: one
-  type: GoTemplate
-  template: |
+  type: Spiff
+  template:
     deployItems:
     - name: init
       type: container
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        {{- $res := getResource .cd "name" "mycustomimage" }}
-        image: {{ $res.access.imageReference }}
+        temp:
+          component: (( &temporary( getComponent(cd, "name", "my-referenced-component") ) ))
+          resource: (( &temporary( getResource(component, "name", "ubuntu") ) ))
+        image: (( temp.resource.access.imageReference ))

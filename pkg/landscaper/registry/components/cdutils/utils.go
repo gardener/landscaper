@@ -6,13 +6,11 @@ package cdutils
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -21,40 +19,9 @@ import (
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
-
-// FindResourceByVersionedReference searches all given components for the defined resource ref.
-func FindResourceByVersionedReference(ttype string, ref lsv1alpha1.VersionedResourceReference, components ...cdv2.ComponentDescriptor) (cdv2.Resource, error) {
-	for _, comp := range components {
-		res, err := FindResourceInComponentByVersionedReference(comp, ttype, ref)
-		if !errors.Is(err, cdv2.NotFound) {
-			return cdv2.Resource{}, err
-		}
-		if err == nil {
-			return res, nil
-		}
-	}
-	return cdv2.Resource{}, cdv2.NotFound
-}
-
-// FindResourceInComponentByVersionedReference searches the given component for the defined resource ref.
-func FindResourceInComponentByVersionedReference(comp cdv2.ComponentDescriptor, ttype string, ref lsv1alpha1.VersionedResourceReference) (cdv2.Resource, error) {
-	if comp.GetName() != ref.ComponentName {
-		return cdv2.Resource{}, cdv2.NotFound
-	}
-	if comp.GetVersion() != ref.Version {
-		return cdv2.Resource{}, cdv2.NotFound
-	}
-
-	res, err := comp.GetResource(ttype, ref.ResourceName, ref.Version)
-	if err != nil {
-		return cdv2.Resource{}, err
-	}
-	return res, nil
-}
 
 // BuildComponentDescriptorManifest creates a new manifest from a component descriptor
 func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispecv1.Manifest, error) {

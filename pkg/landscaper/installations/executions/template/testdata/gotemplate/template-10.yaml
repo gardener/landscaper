@@ -11,5 +11,6 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        {{- $res := getResource .cd "name" "mycustomimage" }}
-        image: {{ $res.access.imageReference }}
+        {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
+        {{ $resource := getResource $component "name" "ubuntu" }}
+        image: {{ $resource.access.imageReference }}

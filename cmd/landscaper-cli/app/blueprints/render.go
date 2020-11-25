@@ -35,7 +35,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -70,7 +69,7 @@ type renderOptions struct {
 	outputResources     sets.String
 	blueprint           *lsv1alpha1.Blueprint
 	blueprintFs         vfs.FileSystem
-	componentDescriptor *cdutils.ResolvedComponentDescriptor
+	componentDescriptor *cdv2.ComponentDescriptor
 	values              *Values
 }
 
@@ -132,7 +131,8 @@ func (o *renderOptions) run(_ context.Context, log logr.Logger) error {
 
 	if o.outputResources.Has(OutputResourceDeployItems) {
 		templateStateHandler := template.NewMemoryStateHandler()
-		deployItemTemplates, err := template.New(nil, templateStateHandler).TemplateDeployExecutions(blueprint, o.componentDescriptor, o.values.Imports)
+		deployItemTemplates, err := template.New(nil, templateStateHandler).
+			TemplateDeployExecutions(blueprint, o.componentDescriptor, &cdv2.ComponentDescriptorList{}, o.values.Imports)
 		if err != nil {
 			return fmt.Errorf("unable to template deploy executions: %w", err)
 		}
@@ -173,7 +173,7 @@ func (o *renderOptions) run(_ context.Context, log logr.Logger) error {
 			fmt.Printf("No subinstallations defined\n")
 		}
 		for _, subInstTmpl := range blueprint.Subinstallations {
-			subBlueprint, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(dummyInst, subInstTmpl, o.componentDescriptor)
+			subBlueprint, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(dummyInst, subInstTmpl, o.componentDescriptor, &cdv2.ComponentDescriptorList{})
 			if err != nil {
 				fmt.Printf("unable to get blueprint: %s\n", err.Error())
 			}
@@ -214,17 +214,11 @@ func (o *renderOptions) Complete(args []string) error {
 		if err != nil {
 			return fmt.Errorf("unable to read component descriptor from %s: %w", o.componentDescriptorPath, err)
 		}
-		cd := cdv2.ComponentDescriptor{}
-		if err := codec.Decode(data, &cd); err != nil {
+		cd := &cdv2.ComponentDescriptor{}
+		if err := codec.Decode(data, cd); err != nil {
 			return fmt.Errorf("unable to decode component descriptor: %w", err)
 		}
-		resCd, err := cdutils.ConvertFromComponentDescriptor(cd, func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-			return cdv2.ComponentDescriptor{}, nil
-		})
-		if err != nil {
-			return fmt.Errorf("unable to convert component descriptor to a resolved component descriptor: %w", err)
-		}
-		o.componentDescriptor = &resCd
+		o.componentDescriptor = cd
 	}
 
 	o.values = &Values{}

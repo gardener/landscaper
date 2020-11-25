@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/yaml"
@@ -16,7 +18,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -43,7 +44,7 @@ func New(blobResolver ctf.BlobResolver, state GenericStateHandler) *Templater {
 // templateExecution describes a implementation for a template execution
 type templateExecution interface {
 	// TemplateDeployExecutions templates a deploy executor and return a list of deployitem templates.
-	TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, components, imports interface{}) ([]byte, error)
+	TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error)
 	// TemplateExportExecutions templates a export executor.
 	// It return the exported data as key value map where the key is the name of the export.
 	TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) ([]byte, error)
@@ -55,12 +56,25 @@ type DeployExecutorOutput struct {
 }
 
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
-func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd *cdutils.ResolvedComponentDescriptor, imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
+func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint,
+	componentDescriptor *cdv2.ComponentDescriptor,
+	resolvedComponentDescriptors *cdv2.ComponentDescriptorList,
+	imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
 
 	// marshal and unmarshal resolved component descriptor
-	components, err := serializeResolvedComponentDescriptor(cd)
+	component, err := serializeComponentDescriptor(componentDescriptor)
 	if err != nil {
-		return nil, fmt.Errorf("error during serializing of the resolved component descriptor: %w", err)
+		return nil, fmt.Errorf("error during serializing of the resolved components: %w", err)
+	}
+	components, err := serializeComponentDescriptorList(resolvedComponentDescriptors)
+	if err != nil {
+		return nil, fmt.Errorf("error during serializing of the component descriptor: %w", err)
+	}
+
+	values := map[string]interface{}{
+		"imports":    imports,
+		"cd":         component,
+		"components": components,
 	}
 
 	executionItems := lsv1alpha1.DeployItemTemplateList{}
@@ -70,7 +84,7 @@ func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint, cd
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		executionItemsBytes, err := impl.TemplateDeployExecutions(tmplExec, blueprint, components, imports)
+		executionItemsBytes, err := impl.TemplateDeployExecutions(tmplExec, blueprint, componentDescriptor, resolvedComponentDescriptors, values)
 		if err != nil {
 			return nil, err
 		}
@@ -129,8 +143,26 @@ func (o *Templater) TemplateExportExecutions(blueprint *blueprints.Blueprint, ex
 	return exportData, nil
 }
 
-func serializeResolvedComponentDescriptor(cd *cdutils.ResolvedComponentDescriptor) (interface{}, error) {
-	data, err := json.Marshal(cd)
+func serializeComponentDescriptor(cd *cdv2.ComponentDescriptor) (interface{}, error) {
+	if cd == nil {
+		return nil, nil
+	}
+	data, err := codec.Encode(cd)
+	if err != nil {
+		return nil, err
+	}
+	var val interface{}
+	if err := json.Unmarshal(data, &val); err != nil {
+		return nil, err
+	}
+	return val, nil
+}
+
+func serializeComponentDescriptorList(cd *cdv2.ComponentDescriptorList) (interface{}, error) {
+	if cd == nil {
+		return nil, nil
+	}
+	data, err := codec.Encode(cd)
 	if err != nil {
 		return nil, err
 	}

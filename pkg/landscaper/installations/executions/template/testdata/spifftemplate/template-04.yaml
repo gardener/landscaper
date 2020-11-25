@@ -11,4 +11,6 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        image: (( cd.component.resources.mycustomimage.access.imageReference ))
+        temp:
+          resource: (( &temporary( getResource(cd, "name", "mycustomimage") ) ))
+        image: (( temp.resource.access.imageReference ))

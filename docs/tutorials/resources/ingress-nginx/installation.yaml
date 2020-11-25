@@ -13,7 +13,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/ingress-nginx
-      version: v0.1.0
+      version: v0.2.0
       resourceName: ingress-nginx-blueprint
 
   imports:
