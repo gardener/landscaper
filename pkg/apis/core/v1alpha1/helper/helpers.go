@@ -5,6 +5,7 @@
 package helper
 
 import (
+	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,13 +68,18 @@ func UpdatedCondition(condition v1alpha1.Condition, status v1alpha1.ConditionSta
 		Reason:             reason,
 		Message:            message,
 		LastTransitionTime: condition.LastTransitionTime,
-		LastUpdateTime:     metav1.Now(),
+		LastUpdateTime:     condition.LastUpdateTime,
 		Codes:              codes,
+	}
+
+	if !reflect.DeepEqual(condition, newCondition) {
+		newCondition.LastUpdateTime = metav1.Now()
 	}
 
 	if condition.Status != status {
 		newCondition.LastTransitionTime = metav1.Now()
 	}
+
 	return newCondition
 }
 
