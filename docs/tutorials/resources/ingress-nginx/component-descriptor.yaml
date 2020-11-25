@@ -13,7 +13,7 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/myproject
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
   sources: [ ]
   componentReferences: [ ]
@@ -25,11 +25,11 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: myregistry/mypath/ingress-nginx:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.1.0
   - type: helm
     name: ingress-nginx-chart
     version: v0.1.0
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0

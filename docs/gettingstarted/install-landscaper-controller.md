@@ -1,17 +1,19 @@
-# Install and Configure the Landscaper
+# Installation and configuration of Landscaper
 
-This document describes the installation of the landscaper.
-The landscaper is a kubernetes controller that reconciles installations and handles the interaction with the deployers through deploy items.
+This document describes the installation of Landscaper.
+
+Landscaper is a Kubernetes controller that reconciles installations of _Components_ and handles the interaction with _Deployers_ through _DeployItems_.
 
 ## Installation
 
-The Landscaper can be easily installed via helm using the helm chart in [charts/landscaper](charts/landscaper).
+Landscaper can easily be installed via [Helm](https://helm.sh/) using the Helm chart in [charts/landscaper](charts/landscaper).
 
 ```
 helm install -n ls-system landscaper ./charts/landscaper
 ```
 
-We also build oci charts so the landscaper can also be installed with a specific version with:
+We are also building OCI charts so a specific version of Landscaper can be installed with:
+
 ```
 export HELM_EXPERIMENTAL_OCI=1
 export LS_VERSION="0.1.0"
@@ -20,22 +22,16 @@ helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-contro
 helm install ./charts
 ```
 
-The chart can be configured via the following values file.
-
-The image tag will be automatically matched with the given version, if the oci helm chart is used.
-If the first installation mechancism is used, the `image.tag` has to be defined.
-
-If component descriptors or blueprints are stored in a non public oci registry, 
-the oci secrets can be provided using a map of `<config-name>: <docker auth>`.
-The docker auth config should be a docker auth config. 
-See the kubernetes pull secret documentation for a comprehensive guide https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#log-in-to-docker.
+Landscaper's Helm chart can be configured with a values file.
 
 In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used.
 
 The landscaper does offload all deployment specific functionality like `helm` to deployers.
 For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by the landscaper.
 
-:warning: this should not be used in production.
+## Configuration through `values.yaml`
+
+The following snippet shows a sample `values.yaml` file that is used to parameterize the Helm chart:
 
 ```yaml
 image:
@@ -70,3 +66,25 @@ landscaper:
   - helm
   - mock
 ```
+
+### Landscaper image and tag
+
+If Landscaper is installed with a local copy of the Helm chart, the field `image.tag` has to be defined to specifiy which container image for Landscaper should be used.
+
+If Landscaper is installed through an OCI chart, the image tag will automatically be matched with the given version.
+
+### Private registry access
+
+Blueprints and component descriptors must reside in one or more OCI registries. During an installation process, Landscaper attempts to pull them from there. 
+
+If component descriptors or blueprints are stored in a non-public OCI registry, the registry's secrets can be provided in the `landscaper.registrySecrets` section by providing a map of `<config-name>: <docker auth>`. Different sets of secrets can be provided for blueprints and component descriptors by the `landscaper.registrySecrets.blueprint` and `landscaper.registrySecrets.components` fields respectively.
+
+The value to provide to `<docker auth>` must be a Docker auth config as plain JSON (not as a string). Refer to Kubernetes' [pull-secret documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#log-in-to-docker) for a comprehensive guide.
+
+### Internal and external deployers
+
+Landscaper offloads all deployment specific logic (e.g. `helm`) to external deployers that are deployed to a target cluster.
+
+For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by Landscaper.
+
+:warning: Using internal deployers is meant for development and debugging and **should not be used in production**.
