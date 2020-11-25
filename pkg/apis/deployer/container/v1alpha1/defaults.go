@@ -23,7 +23,7 @@ func SetDefaults_Configuration(obj *Configuration) {
 		obj.Namespace = metav1.NamespaceDefault
 	}
 	if len(obj.DefaultImage.Image) == 0 {
-		obj.DefaultImage.Image = "ubuntu:18:04"
+		obj.DefaultImage.Image = "ubuntu:18.04"
 	}
 	if len(obj.InitContainer.Image) == 0 {
 		obj.InitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-init:%s", version.Get().GitVersion)
