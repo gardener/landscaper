@@ -60,10 +60,10 @@ func ObjectFromDataObjectSource(src string) (string, lsv1alpha1.ObjectReference,
 
 // DataObjectSourceFromInstallation returns the data object source for a Installation.
 func DataObjectSourceFromInstallation(src *lsv1alpha1.Installation) string {
-	return fmt.Sprintf("Installation.%s.%s", src.GetNamespace(), src.GetName())
+	return fmt.Sprintf("Inst.%s", src.GetName())
 }
 
 // DataObjectSourceFromExecution returns the data object source for a Execution.
 func DataObjectSourceFromExecution(src *lsv1alpha1.Execution) string {
-	return fmt.Sprintf("Execution.%s.%s", src.GetNamespace(), src.GetName())
+	return fmt.Sprintf("Exec.%s", src.GetName())
 }

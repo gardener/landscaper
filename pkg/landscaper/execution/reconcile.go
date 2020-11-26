@@ -177,6 +177,9 @@ func (o *Operation) checkRunnable(ctx context.Context, item executionItem, items
 			if o.exec.Generation != lastAppliedGeneration { // dependent deploy item not up-to-date
 				return false, nil
 			}
+			if exec.DeployItem.Status.ObservedGeneration != exec.DeployItem.Generation { // dependent deploy item status not up-to-date
+				return false, nil
+			}
 			if exec.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded { // dependent deploy item not finished
 				return false, nil
 			}
