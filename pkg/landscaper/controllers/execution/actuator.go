@@ -99,9 +99,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	requeue := !lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) || exec.Generation != exec.Status.ObservedGeneration
-
-	return reconcile.Result{Requeue: requeue}, nil
+	return reconcile.Result{}, nil
 }
 
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution, forceReconcile bool) error {
