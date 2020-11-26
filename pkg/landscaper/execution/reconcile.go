@@ -80,6 +80,8 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
 	}
 
+	o.exec.Status.ObservedGeneration = o.exec.Generation
+
 	if !lsv1alpha1helper.IsCompletedExecutionPhase(phase) {
 		return nil
 	}
@@ -90,7 +92,6 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"DeployItemsReconciled", "All DeployItems are successfully reconciled")
-	o.exec.Status.ObservedGeneration = o.exec.Generation
 	return o.UpdateStatus(ctx, phase, cond)
 }
 
