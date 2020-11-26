@@ -23,6 +23,11 @@ func HasOperation(obj metav1.ObjectMeta, op v1alpha1.Operation) bool {
 	return v1alpha1.Operation(currentOp) == op
 }
 
+func GetOperation(obj metav1.ObjectMeta) string {
+	currentOp := obj.Annotations[v1alpha1.OperationAnnotation]
+	return currentOp
+}
+
 // SetOperation sets the given operation annotation on aa object.
 func SetOperation(obj *metav1.ObjectMeta, op v1alpha1.Operation) {
 	metav1.SetMetaDataAnnotation(obj, v1alpha1.OperationAnnotation, string(op))
