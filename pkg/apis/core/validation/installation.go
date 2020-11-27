@@ -15,9 +15,9 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core"
 )
 
-const installationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.InstallationPrefix)
+const InstallationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.InstallationPrefix)
 
-const installationGenerateNameMaxLength = installationNameMaxLength - 5
+const InstallationGenerateNameMaxLength = InstallationNameMaxLength - 5
 
 // ValidateInstallation validates an Installation
 func ValidateInstallation(inst *core.Installation) field.ErrorList {
@@ -32,10 +32,10 @@ func validateInstallationObjectMeta(objMeta *metav1.ObjectMeta, fldPath *field.P
 
 	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(objMeta, true, apivalidation.NameIsDNSLabel, fldPath)...)
 
-	if len(objMeta.GetName()) > installationNameMaxLength {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), objMeta.GetName(), validation.MaxLenError(installationNameMaxLength)))
-	} else if len(objMeta.GetGenerateName()) > installationGenerateNameMaxLength {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("generateName"), objMeta.GetGenerateName(), validation.MaxLenError(installationGenerateNameMaxLength)))
+	if len(objMeta.GetName()) > InstallationNameMaxLength {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), objMeta.GetName(), validation.MaxLenError(InstallationNameMaxLength)))
+	} else if len(objMeta.GetGenerateName()) > InstallationGenerateNameMaxLength {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("generateName"), objMeta.GetGenerateName(), validation.MaxLenError(InstallationGenerateNameMaxLength)))
 	}
 
 	return allErrs

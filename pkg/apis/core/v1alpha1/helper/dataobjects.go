@@ -22,8 +22,10 @@ const SourceDelimiter = "/"
 
 const NonContextifiedPrefix = "#"
 
+// Prefix combined with installation name is used as label value. Do not change length.
 const InstallationPrefix = "Inst."
 
+// Prefix combined with execution name is used as label value. Do not change length.
 const ExecutionPrefix = "Exec."
 
 // GenerateDataObjectName generates the unique name for a data object exported or imported by a installation.

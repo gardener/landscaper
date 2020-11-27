@@ -12,6 +12,8 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/apis/core/validation"
+
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -151,7 +153,13 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	if subInst == nil {
 		subInst = &lsv1alpha1.Installation{}
-		subInst.GenerateName = fmt.Sprintf("%s-", subInstTmpl.Name)
+
+		generateName := subInstTmpl.Name
+		if len(generateName) > validation.InstallationGenerateNameMaxLength-1 {
+			generateName = generateName[:validation.InstallationGenerateNameMaxLength-1]
+		}
+
+		subInst.GenerateName = fmt.Sprintf("%s-", generateName)
 		subInst.Namespace = inst.Namespace
 	}
 
