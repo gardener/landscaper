@@ -10,10 +10,10 @@ set -o pipefail
 
 PROJECT_MOD_ROOT="github.com/gardener/landscaper"
 
-CURRENT_DIR=$(dirname $0)
+CURRENT_DIR=$(dirname "$0")
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
-chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*
+chmod +x "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/*
 
 export GOFLAGS=-mod=vendor
 
@@ -41,5 +41,5 @@ bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh 
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/pkg/apis/deployer \
   $PROJECT_MOD_ROOT/pkg/apis/deployer \
-  "helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1" \
+  "container:v1alpha1 helm:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1 terraform:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"

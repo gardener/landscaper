@@ -7,9 +7,8 @@ package helm
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,10 +16,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/mock/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -94,7 +95,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			return err
 		}
 
-		controllerutil.RemoveFinalizer(&deployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
 	} else if !kubernetesutil.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)

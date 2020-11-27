@@ -14,6 +14,7 @@
 - [Helm](./deployer/helm.md)
 - [Kubernetes Manifest](./deployer/manifest.md)
 - [Container](./deployer/container.md)
+- [Terraform](./deployer/terraform.md)
 
 ### Tutorials
 - [Simple NGINX Ingress blueprint](tutorials/01-create-simple-blueprint.md)

@@ -37,7 +37,7 @@ func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.deployers, "deployers", "",
 		`Specify additional deployers that should be enabled.
 Controllers are specified as a comma separated list of controller names.
-Available deployers are mock,helm,container.`)
+Available deployers are container,helm,mock,terraform.`)
 	logger.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)

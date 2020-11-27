@@ -169,7 +169,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	}
 
 	if len(status.ManagedResources) == 0 {
-		controllerutil.RemoveFinalizer(&h.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
 		return h.kubeClient.Update(ctx, h.DeployItem)
 	}
 
@@ -204,7 +204,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	}
 
 	// remove finalizer
-	controllerutil.RemoveFinalizer(&h.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return h.kubeClient.Update(ctx, h.DeployItem)
 }
 

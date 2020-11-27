@@ -106,7 +106,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
 	if len(m.ProviderStatus.ManagedResources) == 0 {
-		controllerutil.RemoveFinalizer(&m.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 		return m.kubeClient.Update(ctx, m.DeployItem)
 	}
 
@@ -150,7 +150,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	}
 
 	// remove finalizer
-	controllerutil.RemoveFinalizer(&m.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.kubeClient.Update(ctx, m.DeployItem)
 }
 

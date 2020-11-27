@@ -18,6 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	terraformv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/terraform/v1alpha1"
 )
 
 func main() {
@@ -41,6 +42,10 @@ func run() error {
 		{prefix: "helm_", obj: helmv1alpha1.Configuration{}},
 		{prefix: "helm_", obj: helmv1alpha1.ProviderConfiguration{}},
 		{prefix: "helm_", obj: helmv1alpha1.ProviderStatus{}},
+
+		{prefix: "terraform_", obj: terraformv1alpha1.Configuration{}},
+		{prefix: "terraform_", obj: terraformv1alpha1.ProviderConfiguration{}},
+		{prefix: "terraform_", obj: terraformv1alpha1.ProviderStatus{}},
 	}
 
 	for _, t := range types {
@@ -57,7 +62,7 @@ type JSONSchemGenerator struct {
 
 type GenType struct {
 	prefix string
-	obj interface{}
+	obj    interface{}
 }
 
 func (g JSONSchemGenerator) Generate(gt GenType) error {
@@ -79,4 +84,3 @@ func (g JSONSchemGenerator) Generate(gt GenType) error {
 	}
 	return nil
 }
-

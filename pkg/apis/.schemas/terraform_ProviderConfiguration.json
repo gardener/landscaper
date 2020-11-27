@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/ProviderConfiguration",
+  "definitions": {
+    "ProviderConfiguration": {
+      "required": [
+        "TypeMeta",
+        "kubeconfig",
+        "namespace",
+        "main.tf"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "kubeconfig": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "terraformerImage": {
+          "type": "string"
+        },
+        "main.tf": {
+          "type": "string"
+        },
+        "variables.tf": {
+          "type": "string"
+        },
+        "terraform.tfvars": {
+          "type": "string"
+        },
+        "envSecrets": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

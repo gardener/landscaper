@@ -60,3 +60,11 @@ WORKDIR /
 
 ENTRYPOINT ["/helm-deployer-controller"]
 
+#### Terraform Deployer Controller ####
+FROM base as terraform-deployer-controller
+
+COPY --from=builder /go/bin/terraform-deployer-controller /terraform-deployer-controller
+
+WORKDIR /
+
+ENTRYPOINT ["/terraform-deployer-controller"]
