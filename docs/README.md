@@ -1,5 +1,9 @@
 ## Documentation Index
 
+### Concepts
+- [Glossary](./concepts/Glossary.md)
+- [Installation-Blueprint relationship](./concepts/InstallationBlueprintRelationship.md)
+
 ### Getting Started
 - [Install the landscaper cli](./gettingstarted/install-landscaper-cli.md)
 - [Install the landscaper](./gettingstarted/install-landscaper-controller.md)

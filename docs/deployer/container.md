@@ -18,7 +18,7 @@ spec:
     namespace: test
 
   config:
-    apiVersion: container.deployer.landscaper.gardener.cloud
+    apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
     blueprintRef: <abc....>
