@@ -10,9 +10,9 @@ See the [installation docs](../usage/Installations.md#blueprint) for detailed de
 
 ### ComponentDescriptor reference
 
-Blueprints are created during the build of a component which implies that they are build artifacts that are part of the component's component-descriptor.
+Blueprints are artifacts created during the build of a component. As such, they are included as another resource in a component's `component-descriptor`. 
 
-In the landscaper, these blueprints (referenced in the component descriptor as resource) can be referenced by specifying the component-descriptor and the resource inside the component descriptor.<br>
+In context of the Landscaper, these blueprints (referenced in the component descriptor as resource) can be referenced by specifying the component-descriptor and the resource inside the component descriptor.<br>
 Component descriptors are uniquely defined by the repository context where they are stored and their name and version.
 Within the component descriptor, the blueprint resource can be identified by its name (:warning: see the component descriptor model for a detailed description about a resource's identity).
 
@@ -36,7 +36,7 @@ The blueprint is described as own oci artifact and therefore is described by ful
 }
 ```
 ```yaml
-# blueprint resource
+# blueprint resource within the component-descriptor
 name: myBlueprint
 type: landscaper.gardener.cloud/blueprint
 access:
@@ -69,7 +69,7 @@ The blueprint is part of the component-descriptor's manifest and reference by it
 ```
 
 ```yaml
-# blueprint resource
+# blueprint resource within the component-descriptor
 name: myBlueprint
 type: landscaper.gardener.cloud/blueprint
 access:
