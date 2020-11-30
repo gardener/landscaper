@@ -22,6 +22,12 @@ const SourceDelimiter = "/"
 
 const NonContextifiedPrefix = "#"
 
+// InstallationPrefix is the prefix combined with installation name is used as label value. Do not change length.
+const InstallationPrefix = "Inst."
+
+// ExecutionPrefix is the prefix combined with execution name is used as label value. Do not change length.
+const ExecutionPrefix = "Exec."
+
 // GenerateDataObjectName generates the unique name for a data object exported or imported by a installation.
 // It returns a non contextified data name if the name starts with a "#".
 func GenerateDataObjectName(context string, name string) string {
@@ -60,10 +66,10 @@ func ObjectFromDataObjectSource(src string) (string, lsv1alpha1.ObjectReference,
 
 // DataObjectSourceFromInstallation returns the data object source for a Installation.
 func DataObjectSourceFromInstallation(src *lsv1alpha1.Installation) string {
-	return fmt.Sprintf("Installation.%s.%s", src.GetNamespace(), src.GetName())
+	return InstallationPrefix + src.GetName()
 }
 
 // DataObjectSourceFromExecution returns the data object source for a Execution.
 func DataObjectSourceFromExecution(src *lsv1alpha1.Execution) string {
-	return fmt.Sprintf("Execution.%s.%s", src.GetNamespace(), src.GetName())
+	return ExecutionPrefix + src.GetName()
 }

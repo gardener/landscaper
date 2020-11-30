@@ -6,16 +6,40 @@ package validation
 
 import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 
 	"github.com/gardener/landscaper/pkg/apis/core"
 )
 
+// InstallationNameMaxLength is the max allowed length of an installation name
+const InstallationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.InstallationPrefix)
+
+// InstallationGenerateNameMaxLength is the max length of an installation name minus the number of random characters kubernetes uses to generate a unique name
+const InstallationGenerateNameMaxLength = InstallationNameMaxLength - 5
+
 // ValidateInstallation validates an Installation
 func ValidateInstallation(inst *core.Installation) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(&inst.ObjectMeta, true, apivalidation.NameIsDNSLabel, field.NewPath("metadata"))...)
+	allErrs = append(allErrs, validateInstallationObjectMeta(&inst.ObjectMeta, field.NewPath("metadata"))...)
 	allErrs = append(allErrs, ValidateInstallationSpec(&inst.Spec, field.NewPath("spec"))...)
+	return allErrs
+}
+
+func validateInstallationObjectMeta(objMeta *metav1.ObjectMeta, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, apivalidation.ValidateObjectMeta(objMeta, true, apivalidation.NameIsDNSLabel, fldPath)...)
+
+	if len(objMeta.GetName()) > InstallationNameMaxLength {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), objMeta.GetName(), validation.MaxLenError(InstallationNameMaxLength)))
+	} else if len(objMeta.GetGenerateName()) > InstallationGenerateNameMaxLength {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("generateName"), objMeta.GetGenerateName(), validation.MaxLenError(InstallationGenerateNameMaxLength)))
+	}
+
 	return allErrs
 }
 

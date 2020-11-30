@@ -8,7 +8,7 @@ metadata:
   name: {{ dataObjectName ( dataObjectContext "test1" "root" )  "root.y" }}
   namespace: test1
   labels:
-    data.landscaper.gardener.cloud/context: "Installation.test1.root"
+    data.landscaper.gardener.cloud/context: "Inst.root"
     data.landscaper.gardener.cloud/key: "root.y"
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
