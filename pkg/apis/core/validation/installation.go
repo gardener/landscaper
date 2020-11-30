@@ -17,7 +17,7 @@ import (
 
 const InstallationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.InstallationPrefix)
 
-// max length of an installation name minus the number of random characters kubernetes uses to generate a unique name
+// InstallationGenerateNameMaxLength is the max length of an installation name minus the number of random characters kubernetes uses to generate a unique name
 const InstallationGenerateNameMaxLength = InstallationNameMaxLength - 5
 
 // ValidateInstallation validates an Installation
