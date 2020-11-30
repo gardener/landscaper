@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/core"
 )
 
+// InstallationNameMaxLength is the max allowed length of an installation name
 const InstallationNameMaxLength = validation.DNS1123LabelMaxLength - len(helper.InstallationPrefix)
 
 // InstallationGenerateNameMaxLength is the max length of an installation name minus the number of random characters kubernetes uses to generate a unique name
