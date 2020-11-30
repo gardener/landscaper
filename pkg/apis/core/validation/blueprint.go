@@ -7,6 +7,8 @@ package validation
 import (
 	"os"
 
+	"k8s.io/apimachinery/pkg/util/validation"
+
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -261,6 +263,11 @@ func ValidateInstallationTemplate(fldPath *field.Path, template *core.Installati
 	} else {
 		for _, msg := range apivalidation.NameIsDNSLabel(template.Name, false) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), template.Name, msg))
+		}
+
+		// need to reduce lenght by 1 because "-" is added during subinstallation creation
+		if len(template.Name) > InstallationGenerateNameMaxLength-1 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), template.Name, validation.MaxLenError(InstallationGenerateNameMaxLength-1)))
 		}
 	}
 
