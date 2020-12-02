@@ -78,3 +78,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# webhookConfig:
+#   serverPort: 443
+
+disableWebhooks: [] # options: installation, deployitem, execution, all

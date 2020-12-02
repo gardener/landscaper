@@ -48,6 +48,12 @@ spec:
           - name: metrics
             containerPort: {{ .Values.landscaper.metrics.port }}
           {{- end}}
+          - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.fullname" . }}
+          - --webhook-service-port={{ .Values.service.port }}
+          {{- if .Values.webhookConfig.serverPort }}
+          - --webhook-server-port={{ .Values.webhookConfig.serverPort }}
+          {{- end }}
+          - --disable-webhooks={{ .Values.disableWebhooks | default [] | join "," }}
           volumeMounts:
           - name: oci-cache
             mountPath: /app/ls/oci-cache

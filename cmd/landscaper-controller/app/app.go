@@ -6,6 +6,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -13,7 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/apis/core/install"
+	install "github.com/gardener/landscaper/apis/core/install"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
@@ -25,6 +26,8 @@ import (
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
+	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -56,6 +59,7 @@ func (o *options) run(ctx context.Context) error {
 
 	opts := manager.Options{
 		LeaderElection:     false,
+		Port:               o.webhookServerPort,
 		MetricsBindAddress: "0",
 	}
 
@@ -79,6 +83,70 @@ func (o *options) run(ctx context.Context) error {
 	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
+
+	///// WEBHOOK /////
+
+	wo := webhook.Options{
+		WebhookConfigurationName: "landscaper-validation-webhook",
+		WebhookBasePath:          "/webhook/validate/",
+		WebhookNameSuffix:        ".validation.landscaper.gardener.cloud",
+		ObjectSelector: metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Operator: metav1.LabelSelectorOpNotIn,
+					Key:      "validation.landscaper.gardener.cloud/skip-validation",
+					Values:   []string{"true"},
+				},
+			},
+		},
+		ServicePort: o.webhookServicePort,
+	}
+	webhookLogger := ctrl.Log.WithName("webhook").WithName("validation")
+	webhookedResources := []webhook.WebhookedResourceDefinition{}
+	// adds a validation webhook for Installations and Executions
+	if o.disabledWebhooks == nil || !o.disabledWebhooks["all"] {
+		if o.webhookNamespace == "" {
+			return errors.New("webhook service namespace must not be empty")
+		}
+		if o.webhookName == "" {
+			return errors.New("webhook service name must not be empty")
+		}
+		wo.ServiceNamespace = o.webhookNamespace
+		wo.ServiceName = o.webhookName
+		// determine resources watched by webhook
+		webhookedResourcesTemplate := []webhook.WebhookedResourceDefinition{
+			{
+				APIGroup:     "landscaper.gardener.cloud",
+				APIVersions:  []string{"v1alpha1"},
+				ResourceName: "installations",
+			},
+			{
+				APIGroup:     "landscaper.gardener.cloud",
+				APIVersions:  []string{"v1alpha1"},
+				ResourceName: "deployitems",
+			},
+			{
+				APIGroup:     "landscaper.gardener.cloud",
+				APIVersions:  []string{"v1alpha1"},
+				ResourceName: "executions",
+			},
+		}
+		webhookedResourcesLog := []string{}
+		for _, elem := range webhookedResourcesTemplate {
+			if !o.disabledWebhooks[elem.ResourceName] {
+				webhookedResources = append(webhookedResources, elem)
+				webhookedResourcesLog = append(webhookedResourcesLog, elem.ResourceName)
+			}
+		}
+		wo.WebhookedResources = webhookedResources
+		webhookLogger.Info("Enabling validation", "resources", webhookedResourcesLog)
+	}
+
+	if err := webhook.ApplyValidatingWebhookConfiguration(ctx, mgr, wo, webhookLogger); err != nil {
+		return err
+	}
+
+	///// WEBHOOK END /////
 
 	for _, deployerName := range o.enabledDeployers {
 		if deployerName == "container" {
