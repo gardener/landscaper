@@ -13,10 +13,10 @@ import (
 )
 
 // ValidateExecution validates an Execution
-func ValidateExecution(execution *core.Execution) error {
+func ValidateExecution(execution *core.Execution) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateExecutionSpec(field.NewPath("spec"), execution.Spec)...)
-	return allErrs.ToAggregate()
+	return allErrs
 }
 
 // ValidateExecutionSpec validtes the spec of a execution object
