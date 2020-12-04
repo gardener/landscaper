@@ -46,25 +46,29 @@ func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.Execution
 
 // CreateOrUpdateDataObject creates or updates a dataobject from a object reference
 func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values interface{}) error {
-	do, err := dataobjects.New().
+	do := dataobjects.New().
 		SetNamespace(o.exec.Namespace).
 		SetSource(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).
 		SetContext(lsv1alpha1helper.DataObjectSourceFromExecution(o.exec)).
-		SetData(values).
-		Build()
+		SetData(values)
+
+	raw, err := do.Build()
 	if err != nil {
 		return err
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), do, func() error {
-		return controllerutil.SetOwnerReference(o.exec, do, kubernetes.LandscaperScheme)
+	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if err := controllerutil.SetOwnerReference(o.exec, raw, kubernetes.LandscaperScheme); err != nil {
+			return err
+		}
+		return do.Apply(raw)
 	}); err != nil {
 		return err
 	}
 
 	o.exec.Status.ExportReference = &lsv1alpha1.ObjectReference{
-		Name:      do.Name,
-		Namespace: do.Namespace,
+		Name:      raw.Name,
+		Namespace: raw.Namespace,
 	}
 	return o.UpdateStatus(ctx, o.exec.Status.Phase)
 }
