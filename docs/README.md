@@ -10,6 +10,7 @@
 
 ### Usage
 - [Blueprints](./usage/Blueprints.md)
+- [Installations](./usage/Installations.md)
 - [Template Executors](./usage/TemplateExecutors.md)
 
 ### Deployers
