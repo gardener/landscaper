@@ -60,3 +60,12 @@ WORKDIR /
 
 ENTRYPOINT ["/helm-deployer-controller"]
 
+#### Manifest Deployer Controller ####
+FROM base as manifest-deployer-controller
+
+COPY --from=builder /go/bin/manifest-deployer-controller /manifest-deployer-controller
+
+WORKDIR /
+
+ENTRYPOINT ["/manifest-deployer-controller"]
+

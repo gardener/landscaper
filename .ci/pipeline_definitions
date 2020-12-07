@@ -21,6 +21,10 @@ landscaper:
             registry: 'gcr-readwrite'
             target: 'helm-deployer-controller'
             image: eu.gcr.io/gardener-project/landscaper/helm-deployer-controller
+          manifest-deployer-controller:
+            registry: 'gcr-readwrite'
+            target: 'manifest-deployer-controller'
+            image: eu.gcr.io/gardener-project/landscaper/manifest-deployer-controller
           container-deployer-controller:
             registry: 'gcr-readwrite'
             target: 'container-deployer-controller'
