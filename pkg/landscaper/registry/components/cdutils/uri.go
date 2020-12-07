@@ -24,6 +24,9 @@ const (
 	Resources           = "resources"
 )
 
+// MaxURICharLength is teh maximum length that is supported for a uri.
+const MaxURICharLength = 2083
+
 type Path struct {
 	Keyword string
 	Value   string
@@ -39,6 +42,9 @@ type URI struct {
 // ParseURI parses a component descriptor access uri of the format:
 // cd://<keyword>/<value>/<keyword>/<value>/...
 func ParseURI(cdURI string) (*URI, error) {
+	if len(cdURI) > MaxURICharLength {
+		return nil, fmt.Errorf("too long uri, got %d but expected max %d", len(cdURI), MaxURICharLength)
+	}
 	u, err := url.Parse(cdURI)
 	if err != nil {
 		return nil, err
