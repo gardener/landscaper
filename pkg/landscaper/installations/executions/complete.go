@@ -25,6 +25,11 @@ func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installati
 	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		return "", err
 	}
+
+	if exec.Generation != exec.Status.ObservedGeneration {
+		return lsv1alpha1.ExecutionPhaseProgressing, nil
+	}
+
 	return exec.Status.Phase, nil
 }
 

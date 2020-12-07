@@ -23,7 +23,11 @@ func (o *Operation) CombinedState(ctx context.Context, inst *installations.Insta
 	phases := make([]lsv1alpha1.ComponentInstallationPhase, len(subinsts))
 
 	for _, v := range subinsts {
-		phases = append(phases, v.Status.Phase)
+		if v.Generation != v.Status.ObservedGeneration {
+			phases = append(phases, lsv1alpha1.ComponentPhaseProgressing)
+		} else {
+			phases = append(phases, v.Status.Phase)
+		}
 	}
 
 	return helper.CombinedInstallationPhase(phases...), nil
