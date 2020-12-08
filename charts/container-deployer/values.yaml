@@ -14,8 +14,10 @@ deployer:
     repository: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
   defaultImage: {}
 #    image: ubuntu
-  oci: {}
-#    <name>: <docker config json>
+  oci: 
+    allowPlainHttp: false
+    secrets: {}
+#      <name>: <docker config json>
 
 replicaCount: 1
 

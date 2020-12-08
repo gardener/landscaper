@@ -23,21 +23,14 @@ import (
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *containerv1alpha1.Configuration) (reconcile.Reconciler, error) {
 
-	reg, err := blueprintsregistry.NewOCIRegistry(log, config.OCI)
-	if err != nil {
-		return nil, err
-	}
-
 	return &actuator{
-		log:      log,
-		config:   config,
-		registry: reg,
+		log:    log,
+		config: config,
 	}, nil
 }
 
@@ -47,8 +40,6 @@ type actuator struct {
 	hostClient client.Client
 	scheme     *runtime.Scheme
 	config     *containerv1alpha1.Configuration
-
-	registry blueprintsregistry.Registry
 }
 
 var _ inject.Client = &actuator{}
@@ -125,7 +116,11 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			deployItem.Status.LastError,
 			5*time.Minute))
 	}()
-	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.registry, a.config, deployItem)
+
+	// construct []string with pullsecret names
+	var ociPullSecrets []string
+
+	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.config, deployItem, ociPullSecrets)
 	if err != nil {
 		return err
 	}

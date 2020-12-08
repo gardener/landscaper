@@ -91,6 +91,12 @@ const ConfigurationFilename = "configuration.json"
 // ConfigurationPath is the path to the configuration file.
 var ConfigurationPath = filepath.Join(BasePath, "internal", ConfigurationFilename)
 
+// RegistrySecretBasePath is the path to all OCI pull secrets
+var RegistrySecretBasePath = filepath.Join(BasePath, "registry_secrets")
+
+// RegistrySecretBasePathName is the environment variable pointing to the file system location of all OCI pull secrets
+const RegistrySecretBasePathName = "REGISTRY_SECRETS_DIR"
+
 // PodName is the name of the env var that contains the name of the pod.
 const PodName = "POD_NAME"
 

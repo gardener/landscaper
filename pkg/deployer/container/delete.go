@@ -82,26 +82,28 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	return nil
 }
 
+// cleanupDeployItem deletes all secrets from a host cluster which belong to a deploy item.
 func (c *Container) cleanupDeployItem(ctx context.Context) error {
-	// delete config secret
+	secrets := []string{
+		ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+		ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+		ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+		ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+		BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+	}
+
+	for _, secretName := range secrets {
+		secret := &corev1.Secret{}
+		secret.Name = secretName
+		secret.Namespace = c.Configuration.Namespace
+		if err := c.hostClient.Delete(ctx, secret); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+	}
+
 	secret := &corev1.Secret{}
-	secret.Name = ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
-	secret.Namespace = c.Configuration.Namespace
-	if err := c.hostClient.Delete(ctx, secret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	// delete the referenced export secret if there is one as well as the secret in the host cluster
-	secret = &corev1.Secret{}
-	secret.Name = ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
-	secret.Namespace = c.Configuration.Namespace
-	if err := c.hostClient.Delete(ctx, secret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	secret = &corev1.Secret{}
 	secret.Name = DeployItemExportSecretName(c.DeployItem.Name)
 	secret.Namespace = c.DeployItem.Namespace
 	if err := c.lsClient.Delete(ctx, secret); err != nil {

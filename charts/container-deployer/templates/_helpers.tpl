@@ -81,8 +81,12 @@ defaultImage:
 
 {{- if .Values.deployer.oci }}
 oci:
+  allowPlainHttp: {{ .Values.deployer.oci.allowPlainHttp }}
+  {{- if .Values.deployer.oci.secrets }}
   configFiles:
-  {{- range $key, $value := .Values.deployer.oci }}
+  {{- range $key, $value := .Values.deployer.oci.secrets }}
   - /app/ls/registry/components/{{ $key }}
   {{- end }}
+  {{- end }}
+{{- end }}
 {{- end }}

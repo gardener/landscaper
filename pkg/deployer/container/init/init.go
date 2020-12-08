@@ -23,7 +23,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
@@ -82,7 +81,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 		return err
 	}
 
-	regAcc, err := createRegistryFromDockerAuthConfig(ctx, log, kubeClient, providerConfig.RegistryPullSecrets)
+	regAcc, err := createRegistryFromDockerAuthConfig(ctx, log, kubeClient, opts.RegistrySecretBasePath, fs)
 	if err != nil {
 		return err
 	}
@@ -207,17 +206,28 @@ func (r registries) ArtifactsRegistry() artifactsregistry.Registry {
 }
 
 // todo: add retries
-func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, kubeClient client.Client, registryPullSecrets []lsv1alpha1.ObjectReference) (lsoperation.RegistriesAccessor, error) {
-	secrets := make([]corev1.Secret, len(registryPullSecrets))
-	for i, secretRef := range registryPullSecrets {
-		secret := corev1.Secret{}
-		if err := kubeClient.Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
-			return nil, err
+func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, kubeClient client.Client, registryPullSecretsDir string, fs vfs.FileSystem) (lsoperation.RegistriesAccessor, error) {
+
+	var secrets []string
+
+	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-		secrets[i] = secret
+		if info.IsDir() || info.Name() != corev1.DockerConfigJsonKey {
+			return nil
+		}
+
+		secrets = append(secrets, path)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to add local registry pull secrets: %w", err)
 	}
 
-	keyring, err := credentials.CreateOCIRegistryKeyring(secrets, nil)
+	keyring, err := credentials.CreateOCIRegistryKeyringFromFilesystem(nil, secrets, fs)
 	if err != nil {
 		return nil, err
 	}

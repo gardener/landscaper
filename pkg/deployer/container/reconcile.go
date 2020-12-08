@@ -5,19 +5,31 @@
 package container
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	dockerconfig "github.com/docker/cli/cli/config"
+	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/config/types"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+
+	dockerreference "github.com/containerd/containerd/reference/docker"
 )
 
 // Reconcile handles the reconcile flow for a container deploy item.
@@ -46,6 +58,13 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "SyncConfiguration", err.Error())
 			return err
 		}
+
+		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx)
+		if err != nil {
+			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+				operationName, "ParseAndSyncSecrets", err.Error())
+			return err
+		}
 		// ensure new pod
 		if err := c.ensureServiceAccounts(ctx); err != nil {
 			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
@@ -60,6 +79,10 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			InitContainerServiceAccountSecret: c.InitContainerServiceAccountSecret,
 			WaitContainerServiceAccountSecret: c.WaitContainerServiceAccountSecret,
 			ConfigurationSecretName:           ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
+
+			ImagePullSecret:               imagePullSecret,
+			BluePrintPullSecret:           blueprintSecret,
+			ComponentDescriptorPullSecret: componentDescriptorSecret,
 
 			Name:                c.DeployItem.Name,
 			Namespace:           c.Configuration.Namespace,
@@ -253,6 +276,163 @@ func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []
 	}
 
 	return conditions
+}
+
+// to find a suitable secret for images on Docker Hub, we need its two domains to do matching
+const (
+	dockerHubDomain       = "docker.io"
+	dockerHubLegacyDomain = "index.docker.io"
+)
+
+// syncSecrets identifies a authSecrets based on a given registry. It then creates or updates a pull secret in a target for the matched authSecret.
+func (c *Container) syncSecrets(ctx context.Context, secretName, registry string, authSecrets []*dockerconfigfile.ConfigFile) (string, error) {
+	imageref, err := dockerreference.ParseDockerRef(registry)
+	if err != nil {
+		return "", fmt.Errorf("Not a valid registry reference %s: %w", c.ProviderConfiguration.Image, err)
+	}
+
+	host := dockerreference.Domain(imageref)
+	// this is how containerd translates the old domain for DockerHub to the new one, taken from containerd/reference/docker/reference.go:674
+	if host == dockerHubDomain {
+		host = dockerHubLegacyDomain
+	}
+
+	for _, v := range authSecrets {
+		authConfig, err := v.GetAuthConfig(host)
+		// as of now, err is never returned by GetAuthConfig, checking it in case this changes in future
+		if err != nil {
+			continue
+		}
+		// check, if we got back an empty config
+		if len(authConfig.ServerAddress) == 0 {
+			continue
+		}
+
+		targetAuthConfigs := &dockerconfigfile.ConfigFile{
+			AuthConfigs: map[string]types.AuthConfig{
+				host: authConfig,
+			},
+		}
+
+		targetAuthConfigsJSON, err := json.Marshal(targetAuthConfigs)
+		if err != nil {
+			return "", fmt.Errorf("Failed to create valid auth config JSON for %s: %w", host, err)
+		}
+
+		authSecret := &corev1.Secret{}
+		authSecret.Name = secretName
+		authSecret.Namespace = c.Configuration.Namespace
+		authSecret.Type = corev1.SecretTypeDockerConfigJson
+		if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, authSecret, func() error {
+			kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
+			authSecret.Data = map[string][]byte{
+				corev1.DockerConfigJsonKey: targetAuthConfigsJSON,
+			}
+			return nil
+		}); err != nil {
+			return "", fmt.Errorf("unable to image pull secret to host cluster: %w", err)
+		}
+		return authSecret.Name, nil
+	}
+
+	return "", nil
+}
+
+// parseAndSyncSecrets parses and synchronizes relevant pull secrets for container image, blueprint & component descriptor secrets from the landscaper and host cluster.
+func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
+	// find the secrets that match our image, our blueprint and our componentdescriptor
+	var secrets []*dockerconfigfile.ConfigFile
+
+	for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
+		secretFileContent, err := ioutil.ReadFile(secretFileName)
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Unable to read auth config from file %q, skipping", secretFileName), "error", err.Error())
+			continue
+		}
+
+		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secretFileContent))
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretFileName), "error", err.Error())
+			continue
+		}
+
+		secrets = append(secrets, authConfig)
+	}
+
+	for _, secretRef := range c.ProviderConfiguration.RegistryPullSecrets {
+		secret := &corev1.Secret{}
+
+		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+		}
+
+		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secret.Data[corev1.DockerConfigJsonKey]))
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			continue
+		}
+		secrets = append(secrets, authConfig)
+	}
+
+	var err error
+
+	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, secrets)
+	if err != nil {
+		erro = fmt.Errorf("unable to obtain and sync image pull secret to host cluster: %w", err)
+		return
+	}
+
+	if c.ProviderConfiguration.Blueprint != nil {
+		if c.ProviderConfiguration.Blueprint.Reference != nil {
+			compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI)
+			if err != nil {
+				erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+				return
+			}
+
+			cd, err := compReg.Resolve(ctx, *c.ProviderConfiguration.Blueprint.Reference.RepositoryContext, c.ProviderConfiguration.Blueprint.Reference.ObjectMeta())
+			if err != nil {
+				erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+				return
+			}
+
+			res, err := cdutils.FindResourceInComponentByVersionedReference(*cd, lsv1alpha1.BlueprintResourceType, c.ProviderConfiguration.Blueprint.Reference.VersionedResourceReference)
+			if err != nil {
+				erro = fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+				return
+			}
+
+			ociRegistryAccess, ok := res.Access.(*cdv2.OCIRegistryAccess)
+			if !ok {
+				erro = fmt.Errorf("internal cast error: %w", err)
+				return
+			}
+
+			blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, secrets)
+			if err != nil {
+				erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
+				return
+			}
+		}
+
+		if c.ProviderConfiguration.Blueprint.Reference != nil || (c.ProviderConfiguration.Blueprint.Inline != nil && c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference != nil) {
+			var cdRef string
+			if c.ProviderConfiguration.Blueprint.Reference != nil {
+				cdRef = c.ProviderConfiguration.Blueprint.Reference.RepositoryContext.BaseURL
+			}
+			if c.ProviderConfiguration.Blueprint.Inline != nil && c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference != nil {
+				cdRef = c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext.BaseURL
+			}
+
+			componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, secrets)
+			if err != nil {
+				erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
+				return
+			}
+		}
+	}
+	return
 }
 
 // SyncConfiguration syncs the provider configuration data as secret to the host cluster.
