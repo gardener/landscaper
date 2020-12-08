@@ -117,8 +117,6 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			5*time.Minute))
 	}()
 
-	// Todo sync pull secrets to container Namespace
-
 	// construct []string with pullsecret names
 	var ociPullSecrets []string
 

@@ -377,7 +377,6 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 
 	var err error
 
-	// TODO: figure out what to do in case a private image on dockerhub is referenced but not with FQDN of registry (ie someone/something:latest)
 	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, secrets)
 	if err != nil {
 		erro = fmt.Errorf("unable to obtain and sync image pull secret to host cluster: %w", err)

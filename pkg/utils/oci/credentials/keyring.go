@@ -30,7 +30,7 @@ type OCIKeyring interface {
 	Resolver(ctx context.Context, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
 }
 
-// CreateOCIRegistryKeyringFromFileSytem creates a new OCI registry keyring from a given file system.
+// CreateOCIRegistryKeyringFromFilesystem creates a new OCI registry keyring from a given file system.
 func CreateOCIRegistryKeyringFromFilesystem(pullSecrets []corev1.Secret, configFiles []string, fs vfs.FileSystem) (OCIKeyring, error) {
 	store := &ociKeyring{
 		index: make([]string, 0),
