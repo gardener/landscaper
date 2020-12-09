@@ -5,6 +5,7 @@
 package cdutils_test
 
 import (
+	"context"
 	"errors"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -17,7 +18,7 @@ import (
 
 var _ = Describe("URI", func() {
 	var (
-		compRefResolver = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return cdv2.ComponentDescriptor{}, errors.New("NotFound")
 		}
 		repoCtx = []cdv2.RepositoryContext{
@@ -90,7 +91,7 @@ var _ = Describe("URI", func() {
 				Name: "comp1",
 			},
 		}
-		compRefResolver = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return comp1, nil
 		}
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1")
@@ -115,7 +116,7 @@ var _ = Describe("URI", func() {
 				Name: "comp1",
 			},
 		}
-		compRefResolver = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return comp1, nil
 		}
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/resources/r1")

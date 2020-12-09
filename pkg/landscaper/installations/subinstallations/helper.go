@@ -15,7 +15,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
-func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) (*lsv1alpha1.BlueprintDefinition, error) {
+func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, cd *cdv2.ComponentDescriptor, cdResolveFunc cdutils.ResolveComponentReferenceFunc) (*lsv1alpha1.BlueprintDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
 	if len(subInstTmpl.Blueprint.Filesystem) != 0 {
@@ -41,7 +41,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 		}
 
 		// resolve component descriptor list
-		_, res, err := uri.Get(cd, cdutils.ComponentReferenceResolverFromList(cdList))
+		_, res, err := uri.Get(cd, cdResolveFunc)
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}
@@ -51,7 +51,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 			return nil, fmt.Errorf("expected a resource from the component descriptor %s", cd.Name)
 		}
 
-		cd, err := uri.GetComponent(cd, cdutils.ComponentReferenceResolverFromList(cdList))
+		cd, err := uri.GetComponent(cd, cdResolveFunc)
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}

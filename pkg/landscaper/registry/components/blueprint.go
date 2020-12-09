@@ -40,14 +40,14 @@ func (b *BlueprintResolver) Resolve(ctx context.Context, res cdv2.Resource, writ
 }
 
 func (b *BlueprintResolver) resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
-	localOCIAccess := &cdv2.OCIRegistryAccess{}
-	if err := cdv2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, localOCIAccess); err != nil {
+	ociArtifactAccess := &cdv2.OCIRegistryAccess{}
+	if err := cdv2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, ociArtifactAccess); err != nil {
 		return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
 
-	manifest, err := b.ociClient.GetManifest(ctx, localOCIAccess.ImageReference)
+	manifest, err := b.ociClient.GetManifest(ctx, ociArtifactAccess.ImageReference)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch manifest for oci artifact %s: %w", localOCIAccess.ImageReference, err)
+		return nil, fmt.Errorf("unable to fetch manifest for oci artifact %s: %w", ociArtifactAccess.ImageReference, err)
 	}
 	if len(manifest.Layers) != 1 {
 		return nil, fmt.Errorf("expected blueprint oci artifacts to habe exactly o1 layer but got %d", len(manifest.Layers))
@@ -55,7 +55,7 @@ func (b *BlueprintResolver) resolve(ctx context.Context, res cdv2.Resource, writ
 	blueprintLayer := manifest.Layers[0]
 
 	if writer != nil {
-		if err := b.ociClient.Fetch(ctx, localOCIAccess.ImageReference, blueprintLayer, writer); err != nil {
+		if err := b.ociClient.Fetch(ctx, ociArtifactAccess.ImageReference, blueprintLayer, writer); err != nil {
 			return nil, err
 		}
 	}

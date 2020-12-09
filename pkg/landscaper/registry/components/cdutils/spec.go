@@ -5,9 +5,11 @@
 package cdutils
 
 import (
+	"context"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 )
 
 // ResolvedComponentDescriptor defines a landscaper internal representation of the component descriptor.
@@ -39,17 +41,31 @@ func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryC
 	return cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
 }
 
-type ResolveComponentReferenceFunc = func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error)
+type ResolveComponentReferenceFunc func(ctx context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error)
 
 // ComponentReferenceResolverFromList creates a component reference resolver from a list of components.
 func ComponentReferenceResolverFromList(list *cdv2.ComponentDescriptorList) ResolveComponentReferenceFunc {
-	return func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		return list.GetComponent(meta.Name, meta.Version)
+	return func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		if list == nil {
+			return cdv2.ComponentDescriptor{}, cdv2.NotFound
+		}
+		return list.GetComponent(meta.ComponentName, meta.Version)
+	}
+}
+
+// ComponentReferenceResolverFromResolver creates a component reference resolver from a ctf component resolver
+func ComponentReferenceResolverFromResolver(resolver ctf.ComponentResolver, repoCtx cdv2.RepositoryContext) ResolveComponentReferenceFunc {
+	return func(ctx context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		cd, _, err := resolver.Resolve(ctx, repoCtx, meta.ComponentName, meta.GetVersion())
+		if err != nil {
+			return cdv2.ComponentDescriptor{}, err
+		}
+		return *cd, nil
 	}
 }
 
 // ConvertFromComponentDescriptor converts a component descriptor to a resolved component descriptor.
-func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
+func ConvertFromComponentDescriptor(ctx context.Context, cd cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (ResolvedComponentDescriptor, error) {
 	mcd := ResolvedComponentDescriptor{}
 	mcd.Metadata = cd.Metadata
 	mcd.ObjectMeta = cd.ObjectMeta
@@ -60,19 +76,19 @@ func ConvertFromComponentDescriptor(cd cdv2.ComponentDescriptor, refFunc Resolve
 	mcd.Resources = ResourceListToMap(cd.Resources)
 
 	var err error
-	mcd.ComponentReferences, err = ResolveComponentReferences(cd.ComponentReferences, refFunc)
+	mcd.ComponentReferences, err = ResolveComponentReferences(ctx, cd.ComponentReferences, refFunc)
 	return mcd, err
 }
 
 // ResolveComponentReferences resolves a list of component references to resolved components.
-func ResolveComponentReferences(refs []cdv2.ComponentReference, refFunc ResolveComponentReferenceFunc) (map[string]ResolvedComponentDescriptor, error) {
+func ResolveComponentReferences(ctx context.Context, refs []cdv2.ComponentReference, refFunc ResolveComponentReferenceFunc) (map[string]ResolvedComponentDescriptor, error) {
 	resolvedComponentRefs := map[string]ResolvedComponentDescriptor{}
 	for _, ref := range refs {
-		cd, err := refFunc(ref)
+		cd, err := refFunc(ctx, ref)
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve component: %w", err)
 		}
-		resolvedComponent, err := ConvertFromComponentDescriptor(cd, refFunc)
+		resolvedComponent, err := ConvertFromComponentDescriptor(ctx, cd, refFunc)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert component %s:%s in resolved component: %w", cd.Name, cd.Version, err)
 		}

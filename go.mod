@@ -10,7 +10,6 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
-	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce // indirect
 	github.com/gardener/component-spec/bindings-go v0.0.0-20201127224544-4fd6d604604f
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
@@ -43,6 +42,7 @@ require (
 	golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
+	gotest.tools/v3 v3.0.3 // indirect
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.6

@@ -71,7 +71,6 @@ func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv
 		DeployItem:            item,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
-		OciPullSecrets:        ociPullSecrets,
 	}, nil
 }
 

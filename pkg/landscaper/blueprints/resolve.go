@@ -98,20 +98,10 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 	blueprintName string) (*lsv1alpha1.Blueprint, error) {
 
 	// get blueprint resource from component descriptor
-	resources, err := cd.GetResourcesByType(lsv1alpha1.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
 	if err != nil {
-		if !errors.Is(err, cdv2.NotFound) {
-			return nil, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
-		}
-		// try to fallback to old blueprint type
-		resources, err = cd.GetResourcesByType(lsv1alpha1.OldBlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
-		if err != nil {
-			return nil, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
-		}
+		return nil, err
 	}
-
-	// todo: consider to throw an error if multiple blueprints match
-	resource := resources[0]
 
 	// todo: add resolver for old blueprints
 	var data bytes.Buffer
@@ -134,4 +124,22 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 	}
 
 	return blueprint, err
+}
+
+// GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
+func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, blueprintName string) (cdv2.Resource, error) {
+	// get blueprint resource from component descriptor
+	resources, err := cd.GetResourcesByType(lsv1alpha1.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+	if err != nil {
+		if !errors.Is(err, cdv2.NotFound) {
+			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+		}
+		// try to fallback to old blueprint type
+		resources, err = cd.GetResourcesByType(lsv1alpha1.OldBlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+		if err != nil {
+			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+		}
+	}
+	// todo: consider to throw an error if multiple blueprints match
+	return resources[0], nil
 }

@@ -5,6 +5,7 @@
 package cdutils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -84,7 +85,11 @@ func ParseURI(cdURI string) (*URI, error) {
 // Get resolves to a resource or component descriptor specified by the URI.
 // It also returns the resource kind.
 func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
-	component := cd
+	var (
+		ctx       = context.Background()
+		component = cd
+	)
+	defer ctx.Done()
 	for i, elem := range u.Path {
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
@@ -93,7 +98,8 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenc
 			if err != nil || len(refs) == 0 {
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			comp, err := refFunc(refs[0])
+
+			comp, err := refFunc(ctx, refs[0])
 			if err != nil {
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
@@ -120,7 +126,11 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenc
 // Get resolves to the component descriptor specified by the URI.
 // If a resource is specified, the component descriptor of the resource is returned.
 func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (*cdv2.ComponentDescriptor, error) {
-	component := cd
+	var (
+		ctx       = context.Background()
+		component = cd
+	)
+	defer ctx.Done()
 	for i, elem := range u.Path {
 		isLast := len(u.Path) == i+1
 		switch elem.Keyword {
@@ -129,7 +139,7 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponen
 			if err != nil || len(refs) == 0 {
 				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			comp, err := refFunc(refs[0])
+			comp, err := refFunc(ctx, refs[0])
 			if err != nil {
 				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}

@@ -25,7 +25,7 @@ deployExecutions:
 
         chart:
           {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
-          ref: {{ $resource.access.imageReference" }}
+          ref: {{ $resource.access.imageReference }}
 
         updateStrategy: patch
 

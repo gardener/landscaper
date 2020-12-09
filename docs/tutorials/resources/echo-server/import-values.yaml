@@ -10,3 +10,4 @@ imports:
       config:
         kubeconfig: |
           apiVersion:...
+  ingressClass: my-ingress
