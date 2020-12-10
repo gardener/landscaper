@@ -6,11 +6,15 @@ package template
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -20,7 +24,7 @@ type SpiffTemplate struct {
 	state GenericStateHandler
 }
 
-func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, components, imports interface{}) ([]byte, error) {
+func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error) {
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -32,12 +36,10 @@ func (t *SpiffTemplate) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExe
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
 
-	values := map[string]interface{}{
-		"imports": imports,
-		"cd":      components,
-	}
+	functions := spiffing.NewFunctions()
+	LandscaperSpiffFuncs(functions, descriptor, cdList)
 
-	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithFileSystem(blueprint.Fs).WithValues(values)
+	spiff, err := spiffing.New().WithFunctions(functions).WithFileSystem(blueprint.Fs).WithValues(values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}
@@ -139,4 +141,81 @@ func (t *SpiffTemplate) storeState(ctx context.Context, prefix string, tmplExec 
 		return fmt.Errorf("unabel to persists state: %w", err)
 	}
 	return nil
+}
+
+func LandscaperSpiffFuncs(functions spiffing.Functions, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) {
+	functions.RegisterFunction("getResource", spiffResolveResources(cd))
+	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
+}
+
+func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
+		if err != nil {
+			return info.Error(err.Error())
+		}
+		var val []interface{}
+		if err := yaml.Unmarshal(data, &val); err != nil {
+			return info.Error(err.Error())
+		}
+
+		resources, err := resolveResources(cd, val)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		// resources must be at least one, otherwise an error will be thrown
+		data, err = json.Marshal(resources[0])
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		node, err := spiffyaml.Parse("", data)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+		result, err := binding.Flow(node, false)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		return result.Value(), info, true
+	}
+}
+
+func spiffResolveComponent(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+		data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments, ""))
+		if err != nil {
+			return info.Error(err.Error())
+		}
+		var val []interface{}
+		if err := yaml.Unmarshal(data, &val); err != nil {
+			return info.Error(err.Error())
+		}
+
+		components, err := resolveComponents(cd, cdList, val)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		// resources must be at least one, otherwise an error will be thrown
+		data, err = json.Marshal(components[0])
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		node, err := spiffyaml.Parse("", data)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+		result, err := binding.Flow(node, false)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		return result.Value(), info, true
+	}
 }

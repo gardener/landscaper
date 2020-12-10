@@ -5,13 +5,10 @@
 package operation
 
 import (
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 // Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
@@ -32,42 +29,29 @@ type Interface interface {
 	// InjectScheme is used by the ControllerManager to inject Scheme into Sources, EventHandlers, Predicates, and
 	// Reconciles
 	InjectScheme(scheme *runtime.Scheme) error
-	// InjectRegistry is used to inject a blueprint blueprintsRegistry.
-	InjectBlueprintsRegistry(blueprintsregistry.Registry) error
-	// InjectComponentRepository is used to inject a component repository.
-	InjectComponentsRegistry(componentsregistry.Registry) error
-	// InjectArtifactsRegistry is used to inject a artifact repository.
-	InjectArtifactsRegistry(artifactsregistry.Registry) error
 }
 
 // RegistriesAccessor is a getter interface for available registries.
 type RegistriesAccessor interface {
-	// BlueprintsRegistry returns a blueprints registry instance.
-	BlueprintsRegistry() blueprintsregistry.Registry
 	// ComponentsRegistry returns a components registry instance.
-	ComponentsRegistry() componentsregistry.Registry
-	// ArtifactsRegistry returns a artifacts registry instance.
-	ArtifactsRegistry() artifactsregistry.Registry
+	ComponentsRegistry() ctf.ComponentResolver
 }
 
 type Operation struct {
-	log                logr.Logger
-	client             client.Client
-	directReader       client.Reader
-	scheme             *runtime.Scheme
-	blueprintsRegistry blueprintsregistry.Registry
-	componentRegistry  componentsregistry.Registry
-	artifactRegistry   artifactsregistry.Registry
+	log               logr.Logger
+	client            client.Client
+	directReader      client.Reader
+	scheme            *runtime.Scheme
+	componentRegistry ctf.ComponentResolver
 }
 
 // NewOperation creates a new internal installation Operation object.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, blueRegistry blueprintsregistry.Registry, compRegistry componentsregistry.Registry) Interface {
+func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, compRegistry ctf.ComponentResolver) Interface {
 	return &Operation{
-		log:                log,
-		client:             c,
-		scheme:             scheme,
-		blueprintsRegistry: blueRegistry,
-		componentRegistry:  compRegistry,
+		log:               log,
+		client:            c,
+		scheme:            scheme,
+		componentRegistry: compRegistry,
 	}
 }
 
@@ -101,7 +85,7 @@ func (o *Operation) DirectReader() client.Reader {
 	return o.directReader
 }
 
-// InjectAPIReader injects a readonyl kubernetes client into the operation.
+// InjectAPIReader injects a readonly kubernetes client into the operation.
 func (o *Operation) InjectAPIReader(r client.Reader) error {
 	o.directReader = r
 	return nil
@@ -118,35 +102,13 @@ func (o *Operation) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-// Registry returns a Registry instance
-func (o *Operation) BlueprintsRegistry() blueprintsregistry.Registry {
-	return o.blueprintsRegistry
-}
-
-// InjectRegistry injects a Registry into the actuator
-func (o *Operation) InjectBlueprintsRegistry(r blueprintsregistry.Registry) error {
-	o.blueprintsRegistry = r
-	return nil
-}
-
 // ComponentRepository returns a component blueprintsRegistry instance
-func (o *Operation) ComponentsRegistry() componentsregistry.Registry {
+func (o *Operation) ComponentsRegistry() ctf.ComponentResolver {
 	return o.componentRegistry
 }
 
 // InjectComponentRepository injects a component blueprintsRegistry into the operation
-func (o *Operation) InjectComponentsRegistry(c componentsregistry.Registry) error {
+func (o *Operation) InjectComponentsRegistry(c ctf.ComponentResolver) error {
 	o.componentRegistry = c
-	return nil
-}
-
-// ComponentRepository returns a component blueprintsRegistry instance
-func (o *Operation) ArtifactsRegistry() artifactsregistry.Registry {
-	return o.artifactRegistry
-}
-
-// InjectComponentRepository injects a component blueprintsRegistry into the operation
-func (o *Operation) InjectArtifactsRegistry(r artifactsregistry.Registry) error {
-	o.artifactRegistry = r
 	return nil
 }

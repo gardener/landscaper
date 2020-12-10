@@ -40,6 +40,9 @@ func BuildTar(fs vfs.FileSystem, root string, buf io.Writer) error {
 		if err != nil {
 			return err
 		}
+		if relPath == "." {
+			return nil
+		}
 
 		header, err := tar.FileInfoHeader(info, relPath)
 		if err != nil {

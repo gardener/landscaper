@@ -24,7 +24,8 @@ deployExecutions:
         kind: ProviderConfiguration
 
         chart:
-          ref: {{ index .cd.component.resources "ingress-nginx-chart" "access" "imageReference" }}
+          {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
+          ref: {{ $resource.access.imageReference }}
 
         updateStrategy: patch
 

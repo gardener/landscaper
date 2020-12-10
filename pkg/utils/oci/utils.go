@@ -29,6 +29,17 @@ func GetLayerByName(layers []ocispecv1.Descriptor, name string) *ocispecv1.Descr
 	return nil
 }
 
+// GetLayerByMediaType returns the layers with a given mediatype.
+func GetLayerByMediaType(layers []ocispecv1.Descriptor, mediaType string) []ocispecv1.Descriptor {
+	descs := make([]ocispecv1.Descriptor, 0)
+	for _, desc := range layers {
+		if desc.MediaType == mediaType {
+			descs = append(descs, desc)
+		}
+	}
+	return descs
+}
+
 // BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.
 // It returns the newly creates ocispec Description for the tar.
 func BuildTarGzipLayer(cache cache.Cache, fs vfs.FileSystem, path string, annotations map[string]string) (ocispecv1.Descriptor, error) {

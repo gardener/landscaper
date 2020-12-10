@@ -24,8 +24,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/blueprints/bputils"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -84,7 +83,7 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 
 	ociClient, err := oci.NewClient(log,
 		oci.WithCache{Cache: cache},
-		oci.WithKnownMediaType(blueprintsregistry.ComponentDefinitionConfigMediaType),
+		oci.WithKnownMediaType(lsv1alpha1.BlueprintArtifactsMediaType),
 		oci.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
@@ -114,7 +113,7 @@ func (o *pushOptions) Complete(args []string) error {
 
 // Validate validates push options
 func (o *pushOptions) Validate() error {
-	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath))
+	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
 		return err
 	}

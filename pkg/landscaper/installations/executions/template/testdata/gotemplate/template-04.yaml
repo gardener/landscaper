@@ -11,4 +11,5 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        image: {{ .cd.component.resources.mycustomimage.access.imageReference }}
+        {{- $res := getResource .cd "name" "mycustomimage" }}
+        image: {{ $res.access.imageReference }}

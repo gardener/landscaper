@@ -49,15 +49,3 @@ func (c *ComponentDescriptorList) GetComponentByName(name string) []ComponentDes
 	}
 	return comps
 }
-
-// GetResources returns all resources of a given type, name and version of all components in the list.
-func (c *ComponentDescriptorList) GetResources(rtype, name, version string) []Resource {
-	resources := make([]Resource, 0)
-	for _, comp := range c.Components {
-		resource, err := comp.GetResource(rtype, name, version)
-		if err == nil {
-			resources = append(resources, resource)
-		}
-	}
-	return resources
-}

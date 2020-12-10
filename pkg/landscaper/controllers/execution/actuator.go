@@ -103,7 +103,7 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution, forceReconcile bool) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil, nil), exec,
+	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil), exec,
 		forceReconcile)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {

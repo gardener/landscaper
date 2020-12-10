@@ -15,7 +15,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
-func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, resolvedComponentDescriptor *cdutils.ResolvedComponentDescriptor) (*lsv1alpha1.BlueprintDefinition, error) {
+func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, cd *cdv2.ComponentDescriptor, cdResolveFunc cdutils.ResolveComponentReferenceFunc) (*lsv1alpha1.BlueprintDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
 	if len(subInstTmpl.Blueprint.Filesystem) != 0 {
@@ -36,25 +36,27 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 		if err != nil {
 			return nil, err
 		}
-		if resolvedComponentDescriptor == nil {
+		if cd == nil {
 			return nil, errors.New("no component descriptor defined to resolve the blueprint ref")
 		}
-		_, res, err := uri.Get(*resolvedComponentDescriptor)
+
+		// resolve component descriptor list
+		_, res, err := uri.Get(cd, cdResolveFunc)
 		if err != nil {
-			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", resolvedComponentDescriptor.Name, err)
+			return nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}
 		// the result of the uri has to be an resource
 		resource, ok := res.(cdv2.Resource)
 		if !ok {
-			return nil, fmt.Errorf("expected a resource from the component descriptor %s", resolvedComponentDescriptor.Name)
+			return nil, fmt.Errorf("expected a resource from the component descriptor %s", cd.Name)
 		}
 
-		cd, err := uri.GetComponent(*resolvedComponentDescriptor)
+		cd, err := uri.GetComponent(cd, cdResolveFunc)
 		if err != nil {
-			return nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", resolvedComponentDescriptor.Name, err)
+			return nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}
 
-		latestRepoCtx := resolvedComponentDescriptor.LatestRepositoryContext()
+		latestRepoCtx := cd.GetEffectiveRepositoryContext()
 		subBlueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
 			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 				ResourceReference: lsv1alpha1.ResourceReference{

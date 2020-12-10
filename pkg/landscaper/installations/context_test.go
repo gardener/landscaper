@@ -7,8 +7,9 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr/testing"
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,23 +17,21 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("Context", func() {
+var _ = Describe("Context", func() {
 
 	var (
 		op lsoperation.Interface
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
-		fakeRegistry      blueprintsregistry.Registry
-		fakeCompRepo      componentsregistry.Registry
+		fakeCompRepo      ctf.ComponentResolver
 	)
 
-	g.BeforeEach(func() {
+	BeforeEach(func() {
 		var (
 			err   error
 			state *envtest.State
@@ -41,15 +40,13 @@ var _ = g.Describe("Context", func() {
 		Expect(err).ToNot(HaveOccurred())
 		fakeInstallations = state.Installations
 
-		fakeRegistry, err = blueprintsregistry.NewLocalRegistry(testing.NullLogger{}, "./testdata/registry")
-		Expect(err).ToNot(HaveOccurred())
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeRegistry, fakeCompRepo)
+		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, kubernetes.LandscaperScheme, fakeCompRepo)
 	})
 
-	g.It("should show no parent nor siblings for the test1 root", func() {
+	It("should show no parent nor siblings for the test1 root", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -64,7 +61,7 @@ var _ = g.Describe("Context", func() {
 		Expect(lCtx.Siblings).To(HaveLen(0))
 	})
 
-	g.It("should show no parent and one sibling for the test2/a installation", func() {
+	It("should show no parent and one sibling for the test2/a installation", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -80,7 +77,7 @@ var _ = g.Describe("Context", func() {
 		//Expect(siblings[0].Name).To(Equal("b"))
 	})
 
-	g.It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
+	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 

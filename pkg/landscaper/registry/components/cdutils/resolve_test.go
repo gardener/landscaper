@@ -19,7 +19,7 @@ import (
 var _ = Describe("Resolve", func() {
 	var (
 		ctrl     *gomock.Controller
-		cdClient *mock_componentrepository.MockRegistry
+		cdClient *mock_componentrepository.MockComponentResolver
 
 		repoCtx = []cdv2.RepositoryContext{
 			{Type: cdv2.OCIRegistryType, BaseURL: "example.com"},
@@ -28,7 +28,7 @@ var _ = Describe("Resolve", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		cdClient = mock_componentrepository.NewMockRegistry(ctrl)
+		cdClient = mock_componentrepository.NewMockComponentResolver(ctrl)
 	})
 
 	AfterEach(func() {
@@ -59,8 +59,8 @@ var _ = Describe("Resolve", func() {
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[0])).Return(&l11_CD, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[1])).Return(&l12_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[1].Name, cd.ComponentReferences[1].Version).Return(&l12_CD, nil, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())
@@ -95,8 +95,8 @@ var _ = Describe("Resolve", func() {
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(cd.ComponentReferences[0])).Return(&l11_CD, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cdutils.ComponentReferenceToObjectMeta(l11_CD.ComponentReferences[0])).Return(&l111_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], l11_CD.ComponentReferences[0].Name, l11_CD.ComponentReferences[0].Version).Return(&l111_CD, nil, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())

@@ -23,8 +23,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/apis/deployer/container"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
@@ -94,7 +94,7 @@ var _ = Describe("Constructor", func() {
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(info).To(HaveLen(1))
-		Expect(info[0].Name()).To(Equal(blueprintsregistry.BlueprintFileName))
+		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
 	})
 
 	It("should fetch component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {

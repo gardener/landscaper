@@ -5,6 +5,7 @@
 package cdutils_test
 
 import (
+	"context"
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -24,7 +25,7 @@ var _ = Describe("mapped component descriptor", func() {
 
 	Context("#ResolvedComponentDescriptor", func() {
 
-		resolveFunc := func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		resolveFunc := func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return cdv2.ComponentDescriptor{
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
@@ -37,13 +38,13 @@ var _ = Describe("mapped component descriptor", func() {
 
 		testResources := []cdv2.Resource{
 			{
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r1",
 					Version: "1.5.5",
 				},
 			},
 			{
-				ObjectMeta: cdv2.ObjectMeta{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
 					Name:    "r2",
 					Version: "1.5.0",
 				},
@@ -52,12 +53,16 @@ var _ = Describe("mapped component descriptor", func() {
 
 		testSources := []cdv2.Source{
 			{
-				Name:                "s1",
-				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name: "s1",
+				},
+				Access: cdv2.NewUnstructuredType("custom", nil),
 			},
 			{
-				Name:                "s2",
-				TypedObjectAccessor: cdv2.NewCustomType("custom", nil),
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name: "s2",
+				},
+				Access: cdv2.NewUnstructuredType("custom", nil),
 			},
 		}
 
@@ -74,7 +79,7 @@ var _ = Describe("mapped component descriptor", func() {
 				},
 			}
 
-			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, resolveFunc)
+			mcd, err := cdutils.ConvertFromComponentDescriptor(context.TODO(), cd, resolveFunc)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mcd.Name).To(Equal("comp"))
 			Expect(mcd.Version).To(Equal("1.0.0"))
@@ -86,7 +91,7 @@ var _ = Describe("mapped component descriptor", func() {
 			cd := cdv2.ComponentDescriptor{}
 			cd.Sources = testSources
 
-			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, nil)
+			mcd, err := cdutils.ConvertFromComponentDescriptor(context.TODO(), cd, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mcd.Sources).To(HaveKeyWithValue("s1", testSources[0]))
 			Expect(mcd.Sources).To(HaveKeyWithValue("s2", testSources[1]))
@@ -96,7 +101,7 @@ var _ = Describe("mapped component descriptor", func() {
 			cd := cdv2.ComponentDescriptor{}
 			cd.Resources = testResources
 
-			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, resolveFunc)
+			mcd, err := cdutils.ConvertFromComponentDescriptor(context.TODO(), cd, resolveFunc)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mcd.Resources).To(HaveKeyWithValue("r1", testResources[0]))
 			Expect(mcd.Resources).To(HaveKeyWithValue("r2", testResources[1]))
@@ -117,7 +122,7 @@ var _ = Describe("mapped component descriptor", func() {
 				},
 			}
 
-			mcd, err := cdutils.ConvertFromComponentDescriptor(cd, resolveFunc)
+			mcd, err := cdutils.ConvertFromComponentDescriptor(context.TODO(), cd, resolveFunc)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mcd.ComponentReferences).To(HaveKeyWithValue("ref1", gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 				"ResolvedComponentSpec": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{

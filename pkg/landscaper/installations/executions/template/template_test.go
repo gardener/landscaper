@@ -22,9 +22,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
 func TestConfig(t *testing.T) {
@@ -62,12 +59,12 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, &cdutils.ResolvedComponentDescriptor{}, nil)
+			}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
@@ -84,12 +81,12 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.0"})
+			}, nil, nil, map[string]interface{}{"version": "0.0.0"})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -106,7 +103,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
@@ -115,7 +112,7 @@ func runTestSuite(testdataDir string) {
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   memFs,
-			}, &cdutils.ResolvedComponentDescriptor{}, nil)
+			}, nil, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -132,38 +129,119 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
-			cd := &cdutils.ResolvedComponentDescriptor{
-				ResolvedComponentSpec: cdutils.ResolvedComponentSpec{
+			op := New(nil, stateHandler)
+
+			imageAccess, err := cdv2.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+				ObjectType: cdv2.ObjectType{
+					Type: cdv2.OCIRegistryType,
+				},
+				ImageReference: "quay.io/example/myimage:1.0.0",
+			})
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{
+				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
 						Name:    "mycomp",
 						Version: "1.0.0",
 					},
-					Resources: map[string]cdv2.Resource{
-						"mycustomimage": {
-							ObjectMeta: cdv2.ObjectMeta{
+					RepositoryContexts: []cdv2.RepositoryContext{},
+					Provider:           cdv2.InternalProvider,
+					Resources: []cdv2.Resource{
+						{
+							IdentityObjectMeta: cdv2.IdentityObjectMeta{
 								Name:    "mycustomimage",
 								Version: "1.0.0",
+								Type:    cdv2.OCIImageType,
 							},
-							Relation:            cdv2.ExternalRelation,
-							TypedObjectAccessor: cdv2.NewTypeOnly(cdv2.OCIImageType),
-							Access: &cdv2.OCIRegistryAccess{
-								ObjectType: cdv2.ObjectType{
-									Type: cdv2.OCIRegistryType,
-								},
-								ImageReference: "quay.io/example/myimage:1.0.0",
-							},
+							Relation: cdv2.ExternalRelation,
+							Access:   imageAccess,
 						},
 					},
 				},
 			}
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 
 			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
-			}, cd, nil)
+			}, cd, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
+		})
 
+		It("should use a resource from the component descriptor's referenced component", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-10.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(nil, stateHandler)
+
+			imageAccess, err := cdv2.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+				ObjectType: cdv2.ObjectType{
+					Type: cdv2.OCIRegistryType,
+				},
+				ImageReference: "quay.io/example/myimage:1.0.0",
+			})
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{
+				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+				ComponentSpec: cdv2.ComponentSpec{
+					ObjectMeta: cdv2.ObjectMeta{
+						Name:    "mycomp",
+						Version: "1.0.0",
+					},
+					RepositoryContexts: []cdv2.RepositoryContext{},
+					Provider:           cdv2.InternalProvider,
+					ComponentReferences: []cdv2.ComponentReference{
+						{
+							Name:          "my-referenced-component",
+							ComponentName: "myrefcomp",
+							Version:       "1.0.0",
+						},
+					},
+				},
+			}
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+
+			cd2 := cdv2.ComponentDescriptor{
+				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
+				ComponentSpec: cdv2.ComponentSpec{
+					ObjectMeta: cdv2.ObjectMeta{
+						Name:    "myrefcomp",
+						Version: "1.0.0",
+					},
+					RepositoryContexts: []cdv2.RepositoryContext{},
+					Provider:           cdv2.InternalProvider,
+					Resources: []cdv2.Resource{
+						{
+							IdentityObjectMeta: cdv2.IdentityObjectMeta{
+								Name:    "ubuntu",
+								Version: "1.0.0",
+								Type:    cdv2.OCIImageType,
+							},
+							Relation: cdv2.ExternalRelation,
+							Access:   imageAccess,
+						},
+					},
+				},
+			}
+			Expect(cdv2.DefaultComponent(&cd2)).To(Succeed())
+			list := &cdv2.ComponentDescriptorList{
+				Metadata:   cdv2.Metadata{},
+				Components: []cdv2.ComponentDescriptor{cd2},
+			}
+
+			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
+				Info: blue,
+			}, cd, list, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 			Expect(config).To(HaveKeyWithValue("image", "quay.io/example/myimage:1.0.0"))
@@ -177,12 +255,12 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.0"})
+			}, nil, nil, map[string]interface{}{"version": "0.0.0"})
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -194,12 +272,12 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.1"})
+			}, nil, nil, map[string]interface{}{"version": "0.0.1"})
 			Expect(err).ToNot(HaveOccurred())
 
 			state := map[string]string{
@@ -211,7 +289,7 @@ func runTestSuite(testdataDir string) {
 			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
 				Info: blue,
 				Fs:   nil,
-			}, &cdutils.ResolvedComponentDescriptor{}, map[string]interface{}{"version": "0.0.2"})
+			}, nil, nil, map[string]interface{}{"version": "0.0.2"})
 
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -226,7 +304,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -244,7 +322,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			res, err := op.TemplateExportExecutions(&blueprints.Blueprint{
 				Info: blue,
@@ -262,7 +340,7 @@ func runTestSuite(testdataDir string) {
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.ExportExecutions = exec
-			op := New(&installations.Operation{Interface: &lsoperation.Operation{}}, stateHandler)
+			op := New(nil, stateHandler)
 
 			memFs := memoryfs.New()
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)

@@ -38,33 +38,23 @@ image:
   tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
 
 landscaper:
-  registryConfig: # contains optional oci secrets
-    blueprints:
-      allowPlainHttpRegistries: false
-      secrets:
-        default: {
-          "auths": {
-            "hostname": {
-              "auth": "my auth"
-            }
+  registryConfig:
+    allowPlainHttpRegistries: false
+    secrets: # contains optional oci secrets
+      default: {
+        "auths": {
+          "hostname": {
+            "auth": "my auth"
           }
         }
-    components:
-      allowPlainHttpRegistries: false
-      secrets:
-        default: {
-          "auths": {
-            "hostname": {
-              "auth": "my auth"
-            }
-          }
-        }
+      }
   
   # deploy with integrated deployers for quick start
   deployers: 
   - container
   - helm
   - mock
+  - manifest 
 ```
 
 ### Landscaper image and tag

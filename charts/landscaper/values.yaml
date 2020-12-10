@@ -8,16 +8,10 @@
 
 landscaper:
 
-
   registryConfig: # contains optional oci secrets
-    blueprints:
-      allowPlainHttpRegistries: false
-      secrets: {}
-#       <name>: <docker config json>
-    components:
-      allowPlainHttpRegistries: false
-      secrets: {}
-#       <name>: <docker config json>
+    allowPlainHttpRegistries: false
+    secrets: {}
+#     <name>: <docker config json>
 
   deployers: []
 #  - container

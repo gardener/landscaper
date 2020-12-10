@@ -385,7 +385,71 @@ func CopyFile(srcfs FileSystem, src string, dstfs FileSystem, dst string) error 
 	defer d.Close()
 
 	_, err = io.Copy(d, s)
-	return err
+	if err != nil {
+		return err
+	}
+	return dstfs.Chmod(dst, fi.Mode())
+}
+
+// CopyDir recursively copies a directory tree, attempting to preserve permissions.
+// Source directory must exist, destination directory may exist.
+// Symlinks are ignored and skipped.
+func CopyDir(srcfs FileSystem, src string, dstfs FileSystem, dst string) error {
+	src = Trim(srcfs, src)
+	dst = Trim(dstfs, dst)
+
+	si, err := srcfs.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !si.IsDir() {
+		return NewPathError("CopyDir", src, ErrNotDir)
+	}
+
+	di, err := dstfs.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err == nil && !di.IsDir() {
+		return NewPathError("CopyDir", dst, ErrNotDir)
+	}
+
+	err = dstfs.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return err
+	}
+
+	entries, err := ReadDir(srcfs, src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := Join(srcfs, src, entry.Name())
+		dstPath := Join(dstfs, dst, entry.Name())
+
+		if entry.IsDir() {
+			err = CopyDir(srcfs, srcPath, dstfs, dstPath)
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				var old string
+				old, err = srcfs.Readlink(srcPath)
+				if err == nil {
+					err = dstfs.Symlink(old, dstPath)
+				}
+				if err == nil {
+					err = os.Chmod(dst, entry.Mode())
+				}
+			} else {
+				err = CopyFile(srcfs, srcPath, dstfs, dstPath)
+			}
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func Touch(fs FileSystem, path string, perm os.FileMode) error {

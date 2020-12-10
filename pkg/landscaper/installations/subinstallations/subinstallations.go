@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/apis/core/validation"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -165,12 +166,15 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 
 	//// get version for referenced reference
 	//// todo: revisit for subinstallations
-	//remoteRef, err := subInstTmpl.RemoteBlueprintReference(o.ResolvedComponentDescriptor)
+	//remoteRef, err := subInstTmpl.RemoteBlueprintReference(o.ResolvedComponentDescriptorList)
 	//if err != nil {
 	//	return nil, err
 	//}
 
-	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst, subInstTmpl, o.ResolvedComponentDescriptor)
+	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
+		subInstTmpl,
+		o.ComponentDescriptor,
+		cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList))
 	if err != nil {
 		return nil, err
 	}

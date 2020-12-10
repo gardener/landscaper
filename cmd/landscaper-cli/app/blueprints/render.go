@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"unsafe"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -35,7 +34,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -61,6 +59,8 @@ type renderOptions struct {
 	blueprintPath string
 	// componentDescriptorPath is the path tot he component descriptor to be used
 	componentDescriptorPath string
+	// componentDescriptorPath is the path tot he component descriptor to be used
+	additionalComponentDescriptorPath []string
 	// valueFiles is a list of filepaths to value yaml files.
 	valueFiles []string
 	// outputFormat defines the format of the output
@@ -68,11 +68,12 @@ type renderOptions struct {
 	// outDir is the directory where the rendered should be written to.
 	outDir string
 
-	outputResources     sets.String
-	blueprint           *lsv1alpha1.Blueprint
-	blueprintFs         vfs.FileSystem
-	componentDescriptor *cdutils.ResolvedComponentDescriptor
-	values              *Values
+	outputResources         sets.String
+	blueprint               *lsv1alpha1.Blueprint
+	blueprintFs             vfs.FileSystem
+	componentDescriptor     *cdv2.ComponentDescriptor
+	componentDescriptorList *cdv2.ComponentDescriptorList
+	values                  *Values
 }
 
 // NewRenderCommand creates a new local command to render a blueprint instance locally
@@ -118,15 +119,14 @@ Available resources are
 
 func (o *renderOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&o.componentDescriptorPath, "component-descriptor", "c", "", "Path to the local component descriptor")
+	fs.StringArrayVarP(&o.additionalComponentDescriptorPath, "additional-component-descriptor", "a", []string{}, "Path to additional local component descriptors")
 	fs.StringArrayVarP(&o.valueFiles, "file", "f", []string{}, "List of filepaths to value yaml files that define the imports")
 	fs.StringVarP(&o.outputFormat, "output", "o", YAMLOut, "The format of the output. Can be json or yaml.")
 	fs.StringVarP(&o.outDir, "write", "w", "", "The output directory where the rendered files should be written to")
 }
 
-func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
+func (o *renderOptions) run(_ context.Context, log logr.Logger) error {
 	log.V(3).Info(fmt.Sprintf("rendering %s", strings.Join(o.outputResources.List(), ", ")))
-
-	dummyOperation := &lsoperation.Operation{}
 
 	blueprint, err := blueprints.New(o.blueprint, o.blueprintFs)
 	if err != nil {
@@ -135,7 +135,8 @@ func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
 
 	if o.outputResources.Has(OutputResourceDeployItems) {
 		templateStateHandler := template.NewMemoryStateHandler()
-		deployItemTemplates, err := template.New(dummyOperation, templateStateHandler).TemplateDeployExecutions(blueprint, o.componentDescriptor, o.values.Imports)
+		deployItemTemplates, err := template.New(nil, templateStateHandler).
+			TemplateDeployExecutions(blueprint, o.componentDescriptor, &cdv2.ComponentDescriptorList{}, o.values.Imports)
 		if err != nil {
 			return fmt.Errorf("unable to template deploy executions: %w", err)
 		}
@@ -176,17 +177,22 @@ func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
 			fmt.Printf("No subinstallations defined\n")
 		}
 		for _, subInstTmpl := range blueprint.Subinstallations {
-			subBlueprint, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(dummyInst, subInstTmpl, o.componentDescriptor)
-			if err != nil {
-				fmt.Printf("unable to get blueprint: %s\n", err.Error())
-			}
 			subInst := &lsv1alpha1.Installation{}
 			subInst.Spec = lsv1alpha1.InstallationSpec{
-				Blueprint:          *(*lsv1alpha1.BlueprintDefinition)(unsafe.Pointer(&subBlueprint)),
 				Imports:            subInstTmpl.Imports,
 				ImportDataMappings: subInstTmpl.ImportDataMappings,
 				Exports:            subInstTmpl.Exports,
 				ExportDataMappings: subInstTmpl.ExportDataMappings,
+			}
+			subBlueprint, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(
+				dummyInst,
+				subInstTmpl,
+				o.componentDescriptor,
+				cdutils.ComponentReferenceResolverFromList(o.componentDescriptorList))
+			if err != nil {
+				fmt.Printf("unable to get blueprint: %s\n", err.Error())
+			} else if subBlueprint != nil {
+				subInst.Spec.Blueprint = *subBlueprint
 			}
 			if err := o.out(subInst, "subinstallations", subInstTmpl.Name); err != nil {
 				return err
@@ -199,9 +205,9 @@ func (o *renderOptions) run(ctx context.Context, log logr.Logger) error {
 
 func (o *renderOptions) Complete(args []string) error {
 	o.blueprintPath = args[0]
-	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath))
+	data, err := ioutil.ReadFile(filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
-		return fmt.Errorf("unable to read blueprint from %s: %w", filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFilePath), err)
+		return fmt.Errorf("unable to read blueprint from %s: %w", filepath.Join(o.blueprintPath, lsv1alpha1.BlueprintFileName), err)
 	}
 	o.blueprint = &lsv1alpha1.Blueprint{}
 	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, o.blueprint); err != nil {
@@ -217,17 +223,24 @@ func (o *renderOptions) Complete(args []string) error {
 		if err != nil {
 			return fmt.Errorf("unable to read component descriptor from %s: %w", o.componentDescriptorPath, err)
 		}
+		cd := &cdv2.ComponentDescriptor{}
+		if err := codec.Decode(data, cd); err != nil {
+			return fmt.Errorf("unable to decode component descriptor: %w", err)
+		}
+		o.componentDescriptor = cd
+	}
+
+	o.componentDescriptorList = &cdv2.ComponentDescriptorList{}
+	for _, cdPath := range o.additionalComponentDescriptorPath {
+		data, err := ioutil.ReadFile(cdPath)
+		if err != nil {
+			return fmt.Errorf("unable to read component descriptor from %s: %w", o.componentDescriptorPath, err)
+		}
 		cd := cdv2.ComponentDescriptor{}
 		if err := codec.Decode(data, &cd); err != nil {
 			return fmt.Errorf("unable to decode component descriptor: %w", err)
 		}
-		resCd, err := cdutils.ConvertFromComponentDescriptor(cd, func(meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-			return cdv2.ComponentDescriptor{}, nil
-		})
-		if err != nil {
-			return fmt.Errorf("unable to convert component descriptor to a resolved component descriptor: %w", err)
-		}
-		o.componentDescriptor = &resCd
+		o.componentDescriptorList.Components = append(o.componentDescriptorList.Components, cd)
 	}
 
 	o.values = &Values{}

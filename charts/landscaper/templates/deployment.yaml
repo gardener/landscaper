@@ -18,7 +18,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include "landscaper-config" . |  sha256sum }}
-        checksum/registrysecrets: {{ toJson .Values.landscaper.registrySecrets |  sha256sum }}
+        checksum/registrysecrets: {{ toJson .Values.landscaper.registryConfig |  sha256sum }}
         {{ range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
@@ -46,13 +46,9 @@ spec:
           volumeMounts:
           - name: config
             mountPath: /app/ls/config
-          {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
-          - name: blueprintsregistry
-            mountPath: /app/ls/registry/blueprints
-          {{- end }}
-          {{- if .Values.landscaper.registryConfig.components.secrets }}
-          - name: blueprintsregistry
-            mountPath: /app/ls/registry/components
+          {{- if .Values.landscaper.registryConfig.secrets }}
+          - name: registrypullsecrets
+            mountPath: /app/ls/registry/secrets
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -60,15 +56,10 @@ spec:
       - name: config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-config
-      {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
-      - name: blueprintsregistry
+      {{- if .Values.landscaper.registryConfig.secrets }}
+      - name: registrypullsecrets
         secret:
-          secretName: {{ include "landscaper.fullname" . }}-registry-blueprints
-      {{- end }}
-      {{- if .Values.landscaper.registryConfig.components.secrets }}
-      - name: componentsregistry
-        secret:
-          secretName: {{ include "landscaper.fullname" . }}-registry-components
+          secretName: {{ include "landscaper.fullname" . }}-registry
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

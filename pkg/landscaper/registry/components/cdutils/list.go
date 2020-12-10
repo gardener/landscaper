@@ -10,19 +10,18 @@ import (
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 )
 
 // ResolveEffectiveComponentDescriptor transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.
-func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsregistry.Registry, cd cdv2.ComponentDescriptor) (ResolvedComponentDescriptor, error) {
+func ResolveEffectiveComponentDescriptor(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor) (ResolvedComponentDescriptor, error) {
 	if len(cd.RepositoryContexts) == 0 {
 		return ResolvedComponentDescriptor{}, errors.New("component descriptor must at least contain one repository context with a base url")
 	}
 	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
-	return ConvertFromComponentDescriptor(cd, func(ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		cd, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(ref))
+	return ConvertFromComponentDescriptor(ctx, cd, func(ctx context.Context, ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
+		cd, _, err := client.Resolve(ctx, repoCtx, ref.Name, ref.Version)
 		if err != nil {
 			return cdv2.ComponentDescriptor{}, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", ref.Name, ref.Version, err)
 		}
@@ -32,7 +31,7 @@ func ResolveEffectiveComponentDescriptor(ctx context.Context, client componentsr
 
 // ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.
-func ResolveToComponentDescriptorList(ctx context.Context, client componentsregistry.Registry, cd cdv2.ComponentDescriptor) (cdv2.ComponentDescriptorList, error) {
+func ResolveToComponentDescriptorList(ctx context.Context, client ctf.ComponentResolver, cd cdv2.ComponentDescriptor) (cdv2.ComponentDescriptorList, error) {
 	cdList := cdv2.ComponentDescriptorList{}
 	cdList.Metadata = cd.Metadata
 	if len(cd.RepositoryContexts) == 0 {
@@ -42,7 +41,7 @@ func ResolveToComponentDescriptorList(ctx context.Context, client componentsregi
 	cdList.Components = []cdv2.ComponentDescriptor{cd}
 
 	for _, compRef := range cd.ComponentReferences {
-		resolvedComponent, err := client.Resolve(ctx, repoCtx, ComponentReferenceToObjectMeta(compRef))
+		resolvedComponent, _, err := client.Resolve(ctx, repoCtx, compRef.Name, compRef.Version)
 		if err != nil {
 			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
 		}
@@ -62,30 +61,4 @@ type ResolvedComponentDescriptorList struct {
 	Metadata cdv2.Metadata `json:"meta"`
 	// Components contains a map of mapped component descriptor.
 	Components map[string]ResolvedComponentDescriptor
-}
-
-// ConvertFromComponentDescriptorList converts a component descriptor list to a mapped component descriptor list.
-func ConvertFromComponentDescriptorList(list cdv2.ComponentDescriptorList) (ResolvedComponentDescriptorList, error) {
-	mList := ResolvedComponentDescriptorList{}
-	mList.Metadata = list.Metadata
-	mList.Components = make(map[string]ResolvedComponentDescriptor, len(list.Components))
-
-	refFunc := func(ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		cd, err := list.GetComponent(ref.GetName(), ref.GetVersion())
-		if err != nil {
-			return cdv2.ComponentDescriptor{}, fmt.Errorf("component %s:%s cannot be resolved: %w", ref.GetName(), ref.GetVersion(), err)
-		}
-		return cd, nil
-	}
-
-	for _, cd := range list.Components {
-		// todo: maybe also use version as there could be 2 components with different version
-		var err error
-		mList.Components[cd.Name], err = ConvertFromComponentDescriptor(cd, refFunc)
-		if err != nil {
-			return ResolvedComponentDescriptorList{}, err
-		}
-	}
-
-	return mList, nil
 }

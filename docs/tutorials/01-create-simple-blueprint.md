@@ -63,9 +63,11 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/nginx-ingress
-  version: v0.1.0
+  version: v0.2.0
 
   provider: internal
+  sources: []
+  componentReferences: []
 
   resources:
   - type: helm
@@ -75,31 +77,6 @@ component:
     access:
       type: ociRegistry
       imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
-```
-
-The component descriptor will be transformed into a "resolved" component descriptor by the landscaper during access.
-This is done to ease the accessibility of resources inside the component descriptor with a templating language.
-
-:warning: this might chage in the future.
-```yaml
-meta:
-  schemaVersion: v2
-
-component:
-  name: github.com/gardener/landscaper/ingress-nginx
-  version: v0.1.0
-
-  provider: internal
-
-  resources:
-    ingress-nginx-chart:
-      type: helm
-      name: ingress-nginx-chart
-      version: v0.1.0
-      relation: external
-      access:
-        type: ociRegistry
-        imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
 ```
 
 #### Create Blueprint
@@ -206,7 +183,8 @@ deployExecutions:
         kind: ProviderConfiguration
         
         chart:
-          ref: {{ index .cd.component.resources "ingress-nginx-chart" "access" "imageReference" }}
+          {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
+          ref: {{ $resource.access.imageReference" }}
         
         updateStrategy: patch
         
@@ -316,13 +294,15 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/ingress-nginx
-  version: v0.1.0
+  version: v0.2.0
 
   provider: internal
+  sources: []
+  componentReferences: []
 
   respositoryContext:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/my-project/comp
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
     
   resources:
@@ -331,14 +311,14 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: myregistry/mypath/ingress-nginx:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.2.0
   - type: helm
     name: ingress-nginx-chart
     version: v0.1.0
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
 ```
 
 Then the component descriptor can be uploaded to a oci registry using again the landscaper cli.
@@ -386,9 +366,9 @@ spec:
     ref:
       repositoryContext:
         type: ociRegistry
-        baseUrl: eu.gcr.io/my-project/comp
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/ingress-nginx
-      version: v0.1.0
+      version: v0.2.0
 ```
 
 __imports__:
@@ -431,10 +411,9 @@ spec:
     ref:
       repositoryContext:
         type: ociRegistry
-        baseUrl: eu.gcr.io/my-project/comp
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/ingress-nginx
-      version: v0.1.0
-      kind: localResource
+      version: v0.2.0
       resourceName: ingress-nginx-blueprint
 
   imports:
@@ -475,7 +454,7 @@ spec:
   - config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       chart:
-        ref: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+        ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
       exportsFromManifests:
       - jsonPath: .Values.controller.ingressClass
         key: ingressClass
@@ -513,7 +492,7 @@ spec:
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     chart:
-      ref: eu.gcr.io/myproject/charts/nginx-ingress:v0.1.0
+      ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
     exportsFromManifests:
     - jsonPath: .Values.controller.ingressClass
       key: ingressClass

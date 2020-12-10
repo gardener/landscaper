@@ -16,6 +16,5 @@ spec:
         baseUrl: ""
       version: 1.0.0
       componentName: root
-      kind: localResource
       resourceName: b
 

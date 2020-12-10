@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -84,15 +85,11 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		Type:    cdv2.OCIRegistryType,
 		BaseURL: o.baseUrl,
 	}
-	obj := cdv2.ObjectMeta{
-		Name:    o.componentName,
-		Version: o.version,
-	}
-	ociRef, err := componentsregistry.OCIRef(repoCtx, obj)
+	ociRef, err := cdoci.OCIRef(repoCtx, o.componentName, o.version)
 	if err != nil {
 		return fmt.Errorf("invalid component reference: %w", err)
 	}
-	cd, err := componentRegistry.Resolve(ctx, repoCtx, obj)
+	cd, _, err := componentRegistry.Resolve(ctx, repoCtx, o.componentName, o.version)
 	if err != nil {
 		return fmt.Errorf("unable to to fetch component descriptor %s: %w", ociRef, err)
 	}

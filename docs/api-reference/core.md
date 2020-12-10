@@ -1991,9 +1991,7 @@ Default
 <td>
 <em>(Optional)</em>
 <p>ConditionalImports are Imports that are only valid if this imports is satisfied.
-Does only make sense for optional imports.
-todo: maybe restrict only for required=false
-todo: see if this works with recursion</p>
+Does only make sense for optional imports.</p>
 </td>
 </tr>
 </tbody>

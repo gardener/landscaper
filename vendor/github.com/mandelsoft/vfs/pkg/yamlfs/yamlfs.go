@@ -47,16 +47,11 @@ func New(data []byte) (*YamlFileSystem, error) {
 func NewByPath(fs vfs.FileSystem, path string) (*YamlFileSystem, error) {
 	var data []byte
 	var err error
-	var f vfs.File
 
 	if fs == nil {
 		data, err = ioutil.ReadFile(path)
 	} else {
-		f, err = fs.Open(path)
-		if err == nil {
-			defer f.Close()
-			data, err = ioutil.ReadAll(f)
-		}
+		data, err = vfs.ReadFile(fs, path)
 	}
 	if err != nil {
 		return nil, err

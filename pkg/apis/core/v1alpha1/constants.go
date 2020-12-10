@@ -19,9 +19,15 @@ const (
 	// OperationAnnotation is the annotation that specifies a operation for a component
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
-	// BlueprintFilePath is the path to the component definition
-	BlueprintFilePath = "/blueprint.yaml"
+	// BlueprintType is the name of the blueprint type in a component descriptor.
+	BlueprintType = "landscaper.gardener.cloud/blueprint"
 
-	// ComponentDefinitionComponentDescriptorPath is the path to the component descriptor
-	ComponentDefinitionComponentDescriptorPath = "component_descriptor.yaml"
+	// OldBlueprintType is the old name of the blueprint type in a component descriptor.
+	OldBlueprintType = "blueprint"
+
+	// BlueprintFileName is the filename of a component definition on a local path
+	BlueprintFileName = "blueprint.yaml"
+
+	// BlueprintArtifactsMediaType is the reserved media type for a blueprint that is tored as its own artifact.
+	BlueprintArtifactsMediaType = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 )

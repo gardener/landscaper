@@ -10,8 +10,7 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492
-	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce // indirect
-	github.com/gardener/component-spec/bindings-go v0.0.0-20201104172910-f8dcb4c2977e
+	github.com/gardener/component-spec/bindings-go v0.0.0-20201127224544-4fd6d604604f
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
@@ -24,10 +23,10 @@ require (
 	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mandelsoft/spiff v1.5.0
-	github.com/mandelsoft/vfs v0.0.0-20200915112109-4781252bc384
+	github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
-	github.com/opencontainers/go-digest v1.0.0-rc1
+	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1 // indirect
@@ -43,6 +42,7 @@ require (
 	golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
+	gotest.tools/v3 v3.0.3 // indirect
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.6

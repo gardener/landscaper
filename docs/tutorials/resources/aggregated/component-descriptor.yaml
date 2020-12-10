@@ -13,7 +13,7 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/myproject
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
   sources: []
 
@@ -24,12 +24,12 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: myregistry/mypath/simple-aggregated:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.0
 
   componentReferences:
   - name: ingress
     componentName: github.com/gardener/landscaper/ingress-nginx
-    version: v0.1.0
+    version: v0.2.0
   - name: server
     componentName: github.com/gardener/landscaper/echo-server
     version: v0.1.0

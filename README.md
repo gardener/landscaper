@@ -34,11 +34,12 @@ helm install ./charts
 The chart can be configured via the values file:
 ```yaml
 image:
-  tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
+  tag: image version # .e.g. 0.2.0; check the latest releases in the github releases
 
 landscaper:
-  registrySecrets: # contains optional oci secrets
-    blueprints:
+  registryConfig: 
+    allowPlainHttpRegistries: false 
+    secrets: # contains optional oci secrets
       default: {
         "auths": {
           "hostname": {
@@ -46,17 +47,10 @@ landscaper:
           }
         }
       }
-    components:
-      default: {
-        "auths": {
-           "hostname": {
-             "auth": "my auth"
-           }
-        }
-      }
   
   # deploy with integrated deployers for quick start
   deployers: 
   - container
   - helm
+  - manifest
 ```

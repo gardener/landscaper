@@ -152,7 +152,8 @@ For the specific documentation about the available templating engines see [Templ
 ```yaml
 imports:
   <import-name>: <import value>
-cd: <resolved component descriptor>
+cd: <component descriptor>
+components: <list of all referenced component descriptors>
 ```
 
 All list of deployitem templates of all template executors are appended to one list as they are specified in the deployExecution.
@@ -180,14 +181,30 @@ cd:
   component:
     name: my-component
     version: v1.0.0
+    componentReferences:
+    - name: abc
+      componentName: my-referenced-component
+      version: v1.0.0
     resources:
-      nginx-ingress-chart:
-        name: nginx-ingress-chart
-        version: 0.30.0
-        relation: external
-        acccess:
-          type: ociRegistry
-          imageReference: nginx:0.30.0
+    - name: nginx-ingress-chart
+      version: 0.30.0
+      relation: external
+      acccess:
+        type: ociRegistry
+        imageReference: nginx:0.30.0
+components:
+- meta: # the resolved component referenced in "cd.component.componentReferences[0]"
+    schemaVersion: v2
+  component:
+    name: my-referenced-component
+    version: v1.0.0
+    resources:
+    - name: ubuntu
+      version: 0.18.0
+      relation: external
+      acccess:
+        type: ociRegistry
+        imageReference: ubuntu:0.18.0
 ```
 
 
@@ -207,10 +224,15 @@ deployExecutors:
         kind: ProviderConfiguration
         
         chart:
-          ref: {{ index .cd.component.resources "nginx-ingress-chart" "access" "imageReference" }} # resolves to nginx:0.30.0
+          {{ $resource := getResource .cd "name" "nginx-ingress-chart" }}
+          ref: {{ $resource.access.imageReference }} # resolves to nginx:0.30.0
         
         values:
           replicas: {{ .imports.replicas  }} # will resolve to 3
+          
+          {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
+          {{ $resource := getResource $component "name" "ubuntu" }}
+          usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
 ```
 
 ### ExportExecutions

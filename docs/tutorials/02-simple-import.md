@@ -14,6 +14,11 @@ __Prerequisites__:
 
 All example resources can be found in [docs/tutorials/resources/echo-server](./resources/echo-server).
 
+:warning: note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` is an example repository 
+and has to be replaced with your own registry if you want to upload your own artifacts.
+Although the artifacts are public readable so they can be used out-of-the-box without a need for your own oci registry.
+
+
 ### Resources
 
 #### Build the Blueprint
@@ -132,7 +137,7 @@ deployItems:
 
 Upload the blueprint into the oci registry.
 ```shell script
-landscaper-cli blueprints push myregistry/mypath/echo-server:v0.1.0 docs/tutorials/resources/echo-server/blueprint
+landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.0 docs/tutorials/resources/echo-server/blueprint
 ```
 
 #### Build the Component Descriptor
@@ -156,7 +161,7 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: eu.gcr.io/myproject
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
   resources:
   - type: blueprint
@@ -164,7 +169,7 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: myregistry/mypath/echo-server:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.0
   - type: ociImage
     name: echo-server-image
     version: v0.2.3
@@ -206,7 +211,7 @@ spec:
     ref:
       repositoryContext:
         type: ociRegistry
-        baseUrl: eu.gcr.io/my-project/comp
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/echo-server
       version: v0.1.0
       kind: localResource

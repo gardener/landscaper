@@ -18,6 +18,10 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
 - __readFile(path string): []byte__: reads a file from the blueprints filesystem
 - __readDir(path string): []FileInfo__: returns all files and directories in the given directory of the blueprint's filesystem.
 - __toYaml(interface{}): string__: converts the given object to valid yaml
+- __getResource(ComponentDescriptor, keyValuePairs ...string): Resource__: searches a resource in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the resource's identity.
+  `e.g. getResource .cd "name" "myResource"` -> returns the resource with the name `myResource`
+- __getComponent(componentDescriptor, keyValuePairs ...string): ComponentDescriptor__: searches a component in the given component descriptors that matches the specified selector. The selector are key-value pairs that describe the component reference's identity.
+  `e.g. getComponent .cd "name" "myComp"` -> seraches in the component descriptor for a component reference with the name `myComp` and returns the referenced component descriptor.
 - __parseOCIRef(ref string): [2]string__: parses an oci reference and returns the repository and the version.
   `e.g. host:5000/myrepo/myimage:1.0.0 -> ["host:5000/myrepo/myimage", "1.0.0"]`
 - __ociRefRepo(ref string): string__: parses an oci reference and returns the repository.

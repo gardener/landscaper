@@ -91,7 +91,7 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	defData, err := vfs.ReadFile(memFS, filepath.Join("/", lsv1alpha1.BlueprintFilePath))
+	defData, err := vfs.ReadFile(memFS, lsv1alpha1.BlueprintFileName)
 	if err != nil {
 		return err
 	}

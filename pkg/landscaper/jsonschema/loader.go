@@ -13,13 +13,13 @@ import (
 	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/xeipuuv/gojsonreference"
 	"github.com/xeipuuv/gojsonschema"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -64,9 +64,11 @@ type LoaderConfig struct {
 	// BlueprintFs is the virtual filesystem that is used to resolve "blueprint" refs
 	BlueprintFs vfs.FileSystem
 	// ComponentDescriptor contains the current blueprint's component descriptor.
-	ComponentDescriptor *cdutils.ResolvedComponentDescriptor
-	// ArtifactsRegistry is the registry to resolve resources of the component descriptor.
-	ArtifactsRegistry artifactsregistry.Registry
+	ComponentDescriptor *cdv2.ComponentDescriptor
+	// ComponentReferenceResolver is a function that resolves component references
+	ComponentReferenceResolver cdutils.ResolveComponentReferenceFunc
+	// BlobResolver is the registry to resolve resources of the component descriptor.
+	BlobResolver ctf.BlobResolver
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
 	DefaultLoader gojsonschema.JSONLoader
 }
@@ -162,13 +164,19 @@ func (l *Loader) loadBlueprintReference(refURL *url.URL) ([]byte, error) {
 
 func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, error) {
 	if l.ComponentDescriptor == nil {
-		return nil, errors.New("no component descriptor defined to read from resolve the ref")
+		return nil, errors.New("no component descriptor defined to resolve the ref")
+	}
+	if l.ComponentReferenceResolver == nil {
+		return nil, errors.New("no component reference resolver defined to resolve the ref")
+	}
+	if l.BlobResolver == nil {
+		return nil, errors.New("no blobl resolver defined to resolve the ref")
 	}
 	uri, err := cdutils.ParseURI(refURL.String())
 	if err != nil {
 		return nil, err
 	}
-	kind, res, err := uri.Get(*l.ComponentDescriptor)
+	kind, res, err := uri.Get(l.ComponentDescriptor, l.ComponentReferenceResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +188,7 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 	ctx := context.Background()
 	defer ctx.Done()
 	var JSONSchemaBuf bytes.Buffer
-	_, err = l.ArtifactsRegistry.GetBlob(ctx, resource.Access, &JSONSchemaBuf)
+	_, err = l.BlobResolver.Resolve(ctx, resource, &JSONSchemaBuf)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", refURL.String(), err)
 	}

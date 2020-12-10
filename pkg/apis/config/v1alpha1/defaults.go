@@ -15,11 +15,8 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 // SetDefaults_LandscaperConfiguration sets the defaults for the landscaper configuration.
 func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	if obj.DefaultOCI != nil {
-		if obj.Registries.Components.OCI == nil {
-			obj.Registries.Components.OCI = obj.DefaultOCI
-		}
-		if obj.Registries.Artifacts.OCI == nil {
-			obj.Registries.Artifacts.OCI = obj.DefaultOCI
+		if obj.Registry.OCI == nil {
+			obj.Registry.OCI = obj.DefaultOCI
 		}
 	}
 }

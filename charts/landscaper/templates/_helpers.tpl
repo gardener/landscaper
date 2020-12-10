@@ -66,27 +66,18 @@ Create the name of the service account to use
 apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
+{{- if .Values.landscaper.registryConfig }}
 registries:
-  components:
-  {{- if .Values.landscaper.registryConfig.components }}
     oci:
-      allowPlainHttp: {{ .Values.landscaper.registryConfig.components.allowPlainHttpRegistries }}
-      {{- if .Values.landscaper.registryConfig.components.secrets }}
+      allowPlainHttp: {{ .Values.landscaper.registryConfig.allowPlainHttpRegistries }}
+      {{- if .Values.landscaper.registryConfig.secrets }}
       configFiles:
-      {{- range $key, $value := .Values.landscaper.registryConfig.components.secrets }}
-      - /app/ls/registry/components/{{ $key }}
+      {{- range $key, $value := .Values.landscaper.registryConfig.secrets }}
+      - /app/ls/registry/secrets/{{ $key }}
       {{- end }}
       {{- end }}
-  {{- end }}
-  blueprints:
-    {{- if .Values.landscaper.registryConfig.blueprints }}
-    oci:
-      allowPlainHttp: {{ .Values.landscaper.registryConfig.blueprints.allowPlainHttpRegistries }}
-      {{- if .Values.landscaper.registryConfig.blueprints.secrets }}
-      configFiles:
-      {{- range $key, $value := .Values.landscaper.registryConfig.blueprints.secrets }}
-      - /app/ls/registry/blueprints/{{ $key }}
-      {{- end }}
-      {{- end }}
-    {{- end }}
+{{ end }}
+
+
+
 {{- end }}

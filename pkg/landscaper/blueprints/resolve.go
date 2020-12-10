@@ -5,10 +5,14 @@
 package blueprints
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/gardener/component-spec/bindings-go/utils/selector"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
@@ -18,24 +22,38 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
-func Resolve(ctx context.Context, op operation.RegistriesAccessor, def lsv1alpha1.BlueprintDefinition, fs vfs.FileSystem) (*Blueprint, error) {
+func Resolve(ctx context.Context, resolver ctf.ComponentResolver, def lsv1alpha1.BlueprintDefinition, fs vfs.FileSystem) (*Blueprint, error) {
 	if def.Reference == nil && def.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
 	}
 
+	if fs == nil {
+		osFs := osfs.New()
+		tmpDir, err := vfs.TempDir(osFs, osFs.FSTempDir(), "blueprint-")
+		if err != nil {
+			return nil, fmt.Errorf("unable to create temporary directory: %w", err)
+		}
+		fs, err = projectionfs.New(osFs, tmpDir)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create virtual filesystem with base path %s for content: %w", tmpDir, err)
+		}
+	}
+
 	if def.Inline != nil {
-		fs, err := yamlfs.New(def.Inline.Filesystem)
+		inlineFs, err := yamlfs.New(def.Inline.Filesystem)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create yamlfs for inline blueprint: %w", err)
 		}
+		if err := utils.CopyFS(inlineFs, fs, "/", "/"); err != nil {
+			return nil, fmt.Errorf("unable to copy yaml filesystem: %w", err)
+		}
 		// read blueprint yaml from file system
-		data, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFilePath)
+		data, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read blueprint file from inline defined blueprint: %w", err)
 		}
@@ -54,40 +72,74 @@ func Resolve(ctx context.Context, op operation.RegistriesAccessor, def lsv1alpha
 	if reference.RepositoryContext == nil {
 		return nil, fmt.Errorf("no respository context defined")
 	}
-	cd, err := op.ComponentsRegistry().Resolve(ctx, *reference.RepositoryContext, reference.ObjectMeta())
+	cd, blobResolver, err := resolver.Resolve(ctx, *reference.RepositoryContext, reference.ComponentName, reference.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", reference, err)
 	}
 
-	res, err := cdutils.FindResourceInComponentByVersionedReference(*cd, lsv1alpha1.BlueprintResourceType, reference.VersionedResourceReference)
+	blueprint, err := ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, fs, reference.ResourceName)
 	if err != nil {
-		return nil, fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", reference, err)
+		return nil, err
 	}
 
-	blue, err := op.BlueprintsRegistry().GetBlueprint(ctx, res)
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch blueprint for ref %#v: %w", reference, err)
-	}
-
-	if fs == nil {
-		osFs := osfs.New()
-		tmpDir, err := vfs.TempDir(osFs, osFs.FSTempDir(), "blueprint-")
-		if err != nil {
-			return nil, fmt.Errorf("unable to create temporary directory: %w", err)
-		}
-		fs, err = projectionfs.New(osFs, tmpDir)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create virtual filesystem with base path %s for content for ref %#v: %w", tmpDir, reference, err)
-		}
-
-	}
-	if err := op.BlueprintsRegistry().GetContent(ctx, res, fs); err != nil {
-		return nil, fmt.Errorf("unable to fetch content for ref %#v: %w", reference, err)
-	}
-
-	intBlueprint, err := New(blue, readonlyfs.New(fs))
+	intBlueprint, err := New(blueprint, readonlyfs.New(fs))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create internal blueprint representation for ref %#v: %w", reference, err)
 	}
 	return intBlueprint, nil
+}
+
+// ResolveBlueprintFromBlobResolver resolves a blueprint defined by a component descriptor with
+// a blob resolver.
+func ResolveBlueprintFromBlobResolver(ctx context.Context,
+	cd *cdv2.ComponentDescriptor,
+	blobResolver ctf.BlobResolver,
+	fs vfs.FileSystem,
+	blueprintName string) (*lsv1alpha1.Blueprint, error) {
+
+	// get blueprint resource from component descriptor
+	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: add resolver for old blueprints
+	var data bytes.Buffer
+	if _, err := blobResolver.Resolve(ctx, resource, &data); err != nil {
+		return nil, fmt.Errorf("unable to resolve blueprint blob: %w", err)
+	}
+	if err := utils.ExtractTarGzip(&data, fs, "/"); err != nil {
+		return nil, err
+	}
+
+	blueprintBytes, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
+	}
+	blueprint := &lsv1alpha1.Blueprint{}
+	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).
+		UniversalDecoder().
+		Decode(blueprintBytes, nil, blueprint); err != nil {
+		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)
+	}
+
+	return blueprint, err
+}
+
+// GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
+func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, blueprintName string) (cdv2.Resource, error) {
+	// get blueprint resource from component descriptor
+	resources, err := cd.GetResourcesByType(lsv1alpha1.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+	if err != nil {
+		if !errors.Is(err, cdv2.NotFound) {
+			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+		}
+		// try to fallback to old blueprint type
+		resources, err = cd.GetResourcesByType(lsv1alpha1.OldBlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+		if err != nil {
+			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
+		}
+	}
+	// todo: consider to throw an error if multiple blueprints match
+	return resources[0], nil
 }

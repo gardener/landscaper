@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -15,18 +16,20 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/gardener/component-spec/bindings-go/utils/selector"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
 )
 
 // GoTemplateExecution is the go template implementation for landscaper templating.
 type GoTemplateExecution struct {
-	artifactRegistry artifactsregistry.Registry
-	state            GenericStateHandler
+	blobResolver ctf.BlobResolver
+	state        GenericStateHandler
 }
 
 // GoTemplateResult describes the result of go templating.
@@ -35,7 +38,8 @@ type GoTemplateResult struct {
 }
 
 // GoTemplate is the GoTemplate executor for a deploy execution.
-func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, components, imports interface{}) ([]byte, error) {
+func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
+	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error) {
 	var rawTemplate string
 	if len(tmplExec.Template) != 0 {
 		if err := json.Unmarshal(tmplExec.Template, &rawTemplate); err != nil {
@@ -61,18 +65,14 @@ func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	tmpl, err := template.New("execution").
-		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, t.artifactRegistry)).
+		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, descriptor, cdList, t.blobResolver)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
 		return nil, err
 	}
 
-	values := map[string]interface{}{
-		"imports": imports,
-		"cd":      components,
-		"state":   state,
-	}
+	values["state"] = state
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (t *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.Templ
 	}
 
 	tmpl, err := template.New("execution").
-		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, t.artifactRegistry)).
+		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, nil, nil, t.blobResolver)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
@@ -186,8 +186,8 @@ func LandscaperSprigFuncMap() template.FuncMap {
 
 // LandscaperTplFuncMap contains all additional landscaper functions that are
 // available in the executors templates.
-func LandscaperTplFuncMap(fs vfs.FileSystem, registry artifactsregistry.Registry) map[string]interface{} {
-	return map[string]interface{}{
+func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, blobResolver ctf.BlobResolver) map[string]interface{} {
+	funcs := map[string]interface{}{
 		"readFile": readFileFunc(fs),
 		"readDir":  readDir(fs),
 
@@ -196,8 +196,14 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, registry artifactsregistry.Registry
 		"parseOCIRef":   parseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
-		"resolve":       resolveArtifactFunc(registry),
+		"resolve":       resolveArtifactFunc(blobResolver),
 	}
+	if cd != nil {
+		funcs["getResource"] = getResourceGoFunc(cd)
+		funcs["getResources"] = getResourcesGoFunc(cd)
+		funcs["getComponent"] = getComponentGoFunc(cd, cdList)
+	}
+	return funcs
 }
 
 // readFileFunc returns a function that reads a file from a location in a filesystem
@@ -262,22 +268,176 @@ func getOCIReferenceRepository(ref string) string {
 }
 
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access
-func resolveArtifactFunc(registry artifactsregistry.Registry) func(access map[string]interface{}) []byte {
+func resolveArtifactFunc(blobResolver ctf.BlobResolver) func(access map[string]interface{}) []byte {
 	return func(access map[string]interface{}) []byte {
-		accessBytes, err := json.Marshal(access)
-		if err != nil {
-			panic(err)
-		}
-		acc, err := cdv2.UnmarshalTypedObjectAccessor(accessBytes, cdv2.KnownAccessTypes, nil, nil)
-		if err != nil {
-			panic(err)
-		}
 		ctx := context.Background()
 		defer ctx.Done()
 		var data bytes.Buffer
-		if _, err := registry.GetBlob(ctx, acc, &data); err != nil {
+		if _, err := blobResolver.Resolve(ctx, cdv2.Resource{Access: cdv2.NewUnstructuredType(access["type"].(string), access)}, &data); err != nil {
 			panic(err)
 		}
 		return data.Bytes()
 	}
+}
+
+func getResourcesGoFunc(cd *cdv2.ComponentDescriptor) func(...interface{}) []map[string]interface{} {
+	return func(args ...interface{}) []map[string]interface{} {
+		resources, err := resolveResources(cd, args)
+		if err != nil {
+			panic(err)
+		}
+
+		data, err := json.Marshal(resources)
+		if err != nil {
+			panic(err)
+		}
+
+		parsedResources := []map[string]interface{}{}
+		if err := json.Unmarshal(data, &parsedResources); err != nil {
+			panic(err)
+		}
+		return parsedResources
+	}
+}
+
+func getResourceGoFunc(cd *cdv2.ComponentDescriptor) func(args ...interface{}) map[string]interface{} {
+	return func(args ...interface{}) map[string]interface{} {
+		resources, err := resolveResources(cd, args)
+		if err != nil {
+			panic(err)
+		}
+
+		// resources must be at least one, otherwise an error will be thrown
+		data, err := json.Marshal(resources[0])
+		if err != nil {
+			panic(err)
+		}
+
+		parsedResource := map[string]interface{}{}
+		if err := json.Unmarshal(data, &parsedResource); err != nil {
+			panic(err)
+		}
+		return parsedResource
+	}
+}
+
+func resolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) ([]cdv2.Resource, error) {
+	if len(args) < 3 {
+		panic("at least 3 arguments are expected")
+	}
+	// if the first argument is map we use it as the component descriptor
+	// otherwise the default one is used
+	desc := defaultCD
+	if cdMap, ok := args[0].(map[string]interface{}); ok {
+		data, err := json.Marshal(cdMap)
+		if err != nil {
+			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+		}
+		desc = &cdv2.ComponentDescriptor{}
+		if err := codec.Decode(data, desc); err != nil {
+			return nil, err
+		}
+		// resize the arguments to remove the component descriptor and keep the arguments
+		args = args[1:]
+	}
+
+	if len(args)%2 != 0 {
+		return nil, errors.New("odd number of key value pairs")
+	}
+
+	// build the selector from key, value pairs
+	sel := selector.DefaultSelector{}
+	for i := 0; i < len(args); i = i + 2 {
+		key, ok := args[i].(string)
+		if !ok {
+			panic(fmt.Errorf("expect argument %d to be a string", i))
+		}
+		value, ok := args[i+1].(string)
+		if !ok {
+			panic(fmt.Errorf("expect argument %d to be a string", i+1))
+		}
+		sel[key] = value
+	}
+
+	resources, err := desc.GetResourcesBySelector(sel)
+	if err != nil {
+		return nil, err
+	}
+	return resources, nil
+}
+
+func getComponentGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+	return func(args ...interface{}) map[string]interface{} {
+		components, err := resolveComponents(cd, list, args)
+		if err != nil {
+			panic(err)
+		}
+
+		// resources must be at least one, otherwise an error will be thrown
+		data, err := json.Marshal(components[0])
+		if err != nil {
+			panic(err)
+		}
+
+		parsedComponent := map[string]interface{}{}
+		if err := json.Unmarshal(data, &parsedComponent); err != nil {
+			panic(err)
+		}
+		return parsedComponent
+	}
+}
+
+func resolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList, args []interface{}) ([]cdv2.ComponentDescriptor, error) {
+	if len(args) < 2 {
+		panic("at least 2 arguments are expected")
+	}
+	// if the first argument is map we use it as the component descriptor
+	// otherwise the default one is used
+	desc := defaultCD
+	if cdMap, ok := args[0].(map[string]interface{}); ok {
+		data, err := json.Marshal(cdMap)
+		if err != nil {
+			return nil, fmt.Errorf(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+		}
+		desc = &cdv2.ComponentDescriptor{}
+		if err := codec.Decode(data, desc); err != nil {
+			return nil, err
+		}
+		// resize the arguments to remove the component descriptor and keep the arguments
+		args = args[1:]
+	}
+
+	if len(args)%2 != 0 {
+		return nil, errors.New("odd number of key value pairs")
+	}
+
+	// build the selector from key, value pairs
+	sel := selector.DefaultSelector{}
+	for i := 0; i < len(args); i = i + 2 {
+		key, ok := args[i].(string)
+		if !ok {
+			panic(fmt.Errorf("expect argument %d to be a string", i))
+		}
+		value, ok := args[i+1].(string)
+		if !ok {
+			panic(fmt.Errorf("expect argument %d to be a string", i+1))
+		}
+		sel[key] = value
+	}
+
+	compRefs, err := desc.GetComponentReferences(sel)
+	if err != nil {
+		return nil, err
+	}
+
+	components := make([]cdv2.ComponentDescriptor, len(compRefs))
+	for i, compRef := range compRefs {
+		cd, err := list.GetComponent(compRef.ComponentName, compRef.Version)
+		if err != nil {
+			return nil, fmt.Errorf("unable to resolve component %s:%s", compRef.Name, compRef.Version)
+		}
+		components[i] = cd
+	}
+
+	return components, nil
 }

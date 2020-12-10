@@ -12,14 +12,13 @@ import (
 	"os"
 	"path/filepath"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
+	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	"github.com/gardener/landscaper/pkg/logger"
 	"github.com/gardener/landscaper/pkg/utils/oci"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -68,16 +67,19 @@ func (o *showOptions) run(ctx context.Context, log logr.Logger) error {
 	if err != nil {
 		return err
 	}
-	reg, err := artifactsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
+
+	manifest, err := ociClient.GetManifest(ctx, o.ref)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get oci manifest: %w", err)
 	}
+	layers := oci.GetLayerByMediaType(manifest.Layers, jsonschema.JSONSchemaMediaType)
+	if len(layers) == 0 {
+		return fmt.Errorf("no jsonschema blobs with the media type %s can be found", jsonschema.JSONSchemaMediaType)
+	}
+
 	var jsonSchemaBytes bytes.Buffer
-	if _, err := reg.GetBlob(ctx, &cdv2.OCIRegistryAccess{
-		ObjectType:     cdv2.ObjectType{Type: cdv2.OCIRegistryType},
-		ImageReference: o.ref,
-	}, &jsonSchemaBytes); err != nil {
-		return err
+	if err := ociClient.Fetch(ctx, o.ref, layers[0], &jsonSchemaBytes); err != nil {
+		return fmt.Errorf("unable to fetch jsonschema blob from registry: %w", err)
 	}
 
 	var jsonSchema interface{}
@@ -115,4 +117,4 @@ func (o *showOptions) Complete(args []string) error {
 	return nil
 }
 
-func (o *showOptions) AddFlags(fs *pflag.FlagSet) {}
+func (o *showOptions) AddFlags(_ *pflag.FlagSet) {}

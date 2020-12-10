@@ -4,6 +4,7 @@ imports:
     kind: Target
     metadata:
       name: my-cluster
+      namespace: default
     spec:
       type: landscaper.gardener.cloud/kubernetes-cluster
       config:

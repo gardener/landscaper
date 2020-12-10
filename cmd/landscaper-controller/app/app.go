@@ -74,7 +74,7 @@ func (o *options) run(ctx context.Context) error {
 	for _, deployerName := range o.enabledDeployers {
 		if deployerName == "container" {
 			config := &containerv1alpha1.Configuration{
-				OCI: o.config.Registries.Artifacts.OCI,
+				OCI: o.config.Registry.OCI,
 			}
 			containerv1alpha1.SetDefaults_Configuration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
@@ -82,7 +82,7 @@ func (o *options) run(ctx context.Context) error {
 			}
 		} else if deployerName == "helm" {
 			config := &helmv1alpha1.Configuration{
-				OCI: o.config.Registries.Artifacts.OCI,
+				OCI: o.config.Registry.OCI,
 			}
 			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)

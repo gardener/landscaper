@@ -21,8 +21,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	artifactsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/artifacts"
-	blueprintsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/oci/cache"
@@ -32,13 +30,10 @@ func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (rec
 	op := &operation.Operation{}
 	_ = op.InjectLogger(log)
 
-	var (
-		regConfig   = &lsConfig.Registries
-		sharedCache cache.Cache
-	)
-	if regConfig.Components.OCI != nil && regConfig.Components.OCI.Cache != nil {
+	var sharedCache cache.Cache
+	if lsConfig.Registry.OCI != nil && lsConfig.Registry.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Components.OCI.Cache))
+		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(lsConfig.Registry.OCI.Cache))
 		if err != nil {
 			return nil, err
 		}
@@ -51,42 +46,19 @@ func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (rec
 
 	log.V(3).Info("setup components registry")
 
-	if regConfig.Artifacts.OCI != nil && regConfig.Artifacts.OCI.Cache != nil {
-		var err error
-		sharedCache, err = cache.NewCache(log, cache.WithConfiguration(regConfig.Artifacts.OCI.Cache))
-		if err != nil {
-			return nil, err
-		}
-	}
-	blueprintsRegistryMgr := blueprintsregistry.New(sharedCache)
-	_ = op.InjectBlueprintsRegistry(blueprintsRegistryMgr)
-	log.V(3).Info("setup blueprints registry")
-
-	artifactsRegistryMgr, err := artifactsregistry.New(sharedCache)
-	if err != nil {
-		return nil, err
-	}
-	_ = op.InjectArtifactsRegistry(artifactsRegistryMgr)
-	log.V(3).Info("setup artifacts registry")
-
 	return &actuator{
 		Interface:             op,
 		lsConfig:              lsConfig,
 		componentsRegistryMgr: componentRegistryMgr,
-		blueprintRegistryMgr:  blueprintsRegistryMgr,
-		artifactsRegistryMgr:  artifactsRegistryMgr,
 	}, nil
 }
 
 // NewTestActuator creates a new actuator that is only meant for testing.
 func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *actuator {
-	artifactsRegistry, _ := artifactsregistry.New(nil)
 	a := &actuator{
 		Interface:             op,
 		lsConfig:              configuration,
 		componentsRegistryMgr: &componentsregistry.Manager{},
-		blueprintRegistryMgr:  blueprintsregistry.New(nil),
-		artifactsRegistryMgr:  artifactsRegistry,
 	}
 	return a
 }
@@ -94,9 +66,7 @@ func NewTestActuator(op operation.Interface, configuration *config.LandscaperCon
 type actuator struct {
 	operation.Interface
 	lsConfig              *config.LandscaperConfiguration
-	blueprintRegistryMgr  blueprintsregistry.Manager
 	componentsRegistryMgr *componentsregistry.Manager
-	artifactsRegistryMgr  *artifactsregistry.Manager
 }
 
 func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
@@ -201,7 +171,7 @@ func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Insta
 		inst.Spec.Blueprint.Reference.RepositoryContext = a.lsConfig.RepositoryContext
 	}
 
-	intBlueprint, err := blueprints.Resolve(ctx, a.Interface, inst.Spec.Blueprint, nil)
+	intBlueprint, err := blueprints.Resolve(ctx, a.Interface.ComponentsRegistry(), inst.Spec.Blueprint, nil)
 	if err != nil {
 		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
 			"InitPrerequisites", "ResolveBlueprint", err.Error())
