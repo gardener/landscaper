@@ -15,10 +15,15 @@
 package ctf
 
 import (
+	"archive/tar"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"os"
+
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 )
@@ -68,6 +73,132 @@ type BlobInfo struct {
 
 	// Size specifies the size in bytes of the blob.
 	Size int64 `json:"size"`
+}
+
+type CTF struct {
+	fs vfs.FileSystem
+	ctfPath string
+	tempDir string
+	tempFs vfs.FileSystem
+}
+
+// NewCTF reads a CTF archive from a file.
+// The use should call "Close" to remove all temporary files
+func NewCTF(fs vfs.FileSystem, ctfPath string) (*CTF, error) {
+	tempDir, err := vfs.TempDir(fs, "", "ctf-")
+	if err != nil {
+		return nil, err
+	}
+	tempFs, err := projectionfs.New(fs, tempDir)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create fs for temporary directory %q: %w", tempDir, err)
+	}
+
+	ctf := &CTF{
+		fs:      fs,
+		ctfPath: ctfPath,
+		tempDir: tempDir,
+		tempFs:  tempFs,
+	}
+	if err := ctf.extract(); err != nil {
+		return nil, fmt.Errorf("unable to read ctf: %w", err)
+	}
+	return ctf, nil
+}
+
+type WalkFunc = func(ca *ComponentArchive) error
+
+// Walk traversses through all component archives that are included in the ctf.
+func (ctf *CTF) Walk(walkFunc WalkFunc) error {
+	err := vfs.Walk(ctf.tempFs, "/", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := ctf.tempFs.Open(path)
+		if err != nil {
+			return fmt.Errorf("unable to read component archive file %q: %w", path, err)
+		}
+		ca, err := NewComponentArchiveFromTarReader(file)
+		if err != nil {
+			return err
+		}
+
+		return walkFunc(ca)
+	})
+	return err
+}
+
+// AddComponentArchive adds or updates a component archive in the ctf archive.
+func (ctf *CTF) AddComponentArchive(ca *ComponentArchive) error {
+	filename, err := ca.Digest()
+	if err != nil {
+		return err
+	}
+	file, err := ctf.tempFs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	if err := ca.WriteTar(file); err != nil {
+		return fmt.Errorf("unable to write component archive to %q: %w", filename, err)
+	}
+	return file.Close()
+}
+
+// extract untars the given ctf archive to the tmp directory.
+func (ctf *CTF) extract() error {
+	file, err := ctf.fs.Open(ctf.ctfPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return ExtractTarToFs(ctf.tempFs, file)
+}
+
+// Write writes the current changes back to the original ctf.
+func (ctf *CTF) Write() error {
+	file, err := ctf.fs.OpenFile(ctf.ctfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	tw := tar.NewWriter(file)
+	defer tw.Close()
+
+	err = vfs.Walk(ctf.tempFs, "/", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		if err := tw.WriteHeader(header); err != nil {
+			return fmt.Errorf("unable to write header for %q: %w", path, err)
+		}
+
+		blob, err := ctf.tempFs.Open(path)
+		if err != nil {
+			return fmt.Errorf("unable to open blob %q: %w", path, err)
+		}
+		defer blob.Close()
+		if _, err := io.Copy(tw, blob); err != nil {
+			return fmt.Errorf("unable to write blob %q: %w", path, err)
+		}
+		return nil
+	})
+	return err
+}
+
+// Close closes the CTF that deletes all temporary files
+func (ctf *CTF) Close() error {
+	return ctf.fs.RemoveAll(ctf.tempDir)
 }
 
 // AggregatedBlobResolver combines multiple blob resolver.

@@ -22,6 +22,9 @@ const ComponentDescriptorTarMimeType = "application/vnd.gardener.cloud.cnudie.co
 // that are stored as JSON.
 const ComponentDescriptorJSONMimeType = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+json"
 
+// ComponentDescriptorNamespace is the subpath for all component descriptor artifacts in an oci registry.‚
+const ComponentDescriptorNamespace = "component-descriptors"
+
 // ComponentDescriptorMimeType are the mimetypes for component-descriptor-blobs.
 var ComponentDescriptorMimeType = []string{
 	ComponentDescriptorTarMimeType,

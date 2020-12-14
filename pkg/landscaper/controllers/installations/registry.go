@@ -7,12 +7,14 @@ package installations
 import (
 	"context"
 
+	"github.com/gardener/component-cli/ociclient"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/gardener/component-cli/ociclient/credentials"
+
+	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
@@ -42,9 +44,9 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	ociClient, err := oci.NewClient(a.Log(),
-		oci.WithConfiguration(a.lsConfig.Registry.OCI),
-		oci.WithResolver{Resolver: ociKeyring})
+	ociClient, err := ociclient.NewClient(a.Log(),
+		confighelper.WithConfiguration(a.lsConfig.Registry.OCI),
+		ociclient.WithResolver{Resolver: ociKeyring})
 	if err != nil {
 		return err
 	}

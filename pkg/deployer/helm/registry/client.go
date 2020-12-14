@@ -13,17 +13,19 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 
+	"github.com/gardener/component-cli/ociclient"
+
+	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 type Client struct {
-	oci oci.Client
+	oci ociclient.Client
 }
 
 // NewClient creates a new helm oci registry client.
 func NewClient(log logr.Logger, config *helmv1alpha1.Configuration) (*Client, error) {
-	ociClient, err := oci.NewClient(log, oci.WithConfiguration(config.OCI))
+	ociClient, err := ociclient.NewClient(log, confighelper.WithConfiguration(config.OCI))
 	if err != nil {
 		return nil, err
 	}

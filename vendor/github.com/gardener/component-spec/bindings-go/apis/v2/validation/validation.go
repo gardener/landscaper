@@ -54,21 +54,22 @@ func validate(fldPath *field.Path, component *v2.ComponentDescriptor) field.Erro
 		allErrs = append(allErrs, err)
 	}
 
-	allErrs = append(allErrs, validateObjectMeta(compPath, component)...)
+	allErrs = append(allErrs, ValidateObjectMeta(compPath, component)...)
 
 	srcPath := compPath.Child("sources")
-	allErrs = append(allErrs, validateSources(srcPath, component.Sources)...)
+	allErrs = append(allErrs, ValidateSources(srcPath, component.Sources)...)
 
 	refPath := compPath.Child("componentReferences")
-	allErrs = append(allErrs, validateComponentReferences(refPath, component.ComponentReferences)...)
+	allErrs = append(allErrs, ValidateComponentReferences(refPath, component.ComponentReferences)...)
 
 	resourcePath := compPath.Child("resources")
-	allErrs = append(allErrs, validateResources(resourcePath, component.Resources, component.GetVersion())...)
+	allErrs = append(allErrs, ValidateResources(resourcePath, component.Resources, component.GetVersion())...)
 
 	return allErrs
 }
 
-func validateObjectMeta(fldPath *field.Path, om v2.ObjectMetaAccessor) field.ErrorList {
+// ValidateObjectMeta validate the metadata of an object.
+func ValidateObjectMeta(fldPath *field.Path, om v2.ObjectMetaAccessor) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if len(om.GetName()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "must specify a name"))
@@ -77,12 +78,13 @@ func validateObjectMeta(fldPath *field.Path, om v2.ObjectMetaAccessor) field.Err
 		allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must specify a version"))
 	}
 	if len(om.GetLabels()) != 0 {
-		allErrs = append(allErrs, validateLabels(fldPath.Child("labels"), om.GetLabels())...)
+		allErrs = append(allErrs, ValidateLabels(fldPath.Child("labels"), om.GetLabels())...)
 	}
 	return allErrs
 }
 
-func validateIdentity(fldPath *field.Path, id v2.Identity) field.ErrorList {
+// ValidateIdentity validates the identity of object.
+func ValidateIdentity(fldPath *field.Path, id v2.Identity) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	for key := range id {
@@ -100,12 +102,14 @@ func validateIdentity(fldPath *field.Path, id v2.Identity) field.ErrorList {
 	return allErrs
 }
 
-func validateSources(fldPath *field.Path, sources []v2.Source) field.ErrorList {
+// ValidateSources validates a list of sources.
+// It makes sure that no duplicate sources are present.
+func ValidateSources(fldPath *field.Path, sources []v2.Source) field.ErrorList {
 	allErrs := field.ErrorList{}
 	sourceIDs := make(map[string]struct{})
 	for i, src := range sources {
 		srcPath := fldPath.Index(i)
-		allErrs = append(allErrs, validateSource(srcPath, src)...)
+		allErrs = append(allErrs, ValidateSource(srcPath, src)...)
 
 		id := string(src.GetIdentityDigest())
 		if _, ok := sourceIDs[id]; ok {
@@ -117,7 +121,8 @@ func validateSources(fldPath *field.Path, sources []v2.Source) field.ErrorList {
 	return allErrs
 }
 
-func validateSource(fldPath *field.Path, src v2.Source) field.ErrorList {
+// ValidateSource validates the a component's source object.
+func ValidateSource(fldPath *field.Path, src v2.Source) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if len(src.GetName()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "must specify a name"))
@@ -125,13 +130,14 @@ func validateSource(fldPath *field.Path, src v2.Source) field.ErrorList {
 	if len(src.GetType()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("type"), "must specify a type"))
 	}
-	allErrs = append(allErrs, validateIdentity(fldPath.Child("extraIdentity"), src.ExtraIdentity)...)
+	allErrs = append(allErrs, ValidateIdentity(fldPath.Child("extraIdentity"), src.ExtraIdentity)...)
 	return allErrs
 }
 
-func validateResource(fldPath *field.Path, res v2.Resource) field.ErrorList {
+// ValidateResource validates a components resource
+func ValidateResource(fldPath *field.Path, res v2.Resource) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, validateObjectMeta(fldPath, &res)...)
+	allErrs = append(allErrs, ValidateObjectMeta(fldPath, &res)...)
 
 	if !identityKeyValidationRegexp.Match([]byte(res.Name)) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), res.Name, identityKeyValidationErrMsg))
@@ -140,7 +146,10 @@ func validateResource(fldPath *field.Path, res v2.Resource) field.ErrorList {
 	if len(res.GetType()) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("type"), "must specify a type"))
 	}
-	allErrs = append(allErrs, validateIdentity(fldPath.Child("extraIdentity"), res.ExtraIdentity)...)
+	if res.Access == nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("access"), "must specify a access"))
+	}
+	allErrs = append(allErrs, ValidateIdentity(fldPath.Child("extraIdentity"), res.ExtraIdentity)...)
 
 	return allErrs
 }
@@ -155,7 +164,8 @@ func validateProvider(fldPath *field.Path, provider v2.ProviderType) *field.Erro
 	return nil
 }
 
-func validateLabels(fldPath *field.Path, labels []v2.Label) field.ErrorList {
+// ValidateLabels validates a list of labels.
+func ValidateLabels(fldPath *field.Path, labels []v2.Label) field.ErrorList {
 	allErrs := field.ErrorList{}
 	labelNames := make(map[string]struct{})
 	for i, label := range labels {
@@ -174,21 +184,24 @@ func validateLabels(fldPath *field.Path, labels []v2.Label) field.ErrorList {
 	return allErrs
 }
 
-func validateComponentReference(fldPath *field.Path, cr v2.ComponentReference) field.ErrorList {
+// ValidateComponentReference validates a component reference.
+func ValidateComponentReference(fldPath *field.Path, cr v2.ComponentReference) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if len(cr.ComponentName) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("componentName"), "must specify a component name"))
 	}
-	allErrs = append(allErrs, validateObjectMeta(fldPath, &cr)...)
+	allErrs = append(allErrs, ValidateObjectMeta(fldPath, &cr)...)
 	return allErrs
 }
 
-func validateComponentReferences(fldPath *field.Path, refs []v2.ComponentReference) field.ErrorList {
+// ValidateComponentReferences validates a list of component references.
+// It makes sure that no duplicate sources are present.
+func ValidateComponentReferences(fldPath *field.Path, refs []v2.ComponentReference) field.ErrorList {
 	allErrs := field.ErrorList{}
 	refIDs := make(map[string]struct{})
 	for i, ref := range refs {
 		refPath := fldPath.Index(i)
-		allErrs = append(allErrs, validateComponentReference(refPath, ref)...)
+		allErrs = append(allErrs, ValidateComponentReference(refPath, ref)...)
 
 		id := string(ref.GetIdentityDigest())
 		if _, ok := refIDs[id]; ok {
@@ -200,12 +213,14 @@ func validateComponentReferences(fldPath *field.Path, refs []v2.ComponentReferen
 	return allErrs
 }
 
-func validateResources(fldPath *field.Path, resources []v2.Resource, componentVersion string) field.ErrorList {
+// ValidateResources validates a list of resources.
+// It makes sure that no duplicate sources are present.
+func ValidateResources(fldPath *field.Path, resources []v2.Resource, componentVersion string) field.ErrorList {
 	allErrs := field.ErrorList{}
 	resourceIDs := make(map[string]struct{})
 	for i, res := range resources {
 		localPath := fldPath.Index(i)
-		allErrs = append(allErrs, validateResource(localPath, res)...)
+		allErrs = append(allErrs, ValidateResource(localPath, res)...)
 
 		// only validate the component version if it is defined
 		if res.Relation == v2.LocalRelation && len(componentVersion) != 0 {

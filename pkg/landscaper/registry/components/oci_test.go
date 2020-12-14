@@ -20,9 +20,10 @@ import (
 	. "github.com/onsi/gomega"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
+	mock_oci "github.com/gardener/component-cli/ociclient/mock"
+
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
-	mock_oci "github.com/gardener/landscaper/pkg/utils/oci/mock"
 )
 
 func TestConfig(t *testing.T) {
@@ -69,14 +70,14 @@ var _ = Describe("Registry", func() {
 			Layers: []ocispecv1.Descriptor{cdLayerDesc},
 		}
 
-		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
-		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
+		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/my-comp:0.0.1").Return(manifest, nil)
+		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			data, err := ioutil.ReadFile("./testdata/comp1/config.json")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 		})
-		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
+		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			var buf bytes.Buffer
 			Expect(utils.BuildTar(osfs.New(), "./testdata/comp1", &buf)).To(Succeed())
 			_, err = io.Copy(writer, &buf)
@@ -110,14 +111,14 @@ var _ = Describe("Registry", func() {
 			Layers: []ocispecv1.Descriptor{cdLayerDesc},
 		}
 
-		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
-		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
+		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/my-comp:0.0.1").Return(manifest, nil)
+		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/my-comp:0.0.1", cdConfigLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			data, err := ioutil.ReadFile("./testdata/comp1/config.json")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 		})
-		ociClient.EXPECT().Fetch(ctx, "example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
+		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			data, err := ioutil.ReadFile("./testdata/comp1/component-descriptor.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(writer, bytes.NewBuffer(data))
@@ -151,7 +152,7 @@ var _ = Describe("Registry", func() {
 			},
 		}
 
-		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
+		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/my-comp:0.0.1").Return(manifest, nil)
 
 		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
 		Expect(err).To(HaveOccurred())
@@ -175,7 +176,7 @@ var _ = Describe("Registry", func() {
 			Layers: []ocispecv1.Descriptor{cdLayerDesc},
 		}
 
-		ociClient.EXPECT().GetManifest(ctx, "example.com/my-comp:0.0.1").Return(manifest, nil)
+		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/my-comp:0.0.1").Return(manifest, nil)
 
 		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
 		Expect(err).To(HaveOccurred())

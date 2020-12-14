@@ -11,7 +11,7 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
+	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // TypedRegistry describes a registry that can handle the given type.

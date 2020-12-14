@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
@@ -23,6 +24,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/component-cli/ociclient/credentials"
+
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
@@ -30,8 +33,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/credentials"
 )
 
 // Run downloads the import config, the component descriptor and the blob content
@@ -205,7 +206,7 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs
 		return nil, err
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithResolver{Resolver: keyring})
+	ociClient, err := ociclient.NewClient(log, ociclient.WithResolver{Resolver: keyring})
 	if err != nil {
 		return nil, err
 	}

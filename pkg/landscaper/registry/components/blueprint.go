@@ -12,14 +12,15 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
+	"github.com/gardener/component-cli/ociclient"
+
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/utils/oci"
 )
 
 // BlueprintResolver is a blob resolver that can resolve
 // blueprints that are defined as their independent oci artifact.
 type BlueprintResolver struct {
-	ociClient oci.Client
+	ociClient ociclient.Client
 }
 
 var _ ctf.TypedBlobResolver = &BlueprintResolver{}

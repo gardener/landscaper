@@ -12,9 +12,9 @@ cd "$(dirname $0)/.."
 
 make install-requirements
 
-mkdir -p /go/src/github.com/gardener/landscaper
-cp -r . /go/src/github.com/gardener/landscaper
-cd /go/src/github.com/gardener/landscaper
+#mkdir -p /go/src/github.com/gardener/landscaper
+#cp -a . /go/src/github.com/gardener/landscaper
+#cd /go/src/github.com/gardener/landscaper
 
 make verify
 make test

@@ -233,16 +233,26 @@ func (c ComponentDescriptor) GetResourceIndex(res Resource) int {
 	return -1
 }
 
-// ToUnstructuredTypedObject converts a typed object to a unstructured object.
-func ToUnstructuredTypedObject(codec TypedObjectCodec, obj TypedObjectAccessor) (*UnstructuredAccessType, error) {
-	data, err := codec.Encode(obj)
-	if err != nil {
-		return nil, err
+// GetComponentReferenceIndex returns the index of a given component reference.
+// If the index is not found -1 is returned.
+func (c ComponentDescriptor) GetComponentReferenceIndex(ref ComponentReference) int {
+	id := ref.GetIdentityDigest()
+	for i, cur := range c.ComponentReferences {
+		if bytes.Compare(cur.GetIdentityDigest(), id) == 0 {
+			return i
+		}
 	}
+	return -1
+}
 
-	uObj := &UnstructuredAccessType{}
-	if err := uObj.Decode(data, uObj); err != nil {
-		return nil, err
+// GetSourceIndex returns the index of a given source.
+// If the index is not found -1 is returned.
+func (c ComponentDescriptor) GetSourceIndex(src Source) int {
+	id := src.GetIdentityDigest()
+	for i, cur := range c.Sources {
+		if bytes.Compare(cur.GetIdentityDigest(), id) == 0 {
+			return i
+		}
 	}
-	return uObj, nil
+	return -1
 }

@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,15 +33,9 @@ import (
 	"github.com/opencontainers/go-digest"
 
 	"github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/codec"
 )
-
-// ComponentArchive is the go representation for a CTF component artefact
-type ComponentArchive struct {
-	ComponentDescriptor *v2.ComponentDescriptor
-	fs                  vfs.FileSystem
-	BlobResolver
-}
 
 // NewComponentArchive returns a new component descriptor with a filesystem
 func NewComponentArchive(cd *v2.ComponentDescriptor, fs vfs.FileSystem) *ComponentArchive {
@@ -60,7 +55,7 @@ func ComponentArchiveFromPath(path string) (*ComponentArchive, error) {
 		return nil, fmt.Errorf("unable to create projected filesystem from path %s: %w", path, err)
 	}
 
-	return newComponentArchiveFromFilesystem(fs)
+	return NewComponentArchiveFromFilesystem(fs)
 }
 
 // ComponentArchiveFromCompressedCTF creates a new component archive from a zipped CTF tar.
@@ -75,7 +70,7 @@ func ComponentArchiveFromCompressedCTF(path string) (*ComponentArchive, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to open gzip reader for %s: %w", path, err)
 	}
-	return newComponentArchiveFromTarReader(reader)
+	return NewComponentArchiveFromTarReader(reader)
 }
 
 // ComponentArchiveFromCTF creates a new componet archive from a CTF tar file.
@@ -86,12 +81,12 @@ func ComponentArchiveFromCTF(path string) (*ComponentArchive, error) {
 		return nil, fmt.Errorf("unable to open tar archive from %s: %w", path, err)
 	}
 	defer file.Close()
-	return newComponentArchiveFromTarReader(file)
+	return NewComponentArchiveFromTarReader(file)
 }
 
-// newComponentArchiveFromTarReader creates a new manifest builder from a input reader.
+// NewComponentArchiveFromTarReader creates a new manifest builder from a input reader.
 // todo: make the fs configurable to also use a temporary filesystem
-func newComponentArchiveFromTarReader(in io.Reader) (*ComponentArchive, error) {
+func NewComponentArchiveFromTarReader(in io.Reader) (*ComponentArchive, error) {
 	// the archive is untared to a memory fs that the builder can work
 	// as it would be a default filesystem.
 	fs := memoryfs.New()
@@ -99,11 +94,11 @@ func newComponentArchiveFromTarReader(in io.Reader) (*ComponentArchive, error) {
 		return nil, fmt.Errorf("unable to extract tar: %w", err)
 	}
 
-	return newComponentArchiveFromFilesystem(fs)
+	return NewComponentArchiveFromFilesystem(fs)
 }
 
-// newComponentArchiveFromTarReader creates a new manifest builder from a input reader.
-func newComponentArchiveFromFilesystem(fs vfs.FileSystem) (*ComponentArchive, error) {
+// NewComponentArchiveFromFilesystem creates a new component archive from a filesystem.
+func NewComponentArchiveFromFilesystem(fs vfs.FileSystem) (*ComponentArchive, error) {
 	data, err := vfs.ReadFile(fs, filepath.Join("/", ComponentDescriptorFileName))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read the component descriptor from %s: %w", ComponentDescriptorFileName, err)
@@ -122,10 +117,33 @@ func newComponentArchiveFromFilesystem(fs vfs.FileSystem) (*ComponentArchive, er
 	}, nil
 }
 
+// ComponentArchive is the go representation for a CTF component artefact
+type ComponentArchive struct {
+	ComponentDescriptor *v2.ComponentDescriptor
+	fs                  vfs.FileSystem
+	BlobResolver
+}
+
+// Digest returns the digest of the component archive.
+// The digest is computed serializing the included component descriptor into json and compute sha hash.
+func (ca *ComponentArchive) Digest() (string, error) {
+	data, err := codec.Encode(ca.ComponentDescriptor)
+	if err != nil {
+		return "", err
+	}
+	return digest.FromBytes(data).String(), nil
+}
+
 // AddResource adds a blob resource to the current archive.
 // If the specified resource already exists it will be overwritten.
 func (ca *ComponentArchive) AddResource(res *v2.Resource, info BlobInfo, reader io.Reader) error {
+	if res == nil {
+		return errors.New("a resource has to be defined")
+	}
 	id := ca.ComponentDescriptor.GetResourceIndex(*res)
+	if err := ca.ensureBlobsPath(); err != nil {
+		return err
+	}
 
 	blobpath := BlobPath(info.Digest)
 	if _, err := ca.fs.Stat(blobpath); err != nil {
@@ -145,7 +163,7 @@ func (ca *ComponentArchive) AddResource(res *v2.Resource, info BlobInfo, reader 
 	}
 
 	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
-	unstructuredType, err := v2.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
+	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
 	if err != nil {
 		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
 	}
@@ -159,10 +177,59 @@ func (ca *ComponentArchive) AddResource(res *v2.Resource, info BlobInfo, reader 
 	return nil
 }
 
+// AddSource adds a blob source to the current archive.
+// If the specified source already exists it will be overwritten.
+func (ca *ComponentArchive) AddSource(src *v2.Source, info BlobInfo, reader io.Reader) error {
+	if src == nil {
+		return errors.New("a source has to be defined")
+	}
+	id := ca.ComponentDescriptor.GetSourceIndex(*src)
+	if err := ca.ensureBlobsPath(); err != nil {
+		return err
+	}
+
+	blobpath := BlobPath(info.Digest)
+	if _, err := ca.fs.Stat(blobpath); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("unable to get file info for %s", blobpath)
+		}
+		file, err := ca.fs.OpenFile(blobpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("unable to open file %s: %w", blobpath, err)
+		}
+		if _, err := io.Copy(file, reader); err != nil {
+			return fmt.Errorf("unable to write blob to file: %w", err)
+		}
+		if err := file.Close(); err != nil {
+			return fmt.Errorf("unable to close file: %w", err)
+		}
+	}
+
+	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
+	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
+	if err != nil {
+		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
+	}
+	src.Access = unstructuredType
+
+	if id == -1 {
+		ca.ComponentDescriptor.Sources = append(ca.ComponentDescriptor.Sources, *src)
+	} else {
+		ca.ComponentDescriptor.Sources[id] = *src
+	}
+	return nil
+}
+
 // AddResource adds a blob resource to the current archive.
 // If the specified resource already exists it will be overwritten.
 func (ca *ComponentArchive) AddResourceFromResolver(ctx context.Context, res *v2.Resource, resolver BlobResolver) error {
+	if res == nil {
+		return errors.New("a resource has to be defined")
+	}
 	id := ca.ComponentDescriptor.GetResourceIndex(*res)
+	if err := ca.ensureBlobsPath(); err != nil {
+		return err
+	}
 
 	info, err := resolver.Info(ctx, *res)
 	if err != nil {
@@ -187,7 +254,7 @@ func (ca *ComponentArchive) AddResourceFromResolver(ctx context.Context, res *v2
 	}
 
 	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
-	unstructuredType, err := v2.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
+	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
 	if err != nil {
 		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
 	}
@@ -201,9 +268,24 @@ func (ca *ComponentArchive) AddResourceFromResolver(ctx context.Context, res *v2
 	return nil
 }
 
+// ensureBlobsPath ensures that the blob directory exists
+func (ca *ComponentArchive) ensureBlobsPath() error {
+	if _, err := ca.fs.Stat(BlobsDirectoryName); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("unable to get file info for blob directory: %w", err)
+		}
+		return ca.fs.Mkdir(BlobsDirectoryName, os.ModePerm)
+	}
+	return nil
+}
+
 // WriteTar tars the current components descriptor and its artifacts.
 func (ca *ComponentArchive) WriteTarGzip(writer io.Writer) error {
-	return ca.WriteTar(gzip.NewWriter(writer))
+	gw := gzip.NewWriter(writer)
+	if err := ca.WriteTar(gw); err != nil {
+		return err
+	}
+	return gw.Close()
 }
 
 // WriteTar tars the current components descriptor and its artifacts.
@@ -268,6 +350,57 @@ func (ca *ComponentArchive) WriteTar(writer io.Writer) error {
 		}
 		if err := blob.Close(); err != nil {
 			return fmt.Errorf("unable to close blob %s: %w", blobpath, err)
+		}
+	}
+
+	return tw.Close()
+}
+
+// WriteToFilesystem writes the current component archive to a filesystem
+func (ca *ComponentArchive) WriteToFilesystem(fs vfs.FileSystem, path string) error {
+	// create the directory structure with the blob directory
+	if err := fs.MkdirAll(filepath.Join(path, BlobsDirectoryName), os.ModePerm); err != nil {
+		return fmt.Errorf("unable to create output directory %q: %s", path, err.Error())
+	}
+	// copy component-descriptor
+	cdBytes, err := codec.Encode(ca.ComponentDescriptor)
+	if err != nil {
+		return fmt.Errorf("unable to encode component descriptor: %w", err)
+	}
+	if err := vfs.WriteFile(fs, filepath.Join(path, ComponentDescriptorFileName), cdBytes, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to copy component descritptor to %q: %w", filepath.Join(path, ComponentDescriptorFileName), err)
+	}
+
+	// copy all blobs
+	blobInfos, err := vfs.ReadDir(ca.fs, BlobsDirectoryName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("unable to read blobs: %w", err)
+	}
+	for _, blobInfo := range blobInfos {
+		if blobInfo.IsDir() {
+			continue
+		}
+		inpath := BlobPath(blobInfo.Name())
+		outpath := filepath.Join(path, BlobsDirectoryName, blobInfo.Name())
+		blob, err := ca.fs.Open(inpath)
+		if err != nil {
+			return fmt.Errorf("unable to open input blob %q: %w", inpath, err)
+		}
+		out, err := fs.OpenFile(outpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("unable to open output blob %q: %w", outpath, err)
+		}
+		if _, err := io.Copy(out, blob); err != nil {
+			return fmt.Errorf("unable to copy blob from %q to %q: %w", inpath, outpath, err)
+		}
+		if err := out.Close(); err != nil {
+			return fmt.Errorf("unable to close output blob %s: %w", outpath, err)
+		}
+		if err := blob.Close(); err != nil {
+			return fmt.Errorf("unable to close input blob %s: %w", outpath, err)
 		}
 	}
 

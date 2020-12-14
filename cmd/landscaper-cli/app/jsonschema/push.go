@@ -20,12 +20,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/logger"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 type pushOptions struct {
@@ -98,7 +99,7 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		},
 	}
 
-	ociClient, err := oci.NewClient(log, oci.WithCache{Cache: cache}, oci.WithKnownMediaType(jsonschema.JSONSchemaMediaType))
+	ociClient, err := ociclient.NewClient(log, ociclient.WithCache{Cache: cache}, ociclient.WithKnownMediaType(jsonschema.JSONSchemaMediaType))
 	if err != nil {
 		return err
 	}
