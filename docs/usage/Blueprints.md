@@ -129,7 +129,7 @@ subinstallations:
 
 A Blueprint's deploy executions may contain any number of template executors. 
 A template executor must return a list of deploy items templates.<br>
-A deploy item template exposes specific deploy item fields and will be rendered to DeployItem CRs by teh landscaper.
+A deploy item template exposes specific deploy item fields and will be rendered to DeployItem CRs by the landscaper.
 
 __DeployItem Template__:
 ```yaml
@@ -154,6 +154,7 @@ imports:
   <import-name>: <import value>
 cd: <component descriptor>
 components: <list of all referenced component descriptors>
+blueprint: <blueprint definition> # blueprint definition from the Installation
 ```
 
 All list of deployitem templates of all template executors are appended to one list as they are specified in the deployExecution.
@@ -205,6 +206,20 @@ components:
       acccess:
         type: ociRegistry
         imageReference: ubuntu:0.18.0
+blueprint:
+ ref:
+  #      repositoryContext:
+  #        type: ociRegistry
+  #        baseUrl: eu.gcr.io/myproj
+  componentName: github.com/gardener/gardener
+  version: v1.7.2
+  resourceName: gardener
+#    inline:
+#      filesystem: # vfs filesystem
+#        blueprint.yaml: 
+#          apiVersion: landscaper.gardener.cloud/v1alpha1
+#          kind: Blueprint
+#          ...
 ```
 
 

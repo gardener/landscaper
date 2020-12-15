@@ -51,7 +51,14 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		KubeClient: o.Client(),
 		Inst:       inst.Info,
 	}
-	executions, err := template.New(o.BlobResolver, templateStateHandler).TemplateDeployExecutions(inst.Blueprint, o.ComponentDescriptor, o.ResolvedComponentDescriptorList, imports)
+
+	executions, err := template.New(o.BlobResolver, templateStateHandler).TemplateDeployExecutions(template.DeployExecutionOptions{
+		Imports:              imports,
+		Installation:         inst.Info,
+		Blueprint:            inst.Blueprint,
+		ComponentDescriptor:  o.ComponentDescriptor,
+		ComponentDescriptors: o.ResolvedComponentDescriptorList,
+	})
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
