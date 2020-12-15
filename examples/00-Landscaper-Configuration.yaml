@@ -1,0 +1,11 @@
+apiVersion: config.landscaper.gardener.cloud/v1alpha1
+kind: LandscaperConfiguration
+
+repositoryContext: # define the default repository context for installations
+  type: ociRegistry
+  baseUrl: "myregistry.com/components"
+
+registries:
+  oci:
+    configFiles:
+     - "/home/some/path/docker.json"
