@@ -62,6 +62,16 @@ func NewTestActuator(op operation.Interface, configuration *config.LandscaperCon
 		lsConfig:              configuration,
 		componentsRegistryMgr: &componentsregistry.Manager{},
 	}
+	resolver := op.ComponentsRegistry().(componentsregistry.TypedRegistry)
+	err := a.componentsRegistryMgr.Set(resolver)
+	if err != nil {
+		return nil
+	}
+	err = operation.InjectComponentsRegistryInto(op, a.componentsRegistryMgr)
+	if err != nil {
+		return nil
+	}
+
 	return a
 }
 
@@ -147,7 +157,6 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 	if err != nil {
 		return err
 	}
-	internalInstallation := instOp.Inst
 
 	if !inst.DeletionTimestamp.IsZero() {
 		return EnsureDeletion(ctx, instOp)
@@ -155,25 +164,27 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		// need to return and not continue with export validation
-		return a.forceReconcile(ctx, instOp, internalInstallation)
+		return a.forceReconcile(ctx, instOp)
 	}
 
-	return a.Ensure(ctx, instOp, internalInstallation)
+	return a.Ensure(ctx, instOp)
 }
 
 func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
-	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets); err != nil {
+	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
 		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
-			"InitPrerequisites", "SetupRegistries", err.Error())
+			"Reconcile", "SetupRegistries", err.Error())
 		return nil, err
 	}
 
 	// default repository context if not defined
-	if inst.Spec.Blueprint.Reference != nil && inst.Spec.Blueprint.Reference.RepositoryContext == nil {
-		inst.Spec.Blueprint.Reference.RepositoryContext = a.lsConfig.RepositoryContext
+	if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil && inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = a.lsConfig.RepositoryContext
 	}
 
-	intBlueprint, err := blueprints.Resolve(ctx, a.Interface.ComponentsRegistry(), inst.Spec.Blueprint, nil)
+	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+
+	intBlueprint, err := blueprints.Resolve(ctx, a.Interface.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
 		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
 			"InitPrerequisites", "ResolveBlueprint", err.Error())
@@ -198,18 +209,18 @@ func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Insta
 	return instOp, nil
 }
 
-func (a *actuator) forceReconcile(ctx context.Context, instOp *installations.Operation, inst *installations.Installation) error {
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := a.ApplyUpdate(ctx, instOp, inst); err != nil {
+func (a *actuator) forceReconcile(ctx context.Context, instOp *installations.Operation) error {
+	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
+	if err := a.ApplyUpdate(ctx, instOp); err != nil {
 		return err
 	}
 
-	delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := a.Client().Update(ctx, inst.Info); err != nil {
+	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
+	if err := a.Client().Update(ctx, instOp.Inst.Info); err != nil {
 		return err
 	}
 
-	inst.Info.Status.ObservedGeneration = inst.Info.Generation
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	instOp.Inst.Info.Status.ObservedGeneration = instOp.Inst.Info.Generation
+	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 	return nil
 }

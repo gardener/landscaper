@@ -130,6 +130,11 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 		*out = new(corev1alpha1.BlueprintDefinition)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ComponentDescriptor != nil {
+		in, out := &in.ComponentDescriptor, &out.ComponentDescriptor
+		*out = new(corev1alpha1.ComponentDescriptorDefinition)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RegistryPullSecrets != nil {
 		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
 		*out = make([]corev1alpha1.ObjectReference, len(*in))

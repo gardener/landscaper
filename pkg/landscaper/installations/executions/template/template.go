@@ -86,11 +86,19 @@ func (o *Templater) TemplateDeployExecutions(opts DeployExecutionOptions) ([]lsv
 
 	// add blueprint and component descriptor ref information to the input values
 	if opts.Installation != nil {
-		blueprintDef, err := serializeBlueprintDefinition(opts.Installation.Spec.Blueprint)
+		blueprintDef, err := serializeObject(opts.Installation.Spec.Blueprint)
 		if err != nil {
 			return nil, fmt.Errorf("unable to serialize the blueprint definition")
 		}
 		values["blueprint"] = blueprintDef
+
+		if opts.Installation.Spec.ComponentDescriptor != nil {
+			cdDef, err := serializeObject(opts.Installation.Spec.ComponentDescriptor)
+			if err != nil {
+				return nil, fmt.Errorf("unable to serialize the component descriptor definition")
+			}
+			values["componentDescriptorDef"] = cdDef
+		}
 	}
 
 	executionItems := lsv1alpha1.DeployItemTemplateList{}
@@ -189,8 +197,8 @@ func serializeComponentDescriptorList(cd *cdv2.ComponentDescriptorList) (interfa
 	return val, nil
 }
 
-func serializeBlueprintDefinition(def lsv1alpha1.BlueprintDefinition) (interface{}, error) {
-	data, err := json.Marshal(def)
+func serializeObject(in interface{}) (interface{}, error) {
+	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}

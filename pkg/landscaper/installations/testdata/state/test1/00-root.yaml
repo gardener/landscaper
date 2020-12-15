@@ -9,13 +9,16 @@ metadata:
   namespace: test1
 spec:
 
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: local
         baseUrl: "../testdata/registry"
-      version: 1.0.0
       componentName: example.com/root
+      version: 1.0.0
+
+  blueprint:
+    ref:
       resourceName: root
 
   imports:

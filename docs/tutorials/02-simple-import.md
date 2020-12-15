@@ -154,7 +154,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/echo-server
-  version: v0.1.0
+  version: v0.1.1
 
   provider: internal
 
@@ -168,7 +168,7 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.1
   - type: ociImage
     name: echo-server-image
     version: v0.2.3
@@ -179,7 +179,7 @@ component:
 ```
 
 ```shell script
-landscaper-cli cd push docs/tutorials/resources/echo-server/component-descriptor.yaml
+landscaper-cli component-cli remote push eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/echo-server v0.1.1 docs/tutorials/resources/echo-server
 ```
 
 ### Installation
@@ -206,14 +206,16 @@ kind: Installation
 metadata:
   name: my-echo-server
 spec:
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/echo-server
-      version: v0.1.0
-      kind: localResource
+      version: v0.1.1
+
+  blueprint:
+    ref:
       resourceName: echo-server-blueprint
 
   imports:

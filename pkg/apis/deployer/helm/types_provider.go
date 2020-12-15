@@ -62,10 +62,17 @@ type Chart struct {
 	// The resource is defined as part of a component descriptor which is necessary to also handle
 	// local artifacts.
 	// +optional
-	FromResource *lsv1alpha1.RemoteBlueprintReference `json:"fromResource,omitempty"`
+	FromResource *RemoteChartReference `json:"fromResource,omitempty"`
 	// Archive defines a compressed tarred helm chart as base64 encoded string.
 	// +optional
 	Archive *ArchiveAccess `json:"archive,omitempty"`
+}
+
+// RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor
+type RemoteChartReference struct {
+	lsv1alpha1.ComponentDescriptorDefinition `json:"inline"`
+	// ResourceName is the name of the Helm chart as defined by a component descriptor.
+	ResourceName string `json:"resourceName"`
 }
 
 // ArchiveAccess defines the access for a helm chart as compressed archive.

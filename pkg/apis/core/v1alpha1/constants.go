@@ -30,4 +30,7 @@ const (
 
 	// BlueprintArtifactsMediaType is the reserved media type for a blueprint that is tored as its own artifact.
 	BlueprintArtifactsMediaType = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+
+	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors
+	InlineComponentDescriptorLabel = "landscaper.gardener.cloud/component-descriptor"
 )

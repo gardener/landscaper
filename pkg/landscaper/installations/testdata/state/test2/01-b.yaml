@@ -9,12 +9,15 @@ metadata:
   namespace: test2
 spec:
 
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: local
         baseUrl: ""
-      version: 1.0.0
       componentName: example.com/root
+      version: 1.0.0
+
+  blueprint:
+    ref:
       resourceName: res-b
 

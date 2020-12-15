@@ -107,19 +107,20 @@ var _ = Describe("SubInstallation", func() {
 			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
-			Expect(resInst.Spec.Blueprint.Reference).NotTo(BeNil())
-			Expect(resInst.Spec.Blueprint.Reference).To(Equal(&lsv1alpha1.RemoteBlueprintReference{
+			Expect(resInst.Spec.ComponentDescriptor.Reference).NotTo(BeNil())
+			Expect(resInst.Spec.ComponentDescriptor.Reference).To(Equal(&lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: &cdv2.RepositoryContext{
 					Type:    "ociRegistry",
 					BaseURL: "./testdata",
 				},
-				VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-					ResourceReference: lsv1alpha1.ResourceReference{
-						ComponentName: "example.com/root",
-						ResourceName:  "def1",
-					},
-					Version: "1.0.0",
-				},
+				ComponentName: "example.com/root",
+				Version:       "1.0.0",
+			},
+			))
+
+			Expect(resInst.Spec.Blueprint.Reference).NotTo(BeNil())
+			Expect(resInst.Spec.Blueprint.Reference).To(Equal(&lsv1alpha1.RemoteBlueprintReference{
+				ResourceName: "def1",
 			}))
 			Expect(resInst.Spec.Imports.Data).To(ContainElement(lsv1alpha1.DataImport{
 				Name:    "a",
@@ -198,7 +199,8 @@ var _ = Describe("SubInstallation", func() {
 			subinst := &lsv1alpha1.Installation{}
 			subinst.Name = "inst-def1"
 			subinst.Namespace = "default"
-			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("root", "def1", "1.0.0", "./testdata")
+			subinst.Spec.ComponentDescriptor = utils.LocalRemoteComponentDescriptorRef("root", "1.0.0", ".testdata")
+			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("def1")
 			subinst.Spec.Imports = lsv1alpha1.InstallationImports{
 				Data: []lsv1alpha1.DataImport{
 					{

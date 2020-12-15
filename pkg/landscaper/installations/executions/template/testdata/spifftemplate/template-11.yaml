@@ -12,3 +12,4 @@
         apiVersion: example.test/v1
         kind: Configuration
         blueprint: (( __ctx.OUTER[0].blueprint ))
+        componentDescriptor: (( __ctx.OUTER[0].componentDescriptorDef ))

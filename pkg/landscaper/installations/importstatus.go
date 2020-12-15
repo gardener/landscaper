@@ -25,7 +25,7 @@ func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
 	}
 }
 
-// Updates the internal import states
+// Update the internal import states
 func (s *ImportStatus) Update(state lsv1alpha1.ImportStatus) {
 	s.set(state)
 }

@@ -27,6 +27,7 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
@@ -382,66 +383,58 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 		return
 	}
 
-	if c.ProviderConfiguration.Blueprint != nil {
-		if c.ProviderConfiguration.Blueprint.Reference != nil || (c.ProviderConfiguration.Blueprint.Inline != nil && c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference != nil) {
-			var cdRef string
-			if c.ProviderConfiguration.Blueprint.Reference != nil {
-				cdRef = c.ProviderConfiguration.Blueprint.Reference.RepositoryContext.BaseURL
-			}
-			if c.ProviderConfiguration.Blueprint.Inline != nil && c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference != nil {
-				cdRef = c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext.BaseURL
-			}
+	// sync pull secrets for Component Descriptor
+	if c.ProviderConfiguration.ComponentDescriptor != nil && c.ProviderConfiguration.ComponentDescriptor.Reference != nil {
+		cdRef := c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.BaseURL
+		componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
+		if err != nil {
+			erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
+			return
+		}
+	}
 
-			componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
-			if err != nil {
-				erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
-				return
-			}
+	// sync pull secrets for BluePrint
+	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
+		compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		if err != nil {
+			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
 		}
 
-		if c.ProviderConfiguration.Blueprint.Reference != nil {
-			compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI)
-			if err != nil {
-				erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
-				return
-			}
+		compRef := installationhelper.GeReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-			var (
-				repoCtx                = *c.ProviderConfiguration.Blueprint.Reference.RepositoryContext
-				componentName, version = c.ProviderConfiguration.Blueprint.Reference.ComponentName, c.ProviderConfiguration.Blueprint.Reference.Version
-				blueprintName          = c.ProviderConfiguration.Blueprint.Reference.ResourceName
-			)
-			cd, _, err := compReg.Resolve(ctx, repoCtx, componentName, version)
-			if err != nil {
-				erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
-				return
-			}
-
-			resource, err := blueprints.GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
-			if err != nil {
-				erro = fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
-				return
-			}
-
-			// currently only 2 access methods are supported: localOCIBlob and oci artifact
-			// if the resource is a local oci blob then the same credentials as for the component descriptor is used
-			if resource.Access.GetType() == cdv2.LocalOCIBlobType {
-				return
-			}
-
-			// if the resource is a oci artifact then we need to parse the actual oci image reference
-			ociRegistryAccess := &cdv2.OCIRegistryAccess{}
-			if err := cdv2.NewCodec(nil, nil, nil).Decode(resource.Access.Raw, ociRegistryAccess); err != nil {
-				erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
-				return
-			}
-
-			blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, ociKeyring)
-			if err != nil {
-				erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
-				return
-			}
+		cd, _, err := compReg.Resolve(ctx, *compRef.RepositoryContext, compRef.ComponentName, compRef.Version)
+		if err != nil {
+			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
 		}
+
+		resource, err := blueprints.GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+		if err != nil {
+			erro = fmt.Errorf("unable to find blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
+		}
+
+		// currently only 2 access methods are supported: localOCIBlob and oci artifact
+		// if the resource is a local oci blob then the same credentials as for the component descriptor is used
+		if resource.Access.GetType() == cdv2.LocalOCIBlobType {
+			return
+		}
+
+		// if the resource is a oci artifact then we need to parse the actual oci image reference
+		ociRegistryAccess := &cdv2.OCIRegistryAccess{}
+		if err := cdv2.NewCodec(nil, nil, nil).Decode(resource.Access.Raw, ociRegistryAccess); err != nil {
+			erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
+			return
+		}
+
+		blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, ociKeyring)
+		if err != nil {
+			erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
+			return
+		}
+
 	}
 	return
 }

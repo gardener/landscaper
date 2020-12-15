@@ -27,8 +27,8 @@ import (
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
-func Resolve(ctx context.Context, resolver ctf.ComponentResolver, def lsv1alpha1.BlueprintDefinition, fs vfs.FileSystem) (*Blueprint, error) {
-	if def.Reference == nil && def.Inline == nil {
+func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition, fs vfs.FileSystem) (*Blueprint, error) {
+	if bpDef.Reference == nil && bpDef.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
 	}
 
@@ -44,8 +44,8 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, def lsv1alpha1
 		}
 	}
 
-	if def.Inline != nil {
-		inlineFs, err := yamlfs.New(def.Inline.Filesystem)
+	if bpDef.Inline != nil {
+		inlineFs, err := yamlfs.New(bpDef.Inline.Filesystem)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create yamlfs for inline blueprint: %w", err)
 		}
@@ -68,23 +68,28 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, def lsv1alpha1
 		return intBlueprint, nil
 	}
 
-	reference := def.Reference
-	if reference.RepositoryContext == nil {
+	if cdRef == nil {
+		return nil, fmt.Errorf("no component descriptor reference defined")
+	}
+	if cdRef.RepositoryContext == nil {
 		return nil, fmt.Errorf("no respository context defined")
 	}
-	cd, blobResolver, err := resolver.Resolve(ctx, *reference.RepositoryContext, reference.ComponentName, reference.Version)
+	if resolver == nil {
+		return nil, fmt.Errorf("did not get a working component descriptor resolver")
+	}
+	cd, blobResolver, err := resolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", reference, err)
+		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
 
-	blueprint, err := ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, fs, reference.ResourceName)
+	blueprint, err := ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, fs, bpDef.Reference.ResourceName)
 	if err != nil {
 		return nil, err
 	}
 
 	intBlueprint, err := New(blueprint, readonlyfs.New(fs))
 	if err != nil {
-		return nil, fmt.Errorf("unable to create internal blueprint representation for ref %#v: %w", reference, err)
+		return nil, fmt.Errorf("unable to create internal blueprint representation for ref %#v: %w", cdRef, err)
 	}
 	return intBlueprint, nil
 }

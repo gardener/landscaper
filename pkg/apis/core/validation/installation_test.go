@@ -12,6 +12,8 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
 	"github.com/gardener/landscaper/pkg/apis/core"
 	"github.com/gardener/landscaper/pkg/apis/core/validation"
 )
@@ -88,6 +90,127 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("component[2].namespace"),
+			}))))
+		})
+	})
+
+	Context("InstallationBlueprint", func() {
+		It("should accept a Blueprint reference", func() {
+			bpDef := core.BlueprintDefinition{
+				Reference: &core.RemoteBlueprintReference{
+					ResourceName: "foo",
+				},
+				Inline: nil,
+			}
+			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))
+			Expect(allErrs).To(HaveLen(0))
+		})
+
+		It("should accept an inline Blueprint", func() {
+			bpDef := core.BlueprintDefinition{
+				Reference: nil,
+				Inline: &core.InlineBlueprint{
+					Filesystem: []byte("raw-string-representing-inline-blueprint-for-test"),
+				},
+			}
+			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))
+			Expect(allErrs).To(HaveLen(0))
+		})
+
+		It("should reject empty Blueprint reference and inline definition to be nil at the same time", func() {
+			bpDef := core.BlueprintDefinition{
+				Reference: nil,
+				Inline:    nil,
+			}
+			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("blueprint.definition"),
+			}))))
+		})
+
+		It("should reject Blueprint reference and inline definition to be given at the same time", func() {
+			bpDef := core.BlueprintDefinition{
+				Reference: &core.RemoteBlueprintReference{
+					ResourceName: "foo",
+				},
+				Inline: &core.InlineBlueprint{
+					Filesystem: []byte("raw-string-representing-inline-blueprint-for-test"),
+				},
+			}
+			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeInvalid),
+				"Field": Equal("blueprint.definition"),
+			}))))
+		})
+	})
+
+	Context("InstallationComponentDescriptor", func() {
+		It("should accept a nil ComponentDescriptor definition", func() {
+			var cdDef *core.ComponentDescriptorDefinition = nil
+
+			allErrs := validation.ValidateInstallationComponentDescriptor(cdDef, field.NewPath("componentDescriptor"))
+			Expect(allErrs).To(HaveLen(0))
+		})
+
+		It("should accept a ComponentDescriptor reference", func() {
+			cdDef := &core.ComponentDescriptorDefinition{
+				Reference: &core.ComponentDescriptorReference{
+					RepositoryContext: &cdv2.RepositoryContext{
+						Type:    "bar",
+						BaseURL: "http://foo.invalid",
+					},
+					ComponentName: "foo",
+					Version:       "123",
+				},
+				Inline: nil,
+			}
+
+			allErrs := validation.ValidateInstallationComponentDescriptor(cdDef, field.NewPath("componentDescriptor"))
+			Expect(allErrs).To(HaveLen(0))
+		})
+
+		It("should accept an inline ComponentDescriptor", func() {
+			cdDef := &core.ComponentDescriptorDefinition{
+				Reference: nil,
+				Inline:    &cdv2.ComponentDescriptor{},
+			}
+
+			allErrs := validation.ValidateInstallationComponentDescriptor(cdDef, field.NewPath("componentDescriptor"))
+			Expect(allErrs).To(HaveLen(0))
+		})
+
+		It("should reject ComponentDescriptor reference and inline definition to be nil at the same time", func() {
+			cdDef := &core.ComponentDescriptorDefinition{
+				Reference: nil,
+				Inline:    nil,
+			}
+
+			allErrs := validation.ValidateInstallationComponentDescriptor(cdDef, field.NewPath("componentDescriptor"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("componentDescriptor.definition"),
+			}))))
+		})
+
+		It("should reject ComponentDescriptor reference and inline definition to be given at the same time", func() {
+			cdDef := &core.ComponentDescriptorDefinition{
+				Reference: &core.ComponentDescriptorReference{
+					RepositoryContext: &cdv2.RepositoryContext{
+						Type:    "bar",
+						BaseURL: "http://foo.invalid",
+					},
+					ComponentName: "foo",
+					Version:       "123",
+				},
+				Inline: &cdv2.ComponentDescriptor{},
+			}
+
+			allErrs := validation.ValidateInstallationComponentDescriptor(cdDef, field.NewPath("componentDescriptor"))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeInvalid),
+				"Field": Equal("componentDescriptor.definition"),
 			}))))
 		})
 	})

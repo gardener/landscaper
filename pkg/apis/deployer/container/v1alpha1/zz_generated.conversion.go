@@ -198,6 +198,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_container_ProviderConfigurati
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
 	out.ImportValues = *(*json.RawMessage)(unsafe.Pointer(&in.ImportValues))
 	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
+	out.ComponentDescriptor = (*corev1alpha1.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }
@@ -213,6 +214,7 @@ func autoConvert_container_ProviderConfiguration_To_v1alpha1_ProviderConfigurati
 	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
 	out.ImportValues = *(*json.RawMessage)(unsafe.Pointer(&in.ImportValues))
 	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
+	out.ComponentDescriptor = (*corev1alpha1.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
 	return nil
 }

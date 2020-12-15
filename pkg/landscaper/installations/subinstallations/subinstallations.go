@@ -39,7 +39,7 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 	return nil
 }
 
-// EnsureSubInstallations ensures that all referenced definitions are mapped to a installation.
+// Ensure ensures that all referenced definitions are mapped to a sub-installation.
 func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
@@ -64,7 +64,7 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, b
 	}
 
 	// delete removed subreferences
-	err, deletionTriggered := o.cleanupOrphanedSubInstallations(ctx, blueprint, inst, subInstallations)
+	deletionTriggered, err := o.cleanupOrphanedSubInstallations(ctx, blueprint, inst, subInstallations)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 	return subInstallations, nil
 }
 
-func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *blueprints.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (error, bool) {
+func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *blueprints.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (bool, error) {
 	var (
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
@@ -142,11 +142,11 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 				"InstallationNotDeleted", fmt.Sprintf("Sub Installation %s cannot be deleted", subInst.Name))
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 			_ = o.CreateEventFromCondition(ctx, inst, cond)
-			return err, deleted
+			return deleted, err
 		}
 		deleted = true
 	}
-	return nil, deleted
+	return deleted, nil
 }
 
 func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
@@ -171,7 +171,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	//	return nil, err
 	//}
 
-	subBlueprint, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
+	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
 		o.ComponentDescriptor,
 		cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList))
@@ -185,13 +185,15 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
-			Blueprint:           *subBlueprint,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
+			ComponentDescriptor: subCdDef,
+			Blueprint:           *subBlueprint,
 			Imports:             subInstTmpl.Imports,
 			ImportDataMappings:  subInstTmpl.ImportDataMappings,
 			Exports:             subInstTmpl.Exports,
 			ExportDataMappings:  subInstTmpl.ExportDataMappings,
 		}
+
 		return nil
 	})
 	if err != nil {

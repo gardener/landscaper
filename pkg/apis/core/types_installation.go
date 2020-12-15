@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ComponentInstallationPhase is a string that contains the component's installation phase
 type ComponentInstallationPhase string
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -26,7 +27,7 @@ type InstallationList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Blueprint contains the configuration of a component
+// Installation contains the configuration of a installation
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -41,6 +42,10 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
+	//ComponentDescriptor is a reference to the installation's component descriptor
+	// +optional
+	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
+
 	// Blueprint is the resolved reference to the definition.
 	Blueprint BlueprintDefinition `json:"blueprint"`
 
@@ -149,7 +154,7 @@ type DataImport struct {
 	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
 }
 
-// DataImportExport is a data object export.
+// DataExport is a data object export.
 type DataExport struct {
 	// Name the internal name of the imported/exported data.
 	Name string `json:"name"`
@@ -179,20 +184,27 @@ type BlueprintDefinition struct {
 
 // RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.
 type RemoteBlueprintReference struct {
-	VersionedResourceReference `json:",inline"`
-	// RepositoryContext defines the context of the component repository to resolve blueprints.
-	// +optional
-	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	// ResourceName is the name of the blueprint as defined by a component descriptor.
+	ResourceName string `json:"resourceName"`
 }
 
-// InlineBlueprint defines a inline blueprint with component descriptor and
+// InlineBlueprint defines an inline blueprint with component descriptor and
 // filesystem.
 type InlineBlueprint struct {
-	// ComponentDescriptorReference is the reference to a component descriptor
-	// +optional
-	ComponentDescriptorReference *ComponentDescriptorReference `json:"cdRef,omitempty"`
 	// Filesystem defines a inline yaml filesystem with a blueprint.
 	Filesystem json.RawMessage `json:"filesystem"`
+}
+
+// ComponentDescriptorDefinition defines the component descriptor that should be used
+// for the installatoin
+type ComponentDescriptorDefinition struct {
+	// ComponentDescriptorReference is the reference to a component descriptor
+	// +optional
+	Reference *ComponentDescriptorReference `json:"ref,omitempty"`
+
+	// InlineDescriptorReference defines an inline component descriptor
+	// +optional
+	Inline *cdv2.ComponentDescriptor `json:"inline,omitempty"`
 }
 
 // ComponentDescriptorReference is the reference to a component descriptor.
@@ -250,7 +262,9 @@ type SecretLabelSelectorRef struct {
 type ImportStatusType string
 
 const (
-	DataImportStatusType   ImportStatusType = "dataobject"
+	// DataImportStatusType is an ImportStatusType for data objects
+	DataImportStatusType ImportStatusType = "dataobject"
+	// TargetImportStatusType is an ImportStatusType for targets
 	TargetImportStatusType ImportStatusType = "target"
 )
 

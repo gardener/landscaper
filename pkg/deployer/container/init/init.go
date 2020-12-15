@@ -12,7 +12,6 @@ import (
 	"path"
 
 	"github.com/gardener/component-cli/ociclient"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -24,14 +23,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+
 	"github.com/gardener/component-cli/ociclient/credentials"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -97,22 +99,40 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	}
 	log.Info("all directories have been successfully created")
 
-	if providerConfig.Blueprint != nil {
-		compResolver, err := createRegistryFromDockerAuthConfig(ctx, log, fs, opts.RegistrySecretBasePath)
+	var (
+		cdReference *lsv1alpha1.ComponentDescriptorReference
+		cdResolver  ctf.ComponentResolver
+	)
+
+	if providerConfig.ComponentDescriptor != nil {
+		cdReference = installations.GeReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+		if cdReference == nil {
+			return fmt.Errorf("no inline component descriptor or reference found")
+		}
+
+		ociClient, err := createOciClientFromDockerAuthConfig(ctx, log, fs, opts.RegistrySecretBasePath)
 		if err != nil {
 			return err
 		}
 
-		if err := fetchComponentDescriptor(ctx, log, compResolver, opts, fs, providerConfig); err != nil {
-			return fmt.Errorf("unable to fetch component descriptor: %w", err)
+		cdResolver, err = componentsregistry.NewOCIRegistryWithOCIClient(ociClient, providerConfig.ComponentDescriptor.Inline)
+		if err != nil {
+			return errors.Wrap(err, "unable to setup components registry")
 		}
 
+		if err := fetchComponentDescriptor(ctx, log, cdResolver, opts, fs, providerConfig); err != nil {
+			return fmt.Errorf("unable to fetch component descriptor: %w", err)
+		}
+	}
+
+	if providerConfig.Blueprint != nil {
 		log.Info("get blueprint content")
 		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
 		}
-		if _, err := blueprints.Resolve(ctx, compResolver, *providerConfig.Blueprint, contentFS); err != nil {
+
+		if _, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint, contentFS); err != nil {
 			return fmt.Errorf("unable to resolve blueprint and component descriptor")
 		}
 	}
@@ -141,27 +161,15 @@ func fetchComponentDescriptor(
 	fs vfs.FileSystem,
 	providerConfig *containerv1alpha1.ProviderConfiguration) error {
 
-	var (
-		repoCtx       *cdv2.RepositoryContext
-		name, version string
-	)
-	if providerConfig.Blueprint.Reference != nil {
-		repoCtx = providerConfig.Blueprint.Reference.RepositoryContext
-		name, version = providerConfig.Blueprint.Reference.ComponentName, providerConfig.Blueprint.Reference.Version
-	}
-	if providerConfig.Blueprint.Inline != nil && providerConfig.Blueprint.Inline.ComponentDescriptorReference != nil {
-		repoCtx = providerConfig.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext
-		name, version = providerConfig.Blueprint.Inline.ComponentDescriptorReference.ComponentName, providerConfig.Blueprint.Inline.ComponentDescriptorReference.Version
-	}
-
-	if repoCtx == nil {
+	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+	if cdRef == nil || cdRef.RepositoryContext == nil {
 		return nil
 	}
 
 	log.Info("get component descriptor")
-	cd, _, err := resolver.Resolve(ctx, *repoCtx, name, version)
+	cd, _, err := resolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
-		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", repoCtx.BaseURL, name, version, err)
+		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", cdRef.RepositoryContext.BaseURL, cdRef.ComponentName, cdRef.Version, err)
 	}
 
 	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd)
@@ -180,8 +188,7 @@ func fetchComponentDescriptor(
 }
 
 // todo: add retries
-func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ctf.ComponentResolver, error) {
-
+func createOciClientFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
 	var secrets []string
 	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -209,10 +216,5 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs
 		return nil, err
 	}
 
-	componentsRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to setup components registry")
-	}
-
-	return componentsRegistry, nil
+	return ociClient, err
 }

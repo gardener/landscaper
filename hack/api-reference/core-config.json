@@ -16,6 +16,10 @@
       "docsURLTemplate": "https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext"
     },
     {
+      "typeMatchPrefix": "^github\\.com/gardener/component-spec/bindings-go/apis/v2\\.ComponentDescriptor",
+      "docsURLTemplate": "https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor"
+    },
+    {
       "typeMatchPrefix": "^encoding/json\\.RawMessage$",
       "docsURLTemplate": "https://golang.org/pkg/encoding/json/#RawMessage"
     },

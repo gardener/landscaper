@@ -13,3 +13,5 @@
         kind: Configuration
         blueprint:
     {{ toYaml .blueprint | indent 6 }}
+        componentDescriptor:
+    {{ toYaml .componentDescriptorDef | indent 6 }}

@@ -27,8 +27,8 @@ Landscaper's Helm chart can be configured with a values file.
 
 In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used.
 
-The landscaper offloads all deployment specific functionality like `helm` to deployers.
-For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by the landscaper.
+Landscaper offloads all deployment specific functionality like deploying Helm charts to deployers.
+For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by the landscaper-controller (but observe the **warining** below).
 
 ## Configuration through `values.yaml`
 

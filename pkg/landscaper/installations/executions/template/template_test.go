@@ -325,16 +325,20 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
+			componentDef := lsv1alpha1.ComponentDescriptorDefinition{}
+			componentDef.Reference = &lsv1alpha1.ComponentDescriptorReference{}
+			componentDef.Reference.ComponentName = "my-comp"
+			componentDef.Reference.Version = "0.1.0"
+
 			blueprintDef := lsv1alpha1.BlueprintDefinition{}
 			blueprintDef.Reference = &lsv1alpha1.RemoteBlueprintReference{}
-			blueprintDef.Reference.ComponentName = "my-comp"
 			blueprintDef.Reference.ResourceName = "my-res"
-			blueprintDef.Reference.Version = "0.1.0"
 
 			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
 				Installation: &lsv1alpha1.Installation{
 					Spec: lsv1alpha1.InstallationSpec{
-						Blueprint: blueprintDef,
+						Blueprint:           blueprintDef,
+						ComponentDescriptor: &componentDef,
 					},
 				},
 				Blueprint: &blueprints.Blueprint{
@@ -348,8 +352,12 @@ func runTestSuite(testdataDir string) {
 			Expect(config).To(MatchKeys(IgnoreExtras, Keys{
 				"blueprint": MatchAllKeys(Keys{
 					"ref": MatchAllKeys(Keys{
+						"resourceName": Equal("my-res"),
+					}),
+				}),
+				"componentDescriptor": MatchAllKeys(Keys{
+					"ref": MatchKeys(IgnoreExtras, Keys{
 						"componentName": Equal("my-comp"),
-						"resourceName":  Equal("my-res"),
 						"version":       Equal("0.1.0"),
 					}),
 				}),

@@ -59,30 +59,32 @@ func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, 
 }
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
+// Inline Component Descriptors take precedence
 func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
-	if inst.Spec.Blueprint.Reference == nil &&
-		(inst.Spec.Blueprint.Inline == nil || inst.Spec.Blueprint.Inline.ComponentDescriptorReference == nil) {
+	if inst.Spec.ComponentDescriptor == nil || (inst.Spec.ComponentDescriptor.Reference == nil && inst.Spec.ComponentDescriptor.Inline == nil) {
 		return nil, nil, nil
 	}
 	var (
 		repoCtx cdv2.RepositoryContext
 		ref     cdv2.ObjectMeta
 	)
-	if inst.Spec.Blueprint.Reference != nil {
-		// todo: if not defined read from default configured repo context.
-		repoCtx = *inst.Spec.Blueprint.Reference.RepositoryContext
-		ref = inst.Spec.Blueprint.Reference.ObjectMeta()
+	//case inline component descriptor
+	if inst.Spec.ComponentDescriptor.Inline != nil {
+		repoCtx = inst.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
+		ref = inst.Spec.ComponentDescriptor.Inline.ObjectMeta
 	}
-	if inst.Spec.Blueprint.Inline != nil && inst.Spec.Blueprint.Inline.ComponentDescriptorReference != nil {
-		repoCtx = *inst.Spec.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext
-		ref = inst.Spec.Blueprint.Inline.ComponentDescriptorReference.ObjectMeta()
+	// case remote reference
+	if inst.Spec.ComponentDescriptor.Reference != nil {
+		repoCtx = *inst.Spec.ComponentDescriptor.Reference.RepositoryContext
+		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
 	}
 	return compRepo.Resolve(ctx, repoCtx, ref.GetName(), ref.GetVersion())
 }
 
 // CreateInternalInstallation creates an internal installation for a Installation
 func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
-	blue, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), inst.Spec.Blueprint, nil)
+	cdRef := GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+	blue, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -153,4 +155,22 @@ func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName 
 		return nil, nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
 	}
 	return target, owner, nil
+}
+
+// GeReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
+func GeReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDescriptorDefinition) *lsv1alpha1.ComponentDescriptorReference {
+	if cdDef == nil {
+		return nil
+	}
+
+	if cdDef.Inline != nil {
+		repoCtx := cdDef.Inline.GetEffectiveRepositoryContext()
+		return &lsv1alpha1.ComponentDescriptorReference{
+			RepositoryContext: &repoCtx,
+			ComponentName:     cdDef.Inline.Name,
+			Version:           cdDef.Inline.Version,
+		}
+	}
+
+	return cdDef.Reference
 }

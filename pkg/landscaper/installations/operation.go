@@ -324,7 +324,7 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 	return nil
 }
 
-// GetExportConfigGeneration returns the new export generation of the installation
+// SetExportConfigGeneration returns the new export generation of the installation
 // based on its own generation and its context
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state

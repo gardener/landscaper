@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 )
 
@@ -91,21 +90,30 @@ func ValidateArchive(fldPath *field.Path, archive *helmv1alpha1.ArchiveAccess) f
 }
 
 // ValidateFromResource validates the resource access for a helm chart.
-func ValidateFromResource(fldPath *field.Path, resourceRef *lsv1alpha1.RemoteBlueprintReference) field.ErrorList {
+func ValidateFromResource(fldPath *field.Path, resourceRef *helmv1alpha1.RemoteChartReference) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if resourceRef.RepositoryContext == nil {
+	if len(resourceRef.ResourceName) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("resourceName"), "must not be empty"))
+	}
+
+	if resourceRef.Inline != nil {
+		return allErrs
+	}
+
+	if resourceRef.Reference == nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("ref"), "must not be empty"))
+	}
+
+	if resourceRef.Reference.RepositoryContext == nil {
 		allErrs = append(allErrs, field.Required(fldPath.Child("repositoryContext"), "must not be empty"))
 	}
 
-	if len(resourceRef.ComponentName) == 0 {
+	if len(resourceRef.Reference.ComponentName) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("componentName"), "must not be empty"))
 	}
-	if len(resourceRef.Version) == 0 {
+	if len(resourceRef.Reference.Version) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must not be empty"))
-	}
-	if len(resourceRef.ResourceName) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("resourceName"), "must not be empty"))
 	}
 
 	return allErrs

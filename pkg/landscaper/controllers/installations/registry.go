@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-cli/ociclient"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -18,7 +19,7 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference) error {
+func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 	// resolve all pull secrets
 	secrets, err := a.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
@@ -50,7 +51,13 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+
+	var inlineCd *cdv2.ComponentDescriptor = nil
+	if installation.Spec.ComponentDescriptor != nil {
+		inlineCd = installation.Spec.ComponentDescriptor.Inline
+	}
+
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, inlineCd)
 	if err != nil {
 		return err
 	}

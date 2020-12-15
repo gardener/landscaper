@@ -1,0 +1,39 @@
+apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+kind: ProviderConfiguration
+
+blueprint:
+  inline:
+    filesystem:
+      blueprint.yaml: |
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+        imports:
+        - name: imp-a
+          schema:
+            type: string
+        exports:
+        - name: exp-a
+          schema:
+            type: string
+        exportExecutions:
+        - type: GoTemplate
+          template: |
+            exports:
+              exp-a: \{\{ index .values.deployitems.main "exp-a" \}\}
+
+componentDescriptor:
+  ref:
+    repositoryContext:
+      baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      type: ociRegistry
+    componentName: github.com/gardener/landscaper/ingress-nginx
+    version: v0.2.1
+
+importValues: abc
+
+image: alpine
+command: ["sh", "-c"]
+args:
+- |
+  env
+  ls -laR $CONTENT_PATH

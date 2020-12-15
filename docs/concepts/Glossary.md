@@ -21,6 +21,12 @@
       - [Output](#_export_)
     </details>
 
+#### Component Descriptor_
+  A Component Descriptor contains references and locations to all resources that are used by Landscaper to deploy and install an application.
+  Typically a Component Descriptor is stored in an OCI registry.
+
+  For more details see [here](https://gardener.github.io/component-spec/format.html) and [here](https://gardener.github.io/component-spec/semantics.html).
+
 #### _Context_
 
   A context defines the scope in which an Installation runs and all of its data lives.
