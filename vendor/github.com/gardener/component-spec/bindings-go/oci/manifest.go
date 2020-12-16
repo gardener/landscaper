@@ -15,18 +15,21 @@
 package oci
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"time"
 
 	"github.com/opencontainers/go-digest"
 	imagespec "github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 )
@@ -41,6 +44,7 @@ type BlobStore interface {
 type ManifestBuilder struct {
 	store   BlobStore
 	archive *ctf.ComponentArchive
+	componentDescriptorStorageType string
 }
 
 // NewManifestBuilder creates a new oci manifest builder for a component descriptor
@@ -51,8 +55,17 @@ func NewManifestBuilder(store BlobStore, archive *ctf.ComponentArchive) *Manifes
 	}
 }
 
+func (b *ManifestBuilder) StorageType(storageType string) *ManifestBuilder {
+	b.componentDescriptorStorageType = storageType
+	return b
+}
+
 // BuildNewManifest creates a ocispec Manifest from a component descriptor.
 func (b *ManifestBuilder) Build(ctx context.Context) (*ocispecv1.Manifest, error) {
+	// default storage type
+	if len(b.componentDescriptorStorageType) == 0 {
+		b.componentDescriptorStorageType = ComponentDescriptorTarMimeType
+	}
 
 	// get additional local artifacts
 	additionalBlobDescs, err := b.addLocalBlobs(ctx)
@@ -100,15 +113,47 @@ func (b *ManifestBuilder) addComponentDescriptorDesc() (ocispecv1.Descriptor, er
 		return ocispecv1.Descriptor{}, fmt.Errorf("unable to encode component descriptor: %w", err)
 	}
 
-	componentDescriptorDesc := ocispecv1.Descriptor{
-		MediaType: ComponentDescriptorJSONMimeType,
-		Digest:    digest.FromBytes(data),
-		Size:      int64(len(data)),
+	if b.componentDescriptorStorageType == ComponentDescriptorJSONMimeType {
+		componentDescriptorDesc := ocispecv1.Descriptor{
+			MediaType: ComponentDescriptorJSONMimeType,
+			Digest:    digest.FromBytes(data),
+			Size:      int64(len(data)),
+		}
+		if err := b.store.Add(componentDescriptorDesc, ioutil.NopCloser(bytes.NewBuffer(data))); err != nil {
+			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
+		}
+		return componentDescriptorDesc, nil
+	} else if b.componentDescriptorStorageType == ComponentDescriptorTarMimeType {
+		// create tar with component descriptor
+		var buf bytes.Buffer
+		tw := tar.NewWriter(&buf)
+		if err := tw.WriteHeader(&tar.Header{
+			Typeflag:   tar.TypeReg,
+			Name:       ctf.ComponentDescriptorFileName,
+			Size:       int64(len(data)),
+			ModTime:    time.Now(),
+		}); err != nil {
+			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor header: %w", err)
+		}
+		if _, err := io.Copy(tw, bytes.NewBuffer(data)); err != nil {
+			return ocispecv1.Descriptor{}, fmt.Errorf("unable to write component-descriptor to tar: %w", err)
+		}
+		if err := tw.Close(); err != nil {
+			return ocispecv1.Descriptor{}, fmt.Errorf("unable to close tar writer: %w", err)
+		}
+
+		componentDescriptorDesc := ocispecv1.Descriptor{
+			MediaType: ComponentDescriptorTarMimeType,
+			Digest:    digest.FromBytes(buf.Bytes()),
+			Size:      int64(buf.Len()),
+		}
+		if err := b.store.Add(componentDescriptorDesc, ioutil.NopCloser(&buf)); err != nil {
+			return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
+		}
+		return componentDescriptorDesc, nil
 	}
-	if err := b.store.Add(componentDescriptorDesc, ioutil.NopCloser(bytes.NewBuffer(data))); err != nil {
-		return ocispecv1.Descriptor{}, fmt.Errorf("unable to add component descriptor layer to internal store: %w", err)
-	}
-	return componentDescriptorDesc, nil
+
+	return ocispecv1.Descriptor{}, fmt.Errorf("unsupported storage type %q", b.componentDescriptorStorageType)
 }
 
 // addLocalBlobs adds all local resources to the blob store and updates the component descriptors access method.
@@ -136,7 +181,7 @@ func (b *ManifestBuilder) addLocalBlobs(ctx context.Context) ([]ocispecv1.Descri
 		}
 
 		ociBlobAccess := v2.NewLocalOCIBlobAccess(desc.Digest.String())
-		unstructuredType, err := v2.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), ociBlobAccess)
+		unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), ociBlobAccess)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert ociBlob to untructured type: %w", err)
 		}

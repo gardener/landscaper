@@ -26,12 +26,14 @@ var (
 	NotFound = errors.New("NotFound")
 )
 
+// +k8s:deepcopy-gen=true
 // Metadata defines the metadata of the component descriptor.
 type Metadata struct {
 	// Version is the schema version of the component descriptor.
 	Version string `json:"schemaVersion"`
 }
 
+// +k8s:deepcopy-gen=true
 // ProviderType describes the provider type of component in the origin's context.
 // Defines whether the component is created by a third party or internally.
 type ProviderType string
@@ -45,6 +47,7 @@ const (
 	ExternalProvider ProviderType = "external"
 )
 
+// +k8s:deepcopy-gen=true
 // ResourceRelation describes the type of a resource.
 // Defines whether the component is created by a third party or internally.
 type ResourceRelation string
@@ -58,6 +61,7 @@ const (
 	ExternalRelation ResourceRelation = "external"
 )
 
+// +k8s:deepcopy-gen=true
 // Spec defines a versioned virtual component with a source and dependencies.
 type ComponentDescriptor struct {
 	// Metadata specifies the schema version of the component.
@@ -66,6 +70,7 @@ type ComponentDescriptor struct {
 	ComponentSpec `json:"component"`
 }
 
+// +k8s:deepcopy-gen=true
 // ComponentSpec defines a virtual component with
 // a repository context, source and dependencies.
 type ComponentSpec struct {
@@ -83,6 +88,7 @@ type ComponentSpec struct {
 	Resources []Resource `json:"resources"`
 }
 
+// +k8s:deepcopy-gen=true
 // RepositoryContext describes a repository context.
 type RepositoryContext struct {
 	// Type defines the type of the component repository to resolve references.
@@ -91,6 +97,7 @@ type RepositoryContext struct {
 	BaseURL string `json:"baseUrl"`
 }
 
+// +k8s:deepcopy-gen=true
 // ObjectMeta defines a object that is uniquely identified by its name and version.
 type ObjectMeta struct {
 	// Name is the context unique name of the object.
@@ -100,7 +107,7 @@ type ObjectMeta struct {
 	// Labels defines an optional set of additional labels
 	// describing the object.
 	// +optional
-	Labels []Label `json:"labels,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
 }
 
 // GetName returns the name of the object.
@@ -124,7 +131,7 @@ func (o *ObjectMeta) SetVersion(version string) {
 }
 
 // GetLabels returns the label of the object.
-func (o ObjectMeta) GetLabels() []Label {
+func (o ObjectMeta) GetLabels() Labels {
 	return o.Labels
 }
 
@@ -138,6 +145,7 @@ const (
 	SystemIdentityVersion = "version"
 )
 
+// +k8s:deepcopy-gen=true
 // Identity describes the identity of an object.
 // Only ascii characters are allowed
 type Identity map[string]string
@@ -148,6 +156,7 @@ func (i Identity) Digest() []byte {
 	return data
 }
 
+// +k8s:deepcopy-gen=true
 // IdentityObjectMeta defines a object that is uniquely identified by its identity.
 type IdentityObjectMeta struct {
 	// Name is the context unique name of the object.
@@ -162,7 +171,7 @@ type IdentityObjectMeta struct {
 	// Labels defines an optional set of additional labels
 	// describing the object.
 	// +optional
-	Labels []Label `json:"labels,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
 }
 
 // GetName returns the name of the object.
@@ -196,7 +205,7 @@ func (o *IdentityObjectMeta) SetType(ttype string) {
 }
 
 // GetLabels returns the label of the object.
-func (o IdentityObjectMeta) GetLabels() []Label {
+func (o IdentityObjectMeta) GetLabels() Labels {
 	return o.Labels
 }
 
@@ -225,6 +234,7 @@ func (o *IdentityObjectMeta) GetIdentityDigest() []byte {
 	return o.GetIdentity().Digest()
 }
 
+// +k8s:deepcopy-gen=true
 // ObjectType describes the type of a object
 type ObjectType struct {
 	// Type describes the type of the object.
@@ -241,12 +251,27 @@ func (t *ObjectType) SetType(ttype string) {
 	t.Type = ttype
 }
 
+// +k8s:deepcopy-gen=true
 // Label is a label that can be set on objects.
 type Label struct {
 	// Name is the unique name of the label.
 	Name string `json:"name"`
 	// Value is the json/yaml data of the label
 	Value json.RawMessage `json:"value"`
+}
+
+// +k8s:deepcopy-gen=true
+// Labels describe a list of labels
+type Labels []Label
+
+// Get returns the label witht the given name
+func (l Labels) Get(name string) ([]byte, bool) {
+	for _, label := range l {
+		if label.Name == name {
+			return label.Value, true
+		}
+	}
+	return nil, false
 }
 
 // NameAccessor describes a accessor for a named object.
@@ -268,7 +293,7 @@ type VersionAccessor interface {
 // LabelsAccessor describes a accessor for a labeled object.
 type LabelsAccessor interface {
 	// GetLabels returns the labels of the object.
-	GetLabels() []Label
+	GetLabels() Labels
 	// SetLabels sets the labels of the object.
 	SetLabels(labels []Label)
 }
@@ -310,6 +335,24 @@ type UnstructuredAccessType struct {
 	ObjectType `json:",inline"`
 	Raw        []byte                 `json:"-"`
 	Object     map[string]interface{} `json:"object"`
+}
+
+// DeepCopyInto is deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *UnstructuredAccessType) DeepCopyInto(out *UnstructuredAccessType) {
+	*out = *in
+	raw := make([]byte, len(in.Raw))
+	copy(raw, in.Raw)
+	out.SetData(raw)
+}
+
+// DeepCopy is deepcopy function, copying the receiver, creating a new UnstructuredAccessType.
+func (in *UnstructuredAccessType) DeepCopy() *UnstructuredAccessType {
+	if in == nil {
+		return nil
+	}
+	out := new(UnstructuredAccessType)
+	in.DeepCopyInto(out)
+	return out
 }
 
 func (u *UnstructuredAccessType) Decode(data []byte, into TypedObjectAccessor) error {
@@ -378,12 +421,14 @@ func (u *UnstructuredAccessType) MarshalJSON() ([]byte, error) {
 	return data, nil
 }
 
+// +k8s:deepcopy-gen=true
 // Source is the definition of a component's source.
 type Source struct {
 	IdentityObjectMeta `json:",inline"`
 	Access             *UnstructuredAccessType `json:"access"`
 }
 
+// +k8s:deepcopy-gen=true
 // SourceRef defines a reference to a source
 type SourceRef struct {
 	// IdentitySelector defines the identity that is used to match a source.
@@ -391,9 +436,10 @@ type SourceRef struct {
 	// Labels defines an optional set of additional labels
 	// describing the object.
 	// +optional
-	Labels []Label `json:"labels,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
 }
 
+// +k8s:deepcopy-gen=true
 // Resource describes a resource dependency of a component.
 type Resource struct {
 	IdentityObjectMeta `json:",inline"`
@@ -411,6 +457,7 @@ type Resource struct {
 	Access *UnstructuredAccessType `json:"access"`
 }
 
+// +k8s:deepcopy-gen=true
 // ComponentReference describes the reference to another component in the registry.
 type ComponentReference struct {
 	// Name is the context unique name of the object.
@@ -425,7 +472,7 @@ type ComponentReference struct {
 	// Labels defines an optional set of additional labels
 	// describing the object.
 	// +optional
-	Labels []Label `json:"labels,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
 }
 
 // GetName returns the name of the object.
@@ -449,7 +496,7 @@ func (o *ComponentReference) SetVersion(version string) {
 }
 
 // GetLabels returns the label of the object.
-func (o ComponentReference) GetLabels() []Label {
+func (o ComponentReference) GetLabels() Labels {
 	return o.Labels
 }
 
@@ -461,8 +508,8 @@ func (o *ComponentReference) SetLabels(labels []Label) {
 // GetLabels returns the identity of the object.
 func (o *ComponentReference) GetIdentity() Identity {
 	identity := map[string]string{}
-	if o.ExtraIdentity != nil {
-		identity = o.ExtraIdentity
+	for k, v := range o.ExtraIdentity {
+		identity[k] = v
 	}
 	identity[SystemIdentityName] = o.Name
 	return identity

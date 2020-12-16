@@ -49,7 +49,7 @@ func OCIRef(repoCtx v2.RepositoryContext, name, version string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	u.Path = path.Join(u.Path, name)
+	u.Path = path.Join(u.Path, ComponentDescriptorNamespace, name)
 	return fmt.Sprintf("%s:%s", u.String(), version), nil
 }
 

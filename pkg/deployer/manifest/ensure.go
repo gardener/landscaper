@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -40,7 +39,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	var (
 		objects    = make([]*unstructured.Unstructured, len(m.ProviderConfiguration.Manifests))
-		objDecoder = serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder()
+		objDecoder = serializer.NewCodecFactory(nil).UniversalDecoder()
 		status     = &manifest.ProviderStatus{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: manifest.SchemeGroupVersion.String(),

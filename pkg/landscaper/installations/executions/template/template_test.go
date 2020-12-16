@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -131,7 +132,7 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			imageAccess, err := cdv2.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+			imageAccess, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
 					Type: cdv2.OCIRegistryType,
 				},
@@ -182,7 +183,7 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			imageAccess, err := cdv2.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+			imageAccess, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
 					Type: cdv2.OCIRegistryType,
 				},

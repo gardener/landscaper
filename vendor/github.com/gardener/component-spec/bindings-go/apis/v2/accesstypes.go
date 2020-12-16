@@ -45,7 +45,7 @@ type OCIRegistryAccess struct {
 func NewOCIRegistryAccess(ref string) TypedObjectAccessor {
 	return &OCIRegistryAccess{
 		ObjectType: ObjectType{
-			Type: OCIBlobType,
+			Type: OCIRegistryType,
 		},
 		ImageReference: ref,
 	}

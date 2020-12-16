@@ -14,20 +14,22 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/gardener/landscaper/pkg/apis/config"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
+	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
+
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // ociClient is a component descriptor repository implementation
 // that resolves component references stored in an oci repository.
 type ociClient struct {
-	ociClient oci.Client
+	ociClient ociclient.Client
 	resolver  *cdoci.Resolver
 }
 
 // NewOCIRegistry creates a new oci registry from a oci config.
 func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration) (TypedRegistry, error) {
-	client, err := oci.NewClient(log, oci.WithConfiguration(config))
+	client, err := ociclient.NewClient(log, confighelper.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +41,7 @@ func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration) (TypedRegi
 }
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
-func NewOCIRegistryWithOCIClient(log logr.Logger, client oci.Client) (TypedRegistry, error) {
+func NewOCIRegistryWithOCIClient(log logr.Logger, client ociclient.Client) (TypedRegistry, error) {
 	return &ociClient{
 		ociClient: client,
 		resolver:  cdoci.NewResolver().WithOCIClient(client),

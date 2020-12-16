@@ -7,7 +7,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/simple-aggregated
-  version: v0.1.0
+  version: v0.1.1
 
   provider: internal
 
@@ -20,11 +20,11 @@ component:
   resources:
   - type: blueprint
     name: echo-server-blueprint
-    version: v0.1.0
+    version: v0.1.1
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.1
 
   componentReferences:
   - name: ingress

@@ -18,8 +18,9 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
+	"github.com/gardener/landscaper/pkg/utils"
+
+	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // BuildNewDefinition creates a ocispec Manifest from a component definition.
@@ -77,5 +78,5 @@ func BuildNewDefinitionConfig(cache cache.Cache, fs vfs.FileSystem, path string)
 
 // BuildNewContentBlob creates a ocispec Manifest from a component definition.
 func BuildNewContentBlob(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
-	return oci.BuildTarGzipLayer(cache, fs, path, nil)
+	return utils.BuildTarGzipLayer(cache, fs, path, nil)
 }

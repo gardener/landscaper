@@ -12,12 +12,15 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gardener/component-cli/ociclient"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+
+	"github.com/gardener/component-cli/ociclient/cache"
 
 	"github.com/gardener/landscaper/cmd/landscaper-cli/app/constants"
 	"github.com/gardener/landscaper/pkg/apis/core"
@@ -26,8 +29,6 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints/bputils"
 	"github.com/gardener/landscaper/pkg/logger"
-	"github.com/gardener/landscaper/pkg/utils/oci"
-	"github.com/gardener/landscaper/pkg/utils/oci/cache"
 )
 
 type pushOptions struct {
@@ -81,10 +82,10 @@ func (o *pushOptions) run(ctx context.Context, log logr.Logger) error {
 		return err
 	}
 
-	ociClient, err := oci.NewClient(log,
-		oci.WithCache{Cache: cache},
-		oci.WithKnownMediaType(lsv1alpha1.BlueprintArtifactsMediaType),
-		oci.AllowPlainHttp(o.allowPlainHttp))
+	ociClient, err := ociclient.NewClient(log,
+		ociclient.WithCache{Cache: cache},
+		ociclient.WithKnownMediaType(lsv1alpha1.BlueprintArtifactsMediaType),
+		ociclient.AllowPlainHttp(o.allowPlainHttp))
 	if err != nil {
 		return err
 	}

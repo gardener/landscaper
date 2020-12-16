@@ -83,3 +83,10 @@ docker-push:
 	@docker push $(HELM_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
 	@docker push $(MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
 
+######################
+# Tutorial resources #
+######################
+
+.PHONY: upload-tutorial-resources
+upload-tutorial-resources:
+	@./hack/upload-tutorial-resources.sh

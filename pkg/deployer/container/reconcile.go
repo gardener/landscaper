@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/gardener/component-cli/ociclient/credentials"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -285,10 +286,15 @@ const (
 )
 
 // syncSecrets identifies a authSecrets based on a given registry. It then creates or updates a pull secret in a target for the matched authSecret.
-func (c *Container) syncSecrets(ctx context.Context, secretName, registry string, authSecrets []*dockerconfigfile.ConfigFile) (string, error) {
-	imageref, err := dockerreference.ParseDockerRef(registry)
+func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference string, keyring *credentials.GeneralOciKeyring) (string, error) {
+	authConfig, ok := keyring.Get(imageReference)
+	if !ok {
+		return "", nil
+	}
+
+	imageref, err := dockerreference.ParseDockerRef(imageReference)
 	if err != nil {
-		return "", fmt.Errorf("Not a valid registry reference %s: %w", c.ProviderConfiguration.Image, err)
+		return "", fmt.Errorf("Not a valid imageReference reference %s: %w", c.ProviderConfiguration.Image, err)
 	}
 
 	host := dockerreference.Domain(imageref)
@@ -297,51 +303,37 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, registry string
 		host = dockerHubLegacyDomain
 	}
 
-	for _, v := range authSecrets {
-		authConfig, err := v.GetAuthConfig(host)
-		// as of now, err is never returned by GetAuthConfig, checking it in case this changes in future
-		if err != nil {
-			continue
-		}
-		// check, if we got back an empty config
-		if len(authConfig.ServerAddress) == 0 {
-			continue
-		}
-
-		targetAuthConfigs := &dockerconfigfile.ConfigFile{
-			AuthConfigs: map[string]types.AuthConfig{
-				host: authConfig,
-			},
-		}
-
-		targetAuthConfigsJSON, err := json.Marshal(targetAuthConfigs)
-		if err != nil {
-			return "", fmt.Errorf("Failed to create valid auth config JSON for %s: %w", host, err)
-		}
-
-		authSecret := &corev1.Secret{}
-		authSecret.Name = secretName
-		authSecret.Namespace = c.Configuration.Namespace
-		authSecret.Type = corev1.SecretTypeDockerConfigJson
-		if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, authSecret, func() error {
-			kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
-			authSecret.Data = map[string][]byte{
-				corev1.DockerConfigJsonKey: targetAuthConfigsJSON,
-			}
-			return nil
-		}); err != nil {
-			return "", fmt.Errorf("unable to image pull secret to host cluster: %w", err)
-		}
-		return authSecret.Name, nil
+	targetAuthConfigs := &dockerconfigfile.ConfigFile{
+		AuthConfigs: map[string]types.AuthConfig{
+			host: authConfig,
+		},
 	}
 
-	return "", nil
+	targetAuthConfigsJSON, err := json.Marshal(targetAuthConfigs)
+	if err != nil {
+		return "", fmt.Errorf("Failed to create valid auth config JSON for %s: %w", host, err)
+	}
+
+	authSecret := &corev1.Secret{}
+	authSecret.Name = secretName
+	authSecret.Namespace = c.Configuration.Namespace
+	authSecret.Type = corev1.SecretTypeDockerConfigJson
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, authSecret, func() error {
+		kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
+		authSecret.Data = map[string][]byte{
+			corev1.DockerConfigJsonKey: targetAuthConfigsJSON,
+		}
+		return nil
+	}); err != nil {
+		return "", fmt.Errorf("unable to image pull secret to host cluster: %w", err)
+	}
+	return authSecret.Name, nil
 }
 
 // parseAndSyncSecrets parses and synchronizes relevant pull secrets for container image, blueprint & component descriptor secrets from the landscaper and host cluster.
 func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
 	// find the secrets that match our image, our blueprint and our componentdescriptor
-	var secrets []*dockerconfigfile.ConfigFile
+	ociKeyring := credentials.New()
 
 	for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
 		secretFileContent, err := ioutil.ReadFile(secretFileName)
@@ -356,7 +348,10 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 			continue
 		}
 
-		secrets = append(secrets, authConfig)
+		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
+			erro = fmt.Errorf("unable to add config from %q to credentials store: %w", secretFileName, err)
+			return
+		}
 	}
 
 	for _, secretRef := range c.ProviderConfiguration.RegistryPullSecrets {
@@ -366,18 +361,19 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 		if err != nil {
 			c.log.V(3).Info(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 		}
-
 		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secret.Data[corev1.DockerConfigJsonKey]))
 		if err != nil {
 			c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 			continue
 		}
-		secrets = append(secrets, authConfig)
+		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
+			erro = fmt.Errorf("unable to add config from secret %q to credentials store: %w", secretRef.NamespacedName().String(), err)
+			return
+		}
 	}
 
 	var err error
-
-	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, secrets)
+	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, ociKeyring)
 	if err != nil {
 		erro = fmt.Errorf("unable to obtain and sync image pull secret to host cluster: %w", err)
 		return
@@ -393,7 +389,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 				cdRef = c.ProviderConfiguration.Blueprint.Inline.ComponentDescriptorReference.RepositoryContext.BaseURL
 			}
 
-			componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, secrets)
+			componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
 			if err != nil {
 				erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
 				return
@@ -437,7 +433,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 				return
 			}
 
-			blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, secrets)
+			blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, ociKeyring)
 			if err != nil {
 				erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
 				return
