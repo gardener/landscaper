@@ -275,7 +275,7 @@ This resulting deploy item can be rendered and the templating can be tested by
 After the blueprint is build it has to be uploaded to the oci registry and the reference needs to be added to the component descriptor.
 The blueprint can be easily uploaded by using the landscaper cli tool which packages the blueprint and uploads to the given oci registry.
 
-To install the landscaper see [Landscaper CLI Installation](../gettingstarted/install-landscaper-cli.md)
+To install the landscaper see [Landscaper CLI Installation](https://github.com/gardener/landscapercli/blob/master/docs/installation.md)
 
 ```shell script
 # landscaper-cli blueprints push myregistry/mypath/ingress-nginx:v0.1.0 docs/tutorials/resources/ingress-nginx/blueprint
