@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	Type lsv1alpha1.ExecutionType = "landscaper.gardener.cloud/container"
+	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/container"
 )
 
 var (

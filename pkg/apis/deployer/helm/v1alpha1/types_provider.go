@@ -58,10 +58,31 @@ type Chart struct {
 	// Ref defines the reference to a helm chart in a oci repository.
 	// +optional
 	Ref string `json:"ref,omitempty"`
-	// Tar defines a tarred helm chart as base64 encoded string.
-	// Either a chart or a tar has to be defined
+	// FromResource fetches the chart based on the resource's access method.
+	// The resource is defined as part of a component descriptor which is necessary to also handle
+	// local artifacts.
 	// +optional
-	Tar string `json:"tar,omitempty"`
+	FromResource *lsv1alpha1.RemoteBlueprintReference `json:"fromResource,omitempty"`
+	// Archive defines a compressed tarred helm chart as base64 encoded string.
+	// +optional
+	Archive *ArchiveAccess `json:"archive,omitempty"`
+}
+
+// ArchiveAccess defines the access for a helm chart as compressed archive.
+type ArchiveAccess struct {
+	// Raw defines a compressed tarred helm chart as base64 encoded string.
+	// +optional
+	Raw string `json:"raw,omitempty"`
+	// Remote defines the remote access for a helm chart as compressed archive.
+	// +optional
+	Remote *RemoteArchiveAccess `json:"remote,omitempty"`
+}
+
+// RemoteArchiveAccess defines the remote access for a helm chart as compressed archive.
+type RemoteArchiveAccess struct {
+	// URL defines a compressed tarred helm chart that is fetched from a url.
+	// +optional
+	URL string `json:"url,omitempty"`
 }
 
 // ExportFromManifestItem describes one export that is read from the templates values or a templated resource.

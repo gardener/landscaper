@@ -25,9 +25,6 @@ const ExecutionManagedNameLabel = "execution.landscaper.gardener.cloud/name"
 // todo: add conversion
 const ExecutionDependsOnAnnotation = "execution.landscaper.gardener.cloud/dependsOn"
 
-// ExecutionType defines the type of the execution
-type ExecutionType string
-
 // ReconcileDeployItemsCondition is the Conditions type to indicate the deploy items status.
 const ReconcileDeployItemsCondition ConditionType = "ReconcileDeployItems"
 
@@ -107,7 +104,7 @@ type DeployItemTemplate struct {
 	Name string `json:"name"`
 
 	// DataType is the DeployItem type of the execution.
-	Type ExecutionType `json:"type"`
+	Type DeployItemType `json:"type"`
 
 	// Target is the object reference to the target that the deploy item should deploy to.
 	// +optional

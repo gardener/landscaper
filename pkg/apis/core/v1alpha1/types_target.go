@@ -80,7 +80,7 @@ type TargetTemplate struct {
 // KubernetesClusterTargetType defines the landscaper kubernetes cluster target.
 const KubernetesClusterTargetType TargetType = core.GroupName + "/kubernetes-cluster"
 
-// KubernetesClusterTargetConfig defines the landscaper kubenretes cluster target config.
+// KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.
 type KubernetesClusterTargetConfig struct {
 	// Kubeconfig defines kubeconfig as string.
 	Kubeconfig string `json:"kubeconfig"`

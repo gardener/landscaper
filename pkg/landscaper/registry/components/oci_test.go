@@ -13,7 +13,6 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
-	logtesting "github.com/go-logr/logr/testing"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
@@ -48,7 +47,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should fetch and return a component descriptor when a valid tar is returned", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -89,7 +88,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should fetch and return a component descriptor when it is defined as json", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -130,7 +129,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should throw an error if the manifest has more layers", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -159,7 +158,7 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should throw an error if the manifest has a unknown type", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logtesting.NullLogger{}, ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()

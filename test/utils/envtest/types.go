@@ -6,24 +6,20 @@ package envtest
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
-// State contains the state of initialized fake client
-type State struct {
-	Namespace     string
-	Installations map[string]*lsv1alpha1.Installation
-	Executions    map[string]*lsv1alpha1.Execution
-	DeployItems   map[string]*lsv1alpha1.DeployItem
-	DataObjects   map[string]*lsv1alpha1.DataObject
-	Targets       map[string]*lsv1alpha1.Target
-	Secrets       map[string]*corev1.Secret
-	ConfigMaps    map[string]*corev1.ConfigMap
+// todo: replace with client.Object when updating
+type Object interface {
+	metav1.Object
+	runtime.Object
 }
 
 var (
@@ -39,17 +35,17 @@ var (
 func init() {
 	var err error
 	InstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	ExecutionGVK, err = apiutil.GVKForObject(&lsv1alpha1.Execution{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	DeployItemGVK, err = apiutil.GVKForObject(&lsv1alpha1.DeployItem{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	DataObjectGVK, err = apiutil.GVKForObject(&lsv1alpha1.DataObject{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	TargetGVK, err = apiutil.GVKForObject(&lsv1alpha1.Target{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	SecretGVK, err = apiutil.GVKForObject(&corev1.Secret{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 	ConfigMapGVK, err = apiutil.GVKForObject(&corev1.ConfigMap{}, kubernetes.LandscaperScheme)
-	runtime.Must(err)
+	utilruntime.Must(err)
 }

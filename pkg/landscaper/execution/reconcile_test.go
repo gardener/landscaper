@@ -57,7 +57,7 @@ var _ = Describe("Reconcile", func() {
 		err = fakeClient.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), item)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(item.Spec.Type).To(Equal(lsv1alpha1.ExecutionType("landscaper.gardener.cloud/helm")))
+		Expect(item.Spec.Type).To(Equal(lsv1alpha1.DeployItemType("landscaper.gardener.cloud/helm")))
 		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
 	})
 
@@ -99,7 +99,7 @@ var _ = Describe("Reconcile", func() {
 		err = fakeClient.Get(ctx, exec.Status.DeployItemReferences[1].Reference.NamespacedName(), item)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(item.Spec.Type).To(Equal(lsv1alpha1.ExecutionType("landscaper.gardener.cloud/helm")))
+		Expect(item.Spec.Type).To(Equal(lsv1alpha1.DeployItemType("landscaper.gardener.cloud/helm")))
 		Expect(exec.Status.DeployItemReferences[1].Reference.ObservedGeneration).To(Equal(exec.Generation))
 	})
 

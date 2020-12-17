@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -15,9 +16,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -173,4 +178,55 @@ func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
 		return false
 	}
 	return val == value
+}
+
+// GenerateKubeconfigBytes generates a kubernetes kubeconfig config object from a rest config
+// and encodes it as yaml.
+func GenerateKubeconfigBytes(restConfig *rest.Config) ([]byte, error) {
+	return clientcmd.Write(GenerateKubeconfig(restConfig))
+}
+
+// GenerateKubeconfigJSONBytes generates a kubernetes kubeconfig config object from a rest config
+// and encodes it as json.
+func GenerateKubeconfigJSONBytes(restConfig *rest.Config) ([]byte, error) {
+	data, err := clientcmd.Write(GenerateKubeconfig(restConfig))
+	if err != nil {
+		return nil, err
+	}
+	return yaml.YAMLToJSON(data)
+}
+
+// GenerateKubeconfig generates a kubernetes kubeconfig config object from a rest config
+func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
+	const defaultID = "default"
+	cfg := clientcmdapi.Config{
+		APIVersion:     "v1",
+		Kind:           "Config",
+		CurrentContext: defaultID,
+		Contexts: map[string]*clientcmdapi.Context{
+			defaultID: {
+				Cluster:  defaultID,
+				AuthInfo: defaultID,
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			defaultID: {
+				Token: restConfig.BearerToken,
+
+				Username: restConfig.Username,
+				Password: restConfig.Password,
+
+				ClientCertificateData: restConfig.CertData,
+				ClientKeyData:         restConfig.KeyData,
+			},
+		},
+		Clusters: map[string]*clientcmdapi.Cluster{
+			defaultID: {
+				Server:                   path.Join(restConfig.Host, restConfig.APIPath),
+				CertificateAuthorityData: restConfig.CAData,
+				InsecureSkipTLSVerify:    restConfig.Insecure,
+			},
+		},
+	}
+	return cfg
 }

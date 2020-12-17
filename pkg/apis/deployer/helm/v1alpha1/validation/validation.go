@@ -10,15 +10,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 )
 
 // ValidateProviderConfiguration validates a helm deployer configuration
 func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) error {
 	allErrs := field.ErrorList{}
-	if len(config.Chart.Ref) == 0 && len(config.Chart.Tar) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("chart").Child("ref", "tar"), "must not be empty"))
-	}
+	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
 
 	expPath := field.NewPath("exportsFromManifests")
 	keys := sets.NewString()
@@ -55,4 +54,61 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 	}
 
 	return allErrs.ToAggregate()
+}
+
+// ValidateChart validates the access methods for a chart
+func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil {
+		return append(allErrs, field.Required(fldPath.Child("ref", "archive", "fromResource"), "must not be empty"))
+	}
+
+	if chart.Archive != nil {
+		allErrs = append(allErrs, ValidateArchive(fldPath.Child("archive"), chart.Archive)...)
+	}
+
+	if chart.FromResource != nil {
+		allErrs = append(allErrs, ValidateFromResource(fldPath.Child("fromResource"), chart.FromResource)...)
+	}
+
+	return allErrs
+}
+
+// ValidateArchive validates the archive access for a helm chart.
+func ValidateArchive(fldPath *field.Path, archive *helmv1alpha1.ArchiveAccess) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if len(archive.Raw) == 0 && archive.Remote == nil {
+		return append(allErrs, field.Required(fldPath.Child("raw", "remote"), "must not be empty"))
+	}
+
+	if archive.Remote != nil {
+		remotePath := fldPath.Child("remote")
+		if len(archive.Remote.URL) == 0 {
+			allErrs = append(allErrs, field.Required(remotePath.Child("url"), "must not be empty"))
+		}
+	}
+
+	return allErrs
+}
+
+// ValidateFromResource validates the resource access for a helm chart.
+func ValidateFromResource(fldPath *field.Path, resourceRef *lsv1alpha1.RemoteBlueprintReference) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if resourceRef.RepositoryContext == nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("repositoryContext"), "must not be empty"))
+	}
+
+	if len(resourceRef.ComponentName) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("componentName"), "must not be empty"))
+	}
+	if len(resourceRef.Version) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must not be empty"))
+	}
+	if len(resourceRef.ResourceName) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("resourceName"), "must not be empty"))
+	}
+
+	return allErrs
 }

@@ -211,7 +211,7 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs
 		return nil, err
 	}
 
-	componentsRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient)
+	componentsRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to setup components registry")
 	}

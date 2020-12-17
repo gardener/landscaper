@@ -2,13 +2,31 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "$ref": "#/definitions/ProviderConfiguration",
   "definitions": {
+    "ArchiveAccess": {
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "remote": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RemoteArchiveAccess"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "Chart": {
       "properties": {
         "ref": {
           "type": "string"
         },
-        "tar": {
-          "type": "string"
+        "fromResource": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RemoteBlueprintReference"
+        },
+        "archive": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ArchiveAccess"
         }
       },
       "additionalProperties": false,
@@ -97,6 +115,64 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "RemoteArchiveAccess": {
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RemoteBlueprintReference": {
+      "required": [
+        "VersionedResourceReference"
+      ],
+      "properties": {
+        "VersionedResourceReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/VersionedResourceReference"
+        },
+        "repositoryContext": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RepositoryContext"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RepositoryContext": {
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ResourceReference": {
+      "required": [
+        "componentName",
+        "resourceName"
+      ],
+      "properties": {
+        "componentName": {
+          "type": "string"
+        },
+        "resourceName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "TypedObjectReference": {
       "required": [
         "apiVersion",
@@ -113,6 +189,23 @@
         "ObjectReference": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ObjectReference"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "VersionedResourceReference": {
+      "required": [
+        "ResourceReference",
+        "version"
+      ],
+      "properties": {
+        "ResourceReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ResourceReference"
+        },
+        "version": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
