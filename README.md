@@ -7,6 +7,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/gardener/landscaper)](https://goreportcard.com/report/github.com/gardener/landscaper)
 [![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
 
+**:warning: Landscaper is currently in an alpha state, expect the api to change at any time.**
+
 **Work in progress... partial and unfinished documentation ahead!**
 
 The _Landscaper_ is an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) to install, update & manage a Gardener deployment.
