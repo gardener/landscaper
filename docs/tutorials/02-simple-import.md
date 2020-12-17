@@ -18,7 +18,6 @@ All example resources can be found in [docs/tutorials/resources/echo-server](./r
 and has to be replaced with your own registry if you want to upload your own artifacts.
 Although the artifacts are public readable so they can be used out-of-the-box without a need for your own oci registry.
 
-
 ### Resources
 
 #### Build the Blueprint
