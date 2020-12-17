@@ -5,7 +5,7 @@
 - [Installation-Blueprint relationship](./concepts/InstallationBlueprintRelationship.md)
 
 ### Getting Started
-- [Install the landscaper cli](./gettingstarted/install-landscaper-cli.md)
+- [Install the landscaper cli](https://github.com/gardener/landscapercli/blob/master/docs/installation.md)
 - [Install the landscaper](./gettingstarted/install-landscaper-controller.md)
 
 ### Usage
