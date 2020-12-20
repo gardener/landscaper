@@ -9,6 +9,7 @@ Landscaper is a Kubernetes controller that reconciles installations of _Componen
 Landscaper can easily be installed via [Helm](https://helm.sh/) using the Helm chart in [charts/landscaper](charts/landscaper).
 
 ```
+kubectl create namespace ls-system
 helm install -n ls-system landscaper ./charts/landscaper
 ```
 
