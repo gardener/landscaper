@@ -162,10 +162,15 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 }
 
 func (h *Helm) DeleteFiles(ctx context.Context) error {
+	h.log.Info("Deleting files.")
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 	status := &helmv1alpha1.ProviderStatus{}
-	if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus.Raw, nil, status); err != nil {
-		return err
+
+	if h.DeployItem.Status.ProviderStatus != nil {
+		h.log.V(5).Info(fmt.Sprintf("Provider status is: %s", h.DeployItem.Status.ProviderStatus))
+		if _, _, err := serializer.NewCodecFactory(Helmscheme).UniversalDecoder().Decode(h.DeployItem.Status.ProviderStatus.Raw, nil, status); err != nil {
+			return err
+		}
 	}
 
 	if len(status.ManagedResources) == 0 {
