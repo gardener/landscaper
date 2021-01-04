@@ -31,6 +31,7 @@ landscaper:
 #  - helm
 #  - mock
 #  - manifest
+#  - terraform
   deployersConfig: {}
 #    container:
 #      apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1

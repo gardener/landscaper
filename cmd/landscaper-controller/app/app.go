@@ -17,10 +17,12 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	terraformv1alpha1 "github.com/gardener/landscaper/apis/deployer/terraform/v1alpha1"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
+	terraformctlr "github.com/gardener/landscaper/pkg/deployer/terraform"
 	deployitemactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
@@ -131,6 +133,12 @@ func (o *options) run(ctx context.Context) error {
 		} else if deployerName == "mock" {
 			if err := mockctlr.AddControllerToManager(mgr); err != nil {
 				return fmt.Errorf("unable to add mock deployer: %w", err)
+			}
+		} else if deployerName == "terraform" {
+			config := &terraformv1alpha1.Configuration{}
+			terraformv1alpha1.SetDefaults_Configuration(config)
+			if err := terraformctlr.AddActuatorToManager(mgr, config); err != nil {
+				return fmt.Errorf("unable to add terraform deployer: %w", err)
 			}
 		} else {
 			return fmt.Errorf("unknown deployer %s", deployerName)
