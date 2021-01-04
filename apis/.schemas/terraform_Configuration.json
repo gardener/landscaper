@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/Configuration",
+  "definitions": {
+    "Configuration": {
+      "required": [
+        "TypeMeta",
+        "terraformer"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "targetSelector": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/TargetSelector"
+          },
+          "type": "array"
+        },
+        "terraformer": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TerraformerSpec"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Requirement": {
+      "required": [
+        "key",
+        "operator"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "Values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TargetSelector": {
+      "properties": {
+        "annotations": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Requirement"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TerraformerSpec": {
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "logLevel": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

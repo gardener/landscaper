@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/ProviderConfiguration",
+  "definitions": {
+    "ProviderConfiguration": {
+      "required": [
+        "TypeMeta",
+        "main.tf"
+      ],
+      "properties": {
+        "TypeMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/TypeMeta"
+        },
+        "main.tf": {
+          "type": "string"
+        },
+        "variables.tf": {
+          "type": "string"
+        },
+        "terraform.tfvars": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TypeMeta": {
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

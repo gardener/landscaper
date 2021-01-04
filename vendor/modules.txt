@@ -103,6 +103,10 @@ github.com/gardener/landscaper/apis/deployer/manifest/validation
 github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
+github.com/gardener/landscaper/apis/deployer/terraform
+github.com/gardener/landscaper/apis/deployer/terraform/install
+github.com/gardener/landscaper/apis/deployer/terraform/v1alpha1
+github.com/gardener/landscaper/apis/deployer/terraform/v1alpha1/validation
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-logr/logr v0.3.0
@@ -715,6 +719,7 @@ sigs.k8s.io/controller-runtime/pkg/internal/testing/integration/addr
 sigs.k8s.io/controller-runtime/pkg/internal/testing/integration/internal
 sigs.k8s.io/controller-runtime/pkg/leaderelection
 sigs.k8s.io/controller-runtime/pkg/log
+sigs.k8s.io/controller-runtime/pkg/log/zap
 sigs.k8s.io/controller-runtime/pkg/manager
 sigs.k8s.io/controller-runtime/pkg/manager/signals
 sigs.k8s.io/controller-runtime/pkg/metrics

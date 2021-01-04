@@ -19,6 +19,7 @@
 - [Helm](./deployer/helm.md)
 - [Kubernetes Manifest](./deployer/manifest.md)
 - [Container](./deployer/container.md)
+- [Terraform](./deployer/terraform.md)
 
 ### Tutorials
 - [Local Setup with local OCI Registry](tutorials/00-local-setup.md)

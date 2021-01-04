@@ -25,6 +25,7 @@ landscaper:
 #  - container
 #  - helm
 #  - mock
+#  - terraform
 
 replicaCount: 1
 
