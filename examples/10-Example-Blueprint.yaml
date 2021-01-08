@@ -52,7 +52,7 @@ subinstallations:
 
 - file: /path/to/installation-template # must be inside the blueprints filesystem
 
-deployExecutors: # has to be idempotent
+deployExecutions: # has to be idempotent
 - name: default # has to return a list of deploy item templates
   type: GoTemplate
   template: |
@@ -82,7 +82,7 @@ deployExecutors: # has to be idempotent
           ref: my-repo:1.0.0
         values: {{ .exports.mykey.x }}
 
-exportExecutors:
+exportExecutions:
 - name: default # has to return a list of deploy item templates
   type: GoTemplate
   template: |

@@ -4,17 +4,18 @@ Installations are kubernetes resources that represent instances of [Blueprints](
 Each installation contains the state of its executed blueprint and has its own context.
 
 **Index**
-- [Structure](#basic-structure)
-- [Blueprint](#blueprint)
-- [Imports](#imports)
-  - [Data Imports](#data-imports)
-  - [Target Imports](#target-imports)
-  - [Data Mappings](#import-data-mappings)
-- [Exports](#exports)
-  - [Data Export](#data-exports)
-  - [Target Export](#target-exports)
-  - [Data Mappings](#export-data-mappings)
-- [Operations](#operations)
+- [Installations](#installations)
+      - [Basic structure:](#basic-structure)
+  - [Blueprint](#blueprint)
+  - [Imports](#imports)
+    - [Data Imports](#data-imports)
+    - [Target Imports](#target-imports)
+    - [Import Data Mappings](#import-data-mappings)
+  - [Exports](#exports)
+    - [Data Exports](#data-exports)
+    - [Target Exports](#target-exports)
+    - [Export Data Mappings](#export-data-mappings)
+  - [Operations](#operations)
 
 #### Basic structure:
 ```yaml
@@ -162,7 +163,7 @@ A blueprint is a filesystem that contains a blueprint definition file at its roo
 Therefore, it must be possible to define such a filesystem within the installation manifest.
 The landscaper uses the [vfs yaml filesystem definition](https://pkg.go.dev/github.com/mandelsoft/vfs/pkg/yamlfs) to define such a filesystem.
 
-A component descriptor can be optionally referenced in `spec.blueprint.inline.cdRef`.
+A component descriptor can be referenced optionally in `spec.blueprint.inline.cdRef`.
 Currently, it is only possible to use a remote component descriptor.
 
 ```yaml

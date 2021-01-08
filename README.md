@@ -28,8 +28,8 @@ We also build oci charts so the landscaper can also be installed with a specific
 ```
 export HELM_EXPERIMENTAL_OCI=1
 export LS_VERSION="0.1.0"
-helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION
-helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION ./charts
+helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION
+helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION ./charts
 helm install ./charts
 ```
 

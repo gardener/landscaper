@@ -3,19 +3,19 @@
 #### _Aggregated Blueprint_
 
   Aggregated Blueprints are Blueprints that bundle multiple other blueprints.
-  They contain intruction how they these referenced blueprints interact with each other.
+  They contain instructions how they these referenced blueprints interact with each other.
 
   Their pratical use is to install mutliple components that depend on each other.
 
 #### _Blueprint_
 
-  Blueprints contain actual intructions and steps on how to install a software component and what is needed to perform these actions.
+  Blueprints contain actual instructions and steps on how to install a software component and what is needed to perform these actions.
 
   __Background Knowledge__:
     <details>
     Blueprints consists of:
       - Configuration Data ([Imports](#_import_))
-      - Installation intructions
+      - Installation instructions
         - [DeployItems](#_deploy-items_) or
         - [Subinstallations](#_subinstallations_)
       - [Output](#_export_)
@@ -33,7 +33,7 @@
 
 #### _DataObject_
 
-  DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#_context_) and provide data to Imports / receive data from Exports. They can be considerd to be the implementation of the data flow in an installation. 
+  DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#_context_) and provide data to Imports / receive data from Exports. They can be considerd to be the implementation of the data flow in an installation.
 
 #### _Deployer_
 
@@ -53,11 +53,11 @@
 
   `Export` has 2 ambigious meanings, whether we are talking about Blueprints or Installations.
 
-  ##### Blueprint
+##### Blueprint Export
 
   Exports declare the output expected from a processed Blueprint.
 
-  ##### Installation
+##### Installation Export
 
   Exports of an Installation pick up actual values and make them accessible for a user, parent or sibling Installation.
 
@@ -76,11 +76,11 @@
 
   `Import` has 2 ambigious meanings, whether we are talking about Blueprints or Installations.
 
-  ##### Blueprint
+##### Blueprint Import
 
   Imports declare what data will be required to process the Blueprint. Part of the declaration is also the format, which can either be of type [Target](#_target_) or any valid jsonschema.
 
-  ##### Installation
+##### Installation Import
 
   Imports in an Installation assign acutal values and make them accessible for further processing. They satisfy the requirements (imports) defined in the Blueprint.
 
@@ -105,4 +105,4 @@
 
 #### _Target_
 
-  A Target defines the system in which Landscaper will run the installation steps. Target resources contain all relevant data to access this environment including credentials. 
+  A Target defines the system in which Landscaper will run the installation steps. Target resources contain all relevant data to access this environment including credentials.

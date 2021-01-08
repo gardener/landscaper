@@ -17,8 +17,8 @@ We are also building OCI charts so a specific version of Landscaper can be insta
 ```
 export HELM_EXPERIMENTAL_OCI=1
 export LS_VERSION="0.1.0"
-helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION
-helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$VERSION ./charts
+helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION
+helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION ./charts
 helm install ./charts
 ```
 
@@ -26,7 +26,7 @@ Landscaper's Helm chart can be configured with a values file.
 
 In case of an OCI registry that is not exposed via https, the `allowPlainHttpRegistries` flag can be used.
 
-The landscaper does offload all deployment specific functionality like `helm` to deployers.
+The landscaper offloads all deployment specific functionality like `helm` to deployers.
 For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by the landscaper.
 
 ## Configuration through `values.yaml`
