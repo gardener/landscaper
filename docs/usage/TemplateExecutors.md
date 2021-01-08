@@ -4,8 +4,10 @@ This page contains all available template executors that can be used in the depl
 
 For detailed information of blueprints see the [Blueprint Docs](./Blueprints.md).
 
-- [GoTemplate](#gotemplate)
-- [Spiff](#spiff)
+- [Template Executors](#template-executors)
+    - [GoTemplate](#gotemplate)
+      - [State handling](#state-handling)
+    - [Spiff](#spiff)
 
 ### GoTemplate
 __Type__: `GoTemplate`
@@ -29,7 +31,7 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
 - __ociRefVersion(ref string): string__: parses an oci reference and returns the version.
   `e.g. host:5000/myrepo/myimage:1.0.0 -> "1.0.0"`
 - __resolve(access Access): []byte__: resolves an artifact defined by a typed access definition.<br>
-   The resolve function is currently able to handle artifacts of type `ociRegistry`, others may be added in teh future.
+   The resolve function is currently able to handle artifacts of type `ociRegistry`, others may be added in the future.
    The function always returns a byte array of the artifact response<br>
    ```
    # e.g for a oci registry artifact

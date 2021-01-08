@@ -4,7 +4,7 @@ Blueprints describe the steps that are necessary to deploy a component/applicati
 These steps can consist of deploy items or other blueprints which are assembled using installation templates.
 
 A Blueprint is a filesystem that contains the blueprint definition at `/blueprint.yaml`.
-Other files can be optionally added.
+Other files can be added optionally.
 Every Blueprint must have a corresponding component descriptor that is used to reference tht blueprint and define the dependencies of the blueprint.
 ```
 my-blueprint
@@ -14,11 +14,14 @@ my-blueprint
 ```
 
 **Index**:
-- [Blueprint Definition](#blueprintyaml-definition)
-- [DeployExecutions](#deployexecutions)
-- [ExportExecutions](#exportexecutions)
-- [Installation Templates](#installation-templates)
-- [Storage / Access](#remote-access)
+- [Blueprint](#blueprint)
+  - [blueprint.yaml Definition](#blueprintyaml-definition)
+    - [DeployExecutions](#deployexecutions)
+    - [ExportExecutions](#exportexecutions)
+    - [Installation Templates](#installation-templates)
+  - [Remote Access](#remote-access)
+    - [Local](#local)
+    - [OCI](#oci)
 
 ## blueprint.yaml Definition
 
@@ -83,10 +86,10 @@ deployExecutions:
   file: path to file # path is relative to the blueprint's filesystem root
   template: # inline template
 
-# exportExecutors are a templating mechanism to 
+# exportExecutions are a templating mechanism to 
 # template the export.
 # For detailed documentation see #ExportExecutions
-exportExecutors:
+exportExecutions:
 - name: execution-name
   type: GoTemplate | Spiff
   file: path to file # path is relative to the blueprint's filesystem root
@@ -209,7 +212,7 @@ components:
 
 
 ```yaml
-deployExecutors:
+deployExecutions:
 - name: default
   type: GoTemplate
   template: |
@@ -294,7 +297,7 @@ values:
 ```
 
 ```yaml
-exportExecutors:
+exportExecutions:
 - name: default
   type: GoTemplate
   template: |
@@ -386,11 +389,11 @@ component:
 
 ### OCI
 
-ComponentDefinitions can be stored in a OCI compliant registry which is the preferred way to create and offer CompoentnDefinitions.
+ComponentDefinitions can be stored in a OCI compliant registry which is the preferred way to create and offer ComponentDefinitions.
 The Landscaper uses [OCI Artifacts](https://github.com/opencontainers/artifacts) which means that a OCI compliant registry has to be used.
 For more information about the [OCI distribution spec](https://github.com/opencontainers/distribution-spec/blob/master/spec.md) and OCI compliant registries refer to the official documents.
 
-The OCI manifest are stored in the below format in the registry.
+The OCI manifest is stored in the below format in the registry.
 Whereas the config is ignored and there must be exactly one layer with the containing a bluprints filesystem as `application/tar+gzip`.
  
  The layers can be identified via their title annotation or via their media type as only one component descriptor per layer is allowed.

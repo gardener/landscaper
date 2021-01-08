@@ -93,11 +93,11 @@ registry:
 
 ### OCI
 
-ComponentDefinitions can be stored in a OCI compliant registry which is the preferred way to create and offer CompoentnDefinitions.
+ComponentDefinitions can be stored in a OCI compliant registry which is the preferred way to create and offer ComponentDefinitions.
 The Landscaper uses [OCI Artifacts](https://github.com/opencontainers/artifacts) which means that a OCI compliant registry has to be used.
 For more information about the [OCI distribution spec](https://github.com/opencontainers/distribution-spec/blob/master/spec.md) and OCI compliant registries refer to the official documents.
 
-The OCI manifest are stored in the below format in the registry.
+The OCI manifest is stored in the below format in the registry.
 Whereas the config contains the actual `ComponentDefinition` and the layers 
  - must contain a componentdescriptor of type `application/vnd.gardener.componentdescriptor.v2+json`
  - can contain a content blob of type `application/tar+gzip`
