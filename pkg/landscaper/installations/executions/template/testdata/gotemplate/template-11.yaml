@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: init
+      type: container
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        blueprint:
+    {{ toYaml .blueprint | indent 6 }}

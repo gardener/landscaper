@@ -55,36 +55,52 @@ type DeployExecutorOutput struct {
 	DeployItems []lsv1alpha1.DeployItemTemplate `json:"deployItems"`
 }
 
+// DeployExecutionOptions describes the options for templating the deploy executions.
+type DeployExecutionOptions struct {
+	Imports interface{}
+	// +optional
+	Installation         *lsv1alpha1.Installation
+	Blueprint            *blueprints.Blueprint
+	ComponentDescriptor  *cdv2.ComponentDescriptor
+	ComponentDescriptors *cdv2.ComponentDescriptorList
+}
+
 // TemplateDeployExecutions templates all deploy executions and returns a aggregated list of all templated deploy item templates.
-func (o *Templater) TemplateDeployExecutions(blueprint *blueprints.Blueprint,
-	componentDescriptor *cdv2.ComponentDescriptor,
-	resolvedComponentDescriptors *cdv2.ComponentDescriptorList,
-	imports interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
+func (o *Templater) TemplateDeployExecutions(opts DeployExecutionOptions) ([]lsv1alpha1.DeployItemTemplate, error) {
 
 	// marshal and unmarshal resolved component descriptor
-	component, err := serializeComponentDescriptor(componentDescriptor)
+	component, err := serializeComponentDescriptor(opts.ComponentDescriptor)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the resolved components: %w", err)
 	}
-	components, err := serializeComponentDescriptorList(resolvedComponentDescriptors)
+	components, err := serializeComponentDescriptorList(opts.ComponentDescriptors)
 	if err != nil {
 		return nil, fmt.Errorf("error during serializing of the component descriptor: %w", err)
 	}
 
 	values := map[string]interface{}{
-		"imports":    imports,
+		"imports":    opts.Imports,
 		"cd":         component,
 		"components": components,
 	}
 
+	// add blueprint and component descriptor ref information to the input values
+	if opts.Installation != nil {
+		blueprintDef, err := serializeBlueprintDefinition(opts.Installation.Spec.Blueprint)
+		if err != nil {
+			return nil, fmt.Errorf("unable to serialize the blueprint definition")
+		}
+		values["blueprint"] = blueprintDef
+	}
+
 	executionItems := lsv1alpha1.DeployItemTemplateList{}
-	for _, tmplExec := range blueprint.Info.DeployExecutions {
+	for _, tmplExec := range opts.Blueprint.Info.DeployExecutions {
 		impl, ok := o.impl[tmplExec.Type]
 		if !ok {
 			return nil, fmt.Errorf("unknown template type %s", tmplExec.Type)
 		}
 
-		executionItemsBytes, err := impl.TemplateDeployExecutions(tmplExec, blueprint, componentDescriptor, resolvedComponentDescriptors, values)
+		executionItemsBytes, err := impl.TemplateDeployExecutions(tmplExec, opts.Blueprint, opts.ComponentDescriptor, opts.ComponentDescriptors, values)
 		if err != nil {
 			return nil, err
 		}
@@ -163,6 +179,18 @@ func serializeComponentDescriptorList(cd *cdv2.ComponentDescriptorList) (interfa
 		return nil, nil
 	}
 	data, err := codec.Encode(cd)
+	if err != nil {
+		return nil, err
+	}
+	var val interface{}
+	if err := json.Unmarshal(data, &val); err != nil {
+		return nil, err
+	}
+	return val, nil
+}
+
+func serializeBlueprintDefinition(def lsv1alpha1.BlueprintDefinition) (interface{}, error) {
+	data, err := json.Marshal(def)
 	if err != nil {
 		return nil, err
 	}

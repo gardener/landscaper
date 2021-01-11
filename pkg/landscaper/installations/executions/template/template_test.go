@@ -62,10 +62,12 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   nil,
-			}, nil, nil, nil)
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+					Fs:   nil,
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			Expect(res[0]).To(MatchFields(IgnoreExtras, Fields{
@@ -84,10 +86,13 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   nil,
-			}, nil, nil, map[string]interface{}{"version": "0.0.0"})
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Imports: map[string]interface{}{"version": "0.0.0"},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+					Fs:   nil,
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -110,10 +115,12 @@ func runTestSuite(testdataDir string) {
 			err = vfs.WriteFile(memFs, "VERSION", []byte("0.0.0"), os.ModePerm)
 			Expect(err).ToNot(HaveOccurred())
 
-			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   memFs,
-			}, nil, nil, nil)
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+					Fs:   memFs,
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 
@@ -163,9 +170,12 @@ func runTestSuite(testdataDir string) {
 			}
 			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
 
-			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-			}, cd, nil, nil)
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor: cd,
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			config := make(map[string]interface{})
@@ -238,9 +248,13 @@ func runTestSuite(testdataDir string) {
 				Components: []cdv2.ComponentDescriptor{cd2},
 			}
 
-			res, err := op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-			}, cd, list, nil)
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor:  cd,
+				ComponentDescriptors: list,
+			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			config := make(map[string]interface{})
@@ -258,10 +272,12 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   nil,
-			}, nil, nil, map[string]interface{}{"version": "0.0.0"})
+			_, err = op.TemplateDeployExecutions(DeployExecutionOptions{
+				Imports: map[string]interface{}{"version": "0.0.0"},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+			})
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -275,10 +291,12 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   nil,
-			}, nil, nil, map[string]interface{}{"version": "0.0.1"})
+			_, err = op.TemplateDeployExecutions(DeployExecutionOptions{
+				Imports: map[string]interface{}{"version": "0.0.1"},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+			})
 			Expect(err).ToNot(HaveOccurred())
 
 			state := map[string]string{
@@ -287,12 +305,55 @@ func runTestSuite(testdataDir string) {
 			stateBytes, err := json.Marshal(state)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(stateHandler.Store(context.TODO(), exec[0].Name, stateBytes)).To(Succeed())
-			_, err = op.TemplateDeployExecutions(&blueprints.Blueprint{
-				Info: blue,
-				Fs:   nil,
-			}, nil, nil, map[string]interface{}{"version": "0.0.2"})
+			_, err = op.TemplateDeployExecutions(DeployExecutionOptions{
+				Imports: map[string]interface{}{"version": "0.0.2"},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+			})
 
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should use the blueprint information", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-11.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(nil, stateHandler)
+
+			blueprintDef := lsv1alpha1.BlueprintDefinition{}
+			blueprintDef.Reference = &lsv1alpha1.RemoteBlueprintReference{}
+			blueprintDef.Reference.ComponentName = "my-comp"
+			blueprintDef.Reference.ResourceName = "my-res"
+			blueprintDef.Reference.Version = "0.1.0"
+
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Installation: &lsv1alpha1.Installation{
+					Spec: lsv1alpha1.InstallationSpec{
+						Blueprint: blueprintDef,
+					},
+				},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(MatchKeys(IgnoreExtras, Keys{
+				"blueprint": MatchAllKeys(Keys{
+					"ref": MatchAllKeys(Keys{
+						"componentName": Equal("my-comp"),
+						"resourceName":  Equal("my-res"),
+						"version":       Equal("0.1.0"),
+					}),
+				}),
+			}))
 		})
 	})
 
