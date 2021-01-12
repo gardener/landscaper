@@ -14,14 +14,14 @@ import (
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
 	metav1.TypeMeta
-	// RepositoryContext defins the default repository context that should be used to resolve component descriptors.
+	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
 	// +optional
 	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
 	// DefaultOCI defines the default oci configuration which is used
 	// if it's not overwritten by more specific configuration.
 	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
-	Registry RegistryConfiguration `json:"registries"`
+	Registry RegistryConfiguration `json:"registry"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry

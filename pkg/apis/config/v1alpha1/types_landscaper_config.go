@@ -14,7 +14,7 @@ import (
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
-	// RepositoryContext defins the default repository context that should be used to resolve component descriptors.
+	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
 	// +optional
 	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
 	// DefaultOCI defines the default oci configuration which is used
