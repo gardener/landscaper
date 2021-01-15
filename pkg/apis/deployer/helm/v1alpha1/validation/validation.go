@@ -16,9 +16,7 @@ import (
 // ValidateProviderConfiguration validates a helm deployer configuration
 func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) error {
 	allErrs := field.ErrorList{}
-	if len(config.Chart.Ref) == 0 && len(config.Chart.Tar) == 0 {
-		allErrs = append(allErrs, field.Required(field.NewPath("chart").Child("ref", "tar"), "must not be empty"))
-	}
+	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
 
 	expPath := field.NewPath("exportsFromManifests")
 	keys := sets.NewString()
@@ -55,4 +53,13 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 	}
 
 	return allErrs.ToAggregate()
+}
+
+// ValidateChart validates the access methods for a chart
+func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if len(chart.Ref) == 0 && len(chart.Tar) == 0 {
+		return append(allErrs, field.Required(fldPath.Child("ref", "tar"), "must not be empty"))
+	}
+	return allErrs
 }

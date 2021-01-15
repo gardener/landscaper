@@ -5,19 +5,29 @@
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"path"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 )
@@ -173,4 +183,97 @@ func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
 		return false
 	}
 	return val == value
+}
+
+// GenerateKubeconfigBytes generates a kubernetes kubeconfig config object from a rest config
+// and encodes it as yaml.
+func GenerateKubeconfigBytes(restConfig *rest.Config) ([]byte, error) {
+	return clientcmd.Write(GenerateKubeconfig(restConfig))
+}
+
+// GenerateKubeconfigJSONBytes generates a kubernetes kubeconfig config object from a rest config
+// and encodes it as json.
+func GenerateKubeconfigJSONBytes(restConfig *rest.Config) ([]byte, error) {
+	data, err := clientcmd.Write(GenerateKubeconfig(restConfig))
+	if err != nil {
+		return nil, err
+	}
+	return yaml.YAMLToJSON(data)
+}
+
+// GenerateKubeconfig generates a kubernetes kubeconfig config object from a rest config
+func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
+	const defaultID = "default"
+	cfg := clientcmdapi.Config{
+		APIVersion:     "v1",
+		Kind:           "Config",
+		CurrentContext: defaultID,
+		Contexts: map[string]*clientcmdapi.Context{
+			defaultID: {
+				Cluster:  defaultID,
+				AuthInfo: defaultID,
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			defaultID: {
+				Token: restConfig.BearerToken,
+
+				Username: restConfig.Username,
+				Password: restConfig.Password,
+
+				ClientCertificateData: restConfig.CertData,
+				ClientKeyData:         restConfig.KeyData,
+			},
+		},
+		Clusters: map[string]*clientcmdapi.Cluster{
+			defaultID: {
+				Server:                   path.Join(restConfig.Host, restConfig.APIPath),
+				CertificateAuthorityData: restConfig.CAData,
+				InsecureSkipTLSVerify:    restConfig.Insecure,
+			},
+		},
+	}
+	return cfg
+}
+
+// ParseFiles parses a map of filename->data into unstructured yaml objects.
+func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstructured, error) {
+	objects := make([]*unstructured.Unstructured, 0)
+	for name, content := range files {
+		decodedObjects, err := DecodeObjects(log, name, []byte(content))
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode files for %q: %w", name, err)
+		}
+		objects = append(objects, decodedObjects...)
+	}
+	return objects, nil
+}
+
+// Decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
+func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
+	var (
+		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
+		decodedObj map[string]interface{}
+		objects    = make([]*unstructured.Unstructured, 0)
+	)
+
+	for i := 0; true; i++ {
+		if err := decoder.Decode(&decodedObj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Error(err, fmt.Sprintf("unable to decode resource %d of file %q", i, name))
+			continue
+		}
+		if decodedObj == nil {
+			continue
+		}
+		obj := &unstructured.Unstructured{Object: decodedObj}
+		// ignore the obj if no group version is defined
+		if len(obj.GetAPIVersion()) == 0 {
+			continue
+		}
+		objects = append(objects, obj.DeepCopy())
+	}
+	return objects, nil
 }
