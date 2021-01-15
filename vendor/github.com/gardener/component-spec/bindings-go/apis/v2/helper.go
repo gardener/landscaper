@@ -117,6 +117,15 @@ func (c ComponentDescriptor) GetResourceByDefaultSelector(sel interface{}) ([]Re
 	return c.GetResourcesBySelector(identitySelector)
 }
 
+// GetResourceByRegexSelector returns resources that match the given selectors.
+func (c ComponentDescriptor) GetResourceByRegexSelector(sel interface{}) ([]Resource, error) {
+	identitySelector, err := selector.ParseRegexSelector(sel)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse selector: %w", err)
+	}
+	return c.GetResourcesBySelector(identitySelector)
+}
+
 // GetResourcesBySelector returns resources that match the given selector.
 func (c ComponentDescriptor) GetResourcesBySelector(selectors ...IdentitySelector) ([]Resource, error) {
 	resources := make([]Resource, 0)

@@ -325,8 +325,8 @@ func NewEmptyUnstructured(ttype string) *UnstructuredAccessType {
 // NewCustomType creates a new custom typed object.
 func NewUnstructuredType(ttype string, data map[string]interface{}) *UnstructuredAccessType {
 	unstr := &UnstructuredAccessType{}
-	unstr.SetType(ttype)
 	unstr.Object = data
+	unstr.SetType(ttype)
 	return unstr
 }
 
@@ -337,21 +337,29 @@ type UnstructuredAccessType struct {
 	Object     map[string]interface{} `json:"object"`
 }
 
+func (u *UnstructuredAccessType) SetType(ttype string) {
+	u.ObjectType.SetType(ttype)
+	if u.Object == nil {
+		u.Object = make(map[string]interface{})
+	}
+	u.Object["type"] = ttype
+}
+
 // DeepCopyInto is deepcopy function, copying the receiver, writing into out. in must be non-nil.
-func (in *UnstructuredAccessType) DeepCopyInto(out *UnstructuredAccessType) {
-	*out = *in
-	raw := make([]byte, len(in.Raw))
-	copy(raw, in.Raw)
-	out.SetData(raw)
+func (u *UnstructuredAccessType) DeepCopyInto(out *UnstructuredAccessType) {
+	*out = *u
+	raw := make([]byte, len(u.Raw))
+	copy(raw, u.Raw)
+	_ = out.SetData(raw)
 }
 
 // DeepCopy is deepcopy function, copying the receiver, creating a new UnstructuredAccessType.
-func (in *UnstructuredAccessType) DeepCopy() *UnstructuredAccessType {
-	if in == nil {
+func (u *UnstructuredAccessType) DeepCopy() *UnstructuredAccessType {
+	if u == nil {
 		return nil
 	}
 	out := new(UnstructuredAccessType)
-	in.DeepCopyInto(out)
+	u.DeepCopyInto(out)
 	return out
 }
 

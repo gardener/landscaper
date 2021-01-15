@@ -150,7 +150,7 @@ func runTestSuite(testdataDir string) {
 				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "mycomp",
+						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []cdv2.RepositoryContext{},
@@ -204,7 +204,7 @@ func runTestSuite(testdataDir string) {
 				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "mycomp",
+						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []cdv2.RepositoryContext{},
@@ -212,7 +212,7 @@ func runTestSuite(testdataDir string) {
 					ComponentReferences: []cdv2.ComponentReference{
 						{
 							Name:          "my-referenced-component",
-							ComponentName: "myrefcomp",
+							ComponentName: "example.com/myrefcomp",
 							Version:       "1.0.0",
 						},
 					},
@@ -224,7 +224,7 @@ func runTestSuite(testdataDir string) {
 				Metadata: cdv2.Metadata{Version: cdv2.SchemaVersion},
 				ComponentSpec: cdv2.ComponentSpec{
 					ObjectMeta: cdv2.ObjectMeta{
-						Name:    "myrefcomp",
+						Name:    "example.com/myrefcomp",
 						Version: "1.0.0",
 					},
 					RepositoryContexts: []cdv2.RepositoryContext{},

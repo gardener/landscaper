@@ -213,6 +213,8 @@ github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a h1:NtonVT
 github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a/go.mod h1:V100yIwciYxT0BrAN5c9zi6BRC2NQkJSVwQxLEVsH7o=
 github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce h1:kCmFGAUukyUeMoLZftNRnkFIkBFnL9c2SuE1fefQIjY=
 github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce/go.mod h1:AH9U64AlC1Vncu00Q8KIrxAuUvC6wM2F3cc+V9P99DE=
+github.com/gardener/component-spec/bindings-go v0.0.0-20210115163314-4b901541b394 h1:FPQqYogIdfuzjq7AXkZ49n49O631zAZE07NVYCtK7rw=
+github.com/gardener/component-spec/bindings-go v0.0.0-20210115163314-4b901541b394/go.mod h1:AH9U64AlC1Vncu00Q8KIrxAuUvC6wM2F3cc+V9P99DE=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7 h1:LofdAjjjqCSXMwLGgOgnE+rdPuvX9DxCqaHwKy7i/ko=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=

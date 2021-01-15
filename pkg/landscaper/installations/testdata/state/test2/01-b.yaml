@@ -15,6 +15,6 @@ spec:
         type: local
         baseUrl: ""
       version: 1.0.0
-      componentName: root
-      resourceName: b
+      componentName: example.com/root
+      resourceName: res-b
 
