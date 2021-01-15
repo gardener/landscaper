@@ -5,10 +5,8 @@
 package helm
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -19,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
-	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
@@ -42,26 +39,21 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		return err
 	}
 
-	objects := make([]*unstructured.Unstructured, 0)
-	for name, content := range files {
-		decodedObjects, err := h.decodeObjects(name, []byte(content))
+	objects, err := kutil.ParseFiles(h.log, files)
+	if err != nil {
+		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			currOp, "DecodeHelmTemplatedObjects", err.Error())
+		return err
+	}
+
+	for _, obj := range objects {
+		exports, err = h.addExport(exports, obj)
 		if err != nil {
 			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-				currOp, "DecodeHelmTemplatedObjects", err.Error())
+				currOp, "ReadExportValues", err.Error())
 			return err
 		}
-		// add possible export
-		for _, obj := range decodedObjects {
-			exports, err = h.addExport(exports, obj)
-			if err != nil {
-				h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-					currOp, "ReadExportValues", err.Error())
-				return err
-			}
-			h.injectLabels(obj)
-		}
-
-		objects = append(objects, decodedObjects...)
+		h.injectLabels(obj)
 	}
 
 	managedResources := make([]lsv1alpha1.TypedObjectReference, len(objects))
@@ -321,31 +313,6 @@ func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstr
 		}
 	}
 	return false
-}
-
-func (h *Helm) decodeObjects(name string, data []byte) ([]*unstructured.Unstructured, error) {
-	var (
-		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
-		decodedObj map[string]interface{}
-		objects    = make([]*unstructured.Unstructured, 0)
-	)
-
-	for i := 0; true; i++ {
-		if err := decoder.Decode(&decodedObj); err != nil {
-			if err == io.EOF {
-				break
-			}
-			h.log.Error(err, fmt.Sprintf("unable to decode resource %d of file %s", i, name))
-			continue
-		}
-
-		if decodedObj == nil {
-			continue
-		}
-		obj := &unstructured.Unstructured{Object: decodedObj}
-		objects = append(objects, obj.DeepCopy())
-	}
-	return objects, nil
 }
 
 func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {

@@ -38,5 +38,10 @@ func ProviderConfigurationToRawExtension(config *helmv1alpha1.ProviderConfigurat
 	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
 		return nil, err
 	}
+	data, err := raw.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	raw.Raw = data
 	return raw, nil
 }

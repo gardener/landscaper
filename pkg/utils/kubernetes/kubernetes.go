@@ -5,17 +5,22 @@
 package kubernetes
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"path"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -229,4 +234,46 @@ func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
 		},
 	}
 	return cfg
+}
+
+// ParseFiles parses a map of filename->data into unstructured yaml objects.
+func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstructured, error) {
+	objects := make([]*unstructured.Unstructured, 0)
+	for name, content := range files {
+		decodedObjects, err := DecodeObjects(log, name, []byte(content))
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode files for %q: %w", name, err)
+		}
+		objects = append(objects, decodedObjects...)
+	}
+	return objects, nil
+}
+
+// Decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
+func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
+	var (
+		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
+		decodedObj map[string]interface{}
+		objects    = make([]*unstructured.Unstructured, 0)
+	)
+
+	for i := 0; true; i++ {
+		if err := decoder.Decode(&decodedObj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Error(err, fmt.Sprintf("unable to decode resource %d of file %q", i, name))
+			continue
+		}
+		if decodedObj == nil {
+			continue
+		}
+		obj := &unstructured.Unstructured{Object: decodedObj}
+		// ignore the obj if no group version is defined
+		if len(obj.GetAPIVersion()) == 0 {
+			continue
+		}
+		objects = append(objects, obj.DeepCopy())
+	}
+	return objects, nil
 }
