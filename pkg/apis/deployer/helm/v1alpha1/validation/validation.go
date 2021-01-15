@@ -65,9 +65,7 @@ func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorLis
 
 	if chart.Archive != nil {
 		allErrs = append(allErrs, ValidateArchive(fldPath.Child("archive"), chart.Archive)...)
-	}
-
-	if chart.FromResource != nil {
+	} else if chart.FromResource != nil {
 		allErrs = append(allErrs, ValidateFromResource(fldPath.Child("fromResource"), chart.FromResource)...)
 	}
 
