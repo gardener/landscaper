@@ -170,7 +170,7 @@ func (o GeneralOciKeyring) Get(resourceURl string) (dockerconfigtypes.AuthConfig
 
 	// fallback to legacy docker domain if applicable
 	// this is how containerd translates the old domain for DockerHub to the new one, taken from containerd/reference/docker/reference.go:674
-	if dockerreference.Domain(ref) == dockerHubDomain {
+	if ref != nil && dockerreference.Domain(ref) == dockerHubDomain {
 		dockerreference.Path(ref)
 		return o.get(path.Join(dockerHubLegacyDomain, dockerreference.Path(ref)))
 	}

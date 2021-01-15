@@ -347,14 +347,11 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	_, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
 		// todo: consider different namespace of secrets
 		if len(c.ProviderConfiguration.RegistryPullSecrets) != 0 {
+			// need to read secrets to restore the state
 			rule := rbacv1.PolicyRule{
-				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
-				Resources:     []string{"secrets"},
-				Verbs:         []string{"get"},
-				ResourceNames: []string{},
-			}
-			for _, refs := range c.ProviderConfiguration.RegistryPullSecrets {
-				rule.ResourceNames = append(rule.ResourceNames, refs.Name)
+				APIGroups: []string{corev1.SchemeGroupVersion.Group},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get", "list"},
 			}
 			role.Rules = append(role.Rules, rule)
 		}

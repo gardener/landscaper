@@ -183,7 +183,6 @@ func fetchComponentDescriptor(
 func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ctf.ComponentResolver, error) {
 
 	var secrets []string
-
 	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -196,8 +195,7 @@ func createRegistryFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs
 
 		return nil
 	})
-
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("unable to add local registry pull secrets: %w", err)
 	}
 

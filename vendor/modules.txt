@@ -101,7 +101,7 @@ github.com/emicklei/go-restful/log
 github.com/evanphx/json-patch
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/gardener/component-cli v0.3.0
+# github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
 github.com/gardener/component-cli/ociclient/credentials
