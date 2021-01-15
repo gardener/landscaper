@@ -21,20 +21,14 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
-	registryClient, err := registry.NewClient(log, config)
-	if err != nil {
-		return nil, err
-	}
 	return &actuator{
-		log:            log,
-		config:         config,
-		registryClient: registryClient,
+		log:    log,
+		config: config,
 	}, nil
 }
 
@@ -43,8 +37,6 @@ type actuator struct {
 	c      client.Client
 	scheme *runtime.Scheme
 	config *helmv1alpha1.Configuration
-
-	registryClient *registry.Client
 }
 
 var _ inject.Client = &actuator{}
@@ -136,7 +128,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			5*time.Minute))
 	}()
 
-	helm, err := New(a.log, a.c, a.registryClient, deployItem, target)
+	helm, err := New(a.log, a.config, a.c, deployItem, target)
 	if err != nil {
 		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
 			"InitHelmOperation", "", err.Error())

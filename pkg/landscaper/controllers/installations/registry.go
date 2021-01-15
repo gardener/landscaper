@@ -50,7 +50,7 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if err != nil {
 		return err
 	}
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(a.Log(), ociClient)
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
 	if err != nil {
 		return err
 	}

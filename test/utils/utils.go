@@ -6,6 +6,7 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
@@ -152,4 +155,26 @@ func CreateBlueprintFromFile(filePath, contentPath string) *blueprints.Blueprint
 	blue, err := blueprints.New(def, fs)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	return blue
+}
+
+// CreateOrUpdateTarget creates or updates a target with specific name, namespace and type
+func CreateOrUpdateTarget(ctx context.Context, client client.Client, namespace, name, ttype string, config interface{}) (*lsv1alpha1.Target, error) {
+	data, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	target := &lsv1alpha1.Target{}
+	target.Name = name
+	target.Namespace = namespace
+
+	_, err = controllerutil.CreateOrUpdate(ctx, client, target, func() error {
+		target.Spec.Type = lsv1alpha1.TargetType(ttype)
+		target.Spec.Configuration = data
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return target, err
 }

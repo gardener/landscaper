@@ -286,8 +286,8 @@ DeployItemSpec
 <td>
 <code>type</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionType">
-ExecutionType
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemType">
+DeployItemType
 </a>
 </em>
 </td>
@@ -1358,8 +1358,8 @@ encoding/json.RawMessage
 <td>
 <code>type</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionType">
-ExecutionType
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemType">
+DeployItemType
 </a>
 </em>
 </td>
@@ -1526,8 +1526,8 @@ string
 <td>
 <code>type</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionType">
-ExecutionType
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemType">
+DeployItemType
 </a>
 </em>
 </td>
@@ -1587,6 +1587,16 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemType">DeployItemType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>)
+</p>
+<p>
+<p>DeployItemType defines the type of the deploy item</p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Error">Error
 </h3>
 <p>
@@ -1817,16 +1827,6 @@ The observed generation is here the generation of the Execution not the DeployIt
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionType">ExecutionType
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>)
-</p>
-<p>
-<p>ExecutionType defines the type of the execution</p>
-</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition
 </h3>
 <p>

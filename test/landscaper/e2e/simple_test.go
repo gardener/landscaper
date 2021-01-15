@@ -90,7 +90,7 @@ var _ = Describe("Simple", func() {
 
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution
-		instReq := request("root-1", state.Namespace)
+		instReq := testutils.Request("root-1", state.Namespace)
 		testutils.ShouldReconcile(instActuator, instReq)
 		testutils.ShouldReconcile(instActuator, instReq)
 
@@ -104,7 +104,7 @@ var _ = Describe("Simple", func() {
 			"Type": Equal(lsv1alpha1.DataImportStatusType),
 		}))
 
-		execReq := request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
+		execReq := testutils.Request(inst.Status.ExecutionReference.Name, inst.Status.ExecutionReference.Namespace)
 		exec := &lsv1alpha1.Execution{}
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
 
@@ -122,7 +122,7 @@ var _ = Describe("Simple", func() {
 		Expect(testenv.Client.List(ctx, diList)).ToNot(HaveOccurred())
 		Expect(diList.Items).To(HaveLen(1))
 
-		diReq := request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
+		diReq := testutils.Request(exec.Status.DeployItemReferences[0].Reference.Name, exec.Status.DeployItemReferences[0].Reference.Namespace)
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
 
@@ -140,7 +140,7 @@ var _ = Describe("Simple", func() {
 
 		// as the execution is now successfully reconciled, we have to trigger the installation
 		// and check if the state is propagated
-		_, err = instActuator.Reconcile(request("root-1", state.Namespace))
+		_, err = instActuator.Reconcile(testutils.Request("root-1", state.Namespace))
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
@@ -183,10 +183,3 @@ var _ = Describe("Simple", func() {
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")
 	})
 })
-
-func request(name, namespace string) reconcile.Request {
-	req := reconcile.Request{}
-	req.Name = name
-	req.Namespace = namespace
-	return req
-}

@@ -41,7 +41,7 @@ func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration) (TypedRegi
 }
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
-func NewOCIRegistryWithOCIClient(log logr.Logger, client ociclient.Client) (TypedRegistry, error) {
+func NewOCIRegistryWithOCIClient(client ociclient.Client) (TypedRegistry, error) {
 	return &ociClient{
 		ociClient: client,
 		resolver:  cdoci.NewResolver().WithOCIClient(client),

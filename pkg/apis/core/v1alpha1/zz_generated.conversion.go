@@ -951,7 +951,7 @@ func Convert_core_DeployItemList_To_v1alpha1_DeployItemList(in *core.DeployItemL
 }
 
 func autoConvert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, out *core.DeployItemSpec, s conversion.Scope) error {
-	out.Type = core.ExecutionType(in.Type)
+	out.Type = core.DeployItemType(in.Type)
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	return nil
@@ -963,7 +963,7 @@ func Convert_v1alpha1_DeployItemSpec_To_core_DeployItemSpec(in *DeployItemSpec, 
 }
 
 func autoConvert_core_DeployItemSpec_To_v1alpha1_DeployItemSpec(in *core.DeployItemSpec, out *DeployItemSpec, s conversion.Scope) error {
-	out.Type = ExecutionType(in.Type)
+	out.Type = DeployItemType(in.Type)
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
 	return nil
@@ -1006,7 +1006,7 @@ func Convert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.DeployI
 
 func autoConvert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *DeployItemTemplate, out *core.DeployItemTemplate, s conversion.Scope) error {
 	out.Name = in.Name
-	out.Type = core.ExecutionType(in.Type)
+	out.Type = core.DeployItemType(in.Type)
 	out.Target = (*core.ObjectReference)(unsafe.Pointer(in.Target))
 	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))
@@ -1021,7 +1021,7 @@ func Convert_v1alpha1_DeployItemTemplate_To_core_DeployItemTemplate(in *DeployIt
 
 func autoConvert_core_DeployItemTemplate_To_v1alpha1_DeployItemTemplate(in *core.DeployItemTemplate, out *DeployItemTemplate, s conversion.Scope) error {
 	out.Name = in.Name
-	out.Type = ExecutionType(in.Type)
+	out.Type = DeployItemType(in.Type)
 	out.Target = (*ObjectReference)(unsafe.Pointer(in.Target))
 	out.Labels = *(*map[string]string)(unsafe.Pointer(&in.Labels))
 	out.Configuration = (*runtime.RawExtension)(unsafe.Pointer(in.Configuration))

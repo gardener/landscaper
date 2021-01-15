@@ -13,6 +13,9 @@ import (
 // DeployItemValidationCondition is the Conditions type to indicate the deploy items configuration validation status.
 const DeployItemValidationCondition ConditionType = "DeployItemValidation"
 
+// DeployItemType defines the type of the deploy item
+type DeployItemType string
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -45,7 +48,7 @@ type DeployItem struct {
 // DeployItemSpec contains the definition of a deploy item.
 type DeployItemSpec struct {
 	// Type is the type of the deployer that should handle the item.
-	Type ExecutionType `json:"type"`
+	Type DeployItemType `json:"type"`
 	// Target specifies an optional target of the deploy item.
 	// In most cases it contains the secrets to access a evironment.
 	// It is also used by the deployers to determine the ownernship.

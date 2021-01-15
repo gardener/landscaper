@@ -22,8 +22,18 @@ spec:
     kind: ProviderConfiguration
     
     chart:
-      ref: myrepo.example.com/charts/nginx-ingress:0.5.2
-#      tar: "" #  base64 encoded helm chart tar
+      ref: myrepo.example.com/charts/nginx-ingress:0.5.2 # helm oci ref
+      fromResource: # will fetch the helm chart from component descriptor resource of type helm chart
+        repositoryContext:
+           type: ociRegistry
+           baseUrl: my-repo
+        componentName: github.com/gardener/landscaper
+        version: v0.3.0
+        resourceName: my-helm-chart
+      archive:
+        raw: "" # base64 encoded helm chart tar.gz
+        remote:
+          url: "https://my-domain/maychart.tar.gz"
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx

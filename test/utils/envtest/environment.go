@@ -32,10 +32,9 @@ import (
 	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
-// Environment is a internal landcaper test environment
+// Environment is a internal landscaper test environment
 type Environment struct {
-	Env *envtest.Environment
-
+	Env    *envtest.Environment
 	Client client.Client
 }
 
@@ -83,16 +82,9 @@ func (e *Environment) Stop() error {
 	return e.Env.Stop()
 }
 
-// InitResources creates a new isolated environment with its own namespace.
-func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
-	state := &State{
-		Installations: make(map[string]*lsv1alpha1.Installation),
-		Executions:    make(map[string]*lsv1alpha1.Execution),
-		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
-		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
-		Targets:       make(map[string]*lsv1alpha1.Target),
-		Secrets:       make(map[string]*corev1.Secret),
-	}
+// InitState creates a new isolated environment with its own namespace.
+func (e *Environment) InitState(ctx context.Context) (*State, error) {
+	state := NewState()
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
 	ns.GenerateName = "unit-tests-"
@@ -100,6 +92,16 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		return nil, err
 	}
 	state.Namespace = ns.Name
+
+	return state, nil
+}
+
+// InitResources creates a new isolated environment with its own namespace.
+func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (*State, error) {
+	state, err := e.InitState(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	// parse state and create resources in cluster
 	resources, err := parseResources(resourcesPath, state)
@@ -123,7 +125,7 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 }
 
 // CleanupState cleans up a test environment.
-// todo: remove finalizers iof all objects in state
+// todo: remove finalizers of all objects in state
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 	for _, obj := range state.DeployItems {
 		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
@@ -169,6 +171,35 @@ func (e *Environment) CleanupState(ctx context.Context, state *State) error {
 	}
 	for _, obj := range state.Secrets {
 		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, obj := range state.ConfigMaps {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.Name, Namespace: obj.Namespace}, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
+		if err := e.removeFinalizer(ctx, obj); err != nil {
+			return err
+		}
+		if err := e.Client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	for _, obj := range state.Generic {
+		if err := e.Client.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

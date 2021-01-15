@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/component-cli/ociclient"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
@@ -21,15 +22,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helminstall "github.com/gardener/landscaper/pkg/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1/validation"
-	"github.com/gardener/landscaper/pkg/deployer/helm/registry"
+	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 )
 
 const (
-	Type lsv1alpha1.ExecutionType = "landscaper.gardener.cloud/helm"
+	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/helm"
 )
 
 var Helmscheme = runtime.NewScheme()
@@ -40,9 +42,9 @@ func init() {
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
-	log            logr.Logger
-	kubeClient     client.Client
-	registryClient *registry.Client
+	log           logr.Logger
+	kubeClient    client.Client
+	Configuration *helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -51,7 +53,7 @@ type Helm struct {
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, client *registry.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Helm, error) {
+func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Helm, error) {
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
@@ -73,7 +75,7 @@ func New(log logr.Logger, kubeClient client.Client, client *registry.Client, ite
 	return &Helm{
 		log:                   log,
 		kubeClient:            kubeClient,
-		registryClient:        client,
+		Configuration:         helmconfig,
 		DeployItem:            item,
 		Target:                target,
 		ProviderConfiguration: config,
@@ -91,7 +93,11 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ch, err := h.registryClient.GetChart(ctx, h.ProviderConfiguration.Chart.Ref)
+	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), confighelper.WithConfiguration(h.Configuration.OCI))
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to build oci client: %w", err)
+	}
+	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, &h.ProviderConfiguration.Chart)
 	if err != nil {
 		return nil, nil, err
 	}
