@@ -209,8 +209,8 @@ github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/gardener/component-cli v0.3.0 h1:0LXJzJ18yAPoQmz/gGEQ7GNS1xAH4oHsAYhmLtix4cc=
-github.com/gardener/component-cli v0.3.0/go.mod h1:V100yIwciYxT0BrAN5c9zi6BRC2NQkJSVwQxLEVsH7o=
+github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a h1:NtonVTJ5wcZV1gtygg54q8KRGozA5nyCJyQ7LrKmWpo=
+github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a/go.mod h1:V100yIwciYxT0BrAN5c9zi6BRC2NQkJSVwQxLEVsH7o=
 github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce h1:kCmFGAUukyUeMoLZftNRnkFIkBFnL9c2SuE1fefQIjY=
 github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce/go.mod h1:AH9U64AlC1Vncu00Q8KIrxAuUvC6wM2F3cc+V9P99DE=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7 h1:LofdAjjjqCSXMwLGgOgnE+rdPuvX9DxCqaHwKy7i/ko=

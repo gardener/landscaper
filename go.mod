@@ -9,7 +9,7 @@ require (
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
-	github.com/gardener/component-cli v0.3.0
+	github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a
 	github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0

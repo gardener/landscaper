@@ -53,6 +53,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation || lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 		operationName := "DeployPod"
 		if err := c.SyncConfiguration(ctx); err != nil {
 			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
@@ -335,22 +336,24 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 	// find the secrets that match our image, our blueprint and our componentdescriptor
 	ociKeyring := credentials.New()
 
-	for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
-		secretFileContent, err := ioutil.ReadFile(secretFileName)
-		if err != nil {
-			c.log.V(3).Info(fmt.Sprintf("Unable to read auth config from file %q, skipping", secretFileName), "error", err.Error())
-			continue
-		}
+	if c.Configuration.OCI != nil {
+		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
+			secretFileContent, err := ioutil.ReadFile(secretFileName)
+			if err != nil {
+				c.log.V(3).Info(fmt.Sprintf("Unable to read auth config from file %q, skipping", secretFileName), "error", err.Error())
+				continue
+			}
 
-		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secretFileContent))
-		if err != nil {
-			c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretFileName), "error", err.Error())
-			continue
-		}
+			authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secretFileContent))
+			if err != nil {
+				c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretFileName), "error", err.Error())
+				continue
+			}
 
-		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
-			erro = fmt.Errorf("unable to add config from %q to credentials store: %w", secretFileName, err)
-			return
+			if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
+				erro = fmt.Errorf("unable to add config from %q to credentials store: %w", secretFileName, err)
+				return
+			}
 		}
 	}
 

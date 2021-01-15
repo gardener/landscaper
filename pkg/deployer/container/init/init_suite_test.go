@@ -118,4 +118,25 @@ var _ = Describe("Constructor", func() {
 		Expect(codec.Decode(data, cd)).To(Succeed())
 		Expect(cd.Components).To(HaveLen(1))
 	})
+
+	It("should ignore if the registry secrets path does not exist", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		opts.RegistrySecretBasePath = "/unexisting/path"
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/01-di-blueprint.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(info).To(HaveLen(1))
+		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
+	})
 })
