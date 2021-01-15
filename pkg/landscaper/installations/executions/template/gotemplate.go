@@ -198,11 +198,9 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"ociRefVersion": getOCIReferenceVersion,
 		"resolve":       resolveArtifactFunc(blobResolver),
 	}
-	if cd != nil {
-		funcs["getResource"] = getResourceGoFunc(cd)
-		funcs["getResources"] = getResourcesGoFunc(cd)
-		funcs["getComponent"] = getComponentGoFunc(cd, cdList)
-	}
+	funcs["getResource"] = getResourceGoFunc(cd)
+	funcs["getResources"] = getResourcesGoFunc(cd)
+	funcs["getComponent"] = getComponentGoFunc(cd, cdList)
 	return funcs
 }
 
@@ -282,6 +280,9 @@ func resolveArtifactFunc(blobResolver ctf.BlobResolver) func(access map[string]i
 
 func getResourcesGoFunc(cd *cdv2.ComponentDescriptor) func(...interface{}) []map[string]interface{} {
 	return func(args ...interface{}) []map[string]interface{} {
+		if cd == nil {
+			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
+		}
 		resources, err := resolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -302,6 +303,9 @@ func getResourcesGoFunc(cd *cdv2.ComponentDescriptor) func(...interface{}) []map
 
 func getResourceGoFunc(cd *cdv2.ComponentDescriptor) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
+		if cd == nil {
+			panic("Unable to search for a resource as no ComponentDescriptor is defined.")
+		}
 		resources, err := resolveResources(cd, args)
 		if err != nil {
 			panic(err)
@@ -368,6 +372,9 @@ func resolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) (
 
 func getComponentGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
+		if cd == nil {
+			panic("Unable to search for a component as no ComponentDescriptor is defined.")
+		}
 		components, err := resolveComponents(cd, list, args)
 		if err != nil {
 			panic(err)

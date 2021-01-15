@@ -408,6 +408,10 @@ func (o *Operation) CreateOrUpdateImports(ctx context.Context, importedValues ma
 	for _, importDef := range o.Inst.Blueprint.Info.Imports {
 		importData, ok := importedValues[importDef.Name]
 		if !ok {
+			// todo: create test for optional imports
+			if importDef.Required != nil && !*importDef.Required {
+				continue
+			}
 			return fmt.Errorf("import %s not defined", importDef.Name)
 		}
 
