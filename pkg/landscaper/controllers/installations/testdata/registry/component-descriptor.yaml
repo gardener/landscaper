@@ -6,7 +6,7 @@ meta:
   schemaVersion: v2
 
 component:
-  name: root
+  name: example.com/root
   version: 1.0.0
 
   provider: internal
@@ -26,28 +26,28 @@ component:
     access:
       type: localFilesystemBlob
       filename: root
-  - name: a
+  - name: res-a
     type: blueprint
     version: 1.0.0
     relation: local
     access:
       type: localFilesystemBlob
       filename: a
-  - name: b
+  - name: res-b
     type: blueprint
     version: 1.0.0
     relation: local
     access:
       type: localFilesystemBlob
       filename: b
-  - name: c
+  - name: res-c
     type: blueprint
     version: 1.0.0
     relation: local
     access:
       type: localFilesystemBlob
       filename: c
-  - name: d
+  - name: res-d
     type: blueprint
     version: 1.0.0
     relation: local

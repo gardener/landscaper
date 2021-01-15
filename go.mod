@@ -10,7 +10,7 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
 	github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a
-	github.com/gardener/component-spec/bindings-go v0.0.0-20201215161450-f36336f4c2ce
+	github.com/gardener/component-spec/bindings-go v0.0.0-20210115163314-4b901541b394
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect

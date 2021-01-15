@@ -59,7 +59,7 @@ var _ = Describe("SubInstallation", func() {
 			MockClient:                   mockClient,
 			InstallationName:             "root",
 			InstallationNamespace:        "default",
-			RemoteBlueprintComponentName: "root",
+			RemoteBlueprintComponentName: "example.com/root",
 			RemoteBlueprintResourceName:  "root",
 			RemoteBlueprintVersion:       "1.0.0",
 			BlueprintFilePath:            "./testdata/01-root/blueprint-root1.yaml",
@@ -115,7 +115,7 @@ var _ = Describe("SubInstallation", func() {
 				},
 				VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
 					ResourceReference: lsv1alpha1.ResourceReference{
-						ComponentName: "root",
+						ComponentName: "example.com/root",
 						ResourceName:  "def1",
 					},
 					Version: "1.0.0",

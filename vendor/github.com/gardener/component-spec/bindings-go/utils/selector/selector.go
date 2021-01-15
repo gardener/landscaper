@@ -96,6 +96,76 @@ func (is DefaultSelector) Match(obj map[string]string) (bool, error) {
 func matchValue(selector interface{}, val string) (bool, error) {
 	switch s := selector.(type) {
 	case string:
+		return s == val, nil
+	case []interface{}:
+		for _, orVal := range s {
+			v, ok := orVal.(string)
+			if !ok {
+				return false, fmt.Errorf("invalid selector type '%T'", val)
+			}
+			if val == v {
+				return true, nil
+			}
+		}
+		return false, nil
+	default:
+		return false, fmt.Errorf("unknown selector type '%T' only string or a list of strings is supported", val)
+	}
+}
+
+// RegexSelector defines the selector for the identity of an object.
+// The regex selector is a map of identity key to selector
+// All keys are validated against the given selector.
+//
+// Valid selectors are
+// - raw string value: identity value is compared to the selector value
+// - array of strings: or-operator identity value must be one of the defined strings in the array
+type RegexSelector map[string]interface{}
+
+var _ Interface = RegexSelector{}
+
+// ParseRegexSelector creates a Identity selector from a
+// - json encoded selector
+// - map[string]Selector
+//
+// A selector can be
+// - a string: the value is directly matched
+// - a array of strings: one selector in the array must match
+func ParseRegexSelector(value interface{}) (RegexSelector, error) {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		return v, nil
+	case string:
+		selector := RegexSelector{}
+		if err := json.Unmarshal([]byte(v), &selector); err != nil {
+			return nil, err
+		}
+		return selector, nil
+	default:
+		return nil, fmt.Errorf("unknown type %T", value)
+	}
+}
+
+func (is RegexSelector) Match(obj map[string]string) (bool, error) {
+	for key, selector := range is {
+		value, ok := obj[key]
+		if !ok {
+			return false, nil
+		}
+		ok, err := matchValueByRegex(selector, value)
+		if err != nil {
+			return false, fmt.Errorf("error while trying to match '%s': %w", key, err)
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func matchValueByRegex(selector interface{}, val string) (bool, error) {
+	switch s := selector.(type) {
+	case string:
 		return regexp.MatchString(s, val)
 	case []interface{}:
 		for _, orVal := range s {

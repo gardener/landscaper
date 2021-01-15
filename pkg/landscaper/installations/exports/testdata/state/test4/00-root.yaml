@@ -15,7 +15,7 @@ spec:
         type: local
         baseUrl: "../testdata/registry"
       version: 1.0.0
-      componentName: root
+      componentName: example.com/root
       kind: localResource
       resourceName: root-2
 
