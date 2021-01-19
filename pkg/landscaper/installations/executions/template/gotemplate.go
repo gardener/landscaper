@@ -197,10 +197,12 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
 		"resolve":       resolveArtifactFunc(blobResolver),
+
+		"getResource":          getResourceGoFunc(cd),
+		"getResources":         getResourcesGoFunc(cd),
+		"getComponent":         getComponentGoFunc(cd, cdList),
+		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
 	}
-	funcs["getResource"] = getResourceGoFunc(cd)
-	funcs["getResources"] = getResourcesGoFunc(cd)
-	funcs["getComponent"] = getComponentGoFunc(cd, cdList)
 	return funcs
 }
 
@@ -323,6 +325,36 @@ func getResourceGoFunc(cd *cdv2.ComponentDescriptor) func(args ...interface{}) m
 		}
 		return parsedResource
 	}
+}
+
+func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{} {
+	if arg == nil {
+		panic("Unable to get effective component descriptor as no ComponentDescriptor is defined.")
+	}
+
+	cdMap, ok := arg.(map[string]interface{})
+	if !ok {
+		panic("invalid component descriptor")
+	}
+	data, err := json.Marshal(cdMap)
+	if err != nil {
+		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+	}
+	cd := &cdv2.ComponentDescriptor{}
+	if err := codec.Decode(data, cd); err != nil {
+		panic(fmt.Sprintf("invalid component descriptor: %s", err.Error()))
+	}
+
+	data, err = json.Marshal(cd.GetEffectiveRepositoryContext())
+	if err != nil {
+		panic(fmt.Sprintf("unable to serialize repository context"))
+	}
+
+	parsedRepoCtx := map[string]interface{}{}
+	if err := json.Unmarshal(data, &parsedRepoCtx); err != nil {
+		panic(fmt.Sprintf("unable to deserialize repository context: %s", err.Error()))
+	}
+	return parsedRepoCtx
 }
 
 func resolveResources(defaultCD *cdv2.ComponentDescriptor, args []interface{}) ([]cdv2.Resource, error) {
