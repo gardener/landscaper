@@ -28,7 +28,7 @@ const (
 	// BlueprintFileName is the filename of a component definition on a local path
 	BlueprintFileName = "blueprint.yaml"
 
-	// BlueprintArtifactsMediaType is the reserved media type for a blueprint that is tored as its own artifact.
+	// BlueprintArtifactsMediaType is the reserved media type for a blueprint that is stored as its own artifact.
 	BlueprintArtifactsMediaType = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 
 	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors

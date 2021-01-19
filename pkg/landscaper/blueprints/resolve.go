@@ -108,13 +108,12 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 		return nil, err
 	}
 
-	// todo: add resolver for old blueprints
 	var data bytes.Buffer
 	if _, err := blobResolver.Resolve(ctx, resource, &data); err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint blob: %w", err)
 	}
 	if err := utils.ExtractTarGzip(&data, fs, "/"); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to extract blueprint from tar.gzip blob: %w", err)
 	}
 
 	blueprintBytes, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)

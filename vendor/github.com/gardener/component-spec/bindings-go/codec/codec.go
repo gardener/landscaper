@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/component-spec/bindings-go/apis"
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -28,17 +28,16 @@ import (
 	"github.com/gardener/component-spec/bindings-go/apis/v2/validation"
 )
 
-type serializer struct {
-	knownAccessTypes v2.KnownTypes
-}
-
 // Decode decodes a component into the given object.
 // The obj is expected to be of type v2.ComponentDescriptor or v2.ComponentDescriptorList.
-func Decode(data []byte, obj interface{}) error {
+func Decode(data []byte, obj interface{}, opts ...DecodeOption) error {
 	objType := reflect.TypeOf(obj)
 	if objType.Kind() != reflect.Ptr {
 		return fmt.Errorf("object is expected to be of type pointer but is of type %T", obj)
 	}
+
+	o := &DecodeOptions{}
+	o.ApplyOptions(opts)
 
 	raw := make(map[string]json.RawMessage)
 	if err := yaml.Unmarshal(data, &raw); err != nil {
@@ -52,26 +51,49 @@ func Decode(data []byte, obj interface{}) error {
 
 	// handle v2
 	if metadata.Version == v2.SchemaVersion && objType.Elem() == reflect.TypeOf(v2.ComponentDescriptor{}) {
-		if err := jsonscheme.Validate(data); err != nil {
-			return err
+		if !o.DisableValidation {
+			if err := jsonscheme.Validate(data); err != nil {
+				return err
+			}
 		}
-		if err := yaml.Unmarshal(data, obj); err != nil {
-			return err
+
+		if o.StrictMode {
+			if err := yaml.UnmarshalStrict(data, obj); err != nil {
+				return err
+			}
+		} else {
+			if err := yaml.Unmarshal(data, obj); err != nil {
+				return err
+			}
 		}
+
 		comp := obj.(*v2.ComponentDescriptor)
 		if err := v2.DefaultComponent(comp); err != nil {
 			return err
+		}
+
+		if o.DisableValidation {
+			return nil
 		}
 		return validation.Validate(comp)
 	}
 
 	if metadata.Version == v2.SchemaVersion && objType.Elem() == reflect.TypeOf(v2.ComponentDescriptorList{}) {
-		if err := yaml.Unmarshal(data, obj); err != nil {
-			return err
+		if o.StrictMode {
+			if err := yaml.UnmarshalStrict(data, obj); err != nil {
+				return err
+			}
+		} else {
+			if err := yaml.Unmarshal(data, obj); err != nil {
+				return err
+			}
 		}
 		list := obj.(*v2.ComponentDescriptorList)
 		if err := v2.DefaultList(list); err != nil {
 			return err
+		}
+		if o.DisableValidation {
+			return nil
 		}
 		return validation.ValidateList(list)
 	}
@@ -108,4 +130,42 @@ func Encode(obj interface{}) ([]byte, error) {
 
 	// todo: implement conversion
 	return nil, errors.New("invalid version")
+}
+
+// DecodeOptions defines decode options for the codec.
+type DecodeOptions struct {
+	DisableValidation bool
+	StrictMode        bool
+}
+
+// ApplyOptions applies the given list options on these options,
+// and then returns itself (for convenient chaining).
+func (o *DecodeOptions) ApplyOptions(opts []DecodeOption) *DecodeOptions {
+	for _, opt := range opts {
+		if opt != nil {
+			opt.ApplyOption(o)
+		}
+	}
+	return o
+}
+
+// DecodeOption is the interface to specify different cache options
+type DecodeOption interface {
+	ApplyOption(options *DecodeOptions)
+}
+
+// StrictMode enables or disables strict mode parsing.
+type StrictMode bool
+
+// ApplyOption applies the configured strict mode.
+func (s StrictMode) ApplyOption(options *DecodeOptions) {
+	options.StrictMode = bool(s)
+}
+
+// DisableValidation enables or disables validation of the component descriptor.
+type DisableValidation bool
+
+// ApplyOption applies the validation disable option.
+func (v DisableValidation) ApplyOption(options *DecodeOptions) {
+	options.DisableValidation = bool(v)
 }

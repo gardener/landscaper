@@ -1,0 +1,21 @@
+---
+type: blueprint
+name: ingress-nginx-blueprint
+version: v0.2.1
+relation: local
+input:
+  type: "dir"
+  path: /my/path
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.2.1
+...
+---
+type: helm
+name: ingress-nginx-chart
+version: v0.1.0
+relation: external
+input:
+  type: "dir"
+  path: ./
+...

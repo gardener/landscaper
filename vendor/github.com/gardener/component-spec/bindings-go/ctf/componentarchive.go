@@ -162,7 +162,7 @@ func (ca *ComponentArchive) AddResource(res *v2.Resource, info BlobInfo, reader 
 		}
 	}
 
-	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
+	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest, info.MediaType)
 	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
 	if err != nil {
 		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
@@ -205,7 +205,7 @@ func (ca *ComponentArchive) AddSource(src *v2.Source, info BlobInfo, reader io.R
 		}
 	}
 
-	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
+	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest, info.MediaType)
 	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
 	if err != nil {
 		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
@@ -253,7 +253,7 @@ func (ca *ComponentArchive) AddResourceFromResolver(ctx context.Context, res *v2
 		}
 	}
 
-	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest)
+	localFsAccess := v2.NewLocalFilesystemBlobAccess(info.Digest, info.MediaType)
 	unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), localFsAccess)
 	if err != nil {
 		return fmt.Errorf("unable to convert local filesystem type to untructured type: %w", err)
@@ -463,6 +463,10 @@ func (ca *ComponentArchiveBlobResolver) resolve(_ context.Context, res v2.Resour
 		return nil, nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
 	blobpath := BlobPath(localFSAccess.Filename)
+	mediaType := res.GetType()
+	if len(localFSAccess.MediaType) != 0 {
+		mediaType = localFSAccess.MediaType
+	}
 
 	info, err := ca.fs.Stat(blobpath)
 	if err != nil {
@@ -484,7 +488,7 @@ func (ca *ComponentArchiveBlobResolver) resolve(_ context.Context, res v2.Resour
 		return nil, nil, fmt.Errorf("unable to reset file reader: %w", err)
 	}
 	return &BlobInfo{
-		MediaType: res.GetType(),
+		MediaType: mediaType,
 		Digest:    dig.String(),
 		Size:      info.Size(),
 	}, file, nil

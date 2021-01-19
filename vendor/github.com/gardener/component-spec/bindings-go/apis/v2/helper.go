@@ -235,7 +235,7 @@ func (c ComponentDescriptor) GetResourcesByName(name string, selectors ...Identi
 func (c ComponentDescriptor) GetResourceIndex(res Resource) int {
 	id := res.GetIdentityDigest()
 	for i, cur := range c.Resources {
-		if bytes.Compare(cur.GetIdentityDigest(), id) == 0 {
+		if bytes.Equal(cur.GetIdentityDigest(), id) {
 			return i
 		}
 	}
@@ -247,7 +247,7 @@ func (c ComponentDescriptor) GetResourceIndex(res Resource) int {
 func (c ComponentDescriptor) GetComponentReferenceIndex(ref ComponentReference) int {
 	id := ref.GetIdentityDigest()
 	for i, cur := range c.ComponentReferences {
-		if bytes.Compare(cur.GetIdentityDigest(), id) == 0 {
+		if bytes.Equal(cur.GetIdentityDigest(), id) {
 			return i
 		}
 	}
@@ -259,7 +259,7 @@ func (c ComponentDescriptor) GetComponentReferenceIndex(ref ComponentReference) 
 func (c ComponentDescriptor) GetSourceIndex(src Source) int {
 	id := src.GetIdentityDigest()
 	for i, cur := range c.Sources {
-		if bytes.Compare(cur.GetIdentityDigest(), id) == 0 {
+		if bytes.Equal(cur.GetIdentityDigest(), id) {
 			return i
 		}
 	}
