@@ -347,7 +347,7 @@ func getEffectiveRepositoryContextGoFunc(arg interface{}) map[string]interface{}
 
 	data, err = json.Marshal(cd.GetEffectiveRepositoryContext())
 	if err != nil {
-		panic(fmt.Sprintf("unable to serialize repository context"))
+		panic(fmt.Sprintf("unable to serialize repository context: %s", err.Error()))
 	}
 
 	parsedRepoCtx := map[string]interface{}{}

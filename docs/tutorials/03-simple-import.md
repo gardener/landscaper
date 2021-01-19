@@ -239,4 +239,4 @@ kubectl create -f docs/tutorials/resources/echo-server/installation.yaml
 
 ### Up next
 
-In the [next tutorial](./03-aggregated-blueprint.md), a aggregated blueprint will be developed.
+In the [next tutorial](04-aggregated-blueprint.md), a aggregated blueprint will be developed.

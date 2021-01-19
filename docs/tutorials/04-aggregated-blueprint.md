@@ -7,7 +7,7 @@ __Prerequisites__:
 - OCI compatible oci registry (e.g. GCR or Harbor)
 - Kubernetes Cluster (better use two different clusters: one for the landscaper and one for the installation)
 - [simple blueprint tutorial](01-create-simple-blueprint.md)
-- [import blueprint tutorial](02-simple-import.md)
+- [import blueprint tutorial](03-simple-import.md)
 
 :warning: note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` is an example repository 
 and has to be replaced with your own registry if you want to upload your own artifacts.

@@ -70,7 +70,7 @@ type Chart struct {
 
 // RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor
 type RemoteChartReference struct {
-	lsv1alpha1.ComponentDescriptorDefinition `json:"inline"`
+	lsv1alpha1.ComponentDescriptorDefinition `json:",inline"`
 	// ResourceName is the name of the Helm chart as defined by a component descriptor.
 	ResourceName string `json:"resourceName"`
 }

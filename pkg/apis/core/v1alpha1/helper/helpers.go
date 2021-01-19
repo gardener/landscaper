@@ -156,6 +156,9 @@ func GetPhaseForLastError(phase v1alpha1.ComponentInstallationPhase, lastError *
 	if lastError == nil {
 		return phase
 	}
+	if len(phase) == 0 {
+		return v1alpha1.ComponentPhaseFailed
+	}
 
 	if lastError.LastUpdateTime.Sub(lastError.LastTransitionTime.Time).Seconds() > d.Seconds() {
 		return v1alpha1.ComponentPhaseFailed

@@ -1,14 +1,13 @@
 ---
 type: blueprint
 name: ingress-nginx-blueprint
-version: v0.2.1
+version: v0.1.0
 relation: local
 input:
   type: "dir"
-  path: /my/path
-access:
-  type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.2.1
+  path: "./blueprint"
+  compress: true
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
 ...
 ---
 type: helm
@@ -17,5 +16,6 @@ version: v0.1.0
 relation: external
 input:
   type: "dir"
-  path: ./
+  path: ./chart
+  compress: true
 ...
