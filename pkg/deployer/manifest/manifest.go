@@ -47,8 +47,8 @@ type Manifest struct {
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
 	config := &manifest.ProviderConfiguration{}
-	manifestdecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
-	if _, _, err := manifestdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
+	manifestDecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
+	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, err
 	}
 
@@ -59,7 +59,7 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 	var status *manifest.ProviderStatus
 	if item.Status.ProviderStatus != nil {
 		status = &manifest.ProviderStatus{}
-		if _, _, err := manifestdecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
+		if _, _, err := manifestDecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
 			return nil, err
 		}
 	}

@@ -38,9 +38,9 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	}
 
 	var (
-		objects    = make([]*unstructured.Unstructured, len(m.ProviderConfiguration.Manifests))
-		objDecoder = serializer.NewCodecFactory(nil).UniversalDecoder()
-		status     = &manifest.ProviderStatus{
+		objects         = make([]*unstructured.Unstructured, len(m.ProviderConfiguration.Manifests))
+		manifestDecoder = serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
+		status          = &manifest.ProviderStatus{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: manifest.SchemeGroupVersion.String(),
 				Kind:       "ProviderStatus",
@@ -51,7 +51,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	for i, manifestData := range m.ProviderConfiguration.Manifests {
 		uObj := &unstructured.Unstructured{}
-		if _, _, err := objDecoder.Decode(manifestData.Manifest.Raw, nil, uObj); err != nil {
+		if _, _, err := manifestDecoder.Decode(manifestData.Manifest.Raw, nil, uObj); err != nil {
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
 				currOp, "DecodeManifest", fmt.Sprintf("error while decoding manifest at index %d: %s", i, err.Error()))
 			return err
