@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
+	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/logger"
 )

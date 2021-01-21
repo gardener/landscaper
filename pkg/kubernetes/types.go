@@ -9,8 +9,8 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	corescheme "k8s.io/client-go/kubernetes/scheme"
 
-	configinstall "github.com/gardener/landscaper/pkg/apis/config/install"
-	coreinstall "github.com/gardener/landscaper/pkg/apis/core/install"
+	configinstall "github.com/gardener/landscaper/apis/config/install"
+	coreinstall "github.com/gardener/landscaper/apis/core/install"
 )
 
 // LandscaperScheme ist the scheme used in the landscaper cluster

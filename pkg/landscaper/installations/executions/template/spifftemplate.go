@@ -16,7 +16,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 

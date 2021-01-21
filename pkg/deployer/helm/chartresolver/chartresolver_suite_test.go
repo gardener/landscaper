@@ -24,8 +24,8 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"sigs.k8s.io/yaml"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 )
 

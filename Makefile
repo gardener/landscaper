@@ -21,29 +21,37 @@ install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@$(REPO_ROOT)/hack/install-requirements.sh
+	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
 .PHONY: revendor
 revendor:
 	@$(REPO_ROOT)/hack/revendor.sh
+	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/revendor.sh
+	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
 .PHONY: format
 format:
-	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd
+	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd
 
 .PHONY: check
 check:
 	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
+	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/...
 
 .PHONY: test
 test:
 	@go test -mod=vendor $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
+	@cd $(REPO_ROOT)/apis && GO111MODULE=on go test ./...
 
 .PHONY: verify
 verify: check
 
 .PHONY: generate
 generate:
-	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg...
+	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/generate.sh ./... && cd $(REPO_ROOT)
+	@go run -mod=vendor $(REPO_ROOT)/hack/post-crd-generate $(REPO_ROOT)/charts/landscaper/templates/crd
+	@go run -mod=vendor $(REPO_ROOT)/hack/generate-schemes
+	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
 
 #################################################################
 # Rules related to binary build, docker image build and release #

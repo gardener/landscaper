@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 func AddActuatorToManager(mgr manager.Manager) error {

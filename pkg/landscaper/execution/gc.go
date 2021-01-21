@@ -12,7 +12,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // cleanupOrphanedDeployItems deletes all orphaned deploy items that are not defined by their execution anymore.

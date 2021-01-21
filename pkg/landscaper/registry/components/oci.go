@@ -14,10 +14,10 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/go-logr/logr"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
-	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
+	"github.com/gardener/landscaper/apis/config"
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -34,7 +34,7 @@ type ociClient struct {
 
 // NewOCIRegistry creates a new oci registry from a oci config.
 func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
-	client, err := ociclient.NewClient(log, confighelper.WithConfiguration(config))
+	client, err := ociclient.NewClient(log, utils.WithConfiguration(config))
 	if err != nil {
 		return nil, err
 	}

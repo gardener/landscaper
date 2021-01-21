@@ -14,9 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1/helper"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	helmactuator "github.com/gardener/landscaper/pkg/deployer/helm"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"

@@ -8,8 +8,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 )
 
 func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {

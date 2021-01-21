@@ -4,7 +4,7 @@
   "definitions": {
     "LandscaperConfiguration": {
       "required": [
-        "registries"
+        "registry"
       ],
       "properties": {
         "kind": {
@@ -13,9 +13,17 @@
         "apiVersion": {
           "type": "string"
         },
-        "registries": {
+        "repositoryContext": {
           "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/RegistriesConfiguration"
+          "$ref": "#/definitions/RepositoryContext"
+        },
+        "defaultOCI": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/OCIConfiguration"
+        },
+        "registry": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RegistryConfiguration"
         }
       },
       "additionalProperties": false,
@@ -23,14 +31,11 @@
     },
     "LocalRegistryConfiguration": {
       "required": [
-        "configPaths"
+        "rootPath"
       ],
       "properties": {
-        "configPaths": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "rootPath": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -52,6 +57,9 @@
       "type": "object"
     },
     "OCIConfiguration": {
+      "required": [
+        "allowPlainHttp"
+      ],
       "properties": {
         "configFiles": {
           "items": {
@@ -62,23 +70,9 @@
         "cache": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCICacheConfiguration"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "RegistriesConfiguration": {
-      "required": [
-        "blueprints",
-        "components"
-      ],
-      "properties": {
-        "blueprints": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/RegistryConfiguration"
         },
-        "components": {
-          "$ref": "#/definitions/RegistryConfiguration"
+        "allowPlainHttp": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false,
@@ -91,8 +85,23 @@
           "$ref": "#/definitions/LocalRegistryConfiguration"
         },
         "oci": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RepositoryContext": {
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
         }
       },
       "additionalProperties": false,

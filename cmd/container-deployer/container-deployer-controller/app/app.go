@@ -13,7 +13,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/pkg/apis/core/install"
+	"github.com/gardener/landscaper/apis/core/install"
 	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/version"
 )

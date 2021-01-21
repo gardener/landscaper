@@ -11,4 +11,3 @@ PROJECT_ROOT="${CURRENT_DIR}"/..
 
 GO111MODULE=on go mod vendor
 GO111MODULE=on go mod tidy
-chmod +x ${PROJECT_ROOT}/vendor/k8s.io/code-generator/*

@@ -2,6 +2,22 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "$ref": "#/definitions/InstallationTemplate",
   "definitions": {
+    "ConfigMapReference": {
+      "required": [
+        "ObjectReference",
+        "key"
+      ],
+      "properties": {
+        "ObjectReference": {
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "DataExport": {
       "required": [
         "name",
@@ -20,8 +36,7 @@
     },
     "DataImport": {
       "required": [
-        "name",
-        "dataRef"
+        "name"
       ],
       "properties": {
         "name": {
@@ -32,6 +47,14 @@
         },
         "version": {
           "type": "string"
+        },
+        "secretRef": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/SecretReference"
+        },
+        "configMapRef": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ConfigMapReference"
         }
       },
       "additionalProperties": false,
@@ -139,6 +162,39 @@
             "type": "integer"
           },
           "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectReference": {
+      "required": [
+        "name",
+        "namespace"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "SecretReference": {
+      "required": [
+        "ObjectReference",
+        "key"
+      ],
+      "properties": {
+        "ObjectReference": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "key": {
+          "type": "string"
         }
       },
       "additionalProperties": false,

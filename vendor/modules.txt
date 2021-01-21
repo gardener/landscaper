@@ -9,10 +9,6 @@ github.com/Masterminds/goutils
 github.com/Masterminds/semver/v3
 # github.com/Masterminds/sprig/v3 v3.1.0
 github.com/Masterminds/sprig/v3
-# github.com/PuerkitoBio/purell v1.1.1
-github.com/PuerkitoBio/purell
-# github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
-github.com/PuerkitoBio/urlesc
 # github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 github.com/ahmetb/gen-crd-api-reference-docs
 # github.com/alecthomas/jsonschema v0.0.0-20200530073317-71f438968921
@@ -94,9 +90,6 @@ github.com/docker/go-connections/tlsconfig
 github.com/docker/go-metrics
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
-# github.com/emicklei/go-restful v2.9.5+incompatible
-github.com/emicklei/go-restful
-github.com/emicklei/go-restful/log
 # github.com/evanphx/json-patch v4.9.0+incompatible
 github.com/evanphx/json-patch
 # github.com/fatih/color v1.7.0
@@ -106,7 +99,7 @@ github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
 github.com/gardener/component-cli/ociclient/credentials
 github.com/gardener/component-cli/ociclient/mock
-# github.com/gardener/component-spec/bindings-go v0.0.28-0.20210119120517-8a3773c214e9
+# github.com/gardener/component-spec/bindings-go v0.0.27
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
 github.com/gardener/component-spec/bindings-go/apis/v2/cdutils
@@ -116,6 +109,32 @@ github.com/gardener/component-spec/bindings-go/codec
 github.com/gardener/component-spec/bindings-go/ctf
 github.com/gardener/component-spec/bindings-go/oci
 github.com/gardener/component-spec/bindings-go/utils/selector
+# github.com/gardener/landscaper/apis v0.0.0 => ./apis
+github.com/gardener/landscaper/apis/config
+github.com/gardener/landscaper/apis/config/install
+github.com/gardener/landscaper/apis/config/v1alpha1
+github.com/gardener/landscaper/apis/core
+github.com/gardener/landscaper/apis/core/install
+github.com/gardener/landscaper/apis/core/v1alpha1
+github.com/gardener/landscaper/apis/core/v1alpha1/helper
+github.com/gardener/landscaper/apis/core/validation
+github.com/gardener/landscaper/apis/deployer/container
+github.com/gardener/landscaper/apis/deployer/container/install
+github.com/gardener/landscaper/apis/deployer/container/v1alpha1
+github.com/gardener/landscaper/apis/deployer/container/v1alpha1/validation
+github.com/gardener/landscaper/apis/deployer/helm
+github.com/gardener/landscaper/apis/deployer/helm/install
+github.com/gardener/landscaper/apis/deployer/helm/v1alpha1
+github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper
+github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation
+github.com/gardener/landscaper/apis/deployer/manifest
+github.com/gardener/landscaper/apis/deployer/manifest/install
+github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1
+github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2
+github.com/gardener/landscaper/apis/deployer/manifest/validation
+github.com/gardener/landscaper/apis/deployer/mock
+github.com/gardener/landscaper/apis/deployer/mock/install
+github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-logr/logr v0.3.0
@@ -123,14 +142,6 @@ github.com/go-logr/logr
 github.com/go-logr/logr/testing
 # github.com/go-logr/zapr v0.3.0
 github.com/go-logr/zapr
-# github.com/go-openapi/jsonpointer v0.19.3
-github.com/go-openapi/jsonpointer
-# github.com/go-openapi/jsonreference v0.19.3
-github.com/go-openapi/jsonreference
-# github.com/go-openapi/spec v0.19.3
-github.com/go-openapi/spec
-# github.com/go-openapi/swag v0.19.5
-github.com/go-openapi/swag
 # github.com/gobuffalo/flect v0.2.0
 github.com/gobuffalo/flect
 # github.com/gobwas/glob v0.2.3
@@ -165,7 +176,7 @@ github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/google/gofuzz v1.1.0
 github.com/google/gofuzz
-# github.com/google/uuid v1.1.1
+# github.com/google/uuid v1.1.2
 github.com/google/uuid
 # github.com/googleapis/gnostic v0.4.1 => github.com/googleapis/gnostic v0.4.1
 github.com/googleapis/gnostic/compiler
@@ -198,10 +209,6 @@ github.com/inconshreveable/mousetrap
 github.com/json-iterator/go
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
-# github.com/mailru/easyjson v0.7.0
-github.com/mailru/easyjson/buffer
-github.com/mailru/easyjson/jlexer
-github.com/mailru/easyjson/jwriter
 # github.com/mandelsoft/filepath v0.0.0-20200909114706-3df73d378d55
 github.com/mandelsoft/filepath/pkg/filepath
 # github.com/mandelsoft/spiff v1.5.0 => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
@@ -238,7 +245,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/morikuni/aec v1.0.0
 github.com/morikuni/aec
-# github.com/onsi/ginkgo v1.14.0 => github.com/onsi/ginkgo v1.8.0
+# github.com/onsi/ginkgo v1.14.2 => github.com/onsi/ginkgo v1.8.0
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
 github.com/onsi/ginkgo/ginkgo
@@ -264,7 +271,7 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.10.1 => github.com/onsi/gomega v1.5.0
+# github.com/onsi/gomega v1.10.4 => github.com/onsi/gomega v1.5.0
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/gbytes
@@ -350,7 +357,6 @@ golang.org/x/crypto/ssh/terminal
 golang.org/x/lint
 golang.org/x/lint/golint
 # golang.org/x/mod v0.3.0
-golang.org/x/mod/module
 golang.org/x/mod/semver
 # golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 golang.org/x/net/context
@@ -394,7 +400,6 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-golang.org/x/text/width
 # golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 golang.org/x/time/rate
 # golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d
@@ -403,15 +408,11 @@ golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
 golang.org/x/tools/go/internal/packagesdriver
 golang.org/x/tools/go/packages
-golang.org/x/tools/imports
 golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
 golang.org/x/tools/internal/event/keys
 golang.org/x/tools/internal/event/label
-golang.org/x/tools/internal/fastwalk
 golang.org/x/tools/internal/gocommand
-golang.org/x/tools/internal/gopathwalk
-golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/typesinternal
 # golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
@@ -658,49 +659,7 @@ k8s.io/client-go/util/homedir
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
-# k8s.io/code-generator v0.19.5
-k8s.io/code-generator
-k8s.io/code-generator/cmd/client-gen
-k8s.io/code-generator/cmd/client-gen/args
-k8s.io/code-generator/cmd/client-gen/generators
-k8s.io/code-generator/cmd/client-gen/generators/fake
-k8s.io/code-generator/cmd/client-gen/generators/scheme
-k8s.io/code-generator/cmd/client-gen/generators/util
-k8s.io/code-generator/cmd/client-gen/path
-k8s.io/code-generator/cmd/client-gen/types
-k8s.io/code-generator/cmd/conversion-gen
-k8s.io/code-generator/cmd/conversion-gen/args
-k8s.io/code-generator/cmd/conversion-gen/generators
-k8s.io/code-generator/cmd/deepcopy-gen
-k8s.io/code-generator/cmd/deepcopy-gen/args
-k8s.io/code-generator/cmd/defaulter-gen
-k8s.io/code-generator/cmd/defaulter-gen/args
-k8s.io/code-generator/cmd/go-to-protobuf
-k8s.io/code-generator/cmd/go-to-protobuf/protobuf
-k8s.io/code-generator/cmd/import-boss
-k8s.io/code-generator/cmd/informer-gen
-k8s.io/code-generator/cmd/informer-gen/args
-k8s.io/code-generator/cmd/informer-gen/generators
-k8s.io/code-generator/cmd/lister-gen
-k8s.io/code-generator/cmd/lister-gen/args
-k8s.io/code-generator/cmd/lister-gen/generators
-k8s.io/code-generator/cmd/openapi-gen
-k8s.io/code-generator/cmd/register-gen
-k8s.io/code-generator/cmd/register-gen/args
-k8s.io/code-generator/cmd/register-gen/generators
-k8s.io/code-generator/cmd/set-gen
-k8s.io/code-generator/pkg/namer
-k8s.io/code-generator/pkg/util
-k8s.io/code-generator/third_party/forked/golang/reflect
 # k8s.io/gengo v0.0.0-20200428234225-8167cfdcfc14
-k8s.io/gengo/args
-k8s.io/gengo/examples/deepcopy-gen/generators
-k8s.io/gengo/examples/defaulter-gen/generators
-k8s.io/gengo/examples/import-boss/generators
-k8s.io/gengo/examples/set-gen/generators
-k8s.io/gengo/examples/set-gen/sets
-k8s.io/gengo/generator
-k8s.io/gengo/namer
 k8s.io/gengo/parser
 k8s.io/gengo/types
 # k8s.io/klog v1.0.0
@@ -708,13 +667,8 @@ k8s.io/klog
 # k8s.io/klog/v2 v2.2.0
 k8s.io/klog/v2
 # k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
-k8s.io/kube-openapi/cmd/openapi-gen/args
-k8s.io/kube-openapi/pkg/common
-k8s.io/kube-openapi/pkg/generators
-k8s.io/kube-openapi/pkg/generators/rules
 k8s.io/kube-openapi/pkg/util/proto
-k8s.io/kube-openapi/pkg/util/sets
-# k8s.io/utils v0.0.0-20201110183641-67b214c5f920
+# k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 k8s.io/utils/buffer
 k8s.io/utils/integer
 k8s.io/utils/pointer

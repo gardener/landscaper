@@ -2,13 +2,165 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "$ref": "#/definitions/ProviderConfiguration",
   "definitions": {
+    "ArchiveAccess": {
+      "properties": {
+        "raw": {
+          "type": "string"
+        },
+        "remote": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RemoteArchiveAccess"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "Chart": {
       "properties": {
         "ref": {
           "type": "string"
         },
-        "tar": {
+        "fromResource": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RemoteChartReference"
+        },
+        "archive": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ArchiveAccess"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentDescriptor": {
+      "required": [
+        "meta",
+        "component"
+      ],
+      "properties": {
+        "meta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/Metadata"
+        },
+        "component": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ComponentSpec"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentDescriptorDefinition": {
+      "properties": {
+        "ref": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ComponentDescriptorReference"
+        },
+        "inline": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ComponentDescriptor"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentDescriptorReference": {
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "repositoryContext": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/RepositoryContext"
+        },
+        "componentName": {
           "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentReference": {
+      "required": [
+        "name",
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "componentName": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "extraIdentity": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/Label"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ComponentSpec": {
+      "required": [
+        "ObjectMeta",
+        "repositoryContexts",
+        "provider",
+        "sources",
+        "componentReferences",
+        "resources"
+      ],
+      "properties": {
+        "ObjectMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ObjectMeta"
+        },
+        "repositoryContexts": {
+          "items": {
+            "$ref": "#/definitions/RepositoryContext"
+          },
+          "type": "array"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Source"
+          },
+          "type": "array"
+        },
+        "componentReferences": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/ComponentReference"
+          },
+          "type": "array"
+        },
+        "resources": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Resource"
+          },
+          "type": "array"
         }
       },
       "additionalProperties": false,
@@ -34,6 +186,94 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "IdentityObjectMeta": {
+      "required": [
+        "name",
+        "version",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "extraIdentity": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/Label"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Label": {
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Metadata": {
+      "required": [
+        "schemaVersion"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectMeta": {
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/Label"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "ObjectReference": {
       "required": [
         "name",
@@ -44,6 +284,18 @@
           "type": "string"
         },
         "namespace": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ObjectType": {
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
           "type": "string"
         }
       },
@@ -65,6 +317,9 @@
           "type": "string"
         },
         "kubeconfig": {
+          "type": "string"
+        },
+        "updateStrategy": {
           "type": "string"
         },
         "chart": {
@@ -94,6 +349,112 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "RemoteArchiveAccess": {
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RemoteChartReference": {
+      "required": [
+        "ComponentDescriptorDefinition",
+        "resourceName"
+      ],
+      "properties": {
+        "ComponentDescriptorDefinition": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ComponentDescriptorDefinition"
+        },
+        "resourceName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "RepositoryContext": {
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "baseUrl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Resource": {
+      "required": [
+        "IdentityObjectMeta",
+        "access"
+      ],
+      "properties": {
+        "IdentityObjectMeta": {
+          "$ref": "#/definitions/IdentityObjectMeta"
+        },
+        "relation": {
+          "type": "string"
+        },
+        "srcRef": {
+          "items": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "$ref": "#/definitions/SourceRef"
+          },
+          "type": "array"
+        },
+        "access": {
+          "$ref": "#/definitions/UnstructuredAccessType"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Source": {
+      "required": [
+        "IdentityObjectMeta",
+        "access"
+      ],
+      "properties": {
+        "IdentityObjectMeta": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/IdentityObjectMeta"
+        },
+        "access": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/UnstructuredAccessType"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "SourceRef": {
+      "properties": {
+        "identitySelector": {
+          "patternProperties": {
+            ".*": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/Label"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "TypedObjectReference": {
       "required": [
         "apiVersion",
@@ -110,6 +471,28 @@
         "ObjectReference": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/ObjectReference"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "UnstructuredAccessType": {
+      "required": [
+        "ObjectType",
+        "object"
+      ],
+      "properties": {
+        "ObjectType": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/ObjectType"
+        },
+        "object": {
+          "patternProperties": {
+            ".*": {
+              "additionalProperties": true
+            }
+          },
+          "type": "object"
         }
       },
       "additionalProperties": false,

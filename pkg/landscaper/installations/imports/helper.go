@@ -10,8 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )

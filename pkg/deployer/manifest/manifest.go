@@ -17,10 +17,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	manifest "github.com/gardener/landscaper/pkg/apis/deployer/manifest"
-	manifestinstall "github.com/gardener/landscaper/pkg/apis/deployer/manifest/install"
-	"github.com/gardener/landscaper/pkg/apis/deployer/manifest/validation"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
+	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
+	"github.com/gardener/landscaper/apis/deployer/manifest/validation"
 )
 
 const (

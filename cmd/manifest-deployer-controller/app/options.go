@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	manifestv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/logger"
 )
