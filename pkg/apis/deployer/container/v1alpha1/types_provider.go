@@ -15,7 +15,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
+// ProviderConfiguration is the container deployer configuration that is expected in a DeployItem
 type ProviderConfiguration struct {
 	metav1.TypeMeta
 
@@ -47,9 +47,12 @@ type ProviderConfiguration struct {
 	// ImportValues contains the import values for the container.
 	// +optional
 	ImportValues json.RawMessage `json:"importValues,omitempty"`
-	// Blueprint is the resolved reference to the definition
+	// Blueprint is the resolved reference to the Blueprint definition
 	// +optional
 	Blueprint *lsv1alpha1.BlueprintDefinition `json:"blueprint,omitempty"`
+	// ComponentDescriptor is the resolved reference to the ComponentDescriptor defnition
+	// +optional
+	ComponentDescriptor *lsv1alpha1.ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints and component descriptors from the respective registry.
 	// For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -60,7 +63,7 @@ type ProviderConfiguration struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProviderStatus is the helm provider specific status
+// ProviderStatus is the container provider specific status
 type ProviderStatus struct {
 	metav1.TypeMeta
 	// LastOperation defines the last run operation of the pod.

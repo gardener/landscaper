@@ -50,16 +50,44 @@ func ValidateInstallationSpec(spec *core.InstallationSpec, fldPath *field.Path) 
 	allErrs = append(allErrs, ValidateInstallationImports(spec.Imports, fldPath.Child("imports"))...)
 	allErrs = append(allErrs, ValidateInstallationExports(spec.Exports, fldPath.Child("exports"))...)
 
-	// check that either inline blueprint or reference is provided (and not both)
-	if spec.Blueprint.Reference == nil && spec.Blueprint.Inline == nil {
-		allErrs = append(allErrs, field.Required(fldPath.Child("blueprint"), "must specify either inline blueprint or reference"))
-	}
-	if spec.Blueprint.Reference != nil && spec.Blueprint.Inline != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("blueprint"), spec.Blueprint, "must specify either inline blueprint or reference, not both"))
-	}
+	// check Blueprint and ComponentDescriptor
+	allErrs = append(allErrs, ValidateInstallationBlueprint(spec.Blueprint, fldPath.Child("blueprint"))...)
+	allErrs = append(allErrs, ValidateInstallationComponentDescriptor(spec.ComponentDescriptor, fldPath.Child("componentDescriptor"))...)
 
 	// check RegistryPullSecrets
 	allErrs = append(allErrs, ValidateObjectReferenceList(spec.RegistryPullSecrets, fldPath.Child("registryPullSecrets"))...)
+
+	return allErrs
+}
+
+// ValidateInstallationBlueprint validates the Blueprint definition of an Installation
+func ValidateInstallationBlueprint(bp core.BlueprintDefinition, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// check that either inline blueprint or reference is provided (and not both)
+	if bp.Reference == nil && bp.Inline == nil {
+		allErrs = append(allErrs, field.Required(fldPath.Child("definition"), "must specify either inline blueprint or reference"))
+	}
+	if bp.Reference != nil && bp.Inline != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("definition"), bp, "must specify either inline blueprint or reference, not both"))
+	}
+
+	return allErrs
+}
+
+// ValidateInstallationComponentDescriptor validates the ComponentDesriptor of an Installation
+func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinition, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// check that a ComponentDescriptor - if given - is either inline or ref but not both
+	if cd != nil {
+		if cd.Inline == nil && cd.Reference == nil {
+			allErrs = append(allErrs, field.Required(fldPath.Child("definition"), "must specify either inline Component Descriptor or reference if a Component Descriptor is supplied"))
+		}
+		if cd.Inline != nil && cd.Reference != nil {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("definition"), *cd, "must specify either inline Component Descriptor or reference - not both - if a Component Descriptor is supplied "))
+		}
+	}
 
 	return allErrs
 }

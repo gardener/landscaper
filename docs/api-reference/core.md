@@ -492,6 +492,20 @@ InstallationSpec
 <table>
 <tr>
 <td>
+<code>componentDescriptor</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">
+ComponentDescriptorDefinition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptor is a reference to the installation&rsquo;s component descriptor</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>blueprint</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.BlueprintDefinition">
@@ -931,6 +945,54 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>)
+</p>
+<p>
+<p>ComponentDescriptorDefinition defines the component descriptor that should be used
+for the installatoin</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ref</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
+ComponentDescriptorReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptorReference is the reference to a component descriptor</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>inline</code></br>
+<em>
+<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor">
+github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>InlineDescriptorReference defines an inline component descriptor</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorKind">ComponentDescriptorKind
 (<code>string</code> alias)</p></h3>
 <p>
@@ -941,7 +1003,7 @@ It can be a component or a resource.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InlineBlueprint">InlineBlueprint</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition</a>)
 </p>
 <p>
 <p>ComponentDescriptorReference is the reference to a component descriptor.
@@ -2142,20 +2204,6 @@ filesystem.</p>
 <tbody>
 <tr>
 <td>
-<code>cdRef</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
-ComponentDescriptorReference
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ComponentDescriptorReference is the reference to a component descriptor</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>filesystem</code></br>
 <em>
 <a href="https://golang.org/pkg/encoding/json/#RawMessage">
@@ -2282,6 +2330,20 @@ encoding/json.RawMessage
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>componentDescriptor</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">
+ComponentDescriptorDefinition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptor is a reference to the installation&rsquo;s component descriptor</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>blueprint</code></br>
@@ -2558,7 +2620,7 @@ The filesystem must be a YAML filesystem.</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig
 </h3>
 <p>
-<p>KubernetesClusterTargetConfig defines the landscaper kubenretes cluster target config.</p>
+<p>KubernetesClusterTargetConfig defines the landscaper kubernetes cluster target config.</p>
 </p>
 <table>
 <thead>
@@ -2699,31 +2761,13 @@ string
 <tbody>
 <tr>
 <td>
-<code>VersionedResourceReference</code></br>
+<code>resourceName</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.VersionedResourceReference">
-VersionedResourceReference
-</a>
+string
 </em>
 </td>
 <td>
-<p>
-(Members of <code>VersionedResourceReference</code> are embedded into this type.)
-</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>repositoryContext</code></br>
-<em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext">
-github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>RepositoryContext defines the context of the component repository to resolve blueprints.</p>
+<p>ResourceName is the name of the blueprint as defined by a component descriptor.</p>
 </td>
 </tr>
 </tbody>
@@ -3467,10 +3511,6 @@ int64
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.VersionedResourceReference">VersionedResourceReference
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.RemoteBlueprintReference">RemoteBlueprintReference</a>)
-</p>
 <p>
 <p>VersionedResourceReference defines the reference to a resource with its version.</p>
 </p>

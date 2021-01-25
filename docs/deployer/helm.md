@@ -1,10 +1,11 @@
 # Helm Deployer
 
-The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`.
-It renders a given helm chart and deploys the resulting manifest into a cluster.
+The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. It renders a given helm chart and deploys the resulting manifest into a cluster.
 
 ### Configuration
-This sections describes the provider specific configuration
+
+This sections describes the provider specific configuration.
+
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DeployItem
@@ -24,11 +25,13 @@ spec:
     chart:
       ref: myrepo.example.com/charts/nginx-ingress:0.5.2 # helm oci ref
       fromResource: # will fetch the helm chart from component descriptor resource of type helm chart
-        repositoryContext:
-           type: ociRegistry
-           baseUrl: my-repo
-        componentName: github.com/gardener/landscaper
-        version: v0.3.0
+#       inline: # define an inline component descriptor instead of referencing a remote
+        ref:
+          repositoryContext:
+            type: ociRegistry
+            baseUrl: my-repo
+          componentName: github.com/gardener/landscaper
+          version: v0.3.0
         resourceName: my-helm-chart
       archive:
         raw: "" # base64 encoded helm chart tar.gz
@@ -67,11 +70,12 @@ Exports can be defined in `exportsFromManifests` by specifying the exported key 
 The value is taken from a rendered resource and a jsonpath to the value.
 For a complete documention of the availabel jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
 
-:warning: only unique identifiable resources (apiVersion, kind, name and namespace).
-
+:warning: Only unique identifiable resources (_apiVersion_, _kind_, _name_ and _namespace_).
 
 ### Status
-This section describes the provider specific status of the resource
+
+This section describes the provider specific status of the resource.
+
 ```yaml
 status:
   providerStatus:

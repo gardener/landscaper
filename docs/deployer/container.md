@@ -1,10 +1,11 @@
 # Container Deployer
 
-The container deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/container`.
-It executes the given container spec with the injected imports and collect exports from a predefined path.
+The container deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/container`. It executes the given container spec with the injected imports and collect exports from a predefined path.
 
 ### Configuration
+
 This sections describes the provider specific configuration
+
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DeployItem
@@ -21,7 +22,17 @@ spec:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
-    blueprintRef: <abc....>
+    componentDescriptor:
+#     inline: # define an inline component descriptor instead of referencing a remote
+      ref:
+        componentName: example.com/my-comp
+        version: v0.1.2
+        repositoryContext: <abc...>
+
+    blueprint: 
+#      inline: # define inline Blueprint instead of referencing a remote
+      ref: 
+        resourceName: <abc....>
     
     importValues: 
       {{ toJson . | indent 2 }}
@@ -40,8 +51,8 @@ In order for the container deployer to interact with the landscaper a contract f
 - *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.
 - The optional *state* should be written to the directory given by the env var `STATE_PATH`.
 - The complete state directory will be tarred and managed by the landscaper(:warning: no symlinks)
-- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`.
-  The json file contains a resolved component descriptor list which means that all transitive component descriptors are included in a list.
+- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. The json file contains a resolved component descriptor list which means that all transitive component descriptors are included in a list.
+
   ```json
   {
     "meta":{
@@ -58,10 +69,13 @@ In order for the container deployer to interact with the landscaper a contract f
     ]
   }
   ```
+
 - The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env var `CONTENT_PATH`.
 
 ### Status
+
 This section describes the provider specific status of the resource
+
 ```yaml
 status:
   providerStatus:

@@ -86,6 +86,10 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
+	//ComponentDescriptor is a reference to the installation's component descriptor
+	// +optional
+	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`
+
 	// Blueprint is the resolved reference to the definition.
 	Blueprint BlueprintDefinition `json:"blueprint"`
 
@@ -226,20 +230,27 @@ type BlueprintDefinition struct {
 
 // RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.
 type RemoteBlueprintReference struct {
-	VersionedResourceReference `json:",inline"`
-	// RepositoryContext defines the context of the component repository to resolve blueprints.
-	// +optional
-	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	// ResourceName is the name of the blueprint as defined by a component descriptor.
+	ResourceName string `json:"resourceName"`
 }
 
 // InlineBlueprint defines a inline blueprint with component descriptor and
 // filesystem.
 type InlineBlueprint struct {
-	// ComponentDescriptorReference is the reference to a component descriptor
-	// +optional
-	ComponentDescriptorReference *ComponentDescriptorReference `json:"cdRef,omitempty"`
 	// Filesystem defines a inline yaml filesystem with a blueprint.
 	Filesystem json.RawMessage `json:"filesystem"`
+}
+
+// ComponentDescriptorDefinition defines the component descriptor that should be used
+// for the installatoin
+type ComponentDescriptorDefinition struct {
+	// ComponentDescriptorReference is the reference to a component descriptor
+	// +optional
+	Reference *ComponentDescriptorReference `json:"ref,omitempty"`
+
+	// InlineDescriptorReference defines an inline component descriptor
+	// +optional
+	Inline *cdv2.ComponentDescriptor `json:"inline,omitempty"`
 }
 
 // ComponentDescriptorReference is the reference to a component descriptor.

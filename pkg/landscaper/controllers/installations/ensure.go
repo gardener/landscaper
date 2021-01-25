@@ -17,8 +17,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
-func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
+func (a *actuator) Ensure(ctx context.Context, op *installations.Operation) error {
 	// check that all referenced definitions have a corresponding installation
+	inst := op.Inst
 	subinstallation := subinstallations.New(op)
 	exec := executions.New(op)
 
@@ -58,7 +59,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	}
 	if eligibleToUpdate {
 		inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := a.ApplyUpdate(ctx, op, inst); err != nil {
+		if err := a.ApplyUpdate(ctx, op); err != nil {
 			return err
 		}
 
@@ -109,6 +110,7 @@ func (a *actuator) Ensure(ctx context.Context, op *installations.Operation, inst
 	return nil
 }
 
+//TODO: remove inst from signature
 // eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
 // The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
 func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
@@ -129,7 +131,8 @@ func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Opera
 }
 
 // ApplyUpdate redeploys subinstallations and deploy items.
-func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) error {
+func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation) error {
+	inst := op.Inst
 	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {
 		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
 			"ImportsSatisfied",

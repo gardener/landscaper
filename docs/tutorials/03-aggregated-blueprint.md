@@ -212,7 +212,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/simple-aggregated
-  version: v0.1.0
+  version: v0.1.2
 
   provider: internal
 
@@ -222,19 +222,19 @@ component:
 
   resources:
   - type: blueprint
-    name: echo-server-blueprint
+    name: simple-aggregated
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.1.2
 
   componentReferences:
   - name: ingress
     componentName: github.com/gardener/landscaper/ingress-nginx
-    version: v0.1.0
+    version: v0.2.1
   - name: server
     componentName: github.com/gardener/landscaper/echo-server
-    version: v0.1.0
+    version: v0.1.1
 ```
 
 ### Installation
@@ -252,14 +252,16 @@ kind: Installation
 metadata:
   name: my-aggregation
 spec:
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: ociRegistry
         baseUrl: eu.gcr.io/my-project/comp
       componentName: github.com/gardener/landscaper/simple-aggregated
-      version: v0.1.0
-      kind: localResource
+      version: v0.1.2
+
+  blueprint:
+    ref:
       resourceName: simple-aggregated
 
   imports:

@@ -7,15 +7,17 @@ kind: Installation
 metadata:
   name: application-dns-controller
 spec:
-  blueprint:
+
+  componentDescriptor:
     ref:
       repositoryContext: #maybe optional
         baseUrl: "eu.gcr.io/gardener-dev/"
         type: ociRegistry
-
-      version: "v0.2.0"
       componentName: "github.com/gardener/external-dns-management"
-      kind: "localResource"
+      version: "v0.2.0"
+
+  blueprint:
+    ref:
       resourceName: "installation"
     inline:
       filesystem:

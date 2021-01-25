@@ -20,11 +20,12 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
+// NoChartDefinedError is the error that is returned if no Helm chart was provided
 var NoChartDefinedError = errors.New("no chart was provided")
 
 // GetChart resolves the chart based on a chart access configuration.
@@ -101,16 +102,22 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 	return ch, err
 }
 
-func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ociclient.Client, ref *lsv1alpha1.RemoteBlueprintReference) (*chart.Chart, error) {
+func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ociclient.Client, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
 	// helm specific oci manifest structure
-	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, ref.Inline)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build component resolver: %w", err)
 	}
-	cd, blobResolver, err := compResolver.Resolve(ctx, *ref.RepositoryContext, ref.ComponentName, ref.Version)
+
+	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
+	if cdRef == nil {
+		return nil, fmt.Errorf("no component descriptor reference found for %q", ref.ResourceName)
+	}
+
+	cd, blobResolver, err := compResolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get component descriptor for %q: %w", ref.ComponentName, err)
+		return nil, fmt.Errorf("unable to get component descriptor for %q: %w", cdRef.ComponentName, err)
 	}
 	// add customized helm resolver
 	blobResolver, err = ctf.AggregateBlobResolvers(blobResolver, NewHelmResolver(ociClient))

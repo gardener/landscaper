@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root-1
+  namespace: {{ .Namespace }}
+spec:
+
+  componentDescriptor:
+    inline:
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: root
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "example.com/test"
+
+        sources: []
+        componentReferences: []
+
+        resources:
+        - name: root-a
+          type: blueprint
+          version: 1.0.0
+          relation: local
+          access:
+            type: localFilesystemBlob
+            filename: root
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          imports:
+          - name: imp-a
+            schema:
+              type: string
+          exports:
+          - name: exp-a
+            schema:
+              type: string
+          deployExecutions:
+          - type: GoTemplate
+            template: |
+              deployItems:
+              - name: main
+                type: landscaper.gardener.cloud/mock
+                config:
+                  apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderConfiguration
+                  providerStatus:
+                    apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                    kind: ProviderStatus
+                    imp: \{\{ index .imports "imp-a" \}\}
+                  export:
+                    exp-a: exp-mock
+          exportExecutions:
+          - type: GoTemplate
+            template: |
+              exports:
+                exp-a: \{\{ index .values.deployitems.main "exp-a" \}\}
+
+  imports:
+    data:
+    - name: imp-a
+      dataRef: root.key1
+
+  exports:
+    data:
+    - name: exp-a
+      dataRef: exp-a

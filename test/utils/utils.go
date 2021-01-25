@@ -73,8 +73,8 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 		rootInst = &lsv1alpha1.Installation{}
 		rootInst.Name = cfg.InstallationName
 		rootInst.Namespace = cfg.InstallationNamespace
-		rootInst.Spec.Blueprint = LocalRemoteBlueprintRef(cfg.RemoteBlueprintComponentName,
-			cfg.RemoteBlueprintResourceName, cfg.RemoteBlueprintVersion, cfg.RemoteBlueprintBaseURL)
+		rootInst.Spec.ComponentDescriptor = LocalRemoteComponentDescriptorRef(cfg.RemoteBlueprintComponentName, cfg.RemoteBlueprintVersion, cfg.RemoteBlueprintBaseURL)
+		rootInst.Spec.Blueprint = LocalRemoteBlueprintRef(cfg.RemoteBlueprintResourceName)
 	}
 
 	rootBlueprint := CreateBlueprintFromFile(cfg.BlueprintFilePath, cfg.BlueprintContentPath)
@@ -87,21 +87,25 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 	return rootInst, rootIntInst, rootBlueprint, rootInstOp
 }
 
-// LocalRemoteBlueprintRef creates a new default local remote blueprint reference
-func LocalRemoteBlueprintRef(componentName, resourceName, version, baseUrl string) lsv1alpha1.BlueprintDefinition {
-	return lsv1alpha1.BlueprintDefinition{
-		Reference: &lsv1alpha1.RemoteBlueprintReference{
+// LocalRemoteComponentDescriptorRef creates a new default local remote component descriptor reference
+func LocalRemoteComponentDescriptorRef(componentName, version, baseURL string) *lsv1alpha1.ComponentDescriptorDefinition {
+	return &lsv1alpha1.ComponentDescriptorDefinition{
+		Reference: &lsv1alpha1.ComponentDescriptorReference{
 			RepositoryContext: &cdv2.RepositoryContext{
 				Type:    "local",
-				BaseURL: baseUrl,
+				BaseURL: baseURL,
 			},
-			VersionedResourceReference: lsv1alpha1.VersionedResourceReference{
-				ResourceReference: lsv1alpha1.ResourceReference{
-					ComponentName: componentName,
-					ResourceName:  resourceName,
-				},
-				Version: version,
-			},
+			ComponentName: componentName,
+			Version:       version,
+		},
+	}
+}
+
+// LocalRemoteBlueprintRef creates a new default local remote blueprint reference
+func LocalRemoteBlueprintRef(resourceName string) lsv1alpha1.BlueprintDefinition {
+	return lsv1alpha1.BlueprintDefinition{
+		Reference: &lsv1alpha1.RemoteBlueprintReference{
+			ResourceName: resourceName,
 		},
 	}
 }

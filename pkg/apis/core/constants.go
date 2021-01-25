@@ -15,4 +15,7 @@ const (
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
 	OperationReconcile = "reconcile"
+
+	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors
+	InlineComponentDescriptorLabel = "landscaper.gardener.cloud/component-descriptor"
 )

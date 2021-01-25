@@ -24,14 +24,23 @@ kind: Installation
 metadata:
   name: my-installation
 spec:
-
-  blueprint:
+  componentDescriptor:
     ref:
 #      repositoryContext:
 #        type: ociRegistry
 #        baseUrl: eu.gcr.io/myproj
       componentName: github.com/gardener/gardener
       version: v1.7.2
+#    inline:    # https://gardener.github.io/component-spec/component-descriptor-v2.html
+#      meta:
+#        schemaVersion: v2
+#      component:
+#        name: github.com/gardener/gardener
+#        version: v.1.7.2
+#        ...
+
+  blueprint:
+    ref:
       resourceName: gardener
 #    inline:
 #      filesystem: # vfs filesystem
@@ -108,6 +117,77 @@ status:
       namespace: default
 ```
 
+## Component Descriptor
+A component descriptor defines a 'component' with all its resources and dependencies. An installation may use this information to determine its activities. In this context , a component descriptor can be located via a remote reference or declared inline (only for development purposes).
+
+Though technically a component descriptor is optional, most installations will use it to manage their dependencies.
+
+__Remote Reference__
+
+A component descriptor can be identified by its name and version. Additionally, it is resolved within a defined repository context as described in the [component descriptor spec](https://gardener.github.io/component-spec/component_descriptor_registries.html).
+This repository context is optional and can be defaulted in the landscaper deployment.
+
+```yaml
+spec:
+  componentDescriptor:
+    ref: 
+#      repositoryContext:
+#        type: ociRegistry
+#        baseUrl: ""
+      componentName: github.com/my-comp
+      version: v0.0.1
+```
+
+__Inline Component Descriptor__
+
+For a local development or test scenario, the landscaper allows to specify a component descriptor directly inline within the installation. The below snippet gives an example:
+
+```yaml
+spec:
+  componentDescriptor:
+    inline:
+      meta:
+        schemaVersion: v2
+      component:
+        name: github.com/my-comp
+        version: v0.0.1
+        provider: internal
+        repositoryContexts:
+        - type: ociRegistry
+          baseUrl: "registry.example.com/test"
+        sources: []
+        componentReferences: []
+        resources:
+          - type: ociImage
+            name: echo-server-image
+            version: v0.2.3
+            relation: external
+            access:
+              type: ociRegistry
+              imageReference: hashicorp/http-echo:0.2.3
+```
+
+When resolving the component descriptor and inline definition takes precedence even though a similar component descriptor may exist at the given location. 
+
+It is important to keep in mind that only the component descriptor is inline. To resolve any resource defined the given location will be used. In the example above, the inline component descriptor points to an OCI image stored remotely. If it does not exist, subsequent steps will fail.
+
+To allow component references to be resolved locally, inline component descriptors may be nested by adding a label to the component reference with the name `landscaper.gardener.cloud/component-descriptor` and the actual to the component descriptor as value:
+
+```yaml
+componentReferences:
+  - name: ingress
+    componentName: github.com/gardener/landscaper/ingress-nginx
+    version: v0.2.0
+    labels:
+    - name: landscaper.gardener.cloud/component-descriptor
+      value:
+        meta:
+          schemaVersion: v2
+        component:
+          name: github.com/gardener/landscaper/ingress-nginx
+          version: v0.2.0
+```
+
 ## Blueprint
 
 An Installation is an instance of a blueprint therefore every installation must reference a [blueprint](./Blueprints.md).
@@ -116,8 +196,7 @@ A blueprint can be referenced in an installation via a remote reference or inlin
 
 __Remote Reference__
 
-Like any other artifact, a blueprint can be a resource of a component.
-Therefore, it can be defined in a component descriptor.
+Like any other artifact, a blueprint can be a resource of a component. Therefore, it can be defined in a component descriptor.
 
 The landscaper uses the component descriptor's resource definitions and enhances it with another resource of type `landscaper.gardener.cloud/blueprint`(alternatively `blueprint`).
 This resource definition is then used to reference the remote blueprint for the Installation.
@@ -140,18 +219,20 @@ component:
       imageReference: registry.example.com/blueprints/my-application
 ```
 
-The defined blueprint in the component descriptor can be referenced as described in the below example in `.spec.blueprint.ref`.<br>
-The component descriptor is resolved within a defined repository context as described in the [component descriptor spec](https://gardener.github.io/component-spec/component_descriptor_registries.html).
-This repository context is optional and can be defaulted in the landscaper deployment.
+After having referenced the component descriptor, the defined blueprint can be resolved via its name as described in the below example in `.spec.blueprint.ref.resourceName`.<br>
+
 ```yaml
 spec:
-  blueprint:
-    ref:
+  componentDescriptor:
+    ref: 
 #      repositoryContext:
 #        type: ociRegistry
 #        baseUrl: ""
       componentName: github.com/my-comp
       version: v0.0.1
+
+  blueprint:
+    ref:
       resourceName: my-application
 ```
 
@@ -163,21 +244,21 @@ A blueprint is a filesystem that contains a blueprint definition file at its roo
 Therefore, it must be possible to define such a filesystem within the installation manifest.
 The landscaper uses the [vfs yaml filesystem definition](https://pkg.go.dev/github.com/mandelsoft/vfs/pkg/yamlfs) to define such a filesystem.
 
-A component descriptor can be referenced optionally in `spec.blueprint.inline.cdRef`.
-Currently, it is only possible to use a remote component descriptor.
+A remote or inline component descriptor can be referenced optionally in `spec.componentDescriptor`.
 
 ```yaml
 spec:
+#  componentDescriptor:
+#    ref:
+#      repositoryContext:
+#        type: ociRegistry
+#        baseUrl: ""
+#      componentName: github.com/my-comp
+#      version: v0.0.1
   blueprint:
     inline:
-#      cdRef:
-#        repositoryContext:
-#          type: ociRegistry
-#          baseUrl: ""
-#        componentName: github.com/my-comp
-#        version: v0.0.1
       filesystem:
-        blueprint.yaml:
+        blueprint.yaml: |
           apiVersion: landscaper.gardener.cloud/v1alpha1
           kind: Blueprint
           ...

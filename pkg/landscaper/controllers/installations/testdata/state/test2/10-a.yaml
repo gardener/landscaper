@@ -18,13 +18,16 @@ metadata:
   - finalizer.landscaper.gardener.cloud
 spec:
 
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: local
         baseUrl: "../testdata/registry"
       version: 1.0.0
       componentName: example.com/root
+
+  blueprint:
+    ref:
       resourceName: res-a
 
   imports:

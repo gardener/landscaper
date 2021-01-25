@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Operation is the Operation interface that is used to share common operational data across the landscaper reconciler.
+// Interface is the Operation interface that is used to share common operational data across the landscaper reconciler
 type Interface interface {
 	Log() logr.Logger
 	Client() client.Client
@@ -37,6 +37,7 @@ type RegistriesAccessor interface {
 	ComponentsRegistry() ctf.ComponentResolver
 }
 
+// Operation is the type that is used to share common operational data across the landscaper reconciler
 type Operation struct {
 	log               logr.Logger
 	client            client.Client
@@ -91,7 +92,7 @@ func (o *Operation) InjectAPIReader(r client.Reader) error {
 	return nil
 }
 
-// Schema returns a kubernetes scheme
+// Scheme returns a kubernetes scheme
 func (o *Operation) Scheme() *runtime.Scheme {
 	return o.scheme
 }
@@ -102,13 +103,26 @@ func (o *Operation) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-// ComponentRepository returns a component blueprintsRegistry instance
+// ComponentsRegistry returns a component blueprintsRegistry instance
 func (o *Operation) ComponentsRegistry() ctf.ComponentResolver {
 	return o.componentRegistry
 }
 
-// InjectComponentRepository injects a component blueprintsRegistry into the operation
+// InjectComponentsRegistry injects a component blueprintsRegistry into the operation
 func (o *Operation) InjectComponentsRegistry(c ctf.ComponentResolver) error {
 	o.componentRegistry = c
+	return nil
+}
+
+// ComponentRegistryInjector is an interface definition to inject a component registry
+type ComponentRegistryInjector interface {
+	InjectComponentsRegistry(c ctf.ComponentResolver) error
+}
+
+// InjectComponentsRegistryInto is a helper function that tries to inject a component resolver into a struct with a component registry interface
+func InjectComponentsRegistryInto(object interface{}, c ctf.ComponentResolver) error {
+	if inj, ok := object.(ComponentRegistryInjector); ok {
+		return inj.InjectComponentsRegistry(c)
+	}
 	return nil
 }

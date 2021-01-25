@@ -4,7 +4,7 @@
   "definitions": {
     "LandscaperConfiguration": {
       "required": [
-        "registries"
+        "registry"
       ],
       "properties": {
         "kind": {
@@ -21,7 +21,7 @@
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
         },
-        "registries": {
+        "registry": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/RegistryConfiguration"
         }

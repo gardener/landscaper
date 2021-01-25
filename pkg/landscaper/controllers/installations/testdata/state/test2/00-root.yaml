@@ -12,7 +12,7 @@ metadata:
   - finalizer.landscaper.gardener.cloud
 spec:
 
-  blueprint:
+  componentDescriptor:
     ref:
       repositoryContext:
         type: local
@@ -20,6 +20,9 @@ spec:
       version: 1.0.0
       componentName: example.com/root
       kind: localResource
+
+  blueprint:
+    ref:
       resourceName: root
 
   imports:

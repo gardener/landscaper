@@ -1,10 +1,11 @@
 # Kubernetes Manifest Deployer
 
-The kubernetes manifest deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/kubernetes-manifest`.
-It deploys the configured kubernetes manifest into the target cluster.
+The kubernetes manifest deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/kubernetes-manifest`. It deploys the configured kubernetes manifest into the target cluster.
 
 ### Configuration
+
 This sections describes the provider specific configuration
+
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: DeployItem
@@ -34,7 +35,6 @@ spec:
         data:
           config: abc
     - ...
-    
 ```
 
 __Policy__:
@@ -44,9 +44,10 @@ __Policy__:
 - `keep`: create, update
 - `ignore`: forget
 
-
 ### Status
+
 This section describes the provider specific status of the resource
+
 ```yaml
 status:
   providerStatus:

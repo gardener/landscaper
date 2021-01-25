@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
+	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
@@ -56,14 +57,41 @@ var _ = Describe("GetChart", func() {
 		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
 		Expect(err).ToNot(HaveOccurred())
 
-		ref := &lsv1alpha1.RemoteBlueprintReference{}
-		ref.RepositoryContext = &cdv2.RepositoryContext{
+		ref := &helmv1alpha1.RemoteChartReference{}
+		ref.Reference = &lsv1alpha1.ComponentDescriptorReference{}
+		ref.Reference.RepositoryContext = &cdv2.RepositoryContext{
 			Type:    cdv2.OCIRegistryType,
 			BaseURL: "eu.gcr.io/gardener-project/landscaper/tutorials/components",
 		}
-		ref.ComponentName = "github.com/gardener/landscaper/ingress-nginx"
-		ref.Version = "v0.2.1"
+		ref.Reference.ComponentName = "github.com/gardener/landscaper/ingress-nginx"
+		ref.Reference.Version = "v0.2.1"
 		ref.ResourceName = "ingress-nginx-chart"
+		chartAccess := &helmv1alpha1.Chart{
+			FromResource: ref,
+		}
+
+		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+	})
+
+	It("should resolve a chart from an inline component descriptor", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+		Expect(err).ToNot(HaveOccurred())
+
+		file, err := ioutil.ReadFile("./testdata/01-component-descriptor.yaml")
+		Expect(err).ToNot(HaveOccurred())
+
+		inline := &cdv2.ComponentDescriptor{}
+		err = yaml.Unmarshal(file, &inline)
+		Expect(err).ToNot(HaveOccurred())
+
+		ref := &helmv1alpha1.RemoteChartReference{}
+		ref.Inline = inline
+		ref.ResourceName = "ingress-nginx-chart"
+
 		chartAccess := &helmv1alpha1.Chart{
 			FromResource: ref,
 		}

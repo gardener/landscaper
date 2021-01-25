@@ -97,6 +97,26 @@ var _ = Describe("Constructor", func() {
 		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
 	})
 
+	It("should fetch an inline blueprint from a DeployItem's configuration and write them to the content path", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/02-di-inline-blueprint.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(info).To(HaveLen(1))
+		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
+	})
+
 	It("should fetch component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
@@ -114,6 +134,74 @@ var _ = Describe("Constructor", func() {
 		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
 
+		cd := &cdv2.ComponentDescriptorList{}
+		Expect(codec.Decode(data, cd)).To(Succeed())
+		Expect(cd.Components).To(HaveLen(1))
+	})
+
+	It("should fetch an inline component descriptor from DeployItem's configuration and write them to the component descriptor path", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/03-di-inline-cd.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
+		Expect(err).ToNot(HaveOccurred())
+
+		cd := &cdv2.ComponentDescriptorList{}
+		Expect(codec.Decode(data, cd)).To(Succeed())
+		Expect(cd.Components).To(HaveLen(1))
+	})
+
+	It("should fetch an inline blueprint from a DeployItem's configuration with no Component Descriptor at all and write them to the content path", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/04-di-inline-bp-no-cd.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(info).To(HaveLen(1))
+		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
+	})
+
+	It("should fetch an inline blueprint and an inline Component Descriptor from a DeployItem's configuration and write them to the content path", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+		opts := &options{}
+		opts.Complete(ctx)
+		memFs := memoryfs.New()
+
+		file, err := ioutil.ReadFile("./testdata/05-di-inline-bp-inline-cd.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
+		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
+		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+
+		info, err := vfs.ReadDir(memFs, container.ContentPath)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(info).To(HaveLen(1))
+		Expect(info[0].Name()).To(Equal(v1alpha1.BlueprintFileName))
+
+		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
+		Expect(err).ToNot(HaveOccurred())
 		cd := &cdv2.ComponentDescriptorList{}
 		Expect(codec.Decode(data, cd)).To(Succeed())
 		Expect(cd.Components).To(HaveLen(1))
