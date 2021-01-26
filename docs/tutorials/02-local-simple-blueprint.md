@@ -1,12 +1,12 @@
 # Develop a simple Blueprint with local artifacts
 
-In the first tutorial a nginx helm chart has been deployed using a blueprint and a helm chart that are uploaded as separate artifacts to the remote repository.
+In the first tutorial a nginx helm chart has been deployed using a blueprint and a helm chart that have been uploaded as separate artifacts to the remote repository.
 
 But with the component-descriptor it is also possible to have local artifacts which means that the blueprint, the helm chart and the component-descriptor are stored as one artifact. 
 This simplifies the build and transport of the component as only one artifact has to be maintained.
 
 This tutorial uses the same resources as created in the [first tutorial](./01-create-simple-blueprint.md) but now the artifacts are completely self-contained.
-For detailed information see [the blueprint-installation-relationship](../concepts/InstallationBlueprintRelationship.md).
+For detailed information see [the blueprint-installation-relationship](../concepts/InstallationBlueprintRelationship.md#2-local-oci-blob).
 
 __Prerequisites__:
 - Component-cli (see https://github.com/gardener/component-cli)
@@ -32,7 +32,7 @@ Structure:
 ### Step 1: Define the Component Descriptor
 
 A component descriptor contains all resources that are used by the application installation.
-Resources are in this example the ingress-nginx helm chart but could also be `oci images` or even `node modules`.
+In this example the ingress-nginx helm chart is such a resource. Other valid resources could be an `oci image` or even `node modules`.
 
 For more information about the component descriptor and the usage of the different fields see the [component descriptor docs](https://github.com/gardener/component-spec).
 
@@ -50,14 +50,14 @@ component:
   resources: []
 ```
 
-The basic component ist defined, so now the artifacts that are needed for the deployment (helm chart and blueprints) are added to the component descriptor and uploaded to the oci registry.
+The basic component ist defined, so now the artifacts that are needed for the deployment (helm chart and blueprints) are added to the component descriptor as resources and uploaded to the oci registry.
 
 ### Step 2: Add helm chart as local resource to the component descriptor
 
 Local resources can be added to the component descriptor by using the `component-cli`.
 See the [component-cli](https://github.com/gardener/component-cli) docs for more information.
 
-Now the previously downloaded nginx ingress helm chart of the first tutorial is used.
+For this step, the nginx ingress helm chart downloaded as part of the first tutorial is used again.
 Expand the following details section for the download instructions. (Also the example chart in the resources folder can be used)
 <details>
 
@@ -74,7 +74,7 @@ helm pull ingress-nginx/ingress-nginx --untar --destination /tmp/chart
 
 The helm chart is now downloaded and stored on the machine.
 Then the resource that should be added to component descriptor has to be defined in a `helm-resource.yaml` configuration file.
-This configuration file contains a resource definition with the input to the previously created helm chart.<br>
+This configuration file contains a resource definition which takes the previously created helm char as `input`.<br>
 :warning: Note that the paths used in this configuration file are relative to the location of the `helm-resource.yaml`-file.
 :information_source: The `resources.yaml` can be a multidoc yaml see section `9.2` in the [yaml spec](https://yaml.org/spec/1.2/spec.html#id2800132). See the [here](./resources/local-ingress-nginx/resources.yaml) for an example.
 ```yaml
@@ -109,7 +109,7 @@ A CTF is of the following form
 
 </details>
 
-With the command above, the helm resource defined in the `helm-resource.yaml` has been added to the component descriptor as `localOCIBlob` and the defined input files/directories are packaged and copied to the blobs directory, which contains now 1 file.<br>
+With the command above, the helm resource defined in the `helm-resource.yaml` has been added to the component descriptor as `localFilesystemBlob` and the defined input files/directories are packaged and copied to the blobs directory, which contains now 1 file.<br>
 
 ```yaml
 meta:
@@ -136,7 +136,7 @@ component:
 
 ### Step 3: Create the Blueprint and add it as local artifact
 
-The artifact that should be deployed is now added to the component descriptor and can be consumed by the blueprint.
+The artifact that should be deployed is now part of the component descriptor and can be consumed by the blueprint.
 
 The blueprint of the previous tutorial is reused. Check it out for more details.
 As the location of the helm chart has changed from an independent artifact to a local oci blob, also the reference to the helm chart in the blueprint has to be adjusted.
@@ -187,7 +187,7 @@ component-cli ca resources ./docs/tutorials/resources/local-ingress-nginx \
   -f ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 ```
 
-The blueprint has now been added to the component descriptor as `localOCIBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.<br>
+With his, the blueprint has been added to the component descriptor as `localFilesystemBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.<br>
 
 ```yaml
 meta:
