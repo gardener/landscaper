@@ -121,6 +121,15 @@ type codec struct {
 	validationFunc KnownTypeValidationFunc
 }
 
+// NewDefaultCodec creates a new default typed object codec.
+func NewDefaultCodec() TypedObjectCodec {
+	return &codec{
+		defaultCodec: DefaultJSONTypedObjectCodec,
+		knownTypes:   KnownAccessTypes,
+	}
+}
+
+// NewCodec creates a new typed object codec.
 func NewCodec(knownTypes KnownTypes, defaultCodec TypedObjectCodec, validationFunc KnownTypeValidationFunc) TypedObjectCodec {
 	if knownTypes == nil {
 		knownTypes = KnownAccessTypes

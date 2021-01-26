@@ -207,7 +207,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 			return nil, fmt.Errorf("oci blob layer with digest %s not found in component descriptor manifest", localOCIAccess.Digest)
 		}
 
-		if writer == nil {
+		if writer != nil {
 			if err := b.client.Fetch(ctx, b.ref, *blobLayer, writer); err != nil {
 				return nil, err
 			}
@@ -224,7 +224,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 			return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 		}
 
-		if writer == nil {
+		if writer != nil {
 			if err := b.client.Fetch(ctx, b.ref, ocispecv1.Descriptor{
 				MediaType: ociBlobAccess.MediaType,
 				Digest:    digest.Digest(ociBlobAccess.Digest),

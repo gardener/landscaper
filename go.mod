@@ -8,8 +8,8 @@ require (
 	github.com/alecthomas/jsonschema v0.0.0-20200530073317-71f438968921
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
-	github.com/gardener/component-cli v0.4.1-0.20210115155235-6f6c40d7d28a
-	github.com/gardener/component-spec/bindings-go v0.0.27
+	github.com/gardener/component-cli v0.6.0
+	github.com/gardener/component-spec/bindings-go v0.0.30
 	github.com/gardener/landscaper/apis v0.0.0
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0

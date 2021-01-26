@@ -232,7 +232,8 @@ func (c *client) pushContent(ctx context.Context, pusher remotes.Pusher, desc oc
 	}
 	defer r.Close()
 
-	writer, err := pusher.Push(c.knownMediaTypesCtx(ctx), desc)
+	knownMediaTypes := append(c.knownMediaTypes.List(), desc.MediaType)
+	writer, err := pusher.Push(AddKnownMediaTypesToCtx(ctx, knownMediaTypes), desc)
 	if err != nil {
 		if errdefs.IsAlreadyExists(err) {
 			return nil
@@ -243,8 +244,9 @@ func (c *client) pushContent(ctx context.Context, pusher remotes.Pusher, desc oc
 	return content.Copy(ctx, writer, r, desc.Size, desc.Digest)
 }
 
-func (c *client) knownMediaTypesCtx(ctx context.Context) context.Context {
-	for _, mediaType := range c.knownMediaTypes.List() {
+// AddKnownMediaTypesToCtx adds a list of known media types to the context
+func AddKnownMediaTypesToCtx(ctx context.Context, mediaTypes []string) context.Context {
+	for _, mediaType := range mediaTypes {
 		ctx = remotes.WithMediaTypeKeyPrefix(ctx, mediaType, "custom")
 	}
 	return ctx
