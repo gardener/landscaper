@@ -28,7 +28,7 @@ type Secrets struct {
 }
 
 // Deploy generates and deploys the secrets into the given namespace, taking into account existing secrets.
-func (s *Secrets) Deploy(ctx context.Context, c client.Client, namespace string) (map[string]*corev1.Secret, error) {
+func (s *Secrets) Deploy(ctx context.Context, c client.Client, namespace string, pkcs int) (map[string]*corev1.Secret, error) {
 	// Get existing secrets in the namespace
 	existingSecrets, err := getSecrets(ctx, c, namespace)
 	if err != nil {
@@ -36,7 +36,7 @@ func (s *Secrets) Deploy(ctx context.Context, c client.Client, namespace string)
 	}
 
 	// Generate CAs
-	_, cas, err := GenerateCertificateAuthorities(c, existingSecrets, s.CertificateSecretConfigs, namespace)
+	_, cas, err := GenerateCertificateAuthorities(c, existingSecrets, s.CertificateSecretConfigs, namespace, pkcs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not generate CA secrets in namespace '%s'", namespace)
 	}

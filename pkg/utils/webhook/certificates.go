@@ -37,9 +37,15 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 		err        error
 	)
 
+	caConfig := &certificates.CertificateSecretConfig{
+		CommonName: "webhook-ca",
+		CertType:   certificates.CACert,
+		PKCS:       certificates.PKCS8,
+	}
+
 	// If the namespace is not set then the webhook controller is running locally. We simply generate a new certificate in this case.
 	if len(namespace) == 0 {
-		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name)
+		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -60,7 +66,7 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 		}
 
 		// The secret was not found, let's generate new certificates and store them in the secret afterwards.
-		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name)
+		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -81,19 +87,14 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 	}
 
 	// The secret has been found and we are now trying to read the stored certificate inside it.
-	caCert, serverCert, err = loadExistingCAAndServerCert(secret.Data)
+	caCert, serverCert, err = loadExistingCAAndServerCert(secret.Data, caConfig.PKCS)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error reading data of secret %s/%s", namespace, certSecretName)
 	}
 	return writeCertificates(certDir, caCert, serverCert)
 }
 
-func generateNewCAAndServerCert(namespace, name string) (*certificates.Certificate, *certificates.Certificate, error) {
-	caConfig := &certificates.CertificateSecretConfig{
-		CommonName: "webhook-ca",
-		CertType:   certificates.CACert,
-	}
-
+func generateNewCAAndServerCert(namespace, name string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
 	caCert, err := caConfig.GenerateCertificate()
 	if err != nil {
 		return nil, nil, err
@@ -116,6 +117,7 @@ func generateNewCAAndServerCert(namespace, name string) (*certificates.Certifica
 		IPAddresses: ipAddresses,
 		CertType:    certificates.ServerCert,
 		SigningCA:   caCert,
+		PKCS:        caConfig.PKCS,
 	}
 
 	serverCert, err := serverConfig.GenerateCertificate()
@@ -126,7 +128,7 @@ func generateNewCAAndServerCert(namespace, name string) (*certificates.Certifica
 	return caCert, serverCert, nil
 }
 
-func loadExistingCAAndServerCert(data map[string][]byte) (*certificates.Certificate, *certificates.Certificate, error) {
+func loadExistingCAAndServerCert(data map[string][]byte, pkcs int) (*certificates.Certificate, *certificates.Certificate, error) {
 	secretDataCACert, ok := data[certificates.DataKeyCertificateCA]
 	if !ok {
 		return nil, nil, fmt.Errorf("secret does not contain %s key", certificates.DataKeyCertificateCA)
@@ -135,7 +137,7 @@ func loadExistingCAAndServerCert(data map[string][]byte) (*certificates.Certific
 	if !ok {
 		return nil, nil, fmt.Errorf("secret does not contain %s key", certificates.DataKeyPrivateKeyCA)
 	}
-	caCert, err := certificates.LoadCertificate("", secretDataCAKey, secretDataCACert)
+	caCert, err := certificates.LoadCertificate("", secretDataCAKey, secretDataCACert, pkcs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not load ca certificate")
 	}
@@ -148,7 +150,7 @@ func loadExistingCAAndServerCert(data map[string][]byte) (*certificates.Certific
 	if !ok {
 		return nil, nil, fmt.Errorf("secret does not contain %s key", certificates.DataKeyPrivateKey)
 	}
-	serverCert, err := certificates.LoadCertificate("", secretDataServerKey, secretDataServerCert)
+	serverCert, err := certificates.LoadCertificate("", secretDataServerKey, secretDataServerCert, pkcs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not load server certificate")
 	}

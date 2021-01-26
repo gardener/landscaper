@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,9 +46,9 @@ const (
 	DataKeyPrivateKeyCA = "ca.key"
 
 	// PKCS1 certificate format
-	PKCS1 = iota
+	PKCS1 = 1
 	// PKCS8 certificate format
-	PKCS8
+	PKCS8 = 8
 )
 
 // CertificateSecretConfig contains the specification a to-be-generated CA, server, or client certificate.
@@ -193,6 +194,8 @@ func (s *CertificateSecretConfig) GenerateCertificate() (*Certificate, error) {
 			if err != nil {
 				return nil, err
 			}
+		} else {
+			return nil, errors.Errorf("invalid PKCS value: %v", s.PKCS)
 		}
 
 		certificateObj.PrivateKey = privateKey
@@ -227,8 +230,16 @@ func (c *Certificate) SecretData() map[string][]byte {
 
 // LoadCertificate takes a byte slice representation of a certificate and the corresponding private key, and returns its de-serialized private
 // key, certificate template and PEM certificate which can be used to sign other x509 certificates.
-func LoadCertificate(name string, privateKeyPEM, certificatePEM []byte) (*Certificate, error) {
-	privateKey, err := DecodePrivateKey(privateKeyPEM)
+func LoadCertificate(name string, privateKeyPEM, certificatePEM []byte, pkcs int) (*Certificate, error) {
+	var privateKey *rsa.PrivateKey
+	var err error
+	if pkcs == PKCS1 {
+		privateKey, err = DecodePrivateKey(privateKeyPEM)
+	} else if pkcs == PKCS8 {
+		privateKey, err = DecodeRSAPrivateKeyFromPKCS8(privateKeyPEM)
+	} else {
+		err = errors.New("only PKCS1 and PKCS8 are supported")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -249,13 +260,13 @@ func LoadCertificate(name string, privateKeyPEM, certificatePEM []byte) (*Certif
 }
 
 // LoadCAFromSecret loads a CA certificate from an existing Kubernetes secret object. It returns the secret, the Certificate and an error.
-func LoadCAFromSecret(k8sClient client.Client, namespace, name string) (*corev1.Secret, *Certificate, error) {
+func LoadCAFromSecret(k8sClient client.Client, namespace, name string, pkcs int) (*corev1.Secret, *Certificate, error) {
 	secret := &corev1.Secret{}
 	if err := k8sClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: namespace}, secret); err != nil {
 		return nil, nil, err
 	}
 
-	certificate, err := LoadCertificate(name, secret.Data[DataKeyPrivateKeyCA], secret.Data[DataKeyCertificateCA])
+	certificate, err := LoadCertificate(name, secret.Data[DataKeyPrivateKeyCA], secret.Data[DataKeyCertificateCA], pkcs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -340,8 +351,8 @@ func generateCA(k8sClusterClient client.Client, config *CertificateSecretConfig,
 	return secret, certificate, nil
 }
 
-func loadCA(name string, existingSecret *corev1.Secret) (*corev1.Secret, *Certificate, error) {
-	certificate, err := LoadCertificate(name, existingSecret.Data[DataKeyPrivateKeyCA], existingSecret.Data[DataKeyCertificateCA])
+func loadCA(name string, existingSecret *corev1.Secret, pkcs int) (*corev1.Secret, *Certificate, error) {
+	certificate, err := LoadCertificate(name, existingSecret.Data[DataKeyPrivateKeyCA], existingSecret.Data[DataKeyCertificateCA], pkcs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -351,7 +362,7 @@ func loadCA(name string, existingSecret *corev1.Secret) (*corev1.Secret, *Certif
 // GenerateCertificateAuthorities get a map of wanted certificates and check If they exist in the existingSecretsMap based on the keys in the map. If they exist it get only the certificate from the corresponding
 // existing secret and makes a certificate DataInterface from the existing secret. If there is no existing secret contaning the wanted certificate, we make one certificate and with it we deploy in K8s cluster
 // a secret with that  certificate and then return the newly existing secret. The function returns a map of secrets contaning the wanted CA, a map with the wanted CA certificate and an error.
-func GenerateCertificateAuthorities(k8sClusterClient client.Client, existingSecretsMap map[string]*corev1.Secret, wantedCertificateAuthorities map[string]*CertificateSecretConfig, namespace string) (map[string]*corev1.Secret, map[string]*Certificate, error) {
+func GenerateCertificateAuthorities(k8sClusterClient client.Client, existingSecretsMap map[string]*corev1.Secret, wantedCertificateAuthorities map[string]*CertificateSecretConfig, namespace string, pkcs int) (map[string]*corev1.Secret, map[string]*Certificate, error) {
 	type caOutput struct {
 		secret      *corev1.Secret
 		certificate *Certificate
@@ -378,7 +389,7 @@ func GenerateCertificateAuthorities(k8sClusterClient client.Client, existingSecr
 		} else {
 			go func(name string, existingSecret *corev1.Secret) {
 				defer wg.Done()
-				secret, certificate, err := loadCA(name, existingSecret)
+				secret, certificate, err := loadCA(name, existingSecret, pkcs)
 				results <- &caOutput{secret, certificate, err}
 			}(name, existingSecret)
 		}
