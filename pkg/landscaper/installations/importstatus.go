@@ -7,7 +7,7 @@ package installations
 import (
 	"fmt"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // ImportStatus is the internal representation of all import status of a installation.

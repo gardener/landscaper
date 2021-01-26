@@ -11,10 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	containerinstall "github.com/gardener/landscaper/pkg/apis/deployer/container/install"
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
-	container1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1/validation"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	container1alpha1validation "github.com/gardener/landscaper/apis/deployer/container/v1alpha1/validation"
 )
 
 const (

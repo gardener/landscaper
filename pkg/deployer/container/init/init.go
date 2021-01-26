@@ -28,8 +28,8 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/credentials"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/pkg/kubernetes"

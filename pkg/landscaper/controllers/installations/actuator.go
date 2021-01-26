@@ -17,14 +17,14 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/cache"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
-	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/pkg/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -35,7 +35,7 @@ func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (rec
 	var sharedCache cache.Cache
 	if lsConfig.Registry.OCI != nil && lsConfig.Registry.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log, confighelper.ToOCICacheOptions(lsConfig.Registry.OCI.Cache)...)
+		sharedCache, err = cache.NewCache(log, utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache)...)
 		if err != nil {
 			return nil, err
 		}

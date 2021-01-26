@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	"github.com/gardener/landscaper/apis/deployer/container"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 

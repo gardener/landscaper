@@ -41,6 +41,9 @@
       "type": "object"
     },
     "OCIConfiguration": {
+      "required": [
+        "allowPlainHttp"
+      ],
       "properties": {
         "configFiles": {
           "items": {
@@ -51,6 +54,9 @@
         "cache": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCICacheConfiguration"
+        },
+        "allowPlainHttp": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false,

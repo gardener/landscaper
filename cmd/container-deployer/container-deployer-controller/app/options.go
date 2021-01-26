@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -89,6 +89,6 @@ func (o *options) parseConfigurationFile() (*containerv1alpha1.Configuration, er
 	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 		return nil, err
 	}
-
+	container.DefaultConfiguration(cfg)
 	return cfg, nil
 }

@@ -14,10 +14,10 @@ import (
 
 	"github.com/alecthomas/jsonschema"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 )
 
 func main() {

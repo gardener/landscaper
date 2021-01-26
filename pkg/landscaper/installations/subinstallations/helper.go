@@ -11,7 +11,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/pkg/errors"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )

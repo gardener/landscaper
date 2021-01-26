@@ -17,9 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/deployer/container"
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/container"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 )
 
 func AddActuatorToManager(hostMgr manager.Manager, landscaperMgr manager.Manager, config *containerv1alpha1.Configuration) error {

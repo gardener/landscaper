@@ -15,8 +15,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/apis/deployer/container"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/container"
 	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )

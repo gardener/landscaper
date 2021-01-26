@@ -56,5 +56,8 @@ landscaper:
       traits:
         version:
           preprocess: 'finalize'
+          git_tags:
+          - ref_template: 'refs/tags/{VERSION}'
+          - ref_template: 'refs/tags/api-{VERSION}'
         release:
           nextversion: 'bump_minor'

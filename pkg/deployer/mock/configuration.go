@@ -7,8 +7,8 @@ package helm
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	mockinstall "github.com/gardener/landscaper/pkg/apis/deployer/mock/install"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	mockinstall "github.com/gardener/landscaper/apis/deployer/mock/install"
 )
 
 // Type is the type name of the deployer.

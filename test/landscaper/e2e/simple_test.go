@@ -18,8 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"

@@ -13,10 +13,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/pkg/apis/core/install"
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
-	manifestv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/manifest/v1alpha1"
+	"github.com/gardener/landscaper/apis/core/install"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
@@ -76,7 +76,7 @@ func (o *options) run(ctx context.Context) error {
 			config := &containerv1alpha1.Configuration{
 				OCI: o.config.Registry.OCI,
 			}
-			containerv1alpha1.SetDefaults_Configuration(config)
+			containerctlr.DefaultConfiguration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}

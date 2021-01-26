@@ -84,7 +84,7 @@ e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https:/
 <code>localTypes</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">
-map[string]github.com/gardener/landscaper/pkg/apis/core/v1alpha1.JSONSchemaDefinition
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition
 </a>
 </em>
 </td>

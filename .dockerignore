@@ -3,6 +3,7 @@
 !.git
 !.dockerignore
 !cmd/
+!apis/
 !pkg/
 !hack/
 !test/

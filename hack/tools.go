@@ -13,6 +13,5 @@ import (
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/ahmetb/gen-crd-api-reference-docs"
 
-	_ "k8s.io/code-generator"
 	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

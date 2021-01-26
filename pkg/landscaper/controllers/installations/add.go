@@ -8,8 +8,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/pkg/apis/config"
-	"github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // AddActuatorToManager register the installation in a manager.

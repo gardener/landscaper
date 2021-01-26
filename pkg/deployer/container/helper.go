@@ -5,13 +5,32 @@
 package container
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
-	containerv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/container/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/version"
 )
+
+// DefaultConfiguration sets the defaults for the container deployer configuration.
+func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
+	if len(obj.Namespace) == 0 {
+		obj.Namespace = metav1.NamespaceDefault
+	}
+	if len(obj.DefaultImage.Image) == 0 {
+		obj.DefaultImage.Image = "ubuntu:18.04"
+	}
+	if len(obj.InitContainer.Image) == 0 {
+		obj.InitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-init:%s", version.Get().GitVersion)
+	}
+	if len(obj.WaitContainer.Image) == 0 {
+		obj.WaitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-wait:%s", version.Get().GitVersion)
+	}
+}
 
 // DecodeProviderStatus decodes a RawExtension to a container status.
 func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {

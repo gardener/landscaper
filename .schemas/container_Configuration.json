@@ -4,6 +4,7 @@
   "definitions": {
     "Configuration": {
       "required": [
+        "namespace",
         "defaultImage",
         "initContainer",
         "waitContainer"
@@ -18,6 +19,9 @@
         "oci": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCIConfiguration"
+        },
+        "namespace": {
+          "type": "string"
         },
         "targetSelector": {
           "items": {
@@ -56,6 +60,9 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "imagePullPolicy": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -77,6 +84,9 @@
       "type": "object"
     },
     "OCIConfiguration": {
+      "required": [
+        "allowPlainHttp"
+      ],
       "properties": {
         "configFiles": {
           "items": {
@@ -87,6 +97,9 @@
         "cache": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/OCICacheConfiguration"
+        },
+        "allowPlainHttp": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false,

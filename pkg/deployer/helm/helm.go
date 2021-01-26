@@ -22,12 +22,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	confighelper "github.com/gardener/landscaper/pkg/apis/config/helper"
-	lsv1alpha1 "github.com/gardener/landscaper/pkg/apis/core/v1alpha1"
-	helminstall "github.com/gardener/landscaper/pkg/apis/deployer/helm/install"
-	helmv1alpha1 "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1"
-	helmv1alpha1validation "github.com/gardener/landscaper/pkg/apis/deployer/helm/v1alpha1/validation"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
+	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -93,7 +93,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), confighelper.WithConfiguration(h.Configuration.OCI))
+	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), utils.WithConfiguration(h.Configuration.OCI))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to build oci client: %w", err)
 	}
