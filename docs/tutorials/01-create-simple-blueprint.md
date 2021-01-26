@@ -9,7 +9,7 @@ For this tutorial, we are going to use the [NGINX ingress controller](https://gi
 For this tutorial, you will need:
 
 - the Helm (v3) commandline tool (see https://helm.sh/docs/intro/install/)
-- an OCI compatible registry (e.g. GCR or Harbor)
+- [OPTIONAL] an OCI compatible registry (e.g. GCR or Harbor)
 - a Kubernetes Cluster (better use two different clusters: one which Landscaper runs in and one that NGINX gets installed into)
 
 You will also need the `landscaper-cli` and `component-cli` command line tools. Their installation is described [here](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) and [here](https://github.com/gardener/component-cli) respectively.
@@ -672,10 +672,10 @@ items:
 ```
 
 ## Summary
-- A Blueprint has been created that describes how an nginx ingress can be deployed into a Kubernetes cluster.
-- A Component Descriptor has been created that contains the Blueprint and another external resources as resources.
-- The Blueprint and the Cmponent Descriptor are uploaded to the OCI registry.
-- An _Installation_ has been defined and applied to the cluster which resulted in the deployed nginx application. 
+- A blueprint has been created that describes how a nginx ingress can be deployed into a kubernetes cluster.
+- A component descriptor has been created that contains the blueprint and another external resources as local resources with access type `localOciBlob`.
+- The blueprint and the component descriptor are uploaded to the oci registry.
+- A installation has been defined and applied to the cluster which resulted in teh deployed nginx application.
 
 ## Up Next
-In the [next tutorial](./02-simple-import.md), another application is deployed that used the exported ingressClass data.
+In the [next tutorial](./02-local-simple-blueprint.md), the same blueprint is deployed but using only component local artifacts.

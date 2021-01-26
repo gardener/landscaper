@@ -103,17 +103,17 @@ func ValidateFromResource(fldPath *field.Path, resourceRef *helmv1alpha1.RemoteC
 
 	if resourceRef.Reference == nil {
 		allErrs = append(allErrs, field.Required(fldPath.Child("ref"), "must not be empty"))
-	}
+	} else {
+		if resourceRef.Reference.RepositoryContext == nil {
+			allErrs = append(allErrs, field.Required(fldPath.Child("repositoryContext"), "must not be empty"))
+		}
 
-	if resourceRef.Reference.RepositoryContext == nil {
-		allErrs = append(allErrs, field.Required(fldPath.Child("repositoryContext"), "must not be empty"))
-	}
-
-	if len(resourceRef.Reference.ComponentName) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("componentName"), "must not be empty"))
-	}
-	if len(resourceRef.Reference.Version) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must not be empty"))
+		if len(resourceRef.Reference.ComponentName) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("componentName"), "must not be empty"))
+		}
+		if len(resourceRef.Reference.Version) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must not be empty"))
+		}
 	}
 
 	return allErrs

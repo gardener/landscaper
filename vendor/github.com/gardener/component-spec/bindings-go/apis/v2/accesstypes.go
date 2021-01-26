@@ -152,12 +152,13 @@ func (a *LocalOCIBlobAccess) SetData(bytes []byte) error {
 const LocalFilesystemBlobType = "localFilesystemBlob"
 
 // NewLocalFilesystemBlobAccess creates a new localFilesystemBlob accessor.
-func NewLocalFilesystemBlobAccess(path string) TypedObjectAccessor {
+func NewLocalFilesystemBlobAccess(path string, mediaType string) TypedObjectAccessor {
 	return &LocalFilesystemBlobAccess{
 		ObjectType: ObjectType{
 			Type: LocalFilesystemBlobType,
 		},
-		Filename: path,
+		Filename:  path,
+		MediaType: mediaType,
 	}
 }
 
@@ -167,6 +168,8 @@ type LocalFilesystemBlobAccess struct {
 	// Filename is the name of the blob in the local filesystem.
 	// The blob is expected to be at <fs-root>/blobs/<name>
 	Filename string `json:"filename"`
+	// MediaType is the media type of the object this filename refers to.
+	MediaType string `json:"mediaType,omitempty"`
 }
 
 func (a LocalFilesystemBlobAccess) GetData() ([]byte, error) {

@@ -1,0 +1,10 @@
+---
+type: helm
+name: ingress-nginx-chart
+version: v0.1.0
+relation: external
+input:
+  type: "dir"
+  path: ./chart
+  compress: true
+...

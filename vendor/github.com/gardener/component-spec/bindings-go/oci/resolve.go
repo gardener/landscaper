@@ -57,11 +57,14 @@ func OCIRef(repoCtx v2.RepositoryContext, name, version string) (string, error) 
 type Resolver struct {
 	repoCtx v2.RepositoryContext
 	client  Client
+	decodeOpts []codec.DecodeOption
 }
 
 // NewResolver creates a new resolver.
-func NewResolver() *Resolver {
-	return &Resolver{}
+func NewResolver(decodeOpts ...codec.DecodeOption) *Resolver {
+	return &Resolver{
+		decodeOpts: decodeOpts,
+	}
 }
 
 // WithRepositoryContext sets the repository context of the resolver
@@ -107,15 +110,19 @@ func (r *Resolver) Resolve(ctx context.Context, name, version string) (*v2.Compo
 	}
 
 	componentDescriptorBytes := componentDescriptorLayerBytes.Bytes()
-	if componentDescriptorLayer.MediaType == ComponentDescriptorTarMimeType {
+	switch componentDescriptorLayer.MediaType {
+	case ComponentDescriptorTarMimeType, LegacyComponentDescriptorTarMimeType:
 		componentDescriptorBytes, err = ReadComponentDescriptorFromTar(&componentDescriptorLayerBytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to read component descriptor from tar: %w", err)
 		}
+	case ComponentDescriptorJSONMimeType:
+	default:
+		return nil, nil, fmt.Errorf("unsupported media type %q", componentDescriptorLayer.MediaType)
 	}
 
 	cd := &v2.ComponentDescriptor{}
-	if err := codec.Decode(componentDescriptorBytes, cd); err != nil {
+	if err := codec.Decode(componentDescriptorBytes, cd, r.decodeOpts...); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode component descriptor: %w", err)
 	}
 	return cd, newBlobResolver(r.client, ref, manifest, cd), nil
@@ -139,7 +146,8 @@ func (r *Resolver) ToComponentArchive(ctx context.Context, name, version string,
 }
 
 func (r *Resolver) getComponentConfig(ctx context.Context, ref string, manifest *ocispecv1.Manifest) (*ComponentDescriptorConfig, error) {
-	if manifest.Config.MediaType != ComponentDescriptorConfigMimeType {
+	if manifest.Config.MediaType != ComponentDescriptorConfigMimeType &&
+		manifest.Config.MediaType != ComponentDescriptorLegacyConfigMimeType {
 		return nil, fmt.Errorf("unknown component config type '%s' expected '%s'", manifest.Config.MediaType, ComponentDescriptorConfigMimeType)
 	}
 
@@ -199,7 +207,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 			return nil, fmt.Errorf("oci blob layer with digest %s not found in component descriptor manifest", localOCIAccess.Digest)
 		}
 
-		if writer == nil {
+		if writer != nil {
 			if err := b.client.Fetch(ctx, b.ref, *blobLayer, writer); err != nil {
 				return nil, err
 			}
@@ -216,7 +224,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 			return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 		}
 
-		if writer == nil {
+		if writer != nil {
 			if err := b.client.Fetch(ctx, b.ref, ocispecv1.Descriptor{
 				MediaType: ociBlobAccess.MediaType,
 				Digest:    digest.Digest(ociBlobAccess.Digest),

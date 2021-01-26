@@ -120,6 +120,9 @@ func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 }
 
 func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	if len(deployItem.Status.Phase) == 0 {
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+	}
 	// set failed state if the last error lasts for more than 5 minutes
 	defer func() {
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(

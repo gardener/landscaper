@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+deployExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: deploy
+      type: landscaper.gardener.cloud/helm
+      target:
+        name: {{ .imports.cluster.metadata.name }}
+        namespace: {{ .imports.cluster.metadata.namespace }}
+      config:
+        apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+
+        chart:
+          fromResource: # will fetch the helm chart from component descriptor resource of type helm chart
+    {{ toYaml .componentDescriptorDef | indent 8 }}
+            resourceName: ingress-nginx-chart
+
+        updateStrategy: patch
+
+        name: test
+        namespace: default
+
+        exportsFromManifests:
+        - key: ingressClass
+          jsonPath: .Values.controller.ingressClass
+
+exportExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    exports:
+      ingressClass: {{ .values.deployitems.deploy.ingressClass }}
+
+exports:
+- name: ingressClass
+  schema:
+    type: string

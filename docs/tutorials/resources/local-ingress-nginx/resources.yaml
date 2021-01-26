@@ -1,0 +1,21 @@
+---
+type: blueprint
+name: ingress-nginx-blueprint
+version: v0.1.0
+relation: local
+input:
+  type: "dir"
+  path: "./blueprint"
+  compress: true
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+...
+---
+type: helm
+name: ingress-nginx-chart
+version: v0.1.0
+relation: external
+input:
+  type: "dir"
+  path: ./chart
+  compress: true
+...

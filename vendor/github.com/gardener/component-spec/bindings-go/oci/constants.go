@@ -18,6 +18,10 @@ package oci
 // that are stored as tar.
 const ComponentDescriptorTarMimeType = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+yaml+tar"
 
+// LegacyComponentDescriptorTarMimeType is the legacy mimetype for component-descriptor-blobs
+// that are stored as tar.
+const LegacyComponentDescriptorTarMimeType = "application/vnd.oci.gardener.cloud.cnudie.component-descriptor.config.v2+yaml+tar"
+
 // ComponentDescriptorJSONMimeType is the mimetype for component-descriptor-blobs
 // that are stored as JSON.
 const ComponentDescriptorJSONMimeType = "application/vnd.gardener.cloud.cnudie.component-descriptor.v2+json"
@@ -33,3 +37,6 @@ var ComponentDescriptorMimeType = []string{
 
 // ComponentDescriptorConfigMimeType is the mimetype for component-descriptor-oci-cfg-blobs.
 const ComponentDescriptorConfigMimeType = "application/vnd.gardener.cloud.cnudie.component.config.v1+json"
+
+// ComponentDescriptorLegacyConfigMimeType is the mimetype for the legacy component-descriptor-oci-cfg-blobs
+const ComponentDescriptorLegacyConfigMimeType = "application/vnd.oci.gardener.cloud.cnudie.component-descriptor-metadata.config.v2+json"

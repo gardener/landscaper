@@ -106,7 +106,7 @@ github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
 github.com/gardener/component-cli/ociclient/credentials
 github.com/gardener/component-cli/ociclient/mock
-# github.com/gardener/component-spec/bindings-go v0.0.0-20210115163314-4b901541b394
+# github.com/gardener/component-spec/bindings-go v0.0.28-0.20210119120517-8a3773c214e9
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
 github.com/gardener/component-spec/bindings-go/apis/v2/cdutils
