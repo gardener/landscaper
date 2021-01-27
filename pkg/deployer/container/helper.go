@@ -18,12 +18,7 @@ import (
 
 // DefaultConfiguration sets the defaults for the container deployer configuration.
 func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
-	if len(obj.Namespace) == 0 {
-		obj.Namespace = metav1.NamespaceDefault
-	}
-	if len(obj.DefaultImage.Image) == 0 {
-		obj.DefaultImage.Image = "ubuntu:18.04"
-	}
+	containerv1alpha1.SetDefaults_Configuration(obj)
 	if len(obj.InitContainer.Image) == 0 {
 		obj.InitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-init:%s", version.Get().GitVersion)
 	}
