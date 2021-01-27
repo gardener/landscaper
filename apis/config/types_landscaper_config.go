@@ -25,6 +25,9 @@ type LandscaperConfiguration struct {
 	// Metrics allows to configure how metrics are exposed
 	//+optional
 	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
+	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
+	// +optional
+	CrdManagement *CrdManagementConfiguration `json:"crdManagement,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
@@ -73,5 +76,16 @@ type OCICacheConfiguration struct {
 
 // MetricsConfiguration allows to configure how metrics are exposed
 type MetricsConfiguration struct {
+	// Port specifies the port on which metrics are published
 	Port int32 `json:"port"`
+}
+
+// CrdManagementConfiguration contains the configuration of the CRD management
+type CrdManagementConfiguration struct {
+	// DeployCustomResourceDefinitions specifies if CRDs should be deployed
+	DeployCustomResourceDefinitions bool `json:"deployCrd"`
+
+	// ForceUpdate specifies whether existing CRDs should be updated
+	// +optional
+	ForceUpdate bool `json:"forceUpdate,omitempty"`
 }

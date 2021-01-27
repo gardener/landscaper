@@ -8,6 +8,9 @@
 
 landscaper:
 
+  crdManagement:
+    deployCrd: true
+#   forceUpdate: true
   registryConfig: # contains optional oci secrets
     cache: {}
 #      useInMemoryOverlay: false

@@ -11,4 +11,4 @@ import yaml
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
-sed 's/\s*type: Any/ {}/g' -E ${PROJECT_ROOT}/crd/* | grep -C 4 additionalItems:
+sed 's/\s*type: Any/ {}/g' -E ${PROJECT_ROOT}/pkg/landscaper/crdmanager/crdresources/* | grep -C 4 additionalItems:
