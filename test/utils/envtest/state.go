@@ -75,15 +75,130 @@ func (s *State) AddResources(objects ...client.Object) error {
 	return nil
 }
 
-// CreateOrUpdate creates or updates a kubernetes resources and adds it to the current state
-func (s *State) Create(ctx context.Context, c client.Client, obj client.Object) error {
-	if err := c.Create(ctx, obj); err != nil {
-		return err
-	}
-	if err := c.Status().Update(ctx, obj); err != nil {
-		if !apierrors.IsNotFound(err) {
+type CreateOptions struct {
+	// UpdateStatus also updates the status after the objects creation
+	UpdateStatus bool
+}
+
+// ApplyOptions applies all options from create options to the object
+func (o *CreateOptions) ApplyOptions(options ...CreateOption) error {
+	for _, obj := range options {
+		if err := obj.ApplyOption(o); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+type CreateOption interface {
+	ApplyOption(options *CreateOptions) error
+}
+
+type UpdateStatus bool
+
+func (s UpdateStatus) ApplyOption(options *CreateOptions) error {
+	options.UpdateStatus = bool(s)
+	return nil
+}
+
+// CreateOrUpdate creates or updates a kubernetes resources and adds it to the current state
+func (s *State) Create(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
+	options := &CreateOptions{}
+	if err := options.ApplyOptions(opts...); err != nil {
+		return err
+	}
+	if err := c.Create(ctx, obj); err != nil {
+		return err
+	}
+
+	if options.UpdateStatus {
+		if err := c.Status().Update(ctx, obj); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+	}
 	return s.AddResources(obj)
+}
+
+// InitResources creates a new isolated environment with its own namespace.
+func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPath string) error {
+	// parse state and create resources in cluster
+	resources, err := parseResources(resourcesPath, s)
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range resources {
+		if err := s.Create(ctx, c, obj, UpdateStatus(true)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CleanupState cleans up a test environment.
+// todo: remove finalizers of all objects in state
+func (s *State) CleanupState(ctx context.Context, c client.Client) error {
+	for _, obj := range s.DeployItems {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	for _, obj := range s.Executions {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	for _, obj := range s.Installations {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	for _, obj := range s.Secrets {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	for _, obj := range s.ConfigMaps {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+
+	for _, obj := range s.Generic {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+
+	ns := &corev1.Namespace{}
+	ns.Name = s.Namespace
+	return c.Delete(ctx, ns)
+}
+
+func cleanupForObject(ctx context.Context, c client.Client, obj client.Object) error {
+	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if err := removeFinalizer(ctx, c, obj); err != nil {
+		return err
+	}
+	if err := c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func removeFinalizer(ctx context.Context, c client.Client, object client.Object) error {
+	if len(object.GetFinalizers()) == 0 {
+		return nil
+	}
+
+	object.SetFinalizers([]string{})
+	return c.Update(ctx, object)
 }

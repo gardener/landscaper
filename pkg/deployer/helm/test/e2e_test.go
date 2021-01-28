@@ -86,7 +86,7 @@ var _ = Describe("Helm Deployer", func() {
 		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(state.Create(ctx, testenv.Client, di)).To(Succeed())
+		Expect(state.Create(ctx, testenv.Client, di, envtest.UpdateStatus(true))).To(Succeed())
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
