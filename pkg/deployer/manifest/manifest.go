@@ -21,6 +21,7 @@ import (
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	"github.com/gardener/landscaper/apis/deployer/manifest/validation"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 const (
@@ -65,7 +66,7 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 	}
 
 	return &Manifest{
-		log:                   log,
+		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		kubeClient:            kubeClient,
 		DeployItem:            item,
 		Target:                target,

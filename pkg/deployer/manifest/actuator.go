@@ -151,5 +151,9 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return manifest.Delete(ctx)
 	}
 
-	return manifest.Reconcile(ctx)
+	if err = manifest.Reconcile(ctx); err != nil {
+		return err
+	}
+
+	return manifest.CheckResourcesHealth(ctx)
 }

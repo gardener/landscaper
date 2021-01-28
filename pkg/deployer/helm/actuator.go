@@ -177,5 +177,10 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			"ConstructExportFromValues", "", err.Error())
 		return err
 	}
-	return helm.ApplyFiles(ctx, files, exports)
+
+	if err := helm.ApplyFiles(ctx, files, exports); err != nil {
+		return err
+	}
+
+	return helm.CheckResourcesHealth(ctx)
 }

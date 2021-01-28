@@ -30,6 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 const (
@@ -76,7 +77,7 @@ func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient cli
 	}
 
 	return &Helm{
-		log:                   log,
+		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		kubeClient:            kubeClient,
 		Configuration:         helmconfig,
 		DeployItem:            item,

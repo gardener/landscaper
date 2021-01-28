@@ -13,12 +13,14 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -147,6 +149,32 @@ func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) 
 			Namespace: metaObj.GetNamespace(),
 		},
 	}, nil
+}
+
+// TypedObjectReferenceFromUnstructuredObject creates a typed object reference from an unstructured object.
+func TypedObjectReferenceFromUnstructuredObject(obj *unstructured.Unstructured) *v1alpha1.TypedObjectReference {
+	return &v1alpha1.TypedObjectReference{
+		APIVersion: obj.GroupVersionKind().GroupVersion().String(),
+		Kind:       obj.GetKind(),
+		ObjectReference: v1alpha1.ObjectReference{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+		},
+	}
+}
+
+// ObjectFromTypedObjectReference creates an unstructured object from a typed object reference.
+func ObjectFromTypedObjectReference(ref *v1alpha1.TypedObjectReference) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": ref.APIVersion,
+			"kind":       ref.Kind,
+			"metadata": map[string]interface{}{
+				"name":      ref.Name,
+				"namespace": ref.Namespace,
+			},
+		},
+	}
 }
 
 // HasFinalizer checks if the object constains a finalizer with the given name.
@@ -283,4 +311,73 @@ func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.U
 		objects = append(objects, obj.DeepCopy())
 	}
 	return objects, nil
+}
+
+// GenerateDeleteObjectConditionFunc creates a condition function to validate the deletion of objects.
+func GenerateDeleteObjectConditionFunc(ctx context.Context, kubeClient client.Client, obj client.Object) wait.ConditionFunc {
+	return func() (done bool, err error) {
+		key := ObjectKey(obj.GetName(), obj.GetNamespace())
+		if err := kubeClient.Get(ctx, key, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	}
+}
+
+// SetRequiredNestedFieldsFromObj sets the immutable or the fields that are required
+// when updating un object. e.g: the ClusterIP of a service.
+func SetRequiredNestedFieldsFromObj(currObj, obj *unstructured.Unstructured) error {
+	currObjGK := currObj.GroupVersionKind().GroupKind()
+	objGK := obj.GroupVersionKind().GroupKind()
+
+	if currObjGK != objGK {
+		return fmt.Errorf("objects do not have the same GoupKind: %s/%s", currObjGK, objGK)
+	}
+
+	switch currObjGK.String() {
+	case "Job.batch":
+		selector, found, err := unstructured.NestedMap(currObj.Object, "spec", "selector")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedMap(obj.Object, selector, "spec", "selector"); err != nil {
+				return err
+			}
+		}
+		labels, found, err := unstructured.NestedMap(currObj.Object, "spec", "template", "metadata", "labels")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedMap(obj.Object, labels, "spec", "template", "metadata", "labels"); err != nil {
+				return err
+			}
+		}
+	case "Service":
+		clusterIP, found, err := unstructured.NestedString(currObj.Object, "spec", "clusterIP")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedField(obj.Object, clusterIP, "spec", "clusterIP"); err != nil {
+				return err
+			}
+		}
+	}
+
+	resourceVersion, found, err := unstructured.NestedString(currObj.Object, "metadata", "resourceVersion")
+	if err != nil {
+		return err
+	}
+	if found {
+		if err := unstructured.SetNestedField(obj.Object, resourceVersion, "metadata", "resourceVersion"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

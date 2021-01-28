@@ -11,10 +11,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	helmactuator "github.com/gardener/landscaper/pkg/deployer/helm"
@@ -38,7 +40,7 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(testenv.CleanupState(context.TODO(), state)).To(Succeed())
 	})
 
-	It("should deploy a ingress-nginx chart from a oci artifact into the cluster", func() {
+	It("should deploy an ingress-nginx chart from an oci artifact into the cluster", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -90,8 +92,25 @@ var _ = Describe("Helm Deployer", func() {
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		// At this stage, resources are not yet ready
+		err = testutil.ShouldNotReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		Expect(err).To(HaveOccurred())
 
+		// Get the managed objects from Status and set them in Ready status
+		status := &helm.ProviderStatus{}
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+
+		helmDecoder := serializer.NewCodecFactory(helmactuator.Helmscheme).UniversalDecoder()
+		_, _, err = helmDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
+		Expect(err).ToNot(HaveOccurred())
+
+		for _, ref := range status.ManagedResources {
+			obj := kutil.ObjectFromTypedObjectReference(&ref)
+			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
+			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
+		}
+
+		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
