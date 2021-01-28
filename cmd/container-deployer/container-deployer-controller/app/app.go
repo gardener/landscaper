@@ -71,20 +71,20 @@ func (o *options) run(ctx context.Context) {
 
 	if landscaperClusterMgr != hostClusterMgr {
 		go func() {
-			if err := hostClusterMgr.Start(ctx.Done()); err != nil {
+			if err := hostClusterMgr.Start(ctx); err != nil {
 				o.log.Error(err, "error while running manager")
 				os.Exit(1)
 			}
 		}()
 		o.log.Info("Waiting for host cluster cache to sync")
-		if !hostClusterMgr.GetCache().WaitForCacheSync(ctx.Done()) {
+		if !hostClusterMgr.GetCache().WaitForCacheSync(ctx) {
 			o.log.Info("Unable to sync host cluster cache")
 			os.Exit(1)
 		}
 
 		o.log.Info("Cache of host cluster successfully synced")
 	}
-	if err := landscaperClusterMgr.Start(ctx.Done()); err != nil {
+	if err := landscaperClusterMgr.Start(ctx); err != nil {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)
 	}

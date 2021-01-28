@@ -14,7 +14,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -25,7 +24,7 @@ import (
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
 func NewFakeClientFromPath(path string) (client.Client, *State, error) {
-	objects := make([]runtime.Object, 0)
+	objects := make([]client.Object, 0)
 	state := &State{
 		Installations: make(map[string]*lsv1alpha1.Installation),
 		Executions:    make(map[string]*lsv1alpha1.Execution),
@@ -69,7 +68,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		return nil, nil, err
 	}
 
-	return fake.NewFakeClientWithScheme(kubernetes.LandscaperScheme, objects...), state, nil
+	return fake.NewClientBuilder().WithScheme(kubernetes.LandscaperScheme).WithObjects(objects...).Build(), state, nil
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient

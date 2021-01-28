@@ -25,7 +25,7 @@ type State struct {
 	Targets       map[string]*lsv1alpha1.Target
 	Secrets       map[string]*corev1.Secret
 	ConfigMaps    map[string]*corev1.ConfigMap
-	Generic       map[string]Object
+	Generic       map[string]client.Object
 }
 
 // NewState initializes a new state.
@@ -38,12 +38,12 @@ func NewState() *State {
 		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
 		ConfigMaps:    make(map[string]*corev1.ConfigMap),
-		Generic:       map[string]Object{},
+		Generic:       map[string]client.Object{},
 	}
 }
 
 // AddsResources to the current state
-func (s *State) AddResources(objects ...Object) error {
+func (s *State) AddResources(objects ...client.Object) error {
 	for _, obj := range objects {
 		switch o := obj.(type) {
 		case *lsv1alpha1.Installation:
@@ -76,7 +76,7 @@ func (s *State) AddResources(objects ...Object) error {
 }
 
 // CreateOrUpdate creates or updates a kubernetes resources and adds it to the current state
-func (s *State) Create(ctx context.Context, c client.Client, obj Object) error {
+func (s *State) Create(ctx context.Context, c client.Client, obj client.Object) error {
 	if err := c.Create(ctx, obj); err != nil {
 		return err
 	}

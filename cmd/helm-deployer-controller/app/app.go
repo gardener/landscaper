@@ -59,7 +59,7 @@ func (o *options) run(ctx context.Context) {
 	}
 
 	o.log.Info("starting the controller")
-	if err := mgr.Start(ctx.Done()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)
 	}
