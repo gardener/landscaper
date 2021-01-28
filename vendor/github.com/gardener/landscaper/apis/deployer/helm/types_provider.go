@@ -23,7 +23,16 @@ type ProviderConfiguration struct {
 	// +optional
 	Kubeconfig string `json:"kubeconfig"`
 
-	// UpdateStrategy defines the strategy how the manifest are updated in the cluster.
+	// HealthChecks configures the health checks.
+	// +optional
+	HealthChecks HealthChecksConfiguration `json:"healthChecks,omitempty"`
+
+	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
+	// Defaults to 60s.
+	// +optional
+	DeleteTimeout string `json:"deleteTimeout,omitempty"`
+
+	// UpdateStrategy defines the strategy how the manifests are updated in the cluster.
 	// Defaults to "update".
 	// +optional
 	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
@@ -52,6 +61,17 @@ const (
 	UpdateStrategyUpdate UpdateStrategy = "update"
 	UpdateStrategyPatch  UpdateStrategy = "patch"
 )
+
+// HealthChecksConfiguration contains the condiguration for health checks.
+type HealthChecksConfiguration struct {
+	// DisableDefault allows to disable the default health checks.
+	// +optional
+	DisableDefault bool `json:"disableDefault,omitempty"`
+	// Timeout is the time to wait before giving up on a resource to be healthy.
+	// Defaults to 60s.
+	// +optional
+	Timeout string `json:"timeout,omitempty"`
+}
 
 // Chart defines the helm chart to render and apply.
 type Chart struct {

@@ -17,6 +17,12 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	if len(obj.UpdateStrategy) == 0 {
 		obj.UpdateStrategy = UpdateStrategyUpdate
 	}
+	if len(obj.HealthChecks.Timeout) == 0 {
+		obj.HealthChecks.Timeout = "60s"
+	}
+	if len(obj.DeleteTimeout) == 0 {
+		obj.DeleteTimeout = "60s"
+	}
 	for i := range obj.Manifests {
 		if len(obj.Manifests[i].Policy) == 0 {
 			obj.Manifests[i].Policy = ManagePolicy

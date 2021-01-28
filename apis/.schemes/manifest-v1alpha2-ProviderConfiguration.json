@@ -1,6 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "manifest-v1alpha2-HealthChecksConfiguration": {
+      "description": "HealthChecksConfiguration contains the condiguration for health checks.",
+      "type": "object",
+      "properties": {
+        "disableDefault": {
+          "description": "DisableDefault allows to disable the default health checks.",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+          "type": "string"
+        }
+      }
+    },
     "manifest-v1alpha2-Manifest": {
       "description": "Manifest defines a manifest that is managed by the deployer.",
       "type": "object",
@@ -20,11 +34,20 @@
       "type": "object"
     }
   },
-  "description": "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+  "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
   "properties": {
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "deleteTimeout": {
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+      "type": "string"
+    },
+    "healthChecks": {
+      "$ref": "#/definitions/manifest-v1alpha2-HealthChecksConfiguration",
+      "default": {},
+      "description": "HealthChecks condigures the health checks."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

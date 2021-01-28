@@ -2,6 +2,23 @@
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. It renders a given helm chart and deploys the resulting manifest into a cluster.
 
+It also checks by default the healthiness of the following resources:
+* `Pod`: It is considered healthy if it successfully completed
+or if it has the the PodReady condition set to true.
+* `Deployment`: It is considered healthy if the controller observed
+its current revision and if the number of updated replicas is equal
+to the number of replicas.
+* `ReplicaSet`: It is considered healthy if its controller observed
+its current revision and if the number of updated replicas is equal to the number of replicas.
+* `StatefulSet`: It is considered healthy if its controller observed
+its current revision, it is not in an update (i.e. UpdateRevision is empty)
+and if its current replicas are equal to its desired replicas.
+* `DaemonSet`: It is considered healthy if its controller observed
+its current revision and if its desired number of scheduled pods is equal
+to its updated number of scheduled pods.
+* `ReplicationController`: It is considered healthy if its controller observed
+its current revision and if the number of updated replicas is equal to the number of replicas.
+
 ### Configuration
 
 This sections describes the provider specific configuration.
@@ -42,6 +59,22 @@ spec:
     kubeconfig: xxx
 
     updateStrategy: update | patch # optional; defaults to update
+
+    # Configuration of the health checks for the resources.
+    # optional
+    healthChecks:
+      # Allows to disable the default health checks.
+      # optional; set to false by default.
+      disableDefault: true
+      # Defines the time to wait before giving up on a resource
+      # to be healthy. Should be changed with long startup time pods.
+      # optional; default to 60 seconds.
+      timeout: 30s
+
+    # Defines the time to wait before giving up on a resource to be deleted,
+    # for instance when deleting resources that are not anymore managed from this DeployItem.
+    # optional; default to 60 seconds.
+    deleteTimeout: 2m
 
     # Name of the release: helm install [name]
     name: my-release

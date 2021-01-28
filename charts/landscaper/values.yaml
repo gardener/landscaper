@@ -26,6 +26,7 @@ landscaper:
 #  - container
 #  - helm
 #  - mock
+#  - manifest
   deployersConfig: {}
 #    container:
 #      apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1

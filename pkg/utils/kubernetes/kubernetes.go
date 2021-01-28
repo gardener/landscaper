@@ -10,15 +10,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -181,6 +185,32 @@ func TypedObjectReferenceFromObject(obj runtime.Object, scheme *runtime.Scheme) 
 	}, nil
 }
 
+// TypedObjectReferenceFromUnstructuredObject creates a typed object reference from an unstructured object.
+func TypedObjectReferenceFromUnstructuredObject(obj *unstructured.Unstructured) *v1alpha1.TypedObjectReference {
+	return &v1alpha1.TypedObjectReference{
+		APIVersion: obj.GroupVersionKind().GroupVersion().String(),
+		Kind:       obj.GetKind(),
+		ObjectReference: v1alpha1.ObjectReference{
+			Name:      obj.GetName(),
+			Namespace: obj.GetNamespace(),
+		},
+	}
+}
+
+// ObjectFromTypedObjectReference creates an unstructured object from a typed object reference.
+func ObjectFromTypedObjectReference(ref *v1alpha1.TypedObjectReference) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": ref.APIVersion,
+			"kind":       ref.Kind,
+			"metadata": map[string]interface{}{
+				"name":      ref.Name,
+				"namespace": ref.Namespace,
+			},
+		},
+	}
+}
+
 // HasFinalizer checks if the object constains a finalizer with the given name.
 func HasFinalizer(obj metav1.Object, finalizer string) bool {
 	for _, f := range obj.GetFinalizers() {
@@ -279,6 +309,9 @@ func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
 func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstructured, error) {
 	objects := make([]*unstructured.Unstructured, 0)
 	for name, content := range files {
+		if _, file := filepath.Split(name); file == "NOTES.txt" {
+			continue
+		}
 		decodedObjects, err := DecodeObjects(log, name, []byte(content))
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode files for %q: %w", name, err)
@@ -288,7 +321,7 @@ func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstr
 	return objects, nil
 }
 
-// Decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
+// DecodeObjects decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
 func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
 	var (
 		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
@@ -315,4 +348,86 @@ func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.U
 		objects = append(objects, obj.DeepCopy())
 	}
 	return objects, nil
+}
+
+// DeleteAndWaitForObjectDeleted deletes an object and waits for the object to be deleted.
+func DeleteAndWaitForObjectDeleted(ctx context.Context, kubeClient client.Client, timeout time.Duration, obj client.Object) error {
+	if err := kubeClient.Delete(ctx, obj); err != nil {
+		gvk := obj.GetObjectKind().GroupVersionKind().String()
+		return fmt.Errorf("unable to delete %s %s/%s: %w", gvk, obj.GetName(), obj.GetNamespace(), err)
+	}
+
+	pollCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	delCondFunc := GenerateDeleteObjectConditionFunc(ctx, kubeClient, obj)
+	return wait.PollImmediateUntil(5*time.Second, delCondFunc, pollCtx.Done())
+}
+
+// GenerateDeleteObjectConditionFunc creates a condition function to validate the deletion of objects.
+func GenerateDeleteObjectConditionFunc(ctx context.Context, kubeClient client.Client, obj client.Object) wait.ConditionFunc {
+	return func() (done bool, err error) {
+		key := ObjectKey(obj.GetName(), obj.GetNamespace())
+		if err := kubeClient.Get(ctx, key, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	}
+}
+
+// SetRequiredNestedFieldsFromObj sets the immutable or the fields that are required
+// when updating un object. e.g: the ClusterIP of a service.
+func SetRequiredNestedFieldsFromObj(currObj, obj *unstructured.Unstructured) error {
+	currObjGK := currObj.GroupVersionKind().GroupKind()
+	objGK := obj.GroupVersionKind().GroupKind()
+
+	if currObjGK != objGK {
+		return fmt.Errorf("objects do not have the same GoupKind: %s/%s", currObjGK, objGK)
+	}
+
+	switch currObjGK.String() {
+	case "Job.batch":
+		selector, found, err := unstructured.NestedMap(currObj.Object, "spec", "selector")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedMap(obj.Object, selector, "spec", "selector"); err != nil {
+				return err
+			}
+		}
+		labels, found, err := unstructured.NestedMap(currObj.Object, "spec", "template", "metadata", "labels")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedMap(obj.Object, labels, "spec", "template", "metadata", "labels"); err != nil {
+				return err
+			}
+		}
+	case "Service":
+		clusterIP, found, err := unstructured.NestedString(currObj.Object, "spec", "clusterIP")
+		if err != nil {
+			return err
+		}
+		if found {
+			if err := unstructured.SetNestedField(obj.Object, clusterIP, "spec", "clusterIP"); err != nil {
+				return err
+			}
+		}
+	}
+
+	resourceVersion, found, err := unstructured.NestedString(currObj.Object, "metadata", "resourceVersion")
+	if err != nil {
+		return err
+	}
+	if found {
+		if err := unstructured.SetNestedField(obj.Object, resourceVersion, "metadata", "resourceVersion"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

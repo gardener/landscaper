@@ -7,6 +7,7 @@ package helm
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -130,10 +131,22 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
 	if len(deployItem.Status.Phase) == 0 {
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	}
+
+	// set failed state if the last error lasts for more than 5 minutes
+	defer func() {
+		// set the error if the err is a landscaper error
+		if lsErr, ok := lsv1alpha1helper.IsError(err); ok {
+			deployItem.Status.LastError = lsErr.UpdatedError(deployItem.Status.LastError)
+		}
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
+			deployItem.Status.LastError,
+			5*time.Minute))
+	}()
 
 	helm, err := New(a.log, a.config, a.client, deployItem, target, a.componentsRegistryMgr)
 	if err != nil {

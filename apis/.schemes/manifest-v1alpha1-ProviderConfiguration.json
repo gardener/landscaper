@@ -1,16 +1,39 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "manifest-v1alpha1-HealthChecksConfiguration": {
+      "description": "HealthChecksConfiguration contains the condiguration for health checks.",
+      "type": "object",
+      "properties": {
+        "disableDefault": {
+          "description": "DisableDefault allows to disable the default health checks.",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+          "type": "string"
+        }
+      }
+    },
     "pkg-runtime-RawExtension": {
       "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.Object `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// External package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// On the wire, the JSON will look something like this: {\n\t\"kind\":\"MyAPIObject\",\n\t\"apiVersion\":\"v1\",\n\t\"myPlugin\": {\n\t\t\"kind\":\"PluginA\",\n\t\t\"aOption\":\"foo\",\n\t},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
       "type": "object"
     }
   },
-  "description": "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+  "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
   "properties": {
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "deleteTimeout": {
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+      "type": "string"
+    },
+    "healthChecks": {
+      "$ref": "#/definitions/manifest-v1alpha1-HealthChecksConfiguration",
+      "default": {},
+      "description": "HealthChecks condigures the health checks."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
