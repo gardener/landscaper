@@ -21,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -176,6 +177,7 @@ var _ = Describe("Constructor", func() {
 			do := &lsv1alpha1.DataObject{}
 			do.Name = lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.a")
 			do.Namespace = inInstRoot.Info.Namespace
+			Expect(fakeClient.Get(ctx, kutil.ObjectKey(do.Name, do.Namespace), do)).To(Succeed())
 			do.Data = []byte("7")
 			Expect(fakeClient.Update(ctx, do)).To(Succeed())
 

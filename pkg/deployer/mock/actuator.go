@@ -58,9 +58,7 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	ctx := context.Background()
-	defer ctx.Done()
+func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	deployItem := &lsv1alpha1.DeployItem{}
@@ -94,7 +92,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			return err
 		}
 
-		controllerutil.RemoveFinalizer(&deployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		return a.c.Update(ctx, deployItem)
 	} else if !kubernetesutil.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)

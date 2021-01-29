@@ -166,7 +166,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	}
 
 	if len(status.ManagedResources) == 0 {
-		controllerutil.RemoveFinalizer(&h.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
 		return h.kubeClient.Update(ctx, h.DeployItem)
 	}
 
@@ -201,16 +201,17 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 	}
 
 	// remove finalizer
-	controllerutil.RemoveFinalizer(&h.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return h.kubeClient.Update(ctx, h.DeployItem)
 }
 
 // ApplyObject applies a managed resource to the target cluster.
 func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *unstructured.Unstructured) error {
 	currOp := "ApplyObjects"
-	currObj := obj.NewEmptyInstance()
+	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
+	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-	if err := kubeClient.Get(ctx, key, currObj); err != nil {
+	if err := kubeClient.Get(ctx, key, &currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
 			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
 				currOp, "GetObject", err.Error())
@@ -234,7 +235,7 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 			return err
 		}
 	case helmv1alpha1.UpdateStrategyPatch:
-		if err := kubeClient.Patch(ctx, currObj, client.MergeFrom(obj)); err != nil {
+		if err := kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
 				currOp, "ApplyObject", err.Error())

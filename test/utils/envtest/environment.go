@@ -20,7 +20,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -224,11 +223,11 @@ func (e *Environment) removeFinalizer(ctx context.Context, object metav1.Object)
 	}
 
 	object.SetFinalizers([]string{})
-	return e.Client.Update(ctx, object.(runtime.Object))
+	return e.Client.Update(ctx, object.(client.Object))
 }
 
-func parseResources(path string, state *State) ([]runtime.Object, error) {
-	objects := make([]runtime.Object, 0)
+func parseResources(path string, state *State) ([]client.Object, error) {
+	objects := make([]client.Object, 0)
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -279,7 +278,7 @@ func parseResources(path string, state *State) ([]runtime.Object, error) {
 	return objects, nil
 }
 
-func decodeAndAppendLSObject(data []byte, objects []runtime.Object, state *State) ([]runtime.Object, error) {
+func decodeAndAppendLSObject(data []byte, objects []client.Object, state *State) ([]client.Object, error) {
 	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
 
 	_, gvk, err := decoder.Decode(data, nil, &unstructured.Unstructured{})

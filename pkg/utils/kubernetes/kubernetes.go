@@ -40,7 +40,7 @@ import (
 // The MutateFn is called regardless of creating or updating an object.
 //
 // It returns the executed operation and an error.
-func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 
 	// check if the name key has to be generated
 	accessor, err := meta.Accessor(obj)
@@ -63,11 +63,11 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj runtime.Object, f 
 }
 
 // Mutate wraps a MutateFn and applies validation to its result
-func Mutate(f controllerutil.MutateFn, key client.ObjectKey, obj runtime.Object) error {
+func Mutate(f controllerutil.MutateFn, key client.ObjectKey, obj client.Object) error {
 	if err := f(); err != nil {
 		return err
 	}
-	if newKey, err := client.ObjectKeyFromObject(obj); err != nil || key != newKey {
+	if newKey := client.ObjectKeyFromObject(obj); key != newKey {
 		return fmt.Errorf("MutateFn cannot Mutate object name and/or object namespace")
 	}
 	return nil

@@ -58,9 +58,7 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	ctx := context.Background()
-	defer ctx.Done()
+func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	exec := &lsv1alpha1.Execution{}

@@ -81,9 +81,7 @@ type actuator struct {
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-func (a *actuator) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	ctx := context.Background()
-	defer ctx.Done()
+func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.Log().Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}

@@ -89,8 +89,8 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(state.Create(ctx, testenv.Client, di)).To(Succeed())
 
 		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 

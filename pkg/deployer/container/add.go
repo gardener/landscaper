@@ -5,6 +5,8 @@
 package container
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -62,25 +64,25 @@ func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (r
 }
 
 func (p *PodEventHandler) Create(event event.CreateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Meta); ok {
+	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}
 }
 
 func (p *PodEventHandler) Update(event event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.MetaNew); ok {
+	if req, ok := p.getReconcileDeployItemRequest(event.ObjectNew); ok {
 		q.Add(req)
 	}
 }
 
 func (p *PodEventHandler) Delete(event event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Meta); ok {
+	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}
 }
 
 func (p *PodEventHandler) Generic(event event.GenericEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Meta); ok {
+	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
 		q.Add(req)
 	}
 }
@@ -98,7 +100,7 @@ type hostRunnable struct {
 var _ manager.Runnable = &hostRunnable{}
 var _ inject.Client = &hostRunnable{}
 
-func (_ hostRunnable) Start(<-chan struct{}) error { return nil }
+func (_ hostRunnable) Start(ctx context.Context) error { return nil }
 
 func (r hostRunnable) InjectClient(client client.Client) error {
 	if s, ok := r.a.(HostClient); ok {

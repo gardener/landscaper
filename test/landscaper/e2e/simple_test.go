@@ -91,8 +91,8 @@ var _ = Describe("Simple", func() {
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution
 		instReq := testutils.Request("root-1", state.Namespace)
-		testutils.ShouldReconcile(instActuator, instReq)
-		testutils.ShouldReconcile(instActuator, instReq)
+		testutils.ShouldReconcile(ctx, instActuator, instReq)
+		testutils.ShouldReconcile(ctx, instActuator, instReq)
 
 		inst := &lsv1alpha1.Installation{}
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
@@ -111,8 +111,8 @@ var _ = Describe("Simple", func() {
 		// after the execution was created by the installation, we need to run the execution controller
 		// on first reconcile it should add the finalizer
 		// and int he second reconcile it should create the deploy item
-		testutils.ShouldReconcile(execActuator, execReq)
-		testutils.ShouldReconcile(execActuator, execReq)
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
@@ -126,12 +126,12 @@ var _ = Describe("Simple", func() {
 		di := &lsv1alpha1.DeployItem{}
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
 
-		testutils.ShouldReconcile(mockActuator, diReq)
-		testutils.ShouldReconcile(mockActuator, diReq)
+		testutils.ShouldReconcile(ctx, mockActuator, diReq)
+		testutils.ShouldReconcile(ctx, mockActuator, diReq)
 
 		// as the deploy item is now successfully reconciled, we have to trigger the execution
 		// and check if the states are correctly propagated
-		_, err = execActuator.Reconcile(execReq)
+		_, err = execActuator.Reconcile(ctx, execReq)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
@@ -140,7 +140,7 @@ var _ = Describe("Simple", func() {
 
 		// as the execution is now successfully reconciled, we have to trigger the installation
 		// and check if the state is propagated
-		_, err = instActuator.Reconcile(testutils.Request("root-1", state.Namespace))
+		_, err = instActuator.Reconcile(ctx, testutils.Request("root-1", state.Namespace))
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(testenv.Client.Get(ctx, instReq.NamespacedName, inst)).ToNot(HaveOccurred())
@@ -150,7 +150,7 @@ var _ = Describe("Simple", func() {
 		Expect(testenv.Client.Delete(ctx, inst)).ToNot(HaveOccurred())
 
 		// the installation controller should propagate the deletion to its subcharts
-		_, err = instActuator.Reconcile(instReq)
+		_, err = instActuator.Reconcile(ctx, instReq)
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("waiting for deletion"))
 
@@ -158,26 +158,26 @@ var _ = Describe("Simple", func() {
 		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
 
 		// the execution controller should propagate the deletion to its deploy item
-		_, err = execActuator.Reconcile(execReq)
+		_, err = execActuator.Reconcile(ctx, execReq)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(testenv.Client.Get(ctx, diReq.NamespacedName, di)).ToNot(HaveOccurred())
 		Expect(di.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")
 
-		_, err = mockActuator.Reconcile(diReq)
+		_, err = mockActuator.Reconcile(ctx, diReq)
 		Expect(err).ToNot(HaveOccurred())
 		err = testenv.Client.Get(ctx, diReq.NamespacedName, di)
 		Expect(err).To(HaveOccurred())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "deploy item should be deleted")
 
 		// execution controller should remove the finalizer
-		testutils.ShouldReconcile(execActuator, execReq)
+		testutils.ShouldReconcile(ctx, execActuator, execReq)
 		err = testenv.Client.Get(ctx, execReq.NamespacedName, exec)
 		Expect(err).To(HaveOccurred())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "execution should be deleted")
 
 		// installation controller should remove its own finalizer
-		testutils.ShouldReconcile(instActuator, instReq)
+		testutils.ShouldReconcile(ctx, instActuator, instReq)
 		err = testenv.Client.Get(ctx, instReq.NamespacedName, inst)
 		Expect(err).To(HaveOccurred())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "installation should be deleted")

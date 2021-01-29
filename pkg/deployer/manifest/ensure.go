@@ -105,7 +105,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
 	if len(m.ProviderStatus.ManagedResources) == 0 {
-		controllerutil.RemoveFinalizer(&m.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 		return m.kubeClient.Update(ctx, m.DeployItem)
 	}
 
@@ -149,16 +149,17 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	}
 
 	// remove finalizer
-	controllerutil.RemoveFinalizer(&m.DeployItem.ObjectMeta, lsv1alpha1.LandscaperFinalizer)
+	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.kubeClient.Update(ctx, m.DeployItem)
 }
 
 // ApplyObject applies a managed resource to the target cluster.
 func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, policy manifest.ManifestPolicy, obj *unstructured.Unstructured) error {
 	currOp := "ApplyObjects"
-	currObj := obj.NewEmptyInstance()
+	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
+	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
-	if err := kubeClient.Get(ctx, key, currObj); err != nil {
+	if err := kubeClient.Get(ctx, key, &currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
 				currOp, "GetObject", err.Error())
@@ -193,7 +194,7 @@ func (m *Manifest) ApplyObject(ctx context.Context, kubeClient client.Client, po
 			return err
 		}
 	case manifest.UpdateStrategyPatch:
-		if err := kubeClient.Patch(ctx, currObj, client.MergeFrom(obj)); err != nil {
+		if err := kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
 				currOp, "ApplyObject", err.Error())

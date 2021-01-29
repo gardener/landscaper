@@ -31,11 +31,11 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 	helm.sh/helm/v3 v3.2.4
-	k8s.io/api v0.19.5
-	k8s.io/apimachinery v0.19.5
-	k8s.io/client-go v0.19.5
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/client-go v0.20.2
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
-	sigs.k8s.io/controller-runtime v0.6.0
+	sigs.k8s.io/controller-runtime v0.8.1
 	sigs.k8s.io/controller-tools v0.3.1-0.20200517180335-820a4a27ea84 // including a fix from master
 	sigs.k8s.io/yaml v1.2.0
 )
