@@ -1,0 +1,14 @@
+kind: TestDefinition
+metadata:
+  name: install-landscaper
+spec:
+  owner: gardener-oq@listserv.sap.com
+  description: installs the landscaper with its helm chart
+  activeDeadlineSeconds: 900
+
+  command: [sh, -c]
+  args:
+  - >-
+    ./hack/install-landscaper-for-integration-test.sh
+
+  image: alpine:3.13

@@ -5,14 +5,17 @@
 package integration_test
 
 import (
+	"context"
 	"flag"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/tutorial"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 var opts *framework.Options
@@ -25,9 +28,15 @@ func init() {
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+	ctx := context.Background()
+	defer ctx.Done()
+
+	logger := simplelogger.NewLogger()
+
 	opts.RootPath = "../../"
-	f, err := framework.New(opts)
-	Expect(err).ToNot(HaveOccurred())
+	f, err := framework.New(logger, opts)
+	utils.ExpectNoError(err)
+	utils.ExpectNoError(f.WaitForSystemComponents(ctx))
 
 	// todo: register tests
 	tutorial.RegisterTests(f)

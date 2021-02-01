@@ -71,7 +71,7 @@ func SimpleIngressNginxTest(f *framework.Framework) {
 			// todo: make namespace configurable for deployed resources
 			// expect that the nginx deployment is successfully running
 			nginxIngressDeploymentName := "test-ingress-nginx-controller"
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.Client, kutil.ObjectKey(nginxIngressDeploymentName, "default"), 2*time.Minute))
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKey(nginxIngressDeploymentName, "default"), 2*time.Minute))
 
 			ginkgo.By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))

@@ -47,6 +47,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "landscaper.selectorLabels" -}}
+landscaper.gardener.cloud/component: controller
 app.kubernetes.io/name: {{ include "landscaper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

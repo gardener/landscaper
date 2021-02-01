@@ -6,6 +6,7 @@ package envtest
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -156,6 +157,16 @@ func (s *State) CleanupState(ctx context.Context, c client.Client) error {
 			return err
 		}
 	}
+	for _, obj := range s.DataObjects {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	for _, obj := range s.Targets {
+		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
 	for _, obj := range s.Secrets {
 		if err := cleanupForObject(ctx, c, obj); err != nil {
 			return err
@@ -169,6 +180,17 @@ func (s *State) CleanupState(ctx context.Context, c client.Client) error {
 
 	for _, obj := range s.Generic {
 		if err := cleanupForObject(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+
+	// also remove all pending pods in the namespace if the container deployer leaves some pods
+	pods := &corev1.PodList{}
+	if err := c.List(ctx, pods, &client.ListOptions{Namespace: s.Namespace}); err != nil {
+		return fmt.Errorf("unable to list pods in %q: %w", s.Namespace, err)
+	}
+	for _, obj := range pods.Items {
+		if err := cleanupForObject(ctx, c, &obj); err != nil {
 			return err
 		}
 	}

@@ -1,0 +1,18 @@
+kind: TestDefinition
+metadata:
+  name: delete-cluster
+spec:
+  owner: gardener-oq@listserv.sap.com
+  description: deletes a previously created test cluster
+  activeDeadlineSeconds: 900
+
+  command: [bash, -c]
+  args:
+  - >-
+    go run -mod=vendor ./hack/testcluster delete
+    --kubeconfig=$TM_KUBECONFIG_PATH/testmachinery.config
+    --namespace=kind
+    --id=$TM_TESTRUN_ID
+    --timeout=10m
+
+  image: golang:1.15.7

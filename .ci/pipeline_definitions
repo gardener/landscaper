@@ -39,7 +39,7 @@ landscaper:
             image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
     steps:
       verify:
-        image: 'golang:1.15.2'
+        image: 'golang:1.15.7'
       publish-helm-charts:
         depends:
         - verify
@@ -62,3 +62,10 @@ landscaper:
           git_tags:
           - ref_template: 'refs/tags/{VERSION}'
           - ref_template: 'refs/tags/apis/{VERSION}'
+      steps:
+        integration-test:
+          execute:
+          - integration-test
+          depends:
+          - publish
+          image: 'eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable'

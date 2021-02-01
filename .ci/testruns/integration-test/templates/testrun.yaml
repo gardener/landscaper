@@ -1,0 +1,39 @@
+apiVersion: testmachinery.sapcloud.io/v1beta1
+kind: Testrun
+metadata:
+  generateName: tm-landscaper-
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 172800 # 2 days
+  {{- if .Values.revision }}
+  locationSets:
+  - default: true
+    name: landscaper
+    locations:
+    - type: git
+      repo: https://github.com/gardener/landscaper.git
+      revision: {{ .Values.revision }}
+  {{- end }}
+
+  testflow:
+  - name: create-cluster
+    definition:
+      name: create-cluster
+  - name: install-landscaper
+    dependsOn: ["create-cluster"]
+    definition:
+      name: install-landscaper
+  - name: test
+    dependsOn: ["install-landscaper"]
+    definition:
+      name: integration-test
+  - name: delete-cluster
+    dependsOn: ["test"]
+    definition:
+      name: delete-cluster
+
+  onExit:
+  - name: delete-cluster
+    definition:
+      name: delete-cluster
+
