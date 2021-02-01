@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,6 +87,7 @@ func (o *options) run(ctx context.Context) error {
 
 	///// WEBHOOK /////
 
+	// initialize webhook options
 	wo := webhook.Options{
 		WebhookConfigurationName: "landscaper-validation-webhook",
 		WebhookBasePath:          "/webhook/validate/",
@@ -103,7 +105,7 @@ func (o *options) run(ctx context.Context) error {
 	}
 	webhookLogger := ctrl.Log.WithName("webhook").WithName("validation")
 	webhookedResources := []webhook.WebhookedResourceDefinition{}
-	// adds a validation webhook for Installations and Executions
+	// add validation webhooks for Installations, DeployItems, and Executions (unless disabled)
 	if o.disabledWebhooks == nil || !o.disabledWebhooks["all"] {
 		if o.webhookNamespace == "" {
 			return errors.New("webhook service namespace must not be empty")
@@ -113,7 +115,15 @@ func (o *options) run(ctx context.Context) error {
 		}
 		wo.ServiceNamespace = o.webhookNamespace
 		wo.ServiceName = o.webhookName
-		// determine resources watched by webhook
+
+		// generate certificates
+		mgr.GetWebhookServer().CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
+		wo.CABundle, err = webhook.GenerateCertificates(ctx, mgr, mgr.GetWebhookServer().CertDir, wo.ServiceNamespace, wo.ServiceName)
+		if err != nil {
+			return fmt.Errorf("unable to generate webhook certificates: %w", err)
+		}
+
+		// determine resources watched by webhooks
 		webhookedResourcesTemplate := []webhook.WebhookedResourceDefinition{
 			{
 				APIGroup:     "landscaper.gardener.cloud",
@@ -142,7 +152,12 @@ func (o *options) run(ctx context.Context) error {
 		webhookLogger.Info("Enabling validation", "resources", webhookedResourcesLog)
 	}
 
+	// create/update/delete ValidatingWebhookConfiguration
 	if err := webhook.ApplyValidatingWebhookConfiguration(ctx, mgr, wo, webhookLogger); err != nil {
+		return err
+	}
+	// register webhooks (no-op if all webhooks are disabled)
+	if err := webhook.RegisterWebhooks(ctx, mgr, wo, webhookLogger); err != nil {
 		return err
 	}
 

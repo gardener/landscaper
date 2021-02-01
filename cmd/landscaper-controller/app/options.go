@@ -47,8 +47,8 @@ Controllers are specified as a comma separated list of controller names.
 Available deployers are mock,helm,container.`)
 	fs.StringVar(&o.webhookNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.StringVar(&o.disableWebhooks, "disable-webhooks", "", "Specify validation webhooks that should be disabled ('all' to disable validation completely)")
-	fs.IntVar(&o.webhookServerPort, "webhook-server-port", 443, "Specify the port for the webhook server")
-	fs.Int32Var(&o.webhookServicePort, "webhook-service-port", 443, "Specify the port of the webhook service")
+	fs.IntVar(&o.webhookServerPort, "webhook-server-port", 9443, "Specify the port for the webhook server")
+	fs.Int32Var(&o.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
 	logger.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)

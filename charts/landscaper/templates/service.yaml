@@ -16,5 +16,11 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if not (has "all" .Values.disableWebhooks) }}
+    - port: {{ .Values.webhookConfig.servicePort }}
+      targetPort: {{ .Values.webhookConfig.serverPort }}
+      protocol: TCP
+      name: webhook
+    {{- end }}
   selector:
     {{- include "landscaper.selectorLabels" . | nindent 4 }}

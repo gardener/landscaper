@@ -103,3 +103,9 @@ rules:
   - "*"
 {{- end }}
 {{- end }}
+- apiGroups:
+  - "admissionregistration.k8s.io"
+  resources:
+  - "validatingwebhookconfigurations"
+  verbs:
+  - "*"

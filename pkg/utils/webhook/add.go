@@ -8,9 +8,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,10 +50,12 @@ type Options struct {
 	ObjectSelector metav1.LabelSelector
 	// the resources that should be handled by this webhook
 	WebhookedResources []WebhookedResourceDefinition
+	// certificates for the webhook
+	CABundle []byte
 }
 
 // ApplyValidatingWebhookConfiguration will create, update, or delete a ValidatingWebhookConfiguration, depending on the options
-// If o.WebhookedResources is neither nil nor empty, a ValidatingWebhookConfiguration will be created/updated
+// If WebhookedResources in the given options is neither nil nor empty, a ValidatingWebhookConfiguration will be created/updated
 // otherwise it will be deleted, if it exists.
 func ApplyValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
 	tmpClient, err := getCachelessClient(mgr)
@@ -94,6 +99,7 @@ func ApplyValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manage
 						Path:      &webhookPath,
 						Port:      &o.ServicePort,
 					},
+					CABundle: o.CABundle,
 				},
 			}
 			vwcWebhooks = append(vwcWebhooks, vwcWebhook)
@@ -120,6 +126,36 @@ func ApplyValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manage
 		} else {
 			webhookLogger.Info("ValidatingWebhookConfiguration deleted", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
 		}
+	}
+
+	return nil
+}
+
+// RegisterWebhooks generates certificates and registers the webhooks to the manager
+// no-op if WebhookedResources in the given options is either nil or empty
+func RegisterWebhooks(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
+	if o.WebhookedResources == nil || len(o.WebhookedResources) == 0 {
+		return nil
+	}
+
+	// registering webhooks
+	for _, elem := range o.WebhookedResources {
+		val, err := ValidatorFromResourceType(elem.ResourceName)
+		if err != nil {
+			return fmt.Errorf("unable to register webhooks: %w", err)
+		}
+		val.InjectClient(mgr.GetClient())
+		rsLogger := webhookLogger.WithName(elem.ResourceName)
+		webhookPath := o.WebhookBasePath + elem.ResourceName
+		val.InjectLogger(rsLogger)
+		lscDecoder, err := admission.NewDecoder(kubernetes.LandscaperScheme)
+		if err != nil {
+			return fmt.Errorf("unable to create decoder: %w", err)
+		}
+		val.InjectDecoder(lscDecoder)
+
+		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
+		mgr.GetWebhookServer().Register(webhookPath, &ctrlwebhook.Admission{Handler: val})
 	}
 
 	return nil

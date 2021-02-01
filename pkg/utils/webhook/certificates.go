@@ -16,8 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -54,7 +52,7 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 
 	// The controller stores the generated webhook certificate in a secret in the cluster. It tries to read it. If it does not exist a
 	// new certificate is generated.
-	c, err := getClient(mgr)
+	c, err := getCachelessClient(mgr)
 	if err != nil {
 		return nil, err
 	}
@@ -175,13 +173,4 @@ func writeCertificates(certDir string, caCert, serverCert *certificates.Certific
 	}
 
 	return caCert.CertificatePEM, nil
-}
-
-func getClient(mgr manager.Manager) (client.Client, error) {
-	s := runtime.NewScheme()
-	if err := scheme.AddToScheme(s); err != nil {
-		return nil, err
-	}
-
-	return client.New(mgr.GetConfig(), client.Options{Scheme: s})
 }
