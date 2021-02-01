@@ -1,0 +1,4 @@
+test:
+  default:
+    testrunPath: .ci/testruns/integration-test/templates/testrun.yaml
+    template: true
