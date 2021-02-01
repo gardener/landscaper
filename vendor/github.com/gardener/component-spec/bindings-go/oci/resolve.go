@@ -43,14 +43,19 @@ type Client interface {
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
 }
 
-// OCIRef generates the oci reference url from the repository context and a component name and version.
+// OCIRef generates the oci reference from the repository context and a component name and version.
 func OCIRef(repoCtx v2.RepositoryContext, name, version string) (string, error) {
-	u, err := url.Parse(repoCtx.BaseURL)
+	baseUrl := repoCtx.BaseURL
+	if !strings.Contains(baseUrl, "://") {
+		// add dummy protocol to correctly parse the the url
+		baseUrl = "http://" + baseUrl
+	}
+	u, err := url.Parse(baseUrl)
 	if err != nil {
 		return "", err
 	}
-	u.Path = path.Join(u.Path, ComponentDescriptorNamespace, name)
-	return fmt.Sprintf("%s:%s", u.String(), version), nil
+	ref := path.Join(u.Host, u.Path, ComponentDescriptorNamespace, name)
+	return fmt.Sprintf("%s:%s", ref, version), nil
 }
 
 // Resolver is a generic resolve to resolve a component descriptor from a oci registry

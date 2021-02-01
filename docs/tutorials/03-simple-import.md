@@ -179,7 +179,7 @@ component:
 ```
 
 ```shell script
-landscaper-cli component-cli remote push eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/echo-server v0.1.1 docs/tutorials/resources/echo-server
+landscaper-cli components-cli ca remote push eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/echo-server v0.1.1 docs/tutorials/resources/echo-server
 ```
 
 ### Installation

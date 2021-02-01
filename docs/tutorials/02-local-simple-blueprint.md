@@ -234,7 +234,7 @@ During the upload the `localFilesystemBlob` are converted to `localOciBlob` as t
 
 :information_source: The uploaded component descriptor can be checked by running
 ```
-component-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.1.0
+landscaper-cli components-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.1.0
 ```
 
 ```yaml
