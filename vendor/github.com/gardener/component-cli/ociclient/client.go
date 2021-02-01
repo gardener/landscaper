@@ -17,13 +17,13 @@ import (
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/remotes"
-	dockerauth "github.com/deislabs/oras/pkg/auth/docker"
 	"github.com/go-logr/logr"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
 )
 
 type client struct {
@@ -48,13 +48,11 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	options.ApplyOptions(opts)
 
 	if options.Resolver == nil {
-		authorizer, err := dockerauth.NewClient(options.Paths...)
+		resolver, err := credentials.NewBuilder(log.WithName("ociKeyring")).Build()
 		if err != nil {
 			return nil, err
 		}
-		options.Resolver = ResolverWrapperFunc(func(ctx context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error) {
-			return authorizer.Resolver(ctx, client, plainHTTP)
-		})
+		options.Resolver = resolver
 	}
 
 	if options.Cache == nil {
@@ -87,7 +85,7 @@ func (c *client) InjectCache(cache cache.Cache) error {
 }
 
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
-	resolver, err := c.resolver.Resolver(context.Background(), ref, http.DefaultClient, c.allowPlainHttp)
+	resolver, err := c.resolver.Resolver(ctx, ref, http.DefaultClient, c.allowPlainHttp)
 	if err != nil {
 		return nil, err
 	}

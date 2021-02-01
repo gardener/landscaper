@@ -372,7 +372,7 @@ Finally, the Component Descriptor must be uploaded to an OCI registry. This is d
 ```shell script
 
 # replace the values to match your registry and file locations
-landscaper-cli component-cli remote push \
+landscaper-cli components-cli ca remote push \
   <repositoryContext.baseUrl> \
   <componentName> \
   <componentVersion> \
@@ -380,7 +380,7 @@ landscaper-cli component-cli remote push \
 
 # e.g. if you were to use the provided sample content
 # (this will fail as you have no write access to gardener-project on eu.gcr.io)
-landscaper-cli component-cli remote push \
+landscaper-cli components-cli ca remote push \
   eu.gcr.io/gardener-project/landscaper/tutorials/components \
   github.com/gardener/landscaper/simple-aggregated \
   v0.1.2 \
