@@ -32,6 +32,8 @@ rules:
   - get
   - list
   - watch
+  - create
+  - update
 {{- if has "container" .Values.landscaper.deployers }}
 - apiGroups:
   - ""
