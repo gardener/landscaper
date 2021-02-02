@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"net/http"
 
-	lscore "github.com/gardener/landscaper/apis/core"
-	"github.com/gardener/landscaper/apis/core/validation"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	lscore "github.com/gardener/landscaper/apis/core"
+	"github.com/gardener/landscaper/apis/core/validation"
 )
 
 // ValidatorFromResourceType is a helper method that gets a resource type and returns the fitting validator

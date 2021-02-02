@@ -27,9 +27,10 @@ import (
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
-	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
 
 func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
