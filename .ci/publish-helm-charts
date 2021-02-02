@@ -12,3 +12,6 @@ SOURCE_PATH="$(dirname $0)/.."
 
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller charts/landscaper
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller charts/container-deployer
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/helm-deployer-controller charts/helm-deployer
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/manifest-deployer-controller charts/manifest-deployer
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/mock-deployer-controller charts/mock-deployer

@@ -14,6 +14,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/framework"
+	"github.com/gardener/landscaper/test/integration/helmcharts"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
 	"github.com/gardener/landscaper/test/utils"
@@ -47,6 +48,7 @@ func TestConfig(t *testing.T) {
 	// todo: register tests
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)
+	helmcharts.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()

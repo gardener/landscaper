@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -39,6 +39,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/config/config.yaml"
+          {{- if .Values.deployer.verbosityLevel }}
+          - "-v={{ .Values.deployer.verbosityLevel }}"
+          {{- end }}
           volumeMounts:
           - name: config
             mountPath: /app/ls/config

@@ -31,6 +31,7 @@ type Options struct {
 	KubeconfigPath string
 	RootPath       string
 	LsNamespace    string
+	LsVersion      string
 }
 
 // AddFlags registers the framework related flags
@@ -42,6 +43,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 		fs.String("kubeconfig", "", "Path to the kubeconfig")
 	}
 	fs.StringVar(&o.LsNamespace, "ls-namespace", "", "Namespace where the landscaper controller is running")
+	fs.StringVar(&o.LsVersion, "ls-version", "", "the version to use in integration tests")
 	o.fs = fs
 }
 
@@ -73,6 +75,9 @@ type Framework struct {
 	// All functionality like waiting for the components to be ready or log dump is not available
 	// if left empty.
 	LsNamespace string
+	// LsVersion defines the version of landscaper components to be used for the integration test
+	// Will use the latest version (see VERSION) if left empty
+	LsVersion string
 }
 
 func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
@@ -83,6 +88,7 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 		logger:      logger,
 		RootPath:    cfg.RootPath,
 		LsNamespace: cfg.LsNamespace,
+		LsVersion:   cfg.LsVersion,
 		Cleanup:     &Cleanup{},
 	}
 

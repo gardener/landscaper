@@ -1,0 +1,28 @@
+imports:
+  cluster:
+    apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Target
+    metadata:
+      name: cluster
+      namespace: default
+    spec:
+      type: landscaper.gardener.cloud/kubernetes-cluster
+      config:
+        kubeconfig: |
+          apiVersion:...
+  releaseNamespace: manifest-deployer
+  releaseName: landscaper-manifest-deployer
+  values: 
+    deployer:
+      namespace: ""
+      oci: 
+        allowPlainHttp: false
+        secrets: {}
+    replicaCount: 1
+    image:
+      pullPolicy: IfNotPresent
+    # targetSelector:
+    #   - annotations:
+    #     - key:
+    #       operator:
+    #       value:    

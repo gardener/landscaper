@@ -72,3 +72,11 @@ WORKDIR /
 
 ENTRYPOINT ["/manifest-deployer-controller"]
 
+#### Mock Deployer Controller ####
+FROM base as mock-deployer-controller
+
+COPY --from=builder /go/bin/mock-deployer-controller /mock-deployer-controller
+
+WORKDIR /
+
+ENTRYPOINT ["/mock-deployer-controller"]
