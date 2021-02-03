@@ -18,7 +18,7 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
   - Component Descriptors
   - Installations
   - Targets
-  - Dataobjects
+  - DataObjects
   - Deploy Items
   
 2.2. Running a local Landscaper using the landscaper-cli
