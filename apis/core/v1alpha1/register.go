@@ -50,7 +50,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&DeployItem{},
 		&DeployItemList{},
 	)
-	RegisterConversions(scheme)
+	if err := RegisterConversions(scheme); err != nil {
+		return err
+	}
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }

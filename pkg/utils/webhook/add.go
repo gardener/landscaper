@@ -142,10 +142,14 @@ func RegisterWebhooks(ctx context.Context, mgr manager.Manager, o Options, webho
 		if err != nil {
 			return fmt.Errorf("unable to register webhooks: %w", err)
 		}
-		val.InjectClient(mgr.GetClient())
+		if err := val.InjectClient(mgr.GetClient()); err != nil {
+			return fmt.Errorf("unable to register webhooks: %w", err)
+		}
 		rsLogger := webhookLogger.WithName(elem.ResourceName)
 		webhookPath := o.WebhookBasePath + elem.ResourceName
-		val.InjectLogger(rsLogger)
+		if err := val.InjectLogger(rsLogger); err != nil {
+			return fmt.Errorf("unable to register webhooks: %w", err)
+		}
 
 		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
 		mgr.GetWebhookServer().Register(webhookPath, &ctrlwebhook.Admission{Handler: val})
