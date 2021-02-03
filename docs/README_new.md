@@ -19,7 +19,7 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
   - Installations
   - Targets
   - DataObjects
-  - Deploy Items
+  - DeployItems
   
 2.2. Running a local Landscaper using the landscaper-cli
 - Landscaper CLI in a nutshell
