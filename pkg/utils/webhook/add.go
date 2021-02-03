@@ -12,9 +12,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/gardener/landscaper/pkg/kubernetes"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -149,11 +146,6 @@ func RegisterWebhooks(ctx context.Context, mgr manager.Manager, o Options, webho
 		rsLogger := webhookLogger.WithName(elem.ResourceName)
 		webhookPath := o.WebhookBasePath + elem.ResourceName
 		val.InjectLogger(rsLogger)
-		lscDecoder, err := admission.NewDecoder(kubernetes.LandscaperScheme)
-		if err != nil {
-			return fmt.Errorf("unable to create decoder: %w", err)
-		}
-		val.InjectDecoder(lscDecoder)
 
 		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
 		mgr.GetWebhookServer().Register(webhookPath, &ctrlwebhook.Admission{Handler: val})

@@ -10,6 +10,8 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -34,14 +36,14 @@ func ValidatorFromResourceType(resource string) (GenericValidator, error) {
 
 type abstractValidator struct {
 	Client  client.Client
-	decoder *admission.Decoder
+	decoder runtime.Decoder
 	log     logr.Logger
 }
 
 // GenericValidator is an abstraction interface that implements admission.Handler and contains additional setter functions for the fields
 type GenericValidator interface {
 	Handle(context.Context, admission.Request) admission.Response
-	InjectDecoder(*admission.Decoder) error
+	InjectScheme(*runtime.Scheme) error
 	InjectClient(client.Client) error
 	InjectLogger(logr.Logger) error
 }
@@ -50,8 +52,8 @@ func (av *abstractValidator) Handle(ctx context.Context, req admission.Request) 
 	return admission.Denied("call to abstract method Handle, please implement")
 }
 
-func (av *abstractValidator) InjectDecoder(d *admission.Decoder) error {
-	av.decoder = d
+func (av *abstractValidator) InjectScheme(scheme *runtime.Scheme) error {
+	av.decoder = serializer.NewCodecFactory(scheme).UniversalDecoder()
 	return nil
 }
 
@@ -74,7 +76,7 @@ type InstallationValidator struct{ abstractValidator }
 func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	iv.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	inst := &lscore.Installation{}
-	if err := iv.decoder.Decode(req, inst); err != nil {
+	if _, _, err := iv.decoder.Decode(req.Object.Raw, nil, inst); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
@@ -94,7 +96,7 @@ type DeployItemValidator struct{ abstractValidator }
 func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	div.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	di := &lscore.DeployItem{}
-	if err := div.decoder.Decode(req, di); err != nil {
+	if _, _, err := div.decoder.Decode(req.Object.Raw, nil, di); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
@@ -114,7 +116,7 @@ type ExecutionValidator struct{ abstractValidator }
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	ev.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	exec := &lscore.Execution{}
-	if err := ev.decoder.Decode(req, exec); err != nil {
+	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, exec); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
