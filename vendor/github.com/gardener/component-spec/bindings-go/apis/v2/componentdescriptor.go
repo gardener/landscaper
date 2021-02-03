@@ -26,16 +26,18 @@ var (
 	NotFound = errors.New("NotFound")
 )
 
-// +k8s:deepcopy-gen=true
 // Metadata defines the metadata of the component descriptor.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Metadata struct {
 	// Version is the schema version of the component descriptor.
 	Version string `json:"schemaVersion"`
 }
 
-// +k8s:deepcopy-gen=true
 // ProviderType describes the provider type of component in the origin's context.
 // Defines whether the component is created by a third party or internally.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type ProviderType string
 
 const (
@@ -47,9 +49,10 @@ const (
 	ExternalProvider ProviderType = "external"
 )
 
-// +k8s:deepcopy-gen=true
 // ResourceRelation describes the type of a resource.
 // Defines whether the component is created by a third party or internally.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type ResourceRelation string
 
 const (
@@ -61,8 +64,9 @@ const (
 	ExternalRelation ResourceRelation = "external"
 )
 
-// +k8s:deepcopy-gen=true
 // Spec defines a versioned virtual component with a source and dependencies.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type ComponentDescriptor struct {
 	// Metadata specifies the schema version of the component.
 	Metadata Metadata `json:"meta"`
@@ -70,9 +74,10 @@ type ComponentDescriptor struct {
 	ComponentSpec `json:"component"`
 }
 
-// +k8s:deepcopy-gen=true
 // ComponentSpec defines a virtual component with
 // a repository context, source and dependencies.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type ComponentSpec struct {
 	ObjectMeta `json:",inline"`
 	// RepositoryContexts defines the previous repositories of the component
@@ -90,6 +95,8 @@ type ComponentSpec struct {
 
 // +k8s:deepcopy-gen=true
 // RepositoryContext describes a repository context.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type RepositoryContext struct {
 	// Type defines the type of the component repository to resolve references.
 	Type string `json:"type"`
@@ -145,9 +152,10 @@ const (
 	SystemIdentityVersion = "version"
 )
 
-// +k8s:deepcopy-gen=true
 // Identity describes the identity of an object.
 // Only ascii characters are allowed
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Identity map[string]string
 
 // Digest returns the object digest of an identity
@@ -156,8 +164,9 @@ func (i Identity) Digest() []byte {
 	return data
 }
 
-// +k8s:deepcopy-gen=true
 // IdentityObjectMeta defines a object that is uniquely identified by its identity.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type IdentityObjectMeta struct {
 	// Name is the context unique name of the object.
 	Name string `json:"name"`
@@ -251,8 +260,9 @@ func (t *ObjectType) SetType(ttype string) {
 	t.Type = ttype
 }
 
-// +k8s:deepcopy-gen=true
 // Label is a label that can be set on objects.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Label struct {
 	// Name is the unique name of the label.
 	Name string `json:"name"`
@@ -260,8 +270,9 @@ type Label struct {
 	Value json.RawMessage `json:"value"`
 }
 
-// +k8s:deepcopy-gen=true
 // Labels describe a list of labels
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Labels []Label
 
 // Get returns the label witht the given name
@@ -331,6 +342,7 @@ func NewUnstructuredType(ttype string, data map[string]interface{}) *Unstructure
 }
 
 // UnstructuredAccessType describes a generic access type.
+// +k8s:openapi-gen=true
 type UnstructuredAccessType struct {
 	ObjectType `json:",inline"`
 	Raw        []byte                 `json:"-"`
@@ -429,15 +441,17 @@ func (u *UnstructuredAccessType) MarshalJSON() ([]byte, error) {
 	return data, nil
 }
 
-// +k8s:deepcopy-gen=true
 // Source is the definition of a component's source.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Source struct {
 	IdentityObjectMeta `json:",inline"`
 	Access             *UnstructuredAccessType `json:"access"`
 }
 
-// +k8s:deepcopy-gen=true
 // SourceRef defines a reference to a source
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type SourceRef struct {
 	// IdentitySelector defines the identity that is used to match a source.
 	IdentitySelector map[string]string `json:"identitySelector,omitempty"`
@@ -447,8 +461,9 @@ type SourceRef struct {
 	Labels Labels `json:"labels,omitempty"`
 }
 
-// +k8s:deepcopy-gen=true
 // Resource describes a resource dependency of a component.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type Resource struct {
 	IdentityObjectMeta `json:",inline"`
 
@@ -465,8 +480,9 @@ type Resource struct {
 	Access *UnstructuredAccessType `json:"access"`
 }
 
-// +k8s:deepcopy-gen=true
 // ComponentReference describes the reference to another component in the registry.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
 type ComponentReference struct {
 	// Name is the context unique name of the object.
 	Name string `json:"name"`

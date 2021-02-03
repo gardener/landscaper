@@ -9,9 +9,14 @@
 landscaper:
 
   registryConfig: # contains optional oci secrets
+    cache: {}
+#      useInMemoryOverlay: false
     allowPlainHttpRegistries: false
     secrets: {}
 #     <name>: <docker config json>
+
+#  metrics:
+#    port: 8080
 
   deployers: []
 #  - container

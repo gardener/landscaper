@@ -77,8 +77,12 @@ registry:
       - /app/ls/registry/secrets/{{ $key }}
       {{- end }}
       {{- end }}
+      cache:
+        path: /app/ls/oci-cache/
+        useInMemoryOverlay: {{ .Values.landscaper.registryConfig.cache.useInMemoryOverlay | default false }}
 {{ end }}
-
-
-
+{{- if .Values.landscaper.metrics }}
+metrics:
+  port: {{ .Values.landscaper.metrics.port | default 8080 }}
+{{- end }}
 {{- end }}

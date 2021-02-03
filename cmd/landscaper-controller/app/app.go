@@ -23,6 +23,9 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+
+	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
+	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
@@ -53,13 +56,19 @@ func (o *options) run(ctx context.Context) error {
 
 	opts := manager.Options{
 		LeaderElection:     false,
-		MetricsBindAddress: "0", // disable the metrics serving by default
+		MetricsBindAddress: "0",
+	}
+
+	if o.config.Metrics != nil {
+		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.config.Metrics.Port)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager: %w", err)
 	}
+
+	componentcliMetrics.RegisterCacheMetrics(controllerruntimeMetrics.Registry)
 
 	install.Install(mgr.GetScheme())
 

@@ -13,10 +13,11 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
-	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	mock "github.com/gardener/landscaper/apis/deployer/mock"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	mock "github.com/gardener/landscaper/apis/deployer/mock"
 )
 
 func init() {

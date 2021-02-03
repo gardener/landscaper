@@ -6,6 +6,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,21 +18,24 @@ import (
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/gardener/component-cli/ociclient/metrics"
 )
 
 type layeredCache struct {
 	log logr.Logger
 	mux sync.RWMutex
 
-	baseFs    vfs.FileSystem
-	overlayFs vfs.FileSystem
+	baseFs    *FileSystem
+	overlayFs *FileSystem
 }
 
 // NewCache creates a new cache with the given options.
 // It uses by default a tmp fs
-func NewCache(log logr.Logger, options ...Option) (Cache, error) {
+func NewCache(log logr.Logger, options ...Option) (*layeredCache, error) {
 	opts := &Options{}
 	opts = opts.ApplyOptions(options)
+	opts.ApplyDefaults()
 
 	if err := initBasePath(opts); err != nil {
 		return nil, err
@@ -41,16 +45,34 @@ func NewCache(log logr.Logger, options ...Option) (Cache, error) {
 	if err != nil {
 		return nil, err
 	}
-	var overlay vfs.FileSystem
+	baseCFs, err := NewCacheFilesystem(log.WithName("baseCacheFS"), base, opts.BaseGCConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create base layer: %w", err)
+	}
+	var overlayCFs *FileSystem
 	if opts.InMemoryOverlay {
-		overlay = memoryfs.New()
+		overlayCFs, err = NewCacheFilesystem(log.WithName("inMemoryCacheFS"), memoryfs.New(), opts.InMemoryGCConfig)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create base layer: %w", err)
+		}
+	}
+
+	//initialize metrics
+	baseCFs.WithMetrics(
+		metrics.CachedItems.WithLabelValues(opts.UID),
+		metrics.CacheDiskUsage.WithLabelValues(opts.UID),
+		metrics.CacheHitsDisk.WithLabelValues(opts.UID))
+	if opts.InMemoryOverlay {
+		overlayCFs.WithMetrics(nil,
+			metrics.CacheMemoryUsage.WithLabelValues(opts.UID),
+			metrics.CacheHitsMemory.WithLabelValues(opts.UID))
 	}
 
 	return &layeredCache{
 		log:       log,
 		mux:       sync.RWMutex{},
-		baseFs:    base,
-		overlayFs: overlay,
+		baseFs:    baseCFs,
+		overlayFs: overlayCFs,
 	}, nil
 }
 
@@ -79,6 +101,19 @@ func initBasePath(opts *Options) error {
 	return nil
 }
 
+// Close implements the io.Closer interface that cleanups all resource used by the cache.
+func (lc *layeredCache) Close() error {
+	if err := lc.baseFs.Close(); err != nil {
+		return err
+	}
+	if lc.overlayFs != nil {
+		if err := lc.overlayFs.Close(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (lc *layeredCache) Get(desc ocispecv1.Descriptor) (io.ReadCloser, error) {
 	_, file, err := lc.get(path(desc))
 	if err != nil {
@@ -93,7 +128,7 @@ func (lc *layeredCache) Add(desc ocispecv1.Descriptor, reader io.ReadCloser) err
 	defer lc.mux.Unlock()
 	defer reader.Close()
 
-	file, err := lc.baseFs.Create(path)
+	file, err := lc.baseFs.Create(path, desc.Size)
 	if err != nil {
 		return err
 	}
@@ -155,7 +190,7 @@ func (lc *layeredCache) get(dgst string) (os.FileInfo, vfs.File, error) {
 
 	// copy file to in memory cache
 	if lc.overlayFs != nil {
-		overlayFile, err := lc.overlayFs.Create(dgst)
+		overlayFile, err := lc.overlayFs.Create(dgst, info.Size())
 		if err != nil {
 			// do not return an error here as we are only unable to write to better cache
 			lc.log.V(5).Info(err.Error())
@@ -165,7 +200,19 @@ func (lc *layeredCache) get(dgst string) (os.FileInfo, vfs.File, error) {
 		if _, err := io.Copy(overlayFile, file); err != nil {
 			// do not return an error here as we are only unable to write to better cache
 			lc.log.V(5).Info(err.Error())
+
+			// The file handle is at the end as the data was copied by io.Copy.
+			// Therefore the file handle is reset so that the caller can also read the data.
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				return nil, nil, fmt.Errorf("unable to reset the file handle: %w", err)
+			}
 			return info, file, nil
+		}
+
+		// The file handle is at the end as the data was copied by io.Copy.
+		// Therefore the file handle is reset so that the caller can also read the data.
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			return nil, nil, fmt.Errorf("unable to reset the file handle: %w", err)
 		}
 	}
 	return info, file, nil
