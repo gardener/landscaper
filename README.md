@@ -7,18 +7,26 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/gardener/landscaper)](https://goreportcard.com/report/github.com/gardener/landscaper)
 [![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
 
+<!-- Motivation -->
+_Landscaper_ provides the means to describe, install and maintain cloud-native landscapes. It allows you to express an order of building blocks, connect output with input data and ultimately, bring your landscape to live.
+
+What does a 'landscape' consist of? In this context it refers not only to application bundles but also includes infrastructure components in public, private and hybrid environments. 
+
+While tools like Terraform, Helm or native Kubernetes resources work well in their specific problem space, it has been a manual task to connect them so far. Landscaper solves this specific problem and offers a fully-automated installation flow. To do so, it translates blueprints of components into actionable items and employs well-known tools like Helm or Terraform to deploy them. In turn the produced output can be used as input and trigger for a subsequent step - regardless of the tools used underneath. Since implemented as a set of Kubernetes operators, Landscaper uses the concept of reconciliation to enforce a desired state, which also allows for updates to be rolled out smoothly.
+<!-- end -->
+
 **:warning: Landscaper is currently in an alpha state, expect the api to change at any time.**
 
 **Work in progress... partial and unfinished documentation ahead!**
 
-The _Landscaper_ is an [operator](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) to install, update & manage a Gardener deployment.
-
-The Documentation can be found [here](docs/README.md).<br>
-A list of available deployers is maintained [here](docs/deployer).
+### Start Reading
+- The documentation can be found [here](docs/README.md).
+- A list of available deployers is maintained [here](docs/deployer).
+- A glossary can be found [here](docs/concepts/Glossary.md)
 
 ### Quick Start
 
-The Landscaper is a kubernetes controller that can be easily installed via helm using the helm chart in [charts/landscaper](charts/landscaper).
+Landscaper is a Kubernetes controller that can be easily installed via helm using the helm chart in [charts/landscaper](charts/landscaper).
 
 ```
 helm install -n ls-system landscaper ./charts/landscaper
@@ -39,8 +47,8 @@ image:
   tag: image version # .e.g. 0.2.0; check the latest releases in the github releases
 
 landscaper:
-  registryConfig: 
-    allowPlainHttpRegistries: false 
+  registryConfig:
+    allowPlainHttpRegistries: false
     secrets: # contains optional oci secrets
       default: {
         "auths": {
@@ -49,9 +57,9 @@ landscaper:
           }
         }
       }
-  
+
   # deploy with integrated deployers for quick start
-  deployers: 
+  deployers:
   - container
   - helm
   - manifest
