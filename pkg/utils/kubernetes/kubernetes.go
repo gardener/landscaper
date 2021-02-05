@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -227,7 +226,7 @@ func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
 		},
 		Clusters: map[string]*clientcmdapi.Cluster{
 			defaultID: {
-				Server:                   path.Join(restConfig.Host, restConfig.APIPath),
+				Server:                   restConfig.Host + restConfig.APIPath,
 				CertificateAuthorityData: restConfig.CAData,
 				InsecureSkipTLSVerify:    restConfig.Insecure,
 			},

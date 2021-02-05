@@ -31,7 +31,7 @@ revendor:
 
 .PHONY: format
 format:
-	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd
+	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack
 
 .PHONY: check
 check:
@@ -40,8 +40,12 @@ check:
 
 .PHONY: test
 test:
-	@go test -mod=vendor $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
+	@go test -mod=vendor $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/framework/... $(REPO_ROOT)/test/utils/... $(REPO_ROOT)/test/landscaper/...
 	@cd $(REPO_ROOT)/apis && GO111MODULE=on go test ./...
+
+.PHONY: integration-test
+integration-test:
+	@go test -mod=vendor $(REPO_ROOT)/test/integration --kubeconfig $(KUBECONFIG)
 
 .PHONY: verify
 verify: check

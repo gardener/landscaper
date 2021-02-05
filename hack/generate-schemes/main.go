@@ -57,7 +57,7 @@ type JSONSchemGenerator struct {
 
 type GenType struct {
 	prefix string
-	obj interface{}
+	obj    interface{}
 }
 
 func (g JSONSchemGenerator) Generate(gt GenType) error {
@@ -79,4 +79,3 @@ func (g JSONSchemGenerator) Generate(gt GenType) error {
 	}
 	return nil
 }
-

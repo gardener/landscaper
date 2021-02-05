@@ -19,6 +19,14 @@ const (
 	// OperationAnnotation is the annotation that specifies a operation for a component
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
+	// Labels
+
+	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.
+	// This label should be set on landscper related components like the landcaper controller or deployers.
+	LandscaperComponentLabelName = "landscaper.gardener.cloud/component"
+
+	// Component Descriptor
+
 	// BlueprintType is the name of the blueprint type in a component descriptor.
 	BlueprintType = "landscaper.gardener.cloud/blueprint"
 

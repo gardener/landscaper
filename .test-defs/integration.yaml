@@ -1,0 +1,17 @@
+kind: TestDefinition
+metadata:
+  name: integration-test
+spec:
+  owner: gardener-oq@listserv.sap.com
+  description: runs the intergration test suite of the landscaper
+  activeDeadlineSeconds: 900
+
+  command: [bash, -c]
+  args:
+  - >-
+    go test -timeout=0 -mod=vendor ./test/integration
+    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor
+    --kubeconfig $TM_KUBECONFIG_PATH/kind.config
+    --ls-namespace=ls-system
+
+  image: golang:1.15.7
