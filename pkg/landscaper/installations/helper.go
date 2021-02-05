@@ -112,7 +112,7 @@ func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName st
 			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
-		rawDataObject.Data = data
+		rawDataObject.Data.RawMessage = data
 		// set the generation as it is used to detect outdated imports.
 		rawDataObject.SetGeneration(secret.Generation)
 	}
@@ -126,7 +126,7 @@ func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName st
 			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
-		rawDataObject.Data = []byte(data)
+		rawDataObject.Data.RawMessage = []byte(data)
 		// set the generation as it is used to detect outdated imports.
 		rawDataObject.SetGeneration(cm.Generation)
 	}

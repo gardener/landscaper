@@ -110,7 +110,7 @@ var _ = Describe("Installation", func() {
 			bpDef := core.BlueprintDefinition{
 				Reference: nil,
 				Inline: &core.InlineBlueprint{
-					Filesystem: []byte("raw-string-representing-inline-blueprint-for-test"),
+					Filesystem: core.AnyJSON{RawMessage: []byte("raw-string-representing-inline-blueprint-for-test")},
 				},
 			}
 			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))
@@ -135,7 +135,7 @@ var _ = Describe("Installation", func() {
 					ResourceName: "foo",
 				},
 				Inline: &core.InlineBlueprint{
-					Filesystem: []byte("raw-string-representing-inline-blueprint-for-test"),
+					Filesystem: core.AnyJSON{RawMessage: []byte("raw-string-representing-inline-blueprint-for-test")},
 				},
 			}
 			allErrs := validation.ValidateInstallationBlueprint(bpDef, field.NewPath("blueprint"))

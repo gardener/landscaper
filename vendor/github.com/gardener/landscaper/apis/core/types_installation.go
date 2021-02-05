@@ -5,8 +5,6 @@
 package core
 
 import (
-	"encoding/json"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,7 +63,7 @@ type InstallationSpec struct {
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
 	// +optional
-	ImportDataMappings map[string]json.RawMessage `json:"importDataMappings,omitempty"`
+	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
 	// Exports define the exported data objects and targets.
 	// +optional
@@ -76,7 +74,7 @@ type InstallationSpec struct {
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
-	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
+	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 }
 
 // InstallationStatus contains the current status of a Installation.
@@ -192,7 +190,7 @@ type RemoteBlueprintReference struct {
 // filesystem.
 type InlineBlueprint struct {
 	// Filesystem defines a inline yaml filesystem with a blueprint.
-	Filesystem json.RawMessage `json:"filesystem"`
+	Filesystem AnyJSON `json:"filesystem"`
 }
 
 // ComponentDescriptorDefinition defines the component descriptor that should be used
@@ -231,7 +229,7 @@ func (r ComponentDescriptorReference) ObjectMeta() cdv2.ObjectMeta {
 type StaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
-	Value json.RawMessage `json:"value,omitempty"`
+	Value AnyJSON `json:"value,omitempty"`
 
 	// ValueFrom defines data from an external resource
 	ValueFrom *StaticDataValueFrom `json:"valueFrom,omitempty"`

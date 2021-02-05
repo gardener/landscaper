@@ -50,12 +50,14 @@ integration-test:
 .PHONY: verify
 verify: check
 
-.PHONY: generate
-generate:
+.PHONY: generate-code
+generate-code:
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/generate.sh ./... && cd $(REPO_ROOT)
 	@go run -mod=vendor $(REPO_ROOT)/hack/post-crd-generate $(REPO_ROOT)/charts/landscaper/templates/crd
-	@go run -mod=vendor $(REPO_ROOT)/hack/generate-schemes
 	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
+
+.PHONY: generate
+generate: generate-code format
 
 #################################################################
 # Rules related to binary build, docker image build and release #

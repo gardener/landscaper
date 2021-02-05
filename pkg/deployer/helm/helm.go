@@ -155,7 +155,7 @@ func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 	}
 	if h.Target != nil {
 		targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-		if err := json.Unmarshal(h.Target.Spec.Configuration, targetConfig); err != nil {
+		if err := json.Unmarshal(h.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(targetConfig.Kubeconfig))

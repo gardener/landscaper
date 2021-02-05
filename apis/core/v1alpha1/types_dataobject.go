@@ -5,8 +5,6 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,5 +53,5 @@ type DataObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Data contains the data of the object as string.
-	Data json.RawMessage `json:"data"`
+	Data AnyJSON `json:"data"`
 }

@@ -75,6 +75,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>JSONSchemaVersion defines the default jsonschema version of the blueprint.
 e.g. &ldquo;<a href="https://json-schema.org/draft/2019-09/schema&quot;">https://json-schema.org/draft/2019-09/schema&rdquo;</a></p>
 </td>
@@ -97,8 +98,8 @@ map[string]github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinitio
 <td>
 <code>imports</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinition">
-[]ImportDefinition
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinitionList">
+ImportDefinitionList
 </a>
 </em>
 </td>
@@ -214,8 +215,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>data</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -552,8 +553,8 @@ InstallationImports
 <td>
 <code>importDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -583,8 +584,8 @@ InstallationExports
 <td>
 <code>exportDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -692,8 +693,8 @@ InstallationImports
 <td>
 <code>importDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -723,8 +724,8 @@ InstallationExports
 <td>
 <code>exportDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -814,8 +815,8 @@ The actual schema may be defined by a target type crd in the future.</p>
 <td>
 <code>config</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -825,6 +826,50 @@ encoding/json.RawMessage
 </td>
 </tr>
 </table>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.AnyJSON">AnyJSON
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.BlueprintStaticDataSource">BlueprintStaticDataSource</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.Default">Default</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InlineBlueprint">InlineBlueprint</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplateBlueprintDefinition">InstallationTemplateBlueprintDefinition</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.StaticDataSource">StaticDataSource</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TemplateExecutor">TemplateExecutor</a>)
+</p>
+<p>
+<p>AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
+it is correctly generated</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>RawMessage</code></br>
+<em>
+<a href="https://golang.org/pkg/encoding/json/#RawMessage">
+encoding/json.RawMessage
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RawMessage</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 </tbody>
@@ -893,8 +938,8 @@ InlineBlueprint
 <td>
 <code>value</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -1389,8 +1434,8 @@ This method is not allowed in installation templates.</p>
 <td>
 <code>value</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -1985,11 +2030,6 @@ string
 <h3 id="landscaper.gardener.cloud/v1alpha1.ImportDefinition">ImportDefinition
 </h3>
 <p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinition">ImportDefinition</a>)
-</p>
-<p>
 <p>ImportDefinition defines a imported value</p>
 </p>
 <table>
@@ -2045,8 +2085,8 @@ Default
 <td>
 <code>imports</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinition">
-[]ImportDefinition
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinitionList">
+ImportDefinitionList
 </a>
 </em>
 </td>
@@ -2206,8 +2246,8 @@ filesystem.</p>
 <td>
 <code>filesystem</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -2392,8 +2432,8 @@ InstallationImports
 <td>
 <code>importDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -2423,8 +2463,8 @@ InstallationExports
 <td>
 <code>exportDataMappings</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-map[string]encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 </a>
 </em>
 </td>
@@ -2594,8 +2634,8 @@ Example: cd://componentReference/dns/resources/blueprint</p>
 <td>
 <code>filesystem</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -2608,7 +2648,7 @@ The filesystem must be a YAML filesystem.</p>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.JSONSchemaDefinition">JSONSchemaDefinition
-(<code>[]byte</code> alias)</p></h3>
+</h3>
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>, 
@@ -2617,6 +2657,31 @@ The filesystem must be a YAML filesystem.</p>
 <p>
 <p>JSONSchemaDefinition defines a jsonschema.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>RawMessage</code></br>
+<em>
+<a href="https://golang.org/pkg/encoding/json/#RawMessage">
+encoding/json.RawMessage
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>RawMessage</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.KubernetesClusterTargetConfig">KubernetesClusterTargetConfig
 </h3>
 <p>
@@ -2976,8 +3041,8 @@ string
 <td>
 <code>value</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -3205,8 +3270,8 @@ The actual schema may be defined by a target type crd in the future.</p>
 <td>
 <code>config</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>
@@ -3344,8 +3409,8 @@ string
 <td>
 <code>template</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
-encoding/json.RawMessage
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+AnyJSON
 </a>
 </em>
 </td>

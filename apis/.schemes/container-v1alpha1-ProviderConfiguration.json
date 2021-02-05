@@ -1,0 +1,502 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "apis-v2-ComponentDescriptor": {
+      "description": "Spec defines a versioned virtual component with a source and dependencies.",
+      "type": "object",
+      "required": [
+        "meta",
+        "component"
+      ],
+      "properties": {
+        "component": {
+          "description": "Spec contains the specification of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-ComponentSpec"
+        },
+        "meta": {
+          "description": "Metadata specifies the schema version of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-Metadata"
+        }
+      }
+    },
+    "apis-v2-ComponentReference": {
+      "description": "ComponentReference describes the reference to another component in the registry.",
+      "type": "object",
+      "required": [
+        "name",
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName describes the remote name of the referenced object",
+          "type": "string",
+          "default": ""
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-ComponentSpec": {
+      "description": "ComponentSpec defines a virtual component with a repository context, source and dependencies.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "repositoryContexts",
+        "provider",
+        "sources",
+        "componentReferences",
+        "resources"
+      ],
+      "properties": {
+        "componentReferences": {
+          "description": "ComponentReferences references component dependencies that can be resolved in the current context.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-ComponentReference"
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "provider": {
+          "description": "Provider defines the provider type of a component. It can be external or internal.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContexts": {
+          "description": "RepositoryContexts defines the previous repositories of the component",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-RepositoryContext"
+          }
+        },
+        "resources": {
+          "description": "Resources defines all resources that are created by the component and by a third party.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Resource"
+          }
+        },
+        "sources": {
+          "description": "Sources defines sources that produced the component",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Source"
+          }
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Label": {
+      "description": "Label is a label that can be set on objects.",
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the unique name of the label.",
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "description": "Value is the json/yaml data of the label",
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "apis-v2-Metadata": {
+      "description": "Metadata defines the metadata of the component descriptor.",
+      "type": "object",
+      "required": [
+        "schemaVersion"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "description": "Version is the schema version of the component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-RepositoryContext": {
+      "description": "RepositoryContext describes a repository context.",
+      "type": "object",
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "description": "BaseURL is the base url of the repository to resolve components.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type defines the type of the component repository to resolve references.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Resource": {
+      "description": "Resource describes a resource dependency of a component.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "description": "Access describes the type specific method to access the defined resource.",
+          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "relation": {
+          "description": "Relation describes the relation of the resource to the component. Can be a local or external resource",
+          "type": "string"
+        },
+        "srcRef": {
+          "description": "SourceRef defines a list of source names. These names reference the sources defines in `component.sources`.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-SourceRef"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Source": {
+      "description": "Source is the definition of a component's source.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-SourceRef": {
+      "description": "SourceRef defines a reference to a source",
+      "type": "object",
+      "properties": {
+        "identitySelector": {
+          "description": "IdentitySelector defines the identity that is used to match a source.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        }
+      }
+    },
+    "apis-v2-UnstructuredAccessType": {
+      "description": "UnstructuredAccessType describes a generic access type.",
+      "type": "object",
+      "required": [
+        "type",
+        "object"
+      ],
+      "properties": {
+        "object": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-AnyJSON": {
+      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean"
+      ]
+    },
+    "core-v1alpha1-BlueprintDefinition": {
+      "description": "BlueprintDefinition defines the blueprint that should be used for the installation.",
+      "type": "object",
+      "properties": {
+        "inline": {
+          "description": "Inline defines a inline yaml filesystem with a blueprint.",
+          "$ref": "#/definitions/core-v1alpha1-InlineBlueprint"
+        },
+        "ref": {
+          "description": "Reference defines a remote reference to a blueprint",
+          "$ref": "#/definitions/core-v1alpha1-RemoteBlueprintReference"
+        }
+      }
+    },
+    "core-v1alpha1-ComponentDescriptorDefinition": {
+      "description": "ComponentDescriptorDefinition defines the component descriptor that should be used for the installatoin",
+      "type": "object",
+      "properties": {
+        "inline": {
+          "description": "InlineDescriptorReference defines an inline component descriptor",
+          "$ref": "#/definitions/apis-v2-ComponentDescriptor"
+        },
+        "ref": {
+          "description": "ComponentDescriptorReference is the reference to a component descriptor",
+          "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorReference"
+        }
+      }
+    },
+    "core-v1alpha1-ComponentDescriptorReference": {
+      "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
+      "type": "object",
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName defines the unique of the component containing the resource.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContext": {
+          "description": "RepositoryContext defines the context of the component repository to resolve blueprints.",
+          "$ref": "#/definitions/apis-v2-RepositoryContext"
+        },
+        "version": {
+          "description": "Version defines the version of the component.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-InlineBlueprint": {
+      "description": "InlineBlueprint defines a inline blueprint with component descriptor and filesystem.",
+      "type": "object",
+      "required": [
+        "filesystem"
+      ],
+      "properties": {
+        "filesystem": {
+          "description": "Filesystem defines a inline yaml filesystem with a blueprint.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+        }
+      }
+    },
+    "core-v1alpha1-ObjectReference": {
+      "description": "ObjectReference is the reference to a kubernetes object.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-RemoteBlueprintReference": {
+      "description": "RemoteBlueprintReference describes a reference to a blueprint defined by a component descriptor.",
+      "type": "object",
+      "required": [
+        "resourceName"
+      ],
+      "properties": {
+        "resourceName": {
+          "description": "ResourceName is the name of the blueprint as defined by a component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    }
+  },
+  "description": "ProviderConfiguration is the container deployer configuration that is expected in a DeployItem",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "args": {
+      "description": "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+      "items": {
+        "default": "",
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "blueprint": {
+      "$ref": "#/definitions/core-v1alpha1-BlueprintDefinition",
+      "description": "Blueprint is the resolved reference to the Blueprint definition"
+    },
+    "command": {
+      "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+      "items": {
+        "default": "",
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "componentDescriptor": {
+      "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorDefinition",
+      "description": "ComponentDescriptor is the resolved reference to the ComponentDescriptor defnition"
+    },
+    "image": {
+      "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images The image will be defaulted by the container deployer to the configured default.",
+      "type": "string"
+    },
+    "importValues": {
+      "description": "ImportValues contains the import values for the container.",
+      "format": "byte",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "registryPullSecrets": {
+      "description": "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints and component descriptors from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-ObjectReference",
+        "default": {}
+      },
+      "type": "array"
+    }
+  },
+  "title": "container-v1alpha1-ProviderConfiguration",
+  "type": "object"
+}

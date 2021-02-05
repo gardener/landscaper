@@ -123,7 +123,7 @@ var _ = Describe("jsonschema", func() {
 		BeforeEach(func() {
 			config = &jsonschema.LoaderConfig{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
-					"mycustom": []byte(`{ "type": "string"}`),
+					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
 				},
 			}
 			validator = &jsonschema.Validator{
@@ -161,7 +161,7 @@ var _ = Describe("jsonschema", func() {
 		It("should validate a definition local reference in a blueprint file reference", func() {
 			config = &jsonschema.LoaderConfig{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
-					"mycustom": []byte(`{ "definitions": { "myschema": { "type": "string" } } }`),
+					"mycustom": {RawMessage: []byte(`{ "definitions": { "myschema": { "type": "string" } } }`)},
 				},
 			}
 			validator = &jsonschema.Validator{

@@ -5,8 +5,6 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,7 +14,7 @@ import (
 // InstallationTemplate defines a subinstallation in a blueprint.
 // +kubebuilder:skip
 type InstallationTemplate struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 
 	// Name is the unique name of the step
 	Name string `json:"name"`
@@ -34,7 +32,7 @@ type InstallationTemplate struct {
 	// Missing keys will be defaulted to their respective data import.
 	// Example: namespace: (( installation.imports.namespace ))
 	// +optional
-	ImportDataMappings map[string]json.RawMessage `json:"importDataMappings,omitempty"`
+	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
 
 	// Exports define the exported data objects and targets.
 	// +optional
@@ -45,7 +43,7 @@ type InstallationTemplate struct {
 	// Missing keys will be defaulted to their respective data export.
 	// Example: namespace: (( blueprint.exports.namespace ))
 	// +optional
-	ExportDataMappings map[string]json.RawMessage `json:"exportDataMappings,omitempty"`
+	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 }
 
 // InstallationTemplateBlueprintDefinition contains either a reference to a blueprint or an inline definition.
@@ -59,5 +57,5 @@ type InstallationTemplateBlueprintDefinition struct {
 	// Filesystem defines a virtual filesystem with all files needed for a blueprint.
 	// The filesystem must be a YAML filesystem.
 	// +optional
-	Filesystem json.RawMessage `json:"filesystem,omitempty"`
+	Filesystem AnyJSON `json:"filesystem,omitempty"`
 }

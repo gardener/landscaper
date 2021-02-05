@@ -143,11 +143,11 @@ func (l *Loader) loadLocalReference(refURL *url.URL) ([]byte, error) {
 	if len(refURL.Path) != 0 {
 		return nil, errors.New("a path is not supported for local resources")
 	}
-	schemaBytes, ok := l.LocalTypes[refURL.Host]
+	schema, ok := l.LocalTypes[refURL.Host]
 	if !ok {
 		return nil, fmt.Errorf("type %s is not defined in local types", refURL.Host)
 	}
-	return schemaBytes, nil
+	return schema.RawMessage, nil
 }
 
 func (l *Loader) loadBlueprintReference(refURL *url.URL) ([]byte, error) {

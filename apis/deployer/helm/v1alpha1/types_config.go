@@ -23,7 +23,7 @@ const ManagedDeployItemLabel = "helm.deployer.landscaper.gardener.cloud/deployit
 
 // ProviderConfiguration is the helm deployer configuration that configures the controller
 type Configuration struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 	// OCI configures the oci client of the controller
 	OCI *config.OCIConfiguration `json:"oci,omitempty"`
 	// TargetSelector describes all selectors the deployer should depend on.

@@ -42,7 +42,7 @@ func New() *DataObject {
 // NewFromDataObject creates a new internal dataobject instance from a raw data object.
 func NewFromDataObject(do *lsv1alpha1.DataObject) (*DataObject, error) {
 	var data interface{}
-	if err := yaml.Unmarshal(do.Data, &data); err != nil {
+	if err := yaml.Unmarshal(do.Data.RawMessage, &data); err != nil {
 		return nil, err
 	}
 	return &DataObject{
@@ -145,7 +145,7 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 	)
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Key)
 	raw.Namespace = do.Metadata.Namespace
-	raw.Data, err = json.MarshalIndent(do.Data, "", "  ")
+	raw.Data.RawMessage, err = json.MarshalIndent(do.Data, "", "  ")
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (do DataObject) Apply(raw *lsv1alpha1.DataObject) error {
 	)
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(do.Metadata.Context, do.Metadata.Key)
 	raw.Namespace = do.Metadata.Namespace
-	raw.Data, err = json.MarshalIndent(do.Data, "", "  ")
+	raw.Data.RawMessage, err = json.MarshalIndent(do.Data, "", "  ")
 	if err != nil {
 		return err
 	}

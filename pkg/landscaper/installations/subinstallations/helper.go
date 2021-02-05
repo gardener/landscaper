@@ -24,7 +24,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 	var cdDef *lsv1alpha1.ComponentDescriptorDefinition = inst.Spec.ComponentDescriptor
 
 	// convert InstallationTemplateBlueprintDefinition to installation blueprint definition
-	if len(subInstTmpl.Blueprint.Filesystem) != 0 {
+	if len(subInstTmpl.Blueprint.Filesystem.RawMessage) != 0 {
 		subBlueprint.Inline = &lsv1alpha1.InlineBlueprint{
 			Filesystem: subInstTmpl.Blueprint.Filesystem,
 		}

@@ -22,7 +22,7 @@ const ManagedDeployItemLabel = "manifest.deployer.landscaper.gardener.cloud/depl
 
 // ProviderConfiguration is the helm deployer configuration that configures the controller
 type Configuration struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 	// TargetSelector describes all selectors the deployer should depend on.
 	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
 }

@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "apis-v2-RepositoryContext": {
+      "description": "RepositoryContext describes a repository context.",
+      "type": "object",
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "description": "BaseURL is the base url of the repository to resolve components.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type defines the type of the component repository to resolve references.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "config-v1alpha1-LocalRegistryConfiguration": {
+      "description": "LocalRegistryConfiguration contains the configuration for a local registry",
+      "type": "object",
+      "required": [
+        "rootPath"
+      ],
+      "properties": {
+        "rootPath": {
+          "description": "RootPath configures the root path of a local registry. This path is used to search for components locally.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "config-v1alpha1-MetricsConfiguration": {
+      "description": "MetricsConfiguration allows to configure how metrics are exposed",
+      "type": "object",
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        }
+      }
+    },
+    "config-v1alpha1-OCICacheConfiguration": {
+      "description": "OCICacheConfiguration contains the configuration for the oci cache",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path specifies the path to the oci cache on the filesystem. Defaults to /tmp/ocicache",
+          "type": "string",
+          "default": ""
+        },
+        "useInMemoryOverlay": {
+          "description": "UseInMemoryOverlay enables an additional in memory overlay cache of oci images",
+          "type": "boolean"
+        }
+      }
+    },
+    "config-v1alpha1-OCIConfiguration": {
+      "description": "OCIConfiguration holds configuration for the oci registry",
+      "type": "object",
+      "required": [
+        "allowPlainHttp"
+      ],
+      "properties": {
+        "allowPlainHttp": {
+          "description": "AllowPlainHttp allows the fallback to http if https is not supported by the registry.",
+          "type": "boolean",
+          "default": false
+        },
+        "cache": {
+          "description": "Cache holds configuration for the oci cache",
+          "$ref": "#/definitions/config-v1alpha1-OCICacheConfiguration"
+        },
+        "configFiles": {
+          "description": "ConfigFiles path to additional docker configuration files",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "config-v1alpha1-RegistryConfiguration": {
+      "description": "RegistryConfiguration contains the configuration for the used definition registry",
+      "type": "object",
+      "properties": {
+        "local": {
+          "description": "Local defines a local registry to use for definitions",
+          "$ref": "#/definitions/config-v1alpha1-LocalRegistryConfiguration"
+        },
+        "oci": {
+          "description": "OCI defines a oci registry to use for definitions",
+          "$ref": "#/definitions/config-v1alpha1-OCIConfiguration"
+        }
+      }
+    }
+  },
+  "description": "LandscaperConfiguration contains all configuration for the landscaper controllers",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "defaultOCI": {
+      "$ref": "#/definitions/config-v1alpha1-OCIConfiguration",
+      "description": "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration."
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "metrics": {
+      "$ref": "#/definitions/config-v1alpha1-MetricsConfiguration",
+      "description": "Metrics allows to configure how metrics are exposed"
+    },
+    "registry": {
+      "$ref": "#/definitions/config-v1alpha1-RegistryConfiguration",
+      "default": {},
+      "description": "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts."
+    },
+    "repositoryContext": {
+      "$ref": "#/definitions/apis-v2-RepositoryContext",
+      "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors."
+    }
+  },
+  "required": [
+    "registry"
+  ],
+  "title": "config-v1alpha1-LandscaperConfiguration",
+  "type": "object"
+}

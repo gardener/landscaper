@@ -5,8 +5,6 @@
 package core
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,6 +25,7 @@ type Blueprint struct {
 
 	// JSONSchemaVersion defines the default jsonschema version of the blueprint.
 	// e.g. "https://json-schema.org/draft/2019-09/schema"
+	// +optional
 	JSONSchemaVersion string `json:"jsonSchemaVersion"`
 
 	// LocalTypes defines additional blueprint local schemas
@@ -96,14 +95,14 @@ type FieldValueDefinition struct {
 
 // Default defines a default value (future idea: also reference?).
 type Default struct {
-	Value json.RawMessage `json:"value"`
+	Value AnyJSON `json:"value"`
 }
 
 // BlueprintStaticDataSource defines a static data source for a blueprint
 type BlueprintStaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
-	Value json.RawMessage `json:"value,omitempty"`
+	Value AnyJSON `json:"value,omitempty"`
 
 	// ValueFrom defines data from an external resource
 	ValueFrom *StaticDataValueFrom `json:"valueFrom,omitempty"`
@@ -138,7 +137,7 @@ type TemplateExecutor struct {
 	// The template has to be of string for go template
 	// and a valid yaml/json for spiff.
 	// + optional
-	Template json.RawMessage `json:"template,omitempty"`
+	Template AnyJSON `json:"template,omitempty"`
 }
 
 // SubinstallationTemplate defines a subinstallation template.

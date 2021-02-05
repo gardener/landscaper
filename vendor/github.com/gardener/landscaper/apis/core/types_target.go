@@ -5,8 +5,6 @@
 package core
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -41,7 +39,7 @@ type TargetSpec struct {
 	Type TargetType `json:"type"`
 	// Configuration contains the target type specific configuration.
 	// +optional
-	Configuration json.RawMessage `json:"config,omitempty"`
+	Configuration AnyJSON `json:"config,omitempty"`
 }
 
 // TargetTemplate exposes specific parts of a target that are used in the exports
