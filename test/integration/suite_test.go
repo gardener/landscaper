@@ -37,7 +37,12 @@ func TestConfig(t *testing.T) {
 	opts.RootPath = "../../"
 	f, err := framework.New(logger, opts)
 	utils.ExpectNoError(err)
-	utils.ExpectNoError(f.WaitForSystemComponents(ctx))
+	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
+	err = f.WaitForSystemComponents(ctx)
+	if err != nil {
+		utils.ExpectNoError(d.Dump(ctx))
+	}
+	utils.ExpectNoError(err)
 
 	// todo: register tests
 	tutorial.RegisterTests(f)
