@@ -14,4 +14,5 @@ import (
 func TestWebhook(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Webhook Suite")
+	// TODO add webhook tests, once kubebuilder has a new release
 }
