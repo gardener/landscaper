@@ -18,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
@@ -31,8 +30,10 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
 
+// ApplyFiles applies the helm templated files to the target cluster.
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
 	currOp := "ApplyFile"
 	_, targetClient, err := h.TargetClient()
@@ -116,9 +117,17 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		return err
 	}
 
-	return nil
+	if h.ProviderConfiguration.HealthChecks.Disable {
+		h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+		h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
+		h.DeployItem.Status.LastError = nil
+		return nil
+	}
+
+	return h.CheckResourcesHealth(ctx)
 }
 
+// CheckResourcesHealth checks if the managed resources are Ready/Healthy.
 func (h *Helm) CheckResourcesHealth(ctx context.Context) error {
 	var (
 		currOp      = "CheckResourcesHealthHelm"
@@ -140,13 +149,8 @@ func (h *Helm) CheckResourcesHealth(ctx context.Context) error {
 		objects[i] = obj
 	}
 
-	backoff := wait.Backoff{
-		Duration: 5 * time.Second,
-		Factor:   0,
-		Steps:    3,
-	}
-
-	if err := kutil.WaitObjectsReady(ctx, backoff, h.log, h.kubeClient, objects); err != nil {
+	timeOut := time.Duration(h.ProviderConfiguration.HealthChecks.TimeOutSeconds) * time.Second
+	if err := health.WaitObjectsHealthy(ctx, timeOut, h.log, h.kubeClient, objects); err != nil {
 		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
 			currOp, "CheckResourcesReadiness", err.Error())
 		return err
@@ -155,8 +159,7 @@ func (h *Helm) CheckResourcesHealth(ctx context.Context) error {
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
 	h.DeployItem.Status.LastError = nil
-
-	return h.kubeClient.Status().Update(ctx, h.DeployItem)
+	return nil
 }
 
 func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]interface{}) error {
@@ -194,6 +197,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 	return h.kubeClient.Status().Update(ctx, h.DeployItem)
 }
 
+// DeleteFiles deletes the managed resources from the target cluster.
 func (h *Helm) DeleteFiles(ctx context.Context) error {
 	h.log.Info("Deleting files.")
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
@@ -301,14 +305,9 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 			wg.Add(1)
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
-				if err := kubeClient.Delete(ctx, obj); err != nil {
-					allErrs = append(allErrs, fmt.Errorf("unable to delete %s %s/%s: %w", obj.GroupVersionKind().String(), obj.GetName(), obj.GetNamespace(), err))
-				}
-
-				pollCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
-				defer cancel()
-				delCondFunc := kutil.GenerateDeleteObjectConditionFunc(ctx, kubeClient, obj)
-				err := wait.PollImmediateUntil(5*time.Second, delCondFunc, pollCtx.Done())
+				// Delete object and ensure it is deleted from the cluster.
+				timeOut := time.Duration(h.ProviderConfiguration.DeleteTimeOutSeconds) * time.Second
+				err := kutil.DeleteAndWaitForObjectDeleted(ctx, kubeClient, timeOut, obj)
 				if err != nil {
 					allErrs = append(allErrs, err)
 				}

@@ -14,6 +14,7 @@ import (
 func ValidateProviderConfiguration(config *manifest.ProviderConfiguration) error {
 	var allErr field.ErrorList
 	allErr = append(allErr, ValidateManifestList(field.NewPath(""), config.Manifests)...)
+
 	return allErr.ToAggregate()
 }
 

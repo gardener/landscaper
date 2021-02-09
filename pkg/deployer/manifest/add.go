@@ -9,10 +9,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/manifest"
 )
 
-func AddActuatorToManager(mgr manager.Manager, config *manifestv1alpha1.Configuration) error {
+func AddActuatorToManager(mgr manager.Manager, config *manifest.Configuration) error {
 	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ManifestDeployer"), config)
 	if err != nil {
 		return err

@@ -18,9 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
+	"github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
-	"github.com/gardener/landscaper/apis/deployer/manifest/validation"
+
+	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -36,8 +37,9 @@ func init() {
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
-	log        logr.Logger
-	kubeClient client.Client
+	log           logr.Logger
+	kubeClient    client.Client
+	Configuration *manifest.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -46,14 +48,14 @@ type Manifest struct {
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
+func New(log logr.Logger, kubeClient client.Client, manifestConfig *manifest.Configuration, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
 	config := &manifest.ProviderConfiguration{}
 	manifestDecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, err
 	}
 
-	if err := validation.ValidateProviderConfiguration(config); err != nil {
+	if err := manifestvalidation.ValidateProviderConfiguration(config); err != nil {
 		return nil, err
 	}
 
@@ -68,6 +70,7 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 	return &Manifest{
 		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		kubeClient:            kubeClient,
+		Configuration:         manifestConfig,
 		DeployItem:            item,
 		Target:                target,
 		ProviderConfiguration: config,

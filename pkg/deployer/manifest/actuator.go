@@ -20,12 +20,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator(log logr.Logger, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
+func NewActuator(log logr.Logger, config *manifest.Configuration) (reconcile.Reconciler, error) {
 	return &actuator{
 		log:    log,
 		config: config,
@@ -36,7 +36,7 @@ type actuator struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
-	config *manifestv1alpha1.Configuration
+	config *manifest.Configuration
 }
 
 var _ inject.Client = &actuator{}
@@ -130,7 +130,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 			5*time.Minute))
 	}()
 
-	manifest, err := New(a.log, a.c, deployItem, target)
+	manifest, err := New(a.log, a.c, a.config, deployItem, target)
 	if err != nil {
 		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
 			"InitManifestOperation", "", err.Error())
@@ -151,9 +151,5 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 		return manifest.Delete(ctx)
 	}
 
-	if err = manifest.Reconcile(ctx); err != nil {
-		return err
-	}
-
-	return manifest.CheckResourcesHealth(ctx)
+	return manifest.Reconcile(ctx)
 }

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -311,6 +312,19 @@ func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.U
 		objects = append(objects, obj.DeepCopy())
 	}
 	return objects, nil
+}
+
+// DeleteAndWaitForObjectDeleted deletes an object and waits for the object to be deleted.
+func DeleteAndWaitForObjectDeleted(ctx context.Context, kubeClient client.Client, timeOut time.Duration, obj client.Object) error {
+	if err := kubeClient.Delete(ctx, obj); err != nil {
+		gvk := obj.GetObjectKind().GroupVersionKind().String()
+		return fmt.Errorf("unable to delete %s %s/%s: %w", gvk, obj.GetName(), obj.GetNamespace(), err)
+	}
+
+	pollCtx, cancel := context.WithTimeout(ctx, timeOut)
+	defer cancel()
+	delCondFunc := GenerateDeleteObjectConditionFunc(ctx, kubeClient, obj)
+	return wait.PollImmediateUntil(5*time.Second, delCondFunc, pollCtx.Done())
 }
 
 // GenerateDeleteObjectConditionFunc creates a condition function to validate the deletion of objects.

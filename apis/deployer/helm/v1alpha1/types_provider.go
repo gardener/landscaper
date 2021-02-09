@@ -28,6 +28,15 @@ type ProviderConfiguration struct {
 	// +optional
 	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
 
+	// HealthChecks condigures the health checks.
+	// +optional
+	HealthChecks HealthChecksConfiguration `json:"healthChecks,omitempty"`
+
+	// DeleteTimeOutSeconds is the time to wait in seconds before giving up on a resource to be deleted.
+	// Defaults to 60s.
+	// +optional
+	DeleteTimeOutSeconds int32 `json:"deleteTimeOutSeconds,omitempty"`
+
 	// Chart defines helm chart to be templated and applied.
 	Chart Chart `json:"chart"`
 
@@ -52,6 +61,17 @@ const (
 	UpdateStrategyUpdate UpdateStrategy = "update"
 	UpdateStrategyPatch  UpdateStrategy = "patch"
 )
+
+// HealthChecksConfiguration contains the condiguration for health checks.
+type HealthChecksConfiguration struct {
+	// Disable allows to disable health checks.
+	// +optional
+	Disable bool `json:"disable,omitempty"`
+	// TimeOutSeconds is the time to wait in seconds before giving up on a resource to be healthy.
+	// Defaults to 60s.
+	// +optional
+	TimeOutSeconds int32 `json:"timeOutSeconds,omitempty"`
+}
 
 // Chart defines the helm chart to render and apply.
 type Chart struct {

@@ -12,9 +12,15 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 	return RegisterDefaults(scheme)
 }
 
-// SetDefaults_ProviderConfiguration sets the defaults for the manifest deployer provider configuration.
+// SetDefaults_ProviderConfiguration sets the defaults for the helm deployer provider configuration.
 func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	if len(obj.UpdateStrategy) == 0 {
 		obj.UpdateStrategy = UpdateStrategyUpdate
+	}
+	if obj.HealthChecks.TimeOutSeconds == 0 {
+		obj.HealthChecks.TimeOutSeconds = 60
+	}
+	if obj.DeleteTimeOutSeconds == 0 {
+		obj.DeleteTimeOutSeconds = 60
 	}
 }
