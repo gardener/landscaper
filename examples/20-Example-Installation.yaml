@@ -9,15 +9,15 @@ metadata:
   generation: 6
 spec:
 
-  blueprint: # will be read from the component descriptor
+  componentDescriptor:
     ref:
       componentName: github.com/gardener/virtual-cluster
       version: v1.7.2
+
+  blueprint: # will be read from the component descriptor
+    ref:
       resourceName: my-installation-blueprint
     inline:
-      cdRef:
-        componentName: github.com/gardener/virtual-cluster
-        version: v1.7.2
       filesystem: abc
 
   imports: # generated from aggregated definition or default from definition with from = to

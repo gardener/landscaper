@@ -86,7 +86,8 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguratio
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]manifest.Manifest, len(*in))
 		for i := range *in {
-			if err := s.Convert(&(*in)[i], &(*out)[i]); err != nil {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
 				return err
 			}
 		}
@@ -103,7 +104,8 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguratio
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]*runtime.RawExtension, len(*in))
 		for i := range *in {
-			if err := s.Convert(&(*in)[i], &(*out)[i]); err != nil {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
 				return err
 			}
 		}
@@ -118,7 +120,8 @@ func autoConvert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *Provider
 		in, out := &in.ManagedResources, &out.ManagedResources
 		*out = make([]manifest.ManagedResourceStatus, len(*in))
 		for i := range *in {
-			if err := s.Convert(&(*in)[i], &(*out)[i]); err != nil {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
 				return err
 			}
 		}
@@ -133,7 +136,8 @@ func autoConvert_manifest_ProviderStatus_To_v1alpha1_ProviderStatus(in *manifest
 		in, out := &in.ManagedResources, &out.ManagedResources
 		*out = make([]corev1alpha1.TypedObjectReference, len(*in))
 		for i := range *in {
-			if err := s.Convert(&(*in)[i], &(*out)[i]); err != nil {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
 				return err
 			}
 		}

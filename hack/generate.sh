@@ -7,6 +7,6 @@
 
 set -e
 
-echo "> Generate"
+echo "> Generate $(pwd)"
 
 GOFLAGS=-mod=vendor GO111MODULE=on go generate -mod=vendor $@

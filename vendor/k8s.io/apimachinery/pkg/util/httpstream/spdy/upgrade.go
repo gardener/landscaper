@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -35,7 +34,6 @@ const HeaderSpdy31 = "SPDY/3.1"
 // responseUpgrader knows how to upgrade HTTP responses. It
 // implements the httpstream.ResponseUpgrader interface.
 type responseUpgrader struct {
-	pingPeriod time.Duration
 }
 
 // connWrapper is used to wrap a hijacked connection and its bufio.Reader. All
@@ -66,18 +64,7 @@ func (w *connWrapper) Close() error {
 // capable of upgrading HTTP responses using SPDY/3.1 via the
 // spdystream package.
 func NewResponseUpgrader() httpstream.ResponseUpgrader {
-	return NewResponseUpgraderWithPings(0)
-}
-
-// NewResponseUpgraderWithPings returns a new httpstream.ResponseUpgrader that
-// is capable of upgrading HTTP responses using SPDY/3.1 via the spdystream
-// package.
-//
-// If pingPeriod is non-zero, for each incoming connection a background
-// goroutine will send periodic Ping frames to the server. Use this to keep
-// idle connections through certain load balancers alive longer.
-func NewResponseUpgraderWithPings(pingPeriod time.Duration) httpstream.ResponseUpgrader {
-	return responseUpgrader{pingPeriod: pingPeriod}
+	return responseUpgrader{}
 }
 
 // UpgradeResponse upgrades an HTTP response to one that supports multiplexed
@@ -110,7 +97,7 @@ func (u responseUpgrader) UpgradeResponse(w http.ResponseWriter, req *http.Reque
 	}
 
 	connWithBuf := &connWrapper{Conn: conn, bufReader: bufrw.Reader}
-	spdyConn, err := NewServerConnectionWithPings(connWithBuf, newStreamHandler, u.pingPeriod)
+	spdyConn, err := NewServerConnection(connWithBuf, newStreamHandler)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("unable to upgrade: error creating SPDY server connection: %v", err))
 		return nil
