@@ -84,8 +84,11 @@ name: ingress-nginx-chart
 version: v0.1.0
 relation: external
 input:
-  type: "dir"
+  type: "dir" # type dir automatically creates a tar from the given dir.
   path: /tmp/chart # path to the downloaded helm chart
+  compress: true # compresses the tar/blob using gzip.
+  # Media type automatically defaults to "application/gzip" for compressed=true
+  # mediaType: "application/gzip"
 ...
 ```
 
@@ -177,8 +180,11 @@ name: ingress-nginx-blueprint
 version: v0.1.0
 relation: local
 input:
-  type: "dir"
+  type: "dir" # creates a tar from the given directory
   path: ./blueprint
+  # overwrites the media for the resource. Default for tar/gzip is "application/gzip"
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+  compress: true # compresses the tar using gzip
 ...
 ```
 
