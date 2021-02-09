@@ -8,6 +8,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+rm -f ${GOPATH}/bin/deepcopy-gen
+rm -f ${GOPATH}/bin/defaulter-gen
+rm -f ${GOPATH}/bin/conversion-gen
+
 PROJECT_MOD_ROOT="github.com/gardener/landscaper"
 
 CURRENT_DIR=$(dirname $0)

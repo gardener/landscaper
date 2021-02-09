@@ -13,10 +13,9 @@ import (
 	unsafe "unsafe"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	config "github.com/gardener/landscaper/apis/config"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-
-	config "github.com/gardener/landscaper/apis/config"
 )
 
 func init() {

@@ -12,9 +12,8 @@ package v1alpha1
 
 import (
 	"encoding/json"
-
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	v1 "k8s.io/api/core/v1"
+	"github.com/gardener/component-spec/bindings-go/apis/v2"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

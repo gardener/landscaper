@@ -14,3 +14,9 @@ require (
 	k8s.io/code-generator v0.20.2
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 )
+
+replace (
+	k8s.io/api => k8s.io/api v0.19.7
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.7
+	k8s.io/code-generator => k8s.io/code-generator v0.19.7
+)
