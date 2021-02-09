@@ -158,3 +158,44 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponen
 	}
 	return component, nil
 }
+
+// GetResource resolves to a resource specified by the URI.
+// It also returns the resource kind.
+func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
+	var (
+		ctx       = context.Background()
+		component = cd
+	)
+	defer ctx.Done()
+	for i, elem := range u.Path {
+		isLast := len(u.Path) == i+1
+		switch elem.Keyword {
+		case ComponentReferences:
+			refs, err := cd.GetComponentReferencesByName(elem.Value)
+			if err != nil || len(refs) == 0 {
+				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
+			}
+
+			comp, err := refFunc(ctx, refs[0])
+			if err != nil {
+				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
+			}
+			component = &comp
+			if isLast {
+				return nil, cdv2.Resource{}, fmt.Errorf("the selector seems to target a component desscriptor but a resource is requested")
+			}
+		case Resources:
+			res, err := component.GetResourcesByName(elem.Value)
+			if err != nil {
+				return nil, cdv2.Resource{}, fmt.Errorf("local resource %s cannot be found", elem.Value)
+			}
+			if !isLast {
+				return nil, cdv2.Resource{}, fmt.Errorf("the selector seems to contain more path segements after a external resource")
+			}
+			return component, res[0], nil
+		default:
+			return nil, cdv2.Resource{}, fmt.Errorf("unknown keyword %s", elem.Keyword)
+		}
+	}
+	return nil, cdv2.Resource{}, fmt.Errorf("unable to find resource %q", u.Raw)
+}

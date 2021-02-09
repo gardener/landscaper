@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-echo-server
+spec:
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: ociRegistry
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      componentName: github.com/gardener/landscaper/external-jsonscheme/echo-server
+      version: v0.1.0
+
+  blueprint:
+    ref:
+      resourceName: echo-server-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
+      target: "#my-cluster"
+    data:
+    - name: ingressClass
+      configMapRef:
+        key: ingressClass
+        name: my-imports
+        namespace: default
+    - name: resources
+      configMapRef:
+        key: resources
+        name: my-imports
+        namespace: default

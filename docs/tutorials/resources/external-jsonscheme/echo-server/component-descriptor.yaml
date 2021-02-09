@@ -1,0 +1,30 @@
+component:
+  componentReferences:
+  - componentName: github.com/gardener/landscaper/external-jsonscheme/definitions
+    name: definitions
+    version: v0.1.0
+  name: github.com/gardener/landscaper/external-jsonscheme/echo-server
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+    type: ociRegistry
+  resources:
+  - access:
+      imageReference: hashicorp/http-echo:0.2.3
+      type: ociRegistry
+    name: echo-server-image
+    relation: external
+    type: ociImage
+    version: v0.2.3
+  - access:
+      filename: sha256:44b66a81e4dd3f0301f616f36e5dad9b6b96e5657eb27e6acba0ff13c13d80c2
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      type: localFilesystemBlob
+    name: echo-server-blueprint
+    relation: local
+    type: blueprint
+    version: v0.1.0
+  sources: []
+  version: v0.1.0
+meta:
+  schemaVersion: v2

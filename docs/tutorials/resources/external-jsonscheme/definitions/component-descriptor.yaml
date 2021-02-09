@@ -1,0 +1,20 @@
+component:
+  componentReferences: []
+  name: github.com/gardener/landscaper/external-jsonscheme/definitions
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+    type: ociRegistry
+  resources:
+  - access:
+      filename: sha256:ce2ef8123a529090793d6fa4fcfe9b2bee6f253ba1f0eeb766508927c147f4e1
+      mediaType: application/vnd.gardener.landscaper.jsonscheme.v1+json
+      type: localFilesystemBlob
+    name: resources-definition
+    relation: local
+    type: landscaper.gardener.cloud/jsonschema
+    version: v0.1.0
+  sources: []
+  version: v0.1.0
+meta:
+  schemaVersion: v2
