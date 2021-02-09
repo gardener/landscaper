@@ -2733,6 +2733,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Namespace is the namespace of kubernetes object.</p>
 </td>
 </tr>

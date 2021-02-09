@@ -29,9 +29,7 @@ spec:
       configMapRef:
         key: ingressClass
         name: my-imports
-        namespace: default
     - name: resources
       configMapRef:
         key: resources
         name: my-imports
-        namespace: default

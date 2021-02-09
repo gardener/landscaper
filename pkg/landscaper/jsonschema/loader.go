@@ -49,7 +49,7 @@ func (l LoaderWrapper) LoaderFactory() gojsonschema.JSONLoaderFactory {
 }
 
 // Loader is the landscaper specific jsonscheme loader.
-// It resolves referecens of type: local, blueprint and cd.
+// It resolves references of type: local, blueprint and cd.
 type Loader struct {
 	LoaderConfig
 	source string

@@ -389,7 +389,6 @@ spec:
                           required:
                           - key
                           - name
-                          - namespace
                           type: object
                         dataRef:
                           description: DataRef is the name of the in-cluster data object. The reference can also be a namespaces name. E.g. "default/mydataref"
@@ -412,7 +411,6 @@ spec:
                           required:
                           - key
                           - name
-                          - namespace
                           type: object
                         version:
                           description: Version specifies the imported data version. defaults to "v1"
@@ -451,7 +449,6 @@ spec:
                       type: string
                   required:
                   - name
-                  - namespace
                   type: object
                 type: array
             required:
@@ -514,7 +511,6 @@ spec:
                     type: string
                 required:
                 - name
-                - namespace
                 type: object
               imports:
                 description: Imports contain the state of the imported values.
@@ -547,7 +543,6 @@ spec:
                           type: string
                       required:
                       - name
-                      - namespace
                       type: object
                     target:
                       description: Target is the name of the in-cluster target object.
@@ -580,7 +575,6 @@ spec:
                           type: string
                       required:
                       - name
-                      - namespace
                       type: object
                   required:
                   - name
