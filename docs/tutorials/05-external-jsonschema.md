@@ -202,6 +202,79 @@ deployExecutions:
 ```
 
 ```yaml
+# ./docs/tutorials/resources/external-jsonschema/echo-server/defaultDeployExecution.yaml
+{{ $name :=  "echo-server" }}
+{{ $namespace :=  "default" }}
+deployItems:
+- name: deploy
+  type: landscaper.gardener.cloud/kubernetes-manifest
+  target:
+    name: {{ .imports.cluster.metadata.name }}
+    namespace: {{ .imports.cluster.metadata.namespace }}
+  config:
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+
+    updateStrategy: patch
+
+    manifests:
+      - apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: {{ $name }}
+          namespace: {{ $namespace }}
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: echo-server
+          template:
+            metadata:
+              labels:
+                app: echo-server
+            spec:
+              containers:
+                - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
+                  imagePullPolicy: IfNotPresent
+                  name: echo-server
+                  args:
+                  - -text="hello world"
+                  ports:
+                    - containerPort: 5678
+                  resources:
+{{ toYaml .imports.resources | indent 21 }}
+      - apiVersion: v1
+        kind: Service
+        metadata:
+          name: {{ $name }}
+          namespace: {{ $namespace }}
+        spec:
+          selector:
+            app: echo-server
+          ports:
+          - protocol: TCP
+            port: 80
+            targetPort: 5678
+      - apiVersion: networking.k8s.io/v1beta1
+        kind: Ingress
+        metadata:
+          name: {{ $name }}
+          namespace: {{ $namespace }}
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+            kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
+        spec:
+          rules:
+          - http:
+              paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  serviceName: echo-server
+                  servicePort: 80
+```
+
+```yaml
 # ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
 ---
 type: blueprint

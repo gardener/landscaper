@@ -165,7 +165,7 @@ For detailed information about the jsonschema and landscaper specifics see [JSON
 
 #### Targets
 
-Target are a specific type of import that contains additional meaning for the deployers.
+Targets are a specific type of import and contains additional information that is interpreted by deployers.
 This means that targets should define the target environment where a deployer installs/deploys software to.
 This means that targets could contain additional information about that environment (e.g. that the target cluster is in a fenced environment and needs to be handled by another deployer instance).
 
