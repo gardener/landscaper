@@ -102,6 +102,15 @@ var _ = Describe("Helm Deployer", func() {
 
 		deployment := deploymentList.Items[0]
 		Expect(deployment.Name).To(Equal("ingress-test-ingress-nginx-controller"))
+
+		//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		//// Expect that the deploy item gets deleted
+		//Eventually(func() error{
+		//	_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+		//	return err
+		//}, time.Minute, 5 *time.Second).Should(Succeed())
+		//
+		//Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 	})
 
 })

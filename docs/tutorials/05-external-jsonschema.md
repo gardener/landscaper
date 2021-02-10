@@ -1,6 +1,16 @@
 # External JSON Scheme
 
-The goal of this tutorial is to combine the previously created blueprints and deploy them together.
+In the first tutorials a simple jsonschema was used to describe the namespace import.
+```yaml
+imports:
+- name: namespace
+  schema:
+    type: string
+```
+
+When jsonschemas become more complex or are used by multiple components it is desired that the jsonschema's are defined once and reused by other components.
+
+The goal of this tutorial is to create a jsonschema in a definition component and make it usable in another component.
 
 __Prerequisites__:
 - OCI compatible oci registry (e.g. GCR or Harbor)
@@ -14,23 +24,14 @@ Although the artifacts are public readable so they can be used out-of-the-box wi
 
 ### Resources
 
+This tutorial uses 2 different component:
+- _definitions_: component that contains the jsonschema definition
+- _echo-server_: simple echo server that consumes the jsonschema.
+
 #### Resources JSONSchema
 
-
-```yaml
-# ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yaml
-meta:
-  schemaVersion: v2
-component:
-  name: github.com/gardener/landscaper/external-jsonschema/definitions
-  provider: internal
-  repositoryContexts:
-  - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
-    type: ociRegistry
-  resources: []
-  componentReferences: []
-  sources: []
-```
+First the shared jsonschema has to be created.
+The Kubernetes resource definition is here used as an example.
 
 ```
 # ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor
@@ -63,6 +64,42 @@ component:
 }
 ```
 
+When the jsonschema is defined it is added to the component descriptor as local artifact to the component descriptor.
+For more detailed explanation have a look at the [second tutorial](./02-local-simple-blueprint.md)
+   
+Therefore, create the resource definition, create the component descriptor, add the resource with the component-cli and upload the component descriptor.
+
+The result is a component descriptor that contains the previously created jsonschema as local resource.
+
+<details>
+
+```yaml
+# ./docs/tutorials/resources/external-jsonschema/definitions/jsonschema-resource.yaml
+---
+type: landscaper.gardener.cloud/jsonschema
+name: resources-definition
+relation: local
+input:
+  type: "file"
+  path: "./resources.json"
+  mediaType: "application/vnd.gardener.landscaper.jsonscheme.v1+json"
+...
+```
+```yaml
+# ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yaml
+meta:
+  schemaVersion: v2
+component:
+  name: github.com/gardener/landscaper/external-jsonschema/definitions
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+    type: ociRegistry
+  resources: []
+  componentReferences: []
+  sources: []
+```
+
 ```
 component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions -r ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml -v 5
 ```
@@ -71,7 +108,77 @@ component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/de
 component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
 ```
 
+</details>
+
 #### Echo Server Deployment
+
+The first component is now created and uploaded to the registry.
+Now the user of the jsonschema is created.
+
+The echo server example is reused and enhanced with another import parameter _resources_.
+
+Before the jsonschema can be used in the blueprint, it has to be referenced in the component descriptor so that Landscaper knows about the dependency towards the `definitions` component.
+Subsequently, a component reference is added (see the complete component descriptor in the details):
+```yaml
+componentReferences:
+- name: definitions
+componentName: github.com/gardener/landscaper/external-jsonschema/definitions
+version: v0.1.0
+```
+
+<details>
+<div id="echo-server-comp-desc"></div>
+
+```yaml
+# ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml
+meta:
+  schemaVersion: v2
+
+component:
+name: github.com/gardener/landscaper/external-jsonschema/echo-server
+version: v0.1.0
+
+provider: internal
+
+repositoryContexts:
+- type: ociRegistry
+  baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+
+sources: []
+componentReferences:
+- name: definitions
+  componentName: github.com/gardener/landscaper/external-jsonschema/definitions
+  version: v0.1.0
+
+resources:
+- type: ociImage
+  name: echo-server-image
+  version: v0.2.3
+  relation: external
+  access:
+  type: ociRegistry
+  imageReference: hashicorp/http-echo:0.2.3
+```
+
+</details>
+
+When the component reference is added to the echo-server's component descriptor, the resource import can be added to the blueprint.
+The import also contains a valid jsonschema but uses the `$ref` attribute with a custom landscaper protocol implementation.
+That custom protocol specifies that the jsonschema should be fetched from the resource `resources-definition` of the referenced component `definitions`.
+
+For detailed explanation about available reference methods see the [blueprint jsonschema documentation](../usage/JSONSchema.md)
+
+```yaml
+imports:
+- name: resources
+  schema:
+    $ref: "cd://componentReferences/definitions/resources/resources-definition"
+```
+
+The blueprint is defined, so it can be added to the component descriptor using the component-cli and then uploaded.
+See the details section for concrete resource definitions and cli calls.
+
+<details>
 
 ```yaml
 # ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint.yaml
@@ -92,38 +199,6 @@ deployExecutions:
 - name: default
   type: GoTemplate
   file: /defaultDeployExecution.yaml
-```
-
-
-```yaml
-# ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml
-meta:
-  schemaVersion: v2
-
-component:
-  name: github.com/gardener/landscaper/external-jsonschema/echo-server
-  version: v0.1.0
-
-  provider: internal
-
-  repositoryContexts:
-  - type: ociRegistry
-    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
-
-  sources: []
-  componentReferences:
-  - name: definitions
-    componentName: github.com/gardener/landscaper/external-jsonschema/definitions
-    version: v0.1.0
-
-  resources:
-  - type: ociImage
-    name: echo-server-image
-    version: v0.2.3
-    relation: external
-    access:
-      type: ociRegistry
-      imageReference: hashicorp/http-echo:0.2.3
 ```
 
 ```yaml
@@ -149,9 +224,27 @@ component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/ec
 component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
 ```
 
+</details>
+
 ### Installation
 
-Provide imports
+The components with their jsonschema and blueprint artifacts are now uploaded and can be deployed.
+
+To deploy the component using Landscaper, first the target import and the data imports have to be defined and applied to the Kubernetes cluster.
+
+```yaml
+# ./docs/tutorials/resources/external-jsonschema/my-target.yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: my-target-cluster
+spec:
+  type: landscaper.gardener.cloud/kubernetes-cluster
+  config:
+    kubeconfig: |
+      apiVersion:...
+      # here goes the kubeconfig of the target cluster
+```
 
 ```yaml
 # ./docs/tutorials/resources/external-jsonschema/configmap.yaml
@@ -169,11 +262,50 @@ data:
 ```
 
 ```
+kubectl apply -f ./docs/tutorials/resources/external-jsonschema/my-target.yaml
 kubectl apply -f ./docs/tutorials/resources/external-jsonschema/configmap.yaml
+```
+
+The imports are now available in the system, so the installation can be applied and will be installed.
+
+```
+# ./docs/tutorials/resources/external-jsonschema/installation.yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-echo-server
+spec:
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: ociRegistry
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      componentName: github.com/gardener/landscaper/external-jsonscheme/echo-server
+      version: v0.1.0
+
+  blueprint:
+    ref:
+      resourceName: echo-server-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
+      target: "#my-cluster"
+    data:
+    - name: ingressClass
+      configMapRef:
+        key: ingressClass
+        name: my-imports
+    - name: resources
+      configMapRef:
+        key: resources
+        name: my-imports
 ```
 
 ### Summary
 
-- A blueprint has been created that includes a ingress-nginx and an echo server.
-- With that blueprint is it now possible for others to reuse the aggregated blueprint and deploy the ingress together with the echo server.
+- A component has been created that contains a jsonschema
+- The echo server has been enhanced by another import that uses a jsonschema defined by another component
+- With the external jsonschema it is now possible to reuse and share jsonschemas across components.
 

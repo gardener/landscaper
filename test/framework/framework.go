@@ -151,7 +151,8 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 	var handle CleanupActionHandle
 	cleanupFunc := func(ctx context.Context) error {
 		f.Cleanup.Remove(handle)
-		return state.CleanupState(ctx, f.Client)
+		t := time.Minute
+		return state.CleanupState(ctx, f.Client, &t)
 	}
 	handle = f.Cleanup.Add(func() {
 		ctx := context.Background()
@@ -189,7 +190,7 @@ func CleanupLandscaperResources(ctx context.Context, kubeClient client.Client, n
 		return err
 	}
 	for _, obj := range instList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj); err != nil {
+		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
 			return err
 		}
 	}
@@ -198,7 +199,7 @@ func CleanupLandscaperResources(ctx context.Context, kubeClient client.Client, n
 		return err
 	}
 	for _, obj := range execList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj); err != nil {
+		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
 			return err
 		}
 	}
@@ -207,7 +208,7 @@ func CleanupLandscaperResources(ctx context.Context, kubeClient client.Client, n
 		return err
 	}
 	for _, obj := range diList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj); err != nil {
+		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Minute); err != nil {
 			return err
 		}
 	}
@@ -216,7 +217,7 @@ func CleanupLandscaperResources(ctx context.Context, kubeClient client.Client, n
 		return err
 	}
 	for _, obj := range cmList.Items {
-		if err := envtest.CleanupForObject(ctx, kubeClient, &obj); err != nil {
+		if err := envtest.CleanupForObject(ctx, kubeClient, &obj, time.Second); err != nil {
 			return err
 		}
 	}
