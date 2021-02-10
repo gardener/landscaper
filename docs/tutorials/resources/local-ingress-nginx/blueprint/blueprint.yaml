@@ -9,6 +9,10 @@ imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
+- name: namespace
+  schema:
+    type: string
+
 deployExecutions:
 - name: default
   type: GoTemplate
@@ -31,7 +35,7 @@ deployExecutions:
         updateStrategy: patch
 
         name: test
-        namespace: default
+        namespace: {{ .imports.namespace }}
 
         exportsFromManifests:
         - key: ingressClass

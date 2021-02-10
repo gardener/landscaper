@@ -39,6 +39,8 @@ func SetDefaults_Installation(obj *Installation) {
 			if len(dataImport.ConfigMapRef.Namespace) == 0 {
 				obj.Spec.Imports.Data[i].ConfigMapRef.Namespace = obj.GetNamespace()
 			}
+		}
+		if dataImport.SecretRef != nil {
 			if len(dataImport.SecretRef.Namespace) == 0 {
 				obj.Spec.Imports.Data[i].SecretRef.Namespace = obj.GetNamespace()
 			}

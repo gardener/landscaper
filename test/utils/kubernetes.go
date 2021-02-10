@@ -30,7 +30,7 @@ func WaitForDeploymentToBeReady(ctx context.Context, logger simplelogger.Logger,
 			return false, nil
 		}
 		if err := CheckDeployment(deploy); err != nil {
-			logger.Logf("Waiting for deployment %q to be ready (%s)...", objKey.String(), err.Error())
+			logger.Logfln("Waiting for deployment %q to be ready (%s)...", objKey.String(), err.Error())
 			return false, nil
 		}
 		return true, nil
@@ -38,7 +38,7 @@ func WaitForDeploymentToBeReady(ctx context.Context, logger simplelogger.Logger,
 	if err != nil {
 		return fmt.Errorf("unable to wait for deployment to be ready %q: %w", objKey.Name, err)
 	}
-	logger.Logf("Deployment %q is ready", objKey.String())
+	logger.Logfln("Deployment %q is ready", objKey.String())
 	return nil
 }
 

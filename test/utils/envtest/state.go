@@ -7,10 +7,12 @@ package envtest
 import (
 	"context"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -143,43 +145,43 @@ func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPat
 // todo: remove finalizers of all objects in state
 func (s *State) CleanupState(ctx context.Context, c client.Client) error {
 	for _, obj := range s.DeployItems {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Executions {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Installations {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.DataObjects {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Targets {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Secrets {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.ConfigMaps {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
 
 	for _, obj := range s.Generic {
-		if err := cleanupForObject(ctx, c, obj); err != nil {
+		if err := CleanupForObject(ctx, c, obj); err != nil {
 			return err
 		}
 	}
@@ -190,7 +192,7 @@ func (s *State) CleanupState(ctx context.Context, c client.Client) error {
 		return fmt.Errorf("unable to list pods in %q: %w", s.Namespace, err)
 	}
 	for _, obj := range pods.Items {
-		if err := cleanupForObject(ctx, c, &obj); err != nil {
+		if err := CleanupForObject(ctx, c, &obj); err != nil {
 			return err
 		}
 	}
@@ -200,20 +202,46 @@ func (s *State) CleanupState(ctx context.Context, c client.Client) error {
 	return c.Delete(ctx, ns)
 }
 
-func cleanupForObject(ctx context.Context, c client.Client, obj client.Object) error {
+// CleanupForObject cleans up a object from a cluster
+func CleanupForObject(ctx context.Context, c client.Client, obj client.Object) error {
 	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if err := removeFinalizer(ctx, c, obj); err != nil {
-		return err
-	}
+
+	// try to do a graceful cleanup
 	if err := c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
+	if err := WaitForObjectToBeDeleted(ctx, c, obj, 2 *time.Minute); err != nil {
+		if err := removeFinalizer(ctx, c, obj); err != nil {
+			return err
+		}
+		if err := c.Update(ctx, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("unable to remove finalizer from object: %w", err)
+		}
+		return nil
+	}
 	return nil
+}
+
+// WaitForObjectToBeDeleted waits for a object to be deleted.
+func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
+	return wait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
+		uObj := obj.DeepCopyObject().(client.Object)
+		if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, uObj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, nil
+		}
+		return false, nil
+	})
 }
 
 func removeFinalizer(ctx context.Context, c client.Client, object client.Object) error {

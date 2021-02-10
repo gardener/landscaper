@@ -18,11 +18,11 @@ Although the artifacts are public readable so they can be used out-of-the-box wi
 
 
 ```yaml
-# ./docs/tutorials/resources/external-jsonscheme/definitions/component-descriptor.yaml
+# ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yaml
 meta:
   schemaVersion: v2
 component:
-  name: github.com/gardener/landscaper/external-jsonscheme/definitions
+  name: github.com/gardener/landscaper/external-jsonschema/definitions
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
@@ -33,7 +33,7 @@ component:
 ```
 
 ```
-# ./docs/tutorials/resources/external-jsonscheme/definitions/component-descriptor
+# ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "landscaper.gardener.cloud/tutorial/external-jsonschema/resources",
@@ -64,17 +64,17 @@ component:
 ```
 
 ```
-component-cli ca resources add ./docs/tutorials/resources/external-jsonscheme/definitions -r ./docs/tutorials/resources/external-jsonscheme/definitions/jsonscheme-resource.yaml -v 5
+component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions -r ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml -v 5
 ```
 
 ```
-component-cli ca remote push ./docs/tutorials/resources/external-jsonscheme/definitions
+component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
 ```
 
 #### Echo Server Deployment
 
 ```yaml
-# ./docs/tutorials/resources/external-jsonscheme/echo-server/blueprint.yaml
+# ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint.yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
@@ -96,12 +96,12 @@ deployExecutions:
 
 
 ```yaml
-# ./docs/tutorials/resources/external-jsonscheme/echo-server/component-descriptor.yaml
+# ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml
 meta:
   schemaVersion: v2
 
 component:
-  name: github.com/gardener/landscaper/external-jsonscheme/echo-server
+  name: github.com/gardener/landscaper/external-jsonschema/echo-server
   version: v0.1.0
 
   provider: internal
@@ -113,7 +113,7 @@ component:
   sources: []
   componentReferences:
   - name: definitions
-    componentName: github.com/gardener/landscaper/external-jsonscheme/definitions
+    componentName: github.com/gardener/landscaper/external-jsonschema/definitions
     version: v0.1.0
 
   resources:
@@ -127,7 +127,7 @@ component:
 ```
 
 ```yaml
-# ./docs/tutorials/resources/external-jsonscheme/echo-server/blueprint-resource.yaml
+# ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
 ---
 type: blueprint
 name: echo-server-blueprint
@@ -142,11 +142,11 @@ input:
 ```
 
 ```
-component-cli ca resources add ./docs/tutorials/resources/external-jsonscheme/echo-server -r ./docs/tutorials/resources/external-jsonscheme/echo-server/blueprint-resource.yaml -v 5
+component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server -r ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml -v 5
 ```
 
 ```
-component-cli ca remote push ./docs/tutorials/resources/external-jsonscheme/echo-server
+component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
 ```
 
 ### Installation
@@ -154,7 +154,7 @@ component-cli ca remote push ./docs/tutorials/resources/external-jsonscheme/echo
 Provide imports
 
 ```yaml
-# ./docs/tutorials/resources/external-jsonscheme/configmap.yaml
+# ./docs/tutorials/resources/external-jsonschema/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -169,7 +169,7 @@ data:
 ```
 
 ```
-kubectl apply -f ./docs/tutorials/resources/external-jsonscheme/configmap.yaml
+kubectl apply -f ./docs/tutorials/resources/external-jsonschema/configmap.yaml
 ```
 
 ### Summary

@@ -71,7 +71,13 @@ func (d *Dumper) Dump(ctx context.Context) error {
 		if err := d.DumpInstallationsInNamespace(ctx, ns); err != nil {
 			return err
 		}
+		if err := d.DumpExecutionInNamespace(ctx, ns); err != nil {
+			return err
+		}
 		if err := d.DumpDeployItemsInNamespace(ctx, ns); err != nil {
+			return err
+		}
+		if err := d.DumpConfigMapsInNamespace(ctx, ns); err != nil {
 			return err
 		}
 	}
@@ -141,6 +147,49 @@ Status:
 		deployItem.Status.Phase,
 		FormatLastError(deployItem.Status.LastError, "    "),
 		FormatAsYAML(deployItem.Status.ProviderStatus, "    "))
+	return nil
+}
+
+// DumpExecutionInNamespace dumps all executions in a namespace
+func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string) error {
+	executionList := &lsv1alpha1.ExecutionList{}
+	if err := d.kubeClient.List(ctx, executionList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("unable to list installations for namespace %q: %w", namespace, err)
+	}
+	for _, exec := range executionList.Items {
+		if err := DumpExecution(d.logger, &exec); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpExecution dumps information about the execution
+func DumpExecution(logger simplelogger.Logger, inst *lsv1alpha1.Execution) error {
+	logger.Logf("--- Execution %s\n", inst.Name)
+	logger.Logf("%s\n", FormatAsYAML(inst.Spec, ""))
+	logger.Logf("%s\n", FormatAsYAML(inst.Status, ""))
+	return nil
+}
+
+// DumpConfigMapsInNamespace dumps all configmaps in a namespace
+func (d *Dumper) DumpConfigMapsInNamespace(ctx context.Context, namespace string) error {
+	cmList := &corev1.ConfigMapList{}
+	if err := d.kubeClient.List(ctx, cmList, client.InNamespace(namespace)); err != nil {
+		return fmt.Errorf("unable to list installations for namespace %q: %w", namespace, err)
+	}
+	for _, cm := range cmList.Items {
+		if err := DumpConfigMap(d.logger, &cm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpConfigMap dumps information about the configmap
+func DumpConfigMap(logger simplelogger.Logger, cm *corev1.ConfigMap) error {
+	logger.Logf("--- ConfigMap %s\n", cm.Name)
+	logger.Logf("%s\n", FormatAsYAML(cm.Data, ""))
 	return nil
 }
 

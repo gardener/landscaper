@@ -106,7 +106,7 @@ func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.In
 		if err != nil {
 			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				ImportsSatisfiedReason,
-				fmt.Sprintf("Waiting until all imports are satisfied: %s", err.Error())))
+				fmt.Sprintf("Waiting until all data imports are satisfied: %s", err.Error())))
 			return err
 		}
 	}
@@ -117,7 +117,7 @@ func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.In
 		if err != nil {
 			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				ImportsSatisfiedReason,
-				fmt.Sprintf("Waiting until all imports are satisfied: %s", err.Error())))
+				fmt.Sprintf("Waiting until all target imports are satisfied: %s", err.Error())))
 			return err
 		}
 	}
