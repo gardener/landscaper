@@ -2816,7 +2816,7 @@ k8s.io/apimachinery/pkg/selection.Operator
 </tr>
 <tr>
 <td>
-<code>Values</code></br>
+<code>values</code></br>
 <em>
 []string
 </em>
