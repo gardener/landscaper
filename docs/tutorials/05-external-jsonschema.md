@@ -8,9 +8,9 @@ imports:
     type: string
 ```
 
-When jsonschemas become more complex or are used by multiple components it is desired that the jsonschema's are defined once and reused by other components.
+When jsonschemas become more complex or are used by multiple components the requirement to declare a jsonschema centrally arises.
 
-The goal of this tutorial is to create a jsonschema in a definition component and make it usable in another component.
+The goal of this tutorial is to showcase how this can be done in the context of Landscaper. Therefore, we will create a jsonschema in a 'definition' component and make it usable in another component.
 
 __Prerequisites__:
 - OCI compatible oci registry (e.g. GCR or Harbor)
@@ -24,14 +24,14 @@ Although the artifacts are public readable so they can be used out-of-the-box wi
 
 ### Resources
 
-This tutorial uses 2 different component:
+This tutorial uses 2 different components:
 - _definitions_: component that contains the jsonschema definition
 - _echo-server_: simple echo server that consumes the jsonschema.
 
 #### Resources JSONSchema
 
 First the shared jsonschema has to be created.
-The Kubernetes resource definition is here used as an example.
+Kubernetes' definition of `resources`  is used as an example here.
 
 ```
 # ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor
@@ -64,10 +64,10 @@ The Kubernetes resource definition is here used as an example.
 }
 ```
 
-When the jsonschema is defined it is added to the component descriptor as local artifact to the component descriptor.
+With the jsonschema defined, it has to be linked to a new component descriptor. In this case, the jsonschema will be added as local artifact to the component descriptor.
 For more detailed explanation have a look at the [second tutorial](./02-local-simple-blueprint.md)
    
-Therefore, create the resource definition, create the component descriptor, add the resource with the component-cli and upload the component descriptor.
+Now, create the resource definition and component descriptor, add the resource with the component-cli and upload the component descriptor.
 
 The result is a component descriptor that contains the previously created jsonschema as local resource.
 
@@ -112,13 +112,12 @@ component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/defi
 
 #### Echo Server Deployment
 
-The first component is now created and uploaded to the registry.
-Now the user of the jsonschema is created.
+With the _definitions_  component ready, let's move on and create a component which will consume those definitions.```
 
-The echo server example is reused and enhanced with another import parameter _resources_.
+To keep things as simple as possible, the echo server example will be reused and enhanced with another import parameter _resources_.
 
 Before the jsonschema can be used in the blueprint, it has to be referenced in the component descriptor so that Landscaper knows about the dependency towards the `definitions` component.
-Subsequently, a component reference is added (see the complete component descriptor in the details):
+Hence, a component reference entry is added to the echo server's component descriptor (see the complete component descriptor in the details):
 ```yaml
 componentReferences:
 - name: definitions
@@ -162,7 +161,7 @@ resources:
 
 </details>
 
-When the component reference is added to the echo-server's component descriptor, the resource import can be added to the blueprint.
+Based on the extended component descriptor, the resource import can be added to the blueprint.
 The import also contains a valid jsonschema but uses the `$ref` attribute with a custom landscaper protocol implementation.
 That custom protocol specifies that the jsonschema should be fetched from the resource `resources-definition` of the referenced component `definitions`.
 
@@ -303,7 +302,7 @@ component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo
 
 The components with their jsonschema and blueprint artifacts are now uploaded and can be deployed.
 
-To deploy the component using Landscaper, first the target import and the data imports have to be defined and applied to the Kubernetes cluster.
+In a first step, the target import and the data imports have to be defined and applied to the Kubernetes cluster so that Landscaper can pick them up.
 
 ```yaml
 # ./docs/tutorials/resources/external-jsonschema/my-target.yaml
@@ -339,7 +338,7 @@ kubectl apply -f ./docs/tutorials/resources/external-jsonschema/my-target.yaml
 kubectl apply -f ./docs/tutorials/resources/external-jsonschema/configmap.yaml
 ```
 
-The imports are now available in the system, so the installation can be applied and will be installed.
+The imports are now available in the system, so the installation can be applied and will be processed by Landscaper.
 
 ```
 # ./docs/tutorials/resources/external-jsonschema/installation.yaml
@@ -381,4 +380,3 @@ spec:
 - A component has been created that contains a jsonschema
 - The echo server has been enhanced by another import that uses a jsonschema defined by another component
 - With the external jsonschema it is now possible to reuse and share jsonschemas across components.
-

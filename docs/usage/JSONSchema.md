@@ -1,7 +1,7 @@
 # JSONSchema
 
-Data imports and exports and exports of Blueprints are defined using JSONSchema.
-JSONSchema is a definition language for describing the structure of json or yaml data.
+Data imports and exports of Blueprints are defined using JSONSchema.
+JSONSchema is a definition language to describe the structure of json or yaml data.
 
 See the official [JSONSchema documentation](http://json-schema.org/understanding-json-schema/index.html) for a detailed description of the definition.
 
@@ -48,10 +48,10 @@ imports:
 
 The blueprint type is similar to the [local type](#local) with the difference that the jsonschema can be defined in a file that is packaged with the blueprint.
 
-This feature is useful when definition is too large for a single file and should be split into different file for readability.
+This feature is useful when a definition is too large for a single file or should be split into different files for readability.
 
 The type can be used with the `$ref` property and `blueprint://path/to/schema.json`.
-The root and the pwd path is always considered to be blueprint directory where the `blueprint.yaml` is located.
+The root and the pwd path are always considered to be the blueprint's directory (where the `blueprint.yaml` is located).
 
 _Example_:
 
@@ -145,4 +145,3 @@ component:
     componentName: some-other-component-descriptor
     version: v0.1.0
 ```
-
