@@ -52,10 +52,8 @@ type Options struct {
 	CABundle []byte
 }
 
-// ApplyValidatingWebhookConfiguration will create, update, or delete a ValidatingWebhookConfiguration, depending on the options
-// If WebhookedResources in the given options is neither nil nor empty, a ValidatingWebhookConfiguration will be created/updated
-// otherwise it will be deleted, if it exists.
-func ApplyValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
+// UpdateValidatingWebhookConfiguration will create or update a ValidatingWebhookConfiguration
+func UpdateValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
 	tmpClient, err := getCachelessClient(mgr)
 	if err != nil {
 		return fmt.Errorf("unable to get client: %w", err)
@@ -67,65 +65,74 @@ func ApplyValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manage
 		},
 	}
 
-	if o.WebhookedResources != nil && len(o.WebhookedResources) > 0 {
-		webhookLogger.Info("Validation webhook enabled")
-		// construct ValidatingWebhookConfiguration
-		noSideEffects := admissionregistrationv1.SideEffectClassNone
-		failPolicy := admissionregistrationv1.Fail
-		vwcWebhooks := []admissionregistrationv1.ValidatingWebhook{}
+	// construct ValidatingWebhookConfiguration
+	noSideEffects := admissionregistrationv1.SideEffectClassNone
+	failPolicy := admissionregistrationv1.Fail
+	vwcWebhooks := []admissionregistrationv1.ValidatingWebhook{}
 
-		for _, elem := range o.WebhookedResources {
-			rule := admissionregistrationv1.RuleWithOperations{
-				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
-				Rule:       admissionregistrationv1.Rule{},
-			}
-			rule.Rule.APIGroups = []string{elem.APIGroup}
-			rule.Rule.APIVersions = elem.APIVersions
-			rule.Rule.Resources = []string{elem.ResourceName}
-			webhookPath := o.WebhookBasePath + elem.ResourceName
-			vwcWebhook := admissionregistrationv1.ValidatingWebhook{
-				Name:                    elem.ResourceName + o.WebhookNameSuffix,
-				SideEffects:             &noSideEffects,
-				FailurePolicy:           &failPolicy,
-				ObjectSelector:          &o.ObjectSelector,
-				AdmissionReviewVersions: []string{"v1"},
-				Rules:                   []admissionregistrationv1.RuleWithOperations{rule},
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Namespace: o.ServiceNamespace,
-						Name:      o.ServiceName,
-						Path:      &webhookPath,
-						Port:      &o.ServicePort,
-					},
-					CABundle: o.CABundle,
+	for _, elem := range o.WebhookedResources {
+		rule := admissionregistrationv1.RuleWithOperations{
+			Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+			Rule:       admissionregistrationv1.Rule{},
+		}
+		rule.Rule.APIGroups = []string{elem.APIGroup}
+		rule.Rule.APIVersions = elem.APIVersions
+		rule.Rule.Resources = []string{elem.ResourceName}
+		webhookPath := o.WebhookBasePath + elem.ResourceName
+		vwcWebhook := admissionregistrationv1.ValidatingWebhook{
+			Name:                    elem.ResourceName + o.WebhookNameSuffix,
+			SideEffects:             &noSideEffects,
+			FailurePolicy:           &failPolicy,
+			ObjectSelector:          &o.ObjectSelector,
+			AdmissionReviewVersions: []string{"v1"},
+			Rules:                   []admissionregistrationv1.RuleWithOperations{rule},
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Namespace: o.ServiceNamespace,
+					Name:      o.ServiceName,
+					Path:      &webhookPath,
+					Port:      &o.ServicePort,
 				},
-			}
-			vwcWebhooks = append(vwcWebhooks, vwcWebhook)
+				CABundle: o.CABundle,
+			},
 		}
-
-		webhookLogger.Info("Creating ValidatingWebhookConfiguration", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-		_, err = ctrl.CreateOrUpdate(ctx, tmpClient, &vwc, func() error {
-			vwc.Webhooks = vwcWebhooks
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("unable to create/update ValidatingWebhookConfiguration: %w", err)
-		}
-		webhookLogger.Info("ValidatingWebhookConfiguration created/updated", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-	} else {
-		webhookLogger.Info("Validation webhook disabled")
-		webhookLogger.Info("Removing ValidatingWebhookConfiguration, if it exists", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-		if err := tmpClient.Delete(ctx, &vwc); err != nil {
-			if apierrors.IsNotFound(err) {
-				webhookLogger.Info("ValidatingWebhookConfiguration not found", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-			} else {
-				webhookLogger.Error(err, "unable to delete validatingwebhookconfiguration", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-			}
-		} else {
-			webhookLogger.Info("ValidatingWebhookConfiguration deleted", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-		}
+		vwcWebhooks = append(vwcWebhooks, vwcWebhook)
 	}
 
+	webhookLogger.Info("Creating/updating ValidatingWebhookConfiguration", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
+	_, err = ctrl.CreateOrUpdate(ctx, tmpClient, &vwc, func() error {
+		vwc.Webhooks = vwcWebhooks
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create/update ValidatingWebhookConfiguration: %w", err)
+	}
+	webhookLogger.Info("ValidatingWebhookConfiguration created/updated", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
+
+	return nil
+}
+
+// DeleteValidatingWebhookConfiguration deletes a ValidatingWebhookConfiguration
+func DeleteValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, name string, webhookLogger logr.Logger) error {
+	tmpClient, err := getCachelessClient(mgr)
+	if err != nil {
+		return fmt.Errorf("unable to get client: %w", err)
+	}
+	vwc := admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	webhookLogger.Info("Removing ValidatingWebhookConfiguration, if it exists", "name", name, "kind", "ValidatingWebhookConfiguration")
+	if err := tmpClient.Delete(ctx, &vwc); err != nil {
+		if apierrors.IsNotFound(err) {
+			webhookLogger.V(5).Info("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
+		} else {
+			return fmt.Errorf("unable to delete ValidatingWebhookConfiguration %q: %w", name, err)
+		}
+	} else {
+		webhookLogger.Info("ValidatingWebhookConfiguration deleted", "name", name, "kind", "ValidatingWebhookConfiguration")
+	}
 	return nil
 }
 
