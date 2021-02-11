@@ -11,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -42,10 +44,12 @@ type Container struct {
 
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
+
+	componentsRegistryMgr *componentsregistry.Manager
 }
 
 // New creates a new internal container item
-func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem) (*Container, error) {
+func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem, componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
@@ -71,6 +75,7 @@ func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv
 		DeployItem:            item,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
+		componentsRegistryMgr: componentRegistryMgr,
 	}, nil
 }
 

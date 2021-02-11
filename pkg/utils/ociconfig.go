@@ -40,7 +40,7 @@ func WithConfiguration(cfg *config.OCIConfiguration) *WithConfigurationStruct {
 }
 
 // ToOCICacheOptions converts a landscaper cache configuration to the cache internal config
-func ToOCICacheOptions(cfg *config.OCICacheConfiguration) []cache.Option {
+func ToOCICacheOptions(cfg *config.OCICacheConfiguration, uid string) []cache.Option {
 	cacheOpts := make([]cache.Option, 0)
 	if cfg != nil {
 		if len(cfg.Path) != 0 {
@@ -48,5 +48,6 @@ func ToOCICacheOptions(cfg *config.OCICacheConfiguration) []cache.Option {
 		}
 		cacheOpts = append(cacheOpts, cache.WithInMemoryOverlay(cfg.UseInMemoryOverlay))
 	}
+	cacheOpts = append(cacheOpts, cache.WithUID(uid))
 	return cacheOpts
 }

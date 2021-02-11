@@ -22,6 +22,9 @@ type LandscaperConfiguration struct {
 	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
 	Registry RegistryConfiguration `json:"registry"`
+	// Metrics allows to configure how metrics are exposed
+	//+optional
+	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
@@ -66,4 +69,9 @@ type OCICacheConfiguration struct {
 	// Defaults to /tmp/ocicache
 	// +optional
 	Path string `json:"path"`
+}
+
+// MetricsConfiguration allows to configure how metrics are exposed
+type MetricsConfiguration struct {
+	Port int32 `json:"port"`
 }

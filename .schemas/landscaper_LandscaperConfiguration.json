@@ -24,6 +24,10 @@
         "registry": {
           "$schema": "http://json-schema.org/draft-04/schema#",
           "$ref": "#/definitions/RegistryConfiguration"
+        },
+        "metrics": {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          "$ref": "#/definitions/MetricsConfiguration"
         }
       },
       "additionalProperties": false,
@@ -35,6 +39,18 @@
       ],
       "properties": {
         "rootPath": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "MetricsConfiguration": {
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "port": {
           "type": "string"
         }
       },

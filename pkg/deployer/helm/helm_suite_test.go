@@ -24,6 +24,10 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/utils/envtest"
+
+	"github.com/gardener/component-cli/ociclient/cache"
+
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 func TestConfig(t *testing.T) {
@@ -69,7 +73,11 @@ var _ = Describe("Ensure", func() {
 		item := &lsv1alpha1.DeployItem{}
 		item.Spec.Configuration = providerConfig
 
-		h, err := helm.New(logtesting.NullLogger{}, &helmv1alpha1.Configuration{}, testenv.Client, item, nil)
+		var cacheDummy cache.Cache
+		dummyManager, err := componentsregistry.New(cacheDummy)
+		Expect(err).NotTo(HaveOccurred())
+
+		h, err := helm.New(logtesting.NullLogger{}, &helmv1alpha1.Configuration{}, testenv.Client, item, nil, dummyManager)
 		Expect(err).ToNot(HaveOccurred())
 		files, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())

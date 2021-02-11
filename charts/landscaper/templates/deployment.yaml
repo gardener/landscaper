@@ -43,7 +43,14 @@ spec:
           {{- if .Values.landscaper.deployers }}
           - "--deployers={{  .Values.landscaper.deployers | join "," }}"
           {{- end }}
+          {{- if .Values.landscaper.metrics }}
+          ports:
+          - name: metrics
+            containerPort: {{ .Values.landscaper.metrics.port }}
+          {{- end}}
           volumeMounts:
+          - name: oci-cache
+            mountPath: /app/ls/oci-cache
           - name: config
             mountPath: /app/ls/config
           {{- if .Values.landscaper.registryConfig.secrets }}
@@ -53,6 +60,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+      - name: oci-cache
+        emptyDir: {}
       - name: config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-config

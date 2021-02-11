@@ -48,6 +48,8 @@ image:
 
 landscaper:
   registryConfig:
+    cache: {} # Landscaper caches pulled OCI artefacts on disk and optionally in-memory
+#     useInMemoryOverly: false
     allowPlainHttpRegistries: false
     secrets: # contains optional oci secrets
       default: {
@@ -57,6 +59,8 @@ landscaper:
           }
         }
       }
+metrics:
+    port: 8080  
 
   # deploy with integrated deployers for quick start
   deployers:

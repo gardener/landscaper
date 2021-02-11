@@ -28,6 +28,8 @@ import (
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	"github.com/gardener/landscaper/pkg/utils"
+
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 const (
@@ -50,10 +52,11 @@ type Helm struct {
 	Target                *lsv1alpha1.Target
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
+	componentsRegistryMgr *componentsregistry.Manager
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Helm, error) {
+func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
@@ -80,6 +83,7 @@ func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient cli
 		Target:                target,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
+		componentsRegistryMgr: componentsRegistryMgr,
 	}, nil
 }
 
@@ -93,7 +97,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), utils.WithConfiguration(h.Configuration.OCI))
+	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), utils.WithConfiguration(h.Configuration.OCI), ociclient.WithCache{Cache: h.componentsRegistryMgr.SharedCache()})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to build oci client: %w", err)
 	}

@@ -395,7 +395,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI, c.ProviderConfiguration.ComponentDescriptor.Inline)
+		compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI, c.componentsRegistryMgr.SharedCache(), c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
