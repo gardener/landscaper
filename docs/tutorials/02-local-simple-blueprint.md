@@ -42,7 +42,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/local/nginx-ingress
-  version: v0.1.0
+  version: v0.2.0
 
   provider: internal
   sources: []
@@ -94,8 +94,8 @@ input:
 
 Add the resource to the component descriptor with the component-cli:
 ```
-component-cli ca resources ./docs/tutorials/resources/local-ingress-nginx \
-  -f ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
+component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+  -r ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
 ```
 :warning: Note that the directory `./docs/tutorials/resources/local-ingress-nginx` _MUST_ contain the component descriptor at `./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml`.
 
@@ -119,7 +119,7 @@ meta:
   schemaVersion: v2
 component:
   name: github.com/gardener/landscaper/local/ingress-nginx
-  version: v0.1.0
+  version: v0.2.0
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
@@ -177,7 +177,6 @@ This configuration file contains the resource definition with the input to the p
 ---
 type: blueprint
 name: ingress-nginx-blueprint
-version: v0.1.0
 relation: local
 input:
   type: "dir" # creates a tar from the given directory
@@ -189,8 +188,8 @@ input:
 ```
 
 ```
-component-cli ca resources ./docs/tutorials/resources/local-ingress-nginx \
-  -f ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
+component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+  -r ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 ```
 
 With his, the blueprint has been added to the component descriptor as `localFilesystemBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.<br>
@@ -200,7 +199,7 @@ meta:
   schemaVersion: v2
 component:
   name: github.com/gardener/landscaper/local/ingress-nginx
-  version: v0.1.0
+  version: v0.2.0
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
@@ -215,7 +214,7 @@ component:
     name: ingress-nginx-blueprint
     relation: local
     type: blueprint
-    version: v0.1.0
+    version: v0.2.0
   - access:
       filename: sha256:a489ebe19c3670a921c3e098526baf09b44bd1bf02424e9eb52f192efc1a4760
       mediaType: application/gzip
@@ -240,7 +239,7 @@ During the upload the `localFilesystemBlob` are converted to `localOciBlob` as t
 
 :information_source: The uploaded component descriptor can be checked by running
 ```
-landscaper-cli components-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.1.0
+landscaper-cli components-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.2.0
 ```
 
 ```yaml
@@ -248,7 +247,7 @@ meta:
   schemaVersion: v2
 component:
   name: github.com/gardener/landscaper/local/ingress-nginx
-  version: v0.1.0
+  version: v0.2.0
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
@@ -262,14 +261,14 @@ component:
     name: ingress-nginx-blueprint
     relation: local
     type: blueprint
-    version: v0.1.0
+    version: v0.2.0
   - access:
       digest: sha256:a489ebe19c3670a921c3e098526baf09b44bd1bf02424e9eb52f192efc1a4760
       type: localOciBlob
     name: ingress-nginx-chart
     relation: external
     type: helm
-    version: v0.1.0
+    version: v0.2.0
 ```
 
 ### Installation

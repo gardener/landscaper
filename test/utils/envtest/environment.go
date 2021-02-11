@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -113,9 +114,9 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 }
 
 // CleanupState cleans up a test environment.
-// todo: remove finalizers of all objects in state
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
-	return state.CleanupState(ctx, e.Client)
+	t := 5 * time.Second
+	return state.CleanupState(ctx, e.Client, &t)
 }
 
 func parseResources(path string, state *State) ([]client.Object, error) {

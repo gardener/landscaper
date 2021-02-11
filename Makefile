@@ -45,7 +45,7 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	@go test -mod=vendor $(REPO_ROOT)/test/integration --kubeconfig $(KUBECONFIG)
+	@go test -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG)
 
 .PHONY: verify
 verify: check

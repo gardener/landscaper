@@ -61,7 +61,6 @@ spec:
                     type: string
                 required:
                 - name
-                - namespace
                 type: object
               type:
                 description: Type is the type of the deployer that should handle the item.
@@ -123,7 +122,6 @@ spec:
                     type: string
                 required:
                 - name
-                - namespace
                 type: object
               lastError:
                 description: LastError describes the last error that occurred.

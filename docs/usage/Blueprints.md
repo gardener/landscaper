@@ -16,6 +16,7 @@ my-blueprint
 **Index**:
 - [Blueprint](#blueprint)
   - [blueprint.yaml Definition](#blueprintyaml-definition)
+    - [Import and Export Definitions](#import-and-export-definitions)
     - [DeployExecutions](#deployexecutions)
     - [ExportExecutions](#exportexecutions)
     - [Installation Templates](#installation-templates)
@@ -128,6 +129,52 @@ subinstallations:
       target: "" # target name
   #exportMappings: {}
 
+```
+
+### Import and Export Definitions
+
+The interface of a blueprint can be described using imports and exports.<br>
+The import definitions describe the data that needed by the blueprint.<br>
+The export definitions describe the data that is produced by the blueprint.<br>
+
+Imports and Exports always consists of a name (_MUST_ be unique for the blueprint) and can be generally described as _Target_-Im/Exports or _Data_-Im/Exports.
+
+```yaml
+imports:
+- name: <string> # some unique name
+  required: <boolean> # defaults to true
+```
+
+:warning: in the following data import and target import is used as synonym for import and export. The specification applies to both.
+
+#### Data Imports
+
+Data imports are the default import type that can describe arbitrary data in json or yaml format.
+[JSONSchema](https://json-schema.org/) is used to describe the structure fo the data.
+
+It is recommended to provide a description and an example for the structure, so that users of the blueprint know what to provide (see the [json docs](http://json-schema.org/understanding-json-schema/reference/generic.html#annotations)).
+
+```yaml
+imports:
+- name: my-import
+  schema:
+    <jsonschema>
+```
+
+For detailed information about the jsonschema and landscaper specifics see [JSONSchema Docs](./JSONSchema.md)
+
+#### Targets
+
+Targets are a specific type of import and contains additional information that is interpreted by deployers.
+The concept of a Target is to define the environment where a deployer installs/deploys software.
+This means that targets could contain additional information about that environment (e.g. that the target cluster is in a fenced environment and needs to be handled by another deployer instance).
+
+The configuration structure of targets is defined by their type (currently the type is only for identification but later we plan to add some type registration with checks.)
+
+```yaml
+imports:
+- name: my-import
+  targetType: <string> # name of the target type
 ```
 
 ### DeployExecutions

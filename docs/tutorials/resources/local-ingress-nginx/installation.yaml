@@ -13,7 +13,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/local/ingress-nginx
-      version: v0.1.0
+      version: v0.2.0
   blueprint:
     ref:
       resourceName: ingress-nginx-blueprint
@@ -23,6 +23,12 @@ spec:
     - name: cluster
       # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
       target: "#my-cluster"
+    data:
+    - name: namespace
+      configMapRef:
+        key: "namespace"
+        name: "my-imports" # name of the configmap;
+        # namespace: default # the namespace will be defaulted to the namespace of the installation.
 
   exports:
     data:

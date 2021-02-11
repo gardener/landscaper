@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
+	g "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -20,20 +21,17 @@ import (
 	"github.com/gardener/landscaper/test/utils"
 )
 
-// RegisterTests registers all tests of the package
-func RegisterTests(f *framework.Framework) {
-	SimpleIngressNginxTest(f)
-}
-
-func SimpleIngressNginxTest(f *framework.Framework) {
+// ExternalJSONSchemaTest tests the jsonschema tutorial.
+func ExternalJSONSchemaTest(f *framework.Framework) {
 	dumper := f.Register()
 
-	_ = ginkgo.Describe("SimpleIngressNginxTest", func() {
+	_ = ginkgo.Describe("ExternalJSONSchemaTest", func() {
 
-		ginkgo.It("should deploy a nginx ingress controller", func() {
+		ginkgo.It("should deploy a echo server with resources defined by a external jsonschema", func() {
 			var (
-				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/ingress-nginx")
+				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/external-jsonschema")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")
+				importResource           = filepath.Join(tutorialResourcesRootDir, "configmap.yaml")
 				instResource             = filepath.Join(tutorialResourcesRootDir, "installation.yaml")
 			)
 			ctx := context.Background()
@@ -42,7 +40,7 @@ func SimpleIngressNginxTest(f *framework.Framework) {
 			utils.ExpectNoError(err)
 			dumper.AddNamespaces(state.Namespace)
 			defer func() {
-				gomega.Expect(cleanup(ctx)).ToNot(gomega.HaveOccurred())
+				g.Expect(cleanup(ctx)).ToNot(g.HaveOccurred())
 			}()
 
 			ginkgo.By("Create Target for the installation")
@@ -52,38 +50,48 @@ func SimpleIngressNginxTest(f *framework.Framework) {
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
+			ginkgo.By("Create ConfigMap with imports for the installation")
+			cm := &corev1.ConfigMap{}
+			cm.SetNamespace(state.Namespace)
+			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
+			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
 			inst.SetNamespace(state.Namespace)
-			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
-
+			g.Expect(utils.ReadResourceFromFile(inst, instResource)).To(g.Succeed())
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, inst, lsv1alpha1.ComponentPhaseSucceeded, 2*time.Minute))
 
-			// todo: check if the deploy item is succeeded and that the nginx is successfully running in the default namespace
 			deployItems, err := utils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
-			gomega.Expect(deployItems).To(gomega.HaveLen(1))
-			gomega.Expect(deployItems[0].Status.Phase).To(gomega.Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+			g.Expect(deployItems).To(g.HaveLen(1))
+			g.Expect(deployItems[0].Status.Phase).To(g.Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 
 			// todo: make namespace configurable for deployed resources
-			// expect that the nginx deployment is successfully running
-			nginxIngressDeploymentName := "test-ingress-nginx-controller"
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKey(nginxIngressDeploymentName, "default"), 2*time.Minute))
+			// expect that the echo server deployment is successfully running
+			echoServerDeploymentName := "echo-server"
+			echoServerDeploymentObjectKey := kutil.ObjectKey(echoServerDeploymentName, "default")
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, echoServerDeploymentObjectKey, 2*time.Minute))
+			// expect that the deployment has the correct resource requests and limits
+			echoServerDeploy := &appsv1.Deployment{}
+			utils.ExpectNoError(f.Client.Get(ctx, echoServerDeploymentObjectKey, echoServerDeploy))
+			g.Expect(echoServerDeploy.Spec.Template.Spec.Containers).To(g.HaveLen(1))
+			g.Expect(echoServerDeploy.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(g.Equal("50Mi"))
+			g.Expect(echoServerDeploy.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(g.Equal("100Mi"))
 
 			ginkgo.By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
 
 			// expect that the nginx deployment is alread deleted or has an deletion timestamp
-			nginxDeployment := &appsv1.Deployment{}
-			err = f.Client.Get(ctx, kutil.ObjectKey(nginxIngressDeploymentName, "default"), nginxDeployment)
+			err = f.Client.Get(ctx, echoServerDeploymentObjectKey, echoServerDeploy)
 			if err != nil && !apierrors.IsNotFound(err) {
 				utils.ExpectNoError(err)
 			} else if err == nil {
-				gomega.Expect(nginxDeployment.DeletionTimestamp.IsZero()).To(gomega.BeTrue())
+				g.Expect(echoServerDeploy.DeletionTimestamp.IsZero()).To(g.BeTrue())
 			}
 		})
 	})

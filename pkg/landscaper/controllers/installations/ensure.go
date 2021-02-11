@@ -17,7 +17,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
-func (a *actuator) Ensure(ctx context.Context, op *installations.Operation) error {
+// RunInstallation creates or updates the installation's execution (deploy items) and subinstallations.
+func (a *actuator) RunInstallation(ctx context.Context, op *installations.Operation) error {
 	// check that all referenced definitions have a corresponding installation
 	inst := op.Inst
 	subinstallation := subinstallations.New(op)

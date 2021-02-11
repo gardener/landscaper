@@ -119,6 +119,7 @@ type ObjectReference struct {
 	Name string `json:"name"`
 
 	// Namespace is the namespace of kubernetes object.
+	// +optional
 	Namespace string `json:"namespace"`
 }
 

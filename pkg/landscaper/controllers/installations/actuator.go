@@ -76,7 +76,7 @@ type actuator struct {
 }
 
 func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.Log().Info("reconcile", "resource", req.NamespacedName)
+	a.Log().V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := a.Client().Get(ctx, req.NamespacedName, inst); err != nil {
@@ -86,6 +86,8 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 		}
 		return reconcile.Result{}, err
 	}
+	// default the installation as it not done by the controller runtime
+	lsv1alpha1.SetDefaults_Installation(inst)
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -130,6 +132,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 }
 
 func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	a.Log().Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 	old := inst.DeepCopy()
 
 	defer func() {
@@ -159,7 +162,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 		return a.forceReconcile(ctx, instOp)
 	}
 
-	return a.Ensure(ctx, instOp)
+	return a.RunInstallation(ctx, instOp)
 }
 
 func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
