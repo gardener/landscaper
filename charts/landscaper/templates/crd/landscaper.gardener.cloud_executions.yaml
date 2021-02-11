@@ -76,7 +76,6 @@ spec:
                           type: string
                       required:
                       - name
-                      - namespace
                       type: object
                     type:
                       description: DataType is the DeployItem type of the execution.
@@ -154,7 +153,6 @@ spec:
                           type: integer
                       required:
                       - name
-                      - namespace
                       - observedGeneration
                       type: object
                   required:
@@ -173,7 +171,6 @@ spec:
                     type: string
                 required:
                 - name
-                - namespace
                 type: object
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed for this Execution. It corresponds to the Execution generation, which is updated on mutation by the landscaper.

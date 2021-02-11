@@ -26,6 +26,7 @@
 - [Simple NGINX Ingress blueprint with Local Artifacts](tutorials/02-local-simple-blueprint.md)
 - [HTTP Echo Server with Import from nginx ingress blueprint](tutorials/03-simple-import.md)
 - [Aggregated Blueprint that includes the nginx-ingress and the echo-server](tutorials/04-aggregated-blueprint.md)
+- [Use shared JSONSchemas in Blueprints](tutorials/05-external-jsonschema.md)
 
 ### API Reference
 - [Core](./api-reference/core.md)

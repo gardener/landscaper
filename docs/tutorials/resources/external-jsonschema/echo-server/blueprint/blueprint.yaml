@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: ingressClass
+  schema:
+    type: string
+- name: resources
+  schema:
+    $ref: "cd://componentReferences/definitions/resources/resources-definition"
+
+deployExecutions:
+- name: default
+  type: GoTemplate
+  file: /defaultDeployExecution.yaml

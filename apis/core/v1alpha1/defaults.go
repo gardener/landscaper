@@ -18,11 +18,32 @@ func SetDefaults_Blueprint(obj *Blueprint) {
 	if len(obj.JSONSchemaVersion) == 0 {
 		obj.JSONSchemaVersion = "https://json-schema.org/draft/2019-09/schema"
 	}
+
+	for i := range obj.Imports {
+		SetDefaults_DefinitionImport(&(obj.Imports[i]))
+	}
 }
 
 // SetDefaults_DefinitionImport sets default values for the ImportDefinition objects
 func SetDefaults_DefinitionImport(obj *ImportDefinition) {
 	if obj.Required == nil {
 		obj.Required = pointer.BoolPtr(true)
+	}
+}
+
+// SetDefaults_Installation sets default values for installation objects
+func SetDefaults_Installation(obj *Installation) {
+	// default the namespace of imports
+	for i, dataImport := range obj.Spec.Imports.Data {
+		if dataImport.ConfigMapRef != nil {
+			if len(dataImport.ConfigMapRef.Namespace) == 0 {
+				obj.Spec.Imports.Data[i].ConfigMapRef.Namespace = obj.GetNamespace()
+			}
+		}
+		if dataImport.SecretRef != nil {
+			if len(dataImport.SecretRef.Namespace) == 0 {
+				obj.Spec.Imports.Data[i].SecretRef.Namespace = obj.GetNamespace()
+			}
+		}
 	}
 }

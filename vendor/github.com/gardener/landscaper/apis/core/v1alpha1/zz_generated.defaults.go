@@ -18,9 +18,22 @@ import (
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
 	scheme.AddTypeDefaultingFunc(&Blueprint{}, func(obj interface{}) { SetObjectDefaults_Blueprint(obj.(*Blueprint)) })
+	scheme.AddTypeDefaultingFunc(&Installation{}, func(obj interface{}) { SetObjectDefaults_Installation(obj.(*Installation)) })
+	scheme.AddTypeDefaultingFunc(&InstallationList{}, func(obj interface{}) { SetObjectDefaults_InstallationList(obj.(*InstallationList)) })
 	return nil
 }
 
 func SetObjectDefaults_Blueprint(in *Blueprint) {
 	SetDefaults_Blueprint(in)
+}
+
+func SetObjectDefaults_Installation(in *Installation) {
+	SetDefaults_Installation(in)
+}
+
+func SetObjectDefaults_InstallationList(in *InstallationList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_Installation(a)
+	}
 }

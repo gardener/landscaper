@@ -49,7 +49,7 @@ func (l LoaderWrapper) LoaderFactory() gojsonschema.JSONLoaderFactory {
 }
 
 // Loader is the landscaper specific jsonscheme loader.
-// It resolves referecens of type: local, blueprint and cd.
+// It resolves references of type: local, blueprint and cd.
 type Loader struct {
 	LoaderConfig
 	source string
@@ -65,10 +65,10 @@ type LoaderConfig struct {
 	BlueprintFs vfs.FileSystem
 	// ComponentDescriptor contains the current blueprint's component descriptor.
 	ComponentDescriptor *cdv2.ComponentDescriptor
+	// ComponentResolver is a object that can resolve component descriptors.
+	ComponentResolver ctf.ComponentResolver
 	// ComponentReferenceResolver is a function that resolves component references
 	ComponentReferenceResolver cdutils.ResolveComponentReferenceFunc
-	// BlobResolver is the registry to resolve resources of the component descriptor.
-	BlobResolver ctf.BlobResolver
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
 	DefaultLoader gojsonschema.JSONLoader
 }
@@ -169,26 +169,25 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 	if l.ComponentReferenceResolver == nil {
 		return nil, errors.New("no component reference resolver defined to resolve the ref")
 	}
-	if l.BlobResolver == nil {
-		return nil, errors.New("no blobl resolver defined to resolve the ref")
-	}
 	uri, err := cdutils.ParseURI(refURL.String())
 	if err != nil {
 		return nil, err
 	}
-	kind, res, err := uri.Get(l.ComponentDescriptor, l.ComponentReferenceResolver)
+	cd, res, err := uri.GetResource(l.ComponentDescriptor, l.ComponentReferenceResolver)
 	if err != nil {
 		return nil, err
 	}
-	if kind == lsv1alpha1.ComponentResourceKind {
-		return nil, fmt.Errorf("expected a resource but reference resolves to a component")
-	}
-	resource := res.(cdv2.Resource)
 
+	// get the blob resolver for the specific component
 	ctx := context.Background()
 	defer ctx.Done()
+	_, blobResolver, err := l.ComponentResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), cd.GetName(), cd.GetVersion())
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch component descriptor %s:%s for %q: %w", cd.GetName(), cd.GetVersion(), refURL.String(), err)
+	}
+
 	var JSONSchemaBuf bytes.Buffer
-	_, err = l.BlobResolver.Resolve(ctx, resource, &JSONSchemaBuf)
+	_, err = blobResolver.Resolve(ctx, res, &JSONSchemaBuf)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", refURL.String(), err)
 	}

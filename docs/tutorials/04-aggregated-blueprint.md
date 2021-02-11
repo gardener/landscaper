@@ -309,3 +309,6 @@ x32pwelcl5sssak3otanbo2lta2ndaat   Installation.default.server-nl5gk     ingress
 - A blueprint has been created that includes a ingress-nginx and an echo server.
 - With that blueprint is it now possible for others to reuse the aggregated blueprint and deploy the ingress together with the echo server.
 
+### Up next
+
+In the [next tutorial](05-external-jsonschema.md), a external jsonschema is used to describe imports.

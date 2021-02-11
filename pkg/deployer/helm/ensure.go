@@ -7,9 +7,9 @@ package helm
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,7 +175,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 		return err
 	}
 
-	completed := true
+	nonCompletedResources := make([]string, 0)
 	for _, ref := range status.ManagedResources {
 		obj := &unstructured.Unstructured{
 			Object: map[string]interface{}{
@@ -193,11 +193,11 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 			}
 			return err
 		}
-		completed = false
+		nonCompletedResources = append(nonCompletedResources, fmt.Sprintf("%s/%s(%s)", ref.Namespace, ref.Name, ref.Kind))
 	}
 
-	if !completed {
-		return errors.New("not all items are deleted")
+	if len(nonCompletedResources) != 0 {
+		return fmt.Errorf("waiting for the deletion of %q to be completed", strings.Join(nonCompletedResources, ","))
 	}
 
 	// remove finalizer
