@@ -108,5 +108,5 @@ type Requirement struct {
 	// It is generally faster to operate on a single-element slice
 	// than on a single-element map, so we have a slice here.
 	// +optional
-	Values []string `json:"Values,omitempty"`
+	Values []string `json:"values,omitempty"`
 }
