@@ -7,6 +7,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"path"
 
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -78,7 +79,7 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manag
 		rule.Rule.APIGroups = []string{elem.APIGroup}
 		rule.Rule.APIVersions = elem.APIVersions
 		rule.Rule.Resources = []string{elem.ResourceName}
-		webhookPath := o.WebhookBasePath + elem.ResourceName
+		webhookPath := path.Join(o.WebhookBasePath, elem.ResourceName)
 		vwcWebhook := admissionregistrationv1.ValidatingWebhook{
 			Name:                    elem.ResourceName + o.WebhookNameSuffix,
 			SideEffects:             &noSideEffects,

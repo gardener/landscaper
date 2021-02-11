@@ -29,7 +29,7 @@ func ValidatorFromResourceType(resource string) (GenericValidator, error) {
 	} else if resource == "executions" {
 		val = &ExecutionValidator{}
 	} else {
-		return nil, fmt.Errorf("unable to find validator for resource type '%s'", resource)
+		return nil, fmt.Errorf("unable to find validator for resource type %q", resource)
 	}
 	return val, nil
 }
@@ -74,7 +74,7 @@ type InstallationValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	iv.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	iv.log.V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	inst := &lscore.Installation{}
 	if _, _, err := iv.decoder.Decode(req.Object.Raw, nil, inst); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -94,7 +94,7 @@ type DeployItemValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	div.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	div.log.V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	di := &lscore.DeployItem{}
 	if _, _, err := div.decoder.Decode(req.Object.Raw, nil, di); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -114,7 +114,7 @@ type ExecutionValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	ev.log.Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	ev.log.V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	exec := &lscore.Execution{}
 	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, exec); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)

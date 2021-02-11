@@ -25,10 +25,10 @@ import (
 
 // RegisterTests registers all tests of the package
 func RegisterTests(f *framework.Framework) {
-	SimpleWebhookTest(f)
+	WebhookTest(f)
 }
 
-func SimpleWebhookTest(f *framework.Framework) {
+func WebhookTest(f *framework.Framework) {
 	dumper := f.Register()
 
 	_ = ginkgo.Describe("SimpleWebhookTest", func() {
@@ -36,12 +36,6 @@ func SimpleWebhookTest(f *framework.Framework) {
 		ginkgo.It("should have created a ValidatingWebhookConfiguration", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			state, cleanup, err := f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
-			defer func() {
-				gomega.Expect(cleanup(ctx)).ToNot(gomega.HaveOccurred())
-			}()
 
 			vwc := admissionregistrationv1.ValidatingWebhookConfiguration{}
 			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKey("landscaper-validation-webhook", ""), &vwc))
