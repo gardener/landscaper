@@ -12,10 +12,11 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+
+	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 )
 
 func init() {
