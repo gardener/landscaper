@@ -5,7 +5,6 @@
 package app
 
 import (
-	"errors"
 	goflag "flag"
 	"io/ioutil"
 	"strings"
@@ -23,19 +22,19 @@ import (
 )
 
 // constant
-func defaultWebhookedResources() []webhook.WebhookedResourceDefinition {
-	return []webhook.WebhookedResourceDefinition{
-		{
+func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition {
+	return map[string]webhook.WebhookedResourceDefinition{
+		"installations": {
 			APIGroup:     "landscaper.gardener.cloud",
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "installations",
 		},
-		{
+		"deployitems": {
 			APIGroup:     "landscaper.gardener.cloud",
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "deployitems",
 		},
-		{
+		"executions": {
 			APIGroup:     "landscaper.gardener.cloud",
 			APIVersions:  []string{"v1alpha1"},
 			ResourceName: "executions",
@@ -50,7 +49,7 @@ type options struct {
 
 	config           *config.LandscaperConfiguration
 	enabledDeployers []string
-	webhook          *webhookOptions
+	webhook          webhookOptions
 }
 
 // options for the webhook (as given to the CLI)
@@ -68,13 +67,13 @@ type webhookOptions struct {
 	webhookServerPort       int                                   // port of the webhook server
 	webhookServicePort      int32                                 // port of the webhook service
 	enabledWebhooks         []webhook.WebhookedResourceDefinition // which resources should be watched by the webhook
-	raw                     *rawWebhookOptions                    // the raw values from which these options were generated
+	raw                     rawWebhookOptions                     // the raw values from which these options were generated
 }
 
 func NewOptions() *options {
 	return &options{
-		webhook: &webhookOptions{
-			raw: &rawWebhookOptions{},
+		webhook: webhookOptions{
+			raw: rawWebhookOptions{},
 		},
 	}
 }
@@ -117,7 +116,10 @@ func (o *options) Complete() error {
 	if err != nil {
 		return err
 	}
-	o.webhook.completeWebhookOptions() // compute easier-to-work-with values from the raw webhook options
+	err = o.webhook.completeWebhookOptions() // compute easier-to-work-with values from the raw webhook options
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -153,56 +155,48 @@ func (o *options) validate() error {
 
 // completeWebhookOptions populates the fields of the webhookOptions object by evaluating the rawWebhookOptions in it
 // this functions assumes that the rawWebhookOptions have been validated
-func (wo *webhookOptions) completeWebhookOptions() {
+func (wo *webhookOptions) completeWebhookOptions() error {
+	allErrs := field.ErrorList{}
 	wo.webhookServerPort = wo.raw.webhookServerPort
 	wo.webhookServicePort = wo.raw.webhookServicePort
-	webhookService := strings.Split(wo.raw.webhookServiceNamespaceName, "/")
-	wo.webhookServiceNamespace = webhookService[0]
-	wo.webhookServiceName = webhookService[1]
-	wo.enabledWebhooks = filterWebhookedResources(defaultWebhookedResources(), strings.Split(wo.raw.disabledWebhooks, ","))
+	wo.enabledWebhooks = filterWebhookedResources(defaultWebhookedResources(), stringListToMap(wo.raw.disabledWebhooks))
+	if len(wo.enabledWebhooks) > 0 {
+		if len(wo.raw.webhookServiceNamespaceName) == 0 {
+			allErrs = append(allErrs, field.Required(field.NewPath("--webhook-service"), "option is required unless all webhooks are disabled"))
+		} else {
+			webhookService := strings.Split(wo.raw.webhookServiceNamespaceName, "/")
+			wo.webhookServiceNamespace = webhookService[0]
+			wo.webhookServiceName = webhookService[1]
+		}
+	}
+	if len(allErrs) > 0 {
+		return allErrs.ToAggregate()
+	}
+	return nil
 }
 
 // validateRawWebhookOptions validates the webhook options as given to the CLI
-func validateRawWebhookOptions(wo *rawWebhookOptions) field.ErrorList {
-	if wo == nil {
-		return field.ErrorList{field.InternalError(field.NewPath("rawWebhookOptions"), errors.New("must not be nil"))}
-	}
+func validateRawWebhookOptions(wo rawWebhookOptions) field.ErrorList {
 	allErrs := field.ErrorList{}
-	disabled := false
+	dwr := defaultWebhookedResources()
 	if len(wo.disabledWebhooks) != 0 { // something has been disabled
-		allowedWebhooks := []string{} // needed for logging
-		for _, elem := range defaultWebhookedResources() {
-			allowedWebhooks = append(allowedWebhooks, elem.ResourceName)
-		}
-		allowedWebhooks = append(allowedWebhooks, "all")
+		// validate that no unknown values are in the list of to-be-disabled webhooks
+		allowedWebhooks := allowedWebhookDisables()
 		disabledWebhooks := strings.Split(wo.disabledWebhooks, ",")
 		for _, elem := range disabledWebhooks {
-			if elem == "all" {
-				continue
-			}
-			// check whether the webhooks to be disabled are actually known
-			valid := false
-			for _, tmp := range defaultWebhookedResources() {
-				if elem == tmp.ResourceName {
-					valid = true
-					break
-				}
-			}
-			if !valid {
+			if _, ok := dwr[elem]; (elem != "all") && !ok {
 				allErrs = append(allErrs, field.NotSupported(field.NewPath("--disable-webhooks"), elem, allowedWebhooks))
 			}
 		}
-		wr := filterWebhookedResources(defaultWebhookedResources(), disabledWebhooks) // compute list of enabled webhooks to decide if webhooks are completely disabled
-		disabled = (len(wr) == 0)                                                     // true if all webhooks have been disabled, either by 'all' or by listing all possible ones in the '--disable-webhooks' option
 	}
 	// validate service name and namespace
-	if !disabled { // service namespace not needed if completely disabled
-		if len(wo.webhookServiceNamespaceName) == 0 {
-			allErrs = append(allErrs, field.Required(field.NewPath("--webhook-service"), "option is required unless all webhooks are disabled"))
+	if len(wo.webhookServiceNamespaceName) > 0 {
+		ws := strings.Split(wo.webhookServiceNamespaceName, "/")
+		if len(ws) < 2 {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-service"), wo.webhookServiceNamespaceName, "must have the format '<namespace>/<name>'"))
 		} else {
-			ws := strings.Split(wo.webhookServiceNamespaceName, "/")
-			if len(ws) < 2 {
-				allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-service"), wo.webhookServiceNamespaceName, "must have the format '<namespace>/<name>'"))
+			if len(ws[0]) == 0 || len(ws[1]) == 0 {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-service"), wo.webhookServiceNamespaceName, "neither name nor namespace of the webhook service must be empty"))
 			}
 		}
 	}
@@ -217,24 +211,38 @@ func validateRawWebhookOptions(wo *rawWebhookOptions) field.ErrorList {
 }
 
 // filterWebhookedResources returns a slice of WebhookedResourceDefinitions that contains only those of the given webhookedResources whose ResourceName is not specified in disabledWebhooks
-func filterWebhookedResources(webhookedResources []webhook.WebhookedResourceDefinition, disabledWebhooks []string) []webhook.WebhookedResourceDefinition {
+func filterWebhookedResources(webhookedResources map[string]webhook.WebhookedResourceDefinition, disabledWebhooks map[string]bool) []webhook.WebhookedResourceDefinition {
 	fwr := []webhook.WebhookedResourceDefinition{}
-	for _, dw := range disabledWebhooks {
-		if dw == "all" {
-			return fwr // return empty slice if all webhooks have been disabled
-		}
+	if _, ok := disabledWebhooks["all"]; ok {
+		return fwr // all webhooks disabled, return empty slice
 	}
 	for _, wr := range webhookedResources {
-		enabled := true
-		for _, dw := range disabledWebhooks {
-			if wr.ResourceName == dw {
-				enabled = false
-				break
-			}
-		}
-		if enabled {
+		if _, ok := disabledWebhooks[wr.ResourceName]; !ok {
 			fwr = append(fwr, wr)
 		}
 	}
 	return fwr
+}
+
+// stringListToMap turns a comma-separated list of strings into pseudo-set that maps all elements of the list to true
+func stringListToMap(opt string) map[string]bool {
+	res := map[string]bool{}
+	tmp := strings.Split(opt, ",")
+	for _, t := range tmp {
+		res[t] = true
+	}
+	return res
+}
+
+// allowedWebhookDisables computes a list of allowed values for the '--disable-webhooks' option
+func allowedWebhookDisables() []string {
+	dwr := defaultWebhookedResources()
+	res := make([]string, len(dwr)+1)
+	c := 0
+	for _, elem := range dwr {
+		res[c] = elem.ResourceName
+		c++
+	}
+	res[c] = "all"
+	return res
 }
