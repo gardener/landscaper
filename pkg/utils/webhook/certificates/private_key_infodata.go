@@ -12,10 +12,6 @@ import (
 // PrivateKeyDataType is the type used to denote an PrivateKeyJSONData structure in the ShootState
 const PrivateKeyDataType = TypeVersion("privateKey")
 
-func init() {
-	Register(PrivateKeyDataType, UnmarshalPrivateKey)
-}
-
 // PrivateKeyJSONData is the json representation of PrivateKeyInfoData used to store private key in the ShootState
 type PrivateKeyJSONData struct {
 	PrivateKey []byte `json:"privateKey"`

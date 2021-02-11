@@ -7,15 +7,10 @@ package certificates
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 )
 
 // CertificateDataType is the type used to denote an CertificateJSONData structure in the ShootState
 const CertificateDataType = TypeVersion("certificate")
-
-func init() {
-	Register(CertificateDataType, UnmarshalCert)
-}
 
 // CertificateJSONData is the json representation of CertificateInfoData used to store Certificate metadata in the ShootState
 type CertificateJSONData struct {
@@ -58,19 +53,12 @@ func NewCertificateInfoData(privateKey, certificate []byte) *CertificateInfoData
 	return &CertificateInfoData{privateKey, certificate}
 }
 
-var lock sync.Mutex
-var types = map[TypeVersion]Unmarshaller{}
-
-// Register is used to register new InfoData type versions
-func Register(typeversion TypeVersion, unmarshaller Unmarshaller) {
-	lock.Lock()
-	defer lock.Unlock()
-	types[typeversion] = unmarshaller
+var types = map[TypeVersion]Unmarshaller{
+	CertificateDataType: UnmarshalCert,
+	PrivateKeyDataType:  UnmarshalPrivateKey,
 }
 
 // GetUnmarshaller returns an Unmarshaller for the given typeName.
 func GetUnmarshaller(typeName TypeVersion) Unmarshaller {
-	lock.Lock()
-	defer lock.Unlock()
 	return types[typeName]
 }
