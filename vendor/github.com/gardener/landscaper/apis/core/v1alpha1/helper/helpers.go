@@ -6,7 +6,6 @@ package helper
 
 import (
 	"reflect"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -131,39 +130,6 @@ func IsConditionStatus(conditions []v1alpha1.Condition, status v1alpha1.Conditio
 		}
 	}
 	return true
-}
-
-// UpdatedError updates the properties of a error.
-func UpdatedError(lastError *v1alpha1.Error, operation, reason, message string, codes ...v1alpha1.ErrorCode) *v1alpha1.Error {
-	newError := &v1alpha1.Error{
-		Operation:          operation,
-		Reason:             reason,
-		Message:            message,
-		LastTransitionTime: metav1.Now(),
-		LastUpdateTime:     metav1.Now(),
-		Codes:              codes,
-	}
-
-	if lastError != nil && lastError.Operation == operation {
-		newError.LastTransitionTime = lastError.LastTransitionTime
-	}
-	return newError
-}
-
-// GetPhaseForLastError returns a failed installation phase if the given
-// error lasts longer than the specified time.
-func GetPhaseForLastError(phase v1alpha1.ComponentInstallationPhase, lastError *v1alpha1.Error, d time.Duration) v1alpha1.ComponentInstallationPhase {
-	if lastError == nil {
-		return phase
-	}
-	if len(phase) == 0 {
-		return v1alpha1.ComponentPhaseFailed
-	}
-
-	if lastError.LastUpdateTime.Sub(lastError.LastTransitionTime.Time).Seconds() > d.Seconds() {
-		return v1alpha1.ComponentPhaseFailed
-	}
-	return phase
 }
 
 // CreateOrUpdateVersionedObjectReferences creates or updates a element in versioned objectReference slice.

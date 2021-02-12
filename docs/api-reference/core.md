@@ -1730,7 +1730,7 @@ string
 </em>
 </td>
 <td>
-<p>Operation describes the operator where the error ocurred.</p>
+<p>Operation describes the operator where the error occurred.</p>
 </td>
 </tr>
 <tr>

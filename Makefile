@@ -57,7 +57,7 @@ generate-code:
 	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
 
 .PHONY: generate
-generate: generate-code format
+generate: generate-code format revendor
 
 #################################################################
 # Rules related to binary build, docker image build and release #
