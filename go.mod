@@ -29,7 +29,9 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/zap v1.16.0
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2

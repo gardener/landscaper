@@ -8,12 +8,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/apis/core/install"
+	install "github.com/gardener/landscaper/apis/core/install"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
@@ -25,7 +26,10 @@ import (
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
 
 func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
@@ -56,6 +60,7 @@ func (o *options) run(ctx context.Context) error {
 
 	opts := manager.Options{
 		LeaderElection:     false,
+		Port:               9443,
 		MetricsBindAddress: "0",
 	}
 
@@ -78,6 +83,11 @@ func (o *options) run(ctx context.Context) error {
 
 	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
+	}
+
+	// create ValidatingWebhookConfiguration and register webhooks, if validation is enabled, delete it otherwise
+	if err := registerWebhooks(ctx, mgr, o); err != nil {
+		return fmt.Errorf("unable to register validation webhook: %w", err)
 	}
 
 	for _, deployerName := range o.enabledDeployers {
@@ -115,5 +125,63 @@ func (o *options) run(ctx context.Context) error {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)
 	}
+	return nil
+}
+
+func registerWebhooks(ctx context.Context, mgr manager.Manager, o *options) error {
+	webhookLogger := ctrl.Log.WithName("webhook").WithName("validation")
+	webhookConfigurationName := "landscaper-validation-webhook"
+	// noop if all webhooks are disabled
+	if len(o.webhook.enabledWebhooks) == 0 {
+		webhookLogger.Info("Validation disabled")
+		return webhook.DeleteValidatingWebhookConfiguration(ctx, mgr, webhookConfigurationName, webhookLogger)
+	}
+
+	webhookLogger.Info("Validation enabled")
+
+	// initialize webhook options
+	wo := webhook.Options{
+		WebhookConfigurationName: webhookConfigurationName,
+		WebhookBasePath:          "/webhook/validate/",
+		WebhookNameSuffix:        ".validation.landscaper.gardener.cloud",
+		ObjectSelector: metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Operator: metav1.LabelSelectorOpNotIn,
+					Key:      "validation.landscaper.gardener.cloud/skip-validation",
+					Values:   []string{"true"},
+				},
+			},
+		},
+		ServicePort:        o.webhook.webhookServicePort,
+		ServiceName:        o.webhook.webhookServiceName,
+		ServiceNamespace:   o.webhook.webhookServiceNamespace,
+		WebhookedResources: o.webhook.enabledWebhooks,
+	}
+
+	// generate certificates
+	mgr.GetWebhookServer().CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
+	var err error
+	wo.CABundle, err = webhook.GenerateCertificates(ctx, mgr, mgr.GetWebhookServer().CertDir, wo.ServiceNamespace, wo.ServiceName)
+	if err != nil {
+		return fmt.Errorf("unable to generate webhook certificates: %w", err)
+	}
+
+	// log which resources are being watched
+	webhookedResourcesLog := []string{}
+	for _, elem := range wo.WebhookedResources {
+		webhookedResourcesLog = append(webhookedResourcesLog, elem.ResourceName)
+	}
+	webhookLogger.Info("Enabling validation", "resources", webhookedResourcesLog)
+
+	// create/update/delete ValidatingWebhookConfiguration
+	if err := webhook.UpdateValidatingWebhookConfiguration(ctx, mgr, wo, webhookLogger); err != nil {
+		return err
+	}
+	// register webhooks
+	if err := webhook.RegisterWebhooks(ctx, mgr, wo, webhookLogger); err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -78,3 +78,8 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+webhookConfig: # required unless disableWebhooks contains "all"
+  servicePort: 9443
+
+disableWebhooks: [] # options: installation, deployitem, execution, all

@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/tutorial"
+	"github.com/gardener/landscaper/test/integration/webhook"
 	"github.com/gardener/landscaper/test/utils"
 )
 
@@ -36,10 +37,16 @@ func TestConfig(t *testing.T) {
 	opts.RootPath = "../../"
 	f, err := framework.New(logger, opts)
 	utils.ExpectNoError(err)
-	utils.ExpectNoError(f.WaitForSystemComponents(ctx))
+	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
+	err = f.WaitForSystemComponents(ctx)
+	if err != nil {
+		utils.ExpectNoError(d.Dump(ctx))
+	}
+	utils.ExpectNoError(err)
 
 	// todo: register tests
 	tutorial.RegisterTests(f)
+	webhook.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()
