@@ -80,7 +80,6 @@ tolerations: []
 affinity: {}
 
 webhookConfig: # required unless disableWebhooks contains "all"
-  serverPort: 9443
   servicePort: 9443
 
 disableWebhooks: [] # options: installation, deployitem, execution, all

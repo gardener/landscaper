@@ -51,7 +51,6 @@ spec:
           - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.fullname" . }}
           {{- if not (has "all" .Values.disableWebhooks) }}
           - --webhook-service-port={{ .Values.webhookConfig.servicePort }}
-          - --webhook-server-port={{ .Values.webhookConfig.serverPort }}
           {{- end }}
           - --disable-webhooks={{ .Values.disableWebhooks | join "," }}
           volumeMounts:

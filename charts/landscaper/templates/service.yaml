@@ -18,7 +18,7 @@ spec:
       name: http
     {{- if not (has "all" .Values.disableWebhooks) }}
     - port: {{ .Values.webhookConfig.servicePort }}
-      targetPort: {{ .Values.webhookConfig.serverPort }}
+      targetPort: 9443
       protocol: TCP
       name: webhook
     {{- end }}

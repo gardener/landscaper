@@ -56,7 +56,6 @@ type options struct {
 type rawWebhookOptions struct {
 	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
 	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>
-	webhookServerPort           int    // port of the webhook server
 	webhookServicePort          int32  // port of the webhook service
 }
 
@@ -64,7 +63,6 @@ type rawWebhookOptions struct {
 type webhookOptions struct {
 	webhookServiceNamespace string                                // webhook service namespace
 	webhookServiceName      string                                // webhook service name
-	webhookServerPort       int                                   // port of the webhook server
 	webhookServicePort      int32                                 // port of the webhook service
 	enabledWebhooks         []webhook.WebhookedResourceDefinition // which resources should be watched by the webhook
 	raw                     rawWebhookOptions                     // the raw values from which these options were generated
@@ -86,7 +84,6 @@ Controllers are specified as a comma separated list of controller names.
 Available deployers are mock,helm,container.`)
 	fs.StringVar(&o.webhook.raw.webhookServiceNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.StringVar(&o.webhook.raw.disabledWebhooks, "disable-webhooks", "", "Specify validation webhooks that should be disabled ('all' to disable validation completely)")
-	fs.IntVar(&o.webhook.raw.webhookServerPort, "webhook-server-port", 9443, "Specify the port for the webhook server")
 	fs.Int32Var(&o.webhook.raw.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
 	logger.InitFlags(fs)
 
@@ -157,7 +154,6 @@ func (o *options) validate() error {
 // this functions assumes that the rawWebhookOptions have been validated
 func (wo *webhookOptions) completeWebhookOptions() error {
 	allErrs := field.ErrorList{}
-	wo.webhookServerPort = wo.raw.webhookServerPort
 	wo.webhookServicePort = wo.raw.webhookServicePort
 	wo.enabledWebhooks = filterWebhookedResources(defaultWebhookedResources(), stringListToMap(wo.raw.disabledWebhooks))
 	if len(wo.enabledWebhooks) > 0 {
@@ -200,10 +196,7 @@ func validateRawWebhookOptions(wo rawWebhookOptions) field.ErrorList {
 			}
 		}
 	}
-	// validate ports
-	if wo.webhookServerPort < 0 { // is defaulted on 0 value
-		allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-server-port"), wo.webhookServerPort, "must not be below zero"))
-	}
+	// validate port
 	if wo.webhookServicePort <= 0 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-service-port"), wo.webhookServicePort, "must be greater than zero"))
 	}

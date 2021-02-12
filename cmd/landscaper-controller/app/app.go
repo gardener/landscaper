@@ -60,7 +60,7 @@ func (o *options) run(ctx context.Context) error {
 
 	opts := manager.Options{
 		LeaderElection:     false,
-		Port:               o.webhook.webhookServerPort,
+		Port:               9443,
 		MetricsBindAddress: "0",
 	}
 
@@ -86,8 +86,8 @@ func (o *options) run(ctx context.Context) error {
 	}
 
 	// create ValidatingWebhookConfiguration and register webhooks, if validation is enabled, delete it otherwise
-	if err := handleWebhooks(ctx, mgr, o); err != nil {
-		return fmt.Errorf("unable to handle validation webhook: %w", err)
+	if err := registerWebhooks(ctx, mgr, o); err != nil {
+		return fmt.Errorf("unable to register validation webhook: %w", err)
 	}
 
 	for _, deployerName := range o.enabledDeployers {
@@ -128,7 +128,7 @@ func (o *options) run(ctx context.Context) error {
 	return nil
 }
 
-func handleWebhooks(ctx context.Context, mgr manager.Manager, o *options) error {
+func registerWebhooks(ctx context.Context, mgr manager.Manager, o *options) error {
 	webhookLogger := ctrl.Log.WithName("webhook").WithName("validation")
 	webhookConfigurationName := "landscaper-validation-webhook"
 	// noop if all webhooks are disabled
