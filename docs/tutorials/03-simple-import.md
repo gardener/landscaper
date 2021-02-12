@@ -25,8 +25,8 @@ Although the artifacts are public readable so they can be used out-of-the-box wi
 The http echo server consists of a deployment, a service and a ingress object that are istalled using the [kubernetes manifest deployer](/docs/deployer/manifest.md)
 
 First resource that we have to create is the blueprint.<br>
-The http echo blueprint imports a cluster to deploy the kubernetes resources and it also imports a ingress class
-that is used to determine the responsible ingress controller.
+The http echo blueprint imports a cluster to deploy the kubernetes resources, a namespace name and a ingress class.
+The ingress class is imported so that the responsible ingress controller can be set.
 (See the kubernetes [ingress docs](https://kubernetes.io/docs/concepts/services-networking/ingress/) for detailed documentation)
 
 Then the deploy items are defined.
@@ -46,6 +46,9 @@ kind: Blueprint
 imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: namespace
+  schema:
+    type: string
 - name: ingressClass
   schema:
     type: string
@@ -66,7 +69,6 @@ Also the http echo server oci image is taken from the component descriptor as ex
 *defaultDeployExecution.yaml*:
 ```helmyaml
 {{ $name :=  "echo-server" }}
-{{ $namespace :=  "default" }}
 deployItems:
 - name: deploy
   type: landscaper.gardener.cloud/kubernetes-manifest
@@ -84,7 +86,7 @@ deployItems:
         kind: Deployment
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
         spec:
           replicas: 1
           selector:
@@ -107,7 +109,7 @@ deployItems:
         kind: Service
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
         spec:
           selector:
             app: echo-server
@@ -119,7 +121,7 @@ deployItems:
         kind: Ingress
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
           annotations:
             nginx.ingress.kubernetes.io/rewrite-target: /
             kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
@@ -136,7 +138,7 @@ deployItems:
 
 Upload the blueprint into the oci registry.
 ```shell script
-landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.0 docs/tutorials/resources/echo-server/blueprint
+landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.2.0 docs/tutorials/resources/echo-server/blueprint
 ```
 
 #### Build the Component Descriptor
@@ -154,7 +156,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/echo-server
-  version: v0.1.1
+  version: v0.2.0
 
   provider: internal
 
@@ -168,7 +170,7 @@ component:
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.1
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.2.0
   - type: ociImage
     name: echo-server-image
     version: v0.2.3
@@ -179,7 +181,7 @@ component:
 ```
 
 ```shell script
-landscaper-cli components-cli ca remote push eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/echo-server v0.1.1 docs/tutorials/resources/echo-server
+landscaper-cli components-cli ca remote push docs/tutorials/resources/echo-server
 ```
 
 ### Installation
@@ -189,12 +191,17 @@ The only resource that has to be defined is a Installation for the echo-server b
 
 The echo-server installation is the same as it was previously created for the nginx ingress blueprint.
 
-In addition, the `ingressClass` import has to be defined.
-The nginx installation exports ìts ingressClass to `myIngressClass`, so this dataobject has to be used as import for the echo server.
+In addition to the namespace import, the `ingressClass` import has to be defined.
+The nginx installation exports its ingressClass to `myIngressClass`, so this dataobject has to be used as import for the echo server. 
+DataObject of other components can be referenced using `dataRef: <name of the export>`.
 
 ```yaml
 imports:
   data:
+  - name: namespace
+    configMapRef:
+      key: "namespace"
+      name: "my-imports" # name of the configmap;
   - name: ingressClass
     dataRef: "myIngressClass"
 ```
@@ -212,7 +219,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/echo-server
-      version: v0.1.1
+      version: v0.2.0
 
   blueprint:
     ref:
@@ -224,6 +231,10 @@ spec:
       # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
       target: "#my-cluster"
     data:
+    - name: namespace
+      configMapRef:
+        key: "namespace"
+        name: "my-imports" # name of the configmap;
     - name: ingressClass
       dataRef: "myIngressClass"
 ```

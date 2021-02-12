@@ -88,3 +88,20 @@ func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client,
 	}
 	return items, nil
 }
+
+// GetSubInstallationsOfInstallation returns the direct subinstallations of a installation.
+func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
+	list := make([]*lsv1alpha1.Installation, 0)
+	if len(inst.Status.InstallationReferences) == 0 {
+		return list, nil
+	}
+
+	for _, ref := range inst.Status.InstallationReferences {
+		inst := &lsv1alpha1.Installation{}
+		if err := kubeClient.Get(ctx, ref.Reference.NamespacedName(), inst); err != nil {
+			return nil, fmt.Errorf("unable to find installation %q: %w", ref.Name, err)
+		}
+		list = append(list, inst)
+	}
+	return list, nil
+}

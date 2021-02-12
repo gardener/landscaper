@@ -272,7 +272,7 @@ func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath 
 	// we expect that no dependent siblings are running
 	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation, sibling)
 	if err != nil {
-		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet", fldPath.String())
+		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet: %w", fldPath.String(), err)
 	}
 	if !isCompleted {
 		return installations.NewNotCompletedDependentsErrorf(nil, "%s: A sibling Installation dependency is not completed yet", fldPath.String())

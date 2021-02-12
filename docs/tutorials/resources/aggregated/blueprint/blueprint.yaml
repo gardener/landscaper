@@ -8,6 +8,9 @@ kind: Blueprint
 imports:
 - name: aggCluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: aggNamespace
+  schema:
+    type: string
 
 exports:
 - name: aggIngressClass
@@ -34,6 +37,9 @@ subinstallations:
     targets:
     - name: cluster
       target: aggCluster
+    data:
+    - name: namespace
+      dataRef: aggNamespace
 
   exports:
     data:
@@ -53,5 +59,7 @@ subinstallations:
     - name: cluster
       target: aggCluster
     data:
+    - name: namespace
+      dataRef: aggNamespace
     - name: ingressClass
       dataRef: myIngressClass

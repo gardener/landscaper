@@ -7,7 +7,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/echo-server
-  version: v0.1.1
+  version: v0.2.0
 
   provider: internal
 
@@ -21,11 +21,11 @@ component:
   resources:
   - type: blueprint
     name: echo-server-blueprint
-    version: v0.1.1
+    version: v0.2.0
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.1.1
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/echo-server:v0.2.0
   - type: ociImage
     name: echo-server-image
     version: v0.2.3

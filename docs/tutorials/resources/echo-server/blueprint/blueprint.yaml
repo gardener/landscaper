@@ -8,6 +8,9 @@ kind: Blueprint
 imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: namespace
+  schema:
+    type: string
 - name: ingressClass
   schema:
     type: string
