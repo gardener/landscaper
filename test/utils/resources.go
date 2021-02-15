@@ -177,7 +177,7 @@ func CreateOrUpdateTarget(ctx context.Context, client client.Client, namespace, 
 
 	_, err = controllerutil.CreateOrUpdate(ctx, client, target, func() error {
 		target.Spec.Type = lsv1alpha1.TargetType(ttype)
-		target.Spec.Configuration = data
+		target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
 		return nil
 	})
 	if err != nil {
@@ -206,7 +206,7 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 	target.Namespace = namespace
 
 	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
-	target.Spec.Configuration = data
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
 
 	return target, nil
 }

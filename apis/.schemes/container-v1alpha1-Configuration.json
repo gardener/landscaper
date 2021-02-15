@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "apis-config-OCICacheConfiguration": {
+      "description": "OCICacheConfiguration contains the configuration for the oci cache",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path specifies the path to the oci cache on the filesystem. Defaults to /tmp/ocicache",
+          "type": "string",
+          "default": ""
+        },
+        "useInMemoryOverlay": {
+          "description": "UseInMemoryOverlay enables an additional in memory overlay cache of oci images",
+          "type": "boolean"
+        }
+      }
+    },
+    "apis-config-OCIConfiguration": {
+      "description": "OCIConfiguration holds configuration for the oci registry",
+      "type": "object",
+      "required": [
+        "allowPlainHttp"
+      ],
+      "properties": {
+        "allowPlainHttp": {
+          "description": "AllowPlainHttp allows the fallback to http if https is not supported by the registry.",
+          "type": "boolean",
+          "default": false
+        },
+        "cache": {
+          "description": "Cache holds configuration for the oci cache",
+          "$ref": "#/definitions/apis-config-OCICacheConfiguration"
+        },
+        "configFiles": {
+          "description": "ConfigFiles path to additional docker configuration files",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "container-v1alpha1-ContainerSpec": {
+      "description": "ContainerSpec defines a container specification",
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "command": {
+          "description": "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "image": {
+          "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images The image will be defaulted by the container deployer to the configured default.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-Requirement": {
+      "description": "Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.",
+      "type": "object",
+      "required": [
+        "key",
+        "operator"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "type": "string",
+          "default": ""
+        },
+        "values": {
+          "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "core-v1alpha1-TargetSelector": {
+      "description": "TargetSelector describes a selector that matches specific targets.",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations matches a target based on annotations.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-Requirement"
+          }
+        }
+      }
+    }
+  },
+  "description": "ProviderConfiguration is the container deployer configuration that configures the controller",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "defaultImage": {
+      "$ref": "#/definitions/container-v1alpha1-ContainerSpec",
+      "default": {},
+      "description": "DefaultImage configures the default images that is used if the DeployItem does not specify one."
+    },
+    "initContainer": {
+      "$ref": "#/definitions/container-v1alpha1-ContainerSpec",
+      "default": {},
+      "description": "InitContainerImage defines the image that is used to init the container. This container bootstraps the necessary directories and files."
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "namespace": {
+      "default": "",
+      "description": "Namespace defines the namespace where the pods should be executed. Defaults to default",
+      "type": "string"
+    },
+    "oci": {
+      "$ref": "#/definitions/apis-config-OCIConfiguration",
+      "description": "OCI configures the oci client of the controller"
+    },
+    "targetSelector": {
+      "description": "TargetSelector describes all selectors the deployer should depend on.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TargetSelector",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "waitContainer": {
+      "$ref": "#/definitions/container-v1alpha1-ContainerSpec",
+      "default": {},
+      "description": "SidecarContainerImage defines the image that is used as a sidecar to the defined main container. The sidecar container is responsible to collect the exports and the state of the main container."
+    }
+  },
+  "required": [
+    "defaultImage",
+    "initContainer",
+    "waitContainer"
+  ],
+  "title": "container-v1alpha1-Configuration",
+  "type": "object"
+}

@@ -178,7 +178,7 @@ var _ = Describe("Constructor", func() {
 			do.Name = lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.a")
 			do.Namespace = inInstRoot.Info.Namespace
 			Expect(fakeClient.Get(ctx, kutil.ObjectKey(do.Name, do.Namespace), do)).To(Succeed())
-			do.Data = []byte("7")
+			do.Data.RawMessage = []byte("7")
 			Expect(fakeClient.Update(ctx, do)).To(Succeed())
 
 			c := imports.NewConstructor(op)

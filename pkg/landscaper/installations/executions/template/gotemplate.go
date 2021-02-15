@@ -41,8 +41,8 @@ type GoTemplateResult struct {
 func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
 	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) ([]byte, error) {
 	var rawTemplate string
-	if len(tmplExec.Template) != 0 {
-		if err := json.Unmarshal(tmplExec.Template, &rawTemplate); err != nil {
+	if len(tmplExec.Template.RawMessage) != 0 {
+		if err := json.Unmarshal(tmplExec.Template.RawMessage, &rawTemplate); err != nil {
 			return nil, err
 		}
 	}
@@ -85,8 +85,8 @@ func (t *GoTemplateExecution) TemplateDeployExecutions(tmplExec lsv1alpha1.Templ
 
 func (t *GoTemplateExecution) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) ([]byte, error) {
 	var rawTemplate string
-	if len(tmplExec.Template) != 0 {
-		if err := json.Unmarshal(tmplExec.Template, &rawTemplate); err != nil {
+	if len(tmplExec.Template.RawMessage) != 0 {
+		if err := json.Unmarshal(tmplExec.Template.RawMessage, &rawTemplate); err != nil {
 			return nil, err
 		}
 	}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "core-v1alpha1-TypedObjectReference": {
+      "description": "TypedObjectReference is a reference to a typed kubernetes object.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    }
+  },
+  "description": "ProviderStatus is the helm provider specific status",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "managedResources": {
+      "description": "ManagedResources contains all kubernetes resources that are deployed by the helm deployer.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TypedObjectReference",
+        "default": {}
+      },
+      "type": "array"
+    }
+  },
+  "title": "manifest-v1alpha1-ProviderStatus",
+  "type": "object"
+}

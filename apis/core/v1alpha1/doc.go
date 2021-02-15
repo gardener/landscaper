@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-// Package v1beta1 is the v1beta1 version of the API.
+// Package v1alpha1 is the v1alpha1 version of the API.
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=github.com/gardener/landscaper/apis/core
 // +k8s:openapi-gen=true

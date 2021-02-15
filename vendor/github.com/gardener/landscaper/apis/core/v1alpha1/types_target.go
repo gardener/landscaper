@@ -5,8 +5,6 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/apis/core"
@@ -49,7 +47,7 @@ type TargetSpec struct {
 	// Configuration contains the target type specific configuration.
 	// +optional
 	// +kubebuilder:validation:XPreserveUnknownFields
-	Configuration json.RawMessage `json:"config,omitempty"`
+	Configuration AnyJSON `json:"config,omitempty"`
 }
 
 // TargetTemplate exposes specific parts of a target that are used in the exports

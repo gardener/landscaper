@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "core-v1alpha1-AnyJSON": {
+      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean"
+      ]
+    }
+  },
+  "description": "InlineBlueprint defines a inline blueprint with component descriptor and filesystem.",
+  "properties": {
+    "filesystem": {
+      "$ref": "#/definitions/core-v1alpha1-AnyJSON",
+      "default": {},
+      "description": "Filesystem defines a inline yaml filesystem with a blueprint."
+    }
+  },
+  "required": [
+    "filesystem"
+  ],
+  "title": "core-v1alpha1-InlineBlueprint",
+  "type": "object"
+}

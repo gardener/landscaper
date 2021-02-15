@@ -86,8 +86,8 @@ func (t *SpiffTemplate) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExe
 }
 
 func (t *SpiffTemplate) templateNode(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint) (spiffyaml.Node, error) {
-	if len(tmplExec.Template) != 0 {
-		return spiffyaml.Unmarshal("template", tmplExec.Template)
+	if len(tmplExec.Template.RawMessage) != 0 {
+		return spiffyaml.Unmarshal("template", tmplExec.Template.RawMessage)
 	}
 	if len(tmplExec.File) != 0 {
 		rawTemplateBytes, err := vfs.ReadFile(blueprint.Fs, tmplExec.File)

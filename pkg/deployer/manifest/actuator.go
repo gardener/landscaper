@@ -20,12 +20,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
+func NewActuator(log logr.Logger, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
 	return &actuator{
 		log:    log,
 		config: config,
@@ -36,7 +36,7 @@ type actuator struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
-	config *helmv1alpha1.Configuration
+	config *manifestv1alpha1.Configuration
 }
 
 var _ inject.Client = &actuator{}

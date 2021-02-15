@@ -5,8 +5,6 @@
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,7 +17,7 @@ const BlueprintResourceType = "blueprint"
 // Blueprint contains the configuration of a component
 // +kubebuilder:skip
 type Blueprint struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 
 	// Annotations is an unstructured key value map stored with a resource that may be
 	// set by external tools to store and retrieve arbitrary metadata.
@@ -28,6 +26,7 @@ type Blueprint struct {
 
 	// JSONSchemaVersion defines the default jsonschema version of the blueprint.
 	// e.g. "https://json-schema.org/draft/2019-09/schema"
+	// +optional
 	JSONSchemaVersion string `json:"jsonSchemaVersion"`
 
 	// LocalTypes defines additional blueprint local schemas
@@ -36,7 +35,7 @@ type Blueprint struct {
 
 	// Imports define the import values that are needed for the definition and its sub-definitions.
 	// +optional
-	Imports []ImportDefinition `json:"imports,omitempty"`
+	Imports ImportDefinitionList `json:"imports,omitempty"`
 
 	// Exports define the exported values of the definition and its sub-definitions
 	// +optional
@@ -71,8 +70,10 @@ type ImportDefinition struct {
 	// ConditionalImports are Imports that are only valid if this imports is satisfied.
 	// Does only make sense for optional imports.
 	// +optional
-	ConditionalImports []ImportDefinition `json:"imports,omitempty"`
+	ConditionalImports ImportDefinitionList `json:"imports,omitempty"`
 }
+
+type ImportDefinitionList []ImportDefinition
 
 // ExportDefinition defines a exported value
 type ExportDefinition struct {
@@ -95,14 +96,14 @@ type FieldValueDefinition struct {
 
 // Default defines a default value (future idea: also reference?).
 type Default struct {
-	Value json.RawMessage `json:"value"`
+	Value AnyJSON `json:"value"`
 }
 
 // BlueprintStaticDataSource defines a static data source for a blueprint
 type BlueprintStaticDataSource struct {
 	// Value defined inline a raw data
 	// +optional
-	Value json.RawMessage `json:"value,omitempty"`
+	Value AnyJSON `json:"value,omitempty"`
 
 	// ValueFrom defines data from an external resource
 	ValueFrom *StaticDataValueFrom `json:"valueFrom,omitempty"`
@@ -137,7 +138,7 @@ type TemplateExecutor struct {
 	// The template has to be of string for go template
 	// and a valid yaml/json for spiff.
 	// + optional
-	Template json.RawMessage `json:"template,omitempty"`
+	Template AnyJSON `json:"template,omitempty"`
 }
 
 // SubinstallationTemplate defines a subinstallation template.

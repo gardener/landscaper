@@ -84,8 +84,8 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			continue
 		}
 
-		if len(def.Schema) != 0 {
-			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema, data); err != nil {
+		if len(def.Schema.RawMessage) != 0 {
+			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, data); err != nil {
 				return nil, nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
 			}
 		} else if len(def.TargetType) != 0 {
@@ -146,7 +146,7 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 	for _, do := range dataObjectList.Items {
 		meta := dataobjects.GetMetadataFromObject(&do)
 		var data interface{}
-		if err := yaml.Unmarshal(do.Data, &data); err != nil {
+		if err := yaml.Unmarshal(do.Data.RawMessage, &data); err != nil {
 			return nil, fmt.Errorf("error while decoding data object %s: %w", do.Name, err)
 		}
 		aggDataObjects[meta.Key] = data

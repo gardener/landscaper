@@ -98,7 +98,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`),
+				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
 			},
 		}
 
@@ -141,7 +141,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"root.y: true\nroot.z: {{ index .values.dataobjects \"root.z\" }}"`),
+				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"root.y: true\nroot.z: {{ index .values.dataobjects \"root.z\" }}"`)},
 			},
 		}
 
@@ -161,7 +161,7 @@ var _ = Describe("Constructor", func() {
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
 				Type:     lsv1alpha1.GOTemplateType,
-				Template: []byte(`"exports:\n  root.y: {{ index .values.deployitems.deploy \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`),
+				Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.deployitems.deploy \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
 			},
 		}
 
@@ -218,7 +218,7 @@ var _ = Describe("Constructor", func() {
 					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
 						"Spec": MatchFields(IgnoreExtras, Fields{
 							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
-							"Configuration": Equal(json.RawMessage(`"val-a"`)),
+							"Configuration": Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-a"`)}),
 						}),
 					})),
 					"Metadata": MatchFields(IgnoreExtras, Fields{
@@ -230,7 +230,7 @@ var _ = Describe("Constructor", func() {
 					"Raw": PointTo(MatchFields(IgnoreExtras, Fields{
 						"Spec": MatchFields(IgnoreExtras, Fields{
 							"Type":          Equal(lsv1alpha1.TargetType("landscaper.gardener.cloud/mock")),
-							"Configuration": Equal(json.RawMessage(`"val-e"`)),
+							"Configuration": Equal(lsv1alpha1.AnyJSON{RawMessage: json.RawMessage(`"val-e"`)}),
 						}),
 					})),
 					"Metadata": MatchFields(IgnoreExtras, Fields{

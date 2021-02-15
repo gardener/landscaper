@@ -1,0 +1,537 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "apis-v2-ComponentDescriptor": {
+      "description": "Spec defines a versioned virtual component with a source and dependencies.",
+      "type": "object",
+      "required": [
+        "meta",
+        "component"
+      ],
+      "properties": {
+        "component": {
+          "description": "Spec contains the specification of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-ComponentSpec"
+        },
+        "meta": {
+          "description": "Metadata specifies the schema version of the component.",
+          "default": {},
+          "$ref": "#/definitions/apis-v2-Metadata"
+        }
+      }
+    },
+    "apis-v2-ComponentReference": {
+      "description": "ComponentReference describes the reference to another component in the registry.",
+      "type": "object",
+      "required": [
+        "name",
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName describes the remote name of the referenced object",
+          "type": "string",
+          "default": ""
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-ComponentSpec": {
+      "description": "ComponentSpec defines a virtual component with a repository context, source and dependencies.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "repositoryContexts",
+        "provider",
+        "sources",
+        "componentReferences",
+        "resources"
+      ],
+      "properties": {
+        "componentReferences": {
+          "description": "ComponentReferences references component dependencies that can be resolved in the current context.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-ComponentReference"
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "provider": {
+          "description": "Provider defines the provider type of a component. It can be external or internal.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContexts": {
+          "description": "RepositoryContexts defines the previous repositories of the component",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-RepositoryContext"
+          }
+        },
+        "resources": {
+          "description": "Resources defines all resources that are created by the component and by a third party.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Resource"
+          }
+        },
+        "sources": {
+          "description": "Sources defines sources that produced the component",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Source"
+          }
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Label": {
+      "description": "Label is a label that can be set on objects.",
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the unique name of the label.",
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "description": "Value is the json/yaml data of the label",
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "apis-v2-Metadata": {
+      "description": "Metadata defines the metadata of the component descriptor.",
+      "type": "object",
+      "required": [
+        "schemaVersion"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "description": "Version is the schema version of the component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-RepositoryContext": {
+      "description": "RepositoryContext describes a repository context.",
+      "type": "object",
+      "required": [
+        "type",
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "description": "BaseURL is the base url of the repository to resolve components.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type defines the type of the component repository to resolve references.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Resource": {
+      "description": "Resource describes a resource dependency of a component.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "description": "Access describes the type specific method to access the defined resource.",
+          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "relation": {
+          "description": "Relation describes the relation of the resource to the component. Can be a local or external resource",
+          "type": "string"
+        },
+        "srcRef": {
+          "description": "SourceRef defines a list of source names. These names reference the sources defines in `component.sources`.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-SourceRef"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-Source": {
+      "description": "Source is the definition of a component's source.",
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "type",
+        "access"
+      ],
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+        },
+        "extraIdentity": {
+          "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        },
+        "name": {
+          "description": "Name is the context unique name of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        },
+        "version": {
+          "description": "Version is the semver version of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "apis-v2-SourceRef": {
+      "description": "SourceRef defines a reference to a source",
+      "type": "object",
+      "properties": {
+        "identitySelector": {
+          "description": "IdentitySelector defines the identity that is used to match a source.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "labels": {
+          "description": "Labels defines an optional set of additional labels describing the object.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/apis-v2-Label"
+          }
+        }
+      }
+    },
+    "apis-v2-UnstructuredAccessType": {
+      "description": "UnstructuredAccessType describes a generic access type.",
+      "type": "object",
+      "required": [
+        "type",
+        "object"
+      ],
+      "properties": {
+        "object": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-ComponentDescriptorReference": {
+      "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
+      "type": "object",
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName defines the unique of the component containing the resource.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContext": {
+          "description": "RepositoryContext defines the context of the component repository to resolve blueprints.",
+          "$ref": "#/definitions/apis-v2-RepositoryContext"
+        },
+        "version": {
+          "description": "Version defines the version of the component.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-TypedObjectReference": {
+      "description": "TypedObjectReference is a reference to a typed kubernetes object.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "helm-v1alpha1-ArchiveAccess": {
+      "description": "ArchiveAccess defines the access for a helm chart as compressed archive.",
+      "type": "object",
+      "properties": {
+        "raw": {
+          "description": "Raw defines a compressed tarred helm chart as base64 encoded string.",
+          "type": "string"
+        },
+        "remote": {
+          "description": "Remote defines the remote access for a helm chart as compressed archive.",
+          "$ref": "#/definitions/helm-v1alpha1-RemoteArchiveAccess"
+        }
+      }
+    },
+    "helm-v1alpha1-Chart": {
+      "description": "Chart defines the helm chart to render and apply.",
+      "type": "object",
+      "properties": {
+        "archive": {
+          "description": "Archive defines a compressed tarred helm chart as base64 encoded string.",
+          "$ref": "#/definitions/helm-v1alpha1-ArchiveAccess"
+        },
+        "fromResource": {
+          "description": "FromResource fetches the chart based on the resource's access method. The resource is defined as part of a component descriptor which is necessary to also handle local artifacts.",
+          "$ref": "#/definitions/helm-v1alpha1-RemoteChartReference"
+        },
+        "ref": {
+          "description": "Ref defines the reference to a helm chart in a oci repository.",
+          "type": "string"
+        }
+      }
+    },
+    "helm-v1alpha1-ExportFromManifestItem": {
+      "description": "ExportFromManifestItem describes one export that is read from the templates values or a templated resource. The value will be by default read from the values if fromResource is not specified.",
+      "type": "object",
+      "required": [
+        "key",
+        "jsonPath"
+      ],
+      "properties": {
+        "fromResource": {
+          "description": "FromResource specifies the name of the resource where the value should be read.",
+          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        },
+        "jsonPath": {
+          "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "key": {
+          "description": "Key is the key that the value from JSONPath is exported to.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "helm-v1alpha1-RemoteArchiveAccess": {
+      "description": "RemoteArchiveAccess defines the remote access for a helm chart as compressed archive.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "URL defines a compressed tarred helm chart that is fetched from a url.",
+          "type": "string"
+        }
+      }
+    },
+    "helm-v1alpha1-RemoteChartReference": {
+      "description": "RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor",
+      "type": "object",
+      "required": [
+        "resourceName"
+      ],
+      "properties": {
+        "inline": {
+          "description": "InlineDescriptorReference defines an inline component descriptor",
+          "$ref": "#/definitions/apis-v2-ComponentDescriptor"
+        },
+        "ref": {
+          "description": "ComponentDescriptorReference is the reference to a component descriptor",
+          "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorReference"
+        },
+        "resourceName": {
+          "description": "ResourceName is the name of the Helm chart as defined by a component descriptor.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    }
+  },
+  "description": "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "chart": {
+      "$ref": "#/definitions/helm-v1alpha1-Chart",
+      "default": {},
+      "description": "Chart defines helm chart to be templated and applied."
+    },
+    "exportsFromManifests": {
+      "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.",
+      "items": {
+        "$ref": "#/definitions/helm-v1alpha1-ExportFromManifestItem",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "kubeconfig": {
+      "default": "",
+      "description": "Kubeconfig is the base64 encoded kubeconfig file. By default the configured target is used to deploy the resources",
+      "type": "string"
+    },
+    "name": {
+      "default": "",
+      "description": "Name is the release name of the chart",
+      "type": "string"
+    },
+    "namespace": {
+      "default": "",
+      "description": "Namespace is the release namespace of the chart",
+      "type": "string"
+    },
+    "updateStrategy": {
+      "description": "UpdateStrategy defines the strategy how the manifest are updated in the cluster. Defaults to \"update\".",
+      "type": "string"
+    },
+    "values": {
+      "description": "Values are the values that are used for templating.",
+      "format": "byte",
+      "type": "string"
+    }
+  },
+  "required": [
+    "chart",
+    "name",
+    "namespace"
+  ],
+  "title": "helm-v1alpha1-ProviderConfiguration",
+  "type": "object"
+}

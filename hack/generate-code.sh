@@ -49,5 +49,28 @@ bash "${API_PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups
   "helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
+echo "> Generating openapi definitions"
+go install "${API_PROJECT_ROOT}"/vendor/k8s.io/kube-openapi/cmd/openapi-gen
+${GOPATH}/bin/openapi-gen "$@" \
+  --v 1 \
+  --logtostderr \
+  --input-dirs=github.com/gardener/landscaper/apis/core/v1alpha1 \
+  --input-dirs=github.com/gardener/landscaper/apis/config/v1alpha1 \
+  --input-dirs=github.com/gardener/landscaper/apis/config \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/helm/v1alpha1 \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1 \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2 \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/container/v1alpha1 \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/mock/v1alpha1 \
+  --input-dirs=github.com/gardener/component-spec/bindings-go/apis/v2 \
+  --input-dirs=k8s.io/api/core/v1 \
+  --input-dirs=k8s.io/apimachinery/pkg/apis/meta/v1 \
+  --input-dirs=k8s.io/apimachinery/pkg/api/resource \
+  --input-dirs=k8s.io/apimachinery/pkg/types \
+  --input-dirs=k8s.io/apimachinery/pkg/runtime \
+  --report-filename=${API_PROJECT_ROOT}/openapi/api_violations.report \
+  --output-package=github.com/gardener/landscaper/apis/openapi \
+  -h "${PROJECT_ROOT}/hack/boilerplate.go.txt"
+
 echo
 echo "NOTE: If you changed the API then consider updating the example manifests."

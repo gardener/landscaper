@@ -45,7 +45,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 	}
 
 	if bpDef.Inline != nil {
-		inlineFs, err := yamlfs.New(bpDef.Inline.Filesystem)
+		inlineFs, err := yamlfs.New(bpDef.Inline.Filesystem.RawMessage)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create yamlfs for inline blueprint: %w", err)
 		}

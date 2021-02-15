@@ -15,7 +15,7 @@ import (
 
 // ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
 type ProviderConfiguration struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 	// Kubeconfig is the base64 encoded kubeconfig file.
 	// By default the configured target is used to deploy the resources
 	// +optional
@@ -40,7 +40,7 @@ const (
 
 // ProviderStatus is the helm provider specific status
 type ProviderStatus struct {
-	metav1.TypeMeta
+	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
 	ManagedResources []lsv1alpha1.TypedObjectReference `json:"managedResources,omitempty"`
 }

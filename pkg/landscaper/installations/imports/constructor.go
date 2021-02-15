@@ -56,7 +56,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	// add additional imports and targets
 	for _, def := range inst.Blueprint.Info.Imports {
 		defPath := fldPath.Child(def.Name)
-		if def.Schema != nil {
+		if def.Schema.RawMessage != nil {
 			if val, ok := templatedDataMappings[def.Name]; ok {
 				imports[def.Name] = val
 			} else if val, ok := importedDataObjects[def.Name]; ok {
@@ -68,7 +68,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 				}
 				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
 			}
-			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema, imports[def.Name]); err != nil {
+			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, imports[def.Name]); err != nil {
 				return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
 			}
 			continue
@@ -126,7 +126,7 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 	for key, dataMapping := range c.Inst.Info.Spec.ImportDataMappings {
 		impPath := fldPath.Child(key)
 
-		tmpl, err := spiffyaml.Unmarshal(key, dataMapping)
+		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse import mapping template %s: %w", impPath.String(), err)
 		}

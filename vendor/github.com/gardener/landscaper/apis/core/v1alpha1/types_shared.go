@@ -14,11 +14,14 @@ import (
 )
 
 // JSONSchemaDefinition defines a jsonschema.
-type JSONSchemaDefinition json.RawMessage
+// +k8s:openapi-gen=true
+type JSONSchemaDefinition struct {
+	json.RawMessage `json:",inline"`
+}
 
 // MarshalJSON implements the json marshaling for a JSON
 func (s JSONSchemaDefinition) MarshalJSON() ([]byte, error) {
-	return json.RawMessage(s).MarshalJSON()
+	return s.RawMessage.MarshalJSON()
 }
 
 // UnmarshalJSON implements json unmarshaling for a JSON
@@ -27,9 +30,52 @@ func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
 	if err := raw.UnmarshalJSON(data); err != nil {
 		return err
 	}
-	*s = JSONSchemaDefinition(raw)
+	*s = JSONSchemaDefinition{RawMessage: raw}
 	return nil
 }
+
+func (_ JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
+func (_ JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
+
+// AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
+// it is correctly generated
+// +k8s:openapi-gen=true
+type AnyJSON struct {
+	json.RawMessage `json:",inline"`
+}
+
+// NewAnyJSON creates a new any json object.
+func NewAnyJSON(data []byte) AnyJSON {
+	return AnyJSON{
+		RawMessage: data,
+	}
+}
+
+// MarshalJSON implements the json marshaling for a JSON
+func (s AnyJSON) MarshalJSON() ([]byte, error) {
+	return s.RawMessage.MarshalJSON()
+}
+
+// UnmarshalJSON implements json unmarshaling for a JSON
+func (s *AnyJSON) UnmarshalJSON(data []byte) error {
+	raw := json.RawMessage{}
+	if err := raw.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	*s = AnyJSON{RawMessage: raw}
+	return nil
+}
+
+func (_ AnyJSON) OpenAPISchemaType() []string {
+	return []string{
+		"object",
+		"string",
+		"number",
+		"array",
+		"boolean",
+	}
+}
+func (_ AnyJSON) OpenAPISchemaFormat() string { return "" }
 
 // ConditionStatus is the status of a condition.
 type ConditionStatus string

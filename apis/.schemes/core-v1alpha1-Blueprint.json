@@ -1,0 +1,435 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "core-v1alpha1-AnyJSON": {
+      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean"
+      ]
+    },
+    "core-v1alpha1-ConfigMapReference": {
+      "description": "ConfigMapReference is reference to data in a configmap. The configmap can also be in a different namespace.",
+      "type": "object",
+      "required": [
+        "name",
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "description": "Key is the name of the key in the configmap that holds the data.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-DataExport": {
+      "description": "DataImportExport is a data object export.",
+      "type": "object",
+      "required": [
+        "name",
+        "dataRef"
+      ],
+      "properties": {
+        "dataRef": {
+          "description": "DataRef is the name of the in-cluster data object.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name the internal name of the imported/exported data.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-DataImport": {
+      "description": "DataImport is a data object import.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "configMapRef": {
+          "description": "ConfigMapRef defines a data reference from a configmap. This method is not allowed in installation templates.",
+          "$ref": "#/definitions/core-v1alpha1-ConfigMapReference"
+        },
+        "dataRef": {
+          "description": "DataRef is the name of the in-cluster data object. The reference can also be a namespaces name. E.g. \"default/mydataref\"",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name the internal name of the imported/exported data.",
+          "type": "string",
+          "default": ""
+        },
+        "secretRef": {
+          "description": "SecretRef defines a data reference from a secret. This method is not allowed in installation templates.",
+          "$ref": "#/definitions/core-v1alpha1-SecretReference"
+        },
+        "version": {
+          "description": "Version specifies the imported data version. defaults to \"v1\"",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-Default": {
+      "description": "Default defines a default value (future idea: also reference?).",
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+        }
+      }
+    },
+    "core-v1alpha1-ExportDefinition": {
+      "description": "ExportDefinition defines a exported value",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields",
+          "type": "string",
+          "default": ""
+        },
+        "schema": {
+          "description": "Schema defines the imported value as jsonschema.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition"
+        },
+        "targetType": {
+          "description": "TargetType defines the type of the imported target.",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-ImportDefinition": {
+      "description": "ImportDefinition defines a imported value",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "default": {
+          "description": "Default sets a default value for the current import that is used if the key is not set.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-Default"
+        },
+        "imports": {
+          "description": "ConditionalImports are Imports that are only valid if this imports is satisfied. Does only make sense for optional imports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-ImportDefinition"
+          }
+        },
+        "name": {
+          "description": "Name defines the field name to search for the value and map to exports. Ref: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#selecting-fields",
+          "type": "string",
+          "default": ""
+        },
+        "required": {
+          "description": "Required specifies whether the import is required for the component to run. Defaults to true.",
+          "type": "boolean"
+        },
+        "schema": {
+          "description": "Schema defines the imported value as jsonschema.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition"
+        },
+        "targetType": {
+          "description": "TargetType defines the type of the imported target.",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-InstallationExports": {
+      "description": "InstallationExports defines exports of data objects and targets.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Data defines all data object exports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-DataExport"
+          }
+        },
+        "targets": {
+          "description": "Targets defines all target exports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TargetImportExport"
+          }
+        }
+      }
+    },
+    "core-v1alpha1-InstallationImports": {
+      "description": "InstallationImports defines import of data objects and targets.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Data defines all data object imports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-DataImport"
+          }
+        },
+        "targets": {
+          "description": "Targets defines all target imports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TargetImportExport"
+          }
+        }
+      }
+    },
+    "core-v1alpha1-InstallationTemplateBlueprintDefinition": {
+      "description": "InstallationTemplateBlueprintDefinition contains either a reference to a blueprint or an inline definition.",
+      "type": "object",
+      "properties": {
+        "filesystem": {
+          "description": "Filesystem defines a virtual filesystem with all files needed for a blueprint. The filesystem must be a YAML filesystem.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+        },
+        "ref": {
+          "description": "Ref is a reference to a blueprint. Only blueprints that are defined by the component descriptor of the current blueprint can be referenced here. Example: cd://componentReference/dns/resources/blueprint",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-JSONSchemaDefinition": {
+      "description": "JSONSchemaDefinition defines a jsonschema.",
+      "type": "object"
+    },
+    "core-v1alpha1-SecretReference": {
+      "description": "SecretReference is reference to data in a secret. The secret can also be in a different namespace.",
+      "type": "object",
+      "required": [
+        "name",
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "description": "Key is the name of the key in the secret that holds the data.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-SubinstallationTemplate": {
+      "description": "SubinstallationTemplate defines a subinstallation template.",
+      "type": "object",
+      "required": [
+        "name",
+        "blueprint"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "blueprint": {
+          "description": "Reference defines a reference to a Blueprint. The blueprint can reside in an OCI or other supported location.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-InstallationTemplateBlueprintDefinition"
+        },
+        "exportDataMappings": {
+          "description": "ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace ))",
+          "type": "object",
+          "additionalProperties": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+          }
+        },
+        "exports": {
+          "description": "Exports define the exported data objects and targets.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-InstallationExports"
+        },
+        "file": {
+          "description": "File references a subinstallation template stored in another file.",
+          "type": "string"
+        },
+        "importDataMappings": {
+          "description": "ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace ))",
+          "type": "object",
+          "additionalProperties": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+          }
+        },
+        "imports": {
+          "description": "Imports define the imported data objects and targets.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-InstallationImports"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name is the unique name of the step",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-TargetImportExport": {
+      "description": "TargetImportExport is a target import/export.",
+      "type": "object",
+      "required": [
+        "name",
+        "target"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name the internal name of the imported/exported target.",
+          "type": "string",
+          "default": ""
+        },
+        "target": {
+          "description": "Target is the name of the in-cluster target object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-TemplateExecutor": {
+      "description": "TemplateExecutor describes a templating mechanism and configuration.",
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "file": {
+          "description": "File is the path to the template in the blueprint's content.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name is the unique name of the template",
+          "type": "string",
+          "default": ""
+        },
+        "template": {
+          "description": "Template contains an optional inline template. The template has to be of string for go template and a valid yaml/json for spiff.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-AnyJSON"
+        },
+        "type": {
+          "description": "Type describes the templating mechanism.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    }
+  },
+  "description": "Blueprint contains the configuration of a component",
+  "properties": {
+    "annotations": {
+      "additionalProperties": {
+        "default": "",
+        "type": "string"
+      },
+      "description": "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata.",
+      "type": "object"
+    },
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": "string"
+    },
+    "deployExecutions": {
+      "description": "DeployExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of deploy item templates.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TemplateExecutor",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "exportExecutions": {
+      "description": "ExportExecutions defines the templating executors that are used to generate the exports.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TemplateExecutor",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "exports": {
+      "description": "Exports define the exported values of the definition and its sub-definitions",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-ExportDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "imports": {
+      "description": "Imports define the import values that are needed for the definition and its sub-definitions.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-ImportDefinition",
+        "default": {}
+      },
+      "type": "array"
+    },
+    "jsonSchemaVersion": {
+      "default": "",
+      "description": "JSONSchemaVersion defines the default jsonschema version of the blueprint. e.g. \"https://json-schema.org/draft/2019-09/schema\"",
+      "type": "string"
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": "string"
+    },
+    "localTypes": {
+      "additionalProperties": {
+        "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition",
+        "default": {}
+      },
+      "description": "LocalTypes defines additional blueprint local schemas",
+      "type": "object"
+    },
+    "subinstallations": {
+      "description": "Subinstallations defines an optional list of subinstallations (for aggregating blueprints).",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-SubinstallationTemplate",
+        "default": {}
+      },
+      "type": "array"
+    }
+  },
+  "title": "core-v1alpha1-Blueprint",
+  "type": "object"
+}

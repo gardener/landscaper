@@ -102,11 +102,11 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 	if len(def.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
 	}
-	if len(def.Schema) == 0 && len(def.TargetType) == 0 {
+	if len(def.Schema.RawMessage) == 0 && len(def.TargetType) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath, "schema or targetType must not be empty"))
 	}
 
-	if len(def.Schema) != 0 {
+	if len(def.Schema.RawMessage) != 0 {
 		allErrs = append(allErrs, ValidateJsonSchema(fldPath, def.Schema)...)
 	}
 
@@ -158,7 +158,7 @@ func ValidateSubinstallations(fldPath *field.Path, fs vfs.FileSystem, blueprintI
 	)
 
 	for _, bImport := range blueprintImportDefs {
-		if len(bImport.Schema) != 0 {
+		if len(bImport.Schema.RawMessage) != 0 {
 			blueprintDataImports.Insert(bImport.Name)
 		} else if len(bImport.TargetType) != 0 {
 			blueprintTargetImports.Insert(bImport.Name)
@@ -279,7 +279,7 @@ func ValidateInstallationTemplate(fldPath *field.Path, template *core.Installati
 		}
 	}
 
-	if len(template.Blueprint.Ref) == 0 && len(template.Blueprint.Filesystem) == 0 {
+	if len(template.Blueprint.Ref) == 0 && len(template.Blueprint.Filesystem.RawMessage) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("blueprint"), "a blueprint must be defined"))
 	}
 

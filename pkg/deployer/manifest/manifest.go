@@ -98,7 +98,7 @@ func (m *Manifest) TargetClient() (*rest.Config, client.Client, error) {
 	}
 	if m.Target != nil {
 		targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
-		if err := json.Unmarshal(m.Target.Spec.Configuration, targetConfig); err != nil {
+		if err := json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(targetConfig.Kubeconfig))

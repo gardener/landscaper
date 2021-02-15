@@ -289,7 +289,7 @@ imports:
 					{
 						FieldValueDefinition: core.FieldValueDefinition{
 							Name:   "myimportref",
-							Schema: []byte("type: string"),
+							Schema: core.JSONSchemaDefinition{RawMessage: []byte("type: string")},
 						},
 					},
 				}
@@ -399,7 +399,7 @@ imports:
 					{
 						FieldValueDefinition: core.FieldValueDefinition{
 							Name:   "myimportref",
-							Schema: []byte("type: string"),
+							Schema: core.JSONSchemaDefinition{RawMessage: []byte("type: string")},
 						},
 					},
 				}

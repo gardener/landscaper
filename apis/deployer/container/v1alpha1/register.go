@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -26,7 +27,7 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	SchemeBuilder      runtime.SchemeBuilder
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
 	localSchemeBuilder = &SchemeBuilder
 	AddToScheme        = SchemeBuilder.AddToScheme
 )
@@ -42,5 +43,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ProviderConfiguration{},
 		&Configuration{},
 	)
-	return addDefaultingFuncs(scheme)
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+	return nil
 }
