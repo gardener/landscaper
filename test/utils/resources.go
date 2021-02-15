@@ -18,6 +18,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
@@ -26,6 +27,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -242,4 +245,28 @@ func CreateInternalKubernetesTarget(ctx context.Context, kubeClient client.Clien
 		restConfig.Host = u.String()
 	}
 	return CreateKubernetesTarget(namespace, name, restConfig)
+}
+
+// BuildDeployItem builds a new deploy item
+func BuildDeployItem(diType lsv1alpha1.DeployItemType, providerConfig runtime.Object) (*lsv1alpha1.DeployItem, error) {
+	di := &lsv1alpha1.DeployItem{}
+	di.Spec.Type = diType
+
+	raw := &runtime.RawExtension{}
+	obj := providerConfig.DeepCopyObject()
+	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
+		return nil, err
+	}
+	di.Spec.Configuration = raw
+	return di, nil
+}
+
+func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfiguration) *lsv1alpha1.DeployItem {
+	configuration.TypeMeta = metav1.TypeMeta{
+		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
+		Kind:       "ProviderStatus",
+	}
+	di, err := BuildDeployItem(container.Type, configuration)
+	ExpectNoErrorWithOffset(1, err)
+	return di
 }

@@ -293,7 +293,7 @@ func podIsInErrorState(pod *corev1.Pod) error {
 	waitStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.WaitContainerName)
 	if err == nil {
 		if waitStatus.State.Waiting != nil {
-			if utils.StringIsOneOf(initStatus.State.Waiting.Reason,
+			if utils.StringIsOneOf(waitStatus.State.Waiting.Reason,
 				kutil.ErrImagePull,
 				kutil.ErrInvalidImageName,
 				kutil.ErrRegistryUnavailable,

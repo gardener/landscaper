@@ -1061,12 +1061,6 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext"),
 						},
 					},
-					"defaultOCI": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration.",
-							Ref:         ref("github.com/gardener/landscaper/apis/config.OCIConfiguration"),
-						},
-					},
 					"registry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.",
@@ -1091,7 +1085,7 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
 	}
 }
 
@@ -1303,12 +1297,6 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext"),
 						},
 					},
-					"defaultOCI": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration.",
-							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration"),
-						},
-					},
 					"registry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.",
@@ -1333,7 +1321,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 

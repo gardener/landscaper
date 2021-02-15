@@ -13,6 +13,7 @@ import (
 	"github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -84,8 +85,9 @@ func ManifestDeployerTests(f *framework.Framework) {
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
-			di := &lsv1alpha1.DeployItem{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "30-DeployItem-Container-sleep.yaml")))
+			di := utils.BuildContainerDeployItem(&containerv1alpha1.ProviderConfiguration{
+				Image: "example.com/some-invalid/image:v0.0.1",
+			})
 			di.SetName("")
 			di.SetGenerateName("container-sleep-")
 			di.SetNamespace(state.Namespace)

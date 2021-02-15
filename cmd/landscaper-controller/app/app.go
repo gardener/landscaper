@@ -100,24 +100,32 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to register validation webhook: %w", err)
 	}
 
-	for _, deployerName := range o.enabledDeployers {
+	for _, deployerName := range o.deployer.EnabledDeployers {
+		o.log.Info("Enable Deployer", "name", deployerName)
 		if deployerName == "container" {
-			config := &containerv1alpha1.Configuration{
-				OCI: o.config.Registry.OCI,
+			config := &containerv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
 			}
+			config.OCI = o.config.Registry.OCI
 			containerctlr.DefaultConfiguration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
 		} else if deployerName == "helm" {
-			config := &helmv1alpha1.Configuration{
-				OCI: o.config.Registry.OCI,
+			config := &helmv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
 			}
+			config.OCI = o.config.Registry.OCI
 			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "manifest" {
 			config := &manifestv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
+			}
 			if err := manifestctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
@@ -130,7 +138,7 @@ func (o *options) run(ctx context.Context) error {
 		}
 	}
 
-	o.log.Info("starting the controller")
+	o.log.Info("starting the controllers")
 	if err := mgr.Start(ctx); err != nil {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)
