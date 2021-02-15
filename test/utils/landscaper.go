@@ -69,23 +69,33 @@ func WaitForObjectDeletion(
 func WaitForDeployItemToSucceed(
 	ctx context.Context,
 	kubeClient client.Client,
-	obj client.Object,
+	obj *lsv1alpha1.DeployItem,
 	timeout time.Duration) error {
-	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
-		di := &lsv1alpha1.DeployItem{}
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), di); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
-			return false, nil
+	return WaitForDeployItemToBeInPhase(ctx, kubeClient, obj, lsv1alpha1.ExecutionPhaseSucceeded, timeout)
+}
+
+// WaitForDeployItemToBeInPhase waits until the given deploy item is in the expected phase
+func WaitForDeployItemToBeInPhase(
+	ctx context.Context,
+	kubeClient client.Client,
+	deployItem *lsv1alpha1.DeployItem,
+	phase lsv1alpha1.ExecutionPhase,
+	timeout time.Duration) error {
+
+	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
+		updated := &lsv1alpha1.DeployItem{}
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
+			return false, err
 		}
-		if di.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
-			return false, nil
+		*deployItem = *updated
+		if deployItem.Status.Phase == phase {
+			return true, nil
 		}
-		return true, nil
+		return false, nil
 	})
+
 	if err != nil {
-		return fmt.Errorf("error while waiting for DeployItem %q to succeed: %w", obj.GetName(), err)
+		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w", phase, err)
 	}
 	return nil
 }

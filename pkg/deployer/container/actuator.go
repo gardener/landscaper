@@ -118,10 +118,11 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
+func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) (err error) {
 	old := deployItem.DeepCopy()
 	// set failed state if the last error lasts for more than 5 minutes
 	defer func() {
+		deployItem.Status.LastError = lsv1alpha1helper.TryUpdateError(deployItem.Status.LastError, err)
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
 			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
 			deployItem.Status.LastError,

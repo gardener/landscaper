@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -53,18 +54,21 @@ func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "DecodeProviderConfiguration", err.Error())
 	}
 
 	applyDefaults(config, providerConfig)
 
 	if err := container1alpha1validation.ValidateProviderConfiguration(providerConfig); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "ValidateProviderConfiguration", err.Error())
 	}
 
 	status, err := DecodeProviderStatus(item.Status.ProviderStatus)
 	if err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "DecodeProviderStatus", err.Error())
 	}
 
 	return &Container{

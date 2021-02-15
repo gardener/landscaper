@@ -29,6 +29,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
@@ -39,15 +40,19 @@ import (
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
-		c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			"Reconcile", "FetchRunningPod", err.Error())
-		return err
 	}
 
 	// do nothing if the pod is still running
 	if pod != nil {
-		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
+			// check if pod is in error state
+			if err := podIsInErrorState(pod); err != nil {
+				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				return err
+			}
+			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 			c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 			return c.lsClient.Status().Update(ctx, c.DeployItem)
 		}
@@ -57,22 +62,19 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 		operationName := "DeployPod"
 		if err := c.SyncConfiguration(ctx); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "SyncConfiguration", err.Error())
-			return err
 		}
 
 		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx)
 		if err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "ParseAndSyncSecrets", err.Error())
-			return err
 		}
 		// ensure new pod
 		if err := c.ensureServiceAccounts(ctx); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "EnsurePodRBAC", err.Error())
-			return err
 		}
 		c.ProviderStatus = &containerv1alpha1.ProviderStatus{}
 		podOpts := PodOptions{
@@ -97,30 +99,26 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 		pod, err := generatePod(podOpts)
 		if err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "PodGeneration", err.Error())
-			return err
 		}
 
 		if err := c.hostClient.Create(ctx, pod); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "CreatePod", err.Error())
-			return err
 		}
 
 		// update status
 		c.ProviderStatus.PodStatus.PodName = pod.Name
 		c.ProviderStatus.LastOperation = string(operation)
 		if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "UpdatePodStatus", err.Error())
-			return err
 		}
 		encStatus, err := EncodeProviderStatus(c.ProviderStatus)
 		if err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "EncodeProviderStatus", err.Error())
-			return err
 		}
 
 		c.DeployItem.Status.ProviderStatus = encStatus
@@ -130,17 +128,15 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 		}
 		if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "UpdateDeployItemStatus", err.Error())
-			return err
 		}
 
 		if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			delete(c.DeployItem.Annotations, lsv1alpha1.OperationAnnotation)
 			if err := c.lsClient.Update(ctx, c.DeployItem); err != nil {
-				c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+				return lsv1alpha1helper.NewWrappedError(err,
 					operationName, "RemoveReconcileAnnotation", err.Error())
-				return err
 			}
 		}
 		return nil
@@ -153,9 +149,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 	if pod.Status.Phase == corev1.PodSucceeded {
 		if err := c.SyncExport(ctx); err != nil {
-			c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "SyncExport", err.Error())
-			return err
 		}
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	}
@@ -165,32 +160,28 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 	c.ProviderStatus.LastOperation = string(operation)
 	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
-		c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			operationName, "FetchPodStatus", err.Error())
-		return err
 	}
 
 	encStatus, err := EncodeProviderStatus(c.ProviderStatus)
 	if err != nil {
-		c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			operationName, "SetProviderStatus", err.Error())
-		return err
 	}
 
 	c.DeployItem.Status.ProviderStatus = encStatus
 	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 	if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
-		c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
-		return err
 	}
 
 	// only remove the finalizer if we get the status of the pod
 	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
 	if err := c.hostClient.Update(ctx, pod); err != nil {
-		c.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(c.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			operationName, "RemoveFinalizer", err.Error())
-		return err
 	}
 	c.DeployItem.Status.LastError = nil
 	return nil
@@ -279,6 +270,53 @@ func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []
 	}
 
 	return conditions
+}
+
+// podIsInErrorState detects specific issues with a pod when the pod is in pending or progressing state.
+// This should ensure that errors are detected earlier.
+// currently we only detect ErrImagePull
+func podIsInErrorState(pod *corev1.Pod) error {
+	initStatus, err := kutil.GetStatusForContainer(pod.Status.InitContainerStatuses, container.InitContainerName)
+	if err == nil {
+		if initStatus.State.Waiting != nil {
+
+			if utils.StringIsOneOf(initStatus.State.Waiting.Reason,
+				kutil.ErrImagePull,
+				kutil.ErrInvalidImageName,
+				kutil.ErrRegistryUnavailable,
+				kutil.ErrImageNeverPull) {
+				return lsv1alpha1helper.NewError("RunInitContainer", initStatus.State.Waiting.Reason, initStatus.State.Waiting.Message)
+			}
+		}
+	}
+
+	waitStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.WaitContainerName)
+	if err == nil {
+		if waitStatus.State.Waiting != nil {
+			if utils.StringIsOneOf(initStatus.State.Waiting.Reason,
+				kutil.ErrImagePull,
+				kutil.ErrInvalidImageName,
+				kutil.ErrRegistryUnavailable,
+				kutil.ErrImageNeverPull) {
+				return lsv1alpha1helper.NewError("RunWaitContainer", waitStatus.State.Waiting.Reason, waitStatus.State.Waiting.Message)
+			}
+		}
+	}
+
+	mainStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
+	if err == nil {
+		if utils.StringIsOneOf(mainStatus.State.Waiting.Reason,
+			kutil.ErrImagePull,
+			kutil.ErrInvalidImageName,
+			kutil.ErrRegistryUnavailable,
+			kutil.ErrImageNeverPull) {
+			if mainStatus.State.Waiting.Reason == kutil.ErrImagePull {
+				return lsv1alpha1helper.NewError("RunMainContainer", mainStatus.State.Waiting.Reason, mainStatus.State.Waiting.Message)
+			}
+		}
+	}
+
+	return nil
 }
 
 // to find a suitable secret for images on Docker Hub, we need its two domains to do matching
