@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	gitVersion   = "0.0.0-dev"
+	GitVersion   = "0.0.0-dev"
 	gitCommit    string
 	gitTreeState string
 	buildDate    = "1970-01-01T00:00:00Z"
@@ -25,7 +25,7 @@ var (
 // their absence fallback to the settings in pkg/version/base.go
 func Get() apimachineryversion.Info {
 	var (
-		version  = strings.Split(gitVersion, ".")
+		version  = strings.Split(GitVersion, ".")
 		gitMajor string
 		gitMinor string
 	)
@@ -38,7 +38,7 @@ func Get() apimachineryversion.Info {
 	return apimachineryversion.Info{
 		Major:        gitMajor,
 		Minor:        gitMinor,
-		GitVersion:   gitVersion,
+		GitVersion:   GitVersion,
 		GitCommit:    gitCommit,
 		GitTreeState: gitTreeState,
 		BuildDate:    buildDate,

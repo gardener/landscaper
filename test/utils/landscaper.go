@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,4 +140,17 @@ func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Cl
 		list = append(list, inst)
 	}
 	return list, nil
+}
+
+// GetDeployItemExport returns the exports for a deploy item
+func GetDeployItemExport(ctx context.Context, kubeClient client.Client, di *lsv1alpha1.DeployItem) ([]byte, error) {
+	if di.Status.ExportReference == nil {
+		return nil, errors.New("no export defined")
+	}
+	secret := &corev1.Secret{}
+	if err := kubeClient.Get(ctx, di.Status.ExportReference.NamespacedName(), secret); err != nil {
+		return nil, fmt.Errorf("unable to get export from %q: %w", di.Status.ExportReference.NamespacedName(), err)
+	}
+
+	return secret.Data[lsv1alpha1.DataObjectSecretDataKey], nil
 }

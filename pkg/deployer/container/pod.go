@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -87,10 +88,11 @@ type PodOptions struct {
 	BluePrintPullSecret               string
 	ComponentDescriptorPullSecret     string
 
-	Name                string
-	Namespace           string
-	DeployItemName      string
-	DeployItemNamespace string
+	Name                 string
+	Namespace            string
+	DeployItemName       string
+	DeployItemNamespace  string
+	DeployItemGeneration int64
 
 	Operation       container.OperationType
 	encBlueprintRef []byte
@@ -175,11 +177,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		},
 		{
 			Name:  container.DeployItemName,
-			Value: opts.Name,
+			Value: opts.DeployItemName,
 		},
 		{
 			Name:  container.DeployItemNamespaceName,
-			Value: opts.Namespace,
+			Value: opts.DeployItemNamespace,
 		},
 		{
 			Name:  container.RegistrySecretBasePathName,
@@ -189,11 +191,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	additionalSidecarEnvVars := []corev1.EnvVar{
 		{
 			Name:  container.DeployItemName,
-			Value: opts.Name,
+			Value: opts.DeployItemName,
 		},
 		{
 			Name:  container.DeployItemNamespaceName,
-			Value: opts.Namespace,
+			Value: opts.DeployItemNamespace,
 		},
 	}
 	additionalEnvVars := []corev1.EnvVar{
@@ -281,9 +283,10 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.GenerateName = opts.Name + "-"
 	pod.Namespace = opts.Namespace
 	pod.Labels = map[string]string{
-		container.ContainerDeployerNameLabel:                opts.Name,
-		container.ContainerDeployerDeployItemNameLabel:      opts.DeployItemName,
-		container.ContainerDeployerDeployItemNamespaceLabel: opts.DeployItemNamespace,
+		container.ContainerDeployerNameLabel:                 opts.Name,
+		container.ContainerDeployerDeployItemNameLabel:       opts.DeployItemName,
+		container.ContainerDeployerDeployItemNamespaceLabel:  opts.DeployItemNamespace,
+		container.ContainerDeployerDeployItemGenerationLabel: strconv.Itoa(int(opts.DeployItemGeneration)),
 	}
 	pod.Finalizers = []string{container.ContainerDeployerFinalizer}
 
@@ -408,7 +411,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 				Verbs:         []string{"get", "update"},
 				ResourceNames: []string{c.DeployItem.Name},
 			},
-			// we need a specific create secrets role as we cannot restrict the creation of a secret to a specific name
+			// we need diRec specific create secrets role as we cannot restrict the creation of diRec secret to diRec specific name
 			// See https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 			// "You cannot restrict create or deletecollection requests by resourceName. For create, this limitation is because the object name is not known at authorization time."
 			{
@@ -465,7 +468,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	return nil
 }
 
-// WaitAndGetServiceAccountSecret waits until a service accounts secret is available and returns the secrets name.
+// WaitAndGetServiceAccountSecret waits until diRec service accounts secret is available and returns the secrets name.
 func WaitAndGetServiceAccountSecret(ctx context.Context, log logr.Logger, c client.Client, serviceAccount *corev1.ServiceAccount) (types.NamespacedName, error) {
 	timeout, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()

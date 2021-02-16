@@ -24,6 +24,7 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	"github.com/gardener/landscaper/pkg/version"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,6 +59,7 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
+	o.log.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
 
 	opts := manager.Options{
 		LeaderElection:     false,

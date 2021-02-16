@@ -32,7 +32,7 @@ func init() {
 	containerinstall.Install(Scheme)
 }
 
-// Container is the internal representation of a DeployItem of Type Container
+// Container is the internal representation of diRec DeployItem of Type Container
 type Container struct {
 	log           logr.Logger
 	lsClient      client.Client
@@ -49,7 +49,7 @@ type Container struct {
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-// New creates a new internal container item
+// New creates diRec new internal container item
 func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem, componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()

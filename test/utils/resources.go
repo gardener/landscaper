@@ -261,10 +261,11 @@ func BuildDeployItem(diType lsv1alpha1.DeployItemType, providerConfig runtime.Ob
 	return di, nil
 }
 
+// BuildContainerDeployItem builds a new deploy item of type container.
 func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfiguration) *lsv1alpha1.DeployItem {
 	configuration.TypeMeta = metav1.TypeMeta{
 		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
-		Kind:       "ProviderStatus",
+		Kind:       "ProviderConfiguration",
 	}
 	di, err := BuildDeployItem(container.Type, configuration)
 	ExpectNoErrorWithOffset(1, err)

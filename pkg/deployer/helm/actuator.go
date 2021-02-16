@@ -70,7 +70,8 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 }
 
 func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+	logger := a.log.WithValues("resource", req.NamespacedName)
+	logger.V(7).Info("reconcile deploy item")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
@@ -82,6 +83,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	}
 
 	if deployItem.Spec.Type != Type {
+		logger.V(7).Info("DeployItem is of wrong type", "type", deployItem.Spec.Type)
 		return reconcile.Result{}, nil
 	}
 
@@ -97,17 +99,18 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 				return reconcile.Result{}, fmt.Errorf("unable to match target selector: %w", err)
 			}
 			if !matched {
-				a.log.V(5).Info("the deploy item's target has not matched the given target selector",
-					"deployItem", deployItem.Name, "target", target.Name)
+				logger.V(5).Info("The deploy item's target does not match the given target selector")
 				return reconcile.Result{}, nil
 			}
 		}
 	}
 
 	if deployItem.Status.ObservedGeneration == deployItem.Generation && !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		logger.V(5).Info("Version already reconciled")
 		return reconcile.Result{}, nil
 	}
 
+	logger.Info("Reconcile helm deploy item")
 	old := deployItem.DeepCopy()
 	err := a.reconcile(ctx, deployItem, target)
 	if !reflect.DeepEqual(old.Status, deployItem.Status) {

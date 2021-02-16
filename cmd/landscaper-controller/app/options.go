@@ -282,6 +282,9 @@ func (o *deployerOptions) Complete() error {
 }
 
 func (o *deployerOptions) parseDeployersConfigurationFile() error {
+	if len(o.deployersConfigPath) == 0 {
+		return nil
+	}
 	data, err := ioutil.ReadFile(o.deployersConfigPath)
 	if err != nil {
 		return err

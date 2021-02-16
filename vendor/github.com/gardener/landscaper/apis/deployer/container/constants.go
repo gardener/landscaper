@@ -10,6 +10,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// ContainerDeployerOperationForceCleanupAnnotation is the name of the annotation that triggers the force deletion of the deploy item.
+// Force deletion means that the delete container is skipped and all other resources are cleaned up.
+const ContainerDeployerOperationForceCleanupAnnotation = "container.deployer.landscaper.gardener.cloud/force-cleanup"
+
 // ContainerDeployerFinalizer is the finalizer that is set by the container deployer
 const ContainerDeployerFinalizer = "container.deployer.landscaper.gardener.cloud/finalizer"
 
@@ -24,6 +28,9 @@ const ContainerDeployerDeployItemNameLabel = "deployitem.container.deployer.land
 
 // ContainerDeployerDeployItemNamespaceLabel is the name of the label that is used to identify the deploy item of a pod.
 const ContainerDeployerDeployItemNamespaceLabel = "deployitem.container.deployer.landscaper.gardener.cloud/namespace"
+
+// ContainerDeployerDeployItemGenerationLabel is the name of the label that indicates the deploy item generation.
+const ContainerDeployerDeployItemGenerationLabel = "deployitem.container.deployer.landscaper.gardener.cloud/generation"
 
 // InitContainerConditionType defines the condition for the current init container
 const InitContainerConditionType = "InitContainer"

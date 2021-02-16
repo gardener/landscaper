@@ -37,6 +37,9 @@ import (
 // ErrImagePull - General image pull error
 const ErrImagePull = "ErrImagePull"
 
+// ErrImagePullBackOff - Container image pull failed, kubelet is backing off image pull
+const ErrImagePullBackOff = "ImagePullBackOff"
+
 // ErrImageNeverPull - Required Image is absent on host and PullPolicy is NeverPullImage
 const ErrImageNeverPull = "ErrImageNeverPull"
 

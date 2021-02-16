@@ -18,15 +18,17 @@ import (
 
 // Delete handles the delete flow for container deploy item.
 func (c *Container) Delete(ctx context.Context) error {
-	if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
-		// do default reconcile until the pod has finished
-		return c.Reconcile(ctx, container.OperationDelete)
+	// skip the deletion container when the force cleanup annotation is set
+	if _, ok := c.DeployItem.Annotations[container.ContainerDeployerOperationForceCleanupAnnotation]; !ok {
+		if c.ProviderStatus.LastOperation != string(container.OperationDelete) || c.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
+			// do default reconcile until the pod has finished
+			return c.Reconcile(ctx, container.OperationDelete)
+		}
 	}
 
 	if err := c.cleanupRBAC(ctx); err != nil {
 		return err
 	}
-
 	return c.cleanupDeployItem(ctx)
 }
 
@@ -82,7 +84,7 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	return nil
 }
 
-// cleanupDeployItem deletes all secrets from a host cluster which belong to a deploy item.
+// cleanupDeployItem deletes all secrets from diRec host cluster which belong to diRec deploy item.
 func (c *Container) cleanupDeployItem(ctx context.Context) error {
 	secrets := []string{
 		ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
