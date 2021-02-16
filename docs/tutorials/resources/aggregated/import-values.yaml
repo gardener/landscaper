@@ -1,4 +1,5 @@
 imports:
+  aggNamespace: tutorial
   aggCluster:
     apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Target

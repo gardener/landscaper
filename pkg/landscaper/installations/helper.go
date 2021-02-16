@@ -92,38 +92,38 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 }
 
 // GetDataImport fetches the data import from the cluster.
-func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, dataRef lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
+func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
 	var rawDataObject *lsv1alpha1.DataObject
 	// get deploy item from current context
-	if len(dataRef.DataRef) != 0 {
+	if len(dataImport.DataRef) != 0 {
 		rawDataObject = &lsv1alpha1.DataObject{}
-		doName := helper.GenerateDataObjectName(contextName, dataRef.DataRef)
+		doName := helper.GenerateDataObjectName(contextName, dataImport.DataRef)
 		if err := op.Client().Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("unable to fetch data object %s (%s/%s): %w", doName, contextName, dataImport.DataRef, err)
 		}
 	}
-	if dataRef.SecretRef != nil {
+	if dataImport.SecretRef != nil {
 		secret := &corev1.Secret{}
-		if err := op.Client().Get(ctx, dataRef.SecretRef.NamespacedName(), secret); err != nil {
+		if err := op.Client().Get(ctx, dataImport.SecretRef.NamespacedName(), secret); err != nil {
 			return nil, nil, err
 		}
-		data, ok := secret.Data[dataRef.SecretRef.Key]
+		data, ok := secret.Data[dataImport.SecretRef.Key]
 		if !ok {
-			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
+			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.SecretRef.Key, dataImport.SecretRef.NamespacedName().String())
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
 		rawDataObject.Data.RawMessage = data
 		// set the generation as it is used to detect outdated imports.
 		rawDataObject.SetGeneration(secret.Generation)
 	}
-	if dataRef.ConfigMapRef != nil {
+	if dataImport.ConfigMapRef != nil {
 		cm := &corev1.ConfigMap{}
-		if err := op.Client().Get(ctx, dataRef.ConfigMapRef.NamespacedName(), cm); err != nil {
+		if err := op.Client().Get(ctx, dataImport.ConfigMapRef.NamespacedName(), cm); err != nil {
 			return nil, nil, err
 		}
-		data, ok := cm.Data[dataRef.ConfigMapRef.Key]
+		data, ok := cm.Data[dataImport.ConfigMapRef.Key]
 		if !ok {
-			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataRef.SecretRef.Key, dataRef.SecretRef.NamespacedName().String())
+			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.SecretRef.Key, dataImport.SecretRef.NamespacedName().String())
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
 		rawDataObject.Data.RawMessage = []byte(data)

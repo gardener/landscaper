@@ -13,7 +13,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/echo-server
-      version: v0.1.1
+      version: v0.2.0
 
   blueprint:
     ref:
@@ -25,5 +25,9 @@ spec:
       # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
       target: "#my-cluster"
     data:
+    - name: namespace
+      configMapRef:
+        key: "namespace"
+        name: "my-imports" # name of the configmap;
     - name: ingressClass
       dataRef: "myIngressClass"

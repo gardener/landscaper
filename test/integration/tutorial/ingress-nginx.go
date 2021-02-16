@@ -21,13 +21,7 @@ import (
 	"github.com/gardener/landscaper/test/utils"
 )
 
-// RegisterTests registers all tests of the package
-func RegisterTests(f *framework.Framework) {
-	NginxTest(f)
-	ExternalJSONSchemaTest(f)
-}
-
-func NginxTest(f *framework.Framework) {
+func NginxIngressTest(f *framework.Framework) {
 	dumper := f.Register()
 
 	_ = ginkgo.Describe("SimpleNginxTest", func() {

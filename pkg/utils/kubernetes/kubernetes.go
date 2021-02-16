@@ -80,6 +80,14 @@ func ObjectKey(name, namespace string) types.NamespacedName {
 	}
 }
 
+// ObjectKeyFromObject creates a namespaced name for a given object.
+func ObjectKeyFromObject(obj client.Object) types.NamespacedName {
+	return types.NamespacedName{
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
+	}
+}
+
 // GetStatusForContainer returns the container status for a specific container
 func GetStatusForContainer(containerStatus []corev1.ContainerStatus, name string) (corev1.ContainerStatus, error) {
 	for _, status := range containerStatus {

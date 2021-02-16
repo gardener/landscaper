@@ -86,7 +86,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	statusData, err := encodeStatus(status)
+	m.DeployItem.Status.ProviderStatus, err = encodeStatus(status)
 	if err != nil {
 		m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
 			currOp, "ProviderStatus", err.Error())
@@ -94,7 +94,6 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	m.DeployItem.Status.ProviderStatus = statusData
 	m.DeployItem.Status.ObservedGeneration = m.DeployItem.Generation
 	m.DeployItem.Status.LastError = nil
 	return m.kubeClient.Status().Update(ctx, m.DeployItem)
@@ -104,7 +103,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	currOp := "DeleteManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
-	if len(m.ProviderStatus.ManagedResources) == 0 {
+	if m.ProviderStatus == nil || len(m.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 		return m.kubeClient.Update(ctx, m.DeployItem)
 	}

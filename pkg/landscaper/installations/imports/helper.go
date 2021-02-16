@@ -13,7 +13,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
@@ -109,18 +108,13 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	}
 
 	// we have to get the corresponding installation from the the cluster
-	do := &lsv1alpha1.DataObject{}
-	doName := lsv1alpha1helper.GenerateDataObjectName(op.Context().Name, dataImport.DataRef)
-	if err := op.Client().Get(ctx, kutil.ObjectKey(doName, inst.Info.Namespace), do); err != nil {
-		return nil, fmt.Errorf("unable to fetch data object %s (%s): %w", doName, dataImport.DataRef, err)
-	}
-	owner := kutil.GetOwner(do.ObjectMeta)
-	if owner == nil {
-		return nil, nil
+	_, owner, err := installations.GetDataImport(ctx, op, op.Context().Name, inst, dataImport)
+	if err != nil {
+		return nil, err
 	}
 
 	// we cannot validate if the source is not an installation
-	if owner.Kind != "Installation" {
+	if owner == nil || owner.Kind != "Installation" {
 		return nil, nil
 	}
 	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil

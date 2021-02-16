@@ -13,8 +13,8 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/simple-aggregated
-      version: v0.1.2
-      
+      version: v0.2.0
+
   blueprint:
     ref:
       resourceName: simple-aggregated
@@ -24,6 +24,11 @@ spec:
     - name: aggCluster
       # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
       target: "#my-cluster"
+    data:
+    - name: aggNamespace
+      configMapRef:
+        key: "namespace"
+        name: "my-imports" # name of the configmap;
 
   exports:
     data:

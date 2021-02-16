@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 {{ $name :=  "echo-server" }}
-{{ $namespace :=  "default" }}
 deployItems:
 - name: deploy
   type: landscaper.gardener.cloud/kubernetes-manifest
@@ -21,7 +20,7 @@ deployItems:
         kind: Deployment
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
         spec:
           replicas: 1
           selector:
@@ -44,7 +43,7 @@ deployItems:
         kind: Service
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
         spec:
           selector:
             app: echo-server
@@ -56,7 +55,7 @@ deployItems:
         kind: Ingress
         metadata:
           name: {{ $name }}
-          namespace: {{ $namespace }}
+          namespace: {{ .imports.namespace }}
           annotations:
             nginx.ingress.kubernetes.io/rewrite-target: /
             kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
