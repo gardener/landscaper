@@ -13,7 +13,6 @@ import (
 	g "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -72,14 +71,16 @@ func AggregatedBlueprint(f *framework.Framework) {
 			g.Expect(subInstallations[1].Status.Phase).To(g.Equal(lsv1alpha1.ComponentPhaseSucceeded))
 
 			// expect that the nginx deployment is successfully running
-			nginxIngressDeploymentName := "test-ingress-nginx-controller"
-			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
+			nginxDeployment := &appsv1.Deployment{}
+			nginxDeployment.Name = "test-ingress-nginx-controller"
+			nginxDeployment.Namespace = state.Namespace
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKeyFromObject(nginxDeployment), 2*time.Minute))
 
 			// expect that the echo server deployment is successfully running
-			echoServerDeploymentName := "echo-server"
-			echoServerObjectKey := kutil.ObjectKey(echoServerDeploymentName, state.Namespace)
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, echoServerObjectKey, 2*time.Minute))
+			echoServerDeployment := &appsv1.Deployment{}
+			echoServerDeployment.Name = "echo-server"
+			echoServerDeployment.Namespace = state.Namespace
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKeyFromObject(echoServerDeployment), 2*time.Minute))
 
 			// todo check if the echo server can be pinged
 
@@ -88,22 +89,10 @@ func AggregatedBlueprint(f *framework.Framework) {
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, aggInst, 2*time.Minute))
 
 			// expect that the echo server deployment is already deleted or has an deletion timestamp
-			echoServerDeployment := &appsv1.Deployment{}
-			err = f.Client.Get(ctx, echoServerObjectKey, echoServerDeployment)
-			if err != nil && !apierrors.IsNotFound(err) {
-				utils.ExpectNoError(err)
-			} else if err == nil {
-				g.Expect(echoServerDeployment.DeletionTimestamp.IsZero()).To(g.BeTrue())
-			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, echoServerDeployment, 2*time.Minute))
 
 			// expect that the nginx deployment is already deleted or has an deletion timestamp
-			nginxDeployment := &appsv1.Deployment{}
-			err = f.Client.Get(ctx, nginxIngressObjectKey, nginxDeployment)
-			if err != nil && !apierrors.IsNotFound(err) {
-				utils.ExpectNoError(err)
-			} else if err == nil {
-				g.Expect(nginxDeployment.DeletionTimestamp.IsZero()).To(g.BeTrue())
-			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxDeployment, 2*time.Minute))
 		})
 	})
 
