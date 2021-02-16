@@ -514,7 +514,7 @@ func (c *Container) SyncConfiguration(ctx context.Context) error {
 func (c *Container) SyncExport(ctx context.Context) error {
 	c.log.V(3).Info("Sync export to landscaper cluster", "deployitem", kutil.ObjectKey(c.DeployItem.Name, c.DeployItem.Namespace).String())
 	secret := &corev1.Secret{}
-	key := kutil.ObjectKey(DeployItemExportSecretName(c.DeployItem.Name), c.Configuration.Namespace)
+	key := kutil.ObjectKey(ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.Configuration.Namespace)
 	if err := c.hostClient.Get(ctx, key, secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			c.log.Info("no export found for deploy item", "deployitem", key.String())
@@ -524,8 +524,8 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	}
 
 	expSecret := &corev1.Secret{}
-	expSecret.Name = secret.Name
-	expSecret.Namespace = secret.Namespace
+	expSecret.Name = DeployItemExportSecretName(c.DeployItem.Name)
+	expSecret.Namespace = c.DeployItem.Namespace
 	if _, err := controllerutil.CreateOrUpdate(ctx, c.lsClient, expSecret, func() error {
 		expSecret.Data = secret.Data
 		return controllerutil.SetControllerReference(c.DeployItem, expSecret, kubernetes.LandscaperScheme)
@@ -549,6 +549,9 @@ func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
 		err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
 		return lsv1alpha1helper.NewWrappedError(err,
 			"CleanupPod", "RemoveFinalizer", err.Error())
+	}
+	if c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod {
+		return nil
 	}
 	if err := c.hostClient.Delete(ctx, pod); err != nil {
 		err = fmt.Errorf("unable to delete pod: %w", err)

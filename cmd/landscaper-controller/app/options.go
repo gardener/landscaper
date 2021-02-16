@@ -290,7 +290,7 @@ func (o *deployerOptions) parseDeployersConfigurationFile() error {
 		return err
 	}
 
-	return yaml.Unmarshal(data, o.DeployersConfig)
+	return yaml.Unmarshal(data, &o.DeployersConfig)
 }
 
 // stringListToMap turns a comma-separated list of strings into pseudo-set that maps all elements of the list to true

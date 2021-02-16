@@ -4,9 +4,11 @@
 
 package app
 
-import "k8s.io/apimachinery/pkg/runtime"
+import (
+	"k8s.io/apimachinery/pkg/runtime"
+)
 
 // DeployersConfiguration describes additional configuration for deployers
 type DeployersConfiguration struct {
-	Deployers map[string]*runtime.RawExtension `json:"deployers"`
+	Deployers map[string]runtime.RawExtension `json:"deployers"`
 }

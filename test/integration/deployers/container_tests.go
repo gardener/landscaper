@@ -30,7 +30,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 		exampleDir = path.Join(f.RootPath, "examples/deploy-items")
 	)
 
-	ginkgo.Describe("Manifest Deployer", func() {
+	ginkgo.FDescribe("Manifest Deployer", func() {
 
 		ginkgo.It("should run a simple docker image with a sleep command", func() {
 			ctx := context.Background()
@@ -115,7 +115,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
 
-		ginkgo.FIt("should export data", func() {
+		ginkgo.It("should export data", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			state, cleanup, err := f.NewState(ctx)

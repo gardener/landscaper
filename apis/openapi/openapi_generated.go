@@ -108,6 +108,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":              schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":             schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":             schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions":              schema_apis_deployer_container_v1alpha1_DebugOptions(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                 schema_apis_deployer_container_v1alpha1_PodStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderConfiguration":     schema_apis_deployer_container_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderStatus":            schema_apis_deployer_container_v1alpha1_ProviderStatus(ref),
@@ -4261,12 +4262,18 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec"),
 						},
 					},
+					"debug": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DebugOptions configure additional debug options.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"),
+						},
+					},
 				},
 				Required: []string{"defaultImage", "initContainer", "waitContainer"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"},
 	}
 }
 
@@ -4318,6 +4325,26 @@ func schema_apis_deployer_container_v1alpha1_ContainerSpec(ref common.ReferenceC
 						SchemaProps: spec.SchemaProps{
 							Description: "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
 							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_DebugOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DebugOptions defines optional debug options.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"keepPod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "KeepPod will only remove the finalizer on the pod but will not delete the pod.",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},

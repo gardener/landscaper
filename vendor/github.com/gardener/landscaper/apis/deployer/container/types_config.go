@@ -40,6 +40,9 @@ type Configuration struct {
 	// sidecar to the defined main container.
 	// The sidecar container is responsible to collect the exports and the state of the main container.
 	WaitContainer ContainerSpec `json:"waitContainer"`
+
+	// DebugOptions configure additional debug options.
+	DebugOptions *DebugOptions `json:"debug,omitempty"`
 }
 
 // ContainerSpec defines a container specification
@@ -75,4 +78,10 @@ type ContainerSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+}
+
+// DebugOptions defines optional debug options.
+type DebugOptions struct {
+	// KeepPod will only remove the finalizer on the pod but will not delete the pod.
+	KeepPod bool `json:"keepPod,omitempty"`
 }
