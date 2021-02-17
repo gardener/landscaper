@@ -2,8 +2,6 @@
 github.com/BurntSushi/toml
 # github.com/Masterminds/goutils v1.1.0
 github.com/Masterminds/goutils
-# github.com/Masterminds/semver v1.5.0
-## explicit
 # github.com/Masterminds/semver/v3 v3.1.1
 github.com/Masterminds/semver/v3
 # github.com/Masterminds/sprig/v3 v3.1.0
@@ -455,7 +453,6 @@ gopkg.in/inf.v0
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.3.0
-## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 ## explicit
@@ -665,8 +662,6 @@ k8s.io/component-base/config/v1alpha1
 # k8s.io/gengo v0.0.0-20201113003025-83324d819ded
 k8s.io/gengo/parser
 k8s.io/gengo/types
-# k8s.io/helm v2.17.0+incompatible
-## explicit
 # k8s.io/klog v1.0.0
 k8s.io/klog
 # k8s.io/klog/v2 v2.4.0

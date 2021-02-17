@@ -1,11 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
-    "container-v1alpha1-PodStatus": {
-      "description": "PodStatus describes the status of a pod with its init, wait and main container.",
+    "container-v1alpha1-ContainerStatus": {
+      "description": "ContainerStatus describes the status of a pod with its init, wait and main container.",
       "type": "object",
       "required": [
-        "podName",
         "image",
         "imageID"
       ],
@@ -29,11 +28,6 @@
           "description": "A human readable message indicating details about why the pod is in this condition.",
           "type": "string"
         },
-        "podName": {
-          "description": "PodName is the name of the created pod.",
-          "type": "string",
-          "default": ""
-        },
         "reason": {
           "description": "A brief CamelCase message indicating details about why the pod is in this state. e.g. 'Evicted'",
           "type": "string"
@@ -45,17 +39,39 @@
         }
       }
     },
-    "container-v1alpha1-StateStatus": {
-      "description": "StateStatus defines the status of the deploy item's state",
+    "container-v1alpha1-PodStatus": {
+      "description": "PodStatus describes the status of a pod with its init, wait and main container",
       "type": "object",
+      "required": [
+        "podName",
+        "containerStatus",
+        "initContainerStatus",
+        "waitContainerStatus"
+      ],
       "properties": {
-        "data": {
-          "description": "Data is the list of secrets that stores the state",
-          "type": "array",
-          "items": {
-            "default": {},
-            "$ref": "#/definitions/core-v1alpha1-ObjectReference"
-          }
+        "containerStatus": {
+          "description": "ContainerStatus contains the status of the pod that executes the configured container.",
+          "default": {},
+          "$ref": "#/definitions/container-v1alpha1-ContainerStatus"
+        },
+        "initContainerStatus": {
+          "description": "InitContainerStatus contains the status of the init container.",
+          "default": {},
+          "$ref": "#/definitions/container-v1alpha1-ContainerStatus"
+        },
+        "lastRun": {
+          "description": "LastRun is the time when the pod was executed the last time.",
+          "$ref": "#/definitions/meta-v1-Time"
+        },
+        "podName": {
+          "description": "PodName is the name of the created pod.",
+          "type": "string",
+          "default": ""
+        },
+        "waitContainerStatus": {
+          "description": "WaitContainerStatus contains the status of the wait container.",
+          "default": {},
+          "$ref": "#/definitions/container-v1alpha1-ContainerStatus"
         }
       }
     },
@@ -144,25 +160,6 @@
         }
       }
     },
-    "core-v1alpha1-ObjectReference": {
-      "description": "ObjectReference is the reference to a kubernetes object.",
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "description": "Name is the name of the kubernetes object.",
-          "type": "string",
-          "default": ""
-        },
-        "namespace": {
-          "description": "Namespace is the namespace of kubernetes object.",
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
     "meta-v1-Time": {
       "description": "Time is a wrapper around time.Time which supports correct marshaling to YAML and JSON.  Wrappers are provided for many of the factory methods that the time package offers.",
       "type": "string",
@@ -186,17 +183,11 @@
     },
     "podStatus": {
       "$ref": "#/definitions/container-v1alpha1-PodStatus",
-      "default": {},
-      "description": "PodStatus contains the status of the pod that executes the configured container."
-    },
-    "state": {
-      "$ref": "#/definitions/container-v1alpha1-StateStatus",
-      "description": "State contains the status of the deploy items state"
+      "description": "PodStatus indicated the status of the executed pod."
     }
   },
   "required": [
-    "lastOperation",
-    "podStatus"
+    "lastOperation"
   ],
   "title": "container-v1alpha1-ProviderStatus",
   "type": "object"

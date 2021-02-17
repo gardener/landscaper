@@ -17,9 +17,11 @@ spec:
     command: ["sh", "-c"]
     args:
     - |
-      env
       ls -la $STATE_PATH
-      echo '{ "my-val": true }' > $STATE_PATH/test
-      ls -la $STATE_PATH
+      export COUNTER=0
+      if [ -f "$STATE_PATH/counter" ]; then export COUNTER=$(cat "$STATE_PATH/counter"); fi
+      export COUNTER=$((COUNTER+1))
+      echo $COUNTER > $STATE_PATH/counter
+      echo "{ \"counter\": $COUNTER }" > $EXPORTS_PATH
 
     importValues: abc

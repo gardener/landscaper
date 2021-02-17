@@ -13,7 +13,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/deployer/container/state"
 )
 
 // Delete handles the delete flow for container deploy item.
@@ -27,9 +29,14 @@ func (c *Container) Delete(ctx context.Context) error {
 	}
 
 	if err := c.cleanupRBAC(ctx); err != nil {
-		return err
+		return lsv1alpha1helper.NewWrappedError(err,
+			"Delete", "CleanupRBAC", err.Error())
 	}
-	return c.cleanupDeployItem(ctx)
+	if err := c.cleanupDeployItem(ctx); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			"Delete", "CleanupDeployItem", err.Error())
+	}
+	return nil
 }
 
 // cleanupRBAC removes all service accounts, roles and rolebindings that belong to the deploy item
@@ -46,13 +53,13 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	rolebinding.Name = sa.Name
 	rolebinding.Namespace = sa.Namespace
 
-	if err := c.hostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.hostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 	c.log.V(3).Info("successfully removed init container rbac resources")
@@ -69,13 +76,13 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	rolebinding.Name = sa.Name
 	rolebinding.Namespace = sa.Namespace
 
-	if err := c.hostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, rolebinding); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.hostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, role); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	if err := c.hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
+	if err := c.directHostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
@@ -84,7 +91,7 @@ func (c *Container) cleanupRBAC(ctx context.Context) error {
 	return nil
 }
 
-// cleanupDeployItem deletes all secrets from diRec host cluster which belong to diRec deploy item.
+// cleanupDeployItem deletes all secrets from a host cluster which belong to a deploy item.
 func (c *Container) cleanupDeployItem(ctx context.Context) error {
 	secrets := []string{
 		ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name),
@@ -98,11 +105,20 @@ func (c *Container) cleanupDeployItem(ctx context.Context) error {
 		secret := &corev1.Secret{}
 		secret.Name = secretName
 		secret.Namespace = c.Configuration.Namespace
-		if err := c.hostClient.Delete(ctx, secret); err != nil {
+		if err := c.directHostClient.Delete(ctx, secret); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
 			}
 		}
+	}
+
+	// cleanup state
+	if err := state.CleanupState(ctx,
+		c.log,
+		c.directHostClient,
+		c.Configuration.Namespace,
+		lsv1alpha1helper.ObjectReferenceFromObject(c.DeployItem)); err != nil {
+		return err
 	}
 
 	secret := &corev1.Secret{}

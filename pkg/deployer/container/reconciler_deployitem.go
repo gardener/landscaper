@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -29,7 +30,7 @@ const (
 	cacheIdentifier = "container-deployer-controller"
 )
 
-func NewDeployItemReconciler(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration) (*DeployItemReconciler, error) {
+func NewDeployItemReconciler(log logr.Logger, lsClient, hostClient, directHostClient client.Client, config *containerv1alpha1.Configuration) (*DeployItemReconciler, error) {
 	componentRegistryMgr, err := componentsregistry.SetupManagerFromConfig(log, config.OCI, cacheIdentifier)
 	if err != nil {
 		return nil, err
@@ -39,6 +40,7 @@ func NewDeployItemReconciler(log logr.Logger, lsClient, hostClient client.Client
 		config:                config,
 		lsClient:              lsClient,
 		hostClient:            hostClient,
+		directHostClient:      directHostClient,
 		scheme:                kubernetes.LandscaperScheme,
 		componentsRegistryMgr: componentRegistryMgr,
 	}, nil
@@ -48,14 +50,15 @@ type DeployItemReconciler struct {
 	log                   logr.Logger
 	lsClient              client.Client
 	hostClient            client.Client
+	directHostClient      client.Client
 	scheme                *runtime.Scheme
 	config                *containerv1alpha1.Configuration
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-func (a *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := a.log.WithValues("resource", req.NamespacedName)
-	deployItem, err := GetAndCheckReconcile(a.log, a.lsClient, a.config)(ctx, req)
+func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := r.log.WithValues("resource", req.NamespacedName)
+	deployItem, err := GetAndCheckReconcile(r.log, r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -69,14 +72,14 @@ func (a *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	}
 
 	logger.Info("Reconcile container deploy item")
-	if err := a.reconcile(ctx, deployItem); err != nil {
+	if err := r.reconcile(ctx, deployItem); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (a *DeployItemReconciler) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) (err error) {
+func (r *DeployItemReconciler) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) (err error) {
 	old := deployItem.DeepCopy()
 	// set failed state if the last error lasts for more than 5 minutes
 	defer func() {
@@ -86,20 +89,26 @@ func (a *DeployItemReconciler) reconcile(ctx context.Context, deployItem *lsv1al
 			deployItem.Status.LastError,
 			5*time.Minute))
 		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err := a.lsClient.Status().Update(ctx, deployItem); err != nil {
-				a.log.Error(err, "unable to update status")
+			if err2 := r.lsClient.Status().Update(ctx, deployItem); err2 != nil {
+				if !apierrors.IsConflict(err2) { // reduce logging
+					r.log.Error(err2, "unable to update status")
+				}
+				// retry on conflict
+				if err != nil {
+					err = err2
+				}
 			}
 		}
 	}()
 
-	containerOp, err := New(a.log, a.lsClient, a.hostClient, a.config, deployItem, a.componentsRegistryMgr)
+	containerOp, err := New(r.log, r.lsClient, r.hostClient, r.directHostClient, r.config, deployItem, r.componentsRegistryMgr)
 	if err != nil {
 		return err
 	}
 
 	if !kutil.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := a.lsClient.Update(ctx, deployItem); err != nil {
+		if err := r.lsClient.Update(ctx, deployItem); err != nil {
 			return err
 		}
 		return nil

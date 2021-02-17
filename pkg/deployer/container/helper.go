@@ -69,7 +69,7 @@ func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
 	if len(obj.InitContainer.Image) == 0 {
 		version := lsversion.Get().GitVersion
 		// default lsversion to latest if the gitversion is 0.0.0-dev
-		if version == lsversion.GitVersion {
+		if version == "0.0.0-dev" {
 			version = "latest"
 		}
 		obj.InitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-init:%s", version)
@@ -77,14 +77,14 @@ func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
 	if len(obj.WaitContainer.Image) == 0 {
 		version := lsversion.Get().GitVersion
 		// default lsversion to latest if the gitversion is 0.0.0-dev
-		if version == lsversion.GitVersion {
+		if version == "0.0.0-dev" {
 			version = "latest"
 		}
 		obj.WaitContainer.Image = fmt.Sprintf("eu.gcr.io/gardener-project/landscaper/container-deployer-wait:%s", version)
 	}
 }
 
-// DecodeProviderStatus decodes diRec RawExtension to diRec container status.
+// DecodeProviderStatus decodes a RawExtension to a container status.
 func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
 	status := &containerv1alpha1.ProviderStatus{}
 	if raw != nil {
@@ -95,7 +95,7 @@ func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.Provide
 	return status, nil
 }
 
-// EncodeProviderStatus encodes diRec container status to diRec RawExtension.
+// EncodeProviderStatus encodes a container status to a RawExtension.
 func EncodeProviderStatus(status *containerv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
 		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),

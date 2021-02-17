@@ -323,14 +323,28 @@ func (c *Container) getPod(ctx context.Context) (*corev1.Pod, error) {
 	}
 
 	// only return latest pod and ignore previous runs
-	latest := podList.Items[0]
+	var latest *corev1.Pod
 	for _, pod := range podList.Items {
+		// ignore pods with no finalizer as they are already reconciled and their state was persisted.
+		if !controllerutil.ContainsFinalizer(&pod, container.ContainerDeployerFinalizer) {
+			continue
+		}
+		if latest == nil {
+			latest = pod.DeepCopy()
+		}
 		if pod.CreationTimestamp.After(latest.CreationTimestamp.Time) {
-			latest = pod
+			latest = pod.DeepCopy()
 		}
 	}
 
-	return &latest, nil
+	if latest == nil {
+		return nil, apierrors.NewNotFound(schema.GroupResource{
+			Group:    corev1.SchemeGroupVersion.Group,
+			Resource: "Pod",
+		}, c.DeployItem.Name)
+	}
+
+	return latest, nil
 }
 
 // ensureServiceAccounts ensures that the service accounts for the init and wait container are created
@@ -339,7 +353,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	initSA := &corev1.ServiceAccount{}
 	initSA.Name = InitContainerServiceAccountName(c.DeployItem)
 	initSA.Namespace = c.Configuration.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, c.hostClient, initSA, func() error { return nil }); err != nil {
+	if _, err := kutil.CreateOrUpdate(ctx, c.directHostClient, initSA, func() error { return nil }); err != nil {
 		return err
 	}
 
@@ -347,16 +361,15 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role := &rbacv1.Role{}
 	role.Name = initSA.Name
 	role.Namespace = initSA.Namespace
-	_, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
-		// todo: consider different namespace of secrets
-		if len(c.ProviderConfiguration.RegistryPullSecrets) != 0 {
-			// need to read secrets to restore the state
-			rule := rbacv1.PolicyRule{
+	_, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, role, func() error {
+		// need to read secrets to restore the state
+		// deletion is needed for garbage collection
+		role.Rules = []rbacv1.PolicyRule{
+			{
 				APIGroups: []string{corev1.SchemeGroupVersion.Group},
 				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list"},
-			}
-			role.Rules = append(role.Rules, rule)
+				Verbs:     []string{"get", "list", "delete"},
+			},
 		}
 		return nil
 	})
@@ -367,7 +380,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding := &rbacv1.RoleBinding{}
 	rolebinding.Name = initSA.Name
 	rolebinding.Namespace = initSA.Namespace
-	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.directHostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
@@ -388,14 +401,14 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	c.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.hostClient, initSA)
+	c.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.directHostClient, initSA)
 	if err != nil {
 		return err
 	}
 	waitSA := &corev1.ServiceAccount{}
 	waitSA.Name = WaitContainerServiceAccountName(c.DeployItem)
 	waitSA.Namespace = c.Configuration.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, waitSA, func() error { return nil }); err != nil {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, waitSA, func() error { return nil }); err != nil {
 		return err
 	}
 
@@ -403,27 +416,16 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	role = &rbacv1.Role{}
 	role.Name = waitSA.Name
 	role.Namespace = waitSA.Namespace
-	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, role, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.directHostClient, role, func() error {
 		role.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups:     []string{lsv1alpha1.SchemeGroupVersion.Group},
-				Resources:     []string{"deployitems", "deployitems/status"},
-				Verbs:         []string{"get", "update"},
-				ResourceNames: []string{c.DeployItem.Name},
-			},
-			// we need diRec specific create secrets role as we cannot restrict the creation of diRec secret to diRec specific name
+			// we need a specific create secrets role as we cannot restrict the creation of secrets to a specific name
 			// See https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 			// "You cannot restrict create or deletecollection requests by resourceName. For create, this limitation is because the object name is not known at authorization time."
+			// the ait container needs permissions to write secrets for its state.
 			{
 				APIGroups: []string{corev1.SchemeGroupVersion.Group},
 				Resources: []string{"secrets"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups:     []string{corev1.SchemeGroupVersion.Group},
-				Resources:     []string{"secrets"},
-				Verbs:         []string{"update", "get"},
-				ResourceNames: []string{ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name)},
+				Verbs:     []string{"create", "update", "get", "list"},
 			},
 			{
 				APIGroups: []string{corev1.SchemeGroupVersion.Group},
@@ -440,7 +442,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	rolebinding = &rbacv1.RoleBinding{}
 	rolebinding.Name = waitSA.Name
 	rolebinding.Namespace = waitSA.Namespace
-	_, err = controllerutil.CreateOrUpdate(ctx, c.hostClient, rolebinding, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, c.directHostClient, rolebinding, func() error {
 		rolebinding.RoleRef = rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
@@ -461,14 +463,14 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	c.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.hostClient, waitSA)
+	c.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, c.log, c.directHostClient, waitSA)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// WaitAndGetServiceAccountSecret waits until diRec service accounts secret is available and returns the secrets name.
+// WaitAndGetServiceAccountSecret waits until a service accounts secret is available and returns the secrets name.
 func WaitAndGetServiceAccountSecret(ctx context.Context, log logr.Logger, c client.Client, serviceAccount *corev1.ServiceAccount) (types.NamespacedName, error) {
 	timeout, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()

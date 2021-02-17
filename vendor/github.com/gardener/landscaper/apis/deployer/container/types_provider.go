@@ -68,18 +68,27 @@ type ProviderStatus struct {
 	// LastOperation defines the last run operation of the pod.
 	// The operation can be either reconcile or deletion.
 	LastOperation string `json:"lastOperation"`
-	// PodStatus contains the status of the pod that
-	// executes the configured container.
-	PodStatus PodStatus `json:"podStatus"`
-	// State contains the status of the deploy items state
-	// +optional
-	State *StateStatus `json:"state,omitempty"`
+	// PodStatus indicated the status of the executed pod.
+	PodStatus *PodStatus `json:"podStatus,omitempty"`
 }
 
-// PodStatus describes the status of a pod with its init, wait and main container.
+// PodStatus describes the status of a pod with its init, wait and main container
 type PodStatus struct {
 	// PodName is the name of the created pod.
 	PodName string `json:"podName"`
+	// LastRun is the time when the pod was executed the last time.
+	LastRun *metav1.Time `json:"lastRun,omitempty"`
+	// ContainerStatus contains the status of the pod that
+	// executes the configured container.
+	ContainerStatus ContainerStatus `json:"containerStatus"`
+	// InitContainerStatus contains the status of the init container.
+	InitContainerStatus ContainerStatus `json:"initContainerStatus"`
+	// WaitContainerStatus contains the status of the wait container.
+	WaitContainerStatus ContainerStatus `json:"waitContainerStatus"`
+}
+
+// ContainerStatus describes the status of a pod with its init, wait and main container.
+type ContainerStatus struct {
 	// A human readable message indicating details about why the pod is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`
@@ -98,10 +107,4 @@ type PodStatus struct {
 	// ExitCode of the main container.
 	// +optional
 	ExitCode *int32 `json:"exitCode,omitempty"`
-}
-
-// StateStatus defines the status of the deploy item's state
-type StateStatus struct {
-	// Data is the list of secrets that stores the state
-	Data []lsv1alpha1.ObjectReference `json:"data,omitempty"`
 }

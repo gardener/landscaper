@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,7 @@ import (
 	dockerreference "github.com/containerd/containerd/reference/docker"
 )
 
-// Reconcile handles the reconcile flow for diRec container deploy item.
+// Reconcile handles the reconcile flow for a container deploy item.
 // todo: do retries on failure: difference between main container failure and init/wait container failure
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
@@ -48,21 +49,29 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
+			if err := c.collectAndSetPodStatus(pod); err != nil {
+				return lsv1alpha1helper.NewWrappedError(err,
+					"Reconcile", "UpdatePodStatus", err.Error())
+			}
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
 				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
+					return err // returns the error and retry
+				}
+
+				// only cleanup the pod if the error messages could be collected
 				if err := c.CleanupPod(ctx, pod); err != nil {
 					return err
 				}
 				return err
 			}
 			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-			c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 			return nil
 		}
 	}
 
-	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation || lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	if c.shouldRunNewPod(pod) {
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 		operationName := "DeployPod"
 
@@ -122,26 +131,19 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// update status
-		c.ProviderStatus.PodStatus.PodName = pod.Name
 		c.ProviderStatus.LastOperation = string(operation)
-		if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+		if err := c.collectAndSetPodStatus(pod); err != nil {
 			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "UpdatePodStatus", err.Error())
 		}
-		encStatus, err := EncodeProviderStatus(c.ProviderStatus)
-		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
-				operationName, "EncodeProviderStatus", err.Error())
-		}
 
-		c.DeployItem.Status.ProviderStatus = encStatus
 		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		if operation == container.OperationDelete {
 			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 		}
 
-		// we have to persist the observed changes so lets do diRec patch
+		// we have to persist the observed changes so lets do a patch
 		if err := c.lsClient.Status().Patch(ctx, c.DeployItem, client.MergeFrom(oldDeployItem)); err != nil {
 			return lsv1alpha1helper.NewWrappedError(err,
 				operationName, "UpdateDeployItemStatus", err.Error())
@@ -174,19 +176,11 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	}
 
 	c.ProviderStatus.LastOperation = string(operation)
-	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+	if err := c.collectAndSetPodStatus(pod); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
-			operationName, "FetchPodStatus", err.Error())
+			"Reconcile", "UpdatePodStatus", err.Error())
 	}
 
-	encStatus, err := EncodeProviderStatus(c.ProviderStatus)
-	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
-			operationName, "SetProviderStatus", err.Error())
-	}
-
-	c.DeployItem.Status.ProviderStatus = encStatus
-	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
 	if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
@@ -200,27 +194,85 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	return nil
 }
 
-func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus) error {
-	containerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName)
-	if err != nil {
-		return nil
+// collectAndSetPodStatus the pod status and updates the container provider status
+func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
+	c.DeployItem.Status.Conditions = setConditionsFromPod(pod, c.DeployItem.Status.Conditions)
+	if err := setStatusFromPod(pod, c.ProviderStatus); err != nil {
+		return err
 	}
-	providerStatus.PodStatus.Image = containerStatus.Image
-	providerStatus.PodStatus.ImageID = containerStatus.ImageID
+
+	encStatus, err := EncodeProviderStatus(c.ProviderStatus)
+	if err != nil {
+		return err
+	}
+	c.DeployItem.Status.ProviderStatus = encStatus
+	return nil
+}
+
+func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
+	// if there is already a pod we need to be sure that the current observed generation is not already run.
+	if pod != nil {
+		if genString, ok := pod.Annotations[container.ContainerDeployerDeployItemGenerationLabel]; ok {
+			gen, err := strconv.Atoi(genString)
+			if err == nil {
+				if int64(gen) == c.DeployItem.Generation {
+					return false
+				}
+			}
+		}
+	}
+	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation {
+		return true
+	}
+	if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		return true
+	}
+	return false
+}
+
+func setStatusFromPod(pod *corev1.Pod, providerStatus *containerv1alpha1.ProviderStatus) error {
+	podStatus := &containerv1alpha1.PodStatus{
+		PodName: pod.Name,
+		LastRun: &pod.CreationTimestamp,
+	}
+	if providerStatus.PodStatus != nil {
+		podStatus = providerStatus.PodStatus
+	}
+
+	if mainContainerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.MainContainerName); err == nil {
+		podStatus.ContainerStatus = convertCoreContainerStatusToV1alpha1Container(mainContainerStatus)
+	}
+	if initContainerStatus, err := kutil.GetStatusForContainer(pod.Status.InitContainerStatuses, container.InitContainerName); err == nil {
+		podStatus.InitContainerStatus = convertCoreContainerStatusToV1alpha1Container(initContainerStatus)
+	}
+	if waitContainerStatus, err := kutil.GetStatusForContainer(pod.Status.ContainerStatuses, container.WaitContainerName); err == nil {
+		podStatus.WaitContainerStatus = convertCoreContainerStatusToV1alpha1Container(waitContainerStatus)
+	}
+
+	providerStatus.PodStatus = podStatus
+	return nil
+}
+
+// convertCoreContainerStatusToV1alpha1Container converts a kubernetes container status into a container deployer container status.
+func convertCoreContainerStatusToV1alpha1Container(containerStatus corev1.ContainerStatus) containerv1alpha1.ContainerStatus {
+	cs := containerv1alpha1.ContainerStatus{}
+	cs.Image = containerStatus.Image
+	cs.ImageID = containerStatus.ImageID
 
 	if containerStatus.State.Waiting != nil {
-		providerStatus.PodStatus.Message = containerStatus.State.Waiting.Message
-		providerStatus.PodStatus.Reason = containerStatus.State.Waiting.Reason
+		cs.Message = containerStatus.State.Waiting.Message
+		cs.Reason = containerStatus.State.Waiting.Reason
 	}
 	if containerStatus.State.Running != nil {
-		providerStatus.PodStatus.Reason = "Running"
+		cs.Reason = "Running"
 	}
 	if containerStatus.State.Terminated != nil {
-		providerStatus.PodStatus.Reason = containerStatus.State.Terminated.Reason
-		providerStatus.PodStatus.Message = containerStatus.State.Terminated.Message
-		providerStatus.PodStatus.ExitCode = &containerStatus.State.Terminated.ExitCode
+		cs.Reason = containerStatus.State.Terminated.Reason
+		cs.Message = containerStatus.State.Terminated.Message
+		cs.ExitCode = &containerStatus.State.Terminated.ExitCode
 	}
-	return nil
+
+	return cs
 }
 
 func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []lsv1alpha1.Condition {
@@ -285,7 +337,7 @@ func setConditionsFromPod(pod *corev1.Pod, conditions []lsv1alpha1.Condition) []
 	return conditions
 }
 
-// podIsInErrorState detects specific issues with diRec pod when the pod is in pending or progressing state.
+// podIsInErrorState detects specific issues with a pod when the pod is in pending or progressing state.
 // This should ensure that errors are detected earlier.
 // currently we only detect ErrImagePull
 func podIsInErrorState(pod *corev1.Pod) error {
@@ -335,13 +387,13 @@ func podIsInErrorState(pod *corev1.Pod) error {
 	return nil
 }
 
-// to find diRec suitable secret for images on Docker Hub, we need its two domains to do matching
+// to find a suitable secret for images on Docker Hub, we need its two domains to do matching
 const (
 	dockerHubDomain       = "docker.io"
 	dockerHubLegacyDomain = "index.docker.io"
 )
 
-// syncSecrets identifies diRec authSecrets based on diRec given registry. It then creates or updates diRec pull secret in diRec target for the matched authSecret.
+// syncSecrets identifies a authSecrets based on a given registry. It then creates or updates a pull secret in a target for the matched authSecret.
 func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference string, keyring *credentials.GeneralOciKeyring) (string, error) {
 	authConfig, ok := keyring.Get(imageReference)
 	if !ok {
@@ -350,7 +402,7 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 
 	imageref, err := dockerreference.ParseDockerRef(imageReference)
 	if err != nil {
-		return "", fmt.Errorf("Not diRec valid imageReference reference %s: %w", c.ProviderConfiguration.Image, err)
+		return "", fmt.Errorf("Not a valid imageReference reference %s: %w", c.ProviderConfiguration.Image, err)
 	}
 
 	host := dockerreference.Domain(imageref)
@@ -367,14 +419,14 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 
 	targetAuthConfigsJSON, err := json.Marshal(targetAuthConfigs)
 	if err != nil {
-		return "", fmt.Errorf("Failed to create valid auth config JSON for %s: %w", host, err)
+		return "", fmt.Errorf("failed to create valid auth config JSON for %s: %w", host, err)
 	}
 
 	authSecret := &corev1.Secret{}
 	authSecret.Name = secretName
 	authSecret.Namespace = c.Configuration.Namespace
 	authSecret.Type = corev1.SecretTypeDockerConfigJson
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, authSecret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, authSecret, func() error {
 		kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
 		authSecret.Data = map[string][]byte{
 			corev1.DockerConfigJsonKey: targetAuthConfigsJSON,
@@ -471,12 +523,12 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 		}
 
 		// currently only 2 access methods are supported: localOCIBlob and oci artifact
-		// if the resource is diRec local oci blob then the same credentials as for the component descriptor is used
+		// if the resource is a local oci blob then the same credentials as for the component descriptor is used
 		if resource.Access.GetType() == cdv2.LocalOCIBlobType {
 			return
 		}
 
-		// if the resource is diRec oci artifact then we need to parse the actual oci image reference
+		// if the resource is a oci artifact then we need to parse the actual oci image reference
 		ociRegistryAccess := &cdv2.OCIRegistryAccess{}
 		if err := cdv2.NewCodec(nil, nil, nil).Decode(resource.Access.Raw, ociRegistryAccess); err != nil {
 			erro = fmt.Errorf("unable to parse oci registry access of blueprint resource in component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
@@ -498,7 +550,7 @@ func (c *Container) SyncConfiguration(ctx context.Context) error {
 	secret := &corev1.Secret{}
 	secret.Name = ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
 	secret.Namespace = c.Configuration.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, c.hostClient, secret, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
 		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
 		secret.Data = map[string][]byte{
 			container.ConfigurationFilename: c.DeployItem.Spec.Configuration.Raw,
@@ -515,7 +567,7 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	c.log.V(3).Info("Sync export to landscaper cluster", "deployitem", kutil.ObjectKey(c.DeployItem.Name, c.DeployItem.Namespace).String())
 	secret := &corev1.Secret{}
 	key := kutil.ObjectKey(ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.Configuration.Namespace)
-	if err := c.hostClient.Get(ctx, key, secret); err != nil {
+	if err := c.directHostClient.Get(ctx, key, secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			c.log.Info("no export found for deploy item", "deployitem", key.String())
 			return nil
@@ -541,7 +593,7 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	return nil
 }
 
-// CleanupPod cleans up diRec pod that was started with the container deployer.
+// CleanupPod cleans up a pod that was started with the container deployer.
 func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
 	// only remove the finalizer if we get the status of the pod
 	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)

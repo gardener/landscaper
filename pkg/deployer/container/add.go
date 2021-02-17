@@ -5,9 +5,12 @@
 package container
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -17,10 +20,18 @@ import (
 
 func AddActuatorToManager(hostMgr manager.Manager, lsMgr manager.Manager, config *containerv1alpha1.Configuration) error {
 	ctrlLogger := ctrl.Log.WithName("controllers")
+
+	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
+		Scheme: hostMgr.GetScheme(),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
+	}
 	diRec, err := NewDeployItemReconciler(
 		ctrlLogger.WithName("ContainerDeployer"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
+		directHostClient,
 		config)
 	if err != nil {
 		return err

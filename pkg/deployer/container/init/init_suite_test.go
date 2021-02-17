@@ -26,6 +26,7 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
+	"github.com/gardener/landscaper/test/utils"
 )
 
 func TestConfig(t *testing.T) {
@@ -50,6 +51,10 @@ var _ = Describe("Constructor", func() {
 		Expect(os.Setenv(container.StatePathName, container.StatePath)).To(Succeed())
 		Expect(os.Setenv(container.ContentPathName, container.ContentPath)).To(Succeed())
 		Expect(os.Setenv(container.ComponentDescriptorPathName, container.ComponentDescriptorPath)).To(Succeed())
+
+		utils.ExpectNoError(os.Setenv(container.DeployItemName, "dummy"))
+		utils.ExpectNoError(os.Setenv(container.DeployItemNamespaceName, "val"))
+		utils.ExpectNoError(os.Setenv(container.PodNamespaceName, "default"))
 	})
 
 	AfterEach(func() {
