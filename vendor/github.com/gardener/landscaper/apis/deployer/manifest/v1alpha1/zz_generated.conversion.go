@@ -118,7 +118,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguratio
 func autoConvert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStatus, out *manifest.ProviderStatus, s conversion.Scope) error {
 	if in.ManagedResources != nil {
 		in, out := &in.ManagedResources, &out.ManagedResources
-		*out = make([]manifest.ManagedResourceStatus, len(*in))
+		*out = make(manifest.ManagedResourceStatusList, len(*in))
 		for i := range *in {
 			// TODO: Inefficient conversion - can we improve it?
 			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {

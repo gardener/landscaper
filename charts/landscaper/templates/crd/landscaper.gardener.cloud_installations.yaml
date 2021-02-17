@@ -602,7 +602,7 @@ spec:
                     description: A human readable message indicating details about the transition.
                     type: string
                   operation:
-                    description: Operation describes the operator where the error ocurred.
+                    description: Operation describes the operator where the error occurred.
                     type: string
                   reason:
                     description: The reason for the condition's last transition.

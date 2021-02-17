@@ -2278,7 +2278,7 @@ func schema_landscaper_apis_core_v1alpha1_Error(ref common.ReferenceCallback) co
 				Properties: map[string]spec.Schema{
 					"operation": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Operation describes the operator where the error ocurred.",
+							Description: "Operation describes the operator where the error occurred.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",

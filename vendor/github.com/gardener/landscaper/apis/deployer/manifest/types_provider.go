@@ -67,8 +67,11 @@ const (
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the deployer.
-	ManagedResources []ManagedResourceStatus `json:"managedResources,omitempty"`
+	ManagedResources ManagedResourceStatusList `json:"managedResources,omitempty"`
 }
+
+// ManagedResourceStatusList describes a list of managed resource statuses.
+type ManagedResourceStatusList []ManagedResourceStatus
 
 // ManagedResourceStatus describes the managed resource and their metadata.
 type ManagedResourceStatus struct {

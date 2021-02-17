@@ -131,7 +131,7 @@ type Condition struct {
 
 // Error holds information about an error that occurred.
 type Error struct {
-	// Operation describes the operator where the error ocurred.
+	// Operation describes the operator where the error occurred.
 	Operation string `json:"operation"`
 	// Last time the condition transitioned from one status to another.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
