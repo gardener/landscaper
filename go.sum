@@ -176,8 +176,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/gardener/component-cli v0.11.0 h1:JF0TyC7iD2qgoH+juuoniz3J4sG17bab7B1ZiEgHdsg=
-github.com/gardener/component-cli v0.11.0/go.mod h1:y1n5Tb3NX3OnNLr7KhG1BlrggekO/vpoICigSkQ+UrY=
+github.com/gardener/component-cli v0.13.0 h1:UZa6ZEDaudCriqbfa2zqrkwFozns5qr4FxrR7d25oQU=
+github.com/gardener/component-cli v0.13.0/go.mod h1:y1n5Tb3NX3OnNLr7KhG1BlrggekO/vpoICigSkQ+UrY=
 github.com/gardener/component-spec/bindings-go v0.0.32 h1:1za/V6R9ORWLdyPu+9VzLxg/JpS0VOMvuos9ncCzMas=
 github.com/gardener/component-spec/bindings-go v0.0.32/go.mod h1:53EIwICsuMgbY/MFCv5/lbOR5e1MQe1HY674Io+nGYE=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=

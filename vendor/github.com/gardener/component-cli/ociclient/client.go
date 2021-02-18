@@ -48,7 +48,9 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	options.ApplyOptions(opts)
 
 	if options.Resolver == nil {
-		resolver, err := credentials.NewBuilder(log.WithName("ociKeyring")).Build()
+		resolver, err := credentials.NewBuilder(log.WithName("ociKeyring")).
+			FromConfigFiles(options.Paths...).
+			Build()
 		if err != nil {
 			return nil, err
 		}
