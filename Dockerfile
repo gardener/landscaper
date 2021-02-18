@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #### BUILDER ####
-FROM eu.gcr.io/gardener-project/3rd/golang:1.15.5 AS builder
+FROM golang:1.16 AS builder
 
 WORKDIR /go/src/github.com/gardener/landscaper
 COPY . .
