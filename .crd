@@ -1,1 +1,1 @@
-charts/landscaper/templates/crd
+pkg/landscaper/crdmanager/crdresources

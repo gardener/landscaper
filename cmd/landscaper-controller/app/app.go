@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
 
@@ -74,6 +75,15 @@ func (o *options) run(ctx context.Context) error {
 	}
 
 	componentcliMetrics.RegisterCacheMetrics(controllerruntimeMetrics.Registry)
+
+	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), mgr, o.config)
+	if err != nil {
+		return fmt.Errorf("unable to setup CRD manager: %w", err)
+	}
+
+	if err := crdmgr.EnsureCRDs(); err != nil {
+		return fmt.Errorf("failed to handle CRDs: %w", err)
+	}
 
 	install.Install(mgr.GetScheme())
 

@@ -32,12 +32,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/component-spec/bindings-go/apis/v2.Source":                             schema_component_spec_bindings_go_apis_v2_Source(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef":                          schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredAccessType":             schema_component_spec_bindings_go_apis_v2_UnstructuredAccessType(ref),
+		"github.com/gardener/landscaper/apis/config.CrdManagementConfiguration":                     schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                        schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration":                     schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.MetricsConfiguration":                           schema_gardener_landscaper_apis_config_MetricsConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCICacheConfiguration":                          schema_gardener_landscaper_apis_config_OCICacheConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCIConfiguration":                               schema_gardener_landscaper_apis_config_OCIConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.RegistryConfiguration":                          schema_gardener_landscaper_apis_config_RegistryConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration":            schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":               schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LocalRegistryConfiguration":            schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration":                  schema_landscaper_apis_config_v1alpha1_MetricsConfiguration(ref),
@@ -1003,6 +1005,35 @@ func schema_component_spec_bindings_go_apis_v2_UnstructuredAccessType(ref common
 	}
 }
 
+func schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CrdManagementConfiguration contains the configuration of the CRD management",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"deployCrd": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"forceUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ForceUpdate specifies whether existing CRDs should be updated",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"deployCrd"},
+			},
+		},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1049,12 +1080,18 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.MetricsConfiguration"),
 						},
 					},
+					"crdManagement": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Ref:         ref("github.com/gardener/landscaper/apis/config.CrdManagementConfiguration"),
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
 	}
 }
 
@@ -1089,9 +1126,10 @@ func schema_gardener_landscaper_apis_config_MetricsConfiguration(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"port": {
 						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
+							Description: "Port specifies the port on which metrics are published",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},
@@ -1201,6 +1239,35 @@ func schema_gardener_landscaper_apis_config_RegistryConfiguration(ref common.Ref
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CrdManagementConfiguration contains the configuration of the CRD management",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"deployCrd": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"forceUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ForceUpdate specifies whether existing CRDs should be updated",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"deployCrd"},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1247,12 +1314,18 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration"),
 						},
 					},
+					"crdManagement": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration"),
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 
@@ -1287,9 +1360,10 @@ func schema_landscaper_apis_config_v1alpha1_MetricsConfiguration(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"port": {
 						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
+							Description: "Port specifies the port on which metrics are published",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},

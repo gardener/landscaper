@@ -21,6 +21,24 @@
         }
       }
     },
+    "config-v1alpha1-CrdManagementConfiguration": {
+      "description": "CrdManagementConfiguration contains the configuration of the CRD management",
+      "type": "object",
+      "required": [
+        "deployCrd"
+      ],
+      "properties": {
+        "deployCrd": {
+          "description": "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+          "type": "boolean",
+          "default": false
+        },
+        "forceUpdate": {
+          "description": "ForceUpdate specifies whether existing CRDs should be updated",
+          "type": "boolean"
+        }
+      }
+    },
     "config-v1alpha1-LocalRegistryConfiguration": {
       "description": "LocalRegistryConfiguration contains the configuration for a local registry",
       "type": "object",
@@ -43,6 +61,7 @@
       ],
       "properties": {
         "port": {
+          "description": "Port specifies the port on which metrics are published",
           "type": "integer",
           "format": "int32",
           "default": 0
@@ -110,6 +129,10 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "crdManagement": {
+      "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
+      "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
     "defaultOCI": {
       "$ref": "#/definitions/config-v1alpha1-OCIConfiguration",

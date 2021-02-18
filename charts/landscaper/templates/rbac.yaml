@@ -102,10 +102,16 @@ rules:
   verbs:
   - "*"
 {{- end }}
-{{- end }}
+- apiGroups:
+  - "apiextensions.k8s.io"
+  resources: 
+  - "customresourcedefinitions"
+  verbs:
+  - "*"
 - apiGroups:
   - "admissionregistration.k8s.io"
   resources:
   - "validatingwebhookconfigurations"
   verbs:
   - "*"
+{{- end }}
