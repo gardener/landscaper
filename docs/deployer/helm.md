@@ -63,18 +63,18 @@ spec:
     # Configuration of the health checks for the resources.
     # optional
     healthChecks:
-      # Allows to disable the health checks.
+      # Allows to disable the default health checks.
       # optional; set to false by default.
-      disable: true
-      # Defines the time to wait in seconds before giving up on a resource
+      disableDefault: true
+      # Defines the time to wait before giving up on a resource
       # to be healthy. Should be changed with long startup time pods.
       # optional; default to 60 seconds.
-      timeOutSeconds: 30
+      timeout: 30s
 
-    # Defines the time to wait in seconds before giving up on a resource to be deleted,
+    # Defines the time to wait before giving up on a resource to be deleted,
     # for instance when deleting resources that are not anymore managed from this DeployItem.
     # optional; default to 60 seconds.
-    deleteTimeOutSeconds: 30
+    deleteTimeout: 2m
 
     # Name of the release: helm install [name]
     name: my-release

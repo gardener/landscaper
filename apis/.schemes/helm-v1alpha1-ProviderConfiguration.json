@@ -446,6 +446,20 @@
         }
       }
     },
+    "helm-v1alpha1-HealthChecksConfiguration": {
+      "description": "HealthChecksConfiguration contains the condiguration for health checks.",
+      "type": "object",
+      "properties": {
+        "disableDefault": {
+          "description": "DisableDefault allows to disable the default health checks.",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+          "type": "string"
+        }
+      }
+    },
     "helm-v1alpha1-RemoteArchiveAccess": {
       "description": "RemoteArchiveAccess defines the remote access for a helm chart as compressed archive.",
       "type": "object",
@@ -490,6 +504,10 @@
       "default": {},
       "description": "Chart defines helm chart to be templated and applied."
     },
+    "deleteTimeout": {
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+      "type": "string"
+    },
     "exportsFromManifests": {
       "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.",
       "items": {
@@ -497,6 +515,11 @@
         "default": {}
       },
       "type": "array"
+    },
+    "healthChecks": {
+      "$ref": "#/definitions/helm-v1alpha1-HealthChecksConfiguration",
+      "default": {},
+      "description": "HealthChecks condigures the health checks."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

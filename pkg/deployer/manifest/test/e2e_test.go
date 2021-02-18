@@ -19,7 +19,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/manifest"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	manifestactuator "github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -45,7 +44,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
+		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifest.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 		ok, err := inject.ClientInto(testenv.Client, actuator)
 		Expect(ok).To(BeTrue())
@@ -94,7 +93,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
+		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifest.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 		ok, err := inject.ClientInto(testenv.Client, actuator)
 		Expect(ok).To(BeTrue())
@@ -146,7 +145,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
+		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifest.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 		ok, err := inject.ClientInto(testenv.Client, actuator)
 		Expect(ok).To(BeTrue())

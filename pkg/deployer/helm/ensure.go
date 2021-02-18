@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -24,7 +23,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
@@ -38,24 +36,31 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	currOp := "ApplyFile"
 	_, targetClient, err := h.TargetClient()
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
-		return err
 	}
 
 	objects, err := kutil.ParseFiles(h.log, files)
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
-		return err
+	}
+
+	if h.ProviderStatus == nil {
+		h.ProviderStatus = &helmv1alpha1.ProviderStatus{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
+				Kind:       "ProviderStatus",
+			},
+			ManagedResources: make([]lsv1alpha1.TypedObjectReference, 0),
+		}
 	}
 
 	for _, obj := range objects {
 		exports, err = h.addExport(exports, obj)
 		if err != nil {
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "ReadExportValues", err.Error())
-			return err
 		}
 		h.injectLabels(obj)
 	}
@@ -81,43 +86,30 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			},
 		}
 	}
+	h.ProviderStatus.ManagedResources = managedResources
 
-	if h.ProviderStatus != nil {
-		if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-				currOp, "CleanupOrphanedResources", err.Error())
-			return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-		}
+	if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
+		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "CleanupOrphanedResources", err.Error())
 	}
 
-	status := &helmv1alpha1.ProviderStatus{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
-			Kind:       "ProviderStatus",
-		},
-		ManagedResources: managedResources,
-	}
-	statusData, err := encodeStatus(status)
+	h.DeployItem.Status.ProviderStatus, err = encodeStatus(h.ProviderStatus)
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
-		return err
+	}
+	if err := h.kubeClient.Status().Update(ctx, h.DeployItem); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "UpdateStatus", err.Error())
 	}
 
 	if err := h.createOrUpdateExport(ctx, exports); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CreateExport", err.Error())
-		return err
 	}
 
-	h.DeployItem.Status.ProviderStatus = statusData
-	if err := h.kubeClient.Status().Update(ctx, h.DeployItem); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-			currOp, "UpdateStatus", err.Error())
-		return err
-	}
-
-	if h.ProviderConfiguration.HealthChecks.Disable {
+	if h.ProviderConfiguration.HealthChecks.DisableDefault {
 		h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 		h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
 		h.DeployItem.Status.LastError = nil
@@ -130,30 +122,23 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 // CheckResourcesHealth checks if the managed resources are Ready/Healthy.
 func (h *Helm) CheckResourcesHealth(ctx context.Context) error {
 	var (
-		currOp      = "CheckResourcesHealthHelm"
-		helmDecoder = serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
-		status      = &helm.ProviderStatus{}
+		currOp = "CheckResourcesHealthHelm"
 	)
 
-	if _, _, err := helmDecoder.Decode(h.DeployItem.Status.ProviderStatus.Raw, nil, status); err != nil {
-		return err
-	}
-
-	if len(status.ManagedResources) == 0 {
+	if len(h.ProviderStatus.ManagedResources) == 0 {
 		return nil
 	}
 
-	objects := make([]*unstructured.Unstructured, len(status.ManagedResources))
-	for i, ref := range status.ManagedResources {
+	objects := make([]*unstructured.Unstructured, len(h.ProviderStatus.ManagedResources))
+	for i, ref := range h.ProviderStatus.ManagedResources {
 		obj := kutil.ObjectFromTypedObjectReference(&ref)
 		objects[i] = obj
 	}
 
-	timeOut := time.Duration(h.ProviderConfiguration.HealthChecks.TimeOutSeconds) * time.Second
-	if err := health.WaitObjectsHealthy(ctx, timeOut, h.log, h.kubeClient, objects); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+	timeout, _ := time.ParseDuration(h.ProviderConfiguration.HealthChecks.Timeout)
+	if err := health.WaitObjectsHealthy(ctx, timeout, h.log, h.kubeClient, objects); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CheckResourcesReadiness", err.Error())
-		return err
 	}
 
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
@@ -241,19 +226,19 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, &currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "GetObject", err.Error())
-			return err
 		}
 		if err := kubeClient.Create(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "CreateObject", err.Error())
-			return err
 		}
 		return nil
 	}
 
+	// Set the required and immutable fields from the current object.
+	// Update fails if these fields are missing
 	if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
 		return err
 	}
@@ -262,22 +247,19 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 	case helmv1alpha1.UpdateStrategyUpdate:
 		if err := kubeClient.Update(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "ApplyObject", err.Error())
-			return err
 		}
 	case helmv1alpha1.UpdateStrategyPatch:
 		if err := kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "ApplyObject", err.Error())
-			return err
 		}
 	default:
 		err := fmt.Errorf("%s is not a valid update strategy", h.ProviderConfiguration.UpdateStrategy)
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ApplyObject", err.Error())
-		return err
 	}
 	return nil
 }
@@ -306,8 +288,8 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 				// Delete object and ensure it is deleted from the cluster.
-				timeOut := time.Duration(h.ProviderConfiguration.DeleteTimeOutSeconds) * time.Second
-				err := kutil.DeleteAndWaitForObjectDeleted(ctx, kubeClient, timeOut, obj)
+				timeout, _ := time.ParseDuration(h.ProviderConfiguration.DeleteTimeout)
+				err := kutil.DeleteAndWaitForObjectDeleted(ctx, kubeClient, timeout, obj)
 				if err != nil {
 					allErrs = append(allErrs, err)
 				}

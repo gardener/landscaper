@@ -34,7 +34,7 @@ type StatusType string
 
 // WaitObjectsHealthy waits for objects to be heatlhy and
 // returns an error if all the objects are not healthy after the timeout.
-func WaitObjectsHealthy(ctx context.Context, timeOut time.Duration, log logr.Logger, kubeClient client.Client, objects []*unstructured.Unstructured) error {
+func WaitObjectsHealthy(ctx context.Context, timeout time.Duration, log logr.Logger, kubeClient client.Client, objects []*unstructured.Unstructured) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -45,7 +45,7 @@ func WaitObjectsHealthy(ctx context.Context, timeOut time.Duration, log logr.Log
 		notHealthyErrs []error
 	)
 
-	_ = wait.PollImmediate(5*time.Second, timeOut, func() (bool, error) {
+	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
 		log.V(3).Info("wait resources healthy", "try", try)
 		try++
 
@@ -88,6 +88,8 @@ func WaitObjectsHealthy(ctx context.Context, timeOut time.Duration, log logr.Log
 	return nil
 }
 
+// ObjectNotHealthyError holds information about an unhealthy object
+// and implements the go error interface.
 type ObjectNotHealthyError struct {
 	kind      string
 	name      string
@@ -95,6 +97,7 @@ type ObjectNotHealthyError struct {
 	err       error
 }
 
+// Error implements the go error interface.
 func (e *ObjectNotHealthyError) Error() string {
 	return fmt.Sprintf("%s %s/%s is not healthy: %s",
 		e.kind,

@@ -33,7 +33,7 @@
       }
     }
   },
-  "description": "ProviderStatus is the helm provider specific status",
+  "description": "ProviderStatus is the manifest provider specific status",
   "properties": {
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
@@ -44,7 +44,7 @@
       "type": "string"
     },
     "managedResources": {
-      "description": "ManagedResources contains all kubernetes resources that are deployed by the helm deployer.",
+      "description": "ManagedResources contains all kubernetes resources that are deployed by the manifest deployer.",
       "items": {
         "$ref": "#/definitions/core-v1alpha1-TypedObjectReference",
         "default": {}

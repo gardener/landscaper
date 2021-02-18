@@ -214,8 +214,8 @@ func Convert_helm_ExportFromManifestItem_To_v1alpha1_ExportFromManifestItem(in *
 }
 
 func autoConvert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguration(in *HealthChecksConfiguration, out *helm.HealthChecksConfiguration, s conversion.Scope) error {
-	out.Disable = in.Disable
-	out.TimeOutSeconds = in.TimeOutSeconds
+	out.DisableDefault = in.DisableDefault
+	out.Timeout = in.Timeout
 	return nil
 }
 
@@ -225,8 +225,8 @@ func Convert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguratio
 }
 
 func autoConvert_helm_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *helm.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
-	out.Disable = in.Disable
-	out.TimeOutSeconds = in.TimeOutSeconds
+	out.DisableDefault = in.DisableDefault
+	out.Timeout = in.Timeout
 	return nil
 }
 
@@ -241,7 +241,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	if err := Convert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeOutSeconds = in.DeleteTimeOutSeconds
+	out.DeleteTimeout = in.DeleteTimeout
 	if err := Convert_v1alpha1_Chart_To_helm_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	if err := Convert_helm_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeOutSeconds = in.DeleteTimeOutSeconds
+	out.DeleteTimeout = in.DeleteTimeout
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	if err := Convert_helm_Chart_To_v1alpha1_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err

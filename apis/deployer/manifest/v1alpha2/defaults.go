@@ -17,11 +17,11 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	if len(obj.UpdateStrategy) == 0 {
 		obj.UpdateStrategy = UpdateStrategyUpdate
 	}
-	if obj.HealthChecks.TimeOutSeconds == 0 {
-		obj.HealthChecks.TimeOutSeconds = 60
+	if len(obj.HealthChecks.Timeout) == 0 {
+		obj.HealthChecks.Timeout = "60s"
 	}
-	if obj.DeleteTimeOutSeconds == 0 {
-		obj.DeleteTimeOutSeconds = 60
+	if len(obj.DeleteTimeout) == 0 {
+		obj.DeleteTimeout = "60s"
 	}
 	for i := range obj.Manifests {
 		if len(obj.Manifests[i].Policy) == 0 {

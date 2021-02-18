@@ -6,6 +6,8 @@ package validation
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -16,6 +18,8 @@ import (
 // ValidateProviderConfiguration validates a helm deployer configuration
 func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) error {
 	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
+	allErrs = append(allErrs, ValidateTimeout(field.NewPath("healthChecks", "timeout"), config.HealthChecks.Timeout)...)
 	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
 
 	expPath := field.NewPath("exportsFromManifests")
@@ -116,5 +120,17 @@ func ValidateFromResource(fldPath *field.Path, resourceRef *helmv1alpha1.RemoteC
 		}
 	}
 
+	return allErrs
+}
+
+// ValidateTimeout validates that a timeout can be parsed as Duration.
+func ValidateTimeout(fldPath *field.Path, timeout string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if strings.HasPrefix(timeout, "-") {
+		allErrs = append(allErrs, field.Invalid(fldPath, timeout, "timeout can not be negative"))
+	}
+	if _, err := time.ParseDuration(timeout); err != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath, timeout, "invalid duration string"))
+	}
 	return allErrs
 }

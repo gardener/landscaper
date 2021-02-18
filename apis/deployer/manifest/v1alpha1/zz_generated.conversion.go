@@ -90,8 +90,8 @@ func Convert_manifest_Configuration_To_v1alpha1_Configuration(in *manifest.Confi
 }
 
 func autoConvert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
-	out.Disable = in.Disable
-	out.TimeOutSeconds = in.TimeOutSeconds
+	out.DisableDefault = in.DisableDefault
+	out.Timeout = in.Timeout
 	return nil
 }
 
@@ -101,8 +101,8 @@ func Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfigur
 }
 
 func autoConvert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *manifest.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
-	out.Disable = in.Disable
-	out.TimeOutSeconds = in.TimeOutSeconds
+	out.DisableDefault = in.DisableDefault
+	out.Timeout = in.Timeout
 	return nil
 }
 
@@ -117,7 +117,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	if err := Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeOutSeconds = in.DeleteTimeOutSeconds
+	out.DeleteTimeout = in.DeleteTimeout
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]manifest.Manifest, len(*in))
@@ -139,7 +139,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguratio
 	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeOutSeconds = in.DeleteTimeOutSeconds
+	out.DeleteTimeout = in.DeleteTimeout
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]*runtime.RawExtension, len(*in))
