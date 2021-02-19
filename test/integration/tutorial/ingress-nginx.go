@@ -22,9 +22,8 @@ import (
 )
 
 func NginxIngressTest(f *framework.Framework) {
-	dumper := f.Register()
-
 	_ = ginkgo.Describe("SimpleNginxTest", func() {
+		dumper := f.Register()
 
 		ginkgo.It("should deploy a nginx ingress controller", func() {
 			var (
@@ -45,7 +44,7 @@ func NginxIngressTest(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
+			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -92,6 +91,7 @@ func NginxIngressTest(f *framework.Framework) {
 	})
 
 	_ = ginkgo.Describe("LocalIngressNginxTest", func() {
+		dumper := f.Register()
 
 		ginkgo.It("should deploy a nginx ingress controller with local artifacts", func() {
 			var (
@@ -112,7 +112,7 @@ func NginxIngressTest(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
+			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 

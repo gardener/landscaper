@@ -1203,8 +1203,16 @@ func schema_gardener_landscaper_apis_config_OCIConfiguration(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"insecureSkipVerify": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InsecureSkipVerify skips the certificate validation of the oci registry",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"allowPlainHttp"},
+				Required: []string{"allowPlainHttp", "insecureSkipVerify"},
 			},
 		},
 		Dependencies: []string{
@@ -1437,8 +1445,16 @@ func schema_landscaper_apis_config_v1alpha1_OCIConfiguration(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"insecureSkipVerify": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InsecureSkipVerify skips the certificate validation of the oci registry",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"allowPlainHttp"},
+				Required: []string{"allowPlainHttp", "insecureSkipVerify"},
 			},
 		},
 		Dependencies: []string{

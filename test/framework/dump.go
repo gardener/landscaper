@@ -60,7 +60,24 @@ func (d *Dumper) ClearNamespaces() {
 // - DeployItems
 // todo: add additional resources
 func (d *Dumper) Dump(ctx context.Context) error {
+	d.logger.Logln("Dump")
+	if err := d.DumpNamespaces(ctx); err != nil {
+		return err
+	}
+	if len(d.lsNamespace) != 0 {
+		// dump ls logs and deployment status
+		d.logger.Logfln("--- Landscaper Controller in %s\n", d.lsNamespace)
+		if err := d.DumpLandscaperResources(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpNamespaces dumps information about all configured namespaces.
+func (d *Dumper) DumpNamespaces(ctx context.Context) error {
 	for ns := range d.namespaces {
+		d.logger.Logfln("Dump %s", ns)
 		// check if namespace exists
 		if err := d.kubeClient.Get(ctx, kutil.ObjectKey(ns, ""), &corev1.Namespace{}); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -80,11 +97,7 @@ func (d *Dumper) Dump(ctx context.Context) error {
 		if err := d.DumpConfigMapsInNamespace(ctx, ns); err != nil {
 			return err
 		}
-	}
-	if len(d.lsNamespace) != 0 {
-		// dump ls logs and deployment status
-		d.logger.Logfln("--- Landscaper Controller in %s\n", d.lsNamespace)
-		if err := d.DumpLandscaperResources(ctx); err != nil {
+		if err := d.DumpDeploymentsInNamespace(ctx, ns); err != nil {
 			return err
 		}
 	}
@@ -132,10 +145,15 @@ func DumpDeployItems(logger simplelogger.Logger, deployItem *lsv1alpha1.DeployIt
 Type: %s
 Config: %s
 `
+
+	configData, err := deployItem.Spec.Configuration.Marshal()
+	if err != nil {
+		configData = []byte(fmt.Sprintf("error: %s", err.Error()))
+	}
 	logger.Logf(fmtMsg,
 		deployItem.Name,
 		deployItem.Spec.Type,
-		FormatAsYAML(deployItem.Spec.Configuration, "  "))
+		ApplyIdent(string(configData), 2))
 	fmtMsg = `
 Status:
   Phase: %s
@@ -220,9 +238,25 @@ func (d *Dumper) FormatPodsWithSelector(ctx context.Context, indent int, opts ..
 	}
 	podList := make([]string, len(pods.Items))
 	for i, pod := range pods.Items {
-		podList[i] = FormatPod(ctx, d.logger, &pod, d.kubeClientSet, 0)
+		podList[i] = FormatPod(ctx, &pod, d.kubeClientSet, 0)
 	}
 	return FormatList(podList, indent)
+}
+
+// DumpDeploymentsInNamespace dumps all deployment resources in a namespace.
+func (d *Dumper) DumpDeploymentsInNamespace(ctx context.Context, ns string) error {
+	deployments := &appsv1.DeploymentList{}
+	if err := d.kubeClient.List(ctx, deployments, client.InNamespace(ns)); err != nil {
+		return fmt.Errorf("unable to list deployments for namespace %q: %w", ns, err)
+	}
+	for _, deploy := range deployments.Items {
+		if err := DumpDeployment(d.logger, &deploy); err != nil {
+			return err
+		}
+		d.logger.Logf("Pods: %s",
+			d.FormatPodsWithSelector(ctx, 2, client.InNamespace(d.lsNamespace), client.MatchingLabels(deploy.Spec.Template.Labels)))
+	}
+	return nil
 }
 
 // DumpDeployment dumps information about the deployment
@@ -258,7 +292,7 @@ Image: %s
 
 // FormatPod returns information about the pod.
 // It also fetches the pods logs if a client is provided.
-func FormatPod(ctx context.Context, logger simplelogger.Logger, pod *corev1.Pod, kubeClientSet kubernetes.Interface, indent int) string {
+func FormatPod(ctx context.Context, pod *corev1.Pod, kubeClientSet kubernetes.Interface, indent int) string {
 	podFmt := `
 Name: %s
 Containers: %s

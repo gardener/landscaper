@@ -56,6 +56,8 @@ type Options struct {
 
 	// CustomMediaTypes defines the custom known media types
 	CustomMediaTypes sets.String
+
+	HTTPClient *http.Client
 }
 
 // Option is the interface to specify different cache options
@@ -125,4 +127,12 @@ type AllowPlainHttp bool
 
 func (c AllowPlainHttp) ApplyOption(options *Options) {
 	options.AllowPlainHttp = bool(c)
+}
+
+// WithHTTPClient configures the http client.
+type WithHTTPClient http.Client
+
+func (c WithHTTPClient) ApplyOption(options *Options) {
+	client := http.Client(c)
+	options.HTTPClient = &client
 }

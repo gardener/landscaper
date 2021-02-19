@@ -20,7 +20,8 @@
       "description": "OCIConfiguration holds configuration for the oci registry",
       "type": "object",
       "required": [
-        "allowPlainHttp"
+        "allowPlainHttp",
+        "insecureSkipVerify"
       ],
       "properties": {
         "allowPlainHttp": {
@@ -39,6 +40,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "insecureSkipVerify": {
+          "description": "InsecureSkipVerify skips the certificate validation of the oci registry",
+          "type": "boolean",
+          "default": false
         }
       }
     },

@@ -2,6 +2,7 @@ tmp
 
 /dev
 .vscode
+.run
 
 .idea
 .DS_Store

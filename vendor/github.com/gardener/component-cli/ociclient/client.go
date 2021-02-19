@@ -31,6 +31,7 @@ type client struct {
 	resolver       Resolver
 	cache          cache.Cache
 	allowPlainHttp bool
+	httpClient     *http.Client
 
 	knownMediaTypes sets.String
 }
@@ -72,9 +73,14 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 		options.Cache = c
 	}
 
+	if options.HTTPClient == nil {
+		options.HTTPClient = http.DefaultClient
+	}
+
 	return &client{
 		log:             log,
 		allowPlainHttp:  options.AllowPlainHttp,
+		httpClient:      options.HTTPClient,
 		resolver:        options.Resolver,
 		cache:           options.Cache,
 		knownMediaTypes: DefaultKnownMediaTypes.Union(options.CustomMediaTypes),
@@ -87,7 +93,7 @@ func (c *client) InjectCache(cache cache.Cache) error {
 }
 
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
-	resolver, err := c.resolver.Resolver(ctx, ref, http.DefaultClient, c.allowPlainHttp)
+	resolver, err := c.resolver.Resolver(ctx, ref, c.httpClient, c.allowPlainHttp)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +142,7 @@ func (c *client) getFetchReader(ctx context.Context, ref string, desc ocispecv1.
 		}
 	}
 
-	resolver, err := c.resolver.Resolver(context.Background(), ref, http.DefaultClient, c.allowPlainHttp)
+	resolver, err := c.resolver.Resolver(context.Background(), ref, c.httpClient, c.allowPlainHttp)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +167,7 @@ func (c *client) getFetchReader(ctx context.Context, ref string, desc ocispecv1.
 }
 
 func (c *client) PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error {
-	resolver, err := c.resolver.Resolver(context.Background(), ref, http.DefaultClient, c.allowPlainHttp)
+	resolver, err := c.resolver.Resolver(context.Background(), ref, c.httpClient, c.allowPlainHttp)
 	if err != nil {
 		return err
 	}

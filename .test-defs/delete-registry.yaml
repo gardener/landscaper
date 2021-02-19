@@ -1,9 +1,9 @@
 kind: TestDefinition
 metadata:
-  name: delete-cluster
+  name: delete-registry
 spec:
   owner: gardener-oq@listserv.sap.com
-  description: deletes a previously created test cluster
+  description: deletes a previously created test registry
   activeDeadlineSeconds: 900
 
   command: [bash, -c]
@@ -12,7 +12,8 @@ spec:
     go run -mod=vendor ./hack/testcluster delete
     --kubeconfig=$TM_KUBECONFIG_PATH/testmachinery.config
     --namespace=kind
-    --enable-registry=false
+    --enable-registry
+    --enable-cluster=false
     --id=$TM_TESTRUN_ID$CLUSTER_NAME
     --timeout=10m
 

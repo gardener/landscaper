@@ -213,30 +213,32 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 
 // CreateInternalKubernetesTarget creates a new target of type kubernetes
 // whereas the hostname of the cluster will be set to the cluster internal host
-func CreateInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config) (*lsv1alpha1.Target, error) {
-	oldHost := restConfig.Host
-	defer func() {
-		restConfig.Host = oldHost
-	}()
+func CreateInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config, internal bool) (*lsv1alpha1.Target, error) {
+	if internal {
+		oldHost := restConfig.Host
+		defer func() {
+			restConfig.Host = oldHost
+		}()
 
-	// get the kubernetes internal port of the kubernetes svc
-	// it is expected that the kubernetes svc is in the default namespace with the name "kubernetes"
-	const (
-		kubernetesSvcName      = "kubernetes"
-		kubernetesSvcNamespace = "default"
-	)
-	svc := &corev1.Service{}
-	if err := kubeClient.Get(ctx, kutil.ObjectKey(kubernetesSvcName, kubernetesSvcNamespace), svc); err != nil {
-		return nil, err
+		// get the kubernetes internal port of the kubernetes svc
+		// it is expected that the kubernetes svc is in the default namespace with the name "kubernetes"
+		const (
+			kubernetesSvcName      = "kubernetes"
+			kubernetesSvcNamespace = "default"
+		)
+		svc := &corev1.Service{}
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(kubernetesSvcName, kubernetesSvcNamespace), svc); err != nil {
+			return nil, err
+		}
+		if len(svc.Spec.Ports) != 1 {
+			return nil, fmt.Errorf("unexpected number of ports of the kubernetes service %d", len(svc.Spec.Ports))
+		}
+		u, err := url.Parse(oldHost)
+		if err != nil {
+			return nil, err
+		}
+		u.Host = fmt.Sprintf("%s.%s:%d", kubernetesSvcName, kubernetesSvcNamespace, svc.Spec.Ports[0].Port)
+		restConfig.Host = u.String()
 	}
-	if len(svc.Spec.Ports) != 1 {
-		return nil, fmt.Errorf("unexpected number of ports of the kubernetes service %d", len(svc.Spec.Ports))
-	}
-	u, err := url.Parse(oldHost)
-	if err != nil {
-		return nil, err
-	}
-	u.Host = fmt.Sprintf("%s.%s:%d", kubernetesSvcName, kubernetesSvcNamespace, svc.Spec.Ports[0].Port)
-	restConfig.Host = u.String()
 	return CreateKubernetesTarget(namespace, name, restConfig)
 }

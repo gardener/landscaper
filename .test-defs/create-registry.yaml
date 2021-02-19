@@ -1,9 +1,9 @@
 kind: TestDefinition
 metadata:
-  name: create-cluster
+  name: create-registry
 spec:
   owner: gardener-oq@listserv.sap.com
-  description: creates a test cluster and exposes its kubeconfig at $TM_KUBECONFIG_PATH/kind.config
+  description: creates a test registry and exposes its credentials at $TM_SHARED_PATH/docker.config
   activeDeadlineSeconds: 900
 
   command: [bash, -c]
@@ -12,9 +12,10 @@ spec:
     go run -mod=vendor ./hack/testcluster create
     --kubeconfig=$TM_KUBECONFIG_PATH/$HOST_CLUSTER_CONFIG
     --namespace=kind
-    --export=$TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
-    --id=$TM_TESTRUN_ID$CLUSTER_NAME
-    --enable-registry=false
+    --id=$TM_TESTRUN_ID
+    --enable-registry
+    --enable-cluster=false
+    --registry-auth=$TM_SHARED_PATH/docker.config
     --address-format=ip
     --timeout=10m
 
