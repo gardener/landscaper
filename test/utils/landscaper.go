@@ -65,6 +65,31 @@ func WaitForObjectDeletion(
 	return nil
 }
 
+// WaitForDeployItemToSucceed waits for a DeployItem to be in phase Succeeded
+func WaitForDeployItemToSucceed(
+	ctx context.Context,
+	kubeClient client.Client,
+	obj client.Object,
+	timeout time.Duration) error {
+	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {
+		di := &lsv1alpha1.DeployItem{}
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), di); err != nil {
+			if apierrors.IsNotFound(err) {
+				return false, err
+			}
+			return false, nil
+		}
+		if di.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("error while waiting for DeployItem %q to succeed: %w", obj.GetName(), err)
+	}
+	return nil
+}
+
 // GetDeployItemsOfInstallation returns all direct deploy items of the installation.
 // It does not return deploy items of subinstllations
 // todo: for further tests create recursive installation navigator

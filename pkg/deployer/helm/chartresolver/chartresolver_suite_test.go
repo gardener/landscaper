@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -20,13 +19,13 @@ import (
 	logtesting "github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	chartloader "helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
+
+	utils "github.com/gardener/landscaper/test/utils"
 )
 
 func TestConfig(t *testing.T) {
@@ -107,7 +106,7 @@ var _ = Describe("GetChart", func() {
 		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
 		Expect(err).ToNot(HaveOccurred())
 
-		chartBytes, closer := readChartFrom("./testdata/testchart")
+		chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 
 		chartAccess := &helmv1alpha1.Chart{
@@ -140,7 +139,7 @@ var _ = Describe("GetChart", func() {
 			ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
 			Expect(err).ToNot(HaveOccurred())
 
-			chartBytes, closer := readChartFrom("./testdata/testchart")
+			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
 			defer closer()
 
 			srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -164,20 +163,3 @@ var _ = Describe("GetChart", func() {
 	})
 
 })
-
-func readChartFrom(path string) ([]byte, func()) {
-	chart, err := chartloader.LoadDir(path)
-	Expect(err).ToNot(HaveOccurred())
-	tempDir, err := ioutil.TempDir(os.TempDir(), "chart-")
-	Expect(err).ToNot(HaveOccurred())
-	closer := func() {
-		Expect(os.RemoveAll(tempDir)).To(Succeed())
-	}
-
-	chartPath, err := chartutil.Save(chart, tempDir)
-	Expect(err).ToNot(HaveOccurred())
-
-	chartBytes, err := ioutil.ReadFile(chartPath)
-	Expect(err).ToNot(HaveOccurred())
-	return chartBytes, closer
-}

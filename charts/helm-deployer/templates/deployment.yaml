@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "deployer.fullname" . }}
+  labels:
+    {{- include "deployer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "deployer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "deployer-config" . |  sha256sum }}
+        checksum/registrysecrets: {{ toJson .Values.deployer.oci |  sha256sum }}
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value}}
+        {{- end }}
+      labels:
+        {{- include "deployer.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "deployer.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          - "--config=/app/ls/config/config.yaml"
+          {{- if .Values.deployer.verbosityLevel }}
+          - "-v={{ .Values.deployer.verbosityLevel }}"
+          {{- end }}
+          volumeMounts:
+          - name: config
+            mountPath: /app/ls/config/
+          {{- if .Values.deployer.oci }}
+          - name: ociregistry
+            mountPath: /app/ls/registry/
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: config
+        secret:
+          secretName: {{ include "deployer.fullname" . }}-config
+      {{- if .Values.deployer.oci }}
+      - name: ociregistry
+        secret:
+          secretName: {{ include "deployer.fullname" . }}-registries
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

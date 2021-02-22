@@ -1,0 +1,50 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: releaseName
+  schema:
+    type: string
+- name: releaseNamespace
+  schema: 
+    type: string
+- name: values
+  schema:
+    type: object
+
+deployExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: deploy
+      type: landscaper.gardener.cloud/helm
+      target: 
+        name: {{ .imports.cluster.metadata.name }}
+        namespace: {{ .imports.cluster.metadata.namespace }}
+      config:
+        apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        updateStrategy: update
+        name: {{ .imports.releaseName }}
+        namespace: {{ .imports.releaseNamespace }}
+        chart:
+          {{ $resource := getResource .cd "name" "mock-deployer-chart" }}
+          ref: {{ $resource.access.imageReference }}    
+    
+    {{ $values := dict "values" .imports.values }}
+
+    {{ $imgresource := getResource .cd "name" "mock-deployer-image" }}
+    {{ $imgrepo := ociRefRepo $imgresource.access.imageReference }}
+    {{ $imgtag := ociRefVersion $imgresource.access.imageReference }}
+    
+    {{ $image := dict "image" .imports.values.image }}
+    {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
+    {{ $newimg := dict "image" $imgref }}
+    {{ $newval := dict "values" $newimg }}
+
+    {{ $val := mergeOverwrite $values $newval }}   
+    {{ toYaml $val | indent 4 }}
+   

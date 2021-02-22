@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "deployer.fullname" . }}
+  labels:
+    {{- include "deployer.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - landscaper.gardener.cloud
+  resources:
+  - deployitems
+  - deployitems/status
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+- apiGroups:
+  - landscaper.gardener.cloud
+  resources:
+  - targets
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - "events"
+  verbs:
+  - create
+{{- end }}

@@ -32,7 +32,7 @@ image:
   repository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  #tag: ""
 
 imagePullSecrets: []
 nameOverride: ""

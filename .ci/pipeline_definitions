@@ -37,6 +37,10 @@ landscaper:
             registry: 'gcr-readwrite'
             target: 'container-deployer-wait'
             image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
+          mock-deployer-controller:
+            registry: 'gcr-readwrite'
+            target: 'mock-deployer-controller'
+            image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
     steps:
       verify:
         image: 'golang:1.16'

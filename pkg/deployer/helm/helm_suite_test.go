@@ -7,22 +7,19 @@ package helm_test
 import (
 	"context"
 	"encoding/base64"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
 	logtesting "github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	chartloader "helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -60,7 +57,7 @@ var _ = Describe("RunInstallation", func() {
 
 		kubeconfig, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
-		chartData, closer := readChartFrom("./testdata/testchart")
+		chartData, closer := utils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 		helmConfig := &helmv1alpha1.ProviderConfiguration{}
 		helmConfig.Kubeconfig = base64.StdEncoding.EncodeToString(kubeconfig)
@@ -89,20 +86,3 @@ var _ = Describe("RunInstallation", func() {
 		Expect(objects).To(HaveLen(1))
 	})
 })
-
-func readChartFrom(path string) ([]byte, func()) {
-	chart, err := chartloader.LoadDir(path)
-	Expect(err).ToNot(HaveOccurred())
-	tempDir, err := ioutil.TempDir(os.TempDir(), "chart-")
-	Expect(err).ToNot(HaveOccurred())
-	closer := func() {
-		Expect(os.RemoveAll(tempDir)).To(Succeed())
-	}
-
-	chartPath, err := chartutil.Save(chart, tempDir)
-	Expect(err).ToNot(HaveOccurred())
-
-	chartBytes, err := ioutil.ReadFile(chartPath)
-	Expect(err).ToNot(HaveOccurred())
-	return chartBytes, closer
-}
