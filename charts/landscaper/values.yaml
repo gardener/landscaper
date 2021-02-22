@@ -26,6 +26,13 @@ landscaper:
 #  - container
 #  - helm
 #  - mock
+  deployersConfig: {}
+#    container:
+#      apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+#      kind: Configuration
+#      ...
+
+
 
 replicaCount: 1
 

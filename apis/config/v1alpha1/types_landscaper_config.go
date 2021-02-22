@@ -17,9 +17,6 @@ type LandscaperConfiguration struct {
 	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
 	// +optional
 	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
-	// DefaultOCI defines the default oci configuration which is used
-	// if it's not overwritten by more specific configuration.
-	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
 	Registry RegistryConfiguration `json:"registry"`
 	// Metrics allows to configure how metrics are exposed

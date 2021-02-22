@@ -24,6 +24,7 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	"github.com/gardener/landscaper/pkg/version"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,6 +59,7 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
+	o.log.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
 
 	opts := manager.Options{
 		LeaderElection:     false,
@@ -100,24 +102,32 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to register validation webhook: %w", err)
 	}
 
-	for _, deployerName := range o.enabledDeployers {
+	for _, deployerName := range o.deployer.EnabledDeployers {
+		o.log.Info("Enable Deployer", "name", deployerName)
 		if deployerName == "container" {
-			config := &containerv1alpha1.Configuration{
-				OCI: o.config.Registry.OCI,
+			config := &containerv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
 			}
+			config.OCI = o.config.Registry.OCI
 			containerctlr.DefaultConfiguration(config)
 			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
 		} else if deployerName == "helm" {
-			config := &helmv1alpha1.Configuration{
-				OCI: o.config.Registry.OCI,
+			config := &helmv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
 			}
+			config.OCI = o.config.Registry.OCI
 			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "manifest" {
 			config := &manifestv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
+			}
 			if err := manifestctlr.AddActuatorToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
@@ -130,7 +140,7 @@ func (o *options) run(ctx context.Context) error {
 		}
 	}
 
-	o.log.Info("starting the controller")
+	o.log.Info("starting the controllers")
 	if err := mgr.Start(ctx); err != nil {
 		o.log.Error(err, "error while running manager")
 		os.Exit(1)

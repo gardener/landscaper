@@ -39,11 +39,6 @@ func (in *LandscaperConfiguration) DeepCopyInto(out *LandscaperConfiguration) {
 		*out = new(v2.RepositoryContext)
 		**out = **in
 	}
-	if in.DefaultOCI != nil {
-		in, out := &in.DefaultOCI, &out.DefaultOCI
-		*out = new(OCIConfiguration)
-		(*in).DeepCopyInto(*out)
-	}
 	in.Registry.DeepCopyInto(&out.Registry)
 	if in.Metrics != nil {
 		in, out := &in.Metrics, &out.Metrics

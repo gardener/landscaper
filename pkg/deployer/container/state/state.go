@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"sort"
@@ -26,53 +25,46 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
-	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
-	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // State handles the backup and restore of state of container deploy item.
 type State struct {
-	log     logr.Logger
-	backoff wait.Backoff
+	log logr.Logger
 
 	deployItem lsv1alpha1.ObjectReference
+	// namespace is the namespace where the state secrets should be created.
+	namespace  string
 	kubeClient client.Client
+	fs         vfs.FileSystem
 	path       string
 }
 
 // New creates a new state instance.
-func New(log logr.Logger, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
+func New(log logr.Logger, kubeClient client.Client, namespace string, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
 	return &State{
 		log:        log,
 		deployItem: deployItemKey,
+		namespace:  namespace,
 		kubeClient: kubeClient,
+		fs:         osfs.New(),
 		path:       statePath,
-		backoff: wait.Backoff{
-			Duration: 10 * time.Second,
-			Factor:   1.2,
-			Jitter:   0,
-			Steps:    math.MaxInt32,
-			Cap:      10,
-		},
 	}
 }
 
-// WithBackoff configures the state to use a spoecific backoff
-func (s *State) WithBackoff(backoff wait.Backoff) *State {
-	s.backoff = backoff
+// WithFs sets the fs for the state
+func (s *State) WithFs(fs vfs.FileSystem) *State {
+	s.fs = fs
 	return s
 }
 
 // Backup tars the content of the State directory and stores it in a secrets in the cluster.
 func (s *State) Backup(ctx context.Context) error {
 	// do nothing if there is no State to persist
-	files, err := ioutil.ReadDir(s.path)
+	files, err := vfs.ReadDir(s.fs, s.path)
 	if err != nil {
 		return err
 	}
@@ -84,11 +76,11 @@ func (s *State) Backup(ctx context.Context) error {
 	// tar and gzip the State content
 
 	// todo: check if it would be possible to have the whole State in memory.
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "state-")
+	tmpFile, err := vfs.TempFile(s.fs, s.fs.FSTempDir(), "state-")
 	if err != nil {
 		return err
 	}
-	if err := utils.BuildTarGzip(osfs.New(), s.path, tmpFile); err != nil {
+	if err := utils.BuildTarGzip(s.fs, s.path, tmpFile); err != nil {
 		tmpFile.Close()
 		return errors.Wrap(err, "unable to tar and gzip State")
 	}
@@ -100,54 +92,51 @@ func (s *State) Backup(ctx context.Context) error {
 	}()
 
 	// split the file in chunks of 1MB (Secret size limit)
-	secrets, err := s.splitFileAndUploadChunks(ctx, tmpFile.Name())
+	_, err = s.splitFileAndUploadChunks(ctx, tmpFile.Name())
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	return wait.ExponentialBackoff(s.backoff, func() (bool, error) {
-		deployItem := &lsv1alpha1.DeployItem{}
-		if err := s.kubeClient.Get(ctx, s.deployItem.NamespacedName(), deployItem); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
-			s.log.Error(err, "unable to get deploy item")
-			return false, nil
-		}
-		// update the provider status
-		status, err := containeractuator.DecodeProviderStatus(deployItem.Status.ProviderStatus)
-		if err != nil {
-			return false, err
-		}
-		status.State = &containerv1alpha1.StateStatus{Data: secrets}
-		encStatus, err := containeractuator.EncodeProviderStatus(status)
-		if err != nil {
-			return false, err
-		}
-		deployItem.Status.ProviderStatus = encStatus
-		if err := s.kubeClient.Status().Update(ctx, deployItem); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
-			s.log.Error(err, "unable to update deploy item")
-			return false, nil
-		}
-		return true, nil
-	})
+// StateSecretListOptions returns the list options for all state secrets of a deploy item
+func StateSecretListOptions(namespace string, deployItem lsv1alpha1.ObjectReference) []client.ListOption {
+	labelSelector := client.MatchingLabels{
+		container.ContainerDeployerDeployItemNameLabel:      deployItem.Name,
+		container.ContainerDeployerDeployItemNamespaceLabel: deployItem.Namespace,
+		container.ContainerDeployerTypeLabel:                "state",
+	}
+	return []client.ListOption{labelSelector, client.InNamespace(namespace)}
 }
 
 // Restore restores the latest state from the k8s cluster to the configured state path.
-func (s *State) Restore(ctx context.Context, fs vfs.FileSystem) error {
-	secretList := &corev1.SecretList{}
-	labels := client.MatchingLabels{
-		container.ContainerDeployerNameLabel: s.deployItem.Name,
-		container.ContainerDeployerTypeLabel: "state",
+func (s *State) Restore(ctx context.Context) error {
+	if len(s.deployItem.Name) == 0 || len(s.deployItem.Namespace) == 0 {
+		return fmt.Errorf("a deployitem has to be defined")
 	}
-	if err := s.kubeClient.List(ctx, secretList, labels, client.InNamespace(s.deployItem.Namespace)); err != nil {
-		return nil
+	if len(s.namespace) == 0 {
+		return fmt.Errorf("a target namespace has to be defined")
+	}
+
+	if _, err := s.fs.Stat(s.path); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("unable to read from filesystem: %w", err)
+		}
+		if err := s.fs.MkdirAll(s.path, os.ModePerm); err != nil {
+			return fmt.Errorf("unable to create directory %q: %w", s.path, err)
+		}
+	}
+
+	secretList := &corev1.SecretList{}
+	if err := s.kubeClient.List(ctx, secretList, StateSecretListOptions(s.namespace, s.deployItem)...); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
 
 	// the secrets are grouped by uuid and sorted by their creation date
+	s.log.Info(fmt.Sprintf("Restore state from %d secrets", len(secretList.Items)))
 	secrets := map[string][]*corev1.Secret{}
 	var newest *corev1.Secret
 	for _, secret := range secretList.Items {
@@ -161,7 +150,7 @@ func (s *State) Restore(ctx context.Context, fs vfs.FileSystem) error {
 		return nil
 	}
 	newestUuid := newest.Annotations[container.ContainerDeployerStateUUIDAnnotation]
-	if err := s.restoreFromSecrets(secrets[newestUuid], fs); err != nil {
+	if err := s.restoreFromSecrets(secrets[newestUuid]); err != nil {
 		return err
 	}
 
@@ -182,9 +171,10 @@ func (s *State) Restore(ctx context.Context, fs vfs.FileSystem) error {
 	return nil
 }
 
-func (s *State) restoreFromSecrets(secrets []*corev1.Secret, fs vfs.FileSystem) error {
+func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
 	sort.Sort(stateSecretsList(secrets))
 
+	// todo: need to write to filesystem
 	var data bytes.Buffer
 	for _, secret := range secrets {
 		chunk, ok := secret.Data[lsv1alpha1.DataObjectSecretDataKey]
@@ -194,7 +184,7 @@ func (s *State) restoreFromSecrets(secrets []*corev1.Secret, fs vfs.FileSystem) 
 		data.Write(chunk)
 	}
 
-	return utils.ExtractTarGzip(&data, fs, s.path)
+	return utils.ExtractTarGzip(&data, s.fs, s.path)
 }
 
 func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {
@@ -202,6 +192,7 @@ func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {
 		if err := s.kubeClient.Delete(ctx, secret); err != nil {
 			s.log.Error(err, "unable to delete old state secret %s in namespace %s", secret.Name, secret.Namespace)
 		}
+		s.log.Info(fmt.Sprintf("Successfully garbage collected %q", secret.Name))
 	}
 }
 
@@ -209,16 +200,11 @@ func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {
 // and uploads the chunks as secrets to the configured k8s cluster as secrets
 func (s *State) splitFileAndUploadChunks(ctx context.Context, filePath string) ([]lsv1alpha1.ObjectReference, error) {
 	const bufSize = corev1.MaxSecretSize // 1 MB
-	file, err := os.Open(filePath)
+	file, err := s.fs.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-
-	deployItem := &lsv1alpha1.DeployItem{}
-	if err := s.kubeClient.Get(ctx, s.deployItem.NamespacedName(), deployItem); err != nil {
-		return nil, err
-	}
 
 	secrets := make([]lsv1alpha1.ObjectReference, 0)
 	uuidString := uuid.New().String()
@@ -231,13 +217,16 @@ func (s *State) splitFileAndUploadChunks(ctx context.Context, filePath string) (
 			}
 			return nil, err
 		}
+		// remove NULL characters
+		buffer = bytes.Trim(buffer, "\x00")
 
 		secret := &corev1.Secret{}
-		secret.GenerateName = s.deployItem.Name + "-"
-		secret.Namespace = s.deployItem.Namespace
+		secret.GenerateName = fmt.Sprintf("state-%s-%s-", s.deployItem.Namespace, s.deployItem.Name)
+		secret.Namespace = s.namespace
 		secret.Labels = map[string]string{
-			container.ContainerDeployerNameLabel: s.deployItem.Name,
-			container.ContainerDeployerTypeLabel: "state", // todo: make const
+			container.ContainerDeployerDeployItemNameLabel:      s.deployItem.Name,
+			container.ContainerDeployerDeployItemNamespaceLabel: s.deployItem.Namespace,
+			container.ContainerDeployerTypeLabel:                "state", // todo: make const
 		}
 		secret.Annotations = map[string]string{
 			container.ContainerDeployerStateUUIDAnnotation: uuidString,
@@ -245,9 +234,6 @@ func (s *State) splitFileAndUploadChunks(ctx context.Context, filePath string) (
 		}
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: buffer,
-		}
-		if err := controllerutil.SetControllerReference(deployItem, secret, kubernetes.LandscaperScheme); err != nil {
-			return secrets, err
 		}
 
 		if err := s.kubeClient.Create(ctx, secret); err != nil {
@@ -271,4 +257,33 @@ func (s stateSecretsList) Less(i, j int) bool {
 	numI, _ := strconv.Atoi(s[i].Annotations[container.ContainerDeployerStateNumAnnotation])
 	numJ, _ := strconv.Atoi(s[j].Annotations[container.ContainerDeployerStateNumAnnotation])
 	return numI < numJ
+}
+
+// CleanupState deletes all state secrets for a deployitem
+func CleanupState(ctx context.Context, log logr.Logger, kubeClient client.Client, namespace string, deployItem lsv1alpha1.ObjectReference) error {
+	secretList := &corev1.SecretList{}
+	if err := kubeClient.List(ctx, secretList, StateSecretListOptions(namespace, deployItem)...); err != nil {
+		return nil
+	}
+
+	bo := wait.Backoff{
+		Duration: 10 * time.Second,
+		Factor:   1.2,
+		Jitter:   0,
+		Steps:    math.MaxInt32,
+		Cap:      10 * time.Minute,
+	}
+	return wait.ExponentialBackoff(bo, func() (done bool, err error) {
+		completed := true
+		for _, secret := range secretList.Items {
+			if err := kubeClient.Delete(ctx, &secret); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				log.Error(err, "unable to delete state secret")
+			}
+			completed = false
+		}
+		return completed, nil
+	})
 }

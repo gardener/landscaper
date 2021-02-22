@@ -78,6 +78,16 @@
         }
       }
     },
+    "container-v1alpha1-DebugOptions": {
+      "description": "DebugOptions defines optional debug options.",
+      "type": "object",
+      "properties": {
+        "keepPod": {
+          "description": "KeepPod will only remove the finalizer on the pod but will not delete the pod.",
+          "type": "boolean"
+        }
+      }
+    },
     "core-v1alpha1-Requirement": {
       "description": "Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.",
       "type": "object",
@@ -124,6 +134,10 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "debug": {
+      "$ref": "#/definitions/container-v1alpha1-DebugOptions",
+      "description": "DebugOptions configure additional debug options."
     },
     "defaultImage": {
       "$ref": "#/definitions/container-v1alpha1-ContainerSpec",

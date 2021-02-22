@@ -18,6 +18,6 @@ spec:
     args:
     - |
       env
-      sleep 60
+      sleep 20
 
     importValues: abc

@@ -54,7 +54,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 	}
 
 	// backup state
-	if err := state.New(log, kubeClient, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
+	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StatePath).Backup(ctx); err != nil {
 		return withTerminationLog(log, err)
 	}
 

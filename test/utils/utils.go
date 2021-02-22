@@ -11,3 +11,7 @@ import (
 func ExpectNoError(err error, extra ...interface{}) {
 	gomega.ExpectWithOffset(1, err, extra...).ToNot(gomega.HaveOccurred())
 }
+
+func ExpectNoErrorWithOffset(offset int, err error, extra ...interface{}) {
+	gomega.ExpectWithOffset(offset+1, err, extra...).ToNot(gomega.HaveOccurred())
+}

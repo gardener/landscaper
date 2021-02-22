@@ -123,7 +123,6 @@ func Convert_config_CrdManagementConfiguration_To_v1alpha1_CrdManagementConfigur
 
 func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(in *LandscaperConfiguration, out *config.LandscaperConfiguration, s conversion.Scope) error {
 	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
-	out.DefaultOCI = (*config.OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err
 	}
@@ -139,7 +138,6 @@ func Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(
 
 func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfiguration(in *config.LandscaperConfiguration, out *LandscaperConfiguration, s conversion.Scope) error {
 	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
-	out.DefaultOCI = (*OCIConfiguration)(unsafe.Pointer(in.DefaultOCI))
 	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err
 	}

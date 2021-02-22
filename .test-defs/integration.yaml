@@ -4,7 +4,7 @@ metadata:
 spec:
   owner: gardener-oq@listserv.sap.com
   description: runs the intergration test suite of the landscaper
-  activeDeadlineSeconds: 900
+  activeDeadlineSeconds: 1800
 
   command: [bash, -c]
   args:

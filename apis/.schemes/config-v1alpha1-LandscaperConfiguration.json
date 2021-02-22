@@ -140,10 +140,6 @@
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
       "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
-    "defaultOCI": {
-      "$ref": "#/definitions/config-v1alpha1-OCIConfiguration",
-      "description": "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration."
-    },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
       "type": "string"

@@ -11,11 +11,16 @@ import (
 
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/config"
+	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
+	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
+	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/logger"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
@@ -45,27 +50,10 @@ func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition 
 type options struct {
 	log        logr.Logger
 	configPath string
-	deployers  string
 
-	config           *config.LandscaperConfiguration
-	enabledDeployers []string
-	webhook          webhookOptions
-}
-
-// options for the webhook (as given to the CLI)
-type rawWebhookOptions struct {
-	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
-	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>
-	webhookServicePort          int32  // port of the webhook service
-}
-
-// options for the webhook (generated from raw CLI options for easier usage)
-type webhookOptions struct {
-	webhookServiceNamespace string                                // webhook service namespace
-	webhookServiceName      string                                // webhook service name
-	webhookServicePort      int32                                 // port of the webhook service
-	enabledWebhooks         []webhook.WebhookedResourceDefinition // which resources should be watched by the webhook
-	raw                     rawWebhookOptions                     // the raw values from which these options were generated
+	config   *config.LandscaperConfiguration
+	deployer deployerOptions
+	webhook  webhookOptions
 }
 
 func NewOptions() *options {
@@ -78,10 +66,11 @@ func NewOptions() *options {
 
 func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.configPath, "config", "", "Specify the path to the configuration file")
-	fs.StringVar(&o.deployers, "deployers", "",
+	fs.StringVar(&o.deployer.deployers, "deployers", "",
 		`Specify additional deployers that should be enabled.
 Controllers are specified as a comma separated list of controller names.
 Available deployers are mock,helm,container.`)
+	fs.StringVar(&o.deployer.deployersConfigPath, "deployers-config", "", "Specify the path to the deployers-configuration file")
 	fs.StringVar(&o.webhook.raw.webhookServiceNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.StringVar(&o.webhook.raw.disabledWebhooks, "disable-webhooks", "", "Specify validation webhooks that should be disabled ('all' to disable validation completely)")
 	fs.Int32Var(&o.webhook.raw.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
@@ -104,9 +93,8 @@ func (o *options) Complete() error {
 	if err != nil {
 		return err
 	}
-
-	if len(o.deployers) != 0 {
-		o.enabledDeployers = strings.Split(o.deployers, ",")
+	if err := o.deployer.Complete(); err != nil {
+		return err
 	}
 
 	err = o.validate() // validate options
@@ -148,6 +136,26 @@ func (o *options) validate() error {
 		return allErrs.ToAggregate()
 	}
 	return nil
+}
+
+/////////////////////
+// Webhook Options //
+/////////////////////
+
+// options for the webhook (as given to the CLI)
+type rawWebhookOptions struct {
+	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
+	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>
+	webhookServicePort          int32  // port of the webhook service
+}
+
+// options for the webhook (generated from raw CLI options for easier usage)
+type webhookOptions struct {
+	webhookServiceNamespace string                                // webhook service namespace
+	webhookServiceName      string                                // webhook service name
+	webhookServicePort      int32                                 // port of the webhook service
+	enabledWebhooks         []webhook.WebhookedResourceDefinition // which resources should be watched by the webhook
+	raw                     rawWebhookOptions                     // the raw values from which these options were generated
 }
 
 // completeWebhookOptions populates the fields of the webhookOptions object by evaluating the rawWebhookOptions in it
@@ -217,16 +225,6 @@ func filterWebhookedResources(webhookedResources map[string]webhook.WebhookedRes
 	return fwr
 }
 
-// stringListToMap turns a comma-separated list of strings into pseudo-set that maps all elements of the list to true
-func stringListToMap(opt string) map[string]bool {
-	res := map[string]bool{}
-	tmp := strings.Split(opt, ",")
-	for _, t := range tmp {
-		res[t] = true
-	}
-	return res
-}
-
 // allowedWebhookDisables computes a list of allowed values for the '--disable-webhooks' option
 func allowedWebhookDisables() []string {
 	dwr := defaultWebhookedResources()
@@ -237,5 +235,70 @@ func allowedWebhookDisables() []string {
 		c++
 	}
 	res[c] = "all"
+	return res
+}
+
+//////////////////////
+// Deployer Options //
+//////////////////////
+
+type deployerOptions struct {
+	deployers           string
+	deployersConfigPath string
+
+	EnabledDeployers []string
+	DeployersConfig  DeployersConfiguration
+}
+
+func (o *deployerOptions) GetDeployerConfiguration(name string, config runtime.Object) error {
+	if o.DeployersConfig.Deployers == nil {
+		return nil
+	}
+	data, ok := o.DeployersConfig.Deployers[name]
+	if !ok || data.Raw == nil {
+		return nil
+	}
+	deployerScheme := runtime.NewScheme()
+	helminstall.Install(deployerScheme)
+	manifestinstall.Install(deployerScheme)
+	containerinstall.Install(deployerScheme)
+
+	if _, _, err := serializer.NewCodecFactory(deployerScheme).UniversalDecoder().Decode(data.Raw, nil, config); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (o *deployerOptions) Complete() error {
+	if len(o.deployers) != 0 {
+		o.EnabledDeployers = strings.Split(o.deployers, ",")
+	}
+
+	if err := o.parseDeployersConfigurationFile(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *deployerOptions) parseDeployersConfigurationFile() error {
+	if len(o.deployersConfigPath) == 0 {
+		return nil
+	}
+	data, err := ioutil.ReadFile(o.deployersConfigPath)
+	if err != nil {
+		return err
+	}
+
+	return yaml.Unmarshal(data, &o.DeployersConfig)
+}
+
+// stringListToMap turns a comma-separated list of strings into pseudo-set that maps all elements of the list to true
+func stringListToMap(opt string) map[string]bool {
+	res := map[string]bool{}
+	tmp := strings.Split(opt, ",")
+	for _, t := range tmp {
+		res[t] = true
+	}
 	return res
 }

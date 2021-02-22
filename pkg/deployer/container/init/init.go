@@ -145,7 +145,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	}
 
 	log.Info("restore state")
-	if err := state.New(log, kubeClient, opts.DeployItemKey, opts.StateDirPath).Restore(ctx, fs); err != nil {
+	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StateDirPath).WithFs(fs).Restore(ctx); err != nil {
 		return err
 	}
 	log.Info("state has been successfully restored")
