@@ -23,9 +23,8 @@ import (
 
 // ExternalJSONSchemaTest tests the jsonschema tutorial.
 func ExternalJSONSchemaTest(f *framework.Framework) {
-	dumper := f.Register()
-
 	_ = ginkgo.Describe("ExternalJSONSchemaTest", func() {
+		dumper := f.Register()
 
 		ginkgo.It("should deploy a echo server with resources defined by a external jsonschema", func() {
 			var (
@@ -46,7 +45,7 @@ func ExternalJSONSchemaTest(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
+			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 

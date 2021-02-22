@@ -15,12 +15,24 @@ spec:
       revision: {{ .Values.revision }}
   {{- end }}
 
+  config:
+  - name: CLUSTER_NAME
+    type: env
+    value: test-cluster
+  - name: HOST_CLUSTER_CONFIG
+    type: env
+    value: testmachinery.config
+
   testflow:
   - name: create-cluster
     definition:
       name: create-cluster
-  - name: install-landscaper
+  - name: create-registry
     dependsOn: ["create-cluster"]
+    definition:
+      name: create-registry
+  - name: install-landscaper
+    dependsOn: ["create-registry"]
     definition:
       name: install-landscaper
   - name: test
@@ -31,9 +43,16 @@ spec:
     dependsOn: ["test"]
     definition:
       name: delete-cluster
+  - name: delete-registry
+    dependsOn: ["test"]
+    definition:
+      name: delete-registry
 
   onExit:
   - name: delete-cluster
     definition:
       name: delete-cluster
+  - name: delete-registry
+    definition:
+      name: delete-registry
 

@@ -71,6 +71,7 @@ kind: LandscaperConfiguration
 registry:
     oci:
       allowPlainHttp: {{ .Values.landscaper.registryConfig.allowPlainHttpRegistries }}
+      insecureSkipVerify: {{ .Values.landscaper.registryConfig.insecureSkipVerify }}
       {{- if .Values.landscaper.registryConfig.secrets }}
       configFiles:
       {{- range $key, $value := .Values.landscaper.registryConfig.secrets }}

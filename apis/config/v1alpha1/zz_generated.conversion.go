@@ -219,6 +219,7 @@ func autoConvert_v1alpha1_OCIConfiguration_To_config_OCIConfiguration(in *OCICon
 	out.ConfigFiles = *(*[]string)(unsafe.Pointer(&in.ConfigFiles))
 	out.Cache = (*config.OCICacheConfiguration)(unsafe.Pointer(in.Cache))
 	out.AllowPlainHttp = in.AllowPlainHttp
+	out.InsecureSkipVerify = in.InsecureSkipVerify
 	return nil
 }
 
@@ -231,6 +232,7 @@ func autoConvert_config_OCIConfiguration_To_v1alpha1_OCIConfiguration(in *config
 	out.ConfigFiles = *(*[]string)(unsafe.Pointer(&in.ConfigFiles))
 	out.Cache = (*OCICacheConfiguration)(unsafe.Pointer(in.Cache))
 	out.AllowPlainHttp = in.AllowPlainHttp
+	out.InsecureSkipVerify = in.InsecureSkipVerify
 	return nil
 }
 

@@ -60,6 +60,8 @@ type OCIConfiguration struct {
 
 	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
 	AllowPlainHttp bool `json:"allowPlainHttp"`
+	// InsecureSkipVerify skips the certificate validation of the oci registry
+	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
 
 // OCICacheConfiguration contains the configuration for the oci cache

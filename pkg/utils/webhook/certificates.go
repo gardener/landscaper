@@ -43,7 +43,7 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 
 	// If the namespace is not set then the webhook controller is running locally. We simply generate a new certificate in this case.
 	if len(namespace) == 0 {
-		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name, *caConfig)
+		caCert, serverCert, err = GenerateNewCAAndServerCert(namespace, name, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -64,7 +64,7 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 		}
 
 		// The secret was not found, let's generate new certificates and store them in the secret afterwards.
-		caCert, serverCert, err = generateNewCAAndServerCert(namespace, name, *caConfig)
+		caCert, serverCert, err = GenerateNewCAAndServerCert(namespace, name, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -92,7 +92,8 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 	return writeCertificates(certDir, caCert, serverCert)
 }
 
-func generateNewCAAndServerCert(namespace, name string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
+// GenerateNewCAAndServerCert generates a new ca and server certificate for a service in a name and namespace.
+func GenerateNewCAAndServerCert(namespace, name string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
 	caCert, err := caConfig.GenerateCertificate()
 	if err != nil {
 		return nil, nil, err

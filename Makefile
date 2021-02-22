@@ -46,7 +46,7 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	@go test -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION)
+	@go test -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG)
 
 .PHONY: verify
 verify: check
@@ -107,3 +107,16 @@ docker-all: docker-images docker-push
 .PHONY: upload-tutorial-resources
 upload-tutorial-resources:
 	@./hack/upload-tutorial-resources.sh
+
+######################
+# Local development  #
+######################
+
+.PHONY: setup-local-registry
+setup-local-registry:
+	@go run ./hack/testcluster create --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false --registry-auth=./tmp/local-docker.config
+	@echo "For local development add '127.0.0.1 registry-local.default' to your '/etc/hosts' and run a port-forward to the registry pod 'kubectl port-forward registry-local 5000'"
+
+.PHONY: remove-local-registry
+remove-local-registry:
+	@go run ./hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false

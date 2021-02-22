@@ -11,7 +11,9 @@ spec:
   - >-
     go test -timeout=0 -mod=vendor ./test/integration
     --v -ginkgo.v -ginkgo.progress -ginkgo.noColor
-    --kubeconfig $TM_KUBECONFIG_PATH/kind.config
+    --kubeconfig $TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
+    --registry-config=$TM_SHARED_PATH/docker.config
     --ls-namespace=ls-system
+    --ls-version=$(./hack/get-version.sh)
 
   image: golang:1.15.7

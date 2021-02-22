@@ -15,6 +15,7 @@ landscaper:
     cache: {}
 #      useInMemoryOverlay: false
     allowPlainHttpRegistries: false
+    insecureSkipVerify: false
     secrets: {}
 #     <name>: <docker config json>
 

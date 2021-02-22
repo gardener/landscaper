@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -36,21 +37,31 @@ func RegisterTests(f *framework.Framework) {
 
 // DeployerTests tests if the deployers can be deployed into a cluster through their Helm Charts and the Helm Deployer
 func DeployerTests(f *framework.Framework) {
-	dumper := f.Register()
-
 	_ = Describe("DeployerTests", func() {
-
-		It("should deploy the Helm-Deployer through its Helm Chart", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
-			state, cleanup, err := f.NewState(ctx)
+		dumper := f.Register()
+		var (
+			ctx     context.Context
+			state   *envtest.State
+			cleanup framework.CleanupFunc
+		)
+		BeforeEach(func() {
+			ctx = context.Background()
+			var err error
+			state, cleanup, err = f.NewState(ctx)
 			utils.ExpectNoError(err)
 			dumper.AddNamespaces(state.Namespace)
-			defer func() {
-				Expect(cleanup(ctx)).ToNot(HaveOccurred())
-			}()
+		})
 
+		AfterEach(func() {
+			defer ctx.Done()
+			if CurrentGinkgoTestDescription().Failed {
+				// dump before cleanup
+				utils.ExpectNoError(dumper.DumpNamespaces(ctx))
+			}
+			utils.ExpectNoError(cleanup(ctx))
+		})
+
+		It("should deploy the Helm-Deployer through its Helm Chart", func() {
 			By("Creating and applying a Helm-Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/helm-deployer")
@@ -64,16 +75,6 @@ func DeployerTests(f *framework.Framework) {
 		})
 
 		It("should deploy the Container-Deployer through its Helm Chart", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
-			state, cleanup, err := f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
-			defer func() {
-				Expect(cleanup(ctx)).ToNot(HaveOccurred())
-			}()
-
 			By("Creating and applying a Container Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/container-deployer")
@@ -87,16 +88,6 @@ func DeployerTests(f *framework.Framework) {
 		})
 
 		It("should deploy the Manifest-Deployer through its Helm Chart", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
-			state, cleanup, err := f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
-			defer func() {
-				Expect(cleanup(ctx)).ToNot(HaveOccurred())
-			}()
-
 			By("Creating and applying a Manifest Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/manifest-deployer")
@@ -110,16 +101,6 @@ func DeployerTests(f *framework.Framework) {
 		})
 
 		It("should deploy the Mock-Deployer through its Helm Chart", func() {
-			ctx := context.Background()
-			defer ctx.Done()
-
-			state, cleanup, err := f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
-			defer func() {
-				Expect(cleanup(ctx)).ToNot(HaveOccurred())
-			}()
-
 			By("Creating and applying a Mock Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/mock-deployer")
@@ -134,7 +115,7 @@ func DeployerTests(f *framework.Framework) {
 	})
 }
 
-// deployDeployItemAndWaitForSuccess deploys a DeployItem and waits for it to Succeed and for a Deployment of same name to become ready
+// deployDeployItemAndWaitForSuccess deploys a DeployItem, waits for it to succeed and for a Deployment of same name to become ready
 func deployDeployItemAndWaitForSuccess(
 	ctx context.Context,
 	f *framework.Framework,
@@ -143,7 +124,7 @@ func deployDeployItemAndWaitForSuccess(
 	chartDir string,
 	valuesFile string) *lsv1alpha1.DeployItem {
 
-	target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, deployerName, f.RestConfig)
+	target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, deployerName, f.RestConfig, true)
 	utils.ExpectNoError(err)
 	utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -153,7 +134,15 @@ func deployDeployItemAndWaitForSuccess(
 	By("Waiting for the DeployItem to succeed")
 	utils.ExpectNoError(utils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 	By("Waiting for the corresponding Deployment to become ready")
-	utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKey(deployerName, state.Namespace), 2*time.Minute))
+
+	// check deployment image version
+	deploy := &appsv1.Deployment{}
+	deployKey := kutil.ObjectKey(deployerName, state.Namespace)
+	utils.ExpectNoError(f.Client.Get(ctx, deployKey, deploy))
+	splitImage := strings.Split(deploy.Spec.Template.Spec.Containers[0].Image, ":")
+	Expect(splitImage[len(splitImage)-1]).To(Equal(f.LsVersion))
+
+	utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, deployKey, 2*time.Minute))
 
 	return di
 }

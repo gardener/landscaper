@@ -29,9 +29,8 @@ func RegisterTests(f *framework.Framework) {
 }
 
 func WebhookTest(f *framework.Framework) {
-	dumper := f.Register()
-
 	_ = ginkgo.Describe("SimpleWebhookTest", func() {
+		dumper := f.Register()
 
 		ginkgo.It("should have created a ValidatingWebhookConfiguration", func() {
 			ctx := context.Background()

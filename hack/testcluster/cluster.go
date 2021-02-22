@@ -7,7 +7,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +18,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -37,6 +35,14 @@ import (
 // ClusterIdLabelName is the name of the label that holds the unique id for the current created cluster.
 // It is used by the delete command to find the created cluster.
 const ClusterIdLabelName = "cluster.test.landscaper.gardener.cloud/id"
+
+// ComponentLabelName is the name of the label that specifies the component that is deployed
+const ComponentLabelName = "cluster.test.landscaper.gardener.cloud/component"
+
+const (
+	ComponentCluster  = "cluster"
+	ComponentRegistry = "registry"
+)
 
 // see this issue for more discussions around min resources for a k8s cluster running in a pod.
 // we will stick for now with req of 500M RAM/1 CPU
@@ -108,16 +114,10 @@ type State struct {
 }
 
 func createCluster(ctx context.Context, logger simplelogger.Logger, opts *Options) (err error) {
-	kubeClient := opts.kubeClient
-
-	// generate id if none is defined
-	if len(opts.ID) == 0 {
-		uid, err := uuid.NewUUID()
-		if err != nil {
-			return fmt.Errorf("unable to generate uuid: %w", err)
-		}
-		opts.ID = base64.StdEncoding.EncodeToString([]byte(uid.String()))
+	if !opts.EnableCluster {
+		return nil
 	}
+	kubeClient := opts.kubeClient
 
 	// parse and template pod
 	token := "asdlfjasdoifjsadfasfasf"
@@ -139,6 +139,7 @@ func createCluster(ctx context.Context, logger simplelogger.Logger, opts *Option
 		return err
 	}
 	pod.Namespace = opts.Namespace
+	kutil.SetMetaDataLabel(pod, ComponentLabelName, ComponentCluster)
 	kutil.SetMetaDataLabel(pod, ClusterIdLabelName, opts.ID)
 
 	if err := kubeClient.Create(ctx, pod); err != nil {
@@ -151,7 +152,7 @@ func createCluster(ctx context.Context, logger simplelogger.Logger, opts *Option
 		if err == nil {
 			return
 		}
-		if err := cleanupCluster(ctx, logger, kubeClient, pod, opts.Timeout); err != nil {
+		if err := cleanupPod(ctx, logger, ComponentCluster, kubeClient, pod, opts.Timeout); err != nil {
 			logger.Logfln("Error while cleanup of the cluster: %s", err.Error())
 		}
 	}()
@@ -251,20 +252,10 @@ func getKubeconfigFromCluster(logger simplelogger.Logger, pod *corev1.Pod, opts 
 }
 
 func deleteCluster(ctx context.Context, logger simplelogger.Logger, opts *Options) error {
-	kubeClient := opts.kubeClient
-	if len(opts.ID) == 0 {
-		// statefile should be defined as it is already checked by the calling function
-		data, err := ioutil.ReadFile(opts.StateFile)
-		if err != nil {
-			return fmt.Errorf("unable to read state file %q: %w", opts.StateFile, err)
-		}
-		state := State{}
-		if err := json.Unmarshal(data, &state); err != nil {
-			return fmt.Errorf("unable to decode state from %q: %w", opts.StateFile, err)
-		}
-		opts.ID = state.ID
+	if !opts.EnableCluster {
+		return nil
 	}
-
+	kubeClient := opts.kubeClient
 	if len(opts.ID) == 0 {
 		return errors.New("no id defined by flag or statefile")
 	}
@@ -272,12 +263,13 @@ func deleteCluster(ctx context.Context, logger simplelogger.Logger, opts *Option
 	podList := &corev1.PodList{}
 	if err := kubeClient.List(ctx, podList, client.InNamespace(opts.Namespace), client.MatchingLabels{
 		ClusterIdLabelName: opts.ID,
+		ComponentLabelName: ComponentCluster,
 	}); err != nil {
 		return fmt.Errorf("unable to get pods for id %q in namespace %q: %w", opts.ID, opts.Namespace, err)
 	}
 
 	for _, pod := range podList.Items {
-		if err := cleanupCluster(ctx, logger, kubeClient, &pod, opts.Timeout); err != nil {
+		if err := cleanupPod(ctx, logger, ComponentCluster, kubeClient, &pod, opts.Timeout); err != nil {
 			return err
 		}
 	}
@@ -285,21 +277,21 @@ func deleteCluster(ctx context.Context, logger simplelogger.Logger, opts *Option
 	return nil
 }
 
-// cleanupCluster deletes the cluster that is running in the given pod.
-func cleanupCluster(ctx context.Context, logger simplelogger.Logger, kubeClient client.Client, pod *corev1.Pod, timeout time.Duration) error {
-	logger.Logfln("Cleanup cluster in pod %q", pod.GetName())
+// cleanupPod deletes the cluster that is running in the given pod.
+func cleanupPod(ctx context.Context, logger simplelogger.Logger, componentName string, kubeClient client.Client, pod *corev1.Pod, timeout time.Duration) error {
+	logger.Logfln("Cleanup %s in pod %q", componentName, pod.GetName())
 	err := wait.PollImmediate(10*time.Second, 1*time.Minute, func() (done bool, err error) {
 		if err := kubeClient.Delete(ctx, pod); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
-			logger.Logfln("Error while trying to delete cluster (%s)...", err.Error())
+			logger.Logfln("Error while trying to delete %s (%s)...", componentName, err.Error())
 			return false, nil
 		}
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("unable to delete cluster in pod %q", pod.GetName())
+		return fmt.Errorf("unable to delete %s in pod %q", componentName, pod.GetName())
 	}
 	err = wait.PollImmediate(10*time.Second, timeout, func() (done bool, err error) {
 		updatedPod := &corev1.Pod{}
@@ -307,16 +299,16 @@ func cleanupCluster(ctx context.Context, logger simplelogger.Logger, kubeClient 
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
-			logger.Logfln("Error while trying to delete cluster (%s)...", err.Error())
+			logger.Logfln("Error while trying to %s cluster (%s)...", componentName, err.Error())
 			return false, nil
 		}
-		logger.Logln("Waiting for the cluster to be deleted ...")
+		logger.Logfln("Waiting for the %s to be deleted ...", componentName)
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("unable to delete cluster in pod %q", pod.GetName())
+		return fmt.Errorf("unable to delete %s in pod %q", componentName, pod.GetName())
 	}
-	logger.Logfln("Successfully deleted cluster in pod %q", pod.GetName())
+	logger.Logfln("Successfully deleted %s in pod %q", componentName, pod.GetName())
 	return nil
 }
 

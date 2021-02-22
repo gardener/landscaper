@@ -61,5 +61,17 @@ landscaper:
   - mock
 " > /tmp/values.yaml
 
-export KUBECONFIG="${TM_KUBECONFIG_PATH}/kind.config"
-helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml --set "image.tag=${VERSION}"
+touch /tmp/registry-values.yaml
+if [[ -f "$TM_SHARED_PATH/docker.config" ]]; then
+  printf "
+landscaper:
+  registryConfig:
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: true
+    secrets:
+      default: $(cat "$TM_SHARED_PATH/docker.config")
+  " > /tmp/registry-values.yaml
+fi
+
+export KUBECONFIG="${TM_KUBECONFIG_PATH}/${CLUSTER_NAME}.config"
+helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "image.tag=${VERSION}"
