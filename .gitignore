@@ -7,6 +7,8 @@ tmp
 .idea
 .DS_Store
 
+.cache_ggshield
+
 *.report
 
 **/sha256

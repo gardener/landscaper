@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+SOURCE_PATH="$(dirname $0)/.."
+VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
+
+printf "> Building components with version ${VERSION}\n"
+
+REPO_CTX="eu.gcr.io/sap-se-gcr-k8s-private/cnudie/gardener/development"
+
+# creates a component archive for deployer
+# it expects 1 argument with
+# $1 is the name of the component
+function buildComponentArchive() {
+  COMPONENT_NAME=$1
+  CA_PATH="$(mktemp -d)"
+  printf "> Building component ${COMPONENT_NAME}\n"
+
+  component-cli ca resources add ${CA_PATH} \
+    --component-name=github.com/gardener/landscaper/${COMPONENT_NAME} \
+    --component-version=${VERSION} \
+    --repo-ctx=${REPO_CTX} \
+    VERSION=${VERSION} \
+    ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml
+
+  cat ${CA_PATH}/component-descriptor.yaml
+
+  printf "> Create ca archive\n"
+  COMPONENT_ARCHIVE_ARTIFACT_PATH="$(mktemp -d)/ca.tar"
+  component-cli ca export "${CA_PATH}" --format tar -o "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
+
+  printf "> Add to ctf\n"
+  component-cli ctf add "${CTF_PATH}" -f "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
+}
+
+buildComponentArchive "container-deployer"
+buildComponentArchive "helm-deployer"
+buildComponentArchive "manifest-deployer"
+buildComponentArchive "mock-deployer"
+
+# add landscaper component descriptor
+printf "> Create Landscaper ca archive\n"
+LS_CA_PATH="$(mktemp -d)"
+cp ${BASE_DEFINITION_PATH} "${LS_CA_PATH}/component-descriptor.yaml"
+
+COMPONENT_ARCHIVE_ARTIFACT_PATH="$(mktemp -d)/ca.tar"
+component-cli ca export "${LS_CA_PATH}" --format tar -o "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
+
+printf "> Add Landscaper CA to ctf\n"
+component-cli ctf add "${CTF_PATH}" -f "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
