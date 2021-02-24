@@ -102,11 +102,11 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 	if len(def.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
 	}
-	if len(def.Schema.RawMessage) == 0 && len(def.TargetType) == 0 {
+	if def.Schema == nil && len(def.TargetType) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath, "schema or targetType must not be empty"))
 	}
 
-	if len(def.Schema.RawMessage) != 0 {
+	if def.Schema != nil {
 		allErrs = append(allErrs, ValidateJsonSchema(fldPath, def.Schema)...)
 	}
 
@@ -114,7 +114,7 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 }
 
 // ValidateJsonSchema validates a json schema
-func ValidateJsonSchema(fldPath *field.Path, schema core.JSONSchemaDefinition) field.ErrorList {
+func ValidateJsonSchema(fldPath *field.Path, schema *core.JSONSchemaDefinition) field.ErrorList {
 	allErrs := field.ErrorList{}
 	return allErrs
 }
@@ -158,7 +158,7 @@ func ValidateSubinstallations(fldPath *field.Path, fs vfs.FileSystem, blueprintI
 	)
 
 	for _, bImport := range blueprintImportDefs {
-		if len(bImport.Schema.RawMessage) != 0 {
+		if bImport.Schema != nil {
 			blueprintDataImports.Insert(bImport.Name)
 		} else if len(bImport.TargetType) != 0 {
 			blueprintTargetImports.Insert(bImport.Name)
