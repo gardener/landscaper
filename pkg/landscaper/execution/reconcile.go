@@ -103,6 +103,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 		item.DeployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Info.Name)
 		item.DeployItem.Namespace = o.exec.Namespace
 	}
+	item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
 
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)

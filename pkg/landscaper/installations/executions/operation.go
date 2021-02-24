@@ -72,6 +72,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
+	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
 		exec.Spec.DeployItems = executions
 

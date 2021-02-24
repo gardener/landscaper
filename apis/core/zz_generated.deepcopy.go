@@ -456,6 +456,11 @@ func (in *DeployItemSpec) DeepCopyInto(out *DeployItemSpec) {
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.RegistryPullSecrets != nil {
+		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
+		*out = make([]ObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
@@ -660,6 +665,11 @@ func (in *ExecutionSpec) DeepCopyInto(out *ExecutionSpec) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.RegistryPullSecrets != nil {
+		in, out := &in.RegistryPullSecrets, &out.RegistryPullSecrets
+		*out = make([]ObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	return
 }
