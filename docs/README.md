@@ -29,7 +29,7 @@
 - [Use shared JSONSchemas in Blueprints](tutorials/05-external-jsonschema.md)
 
 ### Development
-
+- [Local Setup](./development/local-setup.md)
 - [Extend the API](./development/extend-the-api.md)
 
 ### API Reference
