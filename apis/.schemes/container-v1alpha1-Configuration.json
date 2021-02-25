@@ -20,7 +20,8 @@
       "description": "OCIConfiguration holds configuration for the oci registry",
       "type": "object",
       "required": [
-        "allowPlainHttp"
+        "allowPlainHttp",
+        "insecureSkipVerify"
       ],
       "properties": {
         "allowPlainHttp": {
@@ -39,6 +40,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "insecureSkipVerify": {
+          "description": "InsecureSkipVerify skips the certificate validation of the oci registry",
+          "type": "boolean",
+          "default": false
         }
       }
     },
@@ -69,6 +75,16 @@
         "imagePullPolicy": {
           "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
           "type": "string"
+        }
+      }
+    },
+    "container-v1alpha1-DebugOptions": {
+      "description": "DebugOptions defines optional debug options.",
+      "type": "object",
+      "properties": {
+        "keepPod": {
+          "description": "KeepPod will only remove the finalizer on the pod but will not delete the pod.",
+          "type": "boolean"
         }
       }
     },
@@ -118,6 +134,10 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "debug": {
+      "$ref": "#/definitions/container-v1alpha1-DebugOptions",
+      "description": "DebugOptions configure additional debug options."
     },
     "defaultImage": {
       "$ref": "#/definitions/container-v1alpha1-ContainerSpec",

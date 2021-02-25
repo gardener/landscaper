@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,6 +66,41 @@ func WaitForObjectDeletion(
 	return nil
 }
 
+// WaitForDeployItemToSucceed waits for a DeployItem to be in phase Succeeded
+func WaitForDeployItemToSucceed(
+	ctx context.Context,
+	kubeClient client.Client,
+	obj *lsv1alpha1.DeployItem,
+	timeout time.Duration) error {
+	return WaitForDeployItemToBeInPhase(ctx, kubeClient, obj, lsv1alpha1.ExecutionPhaseSucceeded, timeout)
+}
+
+// WaitForDeployItemToBeInPhase waits until the given deploy item is in the expected phase
+func WaitForDeployItemToBeInPhase(
+	ctx context.Context,
+	kubeClient client.Client,
+	deployItem *lsv1alpha1.DeployItem,
+	phase lsv1alpha1.ExecutionPhase,
+	timeout time.Duration) error {
+
+	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
+		updated := &lsv1alpha1.DeployItem{}
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
+			return false, err
+		}
+		*deployItem = *updated
+		if deployItem.Status.Phase == phase {
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w", phase, err)
+	}
+	return nil
+}
+
 // GetDeployItemsOfInstallation returns all direct deploy items of the installation.
 // It does not return deploy items of subinstllations
 // todo: for further tests create recursive installation navigator
@@ -104,4 +140,17 @@ func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Cl
 		list = append(list, inst)
 	}
 	return list, nil
+}
+
+// GetDeployItemExport returns the exports for a deploy item
+func GetDeployItemExport(ctx context.Context, kubeClient client.Client, di *lsv1alpha1.DeployItem) ([]byte, error) {
+	if di.Status.ExportReference == nil {
+		return nil, errors.New("no export defined")
+	}
+	secret := &corev1.Secret{}
+	if err := kubeClient.Get(ctx, di.Status.ExportReference.NamespacedName(), secret); err != nil {
+		return nil, fmt.Errorf("unable to get export from %q: %w", di.Status.ExportReference.NamespacedName(), err)
+	}
+
+	return secret.Data[lsv1alpha1.DataObjectSecretDataKey], nil
 }

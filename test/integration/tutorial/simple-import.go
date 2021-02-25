@@ -22,9 +22,8 @@ import (
 )
 
 func SimpleImport(f *framework.Framework) {
-	dumper := f.Register()
-
 	_ = ginkgo.Describe("SimpleImport", func() {
+		dumper := f.Register()
 
 		ginkgo.It("should deploy a nginx ingress controller and a echo-server", func() {
 			var (
@@ -47,7 +46,7 @@ func SimpleImport(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig)
+			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 

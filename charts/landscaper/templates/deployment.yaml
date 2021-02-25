@@ -43,6 +43,9 @@ spec:
           {{- if .Values.landscaper.deployers }}
           - "--deployers={{  .Values.landscaper.deployers | join "," }}"
           {{- end }}
+          {{- if .Values.landscaper.deployersConfig }}
+          - "--deployers-config=/app/ls/deployers/deployers-config.yaml"
+          {{- end }}
           {{- if .Values.landscaper.metrics }}
           ports:
           - name: metrics
@@ -62,6 +65,10 @@ spec:
           - name: registrypullsecrets
             mountPath: /app/ls/registry/secrets
           {{- end }}
+          {{- if .Values.landscaper.deployersConfig }}
+          - name: deployers-config
+            mountPath: /app/ls/deployers
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -74,6 +81,11 @@ spec:
       - name: registrypullsecrets
         secret:
           secretName: {{ include "landscaper.fullname" . }}-registry
+      {{- end }}
+      {{- if .Values.landscaper.deployersConfig }}
+      - name: config
+        secret:
+          secretName: {{ include "landscaper.fullname" . }}-deployers-config
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

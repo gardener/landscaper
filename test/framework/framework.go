@@ -6,10 +6,20 @@ package framework
 
 import (
 	"context"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
+	"github.com/docker/cli/cli/config/configfile"
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/credentials"
+	"github.com/go-logr/logr/testing"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,10 +37,13 @@ import (
 )
 
 type Options struct {
-	fs             *flag.FlagSet
-	KubeconfigPath string
-	RootPath       string
-	LsNamespace    string
+	fs               *flag.FlagSet
+	KubeconfigPath   string
+	RootPath         string
+	LsNamespace      string
+	LsVersion        string
+	DockerConfigPath string
+	DisableCleanup   bool
 }
 
 // AddFlags registers the framework related flags
@@ -42,6 +55,9 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 		fs.String("kubeconfig", "", "Path to the kubeconfig")
 	}
 	fs.StringVar(&o.LsNamespace, "ls-namespace", "", "Namespace where the landscaper controller is running")
+	fs.StringVar(&o.LsVersion, "ls-version", "", "the version to use in integration tests")
+	fs.StringVar(&o.DockerConfigPath, "registry-config", "", "path to the docker config file")
+	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
 	o.fs = fs
 }
 
@@ -73,6 +89,22 @@ type Framework struct {
 	// All functionality like waiting for the components to be ready or log dump is not available
 	// if left empty.
 	LsNamespace string
+	// LsVersion defines the version of landscaper components to be used for the integration test
+	// Will use the latest version (see VERSION) if left empty
+	LsVersion string
+	// DisableCleanup skips the state cleanup step
+	DisableCleanup bool
+
+	// RegistryConfig defines the oci registry config file.
+	// It is expected that the configfile contains exactly one server.
+	RegistryConfig *configfile.ConfigFile
+	// RegistryBasePath defines the base path for the configured registry.
+	// The base path is used to construct references for artifacts.
+	RegistryBasePath string
+	// OCIClient is a oci client that can up and download artifacts from the configured registry
+	OCIClient ociclient.Client
+	// OCICache is the oci store of the local oci client
+	OCICache cache.Cache
 }
 
 func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
@@ -80,10 +112,12 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 		return nil, err
 	}
 	f := &Framework{
-		logger:      logger,
-		RootPath:    cfg.RootPath,
-		LsNamespace: cfg.LsNamespace,
-		Cleanup:     &Cleanup{},
+		logger:         logger,
+		RootPath:       cfg.RootPath,
+		LsNamespace:    cfg.LsNamespace,
+		LsVersion:      cfg.LsVersion,
+		Cleanup:        &Cleanup{},
+		DisableCleanup: cfg.DisableCleanup,
 	}
 
 	var err error
@@ -100,6 +134,46 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 	f.ClientSet, err = kubernetes.NewForConfig(f.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build kubernetes clientset: %w", err)
+	}
+
+	if len(cfg.DockerConfigPath) != 0 {
+		data, err := ioutil.ReadFile(cfg.DockerConfigPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read docker config file: %w", err)
+		}
+		dockerConfig := &configfile.ConfigFile{}
+		if err := json.Unmarshal(data, dockerConfig); err != nil {
+			return nil, fmt.Errorf("unable to decode docker config: %w", err)
+		}
+		if len(dockerConfig.AuthConfigs) == 0 {
+			return nil, errors.New("the configured docker config must contain at least one auth config")
+		}
+		f.RegistryConfig = dockerConfig
+		for address := range dockerConfig.AuthConfigs {
+			f.RegistryBasePath = address
+			break
+		}
+
+		ociKeyring, err := credentials.NewBuilder(testing.NullLogger{}).FromConfigFiles(cfg.DockerConfigPath).Build()
+		if err != nil {
+			return nil, fmt.Errorf("unable to build oci keyring: %w", err)
+		}
+		f.OCICache, err = cache.NewCache(testing.NullLogger{})
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		httpClient := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}
+		f.OCIClient, err = ociclient.NewClient(testing.NullLogger{},
+			ociclient.WithKeyring(ociKeyring),
+			ociclient.WithCache{Cache: f.OCICache},
+			ociclient.WithHTTPClient(httpClient))
+		if err != nil {
+			return nil, fmt.Errorf("unable to build oci client: %w", err)
+		}
 	}
 	return f, nil
 }
@@ -150,15 +224,22 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 	// register Cleanup handle
 	var handle CleanupActionHandle
 	cleanupFunc := func(ctx context.Context) error {
+		if f.DisableCleanup {
+			f.Log().Logln("Skipping cleanup...")
+			return nil
+		}
+		f.Log().Logln("Start state cleanup...")
 		f.Cleanup.Remove(handle)
 		t := time.Minute
 		return state.CleanupState(ctx, f.Client, &t)
 	}
-	handle = f.Cleanup.Add(func() {
-		ctx := context.Background()
-		defer ctx.Done()
-		gomega.Expect(cleanupFunc(ctx)).To(gomega.Succeed())
-	})
+	if !f.DisableCleanup {
+		handle = f.Cleanup.Add(func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			gomega.Expect(cleanupFunc(ctx)).To(gomega.Succeed())
+		})
+	}
 	return state, cleanupFunc, err
 }
 
@@ -173,6 +254,11 @@ func (f *Framework) Register() *Dumper {
 		ctx := context.Background()
 		defer ctx.Done()
 		utils.ExpectNoError(dumper.Dump(ctx))
+		if f.DisableCleanup {
+			f.Log().Logln("Skipping cleanup...")
+			return
+		}
+		f.Log().Logln("Start landscape cleanup...")
 		for ns := range dumper.namespaces {
 			utils.ExpectNoError(CleanupLandscaperResources(ctx, f.Client, ns))
 		}
@@ -181,6 +267,11 @@ func (f *Framework) Register() *Dumper {
 		dumper.ClearNamespaces()
 	})
 	return dumper
+}
+
+// IsRegistryEnabled returns true if a docker registry is configured.
+func (f *Framework) IsRegistryEnabled() bool {
+	return f.RegistryConfig != nil
 }
 
 // CleanupLandscaperResources force cleans up all landscaper resources.

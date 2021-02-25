@@ -2,10 +2,13 @@ tmp
 
 /dev
 .vscode
+.run
 
 .idea
 .DS_Store
 
 *.report
+
+**/sha256
 
 **/gomock_reflect_*

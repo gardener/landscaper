@@ -34,6 +34,24 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+// image err reasons
+// defined in https://github.com/kubernetes/kubernetes/blob/cea1d4e20b4a7886d8ff65f34c6d4f95efcb4742/pkg/kubelet/images/types.go
+
+// ErrImagePull - General image pull error
+const ErrImagePull = "ErrImagePull"
+
+// ErrImagePullBackOff - Container image pull failed, kubelet is backing off image pull
+const ErrImagePullBackOff = "ImagePullBackOff"
+
+// ErrImageNeverPull - Required Image is absent on host and PullPolicy is NeverPullImage
+const ErrImageNeverPull = "ErrImageNeverPull"
+
+// ErrRegistryUnavailable - Get http error when pulling image from registry
+const ErrRegistryUnavailable = "RegistryUnavailable"
+
+// ErrInvalidImageName - Unable to parse the image name.
+const ErrInvalidImageName = "ErrInvalidImageName"
+
 // CreateOrUpdate creates or updates the given object in the Kubernetes
 // cluster. The object's desired state must be reconciled with the existing
 // state inside the passed in callback MutateFn.

@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -33,10 +34,16 @@ func init() {
 
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
-	log           logr.Logger
-	lsClient      client.Client
-	hostClient    client.Client
-	Configuration *containerv1alpha1.Configuration
+	log      logr.Logger
+	lsClient client.Client
+	// hostClient is a cached client that is used to interact with the host cluster
+	// The host cluster is the cluster where the pods are executed.
+	// This client is only used for the pod resource.
+	hostClient client.Client
+	// directHostClient is non-cached client that directly interact with the apiserver.
+	// it is mainly used for secret and rbac resources
+	directHostClient client.Client
+	Configuration    *containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	ProviderStatus        *containerv1alpha1.ProviderStatus
@@ -49,28 +56,38 @@ type Container struct {
 }
 
 // New creates a new internal container item
-func New(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, item *lsv1alpha1.DeployItem, componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
+func New(log logr.Logger,
+	lsClient,
+	hostClient,
+	directHostClient client.Client,
+	config *containerv1alpha1.Configuration,
+	item *lsv1alpha1.DeployItem,
+	componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "DecodeProviderConfiguration", err.Error())
 	}
 
 	applyDefaults(config, providerConfig)
 
 	if err := container1alpha1validation.ValidateProviderConfiguration(providerConfig); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "ValidateProviderConfiguration", err.Error())
 	}
 
 	status, err := DecodeProviderStatus(item.Status.ProviderStatus)
 	if err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			"Init", "DecodeProviderStatus", err.Error())
 	}
 
 	return &Container{
 		log:                   log,
 		lsClient:              lsClient,
 		hostClient:            hostClient,
+		directHostClient:      directHostClient,
 		Configuration:         config,
 		DeployItem:            item,
 		ProviderStatus:        status,

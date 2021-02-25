@@ -49,12 +49,12 @@ func UploadExport(ctx context.Context, log logr.Logger, kubeClient client.Client
 		return err
 	}
 
-	return createOrUpdateExport(ctx, kubeClient, deployItemKey.Name, podKey.Namespace, exportData)
+	return createOrUpdateExport(ctx, kubeClient, deployItemKey.Name, deployItemKey.Namespace, podKey.Namespace, exportData)
 }
 
-func createOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItemName, namespace string, data []byte) error {
+func createOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItemName, deployItemNamespace, namespace string, data []byte) error {
 	secret := &corev1.Secret{}
-	secret.Name = containeractuator.ExportSecretName(namespace, deployItemName)
+	secret.Name = containeractuator.ExportSecretName(deployItemNamespace, deployItemName)
 	secret.Namespace = namespace
 
 	_, err := kutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {

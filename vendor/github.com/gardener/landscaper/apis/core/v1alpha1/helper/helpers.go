@@ -132,6 +132,14 @@ func IsConditionStatus(conditions []v1alpha1.Condition, status v1alpha1.Conditio
 	return true
 }
 
+// ObjectReferenceFromObject creates a object reference from a k8s object
+func ObjectReferenceFromObject(obj metav1.Object) v1alpha1.ObjectReference {
+	return v1alpha1.ObjectReference{
+		Namespace: obj.GetNamespace(),
+		Name:      obj.GetName(),
+	}
+}
+
 // CreateOrUpdateVersionedObjectReferences creates or updates a element in versioned objectReference slice.
 func CreateOrUpdateVersionedObjectReferences(refs []v1alpha1.VersionedObjectReference, ref v1alpha1.ObjectReference, gen int64) []v1alpha1.VersionedObjectReference {
 	for i, vref := range refs {

@@ -56,7 +56,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	// add additional imports and targets
 	for _, def := range inst.Blueprint.Info.Imports {
 		defPath := fldPath.Child(def.Name)
-		if def.Schema.RawMessage != nil {
+		if def.Schema != nil {
 			if val, ok := templatedDataMappings[def.Name]; ok {
 				imports[def.Name] = val
 			} else if val, ok := importedDataObjects[def.Name]; ok {

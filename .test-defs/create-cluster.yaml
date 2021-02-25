@@ -10,10 +10,12 @@ spec:
   args:
   - >-
     go run -mod=vendor ./hack/testcluster create
-    --kubeconfig=$TM_KUBECONFIG_PATH/testmachinery.config
+    --kubeconfig=$TM_KUBECONFIG_PATH/$HOST_CLUSTER_CONFIG
     --namespace=kind
-    --export=$TM_KUBECONFIG_PATH/kind.config
-    --id=$TM_TESTRUN_ID
+    --export=$TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
+    --id=$TM_TESTRUN_ID$CLUSTER_NAME
+    --enable-registry=false
+    --address-format=ip
     --timeout=10m
 
   image: golang:1.15.7

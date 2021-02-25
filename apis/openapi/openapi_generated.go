@@ -32,12 +32,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/component-spec/bindings-go/apis/v2.Source":                             schema_component_spec_bindings_go_apis_v2_Source(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef":                          schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredAccessType":             schema_component_spec_bindings_go_apis_v2_UnstructuredAccessType(ref),
+		"github.com/gardener/landscaper/apis/config.CrdManagementConfiguration":                     schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                        schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration":                     schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.MetricsConfiguration":                           schema_gardener_landscaper_apis_config_MetricsConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCICacheConfiguration":                          schema_gardener_landscaper_apis_config_OCICacheConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCIConfiguration":                               schema_gardener_landscaper_apis_config_OCIConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.RegistryConfiguration":                          schema_gardener_landscaper_apis_config_RegistryConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration":            schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":               schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LocalRegistryConfiguration":            schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration":                  schema_landscaper_apis_config_v1alpha1_MetricsConfiguration(ref),
@@ -106,10 +108,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":              schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":             schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":             schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":           schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions":              schema_apis_deployer_container_v1alpha1_DebugOptions(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                 schema_apis_deployer_container_v1alpha1_PodStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderConfiguration":     schema_apis_deployer_container_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderStatus":            schema_apis_deployer_container_v1alpha1_ProviderStatus(ref),
-		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.StateStatus":               schema_apis_deployer_container_v1alpha1_StateStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess":                  schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                          schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                  schema_apis_deployer_helm_v1alpha1_Configuration(ref),
@@ -1006,6 +1009,35 @@ func schema_component_spec_bindings_go_apis_v2_UnstructuredAccessType(ref common
 	}
 }
 
+func schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CrdManagementConfiguration contains the configuration of the CRD management",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"deployCrd": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"forceUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ForceUpdate specifies whether existing CRDs should be updated",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"deployCrd"},
+			},
+		},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1033,12 +1065,6 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext"),
 						},
 					},
-					"defaultOCI": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration.",
-							Ref:         ref("github.com/gardener/landscaper/apis/config.OCIConfiguration"),
-						},
-					},
 					"registry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.",
@@ -1052,12 +1078,18 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.MetricsConfiguration"),
 						},
 					},
+					"crdManagement": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Ref:         ref("github.com/gardener/landscaper/apis/config.CrdManagementConfiguration"),
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
 	}
 }
 
@@ -1092,9 +1124,10 @@ func schema_gardener_landscaper_apis_config_MetricsConfiguration(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"port": {
 						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
+							Description: "Port specifies the port on which metrics are published",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},
@@ -1168,8 +1201,16 @@ func schema_gardener_landscaper_apis_config_OCIConfiguration(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"insecureSkipVerify": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InsecureSkipVerify skips the certificate validation of the oci registry",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"allowPlainHttp"},
+				Required: []string{"allowPlainHttp", "insecureSkipVerify"},
 			},
 		},
 		Dependencies: []string{
@@ -1204,6 +1245,35 @@ func schema_gardener_landscaper_apis_config_RegistryConfiguration(ref common.Ref
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CrdManagementConfiguration contains the configuration of the CRD management",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"deployCrd": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"forceUpdate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ForceUpdate specifies whether existing CRDs should be updated",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"deployCrd"},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1231,12 +1301,6 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext"),
 						},
 					},
-					"defaultOCI": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration.",
-							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration"),
-						},
-					},
 					"registry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.",
@@ -1250,12 +1314,18 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration"),
 						},
 					},
+					"crdManagement": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration"),
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 
@@ -1290,9 +1360,10 @@ func schema_landscaper_apis_config_v1alpha1_MetricsConfiguration(ref common.Refe
 				Properties: map[string]spec.Schema{
 					"port": {
 						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
+							Description: "Port specifies the port on which metrics are published",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 				},
@@ -1366,8 +1437,16 @@ func schema_landscaper_apis_config_v1alpha1_OCIConfiguration(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"insecureSkipVerify": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InsecureSkipVerify skips the certificate validation of the oci registry",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"allowPlainHttp"},
+				Required: []string{"allowPlainHttp", "insecureSkipVerify"},
 			},
 		},
 		Dependencies: []string{
@@ -4186,12 +4265,18 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec"),
 						},
 					},
+					"debug": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DebugOptions configure additional debug options.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"),
+						},
+					},
 				},
 				Required: []string{"defaultImage", "initContainer", "waitContainer"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"},
 	}
 }
 
@@ -4252,21 +4337,13 @@ func schema_apis_deployer_container_v1alpha1_ContainerSpec(ref common.ReferenceC
 	}
 }
 
-func schema_apis_deployer_container_v1alpha1_PodStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_apis_deployer_container_v1alpha1_ContainerStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "PodStatus describes the status of a pod with its init, wait and main container.",
+				Description: "ContainerStatus describes the status of a pod with its init, wait and main container.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"podName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PodName is the name of the created pod.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"message": {
 						SchemaProps: spec.SchemaProps{
 							Description: "A human readable message indicating details about why the pod is in this condition.",
@@ -4312,11 +4389,82 @@ func schema_apis_deployer_container_v1alpha1_PodStatus(ref common.ReferenceCallb
 						},
 					},
 				},
-				Required: []string{"podName", "image", "imageID"},
+				Required: []string{"image", "imageID"},
 			},
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.ContainerState"},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_DebugOptions(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DebugOptions defines optional debug options.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"keepPod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "KeepPod will only remove the finalizer on the pod but will not delete the pod.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_PodStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PodStatus describes the status of a pod with its init, wait and main container",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"podName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PodName is the name of the created pod.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lastRun": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastRun is the time when the pod was executed the last time.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"containerStatus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContainerStatus contains the status of the pod that executes the configured container.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus"),
+						},
+					},
+					"initContainerStatus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InitContainerStatus contains the status of the init container.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus"),
+						},
+					},
+					"waitContainerStatus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WaitContainerStatus contains the status of the wait container.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus"),
+						},
+					},
+				},
+				Required: []string{"podName", "containerStatus", "initContainerStatus", "waitContainerStatus"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4450,52 +4598,16 @@ func schema_apis_deployer_container_v1alpha1_ProviderStatus(ref common.Reference
 					},
 					"podStatus": {
 						SchemaProps: spec.SchemaProps{
-							Description: "PodStatus contains the status of the pod that executes the configured container.",
-							Default:     map[string]interface{}{},
+							Description: "PodStatus indicated the status of the executed pod.",
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus"),
 						},
 					},
-					"state": {
-						SchemaProps: spec.SchemaProps{
-							Description: "State contains the status of the deploy items state",
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.StateStatus"),
-						},
-					},
 				},
-				Required: []string{"lastOperation", "podStatus"},
+				Required: []string{"lastOperation"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.StateStatus"},
-	}
-}
-
-func schema_apis_deployer_container_v1alpha1_StateStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "StateStatus defines the status of the deploy item's state",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"data": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Data is the list of secrets that stores the state",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+			"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus"},
 	}
 }
 

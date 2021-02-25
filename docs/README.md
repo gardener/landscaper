@@ -28,5 +28,9 @@
 - [Aggregated Blueprint that includes the nginx-ingress and the echo-server](tutorials/04-aggregated-blueprint.md)
 - [Use shared JSONSchemas in Blueprints](tutorials/05-external-jsonschema.md)
 
+### Development
+- [Local Setup](./development/local-setup.md)
+- [Extend the API](./development/extend-the-api.md)
+
 ### API Reference
 - [Core](./api-reference/core.md)

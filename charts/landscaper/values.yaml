@@ -8,10 +8,14 @@
 
 landscaper:
 
+  crdManagement:
+    deployCrd: true
+#   forceUpdate: true
   registryConfig: # contains optional oci secrets
     cache: {}
 #      useInMemoryOverlay: false
     allowPlainHttpRegistries: false
+    insecureSkipVerify: false
     secrets: {}
 #     <name>: <docker config json>
 
@@ -22,6 +26,13 @@ landscaper:
 #  - container
 #  - helm
 #  - mock
+  deployersConfig: {}
+#    container:
+#      apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+#      kind: Configuration
+#      ...
+
+
 
 replicaCount: 1
 
@@ -29,7 +40,7 @@ image:
   repository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  #tag: ""
 
 imagePullSecrets: []
 nameOverride: ""

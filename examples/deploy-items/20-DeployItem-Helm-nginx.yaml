@@ -16,7 +16,7 @@ spec:
     kind: ProviderConfiguration
 
     chart:
-      ref: eu.gcr.io/myproject/charts/nginx-ingress:0.5.2
+      ref: eu.gcr.io/sap-se-gcp-scp-k8s-dev/charts/ingress-nginx:v0.1.0
 
     name: test
     namespace: default

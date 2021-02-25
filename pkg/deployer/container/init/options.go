@@ -31,6 +31,8 @@ type options struct {
 	StateDirPath                string
 	RegistrySecretBasePath      string
 
+	podNamespace string
+
 	deployItemName      string
 	deployItemNamespace string
 	DeployItemKey       lsv1alpha1.ObjectReference
@@ -47,6 +49,7 @@ func (o *options) Complete(ctx context.Context) {
 	o.StateDirPath = os.Getenv(container.StatePathName)
 	o.RegistrySecretBasePath = os.Getenv(container.RegistrySecretBasePathName)
 
+	o.podNamespace = os.Getenv(container.PodNamespaceName)
 	o.deployItemName = os.Getenv(container.DeployItemName)
 	o.deployItemNamespace = os.Getenv(container.DeployItemNamespaceName)
 	o.DeployItemKey = lsv1alpha1.ObjectReference{Name: o.deployItemName, Namespace: o.deployItemNamespace}

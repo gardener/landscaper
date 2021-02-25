@@ -71,6 +71,7 @@ kind: LandscaperConfiguration
 registry:
     oci:
       allowPlainHttp: {{ .Values.landscaper.registryConfig.allowPlainHttpRegistries }}
+      insecureSkipVerify: {{ .Values.landscaper.registryConfig.insecureSkipVerify }}
       {{- if .Values.landscaper.registryConfig.secrets }}
       configFiles:
       {{- range $key, $value := .Values.landscaper.registryConfig.secrets }}
@@ -85,4 +86,12 @@ registry:
 metrics:
   port: {{ .Values.landscaper.metrics.port | default 8080 }}
 {{- end }}
+{{- if .Values.landscaper.crdManagement }}
+crdManagement:
+    deployCrd: {{ .Values.landscaper.crdManagement.deployCrd }}
+    {{- if .Values.landscaper.crdManagement.forceUpdate }}
+    forceUpdate: {{ .Values.landscaper.crdManagement.forceUpdate }}
+    {{- end }}
+{{- end }}
+
 {{- end }}

@@ -84,7 +84,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			continue
 		}
 
-		if len(def.Schema.RawMessage) != 0 {
+		if def.Schema != nil {
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, data); err != nil {
 				return nil, nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
 			}

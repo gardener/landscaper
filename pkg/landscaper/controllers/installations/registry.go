@@ -9,6 +9,7 @@ import (
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -41,7 +42,11 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	if a.lsConfig.Registry.OCI != nil {
 		ociConfigFiles = a.lsConfig.Registry.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
+	ociKeyring, err := credentials.NewBuilder(a.Log()).DisableDefaultConfig().
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(secrets...).
+		Build()
 	if err != nil {
 		return err
 	}

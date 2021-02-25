@@ -1,0 +1,33 @@
+meta:
+  schemaVersion: v2
+component:
+  name: eu.gcr.io/gardener-project/landscaper/container-deployer-controller
+  version: v0.5.3
+  provider: internal
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: eu.gcr.io/gardener-project/landscaper
+  sources: []
+  componentReferences: []
+  resources:
+  - type: helm
+    name: container-deployer-chart
+    version: v0.5.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller:v0.5.3
+  - type: ociImage
+    name: container-deployer-image
+    version: v0.5.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-controller:v0.5.3
+  - type: blueprint
+    name: container-deployer-blueprint
+    version: v0.5.3
+    relation: local
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/landscaper/blueprints/dev/container-deployer:v0.5.3

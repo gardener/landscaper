@@ -15,7 +15,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
+// ProviderConfiguration is the mock deployer configuration that is expected in a DeployItem
 type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 

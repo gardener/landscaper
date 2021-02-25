@@ -37,6 +37,9 @@ func WaitUntilMainContainerFinished(ctx context.Context, log logr.Logger, kubeCl
 			if apierrors.IsNotFound(err) {
 				return false, err
 			}
+			if apierrors.IsUnauthorized(err) {
+				return false, err
+			}
 			log.Error(err, "unable to get pod", "pod", podKey.String())
 			return false, nil
 		}

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "deployer.serviceAccountName" . }}
+  labels:
+    {{- include "deployer.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "deployer.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "deployer.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{ end }}

@@ -62,23 +62,21 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{/*
+Creates the container deployer configuration file which will be encapsulated in a secret.
+*/}}
 {{- define "deployer-config" -}}
 apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
-
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
-
 initContainer:
   image: "{{ .Values.deployer.initContainer.repository }}:{{ .Values.deployer.initContainer.tag | default .Chart.AppVersion }}"
 waitContainer:
   image: "{{ .Values.deployer.waitContainer.repository }}:{{ .Values.deployer.waitContainer.tag | default .Chart.AppVersion }}"
-
 {{- if .Values.deployer.defaultImage.image }}
 defaultImage:
   image: "{{ .Values.deployer.defaultImage.image }}"
 {{- end }}
-
-
 {{- if .Values.deployer.oci }}
 oci:
   allowPlainHttp: {{ .Values.deployer.oci.allowPlainHttp }}
@@ -88,5 +86,9 @@ oci:
   - /app/ls/registry/components/{{ $key }}
   {{- end }}
   {{- end }}
+{{- end }}
+{{- with .Values.targetSelector }}
+targetSelector:
+{{ toYaml . }}
 {{- end }}
 {{- end }}

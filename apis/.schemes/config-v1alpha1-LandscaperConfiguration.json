@@ -21,6 +21,24 @@
         }
       }
     },
+    "config-v1alpha1-CrdManagementConfiguration": {
+      "description": "CrdManagementConfiguration contains the configuration of the CRD management",
+      "type": "object",
+      "required": [
+        "deployCrd"
+      ],
+      "properties": {
+        "deployCrd": {
+          "description": "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
+          "type": "boolean",
+          "default": false
+        },
+        "forceUpdate": {
+          "description": "ForceUpdate specifies whether existing CRDs should be updated",
+          "type": "boolean"
+        }
+      }
+    },
     "config-v1alpha1-LocalRegistryConfiguration": {
       "description": "LocalRegistryConfiguration contains the configuration for a local registry",
       "type": "object",
@@ -43,6 +61,7 @@
       ],
       "properties": {
         "port": {
+          "description": "Port specifies the port on which metrics are published",
           "type": "integer",
           "format": "int32",
           "default": 0
@@ -68,7 +87,8 @@
       "description": "OCIConfiguration holds configuration for the oci registry",
       "type": "object",
       "required": [
-        "allowPlainHttp"
+        "allowPlainHttp",
+        "insecureSkipVerify"
       ],
       "properties": {
         "allowPlainHttp": {
@@ -87,6 +107,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "insecureSkipVerify": {
+          "description": "InsecureSkipVerify skips the certificate validation of the oci registry",
+          "type": "boolean",
+          "default": false
         }
       }
     },
@@ -111,9 +136,9 @@
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
     },
-    "defaultOCI": {
-      "$ref": "#/definitions/config-v1alpha1-OCIConfiguration",
-      "description": "DefaultOCI defines the default oci configuration which is used if it's not overwritten by more specific configuration."
+    "crdManagement": {
+      "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
+      "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

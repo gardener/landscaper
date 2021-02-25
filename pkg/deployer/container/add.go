@@ -5,106 +5,54 @@
 package container
 
 import (
-	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 )
 
-func AddActuatorToManager(hostMgr manager.Manager, landscaperMgr manager.Manager, config *containerv1alpha1.Configuration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ContainerDeployer"), config)
+func AddActuatorToManager(hostMgr manager.Manager, lsMgr manager.Manager, config *containerv1alpha1.Configuration) error {
+	ctrlLogger := ctrl.Log.WithName("controllers")
+
+	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
+		Scheme: hostMgr.GetScheme(),
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
-	if err := hostMgr.Add(&hostRunnable{a: a}); err != nil {
+	diRec, err := NewDeployItemReconciler(
+		ctrlLogger.WithName("ContainerDeployer"),
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
+		directHostClient,
+		config)
+	if err != nil {
 		return err
 	}
 
 	src := source.NewKindWithCache(&corev1.Pod{}, hostMgr.GetCache())
+	podRec := NewPodReconciler(
+		ctrlLogger.WithName("PodReconciler"),
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
+		config,
+		diRec)
 
-	return ctrl.NewControllerManagedBy(landscaperMgr).
+	err = ctrl.NewControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}).
+		Complete(diRec)
+	if err != nil {
+		return err
+	}
+	return ctrl.NewControllerManagedBy(lsMgr).
+		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
 		Watches(src, &PodEventHandler{}).
-		Complete(a)
-}
-
-// PodEventHandler implements the controller runtime handler interface
-// that reconciles only pods that are created by this controller
-type PodEventHandler struct{}
-
-var _ handler.EventHandler = &PodEventHandler{}
-
-func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (reconcile.Request, bool) {
-	var (
-		req = reconcile.Request{}
-		ok  bool
-	)
-	req.Name, ok = object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]
-	if !ok {
-		return req, false
-	}
-	req.Namespace, ok = object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]
-	if !ok {
-		return req, false
-	}
-	return req, true
-}
-
-func (p *PodEventHandler) Create(event event.CreateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Update(event event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.ObjectNew); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Delete(event event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Generic(event event.GenericEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-// HostClient is used by the ControllerManager to inject the host client into teh actuator
-type HostClient interface {
-	InjectHostClient(client.Client) error
-}
-
-// hostRunnable is a dummy runnable function that is used to inject the host lsClient into the actuator.
-type hostRunnable struct {
-	a reconcile.Reconciler
-}
-
-var _ manager.Runnable = &hostRunnable{}
-var _ inject.Client = &hostRunnable{}
-
-func (_ hostRunnable) Start(ctx context.Context) error { return nil }
-
-func (r hostRunnable) InjectClient(client client.Client) error {
-	if s, ok := r.a.(HostClient); ok {
-		return s.InjectHostClient(client)
-	}
-	return nil
+		Complete(podRec)
 }

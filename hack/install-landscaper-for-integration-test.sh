@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2018 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+# Copyright (c) 2021 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -61,5 +61,17 @@ landscaper:
   - mock
 " > /tmp/values.yaml
 
-export KUBECONFIG="${TM_KUBECONFIG_PATH}/kind.config"
-helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml --set "image.tag=${VERSION}"
+touch /tmp/registry-values.yaml
+if [[ -f "$TM_SHARED_PATH/docker.config" ]]; then
+  printf "
+landscaper:
+  registryConfig:
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: true
+    secrets:
+      default: $(cat "$TM_SHARED_PATH/docker.config")
+  " > /tmp/registry-values.yaml
+fi
+
+export KUBECONFIG="${TM_KUBECONFIG_PATH}/${CLUSTER_NAME}.config"
+helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "image.tag=${VERSION}"

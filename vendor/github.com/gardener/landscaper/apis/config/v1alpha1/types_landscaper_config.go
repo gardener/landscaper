@@ -17,14 +17,14 @@ type LandscaperConfiguration struct {
 	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
 	// +optional
 	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
-	// DefaultOCI defines the default oci configuration which is used
-	// if it's not overwritten by more specific configuration.
-	DefaultOCI *OCIConfiguration `json:"defaultOCI,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
 	Registry RegistryConfiguration `json:"registry"`
 	// Metrics allows to configure how metrics are exposed
 	//+optional
 	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
+	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
+	// +optional
+	CrdManagement *CrdManagementConfiguration `json:"crdManagement,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry
@@ -57,6 +57,8 @@ type OCIConfiguration struct {
 
 	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
 	AllowPlainHttp bool `json:"allowPlainHttp"`
+	// InsecureSkipVerify skips the certificate validation of the oci registry
+	InsecureSkipVerify bool `json:"insecureSkipVerify"`
 }
 
 // OCICacheConfiguration contains the configuration for the oci cache
@@ -73,5 +75,16 @@ type OCICacheConfiguration struct {
 
 // MetricsConfiguration allows to configure how metrics are exposed
 type MetricsConfiguration struct {
+	// Port specifies the port on which metrics are published
 	Port int32 `json:"port"`
+}
+
+// CrdManagementConfiguration contains the configuration of the CRD management
+type CrdManagementConfiguration struct {
+	// DeployCustomResourceDefinitions specifies if CRDs should be deployed
+	DeployCustomResourceDefinitions bool `json:"deployCrd"`
+
+	// ForceUpdate specifies whether existing CRDs should be updated
+	// +optional
+	ForceUpdate bool `json:"forceUpdate,omitempty"`
 }

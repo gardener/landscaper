@@ -48,6 +48,16 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	return values
 }
 
+// StringIsOneOf checks whether in is one of s.
+func StringIsOneOf(in string, s ...string) bool {
+	for _, search := range s {
+		if search == in {
+			return true
+		}
+	}
+	return false
+}
+
 // CopyFS copies all files and directories of a filesystem to another.
 func CopyFS(src, dst vfs.FileSystem, srcPath, dstPath string) error {
 	return vfs.Walk(src, srcPath, func(path string, info os.FileInfo, err error) error {

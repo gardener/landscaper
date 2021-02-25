@@ -5,6 +5,9 @@
 package utils
 
 import (
+	"crypto/tls"
+	"net/http"
+
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 
@@ -28,6 +31,12 @@ func (c *WithConfigurationStruct) ApplyOption(options *ociclient.Options) {
 		}
 	}
 	options.AllowPlainHttp = c.AllowPlainHttp
+	if c.InsecureSkipVerify {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		options.HTTPClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}
+	}
 }
 
 // WithConfiguration applies external oci configuration as internal options.

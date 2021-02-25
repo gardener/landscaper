@@ -12,7 +12,8 @@ spec:
     go run -mod=vendor ./hack/testcluster delete
     --kubeconfig=$TM_KUBECONFIG_PATH/testmachinery.config
     --namespace=kind
-    --id=$TM_TESTRUN_ID
+    --enable-registry=false
+    --id=$TM_TESTRUN_ID$CLUSTER_NAME
     --timeout=10m
 
   image: golang:1.15.7
