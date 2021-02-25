@@ -1286,9 +1286,7 @@ func Convert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.ExportD
 
 func autoConvert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in *FieldValueDefinition, out *core.FieldValueDefinition, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_v1alpha1_JSONSchemaDefinition_To_core_JSONSchemaDefinition(&in.Schema, &out.Schema, s); err != nil {
-		return err
-	}
+	out.Schema = (*core.JSONSchemaDefinition)(unsafe.Pointer(in.Schema))
 	out.TargetType = in.TargetType
 	return nil
 }
@@ -1300,9 +1298,7 @@ func Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(in *Fiel
 
 func autoConvert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(in *core.FieldValueDefinition, out *FieldValueDefinition, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_core_JSONSchemaDefinition_To_v1alpha1_JSONSchemaDefinition(&in.Schema, &out.Schema, s); err != nil {
-		return err
-	}
+	out.Schema = (*JSONSchemaDefinition)(unsafe.Pointer(in.Schema))
 	out.TargetType = in.TargetType
 	return nil
 }
