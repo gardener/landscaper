@@ -52,6 +52,13 @@ landscaper:
     head-update:
       traits:
         draft_release: ~
+      steps:
+        integration-test:
+          execute:
+          - integration-test
+          depends:
+          - publish
+          image: 'eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable'
     pull-request:
       traits:
         pull-request: ~
