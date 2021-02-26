@@ -61,6 +61,26 @@ var _ = Describe("Reconcile", func() {
 		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
 	})
 
+	It("should forward imagePullSecrets", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		exec := fakeExecutions["test4/exec-1"]
+		eOp := execution.NewOperation(op, exec, false)
+
+		err := eOp.Reconcile(ctx)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+
+		item := &lsv1alpha1.DeployItem{}
+		err = fakeClient.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), item)
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(item.Spec.Type).To(Equal(lsv1alpha1.DeployItemType("landscaper.gardener.cloud/helm")))
+		Expect(item.Spec.RegistryPullSecrets).To(Equal([]lsv1alpha1.ObjectReference{lsv1alpha1.ObjectReference{Name: "my-secret-1", Namespace: "test4"}}))
+		Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(item.Generation))
+	})
+
 	It("should not deploy a deployitem when dependent ones haven't finished yet", func() {
 		ctx := context.Background()
 		defer ctx.Done()

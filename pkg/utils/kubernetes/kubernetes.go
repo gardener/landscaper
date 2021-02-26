@@ -79,6 +79,20 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f c
 	return controllerutil.CreateOrUpdate(ctx, c, obj, f)
 }
 
+// ResolveSecrets finds and returns the secrets referenced by secretRefs
+func ResolveSecrets(ctx context.Context, client client.Client, secretRefs []v1alpha1.ObjectReference) ([]corev1.Secret, error) {
+	secrets := make([]corev1.Secret, len(secretRefs))
+	for i, secretRef := range secretRefs {
+		secret := corev1.Secret{}
+		// todo: check for cache
+		if err := client.Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
+			return nil, err
+		}
+		secrets[i] = secret
+	}
+	return secrets, nil
+}
+
 // Mutate wraps a MutateFn and applies validation to its result
 func Mutate(f controllerutil.MutateFn, key client.ObjectKey, obj client.Object) error {
 	if err := f(); err != nil {

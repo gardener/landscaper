@@ -11,7 +11,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
+
 	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
@@ -97,7 +100,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := ociclient.NewClient(h.log.WithName("oci"), utils.WithConfiguration(h.Configuration.OCI), ociclient.WithCache{Cache: h.componentsRegistryMgr.SharedCache()})
+	ociClient, err := createOCIClient(ctx, h.log, h.kubeClient, h.DeployItem, h.Configuration, h.componentsRegistryMgr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to build oci client: %w", err)
 	}
@@ -174,4 +177,32 @@ func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 		return restConfig, kubeClient, nil
 	}
 	return nil, nil, errors.New("neither a target nor kubeconfig are defined")
+}
+
+func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config *helmv1alpha1.Configuration, componentsRegistryMgr *componentsregistry.Manager) (ociclient.Client, error) {
+	// resolve all pull secrets
+	secrets, err := kubernetes.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
+	if err != nil {
+		return nil, err
+	}
+
+	// always add a oci client to support unauthenticated requests
+	ociConfigFiles := make([]string, 0)
+	if config.OCI != nil {
+		ociConfigFiles = config.OCI.ConfigFiles
+	}
+	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
+	if err != nil {
+		return nil, err
+	}
+	ociClient, err := ociclient.NewClient(log,
+		utils.WithConfiguration(config.OCI),
+		ociclient.WithResolver{Resolver: ociKeyring},
+		ociclient.WithCache{Cache: componentsRegistryMgr.SharedCache()},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return ociClient, nil
 }

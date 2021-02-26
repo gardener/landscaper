@@ -482,6 +482,24 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 		}
 	}
 
+	for _, secretRef := range c.DeployItem.Spec.RegistryPullSecrets {
+		secret := &corev1.Secret{}
+
+		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+		}
+		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secret.Data[corev1.DockerConfigJsonKey]))
+		if err != nil {
+			c.log.V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			continue
+		}
+		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
+			erro = fmt.Errorf("unable to add config from secret %q to credentials store: %w", secretRef.NamespacedName().String(), err)
+			return
+		}
+	}
+
 	var err error
 	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, ociKeyring)
 	if err != nil {

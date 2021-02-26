@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: exec-1
+  namespace: test4
+spec:
+
+  deployItems:
+  - name: a
+    type: landscaper.gardener.cloud/helm
+    config:
+      my-val: val1
+  registryPullSecrets:
+  - name: my-secret-1
+    namespace: test4
+
+status:
+  phase: Init
+
+  observedGeneration: 0
