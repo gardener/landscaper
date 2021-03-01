@@ -70,6 +70,7 @@ landscaper:
         release:
           nextversion: 'bump_minor'
           release_callback: '.ci/release'
+          next_version_callback: '.ci/next_version'
           git_tags:
           - ref_template: 'refs/tags/{VERSION}'
           - ref_template: 'refs/tags/apis/{VERSION}'
