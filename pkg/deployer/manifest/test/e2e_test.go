@@ -60,6 +60,7 @@ var _ = Describe("Manifest Deployer", func() {
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -195,6 +196,52 @@ var _ = Describe("Manifest Deployer", func() {
 
 		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-configmap", "default"), &corev1.ConfigMap{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
+	})
+
+	It("should fail if a resource is created in non existing namespace", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+
+		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
+		Expect(err).ToNot(HaveOccurred())
+		ok, err := inject.ClientInto(testenv.Client, actuator)
+		Expect(ok).To(BeTrue())
+		Expect(err).ToNot(HaveOccurred())
+
+		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
+		Expect(ok).To(BeTrue())
+		Expect(err).ToNot(HaveOccurred())
+
+		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
+
+		// First reconcile will add a finalizer
+		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		_ = testutil.ShouldNotReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
+
+		status := &manifest.ProviderStatus{}
+		manifestDecoder := serializer.NewCodecFactory(manifestactuator.ManifestScheme).UniversalDecoder()
+		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
+		testutil.ExpectNoError(err)
+		Expect(status.ManagedResources).To(HaveLen(0))
+
+		// Expect that the secret has not been created
+		secret := &corev1.Secret{}
+		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret)
+		Expect(apierrors.IsNotFound(err)).To(BeTrue())
+
+		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		// Expect that the deploy item gets deleted
+		Eventually(func() error {
+			_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			return err
+		}, time.Minute, 5*time.Second).Should(Succeed())
+
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 	})
 
 })

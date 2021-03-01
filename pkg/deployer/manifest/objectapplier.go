@@ -92,9 +92,6 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 			},
 		},
 	}
-	a.mux.Lock()
-	a.managedResources = append(a.managedResources, mr)
-	a.mux.Unlock()
 
 	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
 	currObj.GetObjectKind().SetGroupVersionKind(uObj.GetObjectKind().GroupVersionKind())
@@ -109,12 +106,14 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 			return fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 		}
 		a.mux.Lock()
+		a.managedResources = append(a.managedResources, mr)
 		a.managedObjects = append(a.managedObjects, uObj)
 		a.mux.Unlock()
 		return nil
 	}
 
 	a.mux.Lock()
+	a.managedResources = append(a.managedResources, mr)
 	a.managedObjects = append(a.managedObjects, uObj)
 	a.mux.Unlock()
 
