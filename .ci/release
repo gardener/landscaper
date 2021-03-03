@@ -19,7 +19,8 @@ SOURCE_DIR="$(dirname $0)/.."
 # update go.mod's internal dependency to local module so that it can be used by other repositories
 VERSION=$(cat ${SOURCE_DIR}/VERSION)
 
-sed -i "s@github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000@github.com/gardener/landscaper/apis $VERSION@" \
+# 0,/)/ only replaces the first ocurrence until the first dep block with ')' is reached
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
   ${SOURCE_DIR}/go.mod
 
 cd $SOURCE_DIR
