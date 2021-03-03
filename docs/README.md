@@ -12,6 +12,7 @@
 - [Blueprints](./usage/Blueprints.md)
 - [Installations](./usage/Installations.md)
 - [Template Executors](./usage/TemplateExecutors.md)
+- [JSON Schema](./usage/JSONSchema.md)
 
 ### Deployers
 - [Overview](./deployer)
@@ -33,4 +34,5 @@
 - [Extend the API](./development/extend-the-api.md)
 
 ### API Reference
+- [Types]
 - [Core](./api-reference/core.md)
