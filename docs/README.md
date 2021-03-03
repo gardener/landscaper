@@ -34,5 +34,5 @@
 - [Extend the API](./development/extend-the-api.md)
 
 ### API Reference
-- [Types]
+- [Types](./technical/types.md)
 - [Core](./api-reference/core.md)
