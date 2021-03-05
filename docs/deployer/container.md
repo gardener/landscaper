@@ -1,10 +1,20 @@
 # Container Deployer
 
-The container deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/container`. It executes the given container spec with the injected imports and collect exports from a predefined path.
+The container deployer is a controller that allows you to run whatever coding you need to set up your cloud environment.
+You just need to provide your program as a container image which is then executed by the landscaper in combination
+with the container deployer.
+
+Your image is provided as a reference in a DeployItem of type `landscaper.gardener.cloud/container`. The DeployItem 
+itself must be embedded in a Blueprint and specifies the input data required by your program. The landscaper in
+combination with the container deployer provides these input data during runtime. The output or export data of
+your program must be stored in a predefined file and are collected by the landscaper/container deployer.
+
+More details and examples about how to create a component with a blueprint containing a DeployItem for the container 
+deployer could be found [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md). 
 
 ### Configuration
 
-This sections describes the provider specific configuration
+This section describes the provider specific configuration for a container DeployItem:
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -44,14 +54,19 @@ spec:
 
 ### Contract
 
-In order for the container deployer to interact with the landscaper a contract for imports, exports and the state has to be defined.
+When the image with your program is executed, it gets access to particular information via env variables: 
 
 - The current operation that the image should execute is defined by the env var `OPERATION` which can be `RECONCILE` or `DELETE`.
-- *Imports* can be expected as a json file at the path given by the env var `IMPORTS_PATH`.
+  `RECONCILE` means that the program should just execute its usual installation whereby `DELETE` signals that the
+  corresponding DeployItem was deleted and some optional cleanup could be done.
+- *Imports* are provided as a json file at the path given by the env var `IMPORTS_PATH`.
 - *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.
-- The optional *state* should be written to the directory given by the env var `STATE_PATH`.
-- The complete state directory will be tarred and managed by the landscaper(:warning: no symlinks)
-- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. The json file contains a resolved component descriptor list which means that all transitive component descriptors are included in a list.
+- An optional *state* should be written to the directory given by the env var `STATE_PATH`. The complete state 
+  directory will be tarred and managed by the landscaper(:warning: no symlinks). The last state data are provided 
+  in the next execution or your program. 
+- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. 
+  The json file contains a resolved component descriptor list which means that all transitive component descriptors are 
+  included in a list.
 
   ```json
   {
@@ -70,11 +85,16 @@ In order for the container deployer to interact with the landscaper a contract f
   }
   ```
 
-- The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env var `CONTENT_PATH`.
+- The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env 
+  var `CONTENT_PATH`. The content blob consists of all data stored in a blueprint, consisting of the blueprint yaml file
+  and all other files and folders you stored together with this.
+  
+Again you will find a more detailed explanation of these env variable
+[here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
 
 ### Status
 
-This section describes the provider specific status of the resource
+This section describes the provider specific status of the resource.
 
 ```yaml
 status:
@@ -96,6 +116,9 @@ status:
 
 ### Operations
 
-In addition to the annotations that are specified by the deploy item contract (operation reconcile and force-reconcile), the container deployer implements in addition specific annotations that can be set to instruct the container deployer to perform specific actions.
+In addition to the annotations that are specified in the DeployItem contract (operation reconcile and force-reconcile), 
+the container deployer implements in addition specific annotations that can be set to instruct the container deployer to 
+perform specific actions.
 
-- _container.deployer.landscaper.gardener.cloud/force-cleanup=true_ : triggers the force deletion of the deploy item. Force deletion means that the delete container is skipped and all other resources are cleaned up. 
+- _container.deployer.landscaper.gardener.cloud/force-cleanup=true_ : triggers the force deletion of the deploy item. 
+  Force deletion means that the delete container is skipped and all other resources are cleaned up. 
