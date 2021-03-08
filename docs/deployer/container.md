@@ -1,13 +1,14 @@
 # Container Deployer
 
 The container deployer is a controller that allows you to run whatever coding you need to set up your cloud environment.
-You just need to provide your program as a container image which is then executed by the landscaper in combination
+You just need to provide your program as a container image which is then executed by Landscaper in combination
 with the container deployer.
 
 Your image is provided as a reference in a DeployItem of type `landscaper.gardener.cloud/container`. The DeployItem 
-itself must be embedded in a Blueprint and specifies the input data required by your program. The landscaper in
+itself must be embedded in a Blueprint and specifies the input data required by your program. Landscaper in
 combination with the container deployer provides these input data during runtime. The output or export data of
-your program must be stored in a predefined file and are collected by the landscaper/container deployer.
+your program must be stored in a predefined file and are collected by Landscaper/container deployer once your 
+program and thus the container terminates.
 
 More details and examples about how to create a component with a blueprint containing a DeployItem for the container 
 deployer could be found [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md). 
@@ -62,7 +63,7 @@ When the image with your program is executed, it gets access to particular infor
 - *Imports* are provided as a json file at the path given by the env var `IMPORTS_PATH`.
 - *Exports* should be written to a json or yaml file at the path given by the env var `EXPORTS_PATH`.
 - An optional *state* should be written to the directory given by the env var `STATE_PATH`. The complete state 
-  directory will be tarred and managed by the landscaper(:warning: no symlinks). The last state data are provided 
+  directory will be tarred and managed by Landscaper(:warning: no symlinks). The last state data are provided 
   in the next execution or your program. 
 - The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. 
   The json file contains a resolved component descriptor list which means that all transitive component descriptors are 
