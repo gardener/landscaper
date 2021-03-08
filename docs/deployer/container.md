@@ -118,7 +118,7 @@ status:
 ### Operations
 
 In addition to the annotations that are specified in the DeployItem contract (operation reconcile and force-reconcile), 
-the container deployer implements in addition specific annotations that can be set to instruct the container deployer to 
+the container deployer implements specific annotations that can be set to instruct the container deployer to 
 perform specific actions.
 
 - _container.deployer.landscaper.gardener.cloud/force-cleanup=true_ : triggers the force deletion of the deploy item. 
