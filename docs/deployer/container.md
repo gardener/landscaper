@@ -65,9 +65,9 @@ When the image with your program is executed, it gets access to particular infor
 - An optional *state* should be written to the directory given by the env var `STATE_PATH`. The complete state 
   directory will be tarred and managed by Landscaper(:warning: no symlinks). The last state data are provided 
   in the next execution or your program. 
-- The *Component Descriptor* can be expected as a json file at the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. 
-  The json file contains a resolved component descriptor list which means that all transitive component descriptors are 
-  included in a list.
+- If *componentDescriptor* is specified in the DeployItem, the *Component Descriptor* can be expected as a json file at 
+  the path given by the env var `COMPONENT_DESCRIPTOR_PATH`. The json file contains a resolved component descriptor list 
+  which means that all transitive component descriptors are included in a list.
 
   ```json
   {
@@ -86,9 +86,9 @@ When the image with your program is executed, it gets access to particular infor
   }
   ```
 
-- The optional *content blob* that can be defined by a definition can be accessed at the directory given by the env 
-  var `CONTENT_PATH`. The content blob consists of all data stored in a blueprint, consisting of the blueprint yaml file
-  and all other files and folders you stored together with this.
+- If *componentDescriptor* and *blueprint* is specified, a *content blob* can be accessed at the directory given by 
+  the env var `CONTENT_PATH`. The *content blob* consists of all data stored in the blueprint, consisting of the blueprint 
+  yaml file and all other files and folders you stored together with this.
   
 Again you will find a more detailed explanation of these env variable
 [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
