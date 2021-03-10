@@ -3,7 +3,8 @@
 In this example we describe how to deploy an nginx with the help of Landscaper.
 
 We describe how to develop a component containing a Component Descriptor and a Blueprint with a DeployItem.
-The DeployItem specifies how to deploy the nginx as a helm chart.
+The Blueprint is a collection of DeployItems. In our case it contains exactly one DeployItem which specifies how to 
+deploy the nginx as a helm chart.
 
 ## Deploy Item
 
@@ -48,7 +49,16 @@ You find the DeployItem in file [deploy-execution-nginx.yaml](./resources/bluepr
 
 ## Blueprint
 
-Next, we specify the Blueprint. The Blueprint consists of a [directory](./resources/blueprint) containing a 
+Next, we specify the Blueprint. The Blueprint consists of a [directory](./resources/blueprint) with the following 
+structure:
+
+```
+├── blueprint
+    ├── blueprint.yaml
+    └── deploy-execution-nginx.yaml
+```
+
+The Blueprint contains a
 [blueprint.yaml](./resources/blueprint/blueprint.yaml) with the following content, and the 
 [deploy-execution-nginx.yaml](./resources/blueprint/deploy-execution-nginx.yaml) of the DeployItem. 
  

@@ -35,7 +35,7 @@ A Blueprint Component usually consists of a Blueprint, and the resources require
 Blueprint, like helm charts, docker images, json schema etc. All these required resources are described by a Component 
 Descriptor as a yaml file. 
 
-Component Descriptors are a complete description of all stuff belonging to a component and could be used for
+Component Descriptors are a complete description of all resources belonging to a component and could be used for
 different tasks like security scanning or transport.
 
 ## Component Archive
@@ -68,7 +68,8 @@ defined in the DeployItems.
 
 Very complex systems require hundreds of installation steps resulting in Blueprints with many DeployItems. 
 Landscaper allows defining subsystems each described by a separate Blueprint and to combine these in an aggregated 
-Blueprint. An aggregated Blueprint references the Blueprints of the subsystems not directly but via Sub-Installations. 
+Blueprint. An aggregated Blueprint references the Blueprints of the subsystems not directly but via Sub-Installations.
+Sub-Installations are again Installations referencing a Blueprint, which describes the subsystem.
 
 Assume an Installation referencing an aggregated Blueprint is deployed. When all input data of the Installation is 
 available, all Sub-Installations are created. Sub-Installations get their input data from the parent installation as well

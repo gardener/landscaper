@@ -9,11 +9,11 @@ In this chapter, it is described what Landscaper is, what it does and why you sh
 
 - [Basic Concepts](./level_0/basic_concepts.md)
 
-- [First simple example](./level_0/first_simple_example.md)
+- [First simple Example](./level_0/first_simple_example.md)
+
+- [Architecture Overview](./level_0/basic_architecture.md)
 
 - Landscaper Components
-  - Component Overview
-  - Relationship of Landscaper Components
   - Component Details
     - Blueprints, Component Descriptors, Installations, Targets, DataObjects, DeployItems
   
