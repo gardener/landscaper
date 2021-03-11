@@ -38,26 +38,15 @@ Descriptor as a yaml file.
 Component Descriptors are a complete description of all resources belonging to a component and could be used for
 different tasks like security scanning or transport.
 
-## Component Archive
-
-Usually Component Descriptors are stored in Component Archive in an OCI registry. A Component Archive 
-contains a Component Descriptor and optionally some other resources. Be aware that not all resources
-of a component are stored in one Component Archive. The Component Descriptor can also just contain
-references to resources located somewhere else, like a helm chart in some remote helm chart repository.
-
-Blueprints are also stored in an OCI registry. They can be stored as a part of the Component Archive 
-they belong to. Alternatively, they can be stored as a standalone OCI artifact referenced by the Component 
-Descriptor of a Component Archive.
-
-More details about Component Descriptors and Component Descriptor Artifacts can be found 
-[here](https://github.com/gardener/component-spec).
+Usually Component Descriptors and Blueprints are stored in an OCI registry. More details about Component 
+Descriptors and Component Descriptor Artifacts can be found [here](https://github.com/gardener/component-spec).
 
 ## Installation
 
-Blueprints, Component Descriptors, and Component Archives do not trigger any installation process. A Blueprints is a reusable 
+Blueprints and Component Descriptors do not trigger any installation process. A Blueprints is a reusable 
 definition of the installation process of a particular cloud environment. An instance of such a Blueprint with particular
 import data is called an Installation. Installations are kubernetes Custom Resources (CR) defined by Landscaper.
-An installation references the Blueprint of a Component via the corresponding Component Archive.
+An installation references the Blueprint of a Component via the corresponding Component Descriptor.
 It specifies the import data and how to handle the export data. 
 
 An Installation is deployed to the cluster where Landscaper watches these CRs. If Landscaper recognizes an installation

@@ -127,16 +127,16 @@ meta:
   schemaVersion: v2
 ```
 
-We have uploaded the Component Descriptor as a Component Archive into an OCI registry. You find it
+We have uploaded the Component Descriptor into an OCI registry. You find it
 [here](https://eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/component-descriptors/github.com/gardener/landscaper/first-example).
-You can upload a Component Archive by yourself with the help of the Landscaper CLI command
+You can upload it by yourself with the help of the Landscaper CLI command
 [landscaper-cli components-cli component-archive remote push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_components-cli_component-archive_remote_push.md).
 
 ## Installation
 
-Until now, we only created a reusable component and uploaded it to an OCI registry as a Component Archive. Here we show
+Until now, we only created a reusable component and uploaded it to an OCI registry. Here we show
 how to use this to install the nginx in some kubernetes cluster. Therefore, we create a custom 
-resource of kind `Installation` which references the Component Archive and the contained Blueprint and deploy it to 
+resource of kind `Installation` which references the Component Descriptor and the contained Blueprint and deploy it to 
 a cluster watched by Landscaper. This cluster is usually not the same as the cluster where you want to install the nginx. 
 
 Remark: If you want to set up your own experimental landscaper and OCI registry you find a detailed description 
@@ -178,8 +178,8 @@ spec:
         target: "#my-cluster"
 ```
 
-The Installation references the Component Archive and the contained Component Descriptor.
-The Blueprint can be located by its resource name in the Component Descriptor where you also find its OCI address.
+The Installation references the Component Descriptor. The Blueprint can be located by its resource name in the 
+Component Descriptor where you also find its OCI address.
 
 You remember the Blueprint has specified an import parameter `target-cluster`. The Installation defines how to retrieve 
 the value for this parameter. In our case the value is a custom resource of kind `Target` with name `my-cluster`.
