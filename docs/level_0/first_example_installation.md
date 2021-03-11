@@ -8,8 +8,9 @@ We have uploaded the component into an OCI registry. You find it
 
 ## Step 1
 
-We want to deploy the nginx on some target cluster. Landscaper needs this access information to execute the deployment. 
-Therefore, we create a custom resource of type Target in some namespace `demo` on the cluster where Landscaper is running:
+We want to deploy the nginx on some target cluster. Landscaper needs the access information for this cluster to execute 
+the deployment. Therefore, we create a custom resource of type Target in some namespace `demo` on the cluster watched 
+by Landscaper:
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -26,7 +27,9 @@ spec:
   type: landscaper.gardener.cloud/kubernetes-cluster
 ```
 
-You can use the Landscaper-CLI command [landscaper-cli target create](https://github.com/gardener/landscapercli/blob/master/docs/commands/targets/create.md)
+The field `spec.config.kubeconfig` must contain the kubeconfig of the target cluster.
+
+You can use the Landscaper CLI command [landscaper-cli target create](https://github.com/gardener/landscapercli/blob/master/docs/commands/targets/create.md)
 to create the Target more comfortably.
 
 ## Step 2

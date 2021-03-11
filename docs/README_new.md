@@ -9,7 +9,9 @@ In this chapter, it is described what Landscaper is, what it does and why you sh
 
 - [Basic Concepts](./level_0/basic_concepts.md)
 
-- [First simple Example](./level_0/first_simple_example.md)
+- [First Example Installation](./level_0/first_example_installation.md)
+
+- [First Example Component](./level_0/first_example_component.md)
 
 - [Architecture Overview](./level_0/basic_architecture.md)
 

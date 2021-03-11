@@ -1,9 +1,9 @@
-# First simple Example
+# First Example Component
 
-In this example we describe how to deploy an nginx with the help of Landscaper.
+In this example we describe how to develop the component that we have used in the
+[First Example Installation](./first_example_installation.md).
 
-We describe how to develop a component containing a Component Descriptor and a Blueprint with a DeployItem.
-The Blueprint is a collection of DeployItems. In our case it contains exactly one DeployItem which specifies how to 
+The component contains a Component Descriptor and a Blueprint with one DeployItem. The DeployItem specifies how to 
 deploy the nginx as a helm chart.
 
 ## Deploy Item
@@ -53,7 +53,7 @@ Next, we specify the Blueprint. The Blueprint consists of a [directory](./resour
 structure:
 
 ```
-├── blueprint
+└── blueprint
     ├── blueprint.yaml
     └── deploy-execution-nginx.yaml
 ```
@@ -129,91 +129,8 @@ meta:
 
 We have uploaded the Component Descriptor into an OCI registry. You find it
 [here](https://eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/component-descriptors/github.com/gardener/landscaper/first-example).
-You can upload it by yourself with the help of the Landscaper CLI command
+You can upload a Component Descriptor by yourself to another OCI registry with the help of the Landscaper CLI command
 [landscaper-cli components-cli component-archive remote push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_components-cli_component-archive_remote_push.md).
 
-## Installation
-
-Until now, we only created a reusable component and uploaded it to an OCI registry. Here we show
-how to use this to install the nginx in some kubernetes cluster. Therefore, we create a custom 
-resource of kind `Installation` which references the Component Descriptor and the contained Blueprint and deploy it to 
-a cluster watched by Landscaper. This cluster is usually not the same as the cluster where you want to install the nginx. 
-
-Remark: If you want to set up your own experimental landscaper and OCI registry you find a detailed description 
-[here](https://github.com/gardener/landscapercli/blob/master/docs/commands/quickstart/install.md).
-
-Before we develop the `Installation` we need a small preparation step. The nginx will be deployed in the namespace 
-`first-example` on the target cluster. This was specified in the DeployItem. The helm deployment will not create this 
-namespace automatically. We must do this manually with the following command, using the kubeconfig of the 
-target cluster.
-
-```
-kubectl create namespace first-example
-```
-
-Now let's come back to our `Installation` you see here.
-
-```yaml
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Installation
-metadata:
-  name: demo
-  namespace: demo
-spec:
-  componentDescriptor:
-    ref:
-      repositoryContext:
-        type: ociRegistry
-        baseUrl: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs
-      componentName: github.com/gardener/landscaper/first-example
-      version: v0.1.0
-
-  blueprint:
-    ref:
-      resourceName: first-example-blueprint
-
-  imports:
-    targets:
-      - name: target-cluster
-        target: "#my-cluster"
-```
-
-The Installation references the Component Descriptor. The Blueprint can be located by its resource name in the 
-Component Descriptor where you also find its OCI address.
-
-You remember the Blueprint has specified an import parameter `target-cluster`. The Installation defines how to retrieve 
-the value for this parameter. In our case the value is a custom resource of kind `Target` with name `my-cluster`.
-
-## Target
-
-After the creation of the Installation, we can check its status. 
-
-```
-kubectl get installation -n demo demo
-
-NAME   PHASE                 CONFIGGEN   EXECUTION   AGE
-demo   PendingDependencies               demo        58m
-```
-
-You see the `Installation` get stuck in phase `PendingDependencies` because not all required import data are available yet.
-The Installation will remain in this phase, as long as the Target with name `my-cluster` does not exist.
-To fix this, we create the following Target on the same cluster and in the same namespace as the Installation. The  
-Target contains the kubeconfig for the target cluster.
-
-```yaml
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Target
-metadata:
-  name: my-cluster
-  namespace: demo
-spec:
-  config:
-    kubeconfig: |                     
-      apiVersion: v1
-      kind: Config
-      ...
-  type: landscaper.gardener.cloud/kubernetes-cluster
-```
-
-Now, after some time Landscaper installs the nginx on the target cluster and switches to the state of the
-`Installation` to `Succeeded`.
+We have now created a reusable component and uploaded it to an OCI registry. If you want to deploy this component on a
+target cluster, see [First Example Installation](./first_example_installation.md).
