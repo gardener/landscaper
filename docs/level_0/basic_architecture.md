@@ -13,9 +13,9 @@ k8s clusters and target environments:
   intended installation processes. Landscaper is watching these `Installation` resources and initiates the specified 
   actions.
 
-- Target Environments (including Target Clusters): Target environments are an abstract concept. They describe where to 
-  execute an installation step. Examples are target k8s cluster where some helm charts should be deployed or some network infrastructure on which a 
-  virtual network should be set up.
+- Target Environments (including Target Clusters): Target environments  describe the environment where 
+  software/components are installed/deployed. Examples are target k8s cluster where some helm charts should be deployed 
+  or some network infrastructure on which a virtual network should be set up.
 
 ## Landscaper Controller
 

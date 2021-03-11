@@ -9,9 +9,9 @@ small installation tasks like helm deployments, network setup etc. These element
 DeployItems. There are different types of DeployItems for example for deploying helm charts, plain kubernetes manifests 
 or terraform configurations.
 
-A DeployItem can define import parameter for data needed for the installation task, e.g. the target cluster where 
-a helm chart should be deployed. A DeployItem can also define output parameter for data it creates and which can be 
-consumed by others.
+A DeployItem can be configurable such that it can be used in different scenarios. Typical examples of configurable parts
+of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also 
+define output parameter for data it creates and which can be consumed by others.
 
 ## Blueprint
 
@@ -46,8 +46,8 @@ of a component are stored in one Component Archive. The Component Descriptor can
 references to resources located somewhere else, like a helm chart in some remote helm chart repository.
 
 Blueprints are also stored in an OCI registry. They can be stored as a part of the Component Archive 
-they belong to. Alternatively, they can be stored as a standalone OCI artifact referenced by the Component Descriptor of
-a Component Archive.
+they belong to. Alternatively, they can be stored as a standalone OCI artifact referenced by the Component 
+Descriptor of a Component Archive.
 
 More details about Component Descriptors and Component Descriptor Artifacts can be found 
 [here](https://github.com/gardener/component-spec).
@@ -68,12 +68,11 @@ defined in the DeployItems.
 
 Very complex systems require hundreds of installation steps resulting in Blueprints with many DeployItems. 
 Landscaper allows defining subsystems each described by a separate Blueprint and to combine these in an aggregated 
-Blueprint. An aggregated Blueprint references the Blueprints of the subsystems not directly but via Sub-Installations.
-Sub-Installations are again Installations referencing a Blueprint, which describes the subsystem.
+Blueprint. 
 
 Assume an Installation referencing an aggregated Blueprint is deployed. When all input data of the Installation is 
-available, all Sub-Installations are created. Sub-Installations get their input data from the parent installation as well
-as from the export data of their sibling Installations. Execution of a Sub-Installation is started, when all its import
-data is available. 
+available, the Sub-Installations for all contained Blueprints are created. Sub-Installations get their input data from 
+the input data of the parent installation as well as from the export data of their sibling Sub-Installations. 
+Execution of a Sub-Installation is started, when all its import data is available. 
 
-The hierarchy of installations/blueprints can be arbitrarily deep but in practice two levels should be sufficient.
+The hierarchy of Blueprints can be arbitrarily deep.
