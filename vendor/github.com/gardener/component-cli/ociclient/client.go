@@ -16,10 +16,12 @@ import (
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/errdefs"
+	containerdlog "github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
 	"github.com/go-logr/logr"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -76,6 +78,15 @@ func NewClient(log logr.Logger, opts ...Option) (Client, error) {
 	if options.HTTPClient == nil {
 		options.HTTPClient = http.DefaultClient
 	}
+
+	cLogger := logrus.New()
+	if log.V(5).Enabled() {
+		cLogger.SetLevel(logrus.DebugLevel)
+	}
+	if log.V(7).Enabled() {
+		cLogger.SetLevel(logrus.TraceLevel)
+	}
+	containerdlog.L = logrus.NewEntry(cLogger)
 
 	return &client{
 		log:             log,

@@ -75,6 +75,16 @@ type BlobInfo struct {
 	Size int64 `json:"size"`
 }
 
+// ArchiveFormat describes the format of a component archive.
+// A archive can currently be defined in a filesystem, as tar or as gzipped tar.
+type ArchiveFormat string
+
+const (
+	ArchiveFormatFilesystem ArchiveFormat = "fs"
+	ArchiveFormatTar        ArchiveFormat = "tar"
+	ArchiveFormatTarGzip    ArchiveFormat = "tgz"
+)
+
 type CTF struct {
 	fs vfs.FileSystem
 	ctfPath string
@@ -108,7 +118,7 @@ func NewCTF(fs vfs.FileSystem, ctfPath string) (*CTF, error) {
 
 type WalkFunc = func(ca *ComponentArchive) error
 
-// Walk traversses through all component archives that are included in the ctf.
+// Walk traverses through all component archives that are included in the ctf.
 func (ctf *CTF) Walk(walkFunc WalkFunc) error {
 	err := vfs.Walk(ctf.tempFs, "/", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -133,18 +143,36 @@ func (ctf *CTF) Walk(walkFunc WalkFunc) error {
 }
 
 // AddComponentArchive adds or updates a component archive in the ctf archive.
-func (ctf *CTF) AddComponentArchive(ca *ComponentArchive) error {
+func (ctf *CTF) AddComponentArchive(ca *ComponentArchive, format ArchiveFormat) error {
 	filename, err := ca.Digest()
 	if err != nil {
 		return err
 	}
+	return ctf.AddComponentArchiveWithName(filename, ca, format)
+}
+
+// AddComponentArchive adds or updates a component archive in the ctf archive.
+// The archive is added to the ctf with the given name
+func (ctf *CTF) AddComponentArchiveWithName(filename string, ca *ComponentArchive, format ArchiveFormat) error {
 	file, err := ctf.tempFs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	if err := ca.WriteTar(file); err != nil {
-		return fmt.Errorf("unable to write component archive to %q: %w", filename, err)
+	switch format {
+	case ArchiveFormatTar:
+		if err := ca.WriteTar(file); err != nil {
+			_ = file.Close()
+			return fmt.Errorf("unable to write component archive to %q: %w", filename, err)
+		}
+	case ArchiveFormatTarGzip:
+		if err := ca.WriteTarGzip(file); err != nil {
+			_ = file.Close()
+			return fmt.Errorf("unable to write component archive to %q: %w", filename, err)
+		}
+	default:
+		return fmt.Errorf("unsupported archive format %q", format)
 	}
+
 	return file.Close()
 }
 

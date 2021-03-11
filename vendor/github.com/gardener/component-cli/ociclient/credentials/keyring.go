@@ -6,7 +6,6 @@ package credentials
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -166,7 +165,12 @@ func (o *GeneralOciKeyring) GetCredentials(hostname string) (username, password 
 		if hostname == dockerHubDomain {
 			return o.GetCredentials(dockerHubLegacyDomain)
 		}
-		return "", "", fmt.Errorf("authentication for %s cannot be found", hostname)
+		// try authentication with no username and password.
+		// this is needed by some registries like ghcr that require a auth token flow even for public images.
+		return "", "", nil
+
+		// todo: add log for the error if now authentication can be found
+		//return "", "", fmt.Errorf("authentication for %s cannot be found", hostname)
 	}
 
 	return auth.Username, auth.Password, nil

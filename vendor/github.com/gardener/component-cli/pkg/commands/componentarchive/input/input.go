@@ -77,7 +77,18 @@ func (input *BlobInput) SetMediaTypeIfNotDefined(mediaType string) {
 func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutput, error) {
 	inputPath := input.Path
 	if !filepath.IsAbs(input.Path) {
-		inputPath = filepath.Join(filepath.Dir(inputFilePath), input.Path)
+		var wd string
+		if len(inputFilePath) == 0 {
+			// default to working directory if now input filepath is given
+			var err error
+			wd, err = os.Getwd()
+			if err != nil {
+				return nil, fmt.Errorf("unable to read current working directory: %w", err)
+			}
+		} else {
+			wd = filepath.Dir(inputFilePath)
+		}
+		inputPath = filepath.Join(wd, input.Path)
 	}
 	inputInfo, err := fs.Stat(inputPath)
 	if err != nil {
