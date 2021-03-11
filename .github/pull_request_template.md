@@ -15,7 +15,7 @@ For Gardener Enhancement Proposals (GEPs), please check the following [documenta
 -->
 /area TODO
 /kind TODO
-/priority 1
+/priority 3
 
 **What this PR does / why we need it**:
 

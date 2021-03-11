@@ -20,7 +20,7 @@ If multiple identifiers make sense you can also state the commands multiple time
 -->
 /area TODO
 /kind bug
-/priority 2
+/priority 3
 
 **What happened**:
 

@@ -20,7 +20,7 @@ If multiple identifiers make sense you can also state the commands multiple time
 -->
 /area TODO
 /kind enhancement
-/priority 1
+/priority 5
 
 **What would you like to be added**:
 
