@@ -44,7 +44,3 @@ and executes the particular installation step, e.g. the Helm Deployer installs t
 Landscaper provides the following Deployers out of the box: helm, manifest, container, terraform
 
 It is possible to extend Landscaper by further Deployer for new types.  
-
-# Todo
-
-- Cluster involved
