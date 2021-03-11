@@ -1,0 +1,24 @@
+---
+type: landscaper.gardener.cloud/blueprint
+name: container-deployer-blueprint
+relation: local
+input:
+  type: "dir"
+  path: "./blueprint"
+  compress: true
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+---
+type: helm.io/chart
+name: container-deployer-chart
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller:${VERSION}
+---
+type: ociImage
+name: container-deployer-image
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-controller:${VERSION}
+---
