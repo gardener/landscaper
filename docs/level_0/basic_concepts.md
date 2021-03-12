@@ -15,14 +15,14 @@ define output parameter for data it creates and which can be consumed by others.
 
 ## Blueprint
 
-Several DeployItems can be defined in a Blueprint. In this sense, a Blueprint is a set of installation tasks. 
+Blueprints are reusable collections of combined installation tasks which could be parameterized through import
+parameters. They describe system setups consisting of a set of installations task and their dependencies.
+
+Several DeployItems can be defined in a Blueprint. By this, a Blueprint becomes a set of installation tasks. 
 
 A Blueprint defines an interface for import data, required by its DeployItems. It can also define an export 
 interface to expose output data of its DeployItems. Furthermore, the execution order of the DeployItems of a Blueprint 
-can be specified. 
-
-Blueprints are reusable collections of combined installation tasks which could be parameterized through their import 
-specification/parameters. They describe system setups consisting of a set of installations task and their dependencies. 
+can be specified.
 
 ## Blueprint Component and Component Descriptor
 
@@ -42,11 +42,10 @@ Descriptors and Component Descriptor Artifacts can be found [here](https://githu
 
 ## Installation
 
-Blueprints and Component Descriptors do not trigger any installation process. A Blueprints is a reusable 
-definition of the installation process of a particular cloud environment. An instance of such a Blueprint with particular
-import data is called an Installation. Installations are kubernetes Custom Resources (CR) defined by Landscaper.
-An installation references the Blueprint of a Component via the corresponding Component Descriptor.
-It specifies the import data and how to handle the export data. 
+A Blueprints is a reusable definition of the installation process of a particular cloud environment. 
+An instance of such a Blueprint with particular import data is called an Installation. Installations are kubernetes 
+Custom Resources (CR) defined by Landscaper. An installation references the Blueprint of a Component via the 
+corresponding Component Descriptor. It specifies the import data and how to handle the export data. 
 
 An Installation is deployed to the cluster where Landscaper watches these CRs. If Landscaper recognizes an installation
 with all input data available, it starts the setup specified in the Blueprint. This executes the installation tasks 
