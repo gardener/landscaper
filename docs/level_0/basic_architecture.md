@@ -32,15 +32,16 @@ Landscaper consists of two controllers:
   
 ## Deployer
 
-There exist DeployItems of different types describing different installation methods e.g.:
+There exist DeployItems of different types describing different installation methods, e.g. DeployItems of type
+helm describe the installation of helm charts. For every type there exists a Deployer watching the corresponding 
+DeployItems and executing the installation instructions specified by these DeployItems. 
+
+Currently available types with corresponding Deployers are:
 
   - helm: DeployItems specifying the installation of a helm chart
   - manifest: DeployItems specifying the installation of kubernetes manifests
-  - container, terraform etc.
+  - container: DeployItems specifying a container image with some executable
+  - terraform:  DeployItems specifying a terraform installation
 
-For every type there exists a Deployer. Deployer for a particular type are handling DeployItems of that type
-and executes the particular installation step, e.g. the Helm Deployer installs the helm chart on the target cluster.
-
-Landscaper provides the following Deployers out of the box: helm, manifest, container, terraform
-
-It is possible to extend Landscaper by further Deployer for new types.  
+Deployer usually run separated from Landscaper. It is possible to extend Landscaper by introducing new types for 
+DeployItems with corresponding Deployer.

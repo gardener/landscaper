@@ -80,3 +80,11 @@ in Step 1.
 
 Now we deploy the `Installation` in the same cluster and namespace as the Target resource from above. After some time 
 Landscaper installs the nginx on the target cluster and switches to the state of the `Installation` to `Succeeded`.
+
+You could check this in your Landscaper cluster:
+
+```shell
+k get inst -n demo demo                            
+NAME   PHASE        CONFIGGEN    EXECUTION   AGE
+demo   Succeeded                             2m
+```
