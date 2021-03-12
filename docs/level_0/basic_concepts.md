@@ -17,7 +17,7 @@ define output parameter for data it creates and which can be consumed by others.
 
 Several DeployItems can be defined in a Blueprint. In this sense, a Blueprint is a set of installation tasks. 
 
-A Blueprint can define an interface for import data, required by its DeployItems. It can also define an export 
+A Blueprint defines an interface for import data, required by its DeployItems. It can also define an export 
 interface to expose output data of its DeployItems. Furthermore, the execution order of the DeployItems of a Blueprint 
 can be specified. 
 
