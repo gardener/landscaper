@@ -43,7 +43,7 @@ Descriptors and Component Descriptor Artifacts can be found [here](https://githu
 ## Installation
 
 A Blueprints is a reusable definition of the installation process of a particular cloud environment. 
-An instance of such a Blueprint with particular import data is called an Installation. Installations are kubernetes 
+An instance of such a Blueprint with particular import data is called an Installation. Installations are Kubernetes 
 Custom Resources (CR) defined by Landscaper. An installation references the Blueprint of a Component via the 
 corresponding Component Descriptor. It specifies the import data and how to handle the export data. 
 
