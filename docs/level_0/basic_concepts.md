@@ -31,8 +31,7 @@ and complex systems. In the context of Landscaper we focus on components setting
 described with a Blueprint. This could range from quite simple installations of one or two helm charts, or the
 setup up of a complex system like a Garden landscape.
 
-A Blueprint Component usually consists of a Blueprint, and the resources required by the DeployItems included in the 
-Blueprint, like helm charts, docker images, json schema etc. All these required resources are described by a Component 
+A Blueprint Component usually consists of a Blueprint, and the resources required by the DeployItems, like helm charts, docker images, json schema etc. All these required resources are described by a Component 
 Descriptor as a yaml file. 
 
 Component Descriptors are a complete description of all resources belonging to a component and could be used for
