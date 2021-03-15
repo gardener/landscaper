@@ -21,12 +21,12 @@ metadata:
   name: my-cluster
   namespace: demo
 spec:
+  type: landscaper.gardener.cloud/kubernetes-cluster
   config:
     kubeconfig: |                     
       apiVersion: v1
       kind: Config
       ...
-  type: landscaper.gardener.cloud/kubernetes-cluster
 ```
 
 The field `spec.config.kubeconfig` must contain the kubeconfig of the target cluster.
