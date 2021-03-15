@@ -10,14 +10,6 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-// ManagedInstanceLabel describes label that is added to every terraform deployer managed resource
-// to define its corresponding instance.
-const ManagedInstanceLabel = "terraform.deployer.landscaper.gardener.cloud/instance"
-
-// ManagedDeployItemLabel describes label that is added to every terraform deployer managed resource
-// to define its source deploy item.
-const ManagedDeployItemLabel = "terraform.deployer.landscaper.gardener.cloud/deployitem"
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Configuration is the terraform deployer configuration that configures the controller.

@@ -5,6 +5,12 @@ import "time"
 const (
 	// BaseName is the base name used for the terraformer related resources.
 	BaseName = "terraformer"
+	// ManagedInstanceLabel describes label that is added to every terraform deployer managed resource
+	// to define its corresponding instance.
+	ManagedInstanceLabel = "terraform.deployer.landscaper.gardener.cloud/instance"
+	// ManagedDeployItemLabel describes label that is added to every terraform deployer managed resource
+	// to define its source deploy item.
+	ManagedDeployItemLabel = "terraform.deployer.landscaper.gardener.cloud/deployitem"
 	// LabelKeyName is a key for label on a Terraformer Pod indicating the name of the item.
 	LabelKeyItemName = "terraform.deployer.landscaper.gardener.cloud/name"
 	// LabelKeyNamespace is a key for label on a Terraformer Pod indicating the namespace of the item.
