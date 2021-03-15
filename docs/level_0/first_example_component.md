@@ -114,7 +114,7 @@ component:
       access:
         type: ociRegistry
         imageReference: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/blueprints/github.com/gardener/landscaper/first-example:v0.1.0
-    - type: helm
+    - type: helm.io/chart
       name: nginx-chart
       version: 0.1.0
       relation: external
