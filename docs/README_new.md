@@ -14,14 +14,10 @@ In this chapter, it is described what Landscaper is, what it does and why you sh
 - [First Example Component](./level_0/first_example_component.md)
 
 - [Architecture Overview](./level_0/basic_architecture.md)
-
-- Landscaper Components
-  - Component Details
-    - Blueprints, Component Descriptors, Installations, Targets, DataObjects, DeployItems
   
-- Running a local Landscaper using the landscaper-cli
-  - Landscaper CLI in a nutshell
-  - Landscaper configuration options
+- [Simple Component Development with Landscaper CLI](https://github.com/gardener/landscapercli)
+  
+- Landscaper configuration options
 
 # Level 1 (Intermediate) 
 
