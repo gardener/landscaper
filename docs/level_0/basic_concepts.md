@@ -16,7 +16,7 @@ define output parameter for data it creates and which can be consumed by others.
 ## Blueprint
 
 Blueprints are reusable collections of combined installation tasks which could be parameterized through import
-parameters. They describe system setups consisting of a set of installations task and their dependencies.
+parameters.
 
 Several DeployItems can be defined in a Blueprint. By this, a Blueprint becomes a set of installation tasks. 
 
