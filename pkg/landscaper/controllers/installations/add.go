@@ -12,9 +12,14 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-// AddActuatorToManager register the installation in a manager.
-func AddActuatorToManager(mgr manager.Manager, config *config.LandscaperConfiguration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("Installations"), config)
+// AddControllerToManager register the installation controller in a manager.
+func AddControllerToManager(mgr manager.Manager, config *config.LandscaperConfiguration) error {
+	a, err := NewController(
+		ctrl.Log.WithName("controllers").WithName("Installations"),
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		config,
+	)
 	if err != nil {
 		return err
 	}

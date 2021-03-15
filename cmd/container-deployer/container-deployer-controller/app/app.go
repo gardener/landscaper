@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/apis/core/install"
-	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
+	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/version"
 )
 
@@ -62,7 +62,7 @@ func (o *options) run(ctx context.Context) {
 	}
 	install.Install(landscaperClusterMgr.GetScheme())
 
-	if err := containeractuator.AddActuatorToManager(hostClusterMgr, landscaperClusterMgr, o.config); err != nil {
+	if err := containerctlr.AddControllerToManager(hostClusterMgr, landscaperClusterMgr, o.config); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

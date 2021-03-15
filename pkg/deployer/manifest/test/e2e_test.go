@@ -15,12 +15,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
-	manifestactuator "github.com/gardener/landscaper/pkg/deployer/manifest"
+	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutil "github.com/gardener/landscaper/test/utils"
@@ -45,14 +44,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
-		Expect(err).ToNot(HaveOccurred())
-		ok, err := inject.ClientInto(testenv.Client, actuator)
-		Expect(ok).To(BeTrue())
-		Expect(err).ToNot(HaveOccurred())
-
-		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
-		Expect(ok).To(BeTrue())
+		actuator, err := manifestctlr.NewController(
+			logtesting.NullLogger{},
+			testenv.Client,
+			kubernetes.LandscaperScheme,
+			&manifestv1alpha1.Configuration{},
+		)
 		Expect(err).ToNot(HaveOccurred())
 
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
@@ -68,7 +65,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifest.ProviderStatus{}
-		manifestDecoder := serializer.NewCodecFactory(manifestactuator.ManifestScheme).UniversalDecoder()
+		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
 		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(1))
@@ -95,14 +92,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
-		Expect(err).ToNot(HaveOccurred())
-		ok, err := inject.ClientInto(testenv.Client, actuator)
-		Expect(ok).To(BeTrue())
-		Expect(err).ToNot(HaveOccurred())
-
-		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
-		Expect(ok).To(BeTrue())
+		actuator, err := manifestctlr.NewController(
+			logtesting.NullLogger{},
+			testenv.Client,
+			kubernetes.LandscaperScheme,
+			&manifestv1alpha1.Configuration{},
+		)
 		Expect(err).ToNot(HaveOccurred())
 
 		By("create deploy item")
@@ -147,14 +142,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
-		Expect(err).ToNot(HaveOccurred())
-		ok, err := inject.ClientInto(testenv.Client, actuator)
-		Expect(ok).To(BeTrue())
-		Expect(err).ToNot(HaveOccurred())
-
-		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
-		Expect(ok).To(BeTrue())
+		actuator, err := manifestctlr.NewController(
+			logtesting.NullLogger{},
+			testenv.Client,
+			kubernetes.LandscaperScheme,
+			&manifestv1alpha1.Configuration{},
+		)
 		Expect(err).ToNot(HaveOccurred())
 
 		By("create deploy item")
@@ -202,14 +195,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestactuator.NewActuator(logtesting.NullLogger{}, &manifestv1alpha1.Configuration{})
-		Expect(err).ToNot(HaveOccurred())
-		ok, err := inject.ClientInto(testenv.Client, actuator)
-		Expect(ok).To(BeTrue())
-		Expect(err).ToNot(HaveOccurred())
-
-		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
-		Expect(ok).To(BeTrue())
+		actuator, err := manifestctlr.NewController(
+			logtesting.NullLogger{},
+			testenv.Client,
+			kubernetes.LandscaperScheme,
+			&manifestv1alpha1.Configuration{},
+		)
 		Expect(err).ToNot(HaveOccurred())
 
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
@@ -224,7 +215,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifest.ProviderStatus{}
-		manifestDecoder := serializer.NewCodecFactory(manifestactuator.ManifestScheme).UniversalDecoder()
+		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
 		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(0))

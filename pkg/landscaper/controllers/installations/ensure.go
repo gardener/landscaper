@@ -18,7 +18,7 @@ import (
 )
 
 // RunInstallation creates or updates the installation's execution (deploy items) and subinstallations.
-func (a *actuator) RunInstallation(ctx context.Context, op *installations.Operation) error {
+func (a *controller) RunInstallation(ctx context.Context, op *installations.Operation) error {
 	// check that all referenced definitions have a corresponding installation
 	inst := op.Inst
 	subinstallation := subinstallations.New(op)
@@ -114,7 +114,7 @@ func (a *actuator) RunInstallation(ctx context.Context, op *installations.Operat
 //TODO: remove inst from signature
 // eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
 // The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
-func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
+func (a *controller) eligibleToUpdate(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
 	if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
 		return true, nil
 	}
@@ -132,7 +132,7 @@ func (a *actuator) eligibleToUpdate(ctx context.Context, op *installations.Opera
 }
 
 // ApplyUpdate redeploys subinstallations and deploy items.
-func (a *actuator) ApplyUpdate(ctx context.Context, op *installations.Operation) error {
+func (a *controller) ApplyUpdate(ctx context.Context, op *installations.Operation) error {
 	inst := op.Inst
 	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {
 		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,

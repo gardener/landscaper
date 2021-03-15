@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/apis/core/install"
-	manifestactuator "github.com/gardener/landscaper/pkg/deployer/manifest"
+	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 )
 
 func NewManifestDeployerControllerCommand(ctx context.Context) *cobra.Command {
@@ -53,7 +53,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := manifestactuator.AddActuatorToManager(mgr, o.config); err != nil {
+	if err := manifestctlr.AddControllerToManager(mgr, o.config); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

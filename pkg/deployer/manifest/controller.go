@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -25,37 +24,24 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator(log logr.Logger, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
-	return &actuator{
+// NewController creates a new deploy item controller that reconciles deploy items of type kubernetes manifest.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
+	return &controller{
 		log:    log,
+		c:      kubeClient,
+		scheme: scheme,
 		config: config,
 	}, nil
 }
 
-type actuator struct {
+type controller struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
 	config *manifestv1alpha1.Configuration
 }
 
-var _ inject.Client = &actuator{}
-
-var _ inject.Scheme = &actuator{}
-
-// InjectClients injects the current kubernetes registryClient into the actuator
-func (a *actuator) InjectClient(c client.Client) error {
-	a.c = c
-	return nil
-}
-
-// InjectScheme injects the current scheme into the actuator
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
-	a.scheme = scheme
-	return nil
-}
-
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	deployItem := &lsv1alpha1.DeployItem{}
@@ -117,7 +103,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
 	// set failed state if the last error lasts for more than 5 minutes
 	defer func() {
 		// set the error if the err is a landscaper error

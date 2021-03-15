@@ -20,7 +20,7 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (a *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 	// resolve all pull secrets
 	secrets, err := a.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
@@ -75,7 +75,7 @@ func (a *actuator) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1
 	return nil
 }
 
-func (a *actuator) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
+func (a *controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
 	secrets := make([]corev1.Secret, len(secretRefs))
 	for i, secretRef := range secretRefs {
 		secret := corev1.Secret{}

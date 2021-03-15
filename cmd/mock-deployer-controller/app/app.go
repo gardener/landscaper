@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/apis/core/install"
-	mockactuator "github.com/gardener/landscaper/pkg/deployer/mock"
+	mockctrl "github.com/gardener/landscaper/pkg/deployer/mock"
 )
 
 func NewMockDeployerControllerCommand(ctx context.Context) *cobra.Command {
@@ -53,7 +53,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := mockactuator.AddActuatorToManager(mgr); err != nil {
+	if err := mockctrl.AddControllerToManager(mgr); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

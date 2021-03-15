@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package helm
+package mock
 
 import (
 	"context"
@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -24,41 +23,22 @@ import (
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator() (reconcile.Reconciler, error) {
-	return &actuator{}, nil
+// NewController creates a new deploy item controller that reconciles deploy items of type mock.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme) (reconcile.Reconciler, error) {
+	return &controller{
+		log:    log,
+		c:      kubeClient,
+		scheme: scheme,
+	}, nil
 }
 
-type actuator struct {
+type controller struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
 }
 
-var _ inject.Client = &actuator{}
-
-var _ inject.Logger = &actuator{}
-
-var _ inject.Scheme = &actuator{}
-
-// InjectClients injects the current kubernetes registryClient into the actuator
-func (a *actuator) InjectClient(c client.Client) error {
-	a.c = c
-	return nil
-}
-
-// InjectLogger injects a logging instance into the actuator
-func (a *actuator) InjectLogger(log logr.Logger) error {
-	a.log = log
-	return nil
-}
-
-// InjectScheme injects the current scheme into the actuator
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
-	a.scheme = scheme
-	return nil
-}
-
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	deployItem := &lsv1alpha1.DeployItem{}
@@ -86,7 +66,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) error {
 	if !deployItem.DeletionTimestamp.IsZero() {
 		if err := a.ensureDeletion(ctx, deployItem); err != nil {
 			return err
@@ -122,7 +102,7 @@ func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployI
 	return a.c.Status().Update(ctx, deployItem)
 }
 
-func (a *actuator) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployItem) error {
+func (a *controller) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployItem) error {
 	if item.Status.ExportReference == nil {
 		return nil
 	}
@@ -139,7 +119,7 @@ func (a *actuator) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployIt
 	return nil
 }
 
-func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem, config *mockv1alpha1.ProviderConfiguration) error {
+func (a *controller) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem, config *mockv1alpha1.ProviderConfiguration) error {
 	if config.Export == nil {
 		return nil
 	}
@@ -170,7 +150,7 @@ func (a *actuator) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 	return a.c.Status().Update(ctx, item)
 }
 
-func (a *actuator) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
+func (a *controller) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
 	config := &mockv1alpha1.ProviderConfiguration{}
 	if _, _, err := serializer.NewCodecFactory(Mockscheme).UniversalDecoder().Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		a.log.Error(err, "unable to unmarshal config")

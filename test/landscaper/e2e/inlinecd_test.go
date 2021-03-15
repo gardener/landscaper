@@ -16,7 +16,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -52,22 +51,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 			},
 		})
 
-		execActuator, err = execctlr.NewActuator()
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.ClientInto(testenv.Client, execActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.SchemeInto(kubernetes.LandscaperScheme, execActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.LoggerInto(testing.NullLogger{}, execActuator)
+		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewActuator()
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.ClientInto(testenv.Client, mockActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.SchemeInto(kubernetes.LandscaperScheme, mockActuator)
-		Expect(err).ToNot(HaveOccurred())
-		_, err = inject.LoggerInto(testing.NullLogger{}, mockActuator)
+		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

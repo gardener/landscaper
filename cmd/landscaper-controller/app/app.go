@@ -89,11 +89,11 @@ func (o *options) run(ctx context.Context) error {
 
 	install.Install(mgr.GetScheme())
 
-	if err := installationsactuator.AddActuatorToManager(mgr, o.config); err != nil {
+	if err := installationsactuator.AddControllerToManager(mgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactuator.AddActuatorToManager(mgr); err != nil {
+	if err := executionactuator.AddControllerToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
@@ -111,7 +111,7 @@ func (o *options) run(ctx context.Context) error {
 			}
 			config.OCI = o.config.Registry.OCI
 			containerctlr.DefaultConfiguration(config)
-			if err := containerctlr.AddActuatorToManager(mgr, mgr, config); err != nil {
+			if err := containerctlr.AddControllerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
 		} else if deployerName == "helm" {
@@ -120,7 +120,7 @@ func (o *options) run(ctx context.Context) error {
 				return err
 			}
 			config.OCI = o.config.Registry.OCI
-			if err := helmctlr.AddActuatorToManager(mgr, config); err != nil {
+			if err := helmctlr.AddControllersToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "manifest" {
@@ -128,11 +128,11 @@ func (o *options) run(ctx context.Context) error {
 			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
 				return err
 			}
-			if err := manifestctlr.AddActuatorToManager(mgr, config); err != nil {
+			if err := manifestctlr.AddControllerToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "mock" {
-			if err := mockctlr.AddActuatorToManager(mgr); err != nil {
+			if err := mockctlr.AddControllerToManager(mgr); err != nil {
 				return fmt.Errorf("unable to add mock deployer: %w", err)
 			}
 		} else {

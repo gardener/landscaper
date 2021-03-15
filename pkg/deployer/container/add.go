@@ -18,7 +18,8 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 )
 
-func AddActuatorToManager(hostMgr manager.Manager, lsMgr manager.Manager, config *containerv1alpha1.Configuration) error {
+// AddControllerToManager adds all necessary deployer controllers to a controller manager.
+func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, config *containerv1alpha1.Configuration) error {
 	ctrlLogger := ctrl.Log.WithName("controllers")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{

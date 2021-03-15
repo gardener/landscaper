@@ -12,6 +12,8 @@ import (
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -29,29 +31,25 @@ const (
 	cacheIdentifier = "landscaper-installation-controller"
 )
 
-func NewActuator(log logr.Logger, lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
-
-	op := &operation.Operation{}
-	_ = op.InjectLogger(log)
-
+// NewController creates a new controller that reconciles Installation resources.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 	componentRegistryMgr, err := componentsregistry.SetupManagerFromConfig(log, lsConfig.Registry.OCI, cacheIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	_ = op.InjectComponentsRegistry(componentRegistryMgr)
-
 	log.V(3).Info("setup components registry")
 
-	return &actuator{
+	op := operation.NewOperation(log, kubeClient, scheme, componentRegistryMgr)
+	return &controller{
 		Interface:             op,
 		lsConfig:              lsConfig,
 		componentsRegistryMgr: componentRegistryMgr,
 	}, nil
 }
 
-// NewTestActuator creates a new actuator that is only meant for testing.
-func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *actuator {
-	a := &actuator{
+// NewTestActuator creates a new controller that is only meant for testing.
+func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *controller {
+	a := &controller{
 		Interface:             op,
 		lsConfig:              configuration,
 		componentsRegistryMgr: &componentsregistry.Manager{},
@@ -69,13 +67,13 @@ func NewTestActuator(op operation.Interface, configuration *config.LandscaperCon
 	return a
 }
 
-type actuator struct {
+type controller struct {
 	operation.Interface
 	lsConfig              *config.LandscaperConfiguration
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.Log().V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
@@ -131,7 +129,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (a *controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	a.Log().Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 	old := inst.DeepCopy()
 
@@ -165,7 +163,7 @@ func (a *actuator) reconcile(ctx context.Context, inst *lsv1alpha1.Installation)
 	return a.RunInstallation(ctx, instOp)
 }
 
-func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+func (a *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
 		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
 			"Reconcile", "SetupRegistries", err.Error())
@@ -204,7 +202,7 @@ func (a *actuator) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Insta
 	return instOp, nil
 }
 
-func (a *actuator) forceReconcile(ctx context.Context, instOp *installations.Operation) error {
+func (a *controller) forceReconcile(ctx context.Context, instOp *installations.Operation) error {
 	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
 	if err := a.ApplyUpdate(ctx, instOp); err != nil {
 		return err

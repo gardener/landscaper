@@ -18,17 +18,6 @@ type Interface interface {
 	DirectReader() client.Reader
 	Scheme() *runtime.Scheme
 	RegistriesAccessor
-	// InjectLogger is used to inject Loggers into components that need them
-	// and don't otherwise have opinions.
-	InjectLogger(l logr.Logger) error
-	// InjectClient is used by the ControllerManager to inject client into Sources, EventHandlers, Predicates, and
-	// Reconciles
-	InjectClient(client.Client) error
-	// InjectAPIReader is used by the ControllerManager to inject readonly api client
-	InjectAPIReader(r client.Reader) error
-	// InjectScheme is used by the ControllerManager to inject Scheme into Sources, EventHandlers, Predicates, and
-	// Reconciles
-	InjectScheme(scheme *runtime.Scheme) error
 }
 
 // RegistriesAccessor is a getter interface for available registries.
@@ -61,12 +50,6 @@ func (o *Operation) Log() logr.Logger {
 	return o.log
 }
 
-// InjectLogger injects a logger in the opeation
-func (o *Operation) InjectLogger(l logr.Logger) error {
-	o.log = l
-	return nil
-}
-
 // Client returns a controller runtime client.Registry
 func (o *Operation) Client() client.Client {
 	return o.client
@@ -86,21 +69,9 @@ func (o *Operation) DirectReader() client.Reader {
 	return o.directReader
 }
 
-// InjectAPIReader injects a readonly kubernetes client into the operation.
-func (o *Operation) InjectAPIReader(r client.Reader) error {
-	o.directReader = r
-	return nil
-}
-
 // Scheme returns a kubernetes scheme
 func (o *Operation) Scheme() *runtime.Scheme {
 	return o.scheme
-}
-
-// InjectScheme injects the used kubernetes scheme into the operation
-func (o *Operation) InjectScheme(scheme *runtime.Scheme) error {
-	o.scheme = scheme
-	return nil
 }
 
 // ComponentsRegistry returns a component blueprintsRegistry instance

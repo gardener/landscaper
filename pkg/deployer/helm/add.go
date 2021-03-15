@@ -12,8 +12,14 @@ import (
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("HelmDeployer"), config)
+// AddControllerToManager adds a new helm deployers to a controller manager.
+func AddControllersToManager(mgr manager.Manager, config *helmv1alpha1.Configuration) error {
+	a, err := NewController(
+		ctrl.Log.WithName("controllers").WithName("HelmDeployer"),
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		config,
+	)
 	if err != nil {
 		return err
 	}

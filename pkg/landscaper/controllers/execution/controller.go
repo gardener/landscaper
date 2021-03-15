@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -24,41 +23,22 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func NewActuator() (reconcile.Reconciler, error) {
-	return &actuator{}, nil
+// NewController creates a new execution controller that reconcile Execution resources.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme) (reconcile.Reconciler, error) {
+	return &controller{
+		log:    log,
+		c:      kubeClient,
+		scheme: scheme,
+	}, nil
 }
 
-type actuator struct {
+type controller struct {
 	log    logr.Logger
 	c      client.Client
 	scheme *runtime.Scheme
 }
 
-var _ inject.Client = &actuator{}
-
-var _ inject.Logger = &actuator{}
-
-var _ inject.Scheme = &actuator{}
-
-// InjectClients injects the current kubernetes client into the actuator
-func (a *actuator) InjectClient(c client.Client) error {
-	a.c = c
-	return nil
-}
-
-// InjectLogger injects a logging instance into the actuator
-func (a *actuator) InjectLogger(log logr.Logger) error {
-	a.log = log
-	return nil
-}
-
-// InjectScheme injects the current scheme into the actuator
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
-	a.scheme = scheme
-	return nil
-}
-
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	a.log.Info("reconcile", "resource", req.NamespacedName)
 
 	exec := &lsv1alpha1.Execution{}
@@ -100,7 +80,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) Ensure(ctx context.Context, exec *lsv1alpha1.Execution, forceReconcile bool) error {
+func (a *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution, forceReconcile bool) error {
 	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil), exec,
 		forceReconcile)
 
