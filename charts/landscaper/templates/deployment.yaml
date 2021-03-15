@@ -40,22 +40,25 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/config/config.yaml"
+          - "-v={{ .Values.landscaper.verbosity }}"
           {{- if .Values.landscaper.deployers }}
           - "--deployers={{  .Values.landscaper.deployers | join "," }}"
           {{- end }}
           {{- if .Values.landscaper.deployersConfig }}
           - "--deployers-config=/app/ls/deployers/deployers-config.yaml"
           {{- end }}
+          - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.fullname" . }}
+          {{- if not (has "all" .Values.disableWebhooks) }}
+          - --webhook-service-port={{ .Values.webhookConfig.servicePort }}
+          {{- end }}
+          {{- if .Values.disableWebhooks }}
+          - --disable-webhooks={{ .Values.disableWebhooks | join "," }}
+          {{- end }}
           {{- if .Values.landscaper.metrics }}
           ports:
           - name: metrics
             containerPort: {{ .Values.landscaper.metrics.port }}
           {{- end}}
-          - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.fullname" . }}
-          {{- if not (has "all" .Values.disableWebhooks) }}
-          - --webhook-service-port={{ .Values.webhookConfig.servicePort }}
-          {{- end }}
-          - --disable-webhooks={{ .Values.disableWebhooks | join "," }}
           volumeMounts:
           - name: oci-cache
             mountPath: /app/ls/oci-cache

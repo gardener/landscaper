@@ -199,7 +199,7 @@ func registerWebhooks(ctx context.Context, mgr manager.Manager, o *options) erro
 		return err
 	}
 	// register webhooks
-	if err := webhook.RegisterWebhooks(ctx, mgr, wo, webhookLogger); err != nil {
+	if err := webhook.RegisterWebhooks(mgr, wo, webhookLogger); err != nil {
 		return err
 	}
 

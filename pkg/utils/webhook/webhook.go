@@ -10,8 +10,10 @@ import (
 	"net/http"
 
 	"github.com/go-logr/logr"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -20,14 +22,15 @@ import (
 )
 
 // ValidatorFromResourceType is a helper method that gets a resource type and returns the fitting validator
-func ValidatorFromResourceType(resource string) (GenericValidator, error) {
+func ValidatorFromResourceType(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, resource string) (GenericValidator, error) {
+	abstrVal := newAbstractedValidator(log, kubeClient, scheme)
 	var val GenericValidator
 	if resource == "installations" {
-		val = &InstallationValidator{}
+		val = &InstallationValidator{abstrVal}
 	} else if resource == "deployitems" {
-		val = &DeployItemValidator{}
+		val = &DeployItemValidator{abstrVal}
 	} else if resource == "executions" {
-		val = &ExecutionValidator{}
+		val = &ExecutionValidator{abstrVal}
 	} else {
 		return nil, fmt.Errorf("unable to find validator for resource type %q", resource)
 	}
@@ -40,31 +43,18 @@ type abstractValidator struct {
 	log     logr.Logger
 }
 
+// newAbstractedValidator creates a new abstracted validator
+func newAbstractedValidator(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme) abstractValidator {
+	return abstractValidator{
+		Client:  kubeClient,
+		decoder: serializer.NewCodecFactory(scheme).UniversalDecoder(),
+		log:     log,
+	}
+}
+
 // GenericValidator is an abstraction interface that implements admission.Handler and contains additional setter functions for the fields
 type GenericValidator interface {
 	Handle(context.Context, admission.Request) admission.Response
-	InjectScheme(*runtime.Scheme) error
-	InjectClient(client.Client) error
-	InjectLogger(logr.Logger) error
-}
-
-func (av *abstractValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	return admission.Denied("call to abstract method Handle, please implement")
-}
-
-func (av *abstractValidator) InjectScheme(scheme *runtime.Scheme) error {
-	av.decoder = serializer.NewCodecFactory(scheme).UniversalDecoder()
-	return nil
-}
-
-func (av *abstractValidator) InjectClient(c client.Client) error {
-	av.Client = c
-	return nil
-}
-
-func (av *abstractValidator) InjectLogger(l logr.Logger) error {
-	av.log = l
-	return nil
 }
 
 // INSTALLATION
@@ -93,7 +83,7 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 type DeployItemValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
-func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (div *DeployItemValidator) Handle(_ context.Context, req admission.Request) admission.Response {
 	div.log.V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	di := &lscore.DeployItem{}
 	if _, _, err := div.decoder.Decode(req.Object.Raw, nil, di); err != nil {
@@ -102,6 +92,18 @@ func (div *DeployItemValidator) Handle(ctx context.Context, req admission.Reques
 
 	if errs := validation.ValidateDeployItem(di); len(errs) > 0 {
 		return admission.Denied(errs.ToAggregate().Error())
+	}
+
+	// check if the type was updated for update events
+	if req.Operation == admissionv1.Update {
+		oldDi := &lscore.DeployItem{}
+		if _, _, err := div.decoder.Decode(req.OldObject.Raw, nil, oldDi); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		if oldDi.Spec.Type != di.Spec.Type {
+			div.log.V(7).Info(fmt.Sprintf("deployitem type is immutable, got %q but expected %q", di.Spec.Type, oldDi.Spec.Type))
+			return admission.Errored(http.StatusForbidden, field.Forbidden(field.NewPath(".spec.type"), "type is immutable"))
+		}
 	}
 
 	return admission.Allowed("DeployItem is valid")

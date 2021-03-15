@@ -7,7 +7,7 @@
 # Declare variables to be passed into your templates.
 
 landscaper:
-
+  verbosity: 2
   crdManagement:
     deployCrd: true
 #   forceUpdate: true

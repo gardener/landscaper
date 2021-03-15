@@ -139,26 +139,20 @@ func DeleteValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manag
 
 // RegisterWebhooks generates certificates and registers the webhooks to the manager
 // no-op if WebhookedResources in the given options is either nil or empty
-func RegisterWebhooks(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
+func RegisterWebhooks(mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
 	if o.WebhookedResources == nil || len(o.WebhookedResources) == 0 {
 		return nil
 	}
 
 	// registering webhooks
 	for _, elem := range o.WebhookedResources {
-		val, err := ValidatorFromResourceType(elem.ResourceName)
+		rsLogger := webhookLogger.WithName(elem.ResourceName)
+		val, err := ValidatorFromResourceType(rsLogger, mgr.GetClient(), mgr.GetScheme(), elem.ResourceName)
 		if err != nil {
 			return fmt.Errorf("unable to register webhooks: %w", err)
 		}
-		if err := val.InjectClient(mgr.GetClient()); err != nil {
-			return fmt.Errorf("unable to register webhooks: %w", err)
-		}
-		rsLogger := webhookLogger.WithName(elem.ResourceName)
-		webhookPath := o.WebhookBasePath + elem.ResourceName
-		if err := val.InjectLogger(rsLogger); err != nil {
-			return fmt.Errorf("unable to register webhooks: %w", err)
-		}
 
+		webhookPath := o.WebhookBasePath + elem.ResourceName
 		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
 		mgr.GetWebhookServer().Register(webhookPath, &ctrlwebhook.Admission{Handler: val})
 	}
