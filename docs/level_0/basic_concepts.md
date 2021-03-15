@@ -18,11 +18,11 @@ define output parameter for data it creates and which can be consumed by others.
 Blueprints are reusable collections of combined installation tasks which could be parameterized through import
 parameters.
 
-Several DeployItems can be defined in a Blueprint. By this, a Blueprint becomes a set of installation tasks. 
+Several DeployItems can be defined in a Blueprint. 
+Also the execution order of the DeployItems of a Blueprint can be specified.
 
 A Blueprint defines an interface for import data, required by its DeployItems. It can also define an export 
-interface to expose output data of its DeployItems. Furthermore, the execution order of the DeployItems of a Blueprint 
-can be specified.
+interface to expose output data of its DeployItems. 
 
 ## Blueprint Component and Component Descriptor
 
