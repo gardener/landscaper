@@ -89,7 +89,7 @@ The `deployExecutions` section (2) contains a reference to the file of the Deplo
 previous step. 
 
 We have uploaded the Blueprint into an OCI registry. You find the Blueprint OCI artifact 
-[here](https://eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/blueprints/github.com/gardener/landscaper/first-example).
+[here](https://eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/first-example).
 You can upload a Blueprint by yourself to another OCI registry with the help of the Landscaper CLI command 
 [landscaper-cli blueprints push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_blueprints_push.md).
 
@@ -104,7 +104,7 @@ component:
   name: github.com/gardener/landscaper/first-example
   provider: internal
   repositoryContexts:
-    - baseUrl: "eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs"
+    - baseUrl: "eu.gcr.io/gardener-project/landscaper/tutorials/components"
       type: ociRegistry
   resources:
     - type: blueprint
@@ -113,7 +113,7 @@ component:
       relation: local
       access:
         type: ociRegistry
-        imageReference: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/blueprints/github.com/gardener/landscaper/first-example:v0.1.0
+        imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/first-example:v0.1.0
     - type: helm.io/chart
       name: nginx-chart
       version: 0.1.0
@@ -128,7 +128,7 @@ meta:
 ```
 
 We have uploaded the Component Descriptor into an OCI registry. You find it
-[here](https://eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/component-descriptors/github.com/gardener/landscaper/first-example).
+[here](https://eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/first-example).
 You can upload a Component Descriptor by yourself to another OCI registry with the help of the Landscaper CLI command
 [landscaper-cli components-cli component-archive remote push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_components-cli_component-archive_remote_push.md).
 

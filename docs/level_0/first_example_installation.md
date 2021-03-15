@@ -3,9 +3,6 @@
 In this example we describe how to deploy your first component with Landscaper. The component defines an nginx helm 
 chart deployment. 
 
-We have uploaded the component into an OCI registry. You find it
-[here](https://eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs/component-descriptors/github.com/gardener/landscaper/first-example).
-
 To try out this example by yourself you need to install Landscaper (see [here](../gettingstarted/install-landscaper-controller.md)).
 
 ## Step 1
@@ -59,7 +56,7 @@ spec:
     ref:
       repositoryContext:
         type: ociRegistry
-        baseUrl: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/docs
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/first-example
       version: v0.1.0
 
@@ -74,7 +71,10 @@ spec:
 ```
 
 The Installation references the [Component Descriptor](./basic_concepts.md#blueprint-component-and-component-descriptor) 
-of the component. The specified [Blueprint](./basic_concepts.md#blueprint) can be located by its resource name in the 
+of the existing component `github.com/gardener/landscaper/first-example`. You find it
+[here](https://eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/first-example).
+
+The specified [Blueprint](./basic_concepts.md#blueprint) can be located by its resource name in the 
 Component Descriptor. The Blueprint contains the specification of the nginx deployment. 
 
 The Blueprint has an import parameter `target-cluster` to get the access data for the target cluster. 
