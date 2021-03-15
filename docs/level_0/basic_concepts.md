@@ -29,7 +29,7 @@ interface to expose output data of its DeployItems.
 A component is a quite general term usually describing some IT artifact ranging from a small program to large
 and complex systems. In the context of Landscaper we focus on components setting up some cloud environment 
 described with a Blueprint. This could range from quite simple installations of one or two helm charts, or the
-setup up of a complex system like a Garden landscape.
+setup up of a complex system like a Gardener landscape.
 
 A Blueprint Component usually consists of a Blueprint, and the resources required by the DeployItems, like helm charts, docker images, json schema etc. All these required resources are described by a Component 
 Descriptor as a yaml file. 
