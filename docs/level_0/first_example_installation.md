@@ -73,8 +73,9 @@ spec:
         target: "#my-cluster"
 ```
 
-The Installation references the Component Descriptor of the component. The specified Blueprint can be located by its 
-resource name in the Component Descriptor. The Blueprint contains the specification of the nginx deployment. 
+The Installation references the [Component Descriptor](./basic_concepts.md#blueprint-component-and-component-descriptor) 
+of the component. The specified [Blueprint](./basic_concepts.md#blueprint) can be located by its resource name in the 
+Component Descriptor. The Blueprint contains the specification of the nginx deployment. 
 
 The Blueprint has an import parameter `target-cluster` to get the access data for the target cluster. 
 The Installation sets the value of this parameter to the name `my-cluster` of the Target resource, we have created 
@@ -90,3 +91,6 @@ k get inst -n demo demo
 NAME   PHASE        CONFIGGEN    EXECUTION   AGE
 demo   Succeeded                             2m
 ```
+
+If you want to know how the component of this example is created go to the [first example component](./first_example_component.md) page. 
+If you want to know more about the concepts go to the [basic concepts](./basic_concepts.md) page.
