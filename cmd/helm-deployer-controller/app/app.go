@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/apis/core/install"
-	helmactuator "github.com/gardener/landscaper/pkg/deployer/helm"
+	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 )
 
 func NewHelmDeployerControllerCommand(ctx context.Context) *cobra.Command {
@@ -53,7 +53,7 @@ func (o *options) run(ctx context.Context) {
 
 	install.Install(mgr.GetScheme())
 
-	if err := helmactuator.AddActuatorToManager(mgr, o.config); err != nil {
+	if err := helmctrl.AddControllersToManager(mgr, o.config); err != nil {
 		o.log.Error(err, "unable to setup controller")
 		os.Exit(1)
 	}

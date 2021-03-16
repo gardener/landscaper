@@ -12,13 +12,19 @@ import (
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager, config *manifestv1alpha1.Configuration) error {
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("ManifestDeployer"), config)
+// AddControllerToManager adds a new manifest deployer to a controller manager.
+func AddControllerToManager(mgr manager.Manager, config *manifestv1alpha1.Configuration) error {
+	deployer, err := NewController(
+		ctrl.Log.WithName("controllers").WithName("ManifestDeployer"),
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		config,
+	)
 	if err != nil {
 		return err
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&lsv1alpha1.DeployItem{}).
-		Complete(a)
+		Complete(deployer)
 }

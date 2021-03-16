@@ -31,21 +31,24 @@ const (
 	cacheIdentifier = "helm-deployer-controller"
 )
 
-func NewActuator(log logr.Logger, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
+// NewController creates a new deploy item controller that reconciles deploy items of type helm.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config *helmv1alpha1.Configuration) (reconcile.Reconciler, error) {
 
 	componentRegistryMgr, err := componentsregistry.SetupManagerFromConfig(log, config.OCI, cacheIdentifier)
 	if err != nil {
 		return nil, err
 	}
 
-	return &actuator{
+	return &controller{
 		log:                   log,
+		c:                     kubeClient,
+		scheme:                scheme,
 		config:                config,
 		componentsRegistryMgr: componentRegistryMgr,
 	}, nil
 }
 
-type actuator struct {
+type controller struct {
 	log                   logr.Logger
 	c                     client.Client
 	scheme                *runtime.Scheme
@@ -53,23 +56,23 @@ type actuator struct {
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-var _ inject.Client = &actuator{}
+var _ inject.Client = &controller{}
 
-var _ inject.Scheme = &actuator{}
+var _ inject.Scheme = &controller{}
 
-// InjectClients injects the current kubernetes registryClient into the actuator
-func (a *actuator) InjectClient(c client.Client) error {
+// InjectClients injects the current kubernetes registryClient into the controller
+func (a *controller) InjectClient(c client.Client) error {
 	a.c = c
 	return nil
 }
 
-// InjectScheme injects the current scheme into the actuator
-func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
+// InjectScheme injects the current scheme into the controller
+func (a *controller) InjectScheme(scheme *runtime.Scheme) error {
 	a.scheme = scheme
 	return nil
 }
 
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := a.log.WithValues("resource", req.NamespacedName)
 	logger.V(7).Info("reconcile deploy item")
 
@@ -134,7 +137,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 	return reconcile.Result{}, nil
 }
 
-func (a *actuator) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	if len(deployItem.Status.Phase) == 0 {
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	}

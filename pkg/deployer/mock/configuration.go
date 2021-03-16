@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package helm
+package mock
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"

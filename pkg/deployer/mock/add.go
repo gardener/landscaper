@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package helm
+package mock
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -12,8 +12,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager) error {
-	a, err := NewActuator()
+// AddControllerToManager adds a new mock deployer to a controller manager.
+func AddControllerToManager(mgr manager.Manager) error {
+	a, err := NewController(
+		ctrl.Log.WithName("controllers").WithName("mock"),
+		mgr.GetClient(),
+		mgr.GetScheme(),
+	)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
@@ -42,14 +41,12 @@ var _ = Describe("Helm Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := helmactuator.NewActuator(logtesting.NullLogger{}, &helmv1alpha1.Configuration{})
-		Expect(err).ToNot(HaveOccurred())
-		ok, err := inject.ClientInto(testenv.Client, actuator)
-		Expect(ok).To(BeTrue())
-		Expect(err).ToNot(HaveOccurred())
-
-		ok, err = inject.SchemeInto(kubernetes.LandscaperScheme, actuator)
-		Expect(ok).To(BeTrue())
+		actuator, err := helmactuator.NewController(
+			logtesting.NullLogger{},
+			testenv.Client,
+			kubernetes.LandscaperScheme,
+			&helmv1alpha1.Configuration{},
+		)
 		Expect(err).ToNot(HaveOccurred())
 
 		kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
