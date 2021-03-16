@@ -1,10 +1,15 @@
 package terraformer
 
-import "time"
+import (
+	"path/filepath"
+	"time"
+)
 
 const (
 	// BaseName is the base name used for the terraformer related resources.
 	BaseName = "terraformer"
+	// InitContainerName is the name of the init container.
+	InitContainerName = "init"
 	// ManagedInstanceLabel describes label that is added to every terraform deployer managed resource
 	// to define its corresponding instance.
 	ManagedInstanceLabel = "terraform.deployer.landscaper.gardener.cloud/instance"
@@ -36,7 +41,7 @@ const (
 	// TerraformStateSuffix is the suffix used for the ConfigMap which stores the Terraform state.
 	TerraformStateSuffix = "tf-state"
 
-	// TerraformStateOutputsKey is the key to retrieve the ouputs from the JSON state.
+	// TerraformStateOutputsKey is the key to retrieve the outputs from the JSON state.
 	TerraformStateOutputsKey = "outputs"
 
 	// DeadlineCleaning is the deadline while waiting for a clean environment.
@@ -51,4 +56,41 @@ const (
 
 	// ExitCodeSucceeded is the exit code when the terraformer command succeeded.
 	ExitCodeSucceeded int32 = 0
+
+	// TerraformerProvidersPath is the filesystem path to the directory that should contain all providers.
+	// This directory is specific to the gardener terraformer implementation.
+	// See https://github.com/gardener/terraformer/blob/7db2398aa14f30c056b71f6594954d930b84e009/pkg/terraformer/paths.go#L38
+	TerraformerProvidersPath = "/terraform-providers"
+
+	// Env vars
+
+	// DeployItemConfigurationPathName is the name of the env var that points to the provider configuration file.
+	DeployItemConfigurationPathName = "CONFIGURATION_PATH"
+	// RegistrySecretBasePathName is the environment variable pointing to the file system location of all OCI pull secrets
+	RegistrySecretBasePathName = "REGISTRY_SECRETS_DIR"
+	// TerraformSharedDirEnvVarName is the name of the environment variable that hold the shared terraform directory
+	TerraformSharedDirEnvVarName = "TERRAFORM_SHARED_DIR"
+	// TerraformSharedDirEnvVarName is the name of the environment variable that hold the shared terraform providers directory
+	TerraformProvidersDirEnvVarName = "TERRAFORM_PROVIDERS_DIR"
 )
+
+// BasePath is the base path inside a container that contains the container deployer specific data.
+const BasePath = "/data/ls"
+
+// DeployItemConfigurationFilename is the name of the file that contains the provider configuration as json.
+const DeployItemConfigurationFilename = "di-configuration.json"
+
+// DeployItemConfigurationPath is the path to the configuration file.
+var DeployItemConfigurationPath = filepath.Join(BasePath, "internal", DeployItemConfigurationFilename)
+
+// SharedBasePath is the base path inside the container that is shared between the main and ls containers
+var SharedBasePath = filepath.Join(BasePath, "shared")
+
+// RegistrySecretBasePath is the path to all OCI pull secrets
+var RegistrySecretBasePath = filepath.Join(BasePath, "registry_secrets")
+
+// SharedProvidersDirectory is the name of the directory where the providers are written to in the shared volume.
+const SharedProvidersDirectory = "providers"
+
+// SharedProvidersPath is the path to the directory where the provider is downloaded by the init container.
+var SharedProvidersPath = filepath.Join(SharedBasePath, SharedProvidersDirectory)

@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	terraformv1alpha1 "github.com/gardener/landscaper/apis/deployer/terraform/v1alpha1"
 	kutils "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -43,14 +44,19 @@ type Terraformer struct {
 
 	Labels map[string]string
 
-	Name      string
-	Namespace string
-	Image     string
-	LogLevel  string
+	Name               string
+	Namespace          string
+	InitContainer      terraformv1alpha1.ContainerSpec
+	TerraformContainer terraformv1alpha1.ContainerSpec
+	LogLevel           string
 }
 
 // New creates a new Terraformer struct.
-func New(log logr.Logger, kubeClient client.Client, restConfig *rest.Config, namespace, image, logLevel, itemNamespace, itemName string) *Terraformer {
+func New(log logr.Logger,
+	kubeClient client.Client,
+	restConfig *rest.Config,
+	namespace, logLevel, itemNamespace, itemName string,
+	initContainer, terraformContainer terraformv1alpha1.ContainerSpec) *Terraformer {
 	id := generateId(itemName, itemNamespace)
 	prefix := fmt.Sprintf("%s.", id)
 
@@ -68,15 +74,16 @@ func New(log logr.Logger, kubeClient client.Client, restConfig *rest.Config, nam
 		TFVarsSecretName:           prefix + TerraformTFVarsSuffix,
 		StateConfigMapName:         prefix + TerraformStateSuffix,
 
-		Name:      fmt.Sprintf("%s-%s", BaseName, id),
-		Namespace: namespace,
-		Image:     image,
-		LogLevel:  logLevel,
+		Name:               fmt.Sprintf("%s-%s", BaseName, id),
+		Namespace:          namespace,
+		InitContainer:      initContainer,
+		TerraformContainer: terraformContainer,
+		LogLevel:           logLevel,
 	}
 }
 
 // generateId generates a single ID based on the name and the namespace
-// of a DeployItem. This is then used to guarantee a unique identifer
+// of a DeployItem. This is then used to guarantee a unique identifier
 // for the Terraformer RBAC resources and the pod name.
 func generateId(itemName, itemNamespace string) string {
 	key := fmt.Sprintf("%s/%s", itemNamespace, itemName)
@@ -97,43 +104,112 @@ func (t *Terraformer) EnsurePod(ctx context.Context, command string, itemGenerat
 }
 
 func (t *Terraformer) createPod(ctx context.Context, command string, itemGeneration int64) (*corev1.Pod, error) {
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      t.Name,
-			Namespace: t.Namespace,
-			Labels:    t.Labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:            BaseName,
-				Image:           t.Image,
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command: []string{
-					"/terraformer",
-					command,
-					"--zap-log-level=" + t.LogLevel,
-					"--configuration-configmap-name=" + t.ConfigurationConfigMapName,
-					"--state-configmap-name=" + t.StateConfigMapName,
-					"--variables-secret-name=" + t.TFVarsSecretName,
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("200Mi"),
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("500m"),
-						corev1.ResourceMemory: resource.MustParse("1.5Gi"),
-					},
-				},
-			}},
-			RestartPolicy:                 corev1.RestartPolicyNever,
-			ServiceAccountName:            t.Name,
-			TerminationGracePeriodSeconds: pointer.Int64Ptr(TerminationGracePeriodSeconds),
+
+	sharedVolume := corev1.Volume{
+		Name: "shared-volume",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	}
-	pod.ObjectMeta.Labels[LabelKeyGeneration] = strconv.FormatInt(itemGeneration, 10)
-	pod.ObjectMeta.Labels[LabelKeyCommand] = command
+	sharedVolumeMount := corev1.VolumeMount{
+		Name:      sharedVolume.Name,
+		MountPath: SharedBasePath,
+	}
+
+	providersVolumeMount := corev1.VolumeMount{
+		Name:      sharedVolume.Name,
+		MountPath: TerraformerProvidersPath,
+		SubPath:   SharedProvidersDirectory,
+	}
+
+	deployItemConfigurationVolume := corev1.Volume{
+		Name: "config",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: t.ConfigurationConfigMapName,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  DeployItemConfigurationFilename,
+						Path: DeployItemConfigurationFilename,
+					},
+				},
+				DefaultMode: nil,
+				Optional:    nil,
+			},
+		},
+	}
+	deployItemConfigurationVolumeMount := corev1.VolumeMount{
+		Name:      "config",
+		ReadOnly:  true,
+		MountPath: filepath.Dir(DeployItemConfigurationPath),
+	}
+
+	initContainer := corev1.Container{
+		Name:            InitContainerName,
+		Image:           t.InitContainer.Image,
+		ImagePullPolicy: t.InitContainer.ImagePullPolicy,
+		Env: []corev1.EnvVar{
+			{
+				Name:  DeployItemConfigurationPathName,
+				Value: DeployItemConfigurationPath,
+			},
+			{
+				Name:  RegistrySecretBasePathName,
+				Value: RegistrySecretBasePath,
+			},
+			{
+				Name:  TerraformSharedDirEnvVarName,
+				Value: SharedBasePath,
+			},
+			{
+				Name:  TerraformProvidersDirEnvVarName,
+				Value: SharedProvidersPath,
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{deployItemConfigurationVolumeMount, sharedVolumeMount},
+	}
+
+	mainContainer := corev1.Container{
+		Name:            BaseName,
+		Image:           t.TerraformContainer.Image,
+		ImagePullPolicy: t.TerraformContainer.ImagePullPolicy,
+		Command: []string{
+			"/terraformer",
+			command,
+			"--zap-log-level=" + t.LogLevel,
+			"--configuration-configmap-name=" + t.ConfigurationConfigMapName,
+			"--state-configmap-name=" + t.StateConfigMapName,
+			"--variables-secret-name=" + t.TFVarsSecretName,
+		},
+		VolumeMounts: []corev1.VolumeMount{providersVolumeMount, sharedVolumeMount},
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("500m"),
+				corev1.ResourceMemory: resource.MustParse("1.5Gi"),
+			},
+		},
+	}
+
+	pod := &corev1.Pod{}
+	pod.Name = t.Name
+	pod.Namespace = t.Namespace
+	pod.Labels = t.Labels
+	pod.Labels[LabelKeyGeneration] = strconv.FormatInt(itemGeneration, 10)
+	pod.Labels[LabelKeyCommand] = command
+
+	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
+	pod.Spec.ServiceAccountName = t.Name
+	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(TerminationGracePeriodSeconds)
+
+	pod.Spec.InitContainers = []corev1.Container{initContainer}
+	pod.Spec.Containers = []corev1.Container{mainContainer}
+	pod.Spec.Volumes = []corev1.Volume{deployItemConfigurationVolume, sharedVolume}
 
 	if err := t.kubeClient.Create(ctx, pod); err != nil {
 		return nil, err

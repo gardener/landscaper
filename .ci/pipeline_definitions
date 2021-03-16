@@ -41,6 +41,14 @@ landscaper:
             registry: 'gcr-readwrite'
             target: 'container-deployer-wait'
             image: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
+          terraform-deployer-controller:
+            registry: 'gcr-readwrite'
+            target: 'terraform-deployer-controller'
+            image: eu.gcr.io/gardener-project/landscaper/terraform-deployer-controller
+          terraform-deployer-init:
+            registry: 'gcr-readwrite'
+            target: 'terraform-deployer-init'
+            image: eu.gcr.io/gardener-project/landscaper/terraform-deployer-init
           mock-deployer-controller:
             registry: 'gcr-readwrite'
             target: 'mock-deployer-controller'

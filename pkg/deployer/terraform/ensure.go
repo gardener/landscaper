@@ -19,7 +19,6 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -40,14 +39,11 @@ const (
 	// OperationDelete is the value of the Operation that defines a delete operation.
 	OperationDelete OperationType = "DELETE"
 
-	// RequeueAfter is the time after which to requeue the item.
-	ItemRequeue = 15 * time.Second
-
 	// DeadLinePodNotReady is the time to wait before deleting a not ready pod.
 	DeadLinePodNotReady = 10 * time.Minute
 )
 
-func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.Result, error) {
+func (t *Terraform) Reconcile(ctx context.Context, op OperationType) error {
 	var (
 		currOp  string                    = string(op)
 		command string                    = terraformer.ApplyCommand
@@ -63,17 +59,18 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 	}
 
 	tfr := terraformer.New(
-		t.log, t.kubeClient, t.restConfig,
-		t.Configuration.Terraformer.Namespace, t.Configuration.Terraformer.Image, t.Configuration.Terraformer.LogLevel,
+		t.log, t.hostClient, t.hostRestConfig,
+		t.Configuration.Namespace, t.Configuration.Terraformer.LogLevel,
 		t.DeployItem.Namespace, t.DeployItem.Name,
+		t.Configuration.Terraformer.InitContainer,
+		t.Configuration.Terraformer.TerraformContainer,
 	)
 
 	// Check if the Terraformer pod is running.
 	pod, err := tfr.GetPod(ctx)
 	if client.IgnoreNotFound(err) != nil {
-		t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
-			currOp, "GetTerraformerPod", err.Error())
-		return reconcile.Result{}, fmt.Errorf("unable to get Terraformer pod: %w", err)
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "GetTerraformerPod", fmt.Sprintf("unable to get Terraformer pod: %s", err.Error()))
 	}
 
 	// Check if the Terraformer pod was deleted between two reconciles.
@@ -84,11 +81,10 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 	// Nothing is running, a Terraformer pod can be started.
 	if pod == nil {
 		if err := t.DeployReconcilePod(ctx, currOp, command, tfr, phase); err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
-				currOp, "DeployTerraformerPod", err.Error())
-			return reconcile.Result{}, fmt.Errorf("failed to deploy Terraformer pod: %w", err)
+			return lsv1alpha1helper.NewWrappedError(err,
+				currOp, "DeployTerraformerPod", fmt.Sprintf("failed to deploy Terraformer pod: %s", err.Error()))
 		}
-		return reconcile.Result{RequeueAfter: ItemRequeue}, nil
+		return nil
 	}
 
 	var (
@@ -100,7 +96,7 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 
 	if !isPodReady(podConditions) && podCreatedSince > (DeadLinePodNotReady) {
 		var allErrs []error
-		err := fmt.Errorf("Terraformer pod has been not ready for more than %s", DeadLinePodNotReady.String())
+		err := fmt.Errorf("terraformer pod has been not ready for more than %s", DeadLinePodNotReady.String())
 		allErrs = append(allErrs, err)
 		t.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
@@ -108,10 +104,10 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 
 		// Force deletion of the pod.
 		opts := &client.DeleteOptions{GracePeriodSeconds: pointer.Int64Ptr(0)}
-		if err := t.kubeClient.Delete(ctx, pod, opts); client.IgnoreNotFound(err) != nil {
+		if err := t.hostClient.Delete(ctx, pod, opts); client.IgnoreNotFound(err) != nil {
 			allErrs = append(allErrs, fmt.Errorf("unable to delete not ready Terraformer pod: %w", err))
 		}
-		return reconcile.Result{}, apimacherrors.NewAggregate(allErrs)
+		return apimacherrors.NewAggregate(allErrs)
 	}
 
 	isPodTerminated := (podPhase == corev1.PodSucceeded || podPhase == corev1.PodFailed) && len(containerStatuses) > 0
@@ -120,31 +116,30 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 
 		// Get the logs of the Terraformer pod idependently of the command.
 		if err := tfr.GetLogsAndDeletePod(ctx, pod, command, exitCode); err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
-				currOp, "GetLogsFromTerraformerPod", err.Error())
-			return reconcile.Result{}, fmt.Errorf("failed to get logs from the Terraformer pod: %w", err)
+			return lsv1alpha1helper.NewWrappedError(err,
+				currOp, "GetLogsFromTerraformerPod", fmt.Sprintf("failed to get logs from the Terraformer pod: %s", err.Error()))
 		}
 	}
 
 	if !isPodTerminated {
-		t.log.Info("Terraformer pod is still running, reqeueing...")
-		return reconcile.Result{RequeueAfter: ItemRequeue}, nil
+		t.log.V(3).Info("Terraformer pod is still running, waiting...")
+		return nil
 	}
 
 	// Update the provider status only when we have applied a new configuration.
 	if command == terraformer.ApplyCommand {
 		output, err := tfr.GetOutputFromState(ctx)
 		if err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
+			err := fmt.Errorf("unable to get terraform output from state: %w", err)
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "GetOutputFromState", err.Error())
-			return reconcile.Result{}, fmt.Errorf("unable to get terraform output from state: %w", err)
 		}
 
 		encStatus, err := encodeProviderStatus(output)
 		if err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
+			err := fmt.Errorf("unable to update provider status: %w", err)
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "UpdateProviderStatus", err.Error())
-			return reconcile.Result{}, fmt.Errorf("unable to update provider status: %w", err)
 		}
 
 		t.DeployItem.Status.LastError = nil
@@ -158,20 +153,18 @@ func (t *Terraform) Reconcile(ctx context.Context, op OperationType) (reconcile.
 	// The Terraformer pod destroyed successfully, just clean up is required.
 	if command == terraformer.DestroyCommand {
 		if err := tfr.EnsureCleanedUp(ctx); err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "EnsureCleanedUp", err.Error())
-			return reconcile.Result{}, fmt.Errorf("unable to clean up: %w", err)
 		}
 
 		controllerutil.RemoveFinalizer(t.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := t.kubeClient.Update(ctx, t.DeployItem); err != nil {
-			t.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(t.DeployItem.Status.LastError,
+		if err := t.lsClient.Update(ctx, t.DeployItem); err != nil {
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "UpdateItem", err.Error())
-			return reconcile.Result{}, fmt.Errorf("unable to update item: %w", err)
 		}
 	}
 
-	return reconcile.Result{}, nil
+	return nil
 }
 
 func isPodReady(conditions []corev1.PodCondition) bool {
@@ -191,7 +184,12 @@ func isPodReady(conditions []corev1.PodCondition) bool {
 // DeployReconcilePod ensures the terraform configuration and RBAC are up-to-date
 // before creating a new Terraformer pod and wait for its creation.
 func (t *Terraform) DeployReconcilePod(ctx context.Context, currOp, command string, tfr *terraformer.Terraformer, phase lsv1alpha1.ExecutionPhase) error {
-	if err := tfr.EnsureConfig(ctx, t.ProviderConfiguration.Main, t.ProviderConfiguration.Variables, t.ProviderConfiguration.TFVars); err != nil {
+
+	if err := tfr.EnsureConfig(ctx,
+		t.ProviderConfiguration.Main,
+		t.ProviderConfiguration.Variables,
+		t.ProviderConfiguration.TFVars,
+		t.DeployItem.Spec.Configuration.Raw); err != nil {
 		return fmt.Errorf("unable to create terraform config: %w", err)
 	}
 

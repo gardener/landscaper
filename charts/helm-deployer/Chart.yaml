@@ -4,7 +4,10 @@
 
 apiVersion: v2
 name: helm-deployer
-description: Landscaper provides the means to describe, install and maintain cloud-native landscapes. To achive this objective, Landscaper makes use of specialized, dedicated deployers. This Helm chart deploys the Helm-deployer into a Kubernetes cluster.
+description: |
+  Landscaper provides the means to describe, install and maintain cloud-native landscapes.
+  To achive this objective, Landscaper makes use of specialized, dedicated deployers.
+  This Helm chart deploys the Helm-deployer into a Kubernetes cluster.
 
 # A chart can be either an 'application' or a 'library' chart.
 #

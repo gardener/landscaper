@@ -68,7 +68,12 @@ Create the Helm deployer config file which will be encapsulated in a secret.
 {{- define "deployer-config" -}}
 apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
+
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
+
+terraformer:
+  image: {{ .Values.deployer.terraformer.image }}
+
 {{- if .Values.deployer.oci }}
 oci:
   allowPlainHttp: {{ .Values.deployer.oci.allowPlainHttp }}

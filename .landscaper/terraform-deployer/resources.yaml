@@ -1,0 +1,24 @@
+---
+type: landscaper.gardener.cloud/blueprint
+name: terraform-deployer-blueprint
+relation: local
+input:
+  type: "dir"
+  path: "./blueprint"
+  compress: true
+  mediaType: "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+---
+type: helm.io/chart
+name: terraform-deployer-chart
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/terraform-deployer-controller:${VERSION}
+---
+type: ociImage
+name: terraform-deployer-image
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/terraform-deployer-controller:${VERSION}
+---

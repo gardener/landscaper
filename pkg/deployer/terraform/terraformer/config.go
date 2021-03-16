@@ -18,8 +18,8 @@ import (
 )
 
 // EnsureConfig ensures that the configuration, tfvars and state are created.
-func (t *Terraformer) EnsureConfig(ctx context.Context, main, variables, tfvars string) error {
-	if err := t.createOrUpdateConfig(ctx, main, variables, tfvars); err != nil {
+func (t *Terraformer) EnsureConfig(ctx context.Context, main, variables, tfvars string, deployItemConfig []byte) error {
+	if err := t.createOrUpdateConfig(ctx, main, variables, tfvars, deployItemConfig); err != nil {
 		return err
 	}
 	return t.waitForConfig(ctx)
@@ -27,8 +27,8 @@ func (t *Terraformer) EnsureConfig(ctx context.Context, main, variables, tfvars 
 
 // createOrUpdateConfig creates or updates the configuration ConfigMap
 // and the variables Secret with the given main configuration, variables and tfvars.
-func (t *Terraformer) createOrUpdateConfig(ctx context.Context, main, variables, tfvars string) error {
-	if _, err := t.createOrUpdateConfigurationConfigMap(ctx, main, variables); err != nil {
+func (t *Terraformer) createOrUpdateConfig(ctx context.Context, main, variables, tfvars string, deployItemConfig []byte) error {
+	if _, err := t.createOrUpdateConfigurationConfigMap(ctx, main, variables, deployItemConfig); err != nil {
 		return err
 	}
 	if _, err := t.createOrUpdateTFVarsSecret(ctx, tfvars); err != nil {
@@ -69,9 +69,12 @@ func (t *Terraformer) createStateConfigMap(ctx context.Context) (*corev1.ConfigM
 }
 
 // createOrUpdateConfigurationConfigMap creates or updates the configuration ConfigMap
-// with the given main conficuration and variables.
-func (t *Terraformer) createOrUpdateConfigurationConfigMap(ctx context.Context, main, variables string) (*corev1.ConfigMap, error) {
-	configMap := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Namespace: t.Namespace, Name: t.ConfigurationConfigMapName, Labels: t.Labels}}
+// with the given main configuration and variables.
+func (t *Terraformer) createOrUpdateConfigurationConfigMap(ctx context.Context, main, variables string, deployItemConfig []byte) (*corev1.ConfigMap, error) {
+	configMap := &corev1.ConfigMap{}
+	configMap.Namespace = t.Namespace
+	configMap.Name = t.ConfigurationConfigMapName
+	configMap.Labels = t.Labels
 	values := map[string]string{
 		TerraformConfigMainKey: main,
 		TerraformConfigVarsKey: variables,
@@ -80,9 +83,13 @@ func (t *Terraformer) createOrUpdateConfigurationConfigMap(ctx context.Context, 
 		if configMap.Data == nil {
 			configMap.Data = make(map[string]string)
 		}
+		if configMap.BinaryData == nil {
+			configMap.BinaryData = make(map[string][]byte)
+		}
 		for key, value := range values {
 			configMap.Data[key] = value
 		}
+		configMap.BinaryData[DeployItemConfigurationFilename] = deployItemConfig
 		return nil
 	})
 	return configMap, err

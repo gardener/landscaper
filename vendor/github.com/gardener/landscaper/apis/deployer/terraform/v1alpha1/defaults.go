@@ -15,14 +15,25 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 
 // SetDefaults_Configuration sets the defaults for the terraform deployer configuration.
 func SetDefaults_Configuration(obj *Configuration) {
-	if len(obj.Terraformer.Namespace) == 0 {
-		obj.Terraformer.Namespace = metav1.NamespaceDefault
+	DefaultConfiguration(obj, "")
+}
+
+// DefaultConfiguration defaults the configuration with the current version of the deployer.
+func DefaultConfiguration(obj *Configuration, version string) {
+	if len(obj.Namespace) == 0 {
+		obj.Namespace = metav1.NamespaceDefault
 	}
-	if len(obj.Terraformer.Image) == 0 {
+	if len(obj.Terraformer.TerraformContainer.Image) == 0 {
 		// TODO: add a component reference to the terraformer component.
-		obj.Terraformer.Image = "eu.gcr.io/gardener-project/gardener/terraformer:v2.0.0"
+		obj.Terraformer.TerraformContainer.Image = "eu.gcr.io/gardener-project/gardener/terraformer:v2.0.0"
 	}
 	if len(obj.Terraformer.LogLevel) == 0 {
 		obj.Terraformer.LogLevel = "info"
+	}
+
+	if len(version) != 0 {
+		if len(obj.Terraformer.TerraformContainer.Image) == 0 {
+			obj.Terraformer.TerraformContainer.Image = "eu.gcr.io/gardener-project/landscaper/terraform-deployer-init:" + version
+		}
 	}
 }

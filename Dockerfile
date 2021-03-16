@@ -98,3 +98,12 @@ COPY --from=builder /go/bin/terraform-deployer-controller /terraform-deployer-co
 WORKDIR /
 
 ENTRYPOINT ["/terraform-deployer-controller"]
+
+#### Terraform Deployer Init ####
+FROM base as terraform-deployer-init
+
+COPY --from=builder /go/bin/terraform-deployer-init /terraform-deployer-init
+
+WORKDIR /
+
+ENTRYPOINT ["/terraform-deployer-init"]

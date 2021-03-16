@@ -16,6 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
@@ -53,7 +54,7 @@ func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, conf
 		return err
 	}
 	return ctrl.NewControllerManagedBy(lsMgr).
-		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
-		Watches(src, &PodEventHandler{}).
+		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(deployerlib.NoopPredicate{})).
+		Watches(src, deployerlib.NewPodEventHandler(ConstructReconcileDeployItemRequest)).
 		Complete(podRec)
 }

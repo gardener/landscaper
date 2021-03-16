@@ -108,7 +108,7 @@ const (
 	ErrorCleanupResources ErrorCode = "ERR_CLEANUP"
 	// ErrorConfigurationProblem indicates that the last error occurred due a configuration problem.
 	ErrorConfigurationProblem ErrorCode = "ERR_CONFIGURATION_PROBLEM"
-	// ErrorInternalProblem indicates that the last error occurred due to a servere internal error
+	// ErrorInternalProblem indicates that the last error occurred due to a severe internal error
 	ErrorInternalProblem ErrorCode = "ERR_INTERNAL_PROBLEM"
 	// ErrorHealthCheckTimeout indicates that objects failed the health check within the given time
 	ErrorHealthCheckTimeout ErrorCode = "ERR_HEALTH_CHECK_TIMEOUT"

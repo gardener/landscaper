@@ -14,6 +14,7 @@ import (
 	json "encoding/json"
 	unsafe "unsafe"
 
+	v1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
@@ -38,6 +39,46 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*ContainerSpec)(nil), (*terraform.ContainerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(a.(*ContainerSpec), b.(*terraform.ContainerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.ContainerSpec)(nil), (*ContainerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(a.(*terraform.ContainerSpec), b.(*ContainerSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*EnvVar)(nil), (*terraform.EnvVar)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_EnvVar_To_terraform_EnvVar(a.(*EnvVar), b.(*terraform.EnvVar), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.EnvVar)(nil), (*EnvVar)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_EnvVar_To_v1alpha1_EnvVar(a.(*terraform.EnvVar), b.(*EnvVar), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*FileMount)(nil), (*terraform.FileMount)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FileMount_To_terraform_FileMount(a.(*FileMount), b.(*terraform.FileMount), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.FileMount)(nil), (*FileMount)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_FileMount_To_v1alpha1_FileMount(a.(*terraform.FileMount), b.(*FileMount), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*FromTarget)(nil), (*terraform.FromTarget)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_FromTarget_To_terraform_FromTarget(a.(*FromTarget), b.(*terraform.FromTarget), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.FromTarget)(nil), (*FromTarget)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_FromTarget_To_v1alpha1_FromTarget(a.(*terraform.FromTarget), b.(*FromTarget), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*ProviderConfiguration)(nil), (*terraform.ProviderConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_ProviderConfiguration_To_terraform_ProviderConfiguration(a.(*ProviderConfiguration), b.(*terraform.ProviderConfiguration), scope)
 	}); err != nil {
@@ -58,6 +99,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*RemoteTerraformReference)(nil), (*terraform.RemoteTerraformReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_RemoteTerraformReference_To_terraform_RemoteTerraformReference(a.(*RemoteTerraformReference), b.(*terraform.RemoteTerraformReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.RemoteTerraformReference)(nil), (*RemoteTerraformReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_RemoteTerraformReference_To_v1alpha1_RemoteTerraformReference(a.(*terraform.RemoteTerraformReference), b.(*RemoteTerraformReference), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*TerraformProvider)(nil), (*terraform.TerraformProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TerraformProvider_To_terraform_TerraformProvider(a.(*TerraformProvider), b.(*terraform.TerraformProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*terraform.TerraformProvider)(nil), (*TerraformProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_terraform_TerraformProvider_To_v1alpha1_TerraformProvider(a.(*terraform.TerraformProvider), b.(*TerraformProvider), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*TerraformerSpec)(nil), (*terraform.TerraformerSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_TerraformerSpec_To_terraform_TerraformerSpec(a.(*TerraformerSpec), b.(*terraform.TerraformerSpec), scope)
 	}); err != nil {
@@ -73,6 +134,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 
 func autoConvert_v1alpha1_Configuration_To_terraform_Configuration(in *Configuration, out *terraform.Configuration, s conversion.Scope) error {
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
+	out.Namespace = in.Namespace
 	if err := Convert_v1alpha1_TerraformerSpec_To_terraform_TerraformerSpec(&in.Terraformer, &out.Terraformer, s); err != nil {
 		return err
 	}
@@ -86,6 +148,7 @@ func Convert_v1alpha1_Configuration_To_terraform_Configuration(in *Configuration
 
 func autoConvert_terraform_Configuration_To_v1alpha1_Configuration(in *terraform.Configuration, out *Configuration, s conversion.Scope) error {
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
+	out.Namespace = in.Namespace
 	if err := Convert_terraform_TerraformerSpec_To_v1alpha1_TerraformerSpec(&in.Terraformer, &out.Terraformer, s); err != nil {
 		return err
 	}
@@ -97,10 +160,107 @@ func Convert_terraform_Configuration_To_v1alpha1_Configuration(in *terraform.Con
 	return autoConvert_terraform_Configuration_To_v1alpha1_Configuration(in, out, s)
 }
 
+func autoConvert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(in *ContainerSpec, out *terraform.ContainerSpec, s conversion.Scope) error {
+	out.Image = in.Image
+	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
+	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImagePullPolicy = v1.PullPolicy(in.ImagePullPolicy)
+	return nil
+}
+
+// Convert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec is an autogenerated conversion function.
+func Convert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(in *ContainerSpec, out *terraform.ContainerSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(in, out, s)
+}
+
+func autoConvert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(in *terraform.ContainerSpec, out *ContainerSpec, s conversion.Scope) error {
+	out.Image = in.Image
+	out.Command = *(*[]string)(unsafe.Pointer(&in.Command))
+	out.Args = *(*[]string)(unsafe.Pointer(&in.Args))
+	out.ImagePullPolicy = v1.PullPolicy(in.ImagePullPolicy)
+	return nil
+}
+
+// Convert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec is an autogenerated conversion function.
+func Convert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(in *terraform.ContainerSpec, out *ContainerSpec, s conversion.Scope) error {
+	return autoConvert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(in, out, s)
+}
+
+func autoConvert_v1alpha1_EnvVar_To_terraform_EnvVar(in *EnvVar, out *terraform.EnvVar, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.FromTarget = (*terraform.FromTarget)(unsafe.Pointer(in.FromTarget))
+	return nil
+}
+
+// Convert_v1alpha1_EnvVar_To_terraform_EnvVar is an autogenerated conversion function.
+func Convert_v1alpha1_EnvVar_To_terraform_EnvVar(in *EnvVar, out *terraform.EnvVar, s conversion.Scope) error {
+	return autoConvert_v1alpha1_EnvVar_To_terraform_EnvVar(in, out, s)
+}
+
+func autoConvert_terraform_EnvVar_To_v1alpha1_EnvVar(in *terraform.EnvVar, out *EnvVar, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.FromTarget = (*FromTarget)(unsafe.Pointer(in.FromTarget))
+	return nil
+}
+
+// Convert_terraform_EnvVar_To_v1alpha1_EnvVar is an autogenerated conversion function.
+func Convert_terraform_EnvVar_To_v1alpha1_EnvVar(in *terraform.EnvVar, out *EnvVar, s conversion.Scope) error {
+	return autoConvert_terraform_EnvVar_To_v1alpha1_EnvVar(in, out, s)
+}
+
+func autoConvert_v1alpha1_FileMount_To_terraform_FileMount(in *FileMount, out *terraform.FileMount, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.FromTarget = (*terraform.FromTarget)(unsafe.Pointer(in.FromTarget))
+	return nil
+}
+
+// Convert_v1alpha1_FileMount_To_terraform_FileMount is an autogenerated conversion function.
+func Convert_v1alpha1_FileMount_To_terraform_FileMount(in *FileMount, out *terraform.FileMount, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FileMount_To_terraform_FileMount(in, out, s)
+}
+
+func autoConvert_terraform_FileMount_To_v1alpha1_FileMount(in *terraform.FileMount, out *FileMount, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Value = in.Value
+	out.FromTarget = (*FromTarget)(unsafe.Pointer(in.FromTarget))
+	return nil
+}
+
+// Convert_terraform_FileMount_To_v1alpha1_FileMount is an autogenerated conversion function.
+func Convert_terraform_FileMount_To_v1alpha1_FileMount(in *terraform.FileMount, out *FileMount, s conversion.Scope) error {
+	return autoConvert_terraform_FileMount_To_v1alpha1_FileMount(in, out, s)
+}
+
+func autoConvert_v1alpha1_FromTarget_To_terraform_FromTarget(in *FromTarget, out *terraform.FromTarget, s conversion.Scope) error {
+	out.JSONPath = in.JSONPath
+	return nil
+}
+
+// Convert_v1alpha1_FromTarget_To_terraform_FromTarget is an autogenerated conversion function.
+func Convert_v1alpha1_FromTarget_To_terraform_FromTarget(in *FromTarget, out *terraform.FromTarget, s conversion.Scope) error {
+	return autoConvert_v1alpha1_FromTarget_To_terraform_FromTarget(in, out, s)
+}
+
+func autoConvert_terraform_FromTarget_To_v1alpha1_FromTarget(in *terraform.FromTarget, out *FromTarget, s conversion.Scope) error {
+	out.JSONPath = in.JSONPath
+	return nil
+}
+
+// Convert_terraform_FromTarget_To_v1alpha1_FromTarget is an autogenerated conversion function.
+func Convert_terraform_FromTarget_To_v1alpha1_FromTarget(in *terraform.FromTarget, out *FromTarget, s conversion.Scope) error {
+	return autoConvert_terraform_FromTarget_To_v1alpha1_FromTarget(in, out, s)
+}
+
 func autoConvert_v1alpha1_ProviderConfiguration_To_terraform_ProviderConfiguration(in *ProviderConfiguration, out *terraform.ProviderConfiguration, s conversion.Scope) error {
 	out.Main = in.Main
 	out.Variables = in.Variables
 	out.TFVars = in.TFVars
+	out.EnvVars = *(*[]terraform.EnvVar)(unsafe.Pointer(&in.EnvVars))
+	out.Files = *(*[]terraform.FileMount)(unsafe.Pointer(&in.Files))
+	out.TerraformProviders = *(*terraform.TerraformProviders)(unsafe.Pointer(&in.TerraformProviders))
 	return nil
 }
 
@@ -113,6 +273,9 @@ func autoConvert_terraform_ProviderConfiguration_To_v1alpha1_ProviderConfigurati
 	out.Main = in.Main
 	out.Variables = in.Variables
 	out.TFVars = in.TFVars
+	out.EnvVars = *(*[]EnvVar)(unsafe.Pointer(&in.EnvVars))
+	out.Files = *(*[]FileMount)(unsafe.Pointer(&in.Files))
+	out.TerraformProviders = *(*TerraformProviders)(unsafe.Pointer(&in.TerraformProviders))
 	return nil
 }
 
@@ -141,9 +304,63 @@ func Convert_terraform_ProviderStatus_To_v1alpha1_ProviderStatus(in *terraform.P
 	return autoConvert_terraform_ProviderStatus_To_v1alpha1_ProviderStatus(in, out, s)
 }
 
+func autoConvert_v1alpha1_RemoteTerraformReference_To_terraform_RemoteTerraformReference(in *RemoteTerraformReference, out *terraform.RemoteTerraformReference, s conversion.Scope) error {
+	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
+	out.ResourceName = in.ResourceName
+	return nil
+}
+
+// Convert_v1alpha1_RemoteTerraformReference_To_terraform_RemoteTerraformReference is an autogenerated conversion function.
+func Convert_v1alpha1_RemoteTerraformReference_To_terraform_RemoteTerraformReference(in *RemoteTerraformReference, out *terraform.RemoteTerraformReference, s conversion.Scope) error {
+	return autoConvert_v1alpha1_RemoteTerraformReference_To_terraform_RemoteTerraformReference(in, out, s)
+}
+
+func autoConvert_terraform_RemoteTerraformReference_To_v1alpha1_RemoteTerraformReference(in *terraform.RemoteTerraformReference, out *RemoteTerraformReference, s conversion.Scope) error {
+	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
+	out.ResourceName = in.ResourceName
+	return nil
+}
+
+// Convert_terraform_RemoteTerraformReference_To_v1alpha1_RemoteTerraformReference is an autogenerated conversion function.
+func Convert_terraform_RemoteTerraformReference_To_v1alpha1_RemoteTerraformReference(in *terraform.RemoteTerraformReference, out *RemoteTerraformReference, s conversion.Scope) error {
+	return autoConvert_terraform_RemoteTerraformReference_To_v1alpha1_RemoteTerraformReference(in, out, s)
+}
+
+func autoConvert_v1alpha1_TerraformProvider_To_terraform_TerraformProvider(in *TerraformProvider, out *terraform.TerraformProvider, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Inline = in.Inline
+	out.URL = in.URL
+	out.FromResource = (*terraform.RemoteTerraformReference)(unsafe.Pointer(in.FromResource))
+	return nil
+}
+
+// Convert_v1alpha1_TerraformProvider_To_terraform_TerraformProvider is an autogenerated conversion function.
+func Convert_v1alpha1_TerraformProvider_To_terraform_TerraformProvider(in *TerraformProvider, out *terraform.TerraformProvider, s conversion.Scope) error {
+	return autoConvert_v1alpha1_TerraformProvider_To_terraform_TerraformProvider(in, out, s)
+}
+
+func autoConvert_terraform_TerraformProvider_To_v1alpha1_TerraformProvider(in *terraform.TerraformProvider, out *TerraformProvider, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Inline = in.Inline
+	out.URL = in.URL
+	out.FromResource = (*RemoteTerraformReference)(unsafe.Pointer(in.FromResource))
+	return nil
+}
+
+// Convert_terraform_TerraformProvider_To_v1alpha1_TerraformProvider is an autogenerated conversion function.
+func Convert_terraform_TerraformProvider_To_v1alpha1_TerraformProvider(in *terraform.TerraformProvider, out *TerraformProvider, s conversion.Scope) error {
+	return autoConvert_terraform_TerraformProvider_To_v1alpha1_TerraformProvider(in, out, s)
+}
+
 func autoConvert_v1alpha1_TerraformerSpec_To_terraform_TerraformerSpec(in *TerraformerSpec, out *terraform.TerraformerSpec, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Image = in.Image
+	if err := Convert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(&in.InitContainer, &out.InitContainer, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_ContainerSpec_To_terraform_ContainerSpec(&in.TerraformContainer, &out.TerraformContainer, s); err != nil {
+		return err
+	}
 	out.LogLevel = in.LogLevel
 	return nil
 }
@@ -154,8 +371,12 @@ func Convert_v1alpha1_TerraformerSpec_To_terraform_TerraformerSpec(in *Terraform
 }
 
 func autoConvert_terraform_TerraformerSpec_To_v1alpha1_TerraformerSpec(in *terraform.TerraformerSpec, out *TerraformerSpec, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Image = in.Image
+	if err := Convert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(&in.InitContainer, &out.InitContainer, s); err != nil {
+		return err
+	}
+	if err := Convert_terraform_ContainerSpec_To_v1alpha1_ContainerSpec(&in.TerraformContainer, &out.TerraformContainer, s); err != nil {
+		return err
+	}
 	out.LogLevel = in.LogLevel
 	return nil
 }

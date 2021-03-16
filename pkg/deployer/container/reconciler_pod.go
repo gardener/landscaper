@@ -9,11 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
@@ -57,13 +53,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	return reconcile.Result{}, nil
 }
 
-// PodEventHandler implements the controller runtime handler interface
-// that reconciles only pods that are created by this controller
-type PodEventHandler struct{}
-
-var _ handler.EventHandler = &PodEventHandler{}
-
-func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (reconcile.Request, bool) {
+// ConstructReconcileDeployItemRequest creates a reconcile request for a deploy item based on pod labels.
+func ConstructReconcileDeployItemRequest(object metav1.Object) (reconcile.Request, bool) {
 	var (
 		req = reconcile.Request{}
 		ok  bool
@@ -78,49 +69,3 @@ func (p *PodEventHandler) getReconcileDeployItemRequest(object metav1.Object) (r
 	}
 	return req, true
 }
-
-func (p *PodEventHandler) Create(event event.CreateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Update(event event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.ObjectNew); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Delete(event event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-func (p *PodEventHandler) Generic(event event.GenericEvent, q workqueue.RateLimitingInterface) {
-	if req, ok := p.getReconcileDeployItemRequest(event.Object); ok {
-		q.Add(req)
-	}
-}
-
-// noopPredicate is a predicate definition that does not react on any event.
-// its used for the pod reconciler that should only be triggered upon pod events not deploy item events
-type noopPredicate struct{}
-
-func (n noopPredicate) Create(createEvent event.CreateEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Delete(deleteEvent event.DeleteEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Update(updateEvent event.UpdateEvent) bool {
-	return false
-}
-
-func (n noopPredicate) Generic(genericEvent event.GenericEvent) bool {
-	return false
-}
-
-var _ predicate.Predicate = noopPredicate{}

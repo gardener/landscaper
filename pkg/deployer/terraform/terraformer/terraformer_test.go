@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	terraformv1alpha1 "github.com/gardener/landscaper/apis/deployer/terraform/v1alpha1"
 	kutils "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
@@ -37,7 +38,6 @@ var (
 var _ = Describe("terraformer", func() {
 	const (
 		namespace      = "namespace"
-		image          = "image:tag"
 		logLevel       = "info"
 		itemNamespace  = "itemNamespace"
 		itemName       = "itemName"
@@ -60,6 +60,17 @@ var _ = Describe("terraformer", func() {
 		expectedRoleName           = expectedTerraformerName
 		expectedRoleBindingName    = expectedTerraformerName
 	)
+
+	var (
+		terraformContainer = terraformv1alpha1.ContainerSpec{
+			Image:           "image:tag",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+		}
+		initContainer = terraformv1alpha1.ContainerSpec{
+			Image:           "image:tag",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+		}
+	)
 	var (
 		ctrl       *gomock.Controller
 		fakeClient *mock_client.MockClient
@@ -78,7 +89,7 @@ var _ = Describe("terraformer", func() {
 		log = logzap.New(logzap.WriteTo(GinkgoWriter))
 
 		var restConfig *rest.Config
-		tfr = New(log, fakeClient, restConfig, namespace, image, logLevel, itemNamespace, itemName)
+		tfr = New(log, fakeClient, restConfig, namespace, logLevel, itemNamespace, itemName, initContainer, terraformContainer)
 	})
 
 	AfterEach(func() {
@@ -145,7 +156,7 @@ var _ = Describe("terraformer", func() {
 						Create(gomock.Any(), expectedConfiguration.DeepCopy()),
 				)
 
-				actual, err := tfr.createOrUpdateConfigurationConfigMap(ctx, main, variables)
+				actual, err := tfr.createOrUpdateConfigurationConfigMap(ctx, main, variables, []byte{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(actual).To(Equal(expectedConfiguration))
 			})
@@ -402,7 +413,7 @@ var _ = Describe("terraformer", func() {
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{
 								Name:            BaseName,
-								Image:           image,
+								Image:           terraformContainer.Image,
 								ImagePullPolicy: corev1.PullIfNotPresent,
 								Command: []string{
 									"/terraformer",

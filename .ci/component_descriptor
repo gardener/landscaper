@@ -43,6 +43,7 @@ function buildComponentArchive() {
 buildComponentArchive "container-deployer"
 buildComponentArchive "helm-deployer"
 buildComponentArchive "manifest-deployer"
+buildComponentArchive "terraform-deployer"
 buildComponentArchive "mock-deployer"
 
 # add landscaper component descriptor

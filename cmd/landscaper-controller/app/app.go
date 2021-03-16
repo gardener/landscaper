@@ -24,8 +24,8 @@ import (
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	terraformctlr "github.com/gardener/landscaper/pkg/deployer/terraform"
 	deployitemactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
-	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
-	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
+	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
@@ -89,11 +89,11 @@ func (o *options) run(ctx context.Context) error {
 
 	install.Install(mgr.GetScheme())
 
-	if err := installationsactuator.AddControllerToManager(mgr, o.config); err != nil {
+	if err := installationsctl.AddControllerToManager(mgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactuator.AddControllerToManager(mgr); err != nil {
+	if err := execctlr.AddControllerToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
@@ -136,8 +136,11 @@ func (o *options) run(ctx context.Context) error {
 			}
 		} else if deployerName == "terraform" {
 			config := &terraformv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
+			}
 			terraformv1alpha1.SetDefaults_Configuration(config)
-			if err := terraformctlr.AddActuatorToManager(mgr, config); err != nil {
+			if err := terraformctlr.AddControllerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add terraform deployer: %w", err)
 			}
 		} else {

@@ -14,4 +14,5 @@ $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/cha
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller charts/container-deployer
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/helm-deployer-controller charts/helm-deployer
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/manifest-deployer-controller charts/manifest-deployer
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/terraform-deployer-controller charts/terraform-deployer
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/mock-deployer-controller charts/mock-deployer
