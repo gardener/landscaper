@@ -14,10 +14,10 @@ import (
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/utils/webhook/certificates"
 )
@@ -28,7 +28,7 @@ const (
 
 // GenerateCertificates generates the certificates that are required for a webhook. It returns the ca bundle, and it
 // stores the server certificate and key locally on the file system.
-func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, namespace, name string) ([]byte, error) {
+func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace, name string) ([]byte, error) {
 	var (
 		caCert     *certificates.Certificate
 		serverCert *certificates.Certificate
@@ -52,23 +52,15 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 
 	// The controller stores the generated webhook certificate in a secret in the cluster. It tries to read it. If it does not exist a
 	// new certificate is generated.
-	c, err := getCachelessClient(mgr)
-	if err != nil {
-		return nil, err
-	}
 
-	secret := &corev1.Secret{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "error getting cert secret")
-		}
-
+	generateAndUpdateCertificate := func() ([]byte, error) {
 		// The secret was not found, let's generate new certificates and store them in the secret afterwards.
 		caCert, serverCert, err = GenerateNewCAAndServerCert(namespace, name, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
 
+		secret := &corev1.Secret{}
 		secret.ObjectMeta = metav1.ObjectMeta{Namespace: namespace, Name: certSecretName}
 		secret.Type = corev1.SecretTypeOpaque
 		secret.Data = map[string][]byte{
@@ -77,11 +69,26 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 			certificates.DataKeyCertificate:   serverCert.CertificatePEM,
 			certificates.DataKeyPrivateKey:    serverCert.PrivateKeyPEM,
 		}
-		if err := c.Create(ctx, secret); err != nil {
+
+		if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
+			secret.Type = corev1.SecretTypeOpaque
+			secret.Data = map[string][]byte{
+				certificates.DataKeyCertificateCA: caCert.CertificatePEM,
+				certificates.DataKeyPrivateKeyCA:  caCert.PrivateKeyPEM,
+				certificates.DataKeyCertificate:   serverCert.CertificatePEM,
+				certificates.DataKeyPrivateKey:    serverCert.PrivateKeyPEM,
+			}
+			return nil
+		}); err != nil {
 			return nil, err
 		}
 
 		return writeCertificates(certDir, caCert, serverCert)
+	}
+
+	secret := &corev1.Secret{}
+	if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: namespace, Name: certSecretName}, secret); err != nil {
+		return generateAndUpdateCertificate()
 	}
 
 	// The secret has been found and we are now trying to read the stored certificate inside it.
@@ -89,6 +96,12 @@ func GenerateCertificates(ctx context.Context, mgr manager.Manager, certDir, nam
 	if err != nil {
 		return nil, errors.Wrapf(err, "error reading data of secret %s/%s", namespace, certSecretName)
 	}
+
+	// update certificates if the dns names have changed
+	if !sets.NewString(caCert.Certificate.DNSNames...).HasAll(dnsNames(namespace, name)...) {
+		return generateAndUpdateCertificate()
+	}
+
 	return writeCertificates(certDir, caCert, serverCert)
 }
 
@@ -100,19 +113,12 @@ func GenerateNewCAAndServerCert(namespace, name string, caConfig certificates.Ce
 	}
 
 	var (
-		dnsNames    []string
 		ipAddresses []net.IP
 	)
 
-	dnsNames = []string{
-		name,
-		fmt.Sprintf("%s.%s", name, namespace),
-		fmt.Sprintf("%s.%s.svc", name, namespace),
-	}
-
 	serverConfig := &certificates.CertificateSecretConfig{
 		CommonName:  name,
-		DNSNames:    dnsNames,
+		DNSNames:    dnsNames(namespace, name),
 		IPAddresses: ipAddresses,
 		CertType:    certificates.ServerCert,
 		SigningCA:   caCert,
@@ -125,6 +131,14 @@ func GenerateNewCAAndServerCert(namespace, name string, caConfig certificates.Ce
 	}
 
 	return caCert, serverCert, nil
+}
+
+func dnsNames(namespace, name string) []string {
+	return []string{
+		name,
+		fmt.Sprintf("%s.%s", name, namespace),
+		fmt.Sprintf("%s.%s.svc", name, namespace),
+	}
 }
 
 func loadExistingCAAndServerCert(data map[string][]byte, pkcs int) (*certificates.Certificate, *certificates.Certificate, error) {
@@ -174,4 +188,9 @@ func writeCertificates(certDir string, caCert, serverCert *certificates.Certific
 	}
 
 	return caCert.CertificatePEM, nil
+}
+
+func StringArrayIncludes(list []string, expects ...string) bool {
+	actual := sets.NewString(list...)
+	return actual.HasAll(expects...)
 }

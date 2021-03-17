@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.controller.replicaCount }}
   selector:
     matchLabels:
       {{- include "landscaper.selectorLabels" . | nindent 6 }}
@@ -36,8 +36,10 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.controllerRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- if .Values.serviceAccount.create }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- end }}
           args:
           - "--config=/app/ls/config/config.yaml"
           - "-v={{ .Values.landscaper.verbosity }}"
@@ -46,13 +48,6 @@ spec:
           {{- end }}
           {{- if .Values.landscaper.deployersConfig }}
           - "--deployers-config=/app/ls/deployers/deployers-config.yaml"
-          {{- end }}
-          - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.fullname" . }}
-          {{- if not (has "all" .Values.disableWebhooks) }}
-          - --webhook-service-port={{ .Values.webhookConfig.servicePort }}
-          {{- end }}
-          {{- if .Values.disableWebhooks }}
-          - --disable-webhooks={{ .Values.disableWebhooks | join "," }}
           {{- end }}
           {{- if .Values.landscaper.metrics }}
           ports:

@@ -16,11 +16,23 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    {{- if not (has "all" .Values.disableWebhooks) }}
-    - port: {{ .Values.webhookConfig.servicePort }}
-      targetPort: 9443
-      protocol: TCP
-      name: webhook
-    {{- end }}
   selector:
     {{- include "landscaper.selectorLabels" . | nindent 4 }}
+---
+{{- if not (has "all" .Values.disableWebhooks) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "landscaper.webhooks.fullname" . }}
+  labels:
+  {{- include "landscaper.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.webhookConfig.servicePort }}
+    targetPort: {{ .Values.webhookConfig.servicePort }}
+    protocol: TCP
+    name: webhook
+  selector:
+  {{- include "landscaper.webhooks.selectorLabels" . | nindent 4 }}
+{{- end }}

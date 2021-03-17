@@ -8,6 +8,7 @@ EFFECTIVE_VERSION                              := $(VERSION)-$(shell git rev-par
 
 REGISTRY                                       := eu.gcr.io/gardener-project/landscaper
 LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY         := $(REGISTRY)/landscaper-controller
+LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY    := $(REGISTRY)/landscaper-webhooks-server
 CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY := $(REGISTRY)/container-deployer-controller
 CONTAINER_DEPLOYER_INIT_IMAGE_REPOSITORY       := $(REGISTRY)/container-deployer-init
 CONTAINER_DEPLOYER_WAIT_IMAGE_REPOSITORY       := $(REGISTRY)/container-deployer-wait
@@ -45,7 +46,7 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	@go test -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG)
+	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG)
 
 .PHONY: verify
 verify: check
@@ -71,6 +72,7 @@ install:
 docker-images:
 	@echo "Building docker images for version $(EFFECTIVE_VERSION)"
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target landscaper-controller .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target landscaper-webhooks-server .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target container-deployer-controller .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(CONTAINER_DEPLOYER_INIT_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target container-deployer-init .
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(CONTAINER_DEPLOYER_WAIT_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION) -f Dockerfile --target container-deployer-wait .
@@ -82,6 +84,7 @@ docker-images:
 docker-push:
 	@echo "Pushing docker images for version $(EFFECTIVE_VERSION) to registry $(REGISTRY)"
 	@if ! docker images $(LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
+	@if ! docker images $(LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
 	@if ! docker images $(CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
 	@if ! docker images $(CONTAINER_DEPLOYER_INIT_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(CONTAINER_DEPLOYER_INIT_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
 	@if ! docker images $(CONTAINER_DEPLOYER_WAIT_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(CONTAINER_DEPLOYER_WAIT_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
@@ -89,6 +92,7 @@ docker-push:
 	@if ! docker images $(MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
 	@if ! docker images $(MOCK_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) | awk '{ print $$2 }' | grep -q -F $(EFFECTIVE_VERSION); then echo "$(MOCK_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY) version $(EFFECTIVE_VERSION) is not yet built. Please run 'make docker-images'"; false; fi
 	@docker push $(LANDSCAPER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
+	@docker push $(LANDSCAPER_WEBHOOKS_SERVER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
 	@docker push $(CONTAINER_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
 	@docker push $(CONTAINER_DEPLOYER_INIT_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
 	@docker push $(CONTAINER_DEPLOYER_WAIT_IMAGE_REPOSITORY):$(EFFECTIVE_VERSION)
@@ -119,3 +123,7 @@ setup-local-registry:
 .PHONY: remove-local-registry
 remove-local-registry:
 	@go run ./hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false
+
+.PHONY: start-webhooks
+start-webhooks:
+	@go run ./cmd/landscaper-webhooks-server -v 3 --kubeconfig=$(KUBECONFIG)
