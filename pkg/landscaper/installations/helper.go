@@ -14,6 +14,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -92,19 +93,19 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 }
 
 // GetDataImport fetches the data import from the cluster.
-func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
+func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
 	var rawDataObject *lsv1alpha1.DataObject
 	// get deploy item from current context
 	if len(dataImport.DataRef) != 0 {
 		rawDataObject = &lsv1alpha1.DataObject{}
 		doName := helper.GenerateDataObjectName(contextName, dataImport.DataRef)
-		if err := op.Client().Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
 			return nil, nil, fmt.Errorf("unable to fetch data object %s (%s/%s): %w", doName, contextName, dataImport.DataRef, err)
 		}
 	}
 	if dataImport.SecretRef != nil {
 		secret := &corev1.Secret{}
-		if err := op.Client().Get(ctx, dataImport.SecretRef.NamespacedName(), secret); err != nil {
+		if err := kubeClient.Get(ctx, dataImport.SecretRef.NamespacedName(), secret); err != nil {
 			return nil, nil, err
 		}
 		data, ok := secret.Data[dataImport.SecretRef.Key]
@@ -118,12 +119,12 @@ func GetDataImport(ctx context.Context, op lsoperation.Interface, contextName st
 	}
 	if dataImport.ConfigMapRef != nil {
 		cm := &corev1.ConfigMap{}
-		if err := op.Client().Get(ctx, dataImport.ConfigMapRef.NamespacedName(), cm); err != nil {
+		if err := kubeClient.Get(ctx, dataImport.ConfigMapRef.NamespacedName(), cm); err != nil {
 			return nil, nil, err
 		}
 		data, ok := cm.Data[dataImport.ConfigMapRef.Key]
 		if !ok {
-			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.SecretRef.Key, dataImport.SecretRef.NamespacedName().String())
+			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.ConfigMapRef.Key, dataImport.ConfigMapRef.NamespacedName().String())
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
 		rawDataObject.Data.RawMessage = []byte(data)

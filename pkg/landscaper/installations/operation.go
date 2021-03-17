@@ -126,7 +126,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.Info.Spec.Imports.Data {
 
-		do, _, err := GetDataImport(ctx, o, o.Context().Name, o.Inst, def)
+		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, o.Inst, def)
 		if err != nil {
 			return nil, err
 		}

@@ -34,38 +34,40 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		Secrets:       make(map[string]*corev1.Secret),
 		ConfigMaps:    make(map[string]*corev1.ConfigMap),
 	}
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
+	if len(path) != 0 {
+		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			data, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrapf(err, "unable to read file %s", path)
+			}
+
+			// template files
+			tmpl, err := template.New("init").Funcs(templatingFunctions).Parse(string(data))
+			if err != nil {
+				return err
+			}
+			buf := bytes.NewBuffer([]byte{})
+			if err := tmpl.Execute(buf, map[string]string{"Namespace": state.Namespace}); err != nil {
+				return err
+			}
+
+			objects, err = decodeAndAppendLSObject(buf.Bytes(), objects, state)
+			if err != nil {
+				return errors.Wrapf(err, "unable to decode file %s", path)
+			}
+
 			return nil
-		}
-
-		data, err := ioutil.ReadFile(path)
+		})
 		if err != nil {
-			return errors.Wrapf(err, "unable to read file %s", path)
+			return nil, nil, err
 		}
-
-		// template files
-		tmpl, err := template.New("init").Funcs(templatingFunctions).Parse(string(data))
-		if err != nil {
-			return err
-		}
-		buf := bytes.NewBuffer([]byte{})
-		if err := tmpl.Execute(buf, map[string]string{"Namespace": state.Namespace}); err != nil {
-			return err
-		}
-
-		objects, err = decodeAndAppendLSObject(buf.Bytes(), objects, state)
-		if err != nil {
-			return errors.Wrapf(err, "unable to decode file %s", path)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 
 	return fake.NewClientBuilder().WithScheme(kubernetes.LandscaperScheme).WithObjects(objects...).Build(), state, nil

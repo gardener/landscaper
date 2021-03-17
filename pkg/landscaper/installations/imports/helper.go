@@ -108,7 +108,7 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	}
 
 	// we have to get the corresponding installation from the the cluster
-	_, owner, err := installations.GetDataImport(ctx, op, op.Context().Name, inst, dataImport)
+	_, owner, err := installations.GetDataImport(ctx, op.Client(), op.Context().Name, inst, dataImport)
 	if err != nil {
 		return nil, err
 	}
