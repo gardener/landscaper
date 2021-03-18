@@ -130,7 +130,7 @@ func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.In
 
 func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) (bool, error) {
 	// get deploy item from current context
-	do, owner, err := installations.GetDataImport(ctx, v, v.Context().Name, inst, dataImport)
+	do, owner, err := installations.GetDataImport(ctx, v.Client(), v.Context().Name, inst, dataImport)
 	if err != nil {
 		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
 	}
@@ -192,7 +192,7 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 
 func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
 	// get deploy item from current context
-	_, owner, err := installations.GetDataImport(ctx, v, v.Context().Name, inst, dataImport)
+	_, owner, err := installations.GetDataImport(ctx, v.Client(), v.Context().Name, inst, dataImport)
 	if err != nil {
 		return fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
 	}
