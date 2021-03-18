@@ -18,7 +18,7 @@ FROM eu.gcr.io/gardenlinux/gardenlinux:184.0 AS base
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confnew" install ca-certificates \
     && rm -rf /var/lib/apt /var/cache/apt
 
-#### Helm Deployer Controller ####
+#### Landscaper Controller ####
 FROM base as landscaper-controller
 
 COPY --from=builder /go/bin/landscaper-controller /landscaper-controller
@@ -26,6 +26,15 @@ COPY --from=builder /go/bin/landscaper-controller /landscaper-controller
 WORKDIR /
 
 ENTRYPOINT ["/landscaper-controller"]
+
+#### Landsacper webhooks server ####
+FROM base as landscaper-webhooks-server
+
+COPY --from=builder /go/bin/landscaper-webhooks-server /landscaper-webhooks-server
+
+WORKDIR /
+
+ENTRYPOINT ["/landscaper-webhooks-server"]
 
 #### Container Deployer Controller ####
 FROM base as container-deployer-controller

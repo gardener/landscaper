@@ -18,4 +18,21 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "landscaper.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+---
+{{- if not (has "all" .Values.disableWebhooks) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "landscaper.webhooks.serviceAccountName" . }}
+  labels:
+  {{- include "landscaper.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "landscaper.webhooks.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "landscaper.webhooks.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

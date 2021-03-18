@@ -24,6 +24,10 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
+{{- define "landscaper.webhooks.fullname" -}}
+{{- include "landscaper.fullname" . }}-webhooks
+{{- end }}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}
@@ -52,6 +56,12 @@ app.kubernetes.io/name: {{ include "landscaper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{- define "landscaper.webhooks.selectorLabels" -}}
+landscaper.gardener.cloud/component: webhook-server
+app.kubernetes.io/name: {{ include "landscaper.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
 {{/*
 Create the name of the service account to use
 */}}
@@ -61,6 +71,10 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+
+{{- define "landscaper.webhooks.serviceAccountName" -}}
+{{- include "landscaper.serviceAccountName" . }}-webhooks
 {{- end }}
 
 {{- define "landscaper-config" -}}

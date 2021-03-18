@@ -10,16 +10,15 @@ import (
 	"path"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-///// WEBHOOK /////
 
 // WebhookedResourceDefinition contains information about the resources that should be watched by the webhook
 type WebhookedResourceDefinition struct {
@@ -54,10 +53,10 @@ type Options struct {
 }
 
 // UpdateValidatingWebhookConfiguration will create or update a ValidatingWebhookConfiguration
-func UpdateValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
-	tmpClient, err := getCachelessClient(mgr)
-	if err != nil {
-		return fmt.Errorf("unable to get client: %w", err)
+func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, o Options, webhookLogger logr.Logger) error {
+	// do not deploy or update the webhook if no service name is given
+	if len(o.ServiceName) == 0 || len(o.ServiceNamespace) == 0 {
+		return nil
 	}
 
 	vwc := admissionregistrationv1.ValidatingWebhookConfiguration{
@@ -101,7 +100,7 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manag
 	}
 
 	webhookLogger.Info("Creating/updating ValidatingWebhookConfiguration", "name", o.WebhookConfigurationName, "kind", "ValidatingWebhookConfiguration")
-	_, err = ctrl.CreateOrUpdate(ctx, tmpClient, &vwc, func() error {
+	_, err := ctrl.CreateOrUpdate(ctx, kubeClient, &vwc, func() error {
 		vwc.Webhooks = vwcWebhooks
 		return nil
 	})
@@ -114,18 +113,14 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manag
 }
 
 // DeleteValidatingWebhookConfiguration deletes a ValidatingWebhookConfiguration
-func DeleteValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manager, name string, webhookLogger logr.Logger) error {
-	tmpClient, err := getCachelessClient(mgr)
-	if err != nil {
-		return fmt.Errorf("unable to get client: %w", err)
-	}
+func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, name string, webhookLogger logr.Logger) error {
 	vwc := admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}
 	webhookLogger.Info("Removing ValidatingWebhookConfiguration, if it exists", "name", name, "kind", "ValidatingWebhookConfiguration")
-	if err := tmpClient.Delete(ctx, &vwc); err != nil {
+	if err := kubeClient.Delete(ctx, &vwc); err != nil {
 		if apierrors.IsNotFound(err) {
 			webhookLogger.V(5).Info("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
 		} else {
@@ -139,22 +134,27 @@ func DeleteValidatingWebhookConfiguration(ctx context.Context, mgr manager.Manag
 
 // RegisterWebhooks generates certificates and registers the webhooks to the manager
 // no-op if WebhookedResources in the given options is either nil or empty
-func RegisterWebhooks(mgr manager.Manager, o Options, webhookLogger logr.Logger) error {
+func RegisterWebhooks(log logr.Logger, webhookServer *ctrlwebhook.Server, client client.Client, scheme *runtime.Scheme, o Options) error {
 	if o.WebhookedResources == nil || len(o.WebhookedResources) == 0 {
 		return nil
 	}
 
 	// registering webhooks
 	for _, elem := range o.WebhookedResources {
-		rsLogger := webhookLogger.WithName(elem.ResourceName)
-		val, err := ValidatorFromResourceType(rsLogger, mgr.GetClient(), mgr.GetScheme(), elem.ResourceName)
+		rsLogger := log.WithName(elem.ResourceName)
+		val, err := ValidatorFromResourceType(rsLogger, client, scheme, elem.ResourceName)
 		if err != nil {
 			return fmt.Errorf("unable to register webhooks: %w", err)
 		}
 
 		webhookPath := o.WebhookBasePath + elem.ResourceName
 		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
-		mgr.GetWebhookServer().Register(webhookPath, &ctrlwebhook.Admission{Handler: val})
+		admission := &ctrlwebhook.Admission{Handler: val}
+		_ = admission.InjectLogger(rsLogger)
+		if err := admission.InjectScheme(scheme); err != nil {
+			return err
+		}
+		webhookServer.Register(webhookPath, admission)
 	}
 
 	return nil

@@ -32,12 +32,15 @@ landscaper:
 #      kind: Configuration
 #      ...
 
+controller:
+  replicaCount: 1
 
-
-replicaCount: 1
+webhooksServer:
+  replicaCount: 1
 
 image:
-  repository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
+  controllerRepository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
+  webhookServerRepository: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   #tag: ""
