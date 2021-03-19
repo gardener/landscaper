@@ -27,7 +27,7 @@ import (
 func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
 	return &controller{
 		log:    log,
-		c:      kubeClient,
+		client: kubeClient,
 		scheme: scheme,
 		config: config,
 	}, nil
@@ -35,7 +35,7 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 
 type controller struct {
 	log    logr.Logger
-	c      client.Client
+	client client.Client
 	scheme *runtime.Scheme
 	config *manifestv1alpha1.Configuration
 }
@@ -45,7 +45,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	logger.V(7).Info("reconcile deploy item")
 
 	deployItem := &lsv1alpha1.DeployItem{}
-	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
+	if err := a.client.Get(ctx, req.NamespacedName, deployItem); err != nil {
 		if apierrors.IsNotFound(err) {
 			a.log.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -60,7 +60,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	var target *lsv1alpha1.Target
 	if deployItem.Spec.Target != nil {
 		target = &lsv1alpha1.Target{}
-		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+		if err := a.client.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
 		}
 		if len(a.config.TargetSelector) != 0 {
@@ -80,14 +80,14 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	errHdl := deployerlib.HandleErrorFunc(logger, a.c, deployItem)
+	errHdl := deployerlib.HandleErrorFunc(logger, a.client, deployItem)
 	if err := errHdl(ctx, a.reconcile(ctx, deployItem, target)); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.c.Update(ctx, deployItem); err != nil {
+		if err := a.client.Update(ctx, deployItem); err != nil {
 			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
 				"Reconcile", "RemoveReconcileAnnotation", err.Error())
 			return reconcile.Result{}, err
@@ -98,14 +98,14 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	manifest, err := New(a.log, a.c, deployItem, target)
+	manifest, err := New(a.log, a.client, deployItem, target)
 	if err != nil {
 		return err
 	}
 
 	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, deployItem); err != nil {
+		if err := a.client.Update(ctx, deployItem); err != nil {
 			return lsv1alpha1helper.NewWrappedError(err,
 				"Reconcile", "AddFinalizer", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}

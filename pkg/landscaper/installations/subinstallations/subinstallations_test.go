@@ -33,7 +33,7 @@ import (
 var _ = Describe("SubInstallation", func() {
 
 	var (
-		op               *installations.Operation
+		op               lsoperation.Interface
 		ctrl             *gomock.Controller
 		mockClient       *k8smock.MockClient
 		mockStatusWriter *k8smock.MockStatusWriter
@@ -52,8 +52,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		commonOp := lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeCompRepo)
-		op = &installations.Operation{Interface: commonOp}
+		op = lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeCompRepo)
 
 		defaultTestConfig = &utils.TestInstallationConfig{
 			MockClient:                   mockClient,
@@ -74,8 +73,12 @@ var _ = Describe("SubInstallation", func() {
 
 	Context("Create subinstallations", func() {
 
-		It("should not create any installations if no definition references are defined", func() {
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(
+		It("should not create any installations if no subinstallation definitions are defined", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil).Times(2) // once for the operation and once in the ensure.
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).Times(1).Return(nil).Do(
 				func(ctx context.Context, inst *lsv1alpha1.Installation) {
 					Expect(len(inst.Status.Conditions)).To(Equal(1))
 					Expect(inst.Status.Conditions[0].Type).To(Equal(lsv1alpha1.EnsureSubInstallationsCondition))
@@ -86,17 +89,27 @@ var _ = Describe("SubInstallation", func() {
 			blue, err := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
 			Expect(err).ToNot(HaveOccurred())
 
-			si := subinstallations.New(op)
-			err = si.Ensure(context.TODO(), &lsv1alpha1.Installation{}, blue)
+			inst, err := installations.New(&lsv1alpha1.Installation{}, blue)
+			Expect(err).ToNot(HaveOccurred())
+			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+			Expect(err).ToNot(HaveOccurred())
+
+			si := subinstallations.New(instOp)
+			err = si.Ensure(ctx)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should create one installation if a subinstallation is defined", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+			ctx := context.Background()
+			defer ctx.Done()
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			var resInst *lsv1alpha1.Installation
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
 			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).
+				Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(
 				func(ctx context.Context, inst *lsv1alpha1.Installation) {
 					resInst = inst
@@ -104,7 +117,7 @@ var _ = Describe("SubInstallation", func() {
 			)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+			Expect(si.Ensure(ctx)).To(Succeed())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
 			Expect(resInst.Spec.ComponentDescriptor.Reference).NotTo(BeNil())
@@ -133,11 +146,16 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should update the status and add the newly created sub installations", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+			ctx := context.Background()
+			defer ctx.Done()
+			rootInst, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			var resInst *lsv1alpha1.Installation
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
 			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).
+				Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(
 				func(ctx context.Context, inst *lsv1alpha1.Installation) {
 					resInst = inst
@@ -146,7 +164,7 @@ var _ = Describe("SubInstallation", func() {
 			)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+			Expect(si.Ensure(ctx)).To(Succeed())
 
 			Expect(rootInst.Status.InstallationReferences).To(HaveLen(1))
 			Expect(rootInst.Status.InstallationReferences).To(ConsistOf(lsv1alpha1.NamedObjectReference{
@@ -159,11 +177,15 @@ var _ = Describe("SubInstallation", func() {
 		})
 
 		It("should create multiple installations for all definition references", func() {
+			ctx := context.Background()
+			defer ctx.Done()
 			defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root2.yaml"
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			subInstallations := make([]*lsv1alpha1.Installation, 0)
 
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
 			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
 			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(
@@ -173,16 +195,71 @@ var _ = Describe("SubInstallation", func() {
 			)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+			Expect(si.Ensure(ctx)).To(Succeed())
 
 			Expect(len(subInstallations)).To(Equal(2))
 		})
 	})
 
-	Context("#ApplyUpdate", func() {
+	Context("#Update", func() {
 
 		It("should update a reference even if nothing has changed to trigger a reconcile", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+			ctx := context.Background()
+			defer ctx.Done()
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+
+			subinst := &lsv1alpha1.Installation{}
+			subinst.Name = "inst-def1"
+			subinst.Namespace = "default"
+			subinst.Annotations = map[string]string{
+				lsv1alpha1.SubinstallationNameAnnotation: "def1",
+			}
+			subinst.Spec.ComponentDescriptor = utils.LocalRemoteComponentDescriptorRef("root", "1.0.0", ".testdata")
+			subinst.Spec.Blueprint = utils.LocalRemoteBlueprintRef("def1")
+			subinst.Spec.Imports = lsv1alpha1.InstallationImports{
+				Data: []lsv1alpha1.DataImport{
+					{
+						Name:    "b",
+						DataRef: "a",
+					},
+				},
+			}
+			subinst.Spec.Exports = lsv1alpha1.InstallationExports{
+				Data: []lsv1alpha1.DataExport{
+					{
+						Name:    "c",
+						DataRef: "d",
+					},
+				},
+			}
+
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil).Do(
+				func(ctx context.Context, installations *lsv1alpha1.InstallationList, opts ...client.ListOption) {
+					installations.Items = []lsv1alpha1.Installation{
+						*subinst,
+					}
+				},
+			)
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Create(ctx, gomock.Any(), gomock.Any()).Times(0)
+			mockClient.EXPECT().Update(ctx, gomock.Any()).Times(1)
+			mockClient.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Times(1).Return(nil).Do( // expect once times for the create and update call
+				func(ctx context.Context, key types.NamespacedName, obj *lsv1alpha1.Installation) {
+					Expect(key.Name).To(Equal("inst-def1"))
+					Expect(key.Namespace).To(Equal("default"))
+					*obj = *subinst
+				},
+			)
+
+			si := subinstallations.New(rootInstOp)
+			Expect(si.Ensure(ctx)).To(Succeed())
+		})
+
+		It("should update a reference even if nothing has changed to trigger a reconcile with a fallback to the old status based referencing", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			rootInst, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			rootInst.Status = lsv1alpha1.InstallationStatus{
 				InstallationReferences: []lsv1alpha1.NamedObjectReference{
@@ -218,10 +295,18 @@ var _ = Describe("SubInstallation", func() {
 				},
 			}
 
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
-			mockClient.EXPECT().Update(gomock.Any(), gomock.Any()).Times(1)
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil).Do( // expect 2 times for the create and update call
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil).Do(
+				func(ctx context.Context, installations *lsv1alpha1.InstallationList, opts ...client.ListOption) {
+					installations.Items = []lsv1alpha1.Installation{
+						*subinst,
+					}
+				},
+			)
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Create(ctx, gomock.Any(), gomock.Any()).Times(0)
+			mockClient.EXPECT().Update(ctx, gomock.Any()).Times(1)
+			mockClient.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).Times(1).Return(nil).Do( // expect 2 times for the create and update call
 				func(ctx context.Context, key types.NamespacedName, obj *lsv1alpha1.Installation) {
 					Expect(key.Name).To(Equal("inst-def1"))
 					Expect(key.Namespace).To(Equal("default"))
@@ -230,89 +315,90 @@ var _ = Describe("SubInstallation", func() {
 			)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+			Expect(si.Ensure(ctx)).To(Succeed())
 		})
 
 		It("should reinstall a subinstallation that does not exist anymore", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+			ctx := context.Background()
+			defer ctx.Done()
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
-			rootInst.Status = lsv1alpha1.InstallationStatus{
-				InstallationReferences: []lsv1alpha1.NamedObjectReference{
-					{
-						Name: "def1",
-						Reference: lsv1alpha1.ObjectReference{
-							Name:      "inst-def1",
-							Namespace: "default",
-						},
-					},
-				},
-			}
-
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+			mockClient.EXPECT().Create(ctx, gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+			Expect(si.Ensure(ctx)).To(Succeed())
 		})
 
 		It("should not update until all subinstallations are not in progressing state", func() {
-			rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
-			rootInst.Status.InstallationReferences = []lsv1alpha1.NamedObjectReference{
-				{
-					Name: "def1",
-					Reference: lsv1alpha1.ObjectReference{
-						Name:      "inst-def1",
-						Namespace: "default",
-					},
-				},
-			}
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+			ctx := context.Background()
+			defer ctx.Done()
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			subinst := &lsv1alpha1.Installation{}
 			subinst.Name = "inst-def1"
+			subinst.Annotations = map[string]string{
+				lsv1alpha1.SubinstallationNameAnnotation: "def1",
+			}
 			subinst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 
-			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *lsv1alpha1.Installation) {
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil).Do(
+				func(ctx context.Context, installations *lsv1alpha1.InstallationList, opts ...client.ListOption) {
+					installations.Items = []lsv1alpha1.Installation{
+						*subinst,
+					}
+				},
+			)
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Create(ctx, gomock.Any(), gomock.Any()).Times(0)
+
+			mockClient.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *lsv1alpha1.Installation) {
 				Expect(key.Name).To(Equal("inst-def1"))
 				*obj = *subinst
 			})
 
-			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).Times(0)
+			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).Times(0)
 
 			si := subinstallations.New(rootInstOp)
-			Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(HaveOccurred(), "should throw a unable to update call")
+			Expect(si.Ensure(ctx)).To(HaveOccurred(), "should throw a unable to update call")
 		})
 
 		Context("Cleanup", func() {
 
 			It("should remove a subinstallation that is not referenced anymore", func() {
+				ctx := context.Background()
+				defer ctx.Done()
 				defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root3.yaml"
-				rootInst, _, rootBlueprint, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
-				rootInst.Status.InstallationReferences = []lsv1alpha1.NamedObjectReference{
-					{
-						Name: "def1",
-						Reference: lsv1alpha1.ObjectReference{
-							Name:      "inst-def1",
-							Namespace: "default",
-						},
-					},
-				}
-				mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-				mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+				rootInst, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 				subinst := &lsv1alpha1.Installation{}
 				subinst.Name = "inst-def1"
+				subinst.Annotations = map[string]string{
+					lsv1alpha1.SubinstallationNameAnnotation: "def1",
+				}
+				mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+					Return(nil).Do(
+					func(ctx context.Context, installations *lsv1alpha1.InstallationList, opts ...client.ListOption) {
+						installations.Items = []lsv1alpha1.Installation{
+							*subinst,
+						}
+					},
+				)
+				mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).AnyTimes().Return(nil)
+				mockClient.EXPECT().Create(ctx, gomock.Any(), gomock.Any()).Times(0)
 
-				mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *lsv1alpha1.Installation) {
+				mockClient.EXPECT().Get(ctx, gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(ctx context.Context, key client.ObjectKey, obj *lsv1alpha1.Installation) {
 					Expect(key.Name).To(Equal("inst-def1"))
 					*obj = *subinst
 				})
-				mockClient.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+				mockClient.EXPECT().Delete(ctx, gomock.Any()).Times(1).Return(nil)
 
 				si := subinstallations.New(rootInstOp)
-				Expect(si.Ensure(context.TODO(), rootInst, rootBlueprint)).To(Succeed())
+				Expect(si.Ensure(ctx)).To(Succeed())
 				Expect(rootInst.Status.InstallationReferences).To(HaveLen(1), "should remove the status for a installation only if the installation is really deleted")
 			})
 		})

@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -43,6 +44,9 @@ type Operation struct {
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Context
+
+	// CurrentOperation is the name of the current operation that is used for the error erporting
+	CurrentOperation string
 }
 
 // NewInstallationOperation creates a new installation operation
@@ -86,6 +90,14 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 	return nil
 }
 
+// Log returns a modified logger for the installation.
+func (o *Operation) Log() logr.Logger {
+	return o.Interface.Log().WithValues("installation", types.NamespacedName{
+		Namespace: o.Inst.Info.Namespace,
+		Name:      o.Inst.Info.Name,
+	})
+}
+
 // Context returns the context of the operated installation
 func (o *Operation) Context() *Context {
 	return &o.context
@@ -107,6 +119,27 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 			ComponentReferenceResolver: cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList),
 		},
 	}
+}
+
+// ListSubinstallations returns a list of all subinstallations of the given installation.
+// Returns nil if no installations can be found
+func (o *Operation) ListSubinstallations(ctx context.Context) ([]*lsv1alpha1.Installation, error) {
+	installationList := &lsv1alpha1.InstallationList{}
+
+	err := o.Client().List(ctx, installationList, client.InNamespace(o.Inst.Info.Namespace), client.MatchingLabels{
+		lsv1alpha1.EncompassedByLabel: o.Inst.Info.Name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(installationList.Items) == 0 {
+		return nil, nil
+	}
+	installations := make([]*lsv1alpha1.Installation, len(installationList.Items))
+	for i, inst := range installationList.Items {
+		installations[i] = inst.DeepCopy()
+	}
+	return installations, nil
 }
 
 // UpdateInstallationStatus updates the status of a installation
@@ -208,6 +241,12 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 	}
 
 	return targets, nil
+}
+
+// NewError creates a new error with the current operation
+func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) error {
+	return lsv1alpha1helper.NewWrappedError(err,
+		o.CurrentOperation, reason, message, codes...)
 }
 
 // CreateEventFromCondition creates a new event based on the given condition

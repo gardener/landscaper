@@ -20,29 +20,29 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (a *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (c *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 	// resolve all pull secrets
-	secrets, err := a.resolveSecrets(ctx, pullSecrets)
+	secrets, err := c.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
 		return err
 	}
 
-	if a.lsConfig.Registry.Local != nil {
-		componentsOCIRegistry, err := componentsregistry.NewLocalClient(a.Log(), a.lsConfig.Registry.Local.RootPath)
+	if c.lsConfig.Registry.Local != nil {
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.lsConfig.Registry.Local.RootPath)
 		if err != nil {
 			return err
 		}
-		if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+		if err := c.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 			return err
 		}
 	}
 
-	// always add a oci client to support unauthenticated requests
+	// always add c oci client to support unauthenticated requests
 	ociConfigFiles := make([]string, 0)
-	if a.lsConfig.Registry.OCI != nil {
-		ociConfigFiles = a.lsConfig.Registry.OCI.ConfigFiles
+	if c.lsConfig.Registry.OCI != nil {
+		ociConfigFiles = c.lsConfig.Registry.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.NewBuilder(a.Log()).DisableDefaultConfig().
+	ociKeyring, err := credentials.NewBuilder(c.Log()).DisableDefaultConfig().
 		WithFS(osfs.New()).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
@@ -50,10 +50,10 @@ func (a *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 	if err != nil {
 		return err
 	}
-	ociClient, err := ociclient.NewClient(a.Log(),
-		utils.WithConfiguration(a.lsConfig.Registry.OCI),
+	ociClient, err := ociclient.NewClient(c.Log(),
+		utils.WithConfiguration(c.lsConfig.Registry.OCI),
 		ociclient.WithResolver{Resolver: ociKeyring},
-		ociclient.WithCache{Cache: a.componentsRegistryMgr.SharedCache()},
+		ociclient.WithCache{Cache: c.componentsRegistryMgr.SharedCache()},
 	)
 	if err != nil {
 		return err
@@ -68,19 +68,19 @@ func (a *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 	if err != nil {
 		return err
 	}
-	if err := a.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+	if err := c.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (a *controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
+func (c *controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
 	secrets := make([]corev1.Secret, len(secretRefs))
 	for i, secretRef := range secretRefs {
 		secret := corev1.Secret{}
 		// todo: check for cache
-		if err := a.Client().Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
+		if err := c.Client().Get(ctx, secretRef.NamespacedName(), &secret); err != nil {
 			return nil, err
 		}
 		secrets[i] = secret
