@@ -7,8 +7,6 @@ package manifest
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,6 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -42,7 +41,8 @@ type controller struct {
 }
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+	logger := a.log.WithValues("resource", req.NamespacedName)
+	logger.V(7).Info("reconcile deploy item")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
@@ -80,14 +80,8 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	old := deployItem.DeepCopy()
-	err := a.reconcile(ctx, deployItem, target)
-	if !reflect.DeepEqual(old.Status, deployItem.Status) {
-		if err := a.c.Status().Update(ctx, deployItem); err != nil {
-			a.log.Error(err, "unable to update status")
-		}
-	}
-	if err != nil {
+	errHdl := deployerlib.HandleErrorFunc(logger, a.c, deployItem)
+	if err := errHdl(ctx, a.reconcile(ctx, deployItem, target)); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -103,32 +97,17 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
-	// set failed state if the last error lasts for more than 5 minutes
-	defer func() {
-		// set the error if the err is a landscaper error
-		if lsErr, ok := lsv1alpha1helper.IsError(err); ok {
-			deployItem.Status.LastError = lsErr.UpdatedError(deployItem.Status.LastError)
-		}
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
-			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
-			deployItem.Status.LastError,
-			5*time.Minute))
-	}()
-
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	manifest, err := New(a.log, a.c, deployItem, target)
 	if err != nil {
-		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-			"InitManifestOperation", "", err.Error())
 		return err
 	}
 
 	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := a.c.Update(ctx, deployItem); err != nil {
-			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-				"AddFinalizer", "", err.Error())
-			return err
+			return lsv1alpha1helper.NewWrappedError(err,
+				"Reconcile", "AddFinalizer", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
 		return nil
 	}

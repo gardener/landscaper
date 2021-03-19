@@ -113,7 +113,6 @@
         },
         "schema": {
           "description": "Schema defines the imported value as jsonschema.",
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition"
         },
         "targetType": {
@@ -153,7 +152,6 @@
         },
         "schema": {
           "description": "Schema defines the imported value as jsonschema.",
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition"
         },
         "targetType": {

@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	"github.com/gardener/landscaper/apis/deployer/manifest/validation"
@@ -47,20 +48,24 @@ type Manifest struct {
 // New creates a new internal helm item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
 	config := &manifest.ProviderConfiguration{}
+	currOp := "InitManifestOperation"
 	manifestDecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	if err := validation.ValidateProviderConfiguration(config); err != nil {
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	var status *manifest.ProviderStatus
 	if item.Status.ProviderStatus != nil {
 		status = &manifest.ProviderStatus{}
 		if _, _, err := manifestDecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
-			return nil, err
+			return nil, lsv1alpha1helper.NewWrappedError(err,
+				currOp, "ParseProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
 	}
 

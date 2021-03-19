@@ -110,6 +110,11 @@ const (
 	ErrorConfigurationProblem ErrorCode = "ERR_CONFIGURATION_PROBLEM"
 )
 
+// UnrecoverableErrorCodes defines unrecoverable error codes
+var UnrecoverableErrorCodes = []ErrorCode{
+	ErrorConfigurationProblem,
+}
+
 // Condition holds the information about the state of a resource.
 type Condition struct {
 	// DataType of the Shoot condition.

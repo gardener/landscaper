@@ -34,24 +34,21 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	currOp := "ApplyFile"
 	_, targetClient, err := h.TargetClient()
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
-		return err
 	}
 
 	objects, err := kutil.ParseFiles(h.log, files)
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
-		return err
 	}
 
 	for _, obj := range objects {
 		exports, err = h.addExport(exports, obj)
 		if err != nil {
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "ReadExportValues", err.Error())
-			return err
 		}
 		h.injectLabels(obj)
 	}
@@ -80,9 +77,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 
 	if h.ProviderStatus != nil {
 		if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
-			h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+			err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "CleanupOrphanedResources", err.Error())
-			return fmt.Errorf("unable to cleanup orphaned resources: %w", err)
 		}
 	}
 
@@ -95,24 +92,21 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	}
 	statusData, err := encodeStatus(status)
 	if err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
-			currOp, "ProviderStatus", err.Error())
-		return err
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "UpdateProviderStatus", err.Error())
 	}
 
 	if err := h.createOrUpdateExport(ctx, exports); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CreateExport", err.Error())
-		return err
 	}
 
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	h.DeployItem.Status.ProviderStatus = statusData
 	h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
 	if err := h.kubeClient.Status().Update(ctx, h.DeployItem); err != nil {
-		h.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(h.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
-		return err
 	}
 	h.DeployItem.Status.LastError = nil
 	return nil

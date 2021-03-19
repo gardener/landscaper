@@ -6,17 +6,15 @@ package container
 
 import (
 	"context"
-	"reflect"
-	"time"
 
 	"github.com/go-logr/logr"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/kubernetes"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
@@ -72,7 +70,8 @@ func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 	}
 
 	logger.Info("Reconcile container deploy item")
-	if err := r.reconcile(ctx, deployItem); err != nil {
+	errHdl := deployerlib.HandleErrorFunc(logger, r.lsClient, deployItem)
+	if err := errHdl(ctx, r.reconcile(ctx, deployItem)); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -80,27 +79,6 @@ func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 }
 
 func (r *DeployItemReconciler) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) (err error) {
-	old := deployItem.DeepCopy()
-	// set failed state if the last error lasts for more than 5 minutes
-	defer func() {
-		deployItem.Status.LastError = lsv1alpha1helper.TryUpdateError(deployItem.Status.LastError, err)
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
-			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
-			deployItem.Status.LastError,
-			5*time.Minute))
-		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err2 := r.lsClient.Status().Update(ctx, deployItem); err2 != nil {
-				if !apierrors.IsConflict(err2) { // reduce logging
-					r.log.Error(err2, "unable to update status")
-				}
-				// retry on conflict
-				if err != nil {
-					err = err2
-				}
-			}
-		}
-	}()
-
 	containerOp, err := New(r.log, r.lsClient, r.hostClient, r.directHostClient, r.config, deployItem, r.componentsRegistryMgr)
 	if err != nil {
 		return err
