@@ -108,7 +108,15 @@ const (
 	ErrorCleanupResources ErrorCode = "ERR_CLEANUP"
 	// ErrorConfigurationProblem indicates that the last error occurred due a configuration problem.
 	ErrorConfigurationProblem ErrorCode = "ERR_CONFIGURATION_PROBLEM"
+	// ErrorInternalProblem indicates that the last error occurred due to a servere internal error
+	ErrorInternalProblem ErrorCode = "ERR_INTERNAL_PROBLEM"
 )
+
+// UnrecoverableErrorCodes defines unrecoverable error codes
+var UnrecoverableErrorCodes = []ErrorCode{
+	ErrorConfigurationProblem,
+	ErrorInternalProblem,
+}
 
 // Condition holds the information about the state of a resource.
 type Condition struct {

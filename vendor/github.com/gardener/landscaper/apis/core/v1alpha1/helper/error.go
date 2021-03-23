@@ -121,8 +121,33 @@ func GetPhaseForLastError(phase lsv1alpha1.ComponentInstallationPhase, lastError
 		return lsv1alpha1.ComponentPhaseFailed
 	}
 
+	// directly set the phase to error if the error contains an unrecoverable error code
+	if ContainsAnyErrorCode(lastError.Codes, lsv1alpha1.UnrecoverableErrorCodes) {
+		return lsv1alpha1.ComponentPhaseFailed
+	}
+
 	if lastError.LastUpdateTime.Sub(lastError.LastTransitionTime.Time).Seconds() > d.Seconds() {
 		return lsv1alpha1.ComponentPhaseFailed
 	}
 	return phase
+}
+
+// ContainsAnyErrorCode checks whether any expected error code is included in a list of error codes
+func ContainsAnyErrorCode(codes []lsv1alpha1.ErrorCode, expected []lsv1alpha1.ErrorCode) bool {
+	for _, expected := range expected {
+		if HasErrorCode(codes, expected) {
+			return true
+		}
+	}
+	return false
+}
+
+// HasErrorCode checks if a code is present in the a list of error codes.
+func HasErrorCode(codes []lsv1alpha1.ErrorCode, expected lsv1alpha1.ErrorCode) bool {
+	for _, code := range codes {
+		if code == expected {
+			return true
+		}
+	}
+	return false
 }

@@ -67,20 +67,20 @@ func New(log logr.Logger,
 	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
-			"Init", "DecodeProviderConfiguration", err.Error())
+			"Init", "DecodeProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	applyDefaults(config, providerConfig)
 
 	if err := container1alpha1validation.ValidateProviderConfiguration(providerConfig); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
-			"Init", "ValidateProviderConfiguration", err.Error())
+			"Init", "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	status, err := DecodeProviderStatus(item.Status.ProviderStatus)
 	if err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
-			"Init", "DecodeProviderStatus", err.Error())
+			"Init", "DecodeProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	return &Container{

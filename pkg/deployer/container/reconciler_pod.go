@@ -18,6 +18,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
 // PodReconciler implements the reconciler.Reconcile interface that is expected to be called on
@@ -49,7 +50,8 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	if deployItem == nil {
 		return reconcile.Result{}, nil
 	}
-	if err := r.diRec.reconcile(ctx, deployItem); err != nil {
+	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, deployItem)
+	if err := errHdl(ctx, r.diRec.reconcile(ctx, deployItem)); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

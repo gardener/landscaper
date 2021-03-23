@@ -15,6 +15,10 @@ import (
 // todo: add conversion
 const EncompassedByLabel = "landscaper.gardener.cloud/encompassed-by"
 
+// SubinstallationNameAnnotation is the annotation that contains the name of the subinstallation.
+// todo: add conversion
+const SubinstallationNameAnnotation = "landscaper.gardener.cloud/subinstallation-name"
+
 // todo: keep only subinstallations?
 const KeepChildrenAnnotation = "landscaper.gardener.cloud/keep-children"
 

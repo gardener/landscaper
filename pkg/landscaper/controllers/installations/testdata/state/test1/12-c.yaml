@@ -8,7 +8,9 @@ metadata:
   name: c
   namespace: {{ .Namespace }}
   labels:
-    "landscaper.gardener.cloud/encompassed-by": root
+    "landscaper.gardener.cloud/encompassed-by": a
+  annotations:
+    "landscaper.gardener.cloud/subinstallation-name": c
   ownerReferences:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
     kind: Installation

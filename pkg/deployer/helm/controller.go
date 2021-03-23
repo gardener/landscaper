@@ -7,8 +7,6 @@ package helm
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
@@ -41,7 +40,7 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 
 	return &controller{
 		log:                   log,
-		c:                     kubeClient,
+		client:                kubeClient,
 		scheme:                scheme,
 		config:                config,
 		componentsRegistryMgr: componentRegistryMgr,
@@ -50,7 +49,7 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 
 type controller struct {
 	log                   logr.Logger
-	c                     client.Client
+	client                client.Client
 	scheme                *runtime.Scheme
 	config                *helmv1alpha1.Configuration
 	componentsRegistryMgr *componentsregistry.Manager
@@ -62,7 +61,7 @@ var _ inject.Scheme = &controller{}
 
 // InjectClients injects the current kubernetes registryClient into the controller
 func (a *controller) InjectClient(c client.Client) error {
-	a.c = c
+	a.client = c
 	return nil
 }
 
@@ -77,7 +76,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	logger.V(7).Info("reconcile deploy item")
 
 	deployItem := &lsv1alpha1.DeployItem{}
-	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
+	if err := a.client.Get(ctx, req.NamespacedName, deployItem); err != nil {
 		if apierrors.IsNotFound(err) {
 			a.log.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -93,7 +92,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	var target *lsv1alpha1.Target
 	if deployItem.Spec.Target != nil {
 		target = &lsv1alpha1.Target{}
-		if err := a.c.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+		if err := a.client.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
 		}
 		if len(a.config.TargetSelector) != 0 {
@@ -114,20 +113,14 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	logger.Info("Reconcile helm deploy item")
-	old := deployItem.DeepCopy()
-	err := a.reconcile(ctx, deployItem, target)
-	if !reflect.DeepEqual(old.Status, deployItem.Status) {
-		if err := a.c.Status().Update(ctx, deployItem); err != nil {
-			a.log.Error(err, "unable to update status")
-		}
-	}
-	if err != nil {
+	errHdl := deployerlib.HandleErrorFunc(logger, a.client, deployItem)
+	if err := errHdl(ctx, a.reconcile(ctx, deployItem, target)); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.c.Update(ctx, deployItem); err != nil {
+		if err := a.client.Update(ctx, deployItem); err != nil {
 			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
 				"Reconcile", "RemoveReconcileAnnotation", err.Error())
 			return reconcile.Result{}, err
@@ -141,27 +134,17 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 	if len(deployItem.Status.Phase) == 0 {
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	}
-	// set failed state if the last error lasts for more than 5 minutes
-	defer func() {
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
-			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
-			deployItem.Status.LastError,
-			5*time.Minute))
-	}()
 
-	helm, err := New(a.log, a.config, a.c, deployItem, target, a.componentsRegistryMgr)
+	helm, err := New(a.log, a.config, a.client, deployItem, target, a.componentsRegistryMgr)
 	if err != nil {
-		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-			"InitHelmOperation", "", err.Error())
 		return err
 	}
 
 	if !kubernetes.HasFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := a.c.Update(ctx, deployItem); err != nil {
-			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-				"AddFinalizer", "", err.Error())
-			return err
+		if err := a.client.Update(ctx, deployItem); err != nil {
+			return lsv1alpha1helper.NewWrappedError(err,
+				"Reconcile", "AddFinalizer", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
 		return nil
 	}
@@ -172,8 +155,6 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 
 	files, values, err := helm.Template(ctx)
 	if err != nil {
-		deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-			"TemplateChart", "", err.Error())
 		return err
 	}
 

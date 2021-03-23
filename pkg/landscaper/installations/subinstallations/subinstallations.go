@@ -40,8 +40,13 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 }
 
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
-func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) error {
+func (o *Operation) Ensure(ctx context.Context) error {
+	var (
+		inst      = o.Inst.Info
+		blueprint = o.Inst.Blueprint
+	)
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
+	o.CurrentOperation = string(lsv1alpha1.EnsureSubInstallationsCondition)
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
 	if err != nil {
@@ -54,12 +59,14 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, b
 	for _, subInstallations := range subInstallations {
 		if subInstallations.DeletionTimestamp != nil {
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			return fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallations.Name)
+			err := fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallations.Name)
+			return o.NewError(err, "DeletingSubInstallation", err.Error())
 		}
 
 		if subInstallations.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			return fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
+			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
+			return o.NewError(err, "RunningSubinstalltion", err.Error())
 		}
 	}
 
@@ -77,7 +84,8 @@ func (o *Operation) Ensure(ctx context.Context, inst *lsv1alpha1.Installation, b
 
 		_, err := o.createOrUpdateNewInstallation(ctx, inst, subInstTmpl, subInst)
 		if err != nil {
-			return errors.Wrapf(err, "unable to create installation for %s", subInstTmpl.Name)
+			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
+			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())
 		}
 	}
 
@@ -96,23 +104,32 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 		updatedSubInstallationStates = make([]lsv1alpha1.NamedObjectReference, 0)
 	)
 
-	// todo: use encompassed by label to identify subinstallations
-	for _, installationRef := range inst.Status.InstallationReferences {
-		subInst := &lsv1alpha1.Installation{}
-		if err := o.Client().Get(ctx, installationRef.Reference.NamespacedName(), subInst); err != nil {
-			if !apierrors.IsNotFound(err) {
-				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-					"InstallationNotFound", fmt.Sprintf("Sub Installation %s not available", installationRef.Reference.Name))
-				inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-				_ = o.CreateEventFromCondition(ctx, inst, cond)
-				return nil, errors.Wrapf(err, "unable to get installation %v", installationRef.Reference)
+	installations, err := o.ListSubinstallations(ctx)
+	if err != nil {
+		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			"SubInstallationsNotFound", "Unable to list subinstallations")
+		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+		_ = o.CreateEventFromCondition(ctx, inst, cond)
+		return nil, o.NewError(err, "SubInstallationsNotFound", err.Error())
+	}
+	for _, inst := range installations {
+		name, ok := inst.Annotations[lsv1alpha1.SubinstallationNameAnnotation]
+		if !ok {
+			// todo: remove after some deprecation period.
+			name, ok = getSubinstallationNameByReference(o.Inst.Info.Status.InstallationReferences, inst.Namespace, inst.Name)
+			if !ok {
+				err := fmt.Errorf("dangling installation found %s", inst.Name)
+				return nil, o.NewError(err, "DanglingSubinstallation", err.Error())
 			}
-			continue
 		}
-		if _, ok := subInstallations[installationRef.Name]; !ok {
-			subInstallations[installationRef.Name] = subInst
-			updatedSubInstallationStates = append(updatedSubInstallationStates, installationRef)
-		}
+		subInstallations[name] = inst
+		updatedSubInstallationStates = append(updatedSubInstallationStates, lsv1alpha1.NamedObjectReference{
+			Name: name,
+			Reference: lsv1alpha1.ObjectReference{
+				Name:      inst.Name,
+				Namespace: inst.Namespace,
+			},
+		})
 	}
 
 	// update the sub components if installations changed
@@ -127,7 +144,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 	)
 
 	for defName, subInst := range subInstallations {
-		if _, ok := getDefinitionReference(blue, defName); ok {
+		if _, ok := getSubinstallationTemplate(blue, defName); ok {
 			continue
 		}
 
@@ -142,7 +159,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 				"InstallationNotDeleted", fmt.Sprintf("Sub Installation %s cannot be deleted", subInst.Name))
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 			_ = o.CreateEventFromCondition(ctx, inst, cond)
-			return deleted, err
+			return deleted, o.NewError(err, "InstallationNotDeleted", err.Error())
 		}
 		deleted = true
 	}
@@ -180,7 +197,12 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	}
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
-		subInst.Labels = map[string]string{lsv1alpha1.EncompassedByLabel: inst.Name}
+		subInst.Labels = map[string]string{
+			lsv1alpha1.EncompassedByLabel: inst.Name,
+		}
+		subInst.Annotations = map[string]string{
+			lsv1alpha1.SubinstallationNameAnnotation: subInstTmpl.Name,
+		}
 		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
@@ -213,4 +235,14 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 	}
 
 	return subInst, nil
+}
+
+// getSubinstallationNameByReference returns the name of subinstallation by the refernce
+func getSubinstallationNameByReference(refs []lsv1alpha1.NamedObjectReference, namespace, name string) (string, bool) {
+	for _, ref := range refs {
+		if ref.Reference.Namespace == namespace && ref.Reference.Name == name {
+			return ref.Name, true
+		}
+	}
+	return "", false
 }

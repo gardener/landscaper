@@ -2656,7 +2656,6 @@ func schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref common.ReferenceC
 					"schema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Schema defines the imported value as jsonschema.",
-							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition"),
 						},
 					},
@@ -2694,7 +2693,6 @@ func schema_landscaper_apis_core_v1alpha1_FieldValueDefinition(ref common.Refere
 					"schema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Schema defines the imported value as jsonschema.",
-							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition"),
 						},
 					},
@@ -2732,7 +2730,6 @@ func schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref common.ReferenceC
 					"schema": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Schema defines the imported value as jsonschema.",
-							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition"),
 						},
 					},

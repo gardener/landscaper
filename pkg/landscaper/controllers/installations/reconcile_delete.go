@@ -21,6 +21,14 @@ var (
 	WaitingForDeletionError = errors.New("waiting for deletion")
 )
 
+func (c *controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	instOp, err := c.initPrerequisites(ctx, inst)
+	if err != nil {
+		return err
+	}
+	return EnsureDeletion(ctx, instOp)
+}
+
 func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 	op.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 	// check if suitable for deletion
@@ -68,7 +76,7 @@ func deleteExecution(ctx context.Context, op *installations.Operation) (bool, er
 }
 
 func deleteSubInstallations(ctx context.Context, op *installations.Operation) (bool, error) {
-	// todo: better error reporting as condition
+	op.CurrentOperation = "DeleteSubInstallation"
 	subInsts, err := subinstallations.New(op).GetSubInstallations(ctx, op.Inst.Info)
 	if err != nil {
 		return false, err

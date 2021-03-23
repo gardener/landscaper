@@ -93,8 +93,8 @@ func GetBlueprintDefinitionFromInstallationTemplate(inst *lsv1alpha1.Installatio
 	return subBlueprint, cdDef, nil
 }
 
-// getDefinitionReference returns the definition reference by name
-func getDefinitionReference(blueprint *blueprints.Blueprint, name string) (*lsv1alpha1.InstallationTemplate, bool) {
+// getSubinstallationTemplate returns the installation template by name
+func getSubinstallationTemplate(blueprint *blueprints.Blueprint, name string) (*lsv1alpha1.InstallationTemplate, bool) {
 	for _, ref := range blueprint.Subinstallations {
 		if ref.Name == name {
 			return ref, true

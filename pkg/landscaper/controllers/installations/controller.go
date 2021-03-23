@@ -73,147 +73,118 @@ type controller struct {
 	componentsRegistryMgr *componentsregistry.Manager
 }
 
-func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.Log().V(5).Info("reconcile", "resource", req.NamespacedName)
+func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := c.Log().WithValues("installation", req.NamespacedName.String())
+	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
-	if err := a.Client().Get(ctx, req.NamespacedName, inst); err != nil {
+	if err := c.Client().Get(ctx, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			a.Log().V(5).Info(err.Error())
+			c.Log().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 	// default the installation as it not done by the controller runtime
 	lsv1alpha1.SetDefaults_Installation(inst)
+	errHdl := HandleErrorFunc(logger, c.Client(), inst)
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := a.Client().Update(ctx, inst); err != nil {
-			return reconcile.Result{Requeue: true}, err
+		if err := c.Client().Update(ctx, inst); err != nil {
+			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
+	}
+
+	if !inst.DeletionTimestamp.IsZero() {
+		return reconcile.Result{}, errHdl(ctx, c.handleDelete(ctx, inst))
 	}
 
 	// remove the reconcile annotation if it exists
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.Client().Update(ctx, inst); err != nil {
-			return reconcile.Result{Requeue: true}, err
-		}
-		if err := a.reconcile(ctx, inst); err != nil {
+		if err := c.Client().Update(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		if err := a.reconcile(ctx, inst); err != nil {
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, errHdl(ctx, c.forceReconcile(ctx, inst))
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: handle abort..
-		a.Log().Info("do abort")
+		c.Log().Info("do abort")
 	}
 
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
 		return reconcile.Result{}, nil
 	}
 
-	if err := a.reconcile(ctx, inst); err != nil {
-		return reconcile.Result{}, err
-	}
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
 }
 
-func (a *controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
-	a.Log().Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
-	old := inst.DeepCopy()
-
-	defer func() {
-		inst.Status.Phase = lsv1alpha1helper.GetPhaseForLastError(
-			inst.Status.Phase,
-			inst.Status.LastError,
-			5*time.Minute,
-		)
-		if !reflect.DeepEqual(inst.Status, old.Status) {
-			if err := a.Client().Status().Update(ctx, inst); err != nil {
-				a.Log().Error(err, "unable to update installation")
-			}
-		}
-	}()
-
-	instOp, err := a.initPrerequisites(ctx, inst)
-	if err != nil {
-		return err
-	}
-
-	if !inst.DeletionTimestamp.IsZero() {
-		return EnsureDeletion(ctx, instOp)
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		// need to return and not continue with export validation
-		return a.forceReconcile(ctx, instOp)
-	}
-
-	return a.RunInstallation(ctx, instOp)
-}
-
-func (a *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
-	if err := a.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
-		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
-			"Reconcile", "SetupRegistries", err.Error())
-		return nil, err
+func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+	currOp := "InitPrerequisites"
+	if err := c.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "SetupRegistries", err.Error())
 	}
 
 	// default repository context if not defined
 	if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil && inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = a.lsConfig.RepositoryContext
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = c.lsConfig.RepositoryContext
 	}
 
 	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 
-	intBlueprint, err := blueprints.Resolve(ctx, a.Interface.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
+	intBlueprint, err := blueprints.Resolve(ctx, c.Interface.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
-		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
-			"InitPrerequisites", "ResolveBlueprint", err.Error())
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "ResolveBlueprint", err.Error())
 	}
 
 	internalInstallation, err := installations.New(inst, intBlueprint)
 	if err != nil {
 		err = fmt.Errorf("unable to create internal representation of installation: %w", err)
-		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
-			"InitPrerequisites", "InitInstallation", err.Error())
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "InitInstallation", err.Error())
 	}
 
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, a.Interface, internalInstallation)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
-		inst.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Status.LastError,
-			"InitPrerequisites", "InitInstallationOperation", err.Error())
-		return nil, err
+		return nil, lsv1alpha1helper.NewWrappedError(err,
+			currOp, "InitInstallationOperation", err.Error())
 	}
 	return instOp, nil
 }
 
-func (a *controller) forceReconcile(ctx context.Context, instOp *installations.Operation) error {
-	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := a.ApplyUpdate(ctx, instOp); err != nil {
+// HandleErrorFunc returns a error handler func for deployers.
+// The functions automatically sets the phase for long running errors and updates the status accordingly.
+func HandleErrorFunc(log logr.Logger, client client.Client, inst *lsv1alpha1.Installation) func(ctx context.Context, err error) error {
+	old := inst.DeepCopy()
+	return func(ctx context.Context, err error) error {
+		inst.Status.LastError = lsv1alpha1helper.TryUpdateError(inst.Status.LastError, err)
+		inst.Status.Phase = lsv1alpha1helper.GetPhaseForLastError(
+			inst.Status.Phase,
+			inst.Status.LastError,
+			5*time.Minute)
+		if !reflect.DeepEqual(old.Status, inst.Status) {
+			if err2 := client.Status().Update(ctx, inst); err2 != nil {
+				if apierrors.IsConflict(err2) { // reduce logging
+					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				} else {
+					log.Error(err2, "unable to update status")
+				}
+				// retry on conflict
+				if err != nil {
+					return err2
+				}
+			}
+		}
 		return err
 	}
-
-	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := a.Client().Update(ctx, instOp.Inst.Info); err != nil {
-		return err
-	}
-
-	instOp.Inst.Info.Status.ObservedGeneration = instOp.Inst.Info.Generation
-	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	return nil
 }
