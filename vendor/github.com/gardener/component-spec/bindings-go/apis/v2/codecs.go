@@ -99,6 +99,7 @@ var _ TypedObjectEncoder = DefaultJSONTypedObjectEncoder{}
 
 // Encode is the Encode implementation of the TypedObjectEncoder interface.
 func (e DefaultJSONTypedObjectEncoder) Encode(obj TypedObjectAccessor) ([]byte, error) {
+	obj.SetType(obj.GetType()) // hardcord the correct type if the type was not correctly constructed.
 	return json.Marshal(obj)
 }
 

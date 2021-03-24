@@ -31,6 +31,7 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 )
@@ -130,7 +131,7 @@ func (r *Resolver) Resolve(ctx context.Context, name, version string) (*v2.Compo
 	if err := codec.Decode(componentDescriptorBytes, cd, r.decodeOpts...); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode component descriptor: %w", err)
 	}
-	return cd, newBlobResolver(r.client, ref, manifest, cd), nil
+	return cd, NewBlobResolver(r.client, ref, manifest, cd), nil
 }
 
 // ToComponentArchive creates a tar archive in the CTF (Cnudie Transport Format) from the given component descriptor.
@@ -178,7 +179,8 @@ type blobResolver struct {
 	cd       *v2.ComponentDescriptor
 }
 
-func newBlobResolver(client Client, ref string, manifest *ocispecv1.Manifest, cd *v2.ComponentDescriptor) ctf.BlobResolver {
+// NewBlobResolver creates a new resolver for oci and local oci blobs.
+func NewBlobResolver(client Client, ref string, manifest *ocispecv1.Manifest, cd *v2.ComponentDescriptor) ctf.BlobResolver {
 	return &blobResolver{
 		client:   client,
 		ref:      ref,
@@ -203,8 +205,8 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 	switch res.Access.GetType() {
 	case v2.LocalOCIBlobType:
 		localOCIAccess := &v2.LocalOCIBlobAccess{}
-		if err := v2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, localOCIAccess); err != nil {
-			return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
+		if err := cdutils.FromUnstructuredObject(v2.NewDefaultCodec(), res.Access, localOCIAccess); err != nil {
+			return nil, err
 		}
 
 		blobLayer := GetLayerWithDigest(b.manifest.Layers, localOCIAccess.Digest)
@@ -225,8 +227,8 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 		}, nil
 	case v2.OCIBlobType:
 		ociBlobAccess := &v2.OCIBlobAccess{}
-		if err := v2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, ociBlobAccess); err != nil {
-			return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
+		if err := cdutils.FromUnstructuredObject(v2.NewDefaultCodec(), res.Access, ociBlobAccess); err != nil {
+			return nil, err
 		}
 
 		if writer != nil {

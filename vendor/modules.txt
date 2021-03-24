@@ -63,7 +63,7 @@ github.com/gardener/component-cli/ociclient/credentials
 github.com/gardener/component-cli/ociclient/metrics
 github.com/gardener/component-cli/ociclient/mock
 github.com/gardener/component-cli/pkg/commands/componentarchive/input
-# github.com/gardener/component-spec/bindings-go v0.0.33
+# github.com/gardener/component-spec/bindings-go v0.0.36
 ## explicit
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
