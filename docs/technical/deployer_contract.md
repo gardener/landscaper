@@ -33,7 +33,6 @@ spec:
       kind: Namespace
       metadata:
         name: foo
-
 ```
 This example shows a manifest deploy item that will create a namespace called `foo` when applied. Check out the [example deploy items](../../examples/deploy-items) for more examples of deploy items.
 
