@@ -9,6 +9,8 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/gardener/landscaper/test/integration/deployitems"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -52,6 +54,7 @@ func TestConfig(t *testing.T) {
 	helmcharts.RegisterTests(f)
 	core.RegisterTests(f)
 	deployers.RegisterTests(f)
+	deployitems.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()

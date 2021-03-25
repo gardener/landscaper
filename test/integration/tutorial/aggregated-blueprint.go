@@ -61,7 +61,7 @@ func AggregatedBlueprint(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, aggInst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, aggInst, lsv1alpha1.ComponentPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, aggInst, lsv1alpha1.ComponentPhaseSucceeded, 4*time.Minute))
 
 			subInstallations, err := utils.GetSubInstallationsOfInstallation(ctx, f.Client, aggInst)
 			utils.ExpectNoError(err)
@@ -73,7 +73,7 @@ func AggregatedBlueprint(f *framework.Framework) {
 			nginxDeployment := &appsv1.Deployment{}
 			nginxDeployment.Name = "test-ingress-nginx-controller"
 			nginxDeployment.Namespace = state.Namespace
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKeyFromObject(nginxDeployment), 2*time.Minute))
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, kutil.ObjectKeyFromObject(nginxDeployment), 4*time.Minute))
 
 			// expect that the echo server deployment is successfully running
 			echoServerDeployment := &appsv1.Deployment{}
