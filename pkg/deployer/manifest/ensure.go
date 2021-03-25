@@ -89,7 +89,6 @@ func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Clien
 	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	m.DeployItem.Status.ObservedGeneration = m.DeployItem.Generation
 	m.DeployItem.Status.LastError = nil
 	return nil
 }

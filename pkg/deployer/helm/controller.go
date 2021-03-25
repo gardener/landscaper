@@ -8,6 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	dutils "github.com/gardener/landscaper/pkg/deployer/utils"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,12 +77,12 @@ func (a *controller) InjectScheme(scheme *runtime.Scheme) error {
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := a.log.WithValues("resource", req.NamespacedName)
-	logger.V(7).Info("reconcile deploy item")
+	logger.V(7).Info("reconcile")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.client.Get(ctx, req.NamespacedName, deployItem); err != nil {
 		if apierrors.IsNotFound(err) {
-			a.log.V(5).Info(err.Error())
+			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -107,8 +111,15 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation && !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		logger.V(5).Info("Version already reconciled")
+	logger.Info("reconcile helm deploy item")
+
+	err := dutils.HandleAnnotationsAndGeneration(ctx, logger, a.client, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !dutils.ShouldReconcile(deployItem) {
+		a.log.V(5).Info("aborting reconcile", "phase", deployItem.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
@@ -116,15 +127,6 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	errHdl := deployerlib.HandleErrorFunc(logger, a.client, deployItem)
 	if err := errHdl(ctx, a.reconcile(ctx, deployItem, target)); err != nil {
 		return reconcile.Result{}, err
-	}
-
-	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.client.Update(ctx, deployItem); err != nil {
-			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-				"Reconcile", "RemoveReconcileAnnotation", err.Error())
-			return reconcile.Result{}, err
-		}
 	}
 
 	return reconcile.Result{}, nil
@@ -135,7 +137,8 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	}
 
-	helm, err := New(a.log, a.config, a.client, deployItem, target, a.componentsRegistryMgr)
+	logger := a.log.WithValues("resource", types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String())
+	helm, err := New(logger, a.config, a.client, deployItem, target, a.componentsRegistryMgr)
 	if err != nil {
 		return err
 	}

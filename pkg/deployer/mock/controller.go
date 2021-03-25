@@ -7,6 +7,8 @@ package mock
 import (
 	"context"
 
+	dutils "github.com/gardener/landscaper/pkg/deployer/utils"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,7 +40,8 @@ type controller struct {
 }
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+	logger := a.log.WithValues("resource", req.NamespacedName)
+	logger.V(7).Info("reconcile")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
@@ -53,8 +56,11 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation {
-		return reconcile.Result{}, nil
+	logger.Info("reconcile mock deploy item")
+
+	err := dutils.HandleAnnotationsAndGeneration(ctx, logger, a.c, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	if err := a.reconcile(ctx, deployItem); err != nil {
@@ -97,7 +103,6 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		deployItem.Status.ProviderStatus = config.ProviderStatus
 	}
 
-	deployItem.Status.ObservedGeneration = deployItem.Generation
 	return a.c.Status().Update(ctx, deployItem)
 }
 

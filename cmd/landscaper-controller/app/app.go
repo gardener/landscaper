@@ -21,6 +21,7 @@ import (
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
+	deployitemactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
@@ -92,6 +93,10 @@ func (o *options) run(ctx context.Context) error {
 
 	if err := executionactuator.AddControllerToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
+	}
+
+	if err := deployitemactuator.AddActuatorToManager(mgr, o.config.DeployItemPickupTimeout); err != nil {
+		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
 	for _, deployerName := range o.deployer.EnabledDeployers {

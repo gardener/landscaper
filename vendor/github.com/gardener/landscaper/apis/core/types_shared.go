@@ -110,6 +110,8 @@ const (
 	ErrorInternalProblem ErrorCode = "ERR_INTERNAL_PROBLEM"
 	// ErrorHealthCheckTimeout indicates that objects failed the health check within the given time
 	ErrorHealthCheckTimeout ErrorCode = "ERR_HEALTH_CHECK_TIMEOUT"
+	// ErrorTimeout indicates that an operation timed out.
+	ErrorTimeout ErrorCode = "ERR_TIMEOUT"
 )
 
 // Condition holds the information about the state of a resource.

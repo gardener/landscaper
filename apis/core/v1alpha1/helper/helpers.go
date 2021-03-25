@@ -6,6 +6,7 @@ package helper
 
 import (
 	"reflect"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -29,6 +30,26 @@ func GetOperation(obj metav1.ObjectMeta) string {
 // SetOperation sets the given operation annotation on aa object.
 func SetOperation(obj *metav1.ObjectMeta, op v1alpha1.Operation) {
 	metav1.SetMetaDataAnnotation(obj, v1alpha1.OperationAnnotation, string(op))
+}
+
+// HasReconcileTimestampAnnotation checks if the obj has the given timeout annotation
+func HasReconcileTimestampAnnotation(obj metav1.ObjectMeta) bool {
+	_, ok := obj.Annotations[v1alpha1.ReconcileTimestampAnnotation]
+	return ok
+}
+
+func GetReconcileTimestampAnnotation(obj metav1.ObjectMeta) (time.Time, error) {
+	return time.Parse(time.RFC3339, obj.Annotations[v1alpha1.ReconcileTimestampAnnotation])
+}
+
+// SetReconcileTimestampAnnotationNow sets the timeout annotation with the current timestamp.
+func SetReconcileTimestampAnnotationNow(obj *metav1.ObjectMeta) {
+	SetReconcileTimestampAnnotation(obj, time.Now())
+}
+
+// SetReconcileTimestampAnnotation sets the timeout annotation with the given timestamp.
+func SetReconcileTimestampAnnotation(obj *metav1.ObjectMeta, ts time.Time) {
+	metav1.SetMetaDataAnnotation(obj, v1alpha1.ReconcileTimestampAnnotation, ts.Format(time.RFC3339))
 }
 
 // InitCondition initializes a new Condition with an Unknown status.

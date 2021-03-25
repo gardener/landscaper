@@ -8,6 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	dutils "github.com/gardener/landscaper/pkg/deployer/utils"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,12 +46,12 @@ type controller struct {
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := a.log.WithValues("resource", req.NamespacedName)
-	logger.V(7).Info("reconcile deploy item")
+	logger.V(7).Info("reconcile")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.client.Get(ctx, req.NamespacedName, deployItem); err != nil {
 		if apierrors.IsNotFound(err) {
-			a.log.V(5).Info(err.Error())
+			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -69,14 +73,22 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 				return reconcile.Result{}, fmt.Errorf("unable to match target selector: %w", err)
 			}
 			if !matched {
-				a.log.V(5).Info("the deploy item's target has not matched the given target selector",
+				logger.V(5).Info("the deploy item's target has not matched the given target selector",
 					"deployItem", deployItem.Name, "target", target.Name)
 				return reconcile.Result{}, nil
 			}
 		}
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation && !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	logger.Info("reconcile manifest deploy item")
+
+	err := dutils.HandleAnnotationsAndGeneration(ctx, logger, a.client, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !dutils.ShouldReconcile(deployItem) {
+		a.log.V(5).Info("aborting reconcile", "phase", deployItem.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
@@ -85,20 +97,12 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(deployItem.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.client.Update(ctx, deployItem); err != nil {
-			deployItem.Status.LastError = lsv1alpha1helper.UpdatedError(deployItem.Status.LastError,
-				"Reconcile", "RemoveReconcileAnnotation", err.Error())
-			return reconcile.Result{}, err
-		}
-	}
-
 	return reconcile.Result{}, nil
 }
 
 func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
-	manifest, err := New(a.log, a.client, deployItem, target)
+	logger := a.log.WithValues("resource", types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace}.String())
+	manifest, err := New(logger, a.client, deployItem, target)
 	if err != nil {
 		return err
 	}

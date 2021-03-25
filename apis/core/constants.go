@@ -19,6 +19,9 @@ const (
 	// OperationAnnotation is the annotation that specifies a operation for a component
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
+	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
+	ReconcileTimestampAnnotation = "landscaper.gardener.cloud/reconcile-time"
+
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.

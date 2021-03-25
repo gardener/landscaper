@@ -128,7 +128,6 @@ func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) e
 	}
 
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
 	h.DeployItem.Status.LastError = nil
 	return nil
 }

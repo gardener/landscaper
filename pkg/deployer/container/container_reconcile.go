@@ -137,7 +137,6 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 				operationName, "UpdatePodStatus", err.Error())
 		}
 
-		c.DeployItem.Status.ObservedGeneration = c.DeployItem.Generation
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		if operation == container.OperationDelete {
 			c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
@@ -221,10 +220,8 @@ func (c *Container) shouldRunNewPod(pod *corev1.Pod) bool {
 			}
 		}
 	}
-	if c.DeployItem.Status.ObservedGeneration != c.DeployItem.Generation {
-		return true
-	}
-	if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+	// HandleAnnotationsAndGeneration will set the phase to init if either the generation changed or a ReconcileAnnotation is present
+	if c.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseInit {
 		return true
 	}
 	return false
