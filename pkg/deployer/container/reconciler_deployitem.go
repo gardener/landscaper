@@ -14,8 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -39,7 +39,7 @@ func NewDeployItemReconciler(log logr.Logger, lsClient, hostClient, directHostCl
 		lsClient:              lsClient,
 		hostClient:            hostClient,
 		directHostClient:      directHostClient,
-		scheme:                kubernetes.LandscaperScheme,
+		scheme:                api.LandscaperScheme,
 		componentsRegistryMgr: componentRegistryMgr,
 	}, nil
 }

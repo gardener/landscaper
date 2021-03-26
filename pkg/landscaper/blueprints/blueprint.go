@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 )
 
 // Blueprint is the internal resolved type of a blueprint.
@@ -52,7 +52,7 @@ func ResolveBlueprintReferences(blueprint *Blueprint) error {
 		}
 
 		instTmpl := &lsv1alpha1.InstallationTemplate{}
-		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, instTmpl); err != nil {
+		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, instTmpl); err != nil {
 			return err
 		}
 		refs[i] = instTmpl

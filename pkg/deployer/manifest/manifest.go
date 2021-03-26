@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +22,7 @@ import (
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
+	"github.com/gardener/landscaper/pkg/api"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -51,7 +51,7 @@ type Manifest struct {
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
 	config := &manifest.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
-	manifestDecoder := serializer.NewCodecFactory(ManifestScheme).UniversalDecoder()
+	manifestDecoder := api.NewDecoder(ManifestScheme)
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)

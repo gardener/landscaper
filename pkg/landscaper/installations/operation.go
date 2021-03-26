@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
@@ -399,7 +399,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return do.Apply(raw)
@@ -424,7 +424,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return target.Apply(raw)
@@ -489,7 +489,7 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, kubernetes.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return do.Apply(raw)
@@ -513,7 +513,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		return err
 	}
 	target := &lsv1alpha1.Target{}
-	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, target); err != nil {
+	if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, target); err != nil {
 		return err
 	}
 	intTarget, err := dataobjects.NewFromTarget(target)
@@ -539,7 +539,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, kubernetes.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return intTarget.Apply(target)

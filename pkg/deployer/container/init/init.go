@@ -30,9 +30,9 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
@@ -56,7 +56,7 @@ func Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
 	if err := wait.ExponentialBackoff(opts.DefaultBackoff, func() (bool, error) {
 		var err error
 		kubeClient, err = client.New(restConfig, client.Options{
-			Scheme: kubernetes.LandscaperScheme,
+			Scheme: api.LandscaperScheme,
 		})
 		if err != nil {
 			log.Error(err, "unable to build kubernetes client")

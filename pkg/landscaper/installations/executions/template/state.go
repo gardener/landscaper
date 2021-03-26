@@ -18,7 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -52,7 +52,7 @@ func (s KubernetesStateHandler) Store(ctx context.Context, name string, data []b
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
-		if err := controllerutil.SetControllerReference(s.Inst, secret, kubernetes.LandscaperScheme); err != nil {
+		if err := controllerutil.SetControllerReference(s.Inst, secret, api.LandscaperScheme); err != nil {
 			return fmt.Errorf("unable to set controller reference: %w", err)
 		}
 		return s.KubeClient.Create(ctx, secret)

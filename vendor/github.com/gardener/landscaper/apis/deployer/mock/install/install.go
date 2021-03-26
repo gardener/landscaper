@@ -8,14 +8,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/gardener/landscaper/apis/deployer/helm"
-	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/mock"
+	"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 )
 
 var (
 	schemeBuilder = runtime.NewSchemeBuilder(
 		v1alpha1.AddToScheme,
-		helm.AddToScheme,
+		mock.AddToScheme,
 		setVersionPriority,
 	)
 

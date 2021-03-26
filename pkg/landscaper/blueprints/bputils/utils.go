@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -55,7 +55,7 @@ func BuildNewDefinitionConfig(cache cache.Cache, fs vfs.FileSystem, path string)
 	}
 
 	def := &lsv1alpha1.Blueprint{}
-	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, def); err != nil {
+	if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, def); err != nil {
 		return ocispecv1.Descriptor{}, err
 	}
 

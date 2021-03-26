@@ -18,8 +18,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
@@ -88,7 +88,7 @@ func DefaultConfiguration(obj *containerv1alpha1.Configuration) {
 func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.ProviderStatus, error) {
 	status := &containerv1alpha1.ProviderStatus{}
 	if raw != nil {
-		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(raw.Raw, nil, status); err != nil {
+		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(raw.Raw, nil, status); err != nil {
 			return nil, err
 		}
 	}

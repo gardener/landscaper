@@ -20,7 +20,7 @@ import (
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -75,7 +75,7 @@ func (o *options) Complete() error {
 }
 
 func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {
-	decoder := serializer.NewCodecFactory(kubernetes.ConfigScheme).UniversalDecoder()
+	decoder := serializer.NewCodecFactory(api.ConfigScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
 		return &config.LandscaperConfiguration{}, nil
 	}

@@ -55,7 +55,7 @@ func (o *options) Complete() error {
 }
 
 func (o *options) parseConfigurationFile() (*helmv1alpha1.Configuration, error) {
-	decoder := serializer.NewCodecFactory(helm.Helmscheme).UniversalDecoder()
+	decoder := serializer.NewCodecFactory(helm.HelmScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
 		return &helmv1alpha1.Configuration{}, nil
 	}

@@ -19,7 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	lscheme "github.com/gardener/landscaper/pkg/kubernetes"
+	lscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
