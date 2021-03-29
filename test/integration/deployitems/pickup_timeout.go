@@ -105,7 +105,7 @@ func PickupTimeoutTests(f *framework.Framework) {
 			// checking whether the set timestamp is up-to-date is difficult due to potential differences between the
 			// system times of the machine running the landscaper and the machine running the tests
 			// so just check for existence of the annotation
-			g.Expect(lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta)).To(g.BeTrue(), "deploy item should have a reconcile timestamp annotation")
+			g.Expect(lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)).To(g.BeTrue(), "deploy item should have a reconcile timestamp annotation")
 
 			ginkgo.By("check for pickup timeout")
 			time.Sleep(deployItemPickupTimeout)

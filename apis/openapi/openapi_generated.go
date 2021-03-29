@@ -1092,6 +1092,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Format:      "",
 						},
 					},
+					"deployItemAbortingTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
@@ -1331,6 +1338,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					"deployItemPickupTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"deployItemAbortingTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2233,6 +2247,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							},
 						},
 					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the landscaper will add the abort annotation to the deploy item and later put it in 'Failed' if the deployer doesn't handle the abort properly. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"type"},
 			},
@@ -2284,6 +2305,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
 						},
 					},
+					"lastChangeReconcileTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
 					"providerStatus": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProviderStatus contains the provider specific status",
@@ -2301,7 +2329,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 

@@ -30,6 +30,11 @@ type LandscaperConfiguration struct {
 	// Defaults to five minutes if not specified.
 	// +optional
 	DeployItemPickupTimeout string `json:"deployItemPickupTimeout,omitempty"`
+	// DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation.
+	// Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method.
+	// Defaults to five minutes if not specified.
+	// +optional
+	DeployItemAbortingTimeout string `json:"deployItemAbortingTimeout,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry

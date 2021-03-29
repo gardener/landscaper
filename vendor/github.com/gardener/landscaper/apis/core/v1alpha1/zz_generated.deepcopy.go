@@ -473,6 +473,7 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		*out = new(Error)
 		(*in).DeepCopyInto(*out)
 	}
+	in.LastChangeReconcileTime.DeepCopyInto(&out.LastChangeReconcileTime)
 	if in.ProviderStatus != nil {
 		in, out := &in.ProviderStatus, &out.ProviderStatus
 		*out = new(runtime.RawExtension)

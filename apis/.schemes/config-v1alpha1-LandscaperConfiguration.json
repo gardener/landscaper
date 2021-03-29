@@ -140,6 +140,10 @@
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
       "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
+    "deployItemAbortingTimeout": {
+      "description": "DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+      "type": "string"
+    },
     "deployItemPickupTimeout": {
       "description": "DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
       "type": "string"
