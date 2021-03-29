@@ -146,13 +146,13 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, mr []manifest.ManagedResourceStatus) error {
+func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedResources []manifest.ManagedResourceStatus) error {
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
 	)
 
-	for _, mr := range mr {
+	for _, mr := range managedResources {
 		if mr.Policy == manifest.IgnorePolicy || mr.Policy == manifest.KeepPolicy {
 			continue
 		}

@@ -447,7 +447,7 @@
       }
     },
     "helm-v1alpha1-HealthChecksConfiguration": {
-      "description": "HealthChecksConfiguration contains the condiguration for health checks.",
+      "description": "HealthChecksConfiguration contains the configuration for health checks.",
       "type": "object",
       "properties": {
         "disableDefault": {
@@ -455,7 +455,7 @@
           "type": "boolean"
         },
         "timeout": {
-          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
           "type": "string"
         }
       }
@@ -505,7 +505,7 @@
       "description": "Chart defines helm chart to be templated and applied."
     },
     "deleteTimeout": {
-      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
       "type": "string"
     },
     "exportsFromManifests": {

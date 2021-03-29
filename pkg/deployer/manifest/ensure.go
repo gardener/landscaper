@@ -76,39 +76,16 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			currOp, "UpdateStatus", err.Error())
 	}
 
-	if m.ProviderConfiguration.HealthChecks.DisableDefault {
-		m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-		m.DeployItem.Status.ObservedGeneration = m.DeployItem.Generation
-		m.DeployItem.Status.LastError = nil
-		return nil
-	}
-
 	return m.CheckResourcesHealth(ctx, targetClient)
 }
 
 // CheckResourcesHealth checks if the managed resources are Ready/Healthy.
 func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Client) error {
-	currOp := "CheckResourcesHealthManifests"
-
-	if len(m.ProviderStatus.ManagedResources) == 0 {
-		return nil
-	}
-
-	objects := make([]*unstructured.Unstructured, len(m.ProviderStatus.ManagedResources))
-	for i, mr := range m.ProviderStatus.ManagedResources {
-		// do not check ignored resources.
-		if mr.Policy == manifest.IgnorePolicy {
-			continue
+	if !m.ProviderConfiguration.HealthChecks.DisableDefault {
+		err := m.defaultCheckResourcesHealth(ctx, client)
+		if err != nil {
+			return err
 		}
-		ref := mr.Resource
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
-	}
-
-	timeout, _ := time.ParseDuration(m.ProviderConfiguration.HealthChecks.Timeout)
-	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
-			currOp, "CheckResourcesReadiness", err.Error())
 	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
@@ -190,4 +167,32 @@ func encodeStatus(status *manifest.ProviderStatus) (*runtime.RawExtension, error
 		return nil, err
 	}
 	return raw, nil
+}
+
+// defaultCheckResourcesHealth implements the default health check for all managed resources
+func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client client.Client) error {
+	currOp := "DefaultCheckResourcesHealthManifests"
+
+	if len(m.ProviderStatus.ManagedResources) == 0 {
+		return nil
+	}
+
+	objects := make([]*unstructured.Unstructured, len(m.ProviderStatus.ManagedResources))
+	for i, managedResource := range m.ProviderStatus.ManagedResources {
+		// do not check ignored resources.
+		if managedResource.Policy == manifest.IgnorePolicy {
+			continue
+		}
+		ref := managedResource.Resource
+		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		objects[i] = obj
+	}
+
+	timeout, _ := time.ParseDuration(m.ProviderConfiguration.HealthChecks.Timeout)
+	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "CheckResourcesHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
+	}
+
+	return nil
 }

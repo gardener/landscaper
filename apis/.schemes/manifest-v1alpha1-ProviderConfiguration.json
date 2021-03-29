@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
     "manifest-v1alpha1-HealthChecksConfiguration": {
-      "description": "HealthChecksConfiguration contains the condiguration for health checks.",
+      "description": "HealthChecksConfiguration contains the configuration for health checks.",
       "type": "object",
       "properties": {
         "disableDefault": {
@@ -10,7 +10,7 @@
           "type": "boolean"
         },
         "timeout": {
-          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+          "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
           "type": "string"
         }
       }
@@ -27,13 +27,13 @@
       "type": "string"
     },
     "deleteTimeout": {
-      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
       "type": "string"
     },
     "healthChecks": {
       "$ref": "#/definitions/manifest-v1alpha1-HealthChecksConfiguration",
       "default": {},
-      "description": "HealthChecks condigures the health checks."
+      "description": "HealthChecks configures the health checks."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

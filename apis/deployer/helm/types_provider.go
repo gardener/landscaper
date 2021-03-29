@@ -28,7 +28,7 @@ type ProviderConfiguration struct {
 	HealthChecks HealthChecksConfiguration `json:"healthChecks,omitempty"`
 
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
-	// Defaults to 60s.
+	// Defaults to 180s.
 	// +optional
 	DeleteTimeout string `json:"deleteTimeout,omitempty"`
 
@@ -62,13 +62,13 @@ const (
 	UpdateStrategyPatch  UpdateStrategy = "patch"
 )
 
-// HealthChecksConfiguration contains the condiguration for health checks.
+// HealthChecksConfiguration contains the configuration for health checks.
 type HealthChecksConfiguration struct {
 	// DisableDefault allows to disable the default health checks.
 	// +optional
 	DisableDefault bool `json:"disableDefault,omitempty"`
 	// Timeout is the time to wait before giving up on a resource to be healthy.
-	// Defaults to 60s.
+	// Defaults to 180s.
 	// +optional
 	Timeout string `json:"timeout,omitempty"`
 }

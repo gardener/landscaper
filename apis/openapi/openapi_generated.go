@@ -4789,7 +4789,7 @@ func schema_apis_deployer_helm_v1alpha1_HealthChecksConfiguration(ref common.Ref
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "HealthChecksConfiguration contains the condiguration for health checks.",
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"disableDefault": {
@@ -4801,7 +4801,7 @@ func schema_apis_deployer_helm_v1alpha1_HealthChecksConfiguration(ref common.Ref
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4857,7 +4857,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 					},
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5061,7 +5061,7 @@ func schema_apis_deployer_manifest_v1alpha1_HealthChecksConfiguration(ref common
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "HealthChecksConfiguration contains the condiguration for health checks.",
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"disableDefault": {
@@ -5073,7 +5073,7 @@ func schema_apis_deployer_manifest_v1alpha1_HealthChecksConfiguration(ref common
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5122,14 +5122,14 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 					},
 					"healthChecks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "HealthChecks condigures the health checks.",
+							Description: "HealthChecks configures the health checks.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration"),
 						},
 					},
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5245,7 +5245,7 @@ func schema_apis_deployer_manifest_v1alpha2_HealthChecksConfiguration(ref common
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "HealthChecksConfiguration contains the condiguration for health checks.",
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"disableDefault": {
@@ -5257,7 +5257,7 @@ func schema_apis_deployer_manifest_v1alpha2_HealthChecksConfiguration(ref common
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 60s.",
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5364,14 +5364,14 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 					},
 					"healthChecks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "HealthChecks condigures the health checks.",
+							Description: "HealthChecks configures the health checks.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration"),
 						},
 					},
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 60s.",
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

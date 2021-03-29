@@ -50,12 +50,12 @@ spec:
       disableDefault: true
       # Defines the time to wait before giving up on a resource
       # to be healthy. Should be changed with long startup time pods.
-      # optional; default to 60 seconds.
-      timeout: 30s
+      # optional; default to 180 seconds/3 minutes.
+      timeout: 3m
 
     # Defines the time to wait before giving up on a resource to be deleted,
     # for instance when deleting resources that are not anymore managed from this DeployItem.
-    # optional; default to 60 seconds.
+    # optional; default to 180 seconds/3 minutes.
     deleteTimeout: 2m
 
     manifests: # list of kubernetes manifests

@@ -104,41 +104,27 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			currOp, "UpdateStatus", err.Error())
 	}
 
+	err = h.CheckResourcesHealth(ctx, targetClient)
+	if err != nil {
+		return err
+	}
+
 	if err := h.createOrUpdateExport(ctx, exports); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CreateExport", err.Error())
 	}
 
-	if h.ProviderConfiguration.HealthChecks.DisableDefault {
-		h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-		h.DeployItem.Status.ObservedGeneration = h.DeployItem.Generation
-		h.DeployItem.Status.LastError = nil
-		return nil
-	}
-
-	return h.CheckResourcesHealth(ctx, targetClient)
+	return nil
 }
 
 // CheckResourcesHealth checks if the managed resources are Ready/Healthy.
 func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) error {
-	var (
-		currOp = "CheckResourcesHealthHelm"
-	)
 
-	if len(h.ProviderStatus.ManagedResources) == 0 {
-		return nil
-	}
-
-	objects := make([]*unstructured.Unstructured, len(h.ProviderStatus.ManagedResources))
-	for i, ref := range h.ProviderStatus.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
-	}
-
-	timeout, _ := time.ParseDuration(h.ProviderConfiguration.HealthChecks.Timeout)
-	if err := health.WaitForObjectsHealthy(ctx, timeout, h.log, client, objects); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
-			currOp, "CheckResourcesReadiness", err.Error())
+	if !h.ProviderConfiguration.HealthChecks.DisableDefault {
+		err := h.defaultCheckResourcesHealth(ctx, client)
+		if err != nil {
+			return err
+		}
 	}
 
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
@@ -409,4 +395,27 @@ func encodeStatus(status *helmv1alpha1.ProviderStatus) (*runtime.RawExtension, e
 		return nil, err
 	}
 	return raw, nil
+}
+
+// defaultCheckResourcesHealth implements the default health check for manifests deployed by Helm
+func (h *Helm) defaultCheckResourcesHealth(ctx context.Context, client client.Client) error {
+	currOp := "DefaultCheckResourcesHealthHelm"
+
+	if len(h.ProviderStatus.ManagedResources) == 0 {
+		return nil
+	}
+
+	objects := make([]*unstructured.Unstructured, len(h.ProviderStatus.ManagedResources))
+	for i, ref := range h.ProviderStatus.ManagedResources {
+		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		objects[i] = obj
+	}
+
+	timeout, _ := time.ParseDuration(h.ProviderConfiguration.HealthChecks.Timeout)
+	if err := health.WaitForObjectsHealthy(ctx, timeout, h.log, client, objects); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
+	}
+
+	return nil
 }

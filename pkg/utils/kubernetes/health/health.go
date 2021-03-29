@@ -91,25 +91,25 @@ func WaitForObjectsHealthy(ctx context.Context, timeout time.Duration, log logr.
 // ObjectNotHealthyError holds information about an unhealthy object
 // and implements the go error interface.
 type ObjectNotHealthyError struct {
-	kind      string
-	name      string
-	namespace string
-	err       error
+	objectGVK       string
+	objectName      string
+	objectNamespace string
+	err             error
 }
 
 // Error implements the go error interface.
 func (e *ObjectNotHealthyError) Error() string {
 	return fmt.Sprintf("%s %s/%s is not healthy: %s",
-		e.kind,
-		e.name,
-		e.namespace,
+		e.objectGVK,
+		e.objectName,
+		e.objectNamespace,
 		e.err.Error())
 }
 
 // IsObjectHealthy gets an updated version of an object and checks if it is healthy.
 func IsObjectHealthy(ctx context.Context, log logr.Logger, kubeClient client.Client, obj *unstructured.Unstructured) error {
 	objLog := log.WithValues(
-		"kind", obj.GetKind(),
+		"object", obj.GroupVersionKind().String(),
 		"resource", kutil.ObjectKey(obj.GetName(), obj.GetNamespace()))
 
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
@@ -125,10 +125,10 @@ func IsObjectHealthy(ctx context.Context, log logr.Logger, kubeClient client.Cli
 	if err := CheckObject(obj); err != nil {
 		objLog.V(3).Info("resource status", "status", StatusNotHealthy)
 		return &ObjectNotHealthyError{
-			kind:      obj.GetKind(),
-			name:      obj.GetName(),
-			namespace: obj.GetNamespace(),
-			err:       err,
+			objectGVK:       obj.GroupVersionKind().String(),
+			objectName:      obj.GetName(),
+			objectNamespace: obj.GetNamespace(),
+			err:             err,
 		}
 	}
 
