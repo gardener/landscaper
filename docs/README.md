@@ -32,7 +32,6 @@
 ### Development
 - [Local Setup](./development/local-setup.md)
 - [Extend the API](./development/extend-the-api.md)
-- [Deployer Contract](./technical/deployer_contract.md)
 
 ### API Reference
 - [Types](./technical/types.md)
