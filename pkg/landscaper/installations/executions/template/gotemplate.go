@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gardener/component-cli/pkg/imagevector"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -202,6 +203,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getResources":         getResourcesGoFunc(cd),
 		"getComponent":         getComponentGoFunc(cd, cdList),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
+
+		"generateImageOverwrite": getImageVectorGoFunc(cd, cdList),
 	}
 	return funcs
 }
@@ -479,4 +482,24 @@ func resolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 	}
 
 	return components, nil
+}
+
+func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) string {
+	return func(args ...interface{}) string {
+		if cd == nil {
+			panic("Unable to search for a component as no ComponentDescriptor is defined.")
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(cd, list)
+		if err != nil {
+			panic(err)
+		}
+
+		data, err := yaml.Marshal(vector)
+		if err != nil {
+			panic(err)
+		}
+
+		return string(data)
+	}
 }

@@ -363,6 +363,45 @@ func runTestSuite(testdataDir string) {
 				}),
 			}))
 		})
+
+		It("should generate an image vector", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(nil, stateHandler)
+
+			cdRaw, err := ioutil.ReadFile(filepath.Join(testdataDir, "component-descriptor-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{}
+			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor:  cd,
+				ComponentDescriptors: &cdv2.ComponentDescriptorList{},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+
+			imageVector, ok := config["imageVectorOverWrite"].(string)
+			Expect(ok).To(BeTrue())
+
+			result, err := ioutil.ReadFile(filepath.Join(testdataDir, "result-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			resultString := string(result)
+
+			Expect(imageVector).To(BeIdenticalTo(resultString))
+		})
 	})
 
 	Context("TemplateExportExecutions", func() {
