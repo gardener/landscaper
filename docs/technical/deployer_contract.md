@@ -5,11 +5,11 @@ Deployers need to follow some rules in order to work together with the landscape
 
 ## What is a Deployer?
 
-A 'deployer' is basically a kubernetes controller that watches resources of the type `deployitems.landscaper.gardener.cloud`. These 'deploy items' represent steps of a workflow that are to be executed in a certain manner. Each deployer implements one method of 'deploying something' and is responsible for deploy items that match its type.
+A 'deployer' is basically a kubernetes controller that watches resources of the type `deployitems.landscaper.gardener.cloud`. _Deploy Items_ have a unique type (`.spec.type`) that describes the supported deployment or installation method and is also the identifier for the corresponding deployer.
 For example: Among the basic deployers that come with the landscaper is a `helm` deployer, which reacts on deploy items of type `landscaper.gardener.cloud/helm` and is able to deploy, update, and delete helm charts. Another one would be the `manifest` deployer, which manages basic kubernetes manifests which are contained in the corresponding deploy items.
 
 
-## Anatomy of a Deploy Item
+## Structure of a Deploy Item
 
 ### Spec
 
@@ -21,6 +21,10 @@ metadata:
   name: manifest-di
   namespace: default
 spec:
+  type: landscaper.gardener.cloud/kubernetes-manifest
+  target:
+    name: my-target
+    namespace: default
   config:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
@@ -29,20 +33,19 @@ spec:
       kind: Namespace
       metadata:
         name: foo
-  target:
-    name: my-target
-    namespace: default
-  type: landscaper.gardener.cloud/kubernetes-manifest
 
 ```
 This example shows a manifest deploy item that will create a namespace called `foo` when applied. Check out the [example deploy items](../../examples/deploy-items) for more examples of deploy items.
 
 The type of the deploy item is defined in `spec.type`. It determines which deployer is responsible for this deploy item. The manifest deployer will only handle deploy items of type `landscaper.gardener.cloud/kubernetes-manifest` and it should be the only deployer that watches for this type.
 
-Deployers may reference a target in `spec.target`. Targets usually contain credentials for accessing the environment that is targeted by this type of deploy item - the manifest deployer targets kubernetes clusters, so this target will contain a kubeconfig pointing to the cluster where the namespace should be created. Not all deploy items target kubernetes clusters though, for example the `terraform` deployer can also target IAAS accounts. 
+Deployers may reference a target in `spec.target`. Targets usually contain credentials for accessing the environment that is targeted by this type of deploy item.
+The manifest deployer targets kubernetes clusters, so this target will contain a kubeconfig pointing to the cluster where the namespace should be created. 
+Not all deploy items target kubernetes clusters though, for example the `terraform` deployer can also target IAAS accounts.
 There might be cases in which multiple deployers of the same type exists, e.g. if there is a fenced environment that is not accessible from the outside. In this case, the landscaper and a manifest deployer could run outside of it and another manifest deployer could run within the fenced environment to deploy manifests there. The target then determines which deployer handles which deploy item.
 
-The content of `spec.config` depends on its type. It is only read and evaluated by the corresponding deployer. For the manifest deployer, it consists of a list of kubernetes manifests.
+The content of `spec.config` depends on its type. It is only read and evaluated by the corresponding deployer. 
+In this example the configuration for a manifest deploy item consists of a list of kubernetes manifests.
 
 ### Status
 
@@ -52,7 +55,7 @@ status:
   observedGeneration: 1
   phase: Succeeded
   providerStatus:
-    apiVersion: manifest.deployer.landscaper.gardener.cloud/__internal
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderStatus
     managedResources:
     - policy: manage
@@ -102,6 +105,8 @@ As explained above, even if the type is correct, the deployer might still not be
 There are two important annotations that need to be handled by the deployer: 
 The reconcile annotation `landscaper.gardener.cloud/operation: reconcile` indicates that either a human operator or the landscaper wants this deploy item to be reconciled. The deployer has to remove this annotation. In addition, it should set the deploy item's phase to `Init` to show the beginning of a new reconciliation and avoid loss of information in case the deployer dies immediately after removing the annotation.
 The second important annotation is `landscaper.gardener.cloud/reconcile-time`. The landscaper adds this annotation - with the current time as value - whenever it expands an `execution` into its deploy items. If this annotation is still present after a defined time, this is interpreted as no deployer having picked up this deploy item and the landscaper will set its phase to `Failed`. Deployers are expected to remove this annotation whenever they start reconciling a deploy item they are responsible for.
+
+> The pickup timeout duration defaults to 5 minutes and can be configured by setting `deployItemPickupTimeout` in the landscaper configuration. Checking for pickup timeouts can also be disabled by setting the aforementioned value to `none`.
 
 #### 4. Handle Generation
 Another indicator that something needs to be done is when `status.observedGeneration` differs from `metadata.generation`. The latter one changes every time the `spec` is modified and a difference in both shows that the deployer has not yet reacted on the latest changes to this deploy item. For this logic to work, the deployer has to set `status.observedGeneration` to the deploy item's generation at the beginning of the reconcile loop. Similarly to the reconcile annotation, the deployer should set the phase of the deploy item to `Init` if it updated the observed generation.

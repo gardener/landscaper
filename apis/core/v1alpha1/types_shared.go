@@ -121,6 +121,7 @@ var UnrecoverableErrorCodes = []ErrorCode{
 	ErrorConfigurationProblem,
 	ErrorInternalProblem,
 	ErrorHealthCheckTimeout,
+	ErrorTimeout,
 }
 
 // Condition holds the information about the state of a resource.

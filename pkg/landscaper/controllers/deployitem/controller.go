@@ -17,56 +17,57 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/deployitem"
 )
 
-// NewActuator creates a new deploy item controller that handles timeouts
+const (
+	PickupTimeoutReason    = "PickupTimeout"    // for error messages
+	PickupTimeoutOperation = "WaitingForPickup" // for error messages
+)
+
+// NewController creates a new deploy item controller that handles timeouts
 // To detect pickup timeouts (when a DeployItem resource is not reconciled by any deployer within a specified timeframe), the controller checks for a timestamp annotation.
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // rawPickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewActuator(log logr.Logger, c client.Client, scheme *runtime.Scheme, rawPickupTimeout string) (reconcile.Reconciler, error) {
-	act := actuator{log: log, c: c, scheme: scheme}
+func NewController(log logr.Logger, c client.Client, scheme *runtime.Scheme, rawPickupTimeout string) (reconcile.Reconciler, error) {
+	con := controller{log: log, c: c, scheme: scheme}
 	if rawPickupTimeout == "none" {
-		act.pickupTimeout = nil
-	} else if len(rawPickupTimeout) == 0 {
-		tmp := deployitem.DefaultPickupTimeout
-		act.pickupTimeout = &tmp
+		con.pickupTimeout = nil
 	} else {
 		tmp, err := time.ParseDuration(rawPickupTimeout)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse deploy item pickup timeout into a duration: %w", err)
 		}
-		act.pickupTimeout = &tmp
+		con.pickupTimeout = &tmp
 	}
 
 	// log pickup timeout
 	timeoutLog := ""
-	if act.pickupTimeout != nil {
-		timeoutLog = act.pickupTimeout.String()
+	if con.pickupTimeout != nil {
+		timeoutLog = con.pickupTimeout.String()
 	}
-	log.Info("deploy item pickup timeout detection", "active", act.pickupTimeout != nil, "timeout", timeoutLog)
+	log.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != nil, "timeout", timeoutLog)
 
-	return &act, nil
+	return &con, nil
 }
 
-type actuator struct {
+type controller struct {
 	log           logr.Logger
 	c             client.Client
 	scheme        *runtime.Scheme
 	pickupTimeout *time.Duration
 }
 
-func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := a.log.WithValues("resource", req.NamespacedName.String())
-	if a.pickupTimeout == nil {
+func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := con.log.WithValues("resource", req.NamespacedName.String())
+	if con.pickupTimeout == nil {
 		logger.V(7).Info("skipping reconcile as pickup timeout detection is disabled")
 		return reconcile.Result{}, nil
 	}
 	logger.Info("reconcile")
 
 	di := &lsv1alpha1.DeployItem{}
-	if err := a.c.Get(ctx, req.NamespacedName, di); err != nil {
+	if err := con.c.Get(ctx, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -74,7 +75,7 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 		return reconcile.Result{}, err
 	}
 
-	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == deployitem.PickupTimeoutReason {
+	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == PickupTimeoutReason {
 		// don't do anything if phase is already failed due to a recent pickup timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
 		return reconcile.Result{}, nil
@@ -89,14 +90,20 @@ func (a *actuator) Reconcile(ctx context.Context, req reconcile.Request) (reconc
 		return reconcile.Result{}, fmt.Errorf("unable to parse timestamp annotation: %w", err)
 	}
 	waitingForPickupDuration := time.Since(ts)
-	if waitingForPickupDuration >= *a.pickupTimeout {
+	if waitingForPickupDuration >= *con.pickupTimeout {
 		// no deployer has picked up the deployitem within the timeframe
 		// => pickup timeout
-		return reconcile.Result{}, deployitem.FailDueToTimeout(ctx, a.c, logger, di, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", *a.pickupTimeout/time.Second))
+		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", *con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		if err := con.c.Status().Update(ctx, di); err != nil {
+			logger.Error(err, "unable to set deployitem status")
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
 	}
 
 	// deploy item neither picked up nor timed out
 	// => requeue shortly after expected timeout
-	return reconcile.Result{RequeueAfter: *a.pickupTimeout - waitingForPickupDuration + (5 * time.Second)}, nil
+	return reconcile.Result{RequeueAfter: *con.pickupTimeout - waitingForPickupDuration + (5 * time.Second)}, nil
 
 }

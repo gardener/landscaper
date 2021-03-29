@@ -11,13 +11,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-func AddActuatorToManager(mgr manager.Manager, rawDeployItemPickupTimeout string) error {
+func AddControllerToManager(mgr manager.Manager, rawDeployItemPickupTimeout string) error {
 	if rawDeployItemPickupTimeout == "none" {
 		// currently the deploy item reconcile loop is only used for pickup timeout detection
 		// so if that is disabled there is no need to watch deploy items
 		return nil
 	}
-	a, err := NewActuator(ctrl.Log.WithName("controllers").WithName("DeployItem"), mgr.GetClient(), mgr.GetScheme(), rawDeployItemPickupTimeout)
+	a, err := NewController(ctrl.Log.WithName("controllers").WithName("DeployItem"), mgr.GetClient(), mgr.GetScheme(), rawDeployItemPickupTimeout)
 	if err != nil {
 		return err
 	}

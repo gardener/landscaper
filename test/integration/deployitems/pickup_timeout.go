@@ -13,10 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/deployitem"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 
 	"github.com/onsi/ginkgo"
 	g "github.com/onsi/gomega"
+	gs "github.com/onsi/gomega/gstruct"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/test/framework"
@@ -41,15 +42,6 @@ func namespacedName(meta metav1.ObjectMeta) types.NamespacedName {
 		Namespace: meta.Namespace,
 		Name:      meta.Name,
 	}
-}
-
-func errorListContains(list []lsv1alpha1.ErrorCode, code lsv1alpha1.ErrorCode) bool {
-	for _, e := range list {
-		if e == code {
-			return true
-		}
-	}
-	return false
 }
 
 func PickupTimeoutTests(f *framework.Framework) {
@@ -87,44 +79,42 @@ func PickupTimeoutTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			ginkgo.By("verify that deploy items have been created")
-			time.Sleep(waitingForDeployItems)
-			utils.ExpectNoError(f.Client.Get(ctx, namespacedName(inst.ObjectMeta), inst))
-			g.Expect(inst.Status).ToNot(g.BeNil())
-			g.Expect(inst.Status.ExecutionReference).ToNot(g.BeNil())
-			exec := &lsv1alpha1.Execution{}
-			utils.ExpectNoError(f.Client.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec))
-			g.Expect(exec.Status).ToNot(g.BeNil())
-			g.Expect(exec.Status.DeployItemReferences).ToNot(g.Or(g.BeNil(), g.BeEmpty()))
 			di := &lsv1alpha1.DeployItem{}
-			utils.ExpectNoError(f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di))
+			g.Eventually(func() (*lsv1alpha1.DeployItem, error) {
+				err := f.Client.Get(ctx, namespacedName(inst.ObjectMeta), inst)
+				if err != nil || inst.Status.ExecutionReference == nil {
+					return nil, err
+				}
+				exec := &lsv1alpha1.Execution{}
+				err = f.Client.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec)
+				if err != nil || exec.Status.DeployItemReferences == nil || len(exec.Status.DeployItemReferences) == 0 {
+					return nil, err
+				}
+				err = f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di)
+				if err != nil {
+					return nil, err
+				}
+				return di, err
+			}, waitingForDeployItems, resyncTime).ShouldNot(g.BeNil(), "unable to fetch deploy item")
 
 			ginkgo.By("check for timestamp annotation")
 			// checking whether the set timestamp is up-to-date is difficult due to potential differences between the
 			// system times of the machine running the landscaper and the machine running the tests
 			// so just check for existence of the annotation
-			g.Expect(lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta)).To(g.BeTrue())
+			g.Expect(lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta)).To(g.BeTrue(), "deploy item should have a reconcile timestamp annotation")
 
 			ginkgo.By("check for pickup timeout")
 			time.Sleep(deployItemPickupTimeout)
-			success := false
-			timeoutTime := time.Now().Add(waitingForFailedState)
-			for { // wait for the annotation
+			g.Eventually(func() lsv1alpha1.DeployItemStatus {
 				utils.ExpectNoError(f.Client.Get(ctx, namespacedName(di.ObjectMeta), di))
-				success = di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && errorListContains(di.Status.LastError.Codes, lsv1alpha1.ErrorTimeout) && di.Status.LastError.Reason == deployitem.PickupTimeoutReason
-				if success || time.Now().After(timeoutTime) {
-					// deploy item has failed due to pickup timeout
-					break
-				}
-				time.Sleep(resyncTime)
-			}
-			if !success {
-				// show which condition is not fulfilled
-				g.Expect(di.Status.Phase).To(g.Equal(lsv1alpha1.ExecutionPhaseFailed))
-				g.Expect(di.Status.LastError).NotTo(g.BeNil())
-				g.Expect(errorListContains(di.Status.LastError.Codes, lsv1alpha1.ErrorTimeout)).To(g.BeTrue())
-				g.Expect(di.Status.LastError.Reason).To(g.Equal(deployitem.PickupTimeoutReason))
-			}
-			g.Expect(success).To(g.BeTrue())
+				return di.Status
+			}, waitingForFailedState, resyncTime).Should(gs.MatchFields(gs.IgnoreExtras, gs.Fields{
+				"Phase": g.Equal(lsv1alpha1.ExecutionPhaseFailed),
+				"LastError": gs.PointTo(gs.MatchFields(gs.IgnoreExtras, gs.Fields{
+					"Codes":  g.ContainElement(lsv1alpha1.ErrorTimeout),
+					"Reason": g.Equal(deployitem.PickupTimeoutReason),
+				})),
+			}))
 		})
 
 		ginkgo.It("should not detect pickup timeouts for components with working deployers", func() {
@@ -135,22 +125,32 @@ func PickupTimeoutTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			ginkgo.By("verify that deploy items have been created")
-			time.Sleep(waitingForDeployItems)
-			utils.ExpectNoError(f.Client.Get(ctx, namespacedName(inst.ObjectMeta), inst))
-			g.Expect(inst.Status).ToNot(g.BeNil())
-			g.Expect(inst.Status.ExecutionReference).ToNot(g.BeNil())
-			exec := &lsv1alpha1.Execution{}
-			utils.ExpectNoError(f.Client.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec))
-			g.Expect(exec.Status).ToNot(g.BeNil())
-			g.Expect(exec.Status.DeployItemReferences).ToNot(g.Or(g.BeNil(), g.BeEmpty()))
 			di := &lsv1alpha1.DeployItem{}
-			utils.ExpectNoError(f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di))
+			g.Eventually(func() (*lsv1alpha1.DeployItem, error) {
+				err := f.Client.Get(ctx, namespacedName(inst.ObjectMeta), inst)
+				if err != nil || inst.Status.ExecutionReference == nil {
+					return nil, err
+				}
+				exec := &lsv1alpha1.Execution{}
+				err = f.Client.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec)
+				if err != nil || exec.Status.DeployItemReferences == nil || len(exec.Status.DeployItemReferences) == 0 {
+					return nil, err
+				}
+				err = f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di)
+				if err != nil {
+					return nil, err
+				}
+				return di, err
+			}, waitingForDeployItems, resyncTime).ShouldNot(g.BeNil(), "unable to fetch deploy item")
 
 			ginkgo.By("verify that deploy item is not timed out")
 			time.Sleep(deployItemPickupTimeout + waitingForFailedState) // wait for a potential timeout to happen
 			utils.ExpectNoError(f.Client.Get(ctx, namespacedName(di.ObjectMeta), di))
 			// check that deploy item does not have a pickup timeout
-			g.Expect(di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && errorListContains(di.Status.LastError.Codes, lsv1alpha1.ErrorTimeout) && di.Status.LastError.Reason == deployitem.PickupTimeoutReason).To(g.BeFalse())
+			g.Expect(di.Status.LastError).To(g.Or(g.BeNil(), gs.MatchFields(gs.IgnoreExtras, gs.Fields{
+				"Codes":  g.Not(g.ContainElement(lsv1alpha1.ErrorTimeout)),
+				"Reason": g.Not(g.Equal(deployitem.PickupTimeoutReason)),
+			})))
 		})
 
 	})
