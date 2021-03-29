@@ -77,6 +77,9 @@ spec:
                 required:
                 - name
                 type: object
+              timeout:
+                description: Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the landscaper will add the abort annotation to the deploy item and later put it in 'Failed' if the deployer doesn't handle the abort properly. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.
+                type: string
               type:
                 description: Type is the type of the deployer that should handle the item.
                 type: string
@@ -138,6 +141,10 @@ spec:
                 required:
                 - name
                 type: object
+              lastChangeReconcileTime:
+                description: LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started
+                format: date-time
+                type: string
               lastError:
                 description: LastError describes the last error that occurred.
                 properties:

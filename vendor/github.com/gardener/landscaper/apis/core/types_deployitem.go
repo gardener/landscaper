@@ -54,6 +54,13 @@ type DeployItemSpec struct {
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
+	// Timeout specifies how long the deployer may take to apply the deploy item.
+	// When the time is exceeded, the landscaper will add the abort annotation to the deploy item
+	// and later put it in 'Failed' if the deployer doesn't handle the abort properly.
+	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
+	// Defaults to ten minutes if not specified.
+	// +optional
+	Timeout string `json:"timeout,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item
@@ -71,6 +78,9 @@ type DeployItemStatus struct {
 
 	// LastError describes the last error that occurred.
 	LastError *Error `json:"lastError,omitempty"`
+
+	// LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started
+	LastChangeReconcileTime metav1.Time `json:"lastChangeReconcileTime,omitempty"`
 
 	// ProviderStatus contains the provider specific status
 	// +optional

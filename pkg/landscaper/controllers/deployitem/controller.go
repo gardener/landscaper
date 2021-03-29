@@ -81,11 +81,11 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		return reconcile.Result{}, nil
 	}
 
-	if !lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta) {
+	if !lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp) {
 		return reconcile.Result{}, nil
 	}
 
-	ts, err := lsv1alpha1helper.GetReconcileTimestampAnnotation(di.ObjectMeta)
+	ts, err := lsv1alpha1helper.GetTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to parse timestamp annotation: %w", err)
 	}

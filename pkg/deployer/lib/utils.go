@@ -42,7 +42,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 	}
-	if lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta) {
+	if lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp) {
 		log.V(5).Info("removing timestamp annotation")
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
