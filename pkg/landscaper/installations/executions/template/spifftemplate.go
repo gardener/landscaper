@@ -226,7 +226,40 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
 		info := dynaml.DefaultInfo()
 
-		vector, err := imagevector.GenerateImageOverwrite(cd, cdList)
+		internalCd := cd
+		internalComponents := cdList
+
+		if len(arguments) == 2 {
+			cdData, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[0], ""))
+			if err != nil {
+				return info.Error(err.Error())
+			}
+
+			internalCd = &cdv2.ComponentDescriptor{}
+			if err := yaml.Unmarshal(cdData, internalCd); err != nil {
+				return info.Error(err.Error())
+			}
+
+			componentsData, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[1], ""))
+			if err != nil {
+				return info.Error(err.Error())
+			}
+
+			internalComponents = &cdv2.ComponentDescriptorList{}
+			if err := yaml.Unmarshal(componentsData, internalComponents); err != nil {
+				return info.Error(err.Error())
+			}
+		}
+
+		if internalCd == nil {
+			return info.Error("No component descriptor is defined.")
+		}
+
+		if internalComponents == nil {
+			return info.Error("No component descriptor list is defined.")
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(internalCd, internalComponents)
 		if err != nil {
 			return info.Error(err.Error())
 		}

@@ -487,28 +487,49 @@ func resolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		internalCd := cd
+		internalComponents := list
 
 		if len(args) == 2 {
 			cdMap, ok := args[0].(map[string]interface{})
 			if !ok {
-				panic("No ComponentDescriptor provided as first argument.")
+				panic("No component descriptor provided as first argument.")
 			}
 
 			data, err := json.Marshal(cdMap)
 			if err != nil {
 				panic("Unable to marshall first argument to component descriptor.")
 			}
+
 			internalCd = &cdv2.ComponentDescriptor{}
-			if err := codec.Decode(data, cd); err != nil {
+			if err := codec.Decode(data, internalCd); err != nil {
 				panic("Unable to marshall first argument to component descriptor.")
+			}
+
+			componentsMap, ok := args[1].(map[string]interface{})
+			if !ok {
+				panic("No component descriptor list provided as second argument.")
+			}
+
+			componentsData, err := json.Marshal(componentsMap)
+			if err != nil {
+				panic("Unable to marshall second argument to component descriptor list.")
+			}
+
+			internalComponents = &cdv2.ComponentDescriptorList{}
+			if err := codec.Decode(componentsData, internalComponents); err != nil {
+				panic("Unable to marshall second argument to component descriptor list.")
 			}
 		}
 
 		if internalCd == nil {
-			panic("No ComponentDescriptor is defined.")
+			panic("No component descriptor is defined.")
 		}
 
-		vector, err := imagevector.GenerateImageOverwrite(internalCd, list)
+		if internalComponents == nil {
+			panic("No component descriptor list is defined.")
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(internalCd, internalComponents)
 		if err != nil {
 			panic(err)
 		}
