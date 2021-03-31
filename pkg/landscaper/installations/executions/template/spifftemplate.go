@@ -236,7 +236,10 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 			return info.Error(err.Error())
 		}
 
-		node := spiffyaml.NewNode(string(data), "")
+		node, err := spiffyaml.Parse("", data)
+		if err != nil {
+			return info.Error(err.Error())
+		}
 
 		result, err := binding.Flow(node, false)
 		if err != nil {

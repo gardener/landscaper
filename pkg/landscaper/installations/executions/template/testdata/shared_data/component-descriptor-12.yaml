@@ -1,0 +1,64 @@
+component:
+  componentReferences: []
+  name: github.com/gardener/gardener-extension-provider-aws
+  provider: internal
+  repositoryContexts:
+  - baseUrl: eu.gcr.io/sap-gcp-cp-k8s-stable-hub/examples/landscaper/temp
+    type: ociRegistry
+  resources:
+  - access:
+      imageReference: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws:v1.17.15
+      type: ociRegistry
+    extraIdentity:
+      imagevector-gardener-cloud+tag: v1.17.15
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: cloud-controller-manager
+    - name: imagevector.gardener.cloud/repository
+      value: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
+    - name: imagevector.gardener.cloud/source-repository
+      value: github.com/gardener/cloud-provider-aws
+    - name: imagevector.gardener.cloud/target-version
+      value: 1.17.x
+    name: cloud-controller-manager
+    relation: external
+    type: ociImage
+    version: v1.17.15
+  - access:
+      imageReference: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws:v1.18.13
+      type: ociRegistry
+    extraIdentity:
+      imagevector-gardener-cloud+tag: v1.18.13
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: cloud-controller-manager
+    - name: imagevector.gardener.cloud/repository
+      value: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
+    - name: imagevector.gardener.cloud/source-repository
+      value: github.com/gardener/cloud-provider-aws
+    - name: imagevector.gardener.cloud/target-version
+      value: 1.18.x
+    name: cloud-controller-manager
+    relation: external
+    type: ociImage
+    version: v1.18.13
+  - access:
+      imageReference: quay.io/k8scsi/csi-provisioner:v1.6.0
+      type: ociRegistry
+    extraIdentity:
+      imagevector-gardener-cloud+tag: v1.6.0
+    labels:
+    - name: imagevector.gardener.cloud/name
+      value: csi-provisioner
+    - name: imagevector.gardener.cloud/repository
+      value: quay.io/k8scsi/csi-provisioner
+    - name: imagevector.gardener.cloud/source-repository
+      value: github.com/kubernetes-csi/external-provisioner
+    name: csi-provisioner
+    relation: external
+    type: ociImage
+    version: v1.6.0
+  sources: []
+  version: 1.0.0
+meta:
+  schemaVersion: v2

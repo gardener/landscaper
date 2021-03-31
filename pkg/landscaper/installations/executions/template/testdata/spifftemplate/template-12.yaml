@@ -11,4 +11,5 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        imageVectorOverWrite: (( generateImageOverwrite() ))
+        imageVectorOverWrite:
+          (( generateImageOverwrite() ))

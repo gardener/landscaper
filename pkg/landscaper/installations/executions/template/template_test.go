@@ -32,19 +32,21 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("TemplateDeployExecutions", func() {
 
+	sharedTestdataDir := filepath.Join("./testdata", "shared_data")
+
 	Context("GoTemplate", func() {
 		testdataDir := filepath.Join("./testdata", "gotemplate")
-		runTestSuite(testdataDir)
+		runTestSuite(testdataDir, sharedTestdataDir)
 	})
 
 	Context("Spiff", func() {
 		testdataDir := filepath.Join("./testdata", "spifftemplate")
-		runTestSuite(testdataDir)
+		runTestSuite(testdataDir, sharedTestdataDir)
 	})
 
 })
 
-func runTestSuite(testdataDir string) {
+func runTestSuite(testdataDir, sharedTestdataDir string) {
 	var stateHandler GenericStateHandler
 
 	BeforeEach(func() {
@@ -374,7 +376,7 @@ func runTestSuite(testdataDir string) {
 			blue.DeployExecutions = exec
 			op := New(nil, stateHandler)
 
-			cdRaw, err := ioutil.ReadFile(filepath.Join(testdataDir, "component-descriptor-12.yaml"))
+			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			cd := &cdv2.ComponentDescriptor{}
 			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
@@ -393,14 +395,17 @@ func runTestSuite(testdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 
-			imageVector, ok := config["imageVectorOverWrite"].(string)
+			imageMap, ok := config["imageVectorOverWrite"].(map[string]interface{})
 			Expect(ok).To(BeTrue())
 
-			result, err := ioutil.ReadFile(filepath.Join(testdataDir, "result-12.yaml"))
+			result, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			resultString := string(result)
 
-			Expect(imageVector).To(BeIdenticalTo(resultString))
+			imageVector, err := yaml.Marshal(imageMap)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(imageVector)).To(BeIdenticalTo(resultString))
+
 		})
 	})
 
