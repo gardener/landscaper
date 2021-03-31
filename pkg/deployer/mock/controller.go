@@ -7,8 +7,6 @@ package mock
 import (
 	"context"
 
-	dutils "github.com/gardener/landscaper/pkg/deployer/utils"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +19,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -58,7 +57,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	logger.Info("reconcile mock deploy item")
 
-	err := dutils.HandleAnnotationsAndGeneration(ctx, logger, a.c, deployItem)
+	err := deployerlib.HandleAnnotationsAndGeneration(ctx, logger, a.c, deployItem)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

@@ -9,8 +9,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	dutils "github.com/gardener/landscaper/pkg/deployer/utils"
-
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,12 +68,12 @@ func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 
 	logger.Info("reconcile container deploy item")
 
-	err = dutils.HandleAnnotationsAndGeneration(ctx, logger, r.lsClient, deployItem)
+	err = deployerlib.HandleAnnotationsAndGeneration(ctx, logger, r.lsClient, deployItem)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if !dutils.ShouldReconcile(deployItem) {
+	if !deployerlib.ShouldReconcile(deployItem) {
 		r.log.V(5).Info("aborting reconcile", "phase", deployItem.Status.Phase)
 		return reconcile.Result{}, nil
 	}

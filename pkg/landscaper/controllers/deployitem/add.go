@@ -11,6 +11,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+// AddControllerToManager adds the deploy item controller to the controller manager.
+// It is responsible for detecting timeouts in deploy items.
 func AddControllerToManager(mgr manager.Manager, rawDeployItemPickupTimeout string) error {
 	if rawDeployItemPickupTimeout == "none" {
 		// currently the deploy item reconcile loop is only used for pickup timeout detection
