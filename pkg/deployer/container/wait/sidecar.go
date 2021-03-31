@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 )
 
 // Run runs the container deployer sidecar.
@@ -36,7 +36,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 	if err := wait.ExponentialBackoff(opts.DefaultBackoff, func() (bool, error) {
 		var err error
 		kubeClient, err = client.New(restConfig, client.Options{
-			Scheme: kubernetes.LandscaperScheme,
+			Scheme: api.LandscaperScheme,
 		})
 		if err != nil {
 			log.Error(err, "unable to build kubernetes client")

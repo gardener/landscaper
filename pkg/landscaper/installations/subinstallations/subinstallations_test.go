@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
@@ -52,7 +52,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, mockClient, kubernetes.LandscaperScheme, fakeCompRepo)
+		op = lsoperation.NewOperation(testing.NullLogger{}, mockClient, api.LandscaperScheme, fakeCompRepo)
 
 		defaultTestConfig = &utils.TestInstallationConfig{
 			MockClient:                   mockClient,

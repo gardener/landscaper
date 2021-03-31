@@ -27,7 +27,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	installationhelper "github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -598,7 +598,7 @@ func (c *Container) SyncExport(ctx context.Context) error {
 	expSecret.Namespace = c.DeployItem.Namespace
 	if _, err := controllerutil.CreateOrUpdate(ctx, c.lsClient, expSecret, func() error {
 		expSecret.Data = secret.Data
-		return controllerutil.SetControllerReference(c.DeployItem, expSecret, kubernetes.LandscaperScheme)
+		return controllerutil.SetControllerReference(c.DeployItem, expSecret, api.LandscaperScheme)
 	}); err != nil {
 		return fmt.Errorf("unable to sync export to landscaper cluster: %w", err)
 	}

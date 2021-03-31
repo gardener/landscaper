@@ -13,7 +13,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -82,7 +82,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
-		if err := controllerutil.SetControllerReference(inst.Info, exec, kubernetes.LandscaperScheme); err != nil {
+		if err := controllerutil.SetControllerReference(inst.Info, exec, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return nil

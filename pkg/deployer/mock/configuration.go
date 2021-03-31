@@ -9,13 +9,18 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockinstall "github.com/gardener/landscaper/apis/deployer/mock/install"
+	"github.com/gardener/landscaper/pkg/api"
 )
 
 // Type is the type name of the deployer.
 const Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/mock"
 
-var Mockscheme = runtime.NewScheme()
+var (
+	MockScheme = runtime.NewScheme()
+	Decoder    runtime.Decoder
+)
 
 func init() {
-	mockinstall.Install(Mockscheme)
+	mockinstall.Install(MockScheme)
+	Decoder = api.NewDecoder(MockScheme)
 }

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -58,7 +58,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 			return nil, fmt.Errorf("unable to read blueprint file from inline defined blueprint: %w", err)
 		}
 		blue := &lsv1alpha1.Blueprint{}
-		if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
+		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
 			return nil, fmt.Errorf("unable to decode blueprint definition from inline defined blueprint. %w", err)
 		}
 		intBlueprint, err := New(blue, readonlyfs.New(fs))
@@ -121,7 +121,7 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
 	}
 	blueprint := &lsv1alpha1.Blueprint{}
-	if _, _, err := serializer.NewCodecFactory(kubernetes.LandscaperScheme).
+	if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).
 		UniversalDecoder().
 		Decode(blueprintBytes, nil, blueprint); err != nil {
 		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)

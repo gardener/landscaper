@@ -19,8 +19,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -47,7 +47,7 @@ var _ = Describe("Manifest Deployer", func() {
 		actuator, err := manifestctlr.NewController(
 			logtesting.NullLogger{},
 			testenv.Client,
-			kubernetes.LandscaperScheme,
+			api.LandscaperScheme,
 			&manifestv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
@@ -95,7 +95,7 @@ var _ = Describe("Manifest Deployer", func() {
 		actuator, err := manifestctlr.NewController(
 			logtesting.NullLogger{},
 			testenv.Client,
-			kubernetes.LandscaperScheme,
+			api.LandscaperScheme,
 			&manifestv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
@@ -145,7 +145,7 @@ var _ = Describe("Manifest Deployer", func() {
 		actuator, err := manifestctlr.NewController(
 			logtesting.NullLogger{},
 			testenv.Client,
-			kubernetes.LandscaperScheme,
+			api.LandscaperScheme,
 			&manifestv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
@@ -198,7 +198,7 @@ var _ = Describe("Manifest Deployer", func() {
 		actuator, err := manifestctlr.NewController(
 			logtesting.NullLogger{},
 			testenv.Client,
-			kubernetes.LandscaperScheme,
+			api.LandscaperScheme,
 			&manifestv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())

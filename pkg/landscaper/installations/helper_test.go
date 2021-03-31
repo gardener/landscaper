@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -48,7 +48,7 @@ var _ = g.Describe("helper", func() {
 			owner := &lsv1alpha1.Installation{}
 			owner.Name = "owner"
 			owner.Namespace = "default"
-			err := controllerutil.SetOwnerReference(owner, inst, kubernetes.LandscaperScheme)
+			err := controllerutil.SetOwnerReference(owner, inst, api.LandscaperScheme)
 			Expect(err).ToNot(HaveOccurred())
 
 			isRoot := IsRootInstallation(inst)

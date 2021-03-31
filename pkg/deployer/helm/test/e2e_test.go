@@ -18,8 +18,8 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
-	helmactuator "github.com/gardener/landscaper/pkg/deployer/helm"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
+	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -43,10 +43,10 @@ var _ = Describe("Helm Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := helmactuator.NewController(
+		actuator, err := helmctrl.NewController(
 			logtesting.NullLogger{},
 			testenv.Client,
-			kubernetes.LandscaperScheme,
+			api.LandscaperScheme,
 			&helmv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
@@ -61,7 +61,7 @@ var _ = Describe("Helm Deployer", func() {
 			Name:      "test-target",
 			Namespace: state.Namespace,
 		}
-		di.Spec.Type = helmactuator.Type
+		di.Spec.Type = helmctrl.Type
 
 		// Create Target
 		target, err := testutil.CreateOrUpdateTarget(ctx,
@@ -97,7 +97,7 @@ var _ = Describe("Helm Deployer", func() {
 		status := &helm.ProviderStatus{}
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		helmDecoder := serializer.NewCodecFactory(helmactuator.Helmscheme).UniversalDecoder()
+		helmDecoder := serializer.NewCodecFactory(helmctrl.HelmScheme).UniversalDecoder()
 		_, _, err = helmDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		Expect(err).ToNot(HaveOccurred())
 

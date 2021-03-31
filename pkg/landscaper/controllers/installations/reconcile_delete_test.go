@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	installationsctl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -36,7 +36,7 @@ var _ = Describe("Delete", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeCompRepo)
+		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, fakeCompRepo)
 	})
 
 	AfterEach(func() {

@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -20,7 +21,6 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,10 +41,10 @@ const (
 	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/helm"
 )
 
-var Helmscheme = runtime.NewScheme()
+var HelmScheme = runtime.NewScheme()
 
 func init() {
-	helminstall.Install(Helmscheme)
+	helminstall.Install(HelmScheme)
 }
 
 // Helm is the internal representation of a DeployItem of Type Helm
@@ -64,7 +64,7 @@ type Helm struct {
 func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
 	currOp := "InitHelmOperation"
 	config := &helmv1alpha1.ProviderConfiguration{}
-	helmdecoder := serializer.NewCodecFactory(Helmscheme).UniversalDecoder()
+	helmdecoder := api.NewDecoder(HelmScheme)
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)

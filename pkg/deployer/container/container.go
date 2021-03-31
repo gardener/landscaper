@@ -7,11 +7,11 @@ package container
 import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/api"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -64,7 +64,7 @@ func New(log logr.Logger,
 	item *lsv1alpha1.DeployItem,
 	componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
-	decoder := serializer.NewCodecFactory(Scheme).UniversalDecoder()
+	decoder := api.NewDecoder(Scheme)
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			"Init", "DecodeProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)

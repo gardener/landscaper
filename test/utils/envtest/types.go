@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 )
 
 var (
@@ -26,18 +26,18 @@ var (
 
 func init() {
 	var err error
-	InstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, kubernetes.LandscaperScheme)
+	InstallationGVK, err = apiutil.GVKForObject(&lsv1alpha1.Installation{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	ExecutionGVK, err = apiutil.GVKForObject(&lsv1alpha1.Execution{}, kubernetes.LandscaperScheme)
+	ExecutionGVK, err = apiutil.GVKForObject(&lsv1alpha1.Execution{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	DeployItemGVK, err = apiutil.GVKForObject(&lsv1alpha1.DeployItem{}, kubernetes.LandscaperScheme)
+	DeployItemGVK, err = apiutil.GVKForObject(&lsv1alpha1.DeployItem{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	DataObjectGVK, err = apiutil.GVKForObject(&lsv1alpha1.DataObject{}, kubernetes.LandscaperScheme)
+	DataObjectGVK, err = apiutil.GVKForObject(&lsv1alpha1.DataObject{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	TargetGVK, err = apiutil.GVKForObject(&lsv1alpha1.Target{}, kubernetes.LandscaperScheme)
+	TargetGVK, err = apiutil.GVKForObject(&lsv1alpha1.Target{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	SecretGVK, err = apiutil.GVKForObject(&corev1.Secret{}, kubernetes.LandscaperScheme)
+	SecretGVK, err = apiutil.GVKForObject(&corev1.Secret{}, api.LandscaperScheme)
 	utilruntime.Must(err)
-	ConfigMapGVK, err = apiutil.GVKForObject(&corev1.ConfigMap{}, kubernetes.LandscaperScheme)
+	ConfigMapGVK, err = apiutil.GVKForObject(&corev1.ConfigMap{}, api.LandscaperScheme)
 	utilruntime.Must(err)
 }

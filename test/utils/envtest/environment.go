@@ -28,7 +28,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 )
 
 // Environment is a internal landscaper test environment
@@ -67,7 +67,7 @@ func (e *Environment) Start() (client.Client, error) {
 		return nil, err
 	}
 
-	fakeClient, err := client.New(restConfig, client.Options{Scheme: kubernetes.LandscaperScheme})
+	fakeClient, err := client.New(restConfig, client.Options{Scheme: api.LandscaperScheme})
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func parseResources(path string, state *State) ([]client.Object, error) {
 }
 
 func decodeAndAppendLSObject(data []byte, objects []client.Object, state *State) ([]client.Object, error) {
-	decoder := serializer.NewCodecFactory(kubernetes.LandscaperScheme).UniversalDecoder()
+	decoder := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder()
 
 	_, gvk, err := decoder.Decode(data, nil, &unstructured.Unstructured{})
 	if err != nil {

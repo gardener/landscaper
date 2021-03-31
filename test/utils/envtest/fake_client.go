@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
@@ -70,7 +70,7 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		}
 	}
 
-	return fake.NewClientBuilder().WithScheme(kubernetes.LandscaperScheme).WithObjects(objects...).Build(), state, nil
+	return fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithObjects(objects...).Build(), state, nil
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient

@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -19,7 +18,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
-	"github.com/gardener/landscaper/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/api"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -136,7 +135,7 @@ func (a *controller) ensureExport(ctx context.Context, item *lsv1alpha1.DeployIt
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: *config.Export,
 		}
-		return controllerutil.SetOwnerReference(item, secret, kubernetes.LandscaperScheme)
+		return controllerutil.SetOwnerReference(item, secret, api.LandscaperScheme)
 	})
 	if err != nil {
 		return err
@@ -152,7 +151,7 @@ func (a *controller) ensureExport(ctx context.Context, item *lsv1alpha1.DeployIt
 
 func (a *controller) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
 	config := &mockv1alpha1.ProviderConfiguration{}
-	if _, _, err := serializer.NewCodecFactory(Mockscheme).UniversalDecoder().Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
+	if _, _, err := Decoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		a.log.Error(err, "unable to unmarshal config")
 		item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionFalse,
 			"FailedUnmarshal", err.Error())

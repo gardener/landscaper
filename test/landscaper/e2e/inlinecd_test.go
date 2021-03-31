@@ -19,8 +19,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
-	"github.com/gardener/landscaper/pkg/kubernetes"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	instctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -43,7 +43,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		fakeComponentRegistry, err = componentsregistry.NewLocalClient(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "02-inline-cd"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(log.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme, fakeComponentRegistry)
+		op := operation.NewOperation(log.NullLogger{}, testenv.Client, api.LandscaperScheme, fakeComponentRegistry)
 
 		instActuator = instctlr.NewTestActuator(op, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
@@ -51,10 +51,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 			},
 		})
 
-		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme)
+		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, kubernetes.LandscaperScheme)
+		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
