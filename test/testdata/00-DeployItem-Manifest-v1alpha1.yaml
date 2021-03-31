@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-secret
+spec:
+  type: landscaper.gardener.cloud/kubernetes-manifest
+
+  target:
+    name: my-cluster
+    namespace: default
+
+  config:
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+
+    manifests: # list of kubernetes manifests
+    - apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: my-namespace
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: my-secret
+        namespace: my-namespace
+      stringData:
+        config: my-val

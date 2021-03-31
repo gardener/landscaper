@@ -19,14 +19,14 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // NewController creates a new deploy item controller that reconciles deploy items of type kubernetes manifest.
-func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config *manifestv1alpha1.Configuration) (reconcile.Reconciler, error) {
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config *manifestv1alpha2.Configuration) (reconcile.Reconciler, error) {
 	return &controller{
 		log:    log,
 		client: kubeClient,
@@ -39,7 +39,7 @@ type controller struct {
 	log    logr.Logger
 	client client.Client
 	scheme *runtime.Scheme
-	config *manifestv1alpha1.Configuration
+	config *manifestv1alpha2.Configuration
 }
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {

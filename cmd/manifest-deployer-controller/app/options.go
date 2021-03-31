@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -22,7 +22,7 @@ type options struct {
 	log        logr.Logger
 	configPath string
 
-	config *manifestv1alpha1.Configuration
+	config *manifestv1alpha2.Configuration
 }
 
 func NewOptions() *options {
@@ -54,17 +54,17 @@ func (o *options) Complete() error {
 	return nil
 }
 
-func (o *options) parseConfigurationFile() (*manifestv1alpha1.Configuration, error) {
+func (o *options) parseConfigurationFile() (*manifestv1alpha2.Configuration, error) {
 	decoder := serializer.NewCodecFactory(manifest.ManifestScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
-		return &manifestv1alpha1.Configuration{}, nil
+		return &manifestv1alpha2.Configuration{}, nil
 	}
 	data, err := ioutil.ReadFile(o.configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg := &manifestv1alpha1.Configuration{}
+	cfg := &manifestv1alpha2.Configuration{}
 	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
 		return nil, err
 	}

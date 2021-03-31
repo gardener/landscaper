@@ -16,7 +16,7 @@ import (
 	install "github.com/gardener/landscaper/apis/core/install"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
@@ -121,7 +121,7 @@ func (o *options) run(ctx context.Context) error {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "manifest" {
-			config := &manifestv1alpha1.Configuration{}
+			config := &manifestv1alpha2.Configuration{}
 			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
 				return err
 			}

@@ -9,11 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 )
 
 // AddControllerToManager adds a new manifest deployer to a controller manager.
-func AddControllerToManager(mgr manager.Manager, config *manifestv1alpha1.Configuration) error {
+func AddControllerToManager(mgr manager.Manager, config *manifestv1alpha2.Configuration) error {
 	deployer, err := NewController(
 		ctrl.Log.WithName("controllers").WithName("ManifestDeployer"),
 		mgr.GetClient(),

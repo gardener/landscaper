@@ -11,13 +11,15 @@ deployItems:
     name: {{ .imports.cluster.metadata.name }}
     namespace: {{ .imports.cluster.metadata.namespace }}
   config:
-    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
     kind: ProviderConfiguration
 
     updateStrategy: patch
 
     manifests:
-      - apiVersion: apps/v1
+    - policy: manage
+      manifest:
+        apiVersion: apps/v1
         kind: Deployment
         metadata:
           name: {{ $name }}
@@ -42,7 +44,9 @@ deployItems:
                     - containerPort: 5678
                   resources:
 {{ toYaml .imports.resources | indent 21 }}
-      - apiVersion: v1
+    - policy: manage
+      manifest:
+        apiVersion: v1
         kind: Service
         metadata:
           name: {{ $name }}

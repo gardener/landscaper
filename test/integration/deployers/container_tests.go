@@ -21,12 +21,7 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-// RegisterTests registers all tests of this package
-func RegisterTests(f *framework.Framework) {
-	ManifestDeployerTests(f)
-}
-
-func ManifestDeployerTests(f *framework.Framework) {
+func ContainerDeployerTests(f *framework.Framework) {
 	var (
 		dumper     = f.Register()
 		exampleDir = path.Join(f.RootPath, "examples/deploy-items")
