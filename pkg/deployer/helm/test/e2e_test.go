@@ -81,6 +81,9 @@ var _ = Describe("Helm Deployer", func() {
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
+		providerConfig.HealthChecks = helmv1alpha1.HealthChecksConfiguration{
+			Timeout: "1s",
+		}
 
 		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
 		Expect(err).ToNot(HaveOccurred())
@@ -106,6 +109,8 @@ var _ = Describe("Helm Deployer", func() {
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
+		di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
