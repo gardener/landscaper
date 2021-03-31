@@ -14,7 +14,8 @@ import (
 	unsafe "unsafe"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	selection "k8s.io/apimachinery/pkg/selection"
@@ -1067,7 +1068,7 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
-	out.LastChangeReconcileTime = in.LastChangeReconcileTime
+	out.LastChangeReconcileTime = (*v1.Time)(unsafe.Pointer(in.LastChangeReconcileTime))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
@@ -1083,7 +1084,7 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
 	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
-	out.LastChangeReconcileTime = in.LastChangeReconcileTime
+	out.LastChangeReconcileTime = (*v1.Time)(unsafe.Pointer(in.LastChangeReconcileTime))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	return nil
@@ -1863,7 +1864,7 @@ func Convert_core_StaticDataSource_To_v1alpha1_StaticDataSource(in *core.StaticD
 }
 
 func autoConvert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(in *StaticDataValueFrom, out *core.StaticDataValueFrom, s conversion.Scope) error {
-	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.SecretKeyRef = (*corev1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
 	out.SecretLabelSelector = (*core.SecretLabelSelectorRef)(unsafe.Pointer(in.SecretLabelSelector))
 	return nil
 }
@@ -1874,7 +1875,7 @@ func Convert_v1alpha1_StaticDataValueFrom_To_core_StaticDataValueFrom(in *Static
 }
 
 func autoConvert_core_StaticDataValueFrom_To_v1alpha1_StaticDataValueFrom(in *core.StaticDataValueFrom, out *StaticDataValueFrom, s conversion.Scope) error {
-	out.SecretKeyRef = (*v1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
+	out.SecretKeyRef = (*corev1.SecretKeySelector)(unsafe.Pointer(in.SecretKeyRef))
 	out.SecretLabelSelector = (*SecretLabelSelectorRef)(unsafe.Pointer(in.SecretLabelSelector))
 	return nil
 }

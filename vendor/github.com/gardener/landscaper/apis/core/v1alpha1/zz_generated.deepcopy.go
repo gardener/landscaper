@@ -13,8 +13,8 @@ package v1alpha1
 import (
 	"encoding/json"
 
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	v1 "k8s.io/api/core/v1"
+	"github.com/gardener/component-spec/bindings-go/apis/v2"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -473,7 +473,10 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		*out = new(Error)
 		(*in).DeepCopyInto(*out)
 	}
-	in.LastChangeReconcileTime.DeepCopyInto(&out.LastChangeReconcileTime)
+	if in.LastChangeReconcileTime != nil {
+		in, out := &in.LastChangeReconcileTime, &out.LastChangeReconcileTime
+		*out = (*in).DeepCopy()
+	}
 	if in.ProviderStatus != nil {
 		in, out := &in.ProviderStatus, &out.ProviderStatus
 		*out = new(runtime.RawExtension)

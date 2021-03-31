@@ -39,6 +39,8 @@ landscaper:
 #      ...
 
 #  deployItemPickupTimeout: 5m
+#  deployItemAbortingTimeout: 5m
+#  defaultDeployItemTimeout: 10m
 
 image:
    # Overrides the image tag whose default is the chart appVersion.

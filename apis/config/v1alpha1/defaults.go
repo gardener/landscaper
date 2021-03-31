@@ -25,5 +25,11 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	if len(obj.DeployItemPickupTimeout) == 0 {
 		obj.DeployItemPickupTimeout = "5m"
 	}
+	if len(obj.DeployItemAbortingTimeout) == 0 {
+		obj.DeployItemAbortingTimeout = "5m"
+	}
+	if len(obj.DefaultDeployItemTimeout) == 0 {
+		obj.DefaultDeployItemTimeout = "10m"
+	}
 
 }

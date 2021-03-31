@@ -60,7 +60,7 @@ func SetTimestampAnnotation(obj *metav1.ObjectMeta, ta TimestampAnnotation, ts t
 }
 
 func SetAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
-	SetOperation(obj, v1alpha1.AbortTimestampAnnotation)
+	SetOperation(obj, v1alpha1.AbortOperation)
 	SetTimestampAnnotationNow(obj, AbortTimestamp)
 }
 
