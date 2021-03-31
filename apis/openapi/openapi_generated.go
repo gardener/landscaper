@@ -1099,6 +1099,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Format:      "",
 						},
 					},
+					"defaultDeployItemTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultDeployItemTimeout specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
@@ -1345,6 +1352,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					"deployItemAbortingTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"defaultDeployItemTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultDeployItemTimeout specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

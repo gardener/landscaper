@@ -115,5 +115,11 @@ crdManagement:
 {{- if .Values.landscaper.deployItemPickupTimeout }}
 deployItemPickupTimeout: {{ .Values.landscaper.deployItemPickupTimeout }}
 {{- end }}
+{{- if .Values.landscaper.deployItemAbortingTimeout }}
+deployItemAbortingTimeout: {{ .Values.landscaper.deployItemAbortingTimeout }}
+{{- end }}
+{{- if .Values.landscaper.defaultDeployItemTimeout }}
+defaultDeployItemTimeout: {{ .Values.landscaper.defaultDeployItemTimeout }}
+{{- end }}
 
 {{- end }}

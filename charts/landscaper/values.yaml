@@ -38,6 +38,8 @@ landscaper:
 #      ...
 
 #  deployItemPickupTimeout: 5m
+#  deployItemAbortingTimeout: 5m
+#  defaultDeployItemTimeout: 10m
 
 controller:
   replicaCount: 1

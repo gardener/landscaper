@@ -130,6 +130,7 @@ func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfigurat
 	out.CrdManagement = (*config.CrdManagementConfiguration)(unsafe.Pointer(in.CrdManagement))
 	out.DeployItemPickupTimeout = in.DeployItemPickupTimeout
 	out.DeployItemAbortingTimeout = in.DeployItemAbortingTimeout
+	out.DefaultDeployItemTimeout = in.DefaultDeployItemTimeout
 	return nil
 }
 
@@ -147,6 +148,7 @@ func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfigurat
 	out.CrdManagement = (*CrdManagementConfiguration)(unsafe.Pointer(in.CrdManagement))
 	out.DeployItemPickupTimeout = in.DeployItemPickupTimeout
 	out.DeployItemAbortingTimeout = in.DeployItemAbortingTimeout
+	out.DefaultDeployItemTimeout = in.DefaultDeployItemTimeout
 	return nil
 }
 

@@ -96,7 +96,7 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
-	if err := deployitemactuator.AddControllerToManager(mgr, o.config.DeployItemPickupTimeout); err != nil {
+	if err := deployitemactuator.AddControllerToManager(mgr, o.config.DeployItemPickupTimeout, o.config.DeployItemAbortingTimeout, o.config.DefaultDeployItemTimeout); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
