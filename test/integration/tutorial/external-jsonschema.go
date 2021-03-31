@@ -26,7 +26,7 @@ func ExternalJSONSchemaTest(f *framework.Framework) {
 	_ = ginkgo.Describe("ExternalJSONSchemaTest", func() {
 		dumper := f.Register()
 
-		ginkgo.It("should deploy a echo server with resources defined by a external jsonschema", func() {
+		ginkgo.It("should deploy an echo server with resources defined by an external jsonschema", func() {
 			var (
 				tutorialResourcesRootDir = filepath.Join(f.RootPath, "/docs/tutorials/resources/external-jsonschema")
 				targetResource           = filepath.Join(tutorialResourcesRootDir, "my-target.yaml")

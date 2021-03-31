@@ -130,7 +130,7 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (err error) {
 	if len(deployItem.Status.Phase) == 0 {
 		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	}

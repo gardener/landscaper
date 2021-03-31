@@ -117,14 +117,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                          schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                  schema_apis_deployer_helm_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem":         schema_apis_deployer_helm_v1alpha1_ExportFromManifestItem(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HealthChecksConfiguration":      schema_apis_deployer_helm_v1alpha1_HealthChecksConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderConfiguration":          schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderStatus":                 schema_apis_deployer_helm_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":            schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference":           schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Configuration":              schema_apis_deployer_manifest_v1alpha1_Configuration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration":  schema_apis_deployer_manifest_v1alpha1_HealthChecksConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderConfiguration":      schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderStatus":             schema_apis_deployer_manifest_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Configuration":              schema_apis_deployer_manifest_v1alpha2_Configuration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration":  schema_apis_deployer_manifest_v1alpha2_HealthChecksConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ManagedResourceStatus":      schema_apis_deployer_manifest_v1alpha2_ManagedResourceStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest":                   schema_apis_deployer_manifest_v1alpha2_Manifest(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderConfiguration":      schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref),
@@ -4699,7 +4702,7 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the helm deployer configuration that configures the controller",
+				Description: "Configuration is the helm deployer configuration that configures the controller",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -4782,6 +4785,33 @@ func schema_apis_deployer_helm_v1alpha1_ExportFromManifestItem(ref common.Refere
 	}
 }
 
+func schema_apis_deployer_helm_v1alpha1_HealthChecksConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disableDefault": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableDefault allows to disable the default health checks.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4813,7 +4843,21 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 					},
 					"updateStrategy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "UpdateStrategy defines the strategy how the manifest are updated in the cluster. Defaults to \"update\".",
+							Description: "UpdateStrategy defines the strategy how the manifests are updated in the cluster. Defaults to \"update\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"healthChecks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HealthChecks configures the health checks.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HealthChecksConfiguration"),
+						},
+					},
+					"deleteTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4867,7 +4911,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HealthChecksConfiguration"},
 	}
 }
 
@@ -4974,7 +5018,7 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the helm deployer configuration that configures the controller",
+				Description: "Configuration is the manifest deployer configuration that configures the controller",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -5013,11 +5057,38 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 	}
 }
 
+func schema_apis_deployer_manifest_v1alpha1_HealthChecksConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disableDefault": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableDefault allows to disable the default health checks.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+				Description: "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -5049,6 +5120,20 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 							Format:      "",
 						},
 					},
+					"healthChecks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HealthChecks configures the health checks.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration"),
+						},
+					},
+					"deleteTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"manifests": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Manifests contains a list of manifests that should be applied in the target cluster",
@@ -5066,7 +5151,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -5074,7 +5159,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderStatus(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderStatus is the helm provider specific status",
+				Description: "ProviderStatus is the manifest provider specific status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -5093,7 +5178,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderStatus(ref common.ReferenceC
 					},
 					"managedResources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ManagedResources contains all kubernetes resources that are deployed by the helm deployer.",
+							Description: "ManagedResources contains all kubernetes resources that are deployed by the manifest deployer.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -5117,7 +5202,7 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the helm deployer configuration that configures the controller",
+				Description: "Configuration is the manifest deployer configuration that configures the controller.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -5153,6 +5238,33 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector"},
+	}
+}
+
+func schema_apis_deployer_manifest_v1alpha2_HealthChecksConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disableDefault": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableDefault allows to disable the default health checks.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -5218,7 +5330,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem",
+				Description: "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -5250,6 +5362,20 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 							Format:      "",
 						},
 					},
+					"healthChecks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HealthChecks configures the health checks.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration"),
+						},
+					},
+					"deleteTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"manifests": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Manifests contains a list of manifests that should be applied in the target cluster",
@@ -5268,7 +5394,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest"},
+			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest"},
 	}
 }
 
@@ -5276,7 +5402,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderStatus(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderStatus is the helm provider specific status",
+				Description: "ProviderStatus is the manifest provider specific status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {

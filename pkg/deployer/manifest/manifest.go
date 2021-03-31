@@ -21,7 +21,9 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
-	"github.com/gardener/landscaper/apis/deployer/manifest/validation"
+
+	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 const (
@@ -45,7 +47,7 @@ type Manifest struct {
 	ProviderStatus        *manifest.ProviderStatus
 }
 
-// New creates a new internal helm item
+// New creates a new internal manifest item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
 	config := &manifest.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
@@ -55,7 +57,7 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	if err := validation.ValidateProviderConfiguration(config); err != nil {
+	if err := manifestvalidation.ValidateProviderConfiguration(config); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
@@ -70,7 +72,7 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 	}
 
 	return &Manifest{
-		log:                   log,
+		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		kubeClient:            kubeClient,
 		DeployItem:            item,
 		Target:                target,

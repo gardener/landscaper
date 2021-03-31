@@ -7,17 +7,21 @@ package manifest
 import (
 	"context"
 	"errors"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/manifest"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
 
 func (m *Manifest) Reconcile(ctx context.Context) error {
@@ -26,9 +30,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	_, targetClient, err := m.TargetClient()
 	if err != nil {
-		m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
-		return err
 	}
 
 	if m.ProviderStatus == nil {
@@ -46,6 +49,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		decoder:          serializer.NewCodecFactory(ManifestScheme).UniversalDecoder(),
 		kubeClient:       targetClient,
 		deployItemName:   m.DeployItem.Name,
+		deleteTimeout:    m.ProviderConfiguration.DeleteTimeout,
 		updateStrategy:   m.ProviderConfiguration.UpdateStrategy,
 		manifests:        m.ProviderConfiguration.Manifests,
 		managedResources: m.ProviderStatus.ManagedResources,
@@ -64,15 +68,30 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	m.DeployItem.Status.ProviderStatus, err = encodeStatus(m.ProviderStatus)
 	if err != nil {
-		m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
-		return err
+	}
+	if err := m.kubeClient.Status().Update(ctx, m.DeployItem); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "UpdateStatus", err.Error())
+	}
+
+	return m.CheckResourcesHealth(ctx, targetClient)
+}
+
+// CheckResourcesHealth checks if the managed resources are Ready/Healthy.
+func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Client) error {
+	if !m.ProviderConfiguration.HealthChecks.DisableDefault {
+		err := m.defaultCheckResourcesHealth(ctx, client)
+		if err != nil {
+			return err
+		}
 	}
 
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 	m.DeployItem.Status.ObservedGeneration = m.DeployItem.Generation
 	m.DeployItem.Status.LastError = nil
-	return m.kubeClient.Status().Update(ctx, m.DeployItem)
+	return nil
 }
 
 func (m *Manifest) Delete(ctx context.Context) error {
@@ -86,9 +105,8 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	_, kubeClient, err := m.TargetClient()
 	if err != nil {
-		m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
-		return err
 	}
 
 	completed := true
@@ -97,23 +115,13 @@ func (m *Manifest) Delete(ctx context.Context) error {
 			continue
 		}
 		ref := mr.Resource
-		obj := &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": ref.APIVersion,
-				"kind":       ref.Kind,
-				"metadata": map[string]interface{}{
-					"name":      ref.Name,
-					"namespace": ref.Namespace,
-				},
-			},
-		}
+		obj := kutil.ObjectFromTypedObjectReference(&ref)
 		if err := kubeClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			m.DeployItem.Status.LastError = lsv1alpha1helper.UpdatedError(m.DeployItem.Status.LastError,
+			return lsv1alpha1helper.NewWrappedError(err,
 				currOp, "DeleteManifest", err.Error())
-			return err
 		}
 		completed = false
 	}
@@ -159,4 +167,32 @@ func encodeStatus(status *manifest.ProviderStatus) (*runtime.RawExtension, error
 		return nil, err
 	}
 	return raw, nil
+}
+
+// defaultCheckResourcesHealth implements the default health check for all managed resources
+func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client client.Client) error {
+	currOp := "DefaultCheckResourcesHealthManifests"
+
+	if len(m.ProviderStatus.ManagedResources) == 0 {
+		return nil
+	}
+
+	objects := make([]*unstructured.Unstructured, len(m.ProviderStatus.ManagedResources))
+	for i, managedResource := range m.ProviderStatus.ManagedResources {
+		// do not check ignored resources.
+		if managedResource.Policy == manifest.IgnorePolicy {
+			continue
+		}
+		ref := managedResource.Resource
+		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		objects[i] = obj
+	}
+
+	timeout, _ := time.ParseDuration(m.ProviderConfiguration.HealthChecks.Timeout)
+	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			currOp, "CheckResourcesHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
+	}
+
+	return nil
 }

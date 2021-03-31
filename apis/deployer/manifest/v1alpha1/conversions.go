@@ -41,6 +41,8 @@ func addConversionFuncs(s *runtime.Scheme) error {
 func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
+	out.HealthChecks = manifest.HealthChecksConfiguration(in.HealthChecks)
+	out.DeleteTimeout = in.DeleteTimeout
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]manifest.Manifest, len(*in))
@@ -60,6 +62,8 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
+	out.HealthChecks = HealthChecksConfiguration(in.HealthChecks)
+	out.DeleteTimeout = in.DeleteTimeout
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]*runtime.RawExtension, len(*in))
