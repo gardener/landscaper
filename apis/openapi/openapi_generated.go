@@ -5583,6 +5583,13 @@ func schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref common.Referen
 							Format:      "",
 						},
 					},
+					"initialPhase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InitialPhase sets the phase of the DeployItem, but only if it is empty or \"Init\" Additionally, setting it will suppress the DeployItem phase being set to \"Succeeded\" after successful reconciliation",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"providerStatus": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProviderStatus sets the provider status to the given value",
