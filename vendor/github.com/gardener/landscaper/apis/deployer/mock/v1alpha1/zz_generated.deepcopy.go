@@ -58,6 +58,11 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 		*out = new(corev1alpha1.ExecutionPhase)
 		**out = **in
 	}
+	if in.InitialPhase != nil {
+		in, out := &in.InitialPhase, &out.InitialPhase
+		*out = new(corev1alpha1.ExecutionPhase)
+		**out = **in
+	}
 	if in.ProviderStatus != nil {
 		in, out := &in.ProviderStatus, &out.ProviderStatus
 		*out = new(runtime.RawExtension)
