@@ -60,6 +60,7 @@ landscaper:
   - manifest
   - mock
   deployItemPickupTimeout: 10s
+  deployItemAbortingTimeout: 10s
 " > /tmp/values.yaml
 
 touch /tmp/registry-values.yaml
