@@ -121,7 +121,6 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	logger.Info("Reconcile helm deploy item")
 	errHdl := deployerlib.HandleErrorFunc(logger, a.client, deployItem)
 	if err := errHdl(ctx, a.reconcile(ctx, deployItem, target)); err != nil {
 		return reconcile.Result{}, err
