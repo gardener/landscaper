@@ -1,0 +1,11 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: mock-di-prog
+spec:
+  type: landscaper.gardener.cloud/mock
+  config:
+    apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+    initialPhase: Progressing
+  timeout: 5s
