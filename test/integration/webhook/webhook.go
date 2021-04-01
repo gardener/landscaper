@@ -30,7 +30,7 @@ func RegisterTests(f *framework.Framework) {
 }
 
 func WebhookTest(f *framework.Framework) {
-	_ = ginkgo.Describe("SimpleWebhookTest", func() {
+	_ = ginkgo.Describe("WebhookTest", func() {
 		dumper := f.Register()
 
 		var (
