@@ -254,7 +254,7 @@ deployItems:
           - protocol: TCP
             port: 80
             targetPort: 5678
-      - apiVersion: networking.k8s.io/v1beta1
+      - apiVersion: networking.k8s.io/v1
         kind: Ingress
         metadata:
           name: {{ $name }}
@@ -269,8 +269,10 @@ deployItems:
               - path: /
                 pathType: Prefix
                 backend:
-                  serviceName: echo-server
-                  servicePort: 80
+                  service:
+                    name: echo-server
+                    port:
+                      number: 80
 ```
 
 ```yaml
