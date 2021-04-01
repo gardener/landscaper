@@ -395,17 +395,19 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			config := make(map[string]interface{})
 			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
 
-			imageMap, ok := config["imageVectorOverWrite"].(map[string]interface{})
-			Expect(ok).To(BeTrue())
-
 			result, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			resultString := string(result)
 
-			imageVector, err := yaml.Marshal(imageMap)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(string(imageVector)).To(BeIdenticalTo(resultString))
+			entries := []string{"imageVectorOverWrite1", "imageVectorOverWrite2", "imageVectorOverWrite3"}
 
+			for _, nextEntry := range entries {
+				imageMap, ok := config[nextEntry].(map[string]interface{})
+				Expect(ok).To(BeTrue())
+				imageVector, err := yaml.Marshal(imageMap)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(imageVector)).To(BeIdenticalTo(resultString))
+			}
 		})
 	})
 

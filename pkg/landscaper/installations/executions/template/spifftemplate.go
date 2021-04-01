@@ -229,7 +229,20 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 		internalCd := cd
 		internalComponents := cdList
 
-		if len(arguments) == 2 {
+		if len(arguments) > 2 {
+			panic("Too many arguments for spiffGenerateImageOverwrite")
+		} else if len(arguments) == 1 {
+			data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[0], ""))
+			if err != nil {
+				return info.Error(err.Error())
+			}
+
+			internalCd = &cdv2.ComponentDescriptor{}
+			err = yaml.Unmarshal(data, internalCd)
+			if err != nil {
+				return info.Error(err.Error())
+			}
+		} else if len(arguments) == 2 {
 			cdData, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[0], ""))
 			if err != nil {
 				return info.Error(err.Error())

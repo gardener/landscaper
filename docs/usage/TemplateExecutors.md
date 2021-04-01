@@ -39,6 +39,25 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
    type: ociRegistry
    imageReference: host:5000/myrepo/myimage:1.0.0
    ```
+- __generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector__: returns the image vector 
+  for the component descriptor and the componentDescriptorList. The arguments componentDescriptor and 
+  componentDescriptorList are optional and defaulted by the current context (.cd and .components).
+  ```
+  Example: 
+  
+  imageVectorOverWrite:
+  {{- generateImageOverwrite | toYaml | nindent 2 }}
+  
+  results in something like
+  
+  imageVectorOverWrite:
+    images:
+    - name: cloud-controller-manager
+      repository: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
+      tag: v1.17.15
+      targetVersion: 1.17.x
+  ...
+  ```
 
 :warning: Note that OS functions are not available for security reasons.
 

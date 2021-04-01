@@ -489,13 +489,20 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 		internalCd := cd
 		internalComponents := list
 
-		if len(args) == 2 {
-			cdMap, ok := args[0].(map[string]interface{})
-			if !ok {
-				panic("No component descriptor provided as first argument.")
+		if len(args) > 2 {
+			panic("Too many arguments for getImageVectorGoFunc")
+		} else if len(args) == 1 {
+			data, err := json.Marshal(args[0])
+			if err != nil {
+				panic("Unable to marshall first argument to getImageVectorGoFunc")
 			}
 
-			data, err := json.Marshal(cdMap)
+			internalCd = &cdv2.ComponentDescriptor{}
+			if err = codec.Decode(data, internalCd); err != nil {
+				panic("Unable to marshall first argument to component descriptor.")
+			}
+		} else if len(args) == 2 {
+			data, err := json.Marshal(args[0])
 			if err != nil {
 				panic("Unable to marshall first argument to component descriptor.")
 			}
@@ -505,12 +512,7 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 				panic("Unable to marshall first argument to component descriptor.")
 			}
 
-			componentsMap, ok := args[1].(map[string]interface{})
-			if !ok {
-				panic("No component descriptor list provided as second argument.")
-			}
-
-			componentsData, err := json.Marshal(componentsMap)
+			componentsData, err := json.Marshal(args[1])
 			if err != nil {
 				panic("Unable to marshall second argument to component descriptor list.")
 			}

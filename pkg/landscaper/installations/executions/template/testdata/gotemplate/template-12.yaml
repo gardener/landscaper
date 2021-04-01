@@ -11,5 +11,9 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        imageVectorOverWrite:
+        imageVectorOverWrite1:
           {{- generateImageOverwrite | toYaml | nindent 10 }}
+        imageVectorOverWrite2:
+          {{- generateImageOverwrite .cd .components | toYaml | nindent 10 }}
+        imageVectorOverWrite3:
+          {{- generateImageOverwrite .cd | toYaml | nindent 10 }}
