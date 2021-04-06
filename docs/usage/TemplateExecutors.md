@@ -41,7 +41,7 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
    ```
 - __generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector__: returns the image vector overwrite
   for the component descriptor and the componentDescriptorList. The arguments componentDescriptor and 
-  componentDescriptorList are optional and defaulted by the current context (.cd and .components).
+  componentDescriptorList are optional and defaulted to the current context (.cd and .components).
   ```
   Example: 
   
