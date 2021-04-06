@@ -247,7 +247,11 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 // that is called by ginkgo before and after each test
 func (f *Framework) Register() *Dumper {
 	dumper := NewDumper(f.logger, f.Client, f.ClientSet, f.LsNamespace)
+	ginkgo.BeforeEach(func() {
+		dumper.startTime = time.Now()
+	})
 	ginkgo.AfterEach(func() {
+		dumper.endTime = time.Now()
 		if !ginkgo.CurrentGinkgoTestDescription().Failed {
 			return
 		}
