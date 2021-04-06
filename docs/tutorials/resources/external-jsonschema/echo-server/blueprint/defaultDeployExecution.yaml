@@ -58,7 +58,9 @@ deployItems:
           - protocol: TCP
             port: 80
             targetPort: 5678
-      - apiVersion: networking.k8s.io/v1
+    - policy: manage
+      manifest:
+        apiVersion: networking.k8s.io/v1
         kind: Ingress
         metadata:
           name: {{ $name }}
