@@ -499,7 +499,7 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 
 			internalCd = &cdv2.ComponentDescriptor{}
 			if err = codec.Decode(data, internalCd); err != nil {
-				panic("Unable to marshall first argument to component descriptor.")
+				panic("Unable to marshal first argument to component descriptor.")
 			}
 		} else if len(args) == 2 {
 			data, err := json.Marshal(args[0])
