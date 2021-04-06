@@ -39,7 +39,7 @@ In addition to the `sprig` functions, landscaper specific functions are offered:
    type: ociRegistry
    imageReference: host:5000/myrepo/myimage:1.0.0
    ```
-- __generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector__: returns the image vector 
+- __generateImageOverwrite(componentDescriptor,componentDescriptorList): ImageVector__: returns the image vector overwrite
   for the component descriptor and the componentDescriptorList. The arguments componentDescriptor and 
   componentDescriptorList are optional and defaulted by the current context (.cd and .components).
   ```
