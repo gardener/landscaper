@@ -81,6 +81,11 @@ Create the name of the service account to use
 apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
+{{- if .Values.landscaper.repositoryContext }}
+repositoryContext:
+    type: {{ .Values.landscaper.repositoryContext.type }}
+    baseUrl: {{ .Values.landscaper.repositoryContext.baseUrl }}
+{{- end }}
 {{- if .Values.landscaper.registryConfig }}
 registry:
     oci:
