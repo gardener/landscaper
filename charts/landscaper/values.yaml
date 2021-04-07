@@ -19,6 +19,10 @@ landscaper:
     secrets: {}
 #     <name>: <docker config json>
 
+#  repositoryContext:
+#    type: "ociRegistry"
+#    baseUrl: ""
+
 #  metrics:
 #    port: 8080
 
