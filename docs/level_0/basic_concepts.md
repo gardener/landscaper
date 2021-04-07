@@ -11,7 +11,7 @@ or terraform configurations.
 
 A DeployItem can be configured such that it can be used in different scenarios. Typical examples of configurable parts
 of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also 
-define output parameter for data it creates and which can be consumed by others.
+define output parameters for data it creates and which can be consumed by others.
 
 ## Blueprint
 
