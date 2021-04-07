@@ -5,7 +5,7 @@ This document describes the basic concepts, artifacts and their relationships wi
 ## DeployItem
 
 The main objective of Landscaper is to set up large cloud environments with complex relationships consisting of many
-small installation tasks like helm deployments, network setup etc. These elementary installation tasks are defined by 
+small installation tasks like Helm deployments, network setup etc. These elementary installation tasks are defined by 
 DeployItems. There are different types of DeployItems for example for deploying Helm charts, plain kubernetes manifests 
 or terraform configurations.
 
