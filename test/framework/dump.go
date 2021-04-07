@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +33,8 @@ type Dumper struct {
 	namespaces    sets.String
 	lsNamespace   string
 	logger        simplelogger.Logger
+	startTime     time.Time
+	endTime       time.Time
 }
 
 // NewDumper create a new dumper
@@ -238,7 +242,7 @@ func (d *Dumper) FormatPodsWithSelector(ctx context.Context, indent int, opts ..
 	}
 	podList := make([]string, len(pods.Items))
 	for i, pod := range pods.Items {
-		podList[i] = FormatPod(ctx, &pod, d.kubeClientSet, 0)
+		podList[i] = FormatPod(ctx, &pod, d.kubeClientSet, 0, d.startTime, d.endTime)
 	}
 	return FormatList(podList, indent)
 }
@@ -292,7 +296,7 @@ Image: %s
 
 // FormatPod returns information about the pod.
 // It also fetches the pods logs if a client is provided.
-func FormatPod(ctx context.Context, pod *corev1.Pod, kubeClientSet kubernetes.Interface, indent int) string {
+func FormatPod(ctx context.Context, pod *corev1.Pod, kubeClientSet kubernetes.Interface, indent int, start, end time.Time) string {
 	podFmt := `
 Name: %s
 Containers: %s
@@ -306,17 +310,18 @@ Status:
 		client.ObjectKeyFromObject(pod).String(),
 		FormatContainers(pod.Spec.Containers, 2),
 		pod.Status.Phase, pod.Status.Reason, pod.Status.Message,
-		FormatContainerStatuses(ctx, pod, 4, kubeClientSet))
+		FormatContainerStatuses(ctx, pod, 4, kubeClientSet, start, end),
+	)
 	return ApplyIdent(out, indent)
 }
 
 // FormatContainerStatuses formats the container statuses of a pod.
-func FormatContainerStatuses(ctx context.Context, pod *corev1.Pod, indent int, kubeClientSet kubernetes.Interface) string {
+func FormatContainerStatuses(ctx context.Context, pod *corev1.Pod, indent int, kubeClientSet kubernetes.Interface, start, end time.Time) string {
 	statuses := make([]string, len(pod.Status.ContainerStatuses))
 	for i, status := range pod.Status.ContainerStatuses {
 		logs := ""
 		if kubeClientSet != nil {
-			containerLogs, err := GetContainerLogs(ctx, kubeClientSet, pod.GetName(), pod.GetNamespace(), status.Name)
+			containerLogs, err := GetContainerLogs(ctx, kubeClientSet, pod.GetName(), pod.GetNamespace(), status.Name, start, end)
 			if err != nil {
 				logs = fmt.Sprintf("error while fetching: %s", err.Error())
 			} else {
@@ -331,13 +336,13 @@ func FormatContainerStatuses(ctx context.Context, pod *corev1.Pod, indent int, k
 }
 
 // GetContainerLogs returns the logs of a container.
-func GetContainerLogs(ctx context.Context, kubeClientSet kubernetes.Interface, podName, podNamespace, containerName string) ([]byte, error) {
+func GetContainerLogs(ctx context.Context, kubeClientSet kubernetes.Interface, podName, podNamespace, containerName string, start, end time.Time) ([]byte, error) {
 	req := kubeClientSet.CoreV1().Pods(podNamespace).GetLogs(podName, &corev1.PodLogOptions{
 		Container:    containerName,
 		Follow:       false,
 		Previous:     false,
 		SinceSeconds: nil,
-		SinceTime:    nil,
+		SinceTime:    &metav1.Time{Time: start},
 		Timestamps:   false,
 	})
 	podLogs, err := req.Stream(ctx)
