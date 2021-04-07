@@ -16,7 +16,7 @@ If multiple identifiers make sense you can also state the commands multiple time
 
 "/area" identifiers:     backup|certification|cost|delivery|deployers|manifest-deployer|helm-deployer|container-deployer|dev-productivity|documentation|high-availability|logging|monitoring|oci|open-source|operations|ops-productivity|performance|quality|robustness|scalability|security|storage|testing|usability|user-management
 "/kind" identifiers:     api-change|bug|cleanup|discussion|enhancement|epic|impediment|poc|post-mortem|question|regression|task|technical-debt|test
-"/priority" identifiers: normal|critical|blocker
+"/priority" identifiers (numerical value): 1 (blocker)|2 (critical)|3 (normal)|4 (low priority)|5 (nice to have)
 -->
 /area TODO
 /kind bug
