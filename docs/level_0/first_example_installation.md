@@ -7,7 +7,7 @@ To try out this example by yourself you need to install Landscaper (see [here](.
 
 ## Step 1
 
-We want to deploy the nginx on some target cluster. Landscaper needs the access information for this cluster to execute 
+We want to deploy the nginx ingress-controller on some target cluster. Landscaper needs the access information for this cluster to execute 
 the deployment. Therefore, we create a custom resource of type Target in some namespace `demo` on the cluster watched 
 by Landscaper:
 
