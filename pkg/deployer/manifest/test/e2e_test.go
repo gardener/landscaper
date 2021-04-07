@@ -17,8 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/deployer/manifest"
-	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/pkg/api"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -48,7 +47,7 @@ var _ = Describe("Manifest Deployer", func() {
 			logtesting.NullLogger{},
 			testenv.Client,
 			api.LandscaperScheme,
-			&manifestv1alpha1.Configuration{},
+			&manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -64,7 +63,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
-		status := &manifest.ProviderStatus{}
+		status := &manifestv1alpha2.ProviderStatus{}
 		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
 		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
@@ -96,7 +95,7 @@ var _ = Describe("Manifest Deployer", func() {
 			logtesting.NullLogger{},
 			testenv.Client,
 			api.LandscaperScheme,
-			&manifestv1alpha1.Configuration{},
+			&manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -146,7 +145,7 @@ var _ = Describe("Manifest Deployer", func() {
 			logtesting.NullLogger{},
 			testenv.Client,
 			api.LandscaperScheme,
-			&manifestv1alpha1.Configuration{},
+			&manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -199,7 +198,7 @@ var _ = Describe("Manifest Deployer", func() {
 			logtesting.NullLogger{},
 			testenv.Client,
 			api.LandscaperScheme,
-			&manifestv1alpha1.Configuration{},
+			&manifestv1alpha2.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -214,7 +213,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
-		status := &manifest.ProviderStatus{}
+		status := &manifestv1alpha2.ProviderStatus{}
 		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
 		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)

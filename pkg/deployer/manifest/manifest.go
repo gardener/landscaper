@@ -18,8 +18,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
 	"github.com/gardener/landscaper/pkg/api"
@@ -43,13 +43,13 @@ type Manifest struct {
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
-	ProviderConfiguration *manifest.ProviderConfiguration
-	ProviderStatus        *manifest.ProviderStatus
+	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
+	ProviderStatus        *manifestv1alpha2.ProviderStatus
 }
 
 // New creates a new internal manifest item
 func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
-	config := &manifest.ProviderConfiguration{}
+	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
 	manifestDecoder := api.NewDecoder(ManifestScheme)
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
@@ -62,9 +62,9 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	var status *manifest.ProviderStatus
+	var status *manifestv1alpha2.ProviderStatus
 	if item.Status.ProviderStatus != nil {
-		status = &manifest.ProviderStatus{}
+		status = &manifestv1alpha2.ProviderStatus{}
 		if _, _, err := manifestDecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
 			return nil, lsv1alpha1helper.NewWrappedError(err,
 				currOp, "ParseProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)

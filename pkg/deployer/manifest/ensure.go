@@ -19,7 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/apis/deployer/manifest"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
@@ -35,12 +35,12 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	}
 
 	if m.ProviderStatus == nil {
-		m.ProviderStatus = &manifest.ProviderStatus{
+		m.ProviderStatus = &manifestv1alpha2.ProviderStatus{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: manifest.SchemeGroupVersion.String(),
+				APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
 				Kind:       "ProviderStatus",
 			},
-			ManagedResources: make([]manifest.ManagedResourceStatus, 0),
+			ManagedResources: make([]manifestv1alpha2.ManagedResourceStatus, 0),
 		}
 	}
 
@@ -110,7 +110,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	completed := true
 	for _, mr := range m.ProviderStatus.ManagedResources {
-		if mr.Policy == manifest.IgnorePolicy || mr.Policy == manifest.KeepPolicy {
+		if mr.Policy == manifestv1alpha2.IgnorePolicy || mr.Policy == manifestv1alpha2.KeepPolicy {
 			continue
 		}
 		ref := mr.Resource
@@ -154,9 +154,9 @@ func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstr
 	return false
 }
 
-func encodeStatus(status *manifest.ProviderStatus) (*runtime.RawExtension, error) {
+func encodeStatus(status *manifestv1alpha2.ProviderStatus) (*runtime.RawExtension, error) {
 	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: manifest.SchemeGroupVersion.String(),
+		APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
 		Kind:       "ProviderStatus",
 	}
 
@@ -179,7 +179,7 @@ func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client clien
 	objects := make([]*unstructured.Unstructured, len(m.ProviderStatus.ManagedResources))
 	for i, managedResource := range m.ProviderStatus.ManagedResources {
 		// do not check ignored resources.
-		if managedResource.Policy == manifest.IgnorePolicy {
+		if managedResource.Policy == manifestv1alpha2.IgnorePolicy {
 			continue
 		}
 		ref := managedResource.Resource

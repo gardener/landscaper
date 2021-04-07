@@ -10,11 +10,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/apis/deployer/manifest"
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 )
 
 // ValidateProviderConfiguration validates a manifest provider configuration.
-func ValidateProviderConfiguration(config *manifest.ProviderConfiguration) error {
+func ValidateProviderConfiguration(config *manifestv1alpha2.ProviderConfiguration) error {
 	var allErrs field.ErrorList
 	allErrs = append(allErrs, ValidateManifestList(field.NewPath(""), config.Manifests)...)
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
@@ -23,7 +23,7 @@ func ValidateProviderConfiguration(config *manifest.ProviderConfiguration) error
 }
 
 // ValidateManifestList validates a list of manifests.
-func ValidateManifestList(fldPath *field.Path, list []manifest.Manifest) field.ErrorList {
+func ValidateManifestList(fldPath *field.Path, list []manifestv1alpha2.Manifest) field.ErrorList {
 	var allErrs field.ErrorList
 	for i, m := range list {
 		allErrs = append(allErrs, ValidateManifest(fldPath.Index(i), m)...)
@@ -32,7 +32,7 @@ func ValidateManifestList(fldPath *field.Path, list []manifest.Manifest) field.E
 }
 
 // ValidateManifest validates a manifest.
-func ValidateManifest(fldPath *field.Path, manifest manifest.Manifest) field.ErrorList {
+func ValidateManifest(fldPath *field.Path, manifest manifestv1alpha2.Manifest) field.ErrorList {
 	var allErrs field.ErrorList
 	if manifest.Manifest == nil || len(manifest.Manifest.Raw) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("manifest"), "manifest must be defined"))

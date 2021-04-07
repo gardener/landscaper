@@ -66,7 +66,7 @@ Create the name of the service account to use
 Create the Manifest deployer config file which will be encapsulated in a secret.
 */}}
 {{- define "deployer-config" -}}
-apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
 kind: Configuration
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 {{- with .Values.targetSelector }}
