@@ -43,7 +43,7 @@ kubectl create namespace first-example
 
 ## Step 3
 
-To install the nginx we will create a custom resource of kind `Installation`.
+To install the nginx ingress-controller we will create a custom resource of kind `Installation`.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
