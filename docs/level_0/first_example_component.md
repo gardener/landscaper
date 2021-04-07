@@ -127,7 +127,7 @@ meta:
   schemaVersion: v2
 ```
 
-We have uploaded the Component Descriptor into an OCI registry. You find it
+We previously uploaded the Component Descriptor into an OCI registry. You can find it
 [here](https://eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/first-example).
 You can upload a Component Descriptor by yourself to another OCI registry with the help of the Landscaper CLI command
 [landscaper-cli components-cli component-archive remote push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_components-cli_component-archive_remote_push.md).
