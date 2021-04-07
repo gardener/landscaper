@@ -1,6 +1,6 @@
 # Basic Concepts
 
-This document describes the basic concepts, artifacts and their relationships of Landscaper. 
+This document describes the basic concepts, artifacts and their relationships within the Landscaper universe. 
 
 ## DeployItem
 
