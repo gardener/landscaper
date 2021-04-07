@@ -8,7 +8,7 @@ deploy the nginx as a helm chart.
 
 ## Deploy Item
 
-We want to deploy an nginx via the helm chart [nginx ingress](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx).
+We want to deploy an nginx ingress-controller via the helm chart [nginx ingress](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx).
 Therefore, we specify a DeployItem in a yaml file with the following content.
 
 ```yaml
