@@ -33,7 +33,7 @@ to create the Target more comfortably.
 
 ## Step 2
 
-The nginx will be deployed in a namespace `first-example` on the target cluster. The component will not create 
+The nginx ingress-controller will be deployed in a namespace `first-example` on the target cluster. The component **will not** create 
 this namespace automatically. We must do this manually with the following command, using the kubeconfig of the 
 target cluster.
 
