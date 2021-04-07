@@ -9,7 +9,7 @@ small installation tasks like helm deployments, network setup etc. These element
 DeployItems. There are different types of DeployItems for example for deploying helm charts, plain kubernetes manifests 
 or terraform configurations.
 
-A DeployItem can be configurable such that it can be used in different scenarios. Typical examples of configurable parts
+A DeployItem can be configured such that it can be used in different scenarios. Typical examples of configurable parts
 of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also 
 define output parameter for data it creates and which can be consumed by others.
 
