@@ -25,6 +25,11 @@ type LandscaperConfiguration struct {
 	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
 	// +optional
 	CrdManagement *CrdManagementConfiguration `json:"crdManagement,omitempty"`
+	// DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed.
+	// Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method.
+	// Defaults to five minutes if not specified.
+	// +optional
+	DeployItemPickupTimeout string `json:"deployItemPickupTimeout,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry

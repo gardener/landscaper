@@ -107,5 +107,8 @@ crdManagement:
     forceUpdate: {{ .Values.landscaper.crdManagement.forceUpdate }}
     {{- end }}
 {{- end }}
+{{- if .Values.landscaper.deployItemPickupTimeout }}
+deployItemPickupTimeout: {{ .Values.landscaper.deployItemPickupTimeout }}
+{{- end }}
 
 {{- end }}

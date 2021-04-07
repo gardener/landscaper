@@ -1084,6 +1084,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.CrdManagementConfiguration"),
 						},
 					},
+					"deployItemPickupTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"registry"},
 			},
@@ -1318,6 +1325,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						SchemaProps: spec.SchemaProps{
 							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration"),
+						},
+					},
+					"deployItemPickupTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

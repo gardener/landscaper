@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: dummy-installation
+spec:
+
+  componentDescriptor:
+    inline:
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: dummy-installation
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+          - type: ociRegistry
+            baseUrl: "example.com/test"
+
+        sources: []
+        componentReferences: []
+
+        resources: []
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+          deployExecutions:
+          - type: GoTemplate
+            template: |
+              deployItems:
+              - name: main
+                type: landscaper.gardener.cloud/dummy
+                config:
+                  apiVersion: dummy.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderConfiguration

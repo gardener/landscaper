@@ -7,6 +7,8 @@ package container
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +21,6 @@ import (
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -55,7 +56,8 @@ type DeployItemReconciler struct {
 }
 
 func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := r.log.WithValues("resource", req.NamespacedName)
+	logger := r.log.WithValues("resource", req.NamespacedName.String())
+	logger.V(7).Info("reconcile")
 	deployItem, err := GetAndCheckReconcile(r.log, r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -64,12 +66,18 @@ func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 		return reconcile.Result{}, nil
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation && !lsv1alpha1helper.HasOperation(deployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		logger.V(5).Info("Version already reconciled")
+	logger.Info("reconcile container deploy item")
+
+	err = deployerlib.HandleAnnotationsAndGeneration(ctx, logger, r.lsClient, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !deployerlib.ShouldReconcile(deployItem) {
+		r.log.V(5).Info("aborting reconcile", "phase", deployItem.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
-	logger.Info("Reconcile container deploy item")
 	errHdl := deployerlib.HandleErrorFunc(logger, r.lsClient, deployItem)
 	if err := errHdl(ctx, r.reconcile(ctx, deployItem)); err != nil {
 		return reconcile.Result{}, err
@@ -79,7 +87,8 @@ func (r *DeployItemReconciler) Reconcile(ctx context.Context, req reconcile.Requ
 }
 
 func (r *DeployItemReconciler) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem) (err error) {
-	containerOp, err := New(r.log, r.lsClient, r.hostClient, r.directHostClient, r.config, deployItem, r.componentsRegistryMgr)
+	logger := r.log.WithValues("resource", types.NamespacedName{Name: deployItem.Name, Namespace: deployItem.Namespace})
+	containerOp, err := New(logger, r.lsClient, r.hostClient, r.directHostClient, r.config, deployItem, r.componentsRegistryMgr)
 	if err != nil {
 		return err
 	}

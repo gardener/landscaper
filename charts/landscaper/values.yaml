@@ -33,6 +33,8 @@ landscaper:
 #      kind: Configuration
 #      ...
 
+#  deployItemPickupTimeout: 5m
+
 controller:
   replicaCount: 1
 

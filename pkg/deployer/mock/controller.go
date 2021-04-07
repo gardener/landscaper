@@ -19,6 +19,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -38,7 +39,8 @@ type controller struct {
 }
 
 func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+	logger := a.log.WithValues("resource", req.NamespacedName)
+	logger.V(7).Info("reconcile")
 
 	deployItem := &lsv1alpha1.DeployItem{}
 	if err := a.c.Get(ctx, req.NamespacedName, deployItem); err != nil {
@@ -53,8 +55,11 @@ func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if deployItem.Status.ObservedGeneration == deployItem.Generation {
-		return reconcile.Result{}, nil
+	logger.Info("reconcile mock deploy item")
+
+	err := deployerlib.HandleAnnotationsAndGeneration(ctx, logger, a.c, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	if err := a.reconcile(ctx, deployItem); err != nil {
@@ -97,7 +102,6 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		deployItem.Status.ProviderStatus = config.ProviderStatus
 	}
 
-	deployItem.Status.ObservedGeneration = deployItem.Generation
 	return a.c.Status().Update(ctx, deployItem)
 }
 

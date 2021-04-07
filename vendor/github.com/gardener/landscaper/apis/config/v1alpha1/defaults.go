@@ -22,5 +22,8 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 			UseInMemoryOverlay: false,
 		}
 	}
+	if len(obj.DeployItemPickupTimeout) == 0 {
+		obj.DeployItemPickupTimeout = "5m"
+	}
 
 }
