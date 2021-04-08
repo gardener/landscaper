@@ -496,7 +496,7 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 		if len(args) >= 1 {
 			data, err := json.Marshal(args[0])
 			if err != nil {
-				panic("Unable to marshal first argument to getImageVectorGoFunc")
+				panic("Unable to marshal first argument to json")
 			}
 
 			internalCd = &cdv2.ComponentDescriptor{}
