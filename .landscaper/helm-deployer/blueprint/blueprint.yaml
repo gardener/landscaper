@@ -4,6 +4,9 @@ kind: Blueprint
 imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: landscaperCluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+  required: false
 - name: releaseName
   schema:
     type: string
@@ -39,11 +42,14 @@ deployExecutions:
     {{ $imgresource := getResource .cd "name" "helm-deployer-image" }}
     {{ $imgrepo := ociRefRepo $imgresource.access.imageReference }}
     {{ $imgtag := ociRefVersion $imgresource.access.imageReference }}
-    
-    {{ $image := dict "image" .imports.values.image }}
     {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
-    {{ $newimg := dict "image" $imgref }}
-    {{ $newval := dict "values" $newimg }}
 
-    {{ $val := mergeOverwrite $values $newval }}   
+    {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
+    {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}
+    {{ $newLsClusterKubeconfig := dict "landscaperClusterKubeconfig" $newKubeconfig }}
+
+    {{ $newvals := dict "image" $imgref "deployer" $newLsClusterKubeconfig }}
+    {{ $mergevals := dict "values" $newvals }}
+
+    {{ $val := mergeOverwrite $values $mergevals }}
     {{ toYaml $val | indent 4 }}
