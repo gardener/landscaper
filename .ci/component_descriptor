@@ -23,21 +23,12 @@ function buildComponentArchive() {
   CA_PATH="$(mktemp -d)"
   printf "> Building component ${COMPONENT_NAME}\n"
 
-  component-cli ca resources add ${CA_PATH} \
+  component-cli ca "${CA_PATH}" "${CTF_PATH}" \
     --component-name=github.com/gardener/landscaper/${COMPONENT_NAME} \
     --component-version=${VERSION} \
     --repo-ctx=${REPO_CTX} \
-    VERSION=${VERSION} \
-    ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml
-
-  cat ${CA_PATH}/component-descriptor.yaml
-
-  printf "> Create ca archive\n"
-  COMPONENT_ARCHIVE_ARTIFACT_PATH="$(mktemp -d)/ca.tar"
-  component-cli ca export "${CA_PATH}" --format tar -o "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
-
-  printf "> Add to ctf\n"
-  component-cli ctf add "${CTF_PATH}" -f "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
+    -r ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml \
+    VERSION=${VERSION}
 }
 
 buildComponentArchive "container-deployer"
@@ -53,8 +44,5 @@ component-cli ca resources add ${LS_CA_PATH} \
     VERSION=${VERSION} \
     ${SOURCE_PATH}/.landscaper/resources.yaml
 
-COMPONENT_ARCHIVE_ARTIFACT_PATH="$(mktemp -d)/ca.tar"
-component-cli ca export "${LS_CA_PATH}" --format tar -o "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
-
 printf "> Add Landscaper CA to ctf\n"
-component-cli ctf add "${CTF_PATH}" -f "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"
+component-cli ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"

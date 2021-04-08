@@ -103,6 +103,10 @@ docker-push:
 .PHONY: docker-all
 docker-all: docker-images docker-push
 
+.PHONY: cnudie
+cnudie:
+	@$(REPO_ROOT)/hack/generate-cd.sh
+
 ######################
 # Tutorial resources #
 ######################

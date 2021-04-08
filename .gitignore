@@ -1,6 +1,7 @@
 tmp
 
 /dev
+/gen
 .vscode
 .run
 

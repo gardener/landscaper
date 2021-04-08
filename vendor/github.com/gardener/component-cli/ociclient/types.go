@@ -28,10 +28,21 @@ type Client interface {
 	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error
 }
 
+// ExtendedClient defines an oci client with extended functionality that may not work with all registries.
+type ExtendedClient interface {
+	Client
+	// ListTags returns a list of all tags of the given ref.
+	ListTags(ctx context.Context, ref string) ([]string, error)
+	// ListRepositories lists all repositories for the given registry host.
+	ListRepositories(ctx context.Context, registryHost string) ([]string, error)
+}
+
 // Resolver is a interface that should return a new resolver for a given ref if called.
 type Resolver interface {
 	// Resolver returns a new authenticated resolver.
 	Resolver(ctx context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
+	// GetCredentials returns the username and password for a hostname if defined.
+	GetCredentials(hostname string) (username, password string, err error)
 }
 
 // Options contains all client options to configure the oci client.

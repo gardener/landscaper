@@ -58,13 +58,14 @@ github.com/evanphx/json-patch
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
-# github.com/gardener/component-cli v0.16.0
+# github.com/gardener/component-cli v0.17.0
 ## explicit
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
 github.com/gardener/component-cli/ociclient/credentials
 github.com/gardener/component-cli/ociclient/metrics
 github.com/gardener/component-cli/ociclient/mock
+github.com/gardener/component-cli/ociclient/oci
 github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/imagevector
 # github.com/gardener/component-spec/bindings-go v0.0.36
@@ -262,6 +263,8 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
+# github.com/opencontainers/distribution-spec v1.0.0-rc1
+github.com/opencontainers/distribution-spec/specs-go/v1
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit
 github.com/opencontainers/go-digest
