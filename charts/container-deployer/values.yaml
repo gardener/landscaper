@@ -19,12 +19,16 @@ deployer:
 #  namespace: ""
   initContainer:
     repository: eu.gcr.io/gardener-project/landscaper/container-deployer-init
+#    tag: "latest"
   waitContainer:
     repository: eu.gcr.io/gardener-project/landscaper/container-deployer-wait
-  defaultImage: {}
-#    image: ubuntu
-  oci: 
+#    tag: "latest"
+#  defaultImage:
+#    repository: ubuntu
+#    tag: latest
+  oci:
     allowPlainHttp: false
+    insecureSkipVerify: false
     secrets: {}
 #     <name>: <docker config json>
 #  verbosityLevel: 9

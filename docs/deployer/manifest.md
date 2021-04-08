@@ -20,7 +20,12 @@ to its updated number of scheduled pods.
 * `ReplicationController`: It is considered healthy if its controller observed
 its current revision and if the number of updated replicas is equal to the number of replicas.
 
-### Configuration
+**Index**:
+- [Provider Configuration](#provider-configuration)
+- [Provider Status](#status)
+- [Deployer Configuration](#deployer-configuration)
+
+### Provider Configuration
 
 This sections describes the provider specific configuration
 
@@ -92,4 +97,22 @@ status:
       kind: my-type
       name: my-resource
       namespace: default
+```
+
+## Deployer Configuration
+
+When deploying the manifest deployer controller it can be configured using the `--config` flag and providing a configuration file.
+
+The structure of the provided configuration file is defined as follows.
+
+:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. See the [helm values file](../../charts/manifest-deployer/values.yaml) for details when deploying with the helm chart.
+```yaml
+apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
+kind: Configuration
+
+# target selector to only react on specific deploy items.
+# see the common config in "./README.md" for detailed documentation.
+targetSelector:
+  annotations: []
+  labels: []
 ```

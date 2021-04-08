@@ -7,7 +7,6 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
@@ -16,8 +15,6 @@ import (
 // Configuration is the helm deployer configuration that configures the controller
 type Configuration struct {
 	metav1.TypeMeta `json:",inline"`
-	// OCI configures the oci client of the controller
-	OCI *config.OCIConfiguration `json:"oci,omitempty"`
 	// TargetSelector describes all selectors the deployer should depend on.
 	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
 }

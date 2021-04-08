@@ -1,53 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
-    "apis-config-OCICacheConfiguration": {
-      "description": "OCICacheConfiguration contains the configuration for the oci cache",
-      "type": "object",
-      "properties": {
-        "path": {
-          "description": "Path specifies the path to the oci cache on the filesystem. Defaults to /tmp/ocicache",
-          "type": "string",
-          "default": ""
-        },
-        "useInMemoryOverlay": {
-          "description": "UseInMemoryOverlay enables an additional in memory overlay cache of oci images",
-          "type": "boolean"
-        }
-      }
-    },
-    "apis-config-OCIConfiguration": {
-      "description": "OCIConfiguration holds configuration for the oci registry",
-      "type": "object",
-      "required": [
-        "allowPlainHttp",
-        "insecureSkipVerify"
-      ],
-      "properties": {
-        "allowPlainHttp": {
-          "description": "AllowPlainHttp allows the fallback to http if https is not supported by the registry.",
-          "type": "boolean",
-          "default": false
-        },
-        "cache": {
-          "description": "Cache holds configuration for the oci cache",
-          "$ref": "#/definitions/apis-config-OCICacheConfiguration"
-        },
-        "configFiles": {
-          "description": "ConfigFiles path to additional docker configuration files",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "insecureSkipVerify": {
-          "description": "InsecureSkipVerify skips the certificate validation of the oci registry",
-          "type": "boolean",
-          "default": false
-        }
-      }
-    },
     "core-v1alpha1-Requirement": {
       "description": "Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.",
       "type": "object",
@@ -106,10 +59,6 @@
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
       "type": "string"
-    },
-    "oci": {
-      "$ref": "#/definitions/apis-config-OCIConfiguration",
-      "description": "OCI configures the oci client of the controller"
     },
     "targetSelector": {
       "description": "TargetSelector describes all selectors the deployer should depend on.",

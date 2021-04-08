@@ -5491,12 +5491,6 @@ func schema_apis_deployer_mock_v1alpha1_Configuration(ref common.ReferenceCallba
 							Format:      "",
 						},
 					},
-					"oci": {
-						SchemaProps: spec.SchemaProps{
-							Description: "OCI configures the oci client of the controller",
-							Ref:         ref("github.com/gardener/landscaper/apis/config.OCIConfiguration"),
-						},
-					},
 					"targetSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TargetSelector describes all selectors the deployer should depend on.",
@@ -5515,7 +5509,7 @@ func schema_apis_deployer_mock_v1alpha1_Configuration(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector"},
 	}
 }
 

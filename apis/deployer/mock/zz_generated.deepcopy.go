@@ -14,7 +14,6 @@ import (
 
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
-	config "github.com/gardener/landscaper/apis/config"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
@@ -22,11 +21,6 @@ import (
 func (in *Configuration) DeepCopyInto(out *Configuration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	if in.OCI != nil {
-		in, out := &in.OCI, &out.OCI
-		*out = new(config.OCIConfiguration)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.TargetSelector != nil {
 		in, out := &in.TargetSelector, &out.TargetSelector
 		*out = make([]v1alpha1.TargetSelector, len(*in))

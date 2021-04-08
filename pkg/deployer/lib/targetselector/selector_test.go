@@ -39,7 +39,7 @@ var _ = Describe("Selectors", func() {
 					Values:   []string{"val2"},
 				},
 			}
-			ok, err := targetselector.MatchAnnotations(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Annotations: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeTrue())
 		})
@@ -54,7 +54,7 @@ var _ = Describe("Selectors", func() {
 					Operator: selection.DoesNotExist,
 				},
 			}
-			ok, err := targetselector.MatchAnnotations(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Annotations: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeTrue())
 		})
@@ -71,7 +71,7 @@ var _ = Describe("Selectors", func() {
 					Values:   []string{"val1"},
 				},
 			}
-			ok, err := targetselector.MatchAnnotations(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Annotations: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeFalse())
 		})
@@ -95,7 +95,7 @@ var _ = Describe("Selectors", func() {
 					Values:   []string{"val2"},
 				},
 			}
-			ok, err := targetselector.MatchLabels(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Labels: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeTrue())
 		})
@@ -110,7 +110,7 @@ var _ = Describe("Selectors", func() {
 					Operator: selection.DoesNotExist,
 				},
 			}
-			ok, err := targetselector.MatchLabels(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Labels: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeTrue())
 		})
@@ -127,7 +127,7 @@ var _ = Describe("Selectors", func() {
 					Values:   []string{"val1"},
 				},
 			}
-			ok, err := targetselector.MatchLabels(target, req)
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Labels: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeFalse())
 		})

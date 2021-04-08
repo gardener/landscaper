@@ -30,7 +30,7 @@ func Match(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bo
 // It only passes if all configured selector methods match.
 func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector) (bool, error) {
 	if len(selector.Annotations) != 0 {
-		ok, err := MatchAnnotations(target, selector.Annotations)
+		ok, err := MatchStringMap(target.GetAnnotations(), selector.Annotations)
 		if err != nil {
 			return false, err
 		}
@@ -39,7 +39,7 @@ func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector
 		}
 	}
 	if len(selector.Labels) != 0 {
-		ok, err := MatchLabels(target, selector.Labels)
+		ok, err := MatchStringMap(target.GetLabels(), selector.Labels)
 		if err != nil {
 			return false, err
 		}
@@ -50,32 +50,16 @@ func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector
 	return true, nil
 }
 
-// MatchAnnotations matches a targets annotation for configured requirements.
-// All requirements must match in order to match the target.
-func MatchAnnotations(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requirement) (bool, error) {
-	ann := labels.Set(target.GetAnnotations())
+// MatchStringMap matches a map of string -> string for the configured requirements.
+// All requirements must match in order to match the map.
+func MatchStringMap(m map[string]string, requirements []lsv1alpha1.Requirement) (bool, error) {
+	ann := labels.Set(m)
 	for _, req := range requirements {
 		req1, err := labels.NewRequirement(req.Key, req.Operator, req.Values)
 		if err != nil {
 			return false, err
 		}
 		if !req1.Matches(ann) {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-// MatchLabels matches a target's labels for configured requirements.
-// All requirements must match in order to match the target.
-func MatchLabels(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requirement) (bool, error) {
-	labelSet := labels.Set(target.GetLabels())
-	for _, req := range requirements {
-		req1, err := labels.NewRequirement(req.Key, req.Operator, req.Values)
-		if err != nil {
-			return false, err
-		}
-		if !req1.Matches(labelSet) {
 			return false, nil
 		}
 	}
