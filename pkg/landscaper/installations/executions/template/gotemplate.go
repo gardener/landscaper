@@ -513,7 +513,7 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 
 			internalComponents = &cdv2.ComponentDescriptorList{}
 			if err := codec.Decode(componentsData, internalComponents); err != nil {
-				panic("Unable to marshal second argument to component descriptor list.")
+				panic("Unable to decode second argument to component descriptor list.")
 			}
 		}
 
