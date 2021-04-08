@@ -9,6 +9,15 @@
 replicaCount: 1
 
 deployer:
+  # If the deployer runs in a different cluster than the Landscaper instance, provide the kubeconfig
+  # to access the remote Landscaper cluster here (inline or via secretRef). When providing a
+  # secretRef, see ./templates/landscaper-cluster-kubeconfig-secret.yaml for the correct secret format.
+  # If no value is provided at all, the deployer will default to the in-cluster kubeconfig.
+  landscaperClusterKubeconfig: {}
+  #   secretRef: my-kubeconfig-secret
+  #   kubeconfig: |
+  #     <landscaper-cluster-kubeconfig>
+
   namespace: ""
 
 image:

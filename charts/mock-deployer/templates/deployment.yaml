@@ -35,8 +35,27 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      {{- if .Values.deployer.landscaperClusterKubeconfig }}
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.deployer.landscaperClusterKubeconfig.kubeconfig }}
+          secretName:  {{ include "deployer.fullname" . }}-landscaper-cluster-kubeconfig
+          {{- else }}
+          secretName:  {{ .Values.deployer.landscaperClusterKubeconfig.secretRef }}
+          {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

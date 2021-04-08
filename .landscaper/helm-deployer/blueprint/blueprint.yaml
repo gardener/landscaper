@@ -44,11 +44,15 @@ deployExecutions:
     {{ $imgtag := ociRefVersion $imgresource.access.imageReference }}
     {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
 
+    {{ $newvals := dict "image" $imgref }}
+
+    {{ if .imports.landscaperCluster  }}
     {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
     {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}
     {{ $newLsClusterKubeconfig := dict "landscaperClusterKubeconfig" $newKubeconfig }}
+    {{ $_ := set $newvals "deployer" $newLsClusterKubeconfig }}
+    {{ end }}
 
-    {{ $newvals := dict "image" $imgref "deployer" $newLsClusterKubeconfig }}
     {{ $mergevals := dict "values" $newvals }}
 
     {{ $val := mergeOverwrite $values $mergevals }}

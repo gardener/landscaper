@@ -42,16 +42,32 @@ spec:
       {{- if .Values.targetSelector }}
           args:
           - "--config=/app/ls/config/config.yaml"
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- end }}
           {{- if .Values.deployer.verbosityLevel }}
           - "-v={{ .Values.deployer.verbosityLevel }}"
           {{- end }}
           volumeMounts:
           - name: config
             mountPath: /app/ls/config/
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
+          {{- end }}
       volumes:
       - name: config
         secret:
           secretName: {{ include "deployer.fullname" . }}-config
+      {{- if .Values.deployer.landscaperClusterKubeconfig }}
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.deployer.landscaperClusterKubeconfig.kubeconfig }}
+          secretName:  {{ include "deployer.fullname" . }}-landscaper-cluster-kubeconfig
+          {{- else }}
+          secretName:  {{ .Values.deployer.landscaperClusterKubeconfig.secretRef }}
+          {{- end }}
+      {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
