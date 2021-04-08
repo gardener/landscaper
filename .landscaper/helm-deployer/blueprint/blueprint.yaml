@@ -15,6 +15,7 @@ imports:
     type: string
 - name: values
   schema:
+    description: "values for the helm-deployer Helm Chart. See `https://github.com/gardener/landscaper/blob/master/charts/helm-deployer/values.yaml`"
     type: object
 
 deployExecutions:
