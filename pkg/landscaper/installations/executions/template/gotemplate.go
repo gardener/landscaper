@@ -490,7 +490,7 @@ func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDesc
 		internalComponents := list
 
 		if len(args) > 2 {
-			panic("Too many arguments for getImageVectorGoFunc")
+			panic("Too many arguments for generateImageOverwrite")
 		}
 
 		if len(args) >= 1 {
