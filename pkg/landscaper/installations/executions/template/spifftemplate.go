@@ -230,7 +230,7 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 		internalComponents := cdList
 
 		if len(arguments) > 2 {
-			panic("Too many arguments for spiffGenerateImageOverwrite")
+			return info.Error("Too many arguments for spiffGenerateImageOverwrite")
 		}
 
 		if len(arguments) >= 1 {
