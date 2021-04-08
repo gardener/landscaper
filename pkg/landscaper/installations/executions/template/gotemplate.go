@@ -204,7 +204,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getComponent":         getComponentGoFunc(cd, cdList),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
 
-		"generateImageOverwrite": getImageVectorGoFunc(cd, cdList),
+		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
 	return funcs
 }
@@ -484,7 +484,7 @@ func resolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 	return components, nil
 }
 
-func getImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
 	return func(args ...interface{}) map[string]interface{} {
 		internalCd := cd
 		internalComponents := list
