@@ -97,7 +97,7 @@ var _ = Describe("Helm Deployer", func() {
 
 		// create helm provider config
 		providerConfig := &helmv1alpha1.ProviderConfiguration{}
-		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0"
+		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
 		providerConfig.HealthChecks = helmv1alpha1.HealthChecksConfiguration{
