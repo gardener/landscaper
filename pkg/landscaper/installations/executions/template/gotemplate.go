@@ -490,13 +490,13 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 		internalComponents := list
 
 		if len(args) > 2 {
-			panic("Too many arguments for generateImageOverwrite")
+			panic("Too many arguments for generateImageOverwrite.")
 		}
 
 		if len(args) >= 1 {
 			data, err := json.Marshal(args[0])
 			if err != nil {
-				panic("Unable to marshal first argument to json")
+				panic("Unable to marshal first argument to json.")
 			}
 
 			internalCd = &cdv2.ComponentDescriptor{}
@@ -508,7 +508,7 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 		if len(args) == 2 {
 			componentsData, err := json.Marshal(args[1])
 			if err != nil {
-				panic("Unable to marshal second argument to component descriptor list.")
+				panic("Unable to marshal second argument to json.")
 			}
 
 			internalComponents = &cdv2.ComponentDescriptorList{}
