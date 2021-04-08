@@ -15,6 +15,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gardener/component-cli/pkg/imagevector"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -202,6 +203,8 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 		"getResources":         getResourcesGoFunc(cd),
 		"getComponent":         getComponentGoFunc(cd, cdList),
 		"getRepositoryContext": getEffectiveRepositoryContextGoFunc,
+
+		"generateImageOverwrite": generateImageVectorGoFunc(cd, cdList),
 	}
 	return funcs
 }
@@ -479,4 +482,63 @@ func resolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 	}
 
 	return components, nil
+}
+
+func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) func(args ...interface{}) map[string]interface{} {
+	return func(args ...interface{}) map[string]interface{} {
+		internalCd := cd
+		internalComponents := list
+
+		if len(args) > 2 {
+			panic("Too many arguments for generateImageOverwrite.")
+		}
+
+		if len(args) >= 1 {
+			data, err := json.Marshal(args[0])
+			if err != nil {
+				panic("Unable to marshal first argument to json.")
+			}
+
+			internalCd = &cdv2.ComponentDescriptor{}
+			if err = codec.Decode(data, internalCd); err != nil {
+				panic("Unable to decode first argument to component descriptor.")
+			}
+		}
+
+		if len(args) == 2 {
+			componentsData, err := json.Marshal(args[1])
+			if err != nil {
+				panic("Unable to marshal second argument to json.")
+			}
+
+			internalComponents = &cdv2.ComponentDescriptorList{}
+			if err := codec.Decode(componentsData, internalComponents); err != nil {
+				panic("Unable to decode second argument to component descriptor list.")
+			}
+		}
+
+		if internalCd == nil {
+			panic("No component descriptor is defined.")
+		}
+
+		if internalComponents == nil {
+			panic("No component descriptor list is defined.")
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(internalCd, internalComponents)
+		if err != nil {
+			panic(err)
+		}
+
+		data, err := json.Marshal(vector)
+		if err != nil {
+			panic(err)
+		}
+
+		parsedImageVector := map[string]interface{}{}
+		if err := json.Unmarshal(data, &parsedImageVector); err != nil {
+			panic(err)
+		}
+		return parsedImageVector
+	}
 }

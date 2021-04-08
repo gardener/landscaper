@@ -32,19 +32,21 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("TemplateDeployExecutions", func() {
 
+	sharedTestdataDir := filepath.Join("./testdata", "shared_data")
+
 	Context("GoTemplate", func() {
 		testdataDir := filepath.Join("./testdata", "gotemplate")
-		runTestSuite(testdataDir)
+		runTestSuite(testdataDir, sharedTestdataDir)
 	})
 
 	Context("Spiff", func() {
 		testdataDir := filepath.Join("./testdata", "spifftemplate")
-		runTestSuite(testdataDir)
+		runTestSuite(testdataDir, sharedTestdataDir)
 	})
 
 })
 
-func runTestSuite(testdataDir string) {
+func runTestSuite(testdataDir, sharedTestdataDir string) {
 	var stateHandler GenericStateHandler
 
 	BeforeEach(func() {
@@ -362,6 +364,50 @@ func runTestSuite(testdataDir string) {
 					}),
 				}),
 			}))
+		})
+
+		It("should generate an image vector", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := New(nil, stateHandler)
+
+			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{}
+			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+
+			res, err := op.TemplateDeployExecutions(DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor:  cd,
+				ComponentDescriptors: &cdv2.ComponentDescriptorList{},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+
+			result, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "result-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			resultString := string(result)
+
+			entries := []string{"imageVectorOverWrite1", "imageVectorOverWrite2", "imageVectorOverWrite3"}
+
+			for _, nextEntry := range entries {
+				imageMap, ok := config[nextEntry].(map[string]interface{})
+				Expect(ok).To(BeTrue())
+				imageVector, err := yaml.Marshal(imageMap)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(imageVector)).To(BeIdenticalTo(resultString))
+			}
 		})
 	})
 

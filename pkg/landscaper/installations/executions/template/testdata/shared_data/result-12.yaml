@@ -1,0 +1,12 @@
+images:
+- name: cloud-controller-manager
+  repository: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
+  tag: v1.17.15
+  targetVersion: 1.17.x
+- name: cloud-controller-manager
+  repository: eu.gcr.io/gardener-project/kubernetes/cloud-provider-aws
+  tag: v1.18.13
+  targetVersion: 1.18.x
+- name: csi-provisioner
+  repository: quay.io/k8scsi/csi-provisioner
+  tag: v1.6.0

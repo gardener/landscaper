@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/gardener/component-cli/pkg/imagevector"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
@@ -146,6 +147,7 @@ func (t *SpiffTemplate) storeState(ctx context.Context, prefix string, tmplExec 
 func LandscaperSpiffFuncs(functions spiffing.Functions, cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) {
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
+	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
 }
 
 func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
@@ -211,6 +213,73 @@ func spiffResolveComponent(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentD
 		if err != nil {
 			return info.Error(err.Error())
 		}
+		result, err := binding.Flow(node, false)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		return result.Value(), info, true
+	}
+}
+
+func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	return func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+		info := dynaml.DefaultInfo()
+
+		internalCd := cd
+		internalComponents := cdList
+
+		if len(arguments) > 2 {
+			return info.Error("Too many arguments for generateImageOverwrite.")
+		}
+
+		if len(arguments) >= 1 {
+			data, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[0], ""))
+			if err != nil {
+				return info.Error(err.Error())
+			}
+
+			internalCd = &cdv2.ComponentDescriptor{}
+			if err := yaml.Unmarshal(data, internalCd); err != nil {
+				return info.Error(err.Error())
+			}
+		}
+
+		if len(arguments) == 2 {
+			componentsData, err := spiffyaml.Marshal(spiffyaml.NewNode(arguments[1], ""))
+			if err != nil {
+				return info.Error(err.Error())
+			}
+
+			internalComponents = &cdv2.ComponentDescriptorList{}
+			if err := yaml.Unmarshal(componentsData, internalComponents); err != nil {
+				return info.Error(err.Error())
+			}
+		}
+
+		if internalCd == nil {
+			return info.Error("No component descriptor is defined.")
+		}
+
+		if internalComponents == nil {
+			return info.Error("No component descriptor list is defined.")
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(internalCd, internalComponents)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		data, err := yaml.Marshal(vector)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
+		node, err := spiffyaml.Parse("", data)
+		if err != nil {
+			return info.Error(err.Error())
+		}
+
 		result, err := binding.Flow(node, false)
 		if err != nil {
 			return info.Error(err.Error())

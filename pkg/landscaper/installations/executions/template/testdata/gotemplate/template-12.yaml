@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: init
+      type: manifest
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        imageVectorOverWrite1:
+          {{- generateImageOverwrite | toYaml | nindent 10 }}
+        imageVectorOverWrite2:
+          {{- generateImageOverwrite .cd .components | toYaml | nindent 10 }}
+        imageVectorOverWrite3:
+          {{- generateImageOverwrite .cd | toYaml | nindent 10 }}
