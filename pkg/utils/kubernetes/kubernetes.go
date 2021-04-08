@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -121,6 +122,13 @@ func ObjectKeyFromObject(obj client.Object) types.NamespacedName {
 	return types.NamespacedName{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
+	}
+}
+
+// ReconcileRequestFromObject creates a namespaced name for a given object.
+func ReconcileRequestFromObject(obj client.Object) reconcile.Request {
+	return reconcile.Request{
+		NamespacedName: ObjectKeyFromObject(obj),
 	}
 }
 

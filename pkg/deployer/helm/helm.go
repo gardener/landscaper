@@ -11,10 +11,6 @@ import (
 	"errors"
 	"fmt"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes"
-
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/go-logr/logr"
@@ -25,6 +21,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
@@ -45,6 +45,11 @@ var HelmScheme = runtime.NewScheme()
 
 func init() {
 	helminstall.Install(HelmScheme)
+}
+
+// NewDeployItemBuilder creates a new deployitem builder for helm deployitems
+func NewDeployItemBuilder() *utils.DeployItemBuilder {
+	return utils.NewDeployItemBuilder(string(Type)).Scheme(HelmScheme)
 }
 
 // Helm is the internal representation of a DeployItem of Type Helm

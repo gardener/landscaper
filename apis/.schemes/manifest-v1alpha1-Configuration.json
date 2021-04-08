@@ -38,6 +38,14 @@
             "default": {},
             "$ref": "#/definitions/core-v1alpha1-Requirement"
           }
+        },
+        "labels": {
+          "description": "Labels matches a target based on its labels.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-Requirement"
+          }
         }
       }
     }

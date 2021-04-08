@@ -17,6 +17,7 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
@@ -129,7 +130,11 @@ func (o *options) run(ctx context.Context) error {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "mock" {
-			if err := mockctlr.AddControllerToManager(mgr); err != nil {
+			config := &mockv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+				return err
+			}
+			if err := mockctlr.AddControllerToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add mock deployer: %w", err)
 			}
 		} else {

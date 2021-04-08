@@ -10,14 +10,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 )
 
 // AddControllerToManager adds a new mock deployer to a controller manager.
-func AddControllerToManager(mgr manager.Manager) error {
+func AddControllerToManager(mgr manager.Manager, config *mockv1alpha1.Configuration) error {
 	a, err := NewController(
 		ctrl.Log.WithName("controllers").WithName("mock"),
 		mgr.GetClient(),
 		mgr.GetScheme(),
+		config,
 	)
 	if err != nil {
 		return err

@@ -38,13 +38,22 @@ func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector
 			return false, nil
 		}
 	}
+	if len(selector.Labels) != 0 {
+		ok, err := MatchLabels(target, selector.Labels)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+	}
 	return true, nil
 }
 
 // MatchAnnotations matches a targets annotation for configured requirements.
 // All requirements must match in order to match the target.
 func MatchAnnotations(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requirement) (bool, error) {
-	ann := annotations(target.GetAnnotations())
+	ann := labels.Set(target.GetAnnotations())
 	for _, req := range requirements {
 		req1, err := labels.NewRequirement(req.Key, req.Operator, req.Values)
 		if err != nil {
@@ -57,24 +66,18 @@ func MatchAnnotations(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requi
 	return true, nil
 }
 
-type annotations map[string]string
-
-// Has returns whether the provided label exists.
-func (a annotations) Has(ann string) (exists bool) {
-	for key := range a {
-		if key == ann {
-			return true
+// MatchLabels matches a target's labels for configured requirements.
+// All requirements must match in order to match the target.
+func MatchLabels(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requirement) (bool, error) {
+	labelSet := labels.Set(target.GetLabels())
+	for _, req := range requirements {
+		req1, err := labels.NewRequirement(req.Key, req.Operator, req.Values)
+		if err != nil {
+			return false, err
+		}
+		if !req1.Matches(labelSet) {
+			return false, nil
 		}
 	}
-	return false
-}
-
-// Get returns the value for the provided label.
-func (a annotations) Get(ann string) (value string) {
-	for key, val := range a {
-		if key == ann {
-			return val
-		}
-	}
-	return ""
+	return true, nil
 }

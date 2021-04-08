@@ -1972,6 +1972,7 @@ func Convert_core_TargetList_To_v1alpha1_TargetList(in *core.TargetList, out *Ta
 
 func autoConvert_v1alpha1_TargetSelector_To_core_TargetSelector(in *TargetSelector, out *core.TargetSelector, s conversion.Scope) error {
 	out.Annotations = *(*[]core.Requirement)(unsafe.Pointer(&in.Annotations))
+	out.Labels = *(*[]core.Requirement)(unsafe.Pointer(&in.Labels))
 	return nil
 }
 
@@ -1982,6 +1983,7 @@ func Convert_v1alpha1_TargetSelector_To_core_TargetSelector(in *TargetSelector, 
 
 func autoConvert_core_TargetSelector_To_v1alpha1_TargetSelector(in *core.TargetSelector, out *TargetSelector, s conversion.Scope) error {
 	out.Annotations = *(*[]Requirement)(unsafe.Pointer(&in.Annotations))
+	out.Labels = *(*[]Requirement)(unsafe.Pointer(&in.Labels))
 	return nil
 }
 

@@ -13,6 +13,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
@@ -30,6 +31,11 @@ var (
 
 func init() {
 	containerinstall.Install(Scheme)
+}
+
+// NewDeployItemBuilder creates a new deployitem builder for container deployitems
+func NewDeployItemBuilder() *utils.DeployItemBuilder {
+	return utils.NewDeployItemBuilder(string(Type)).Scheme(Scheme)
 }
 
 // Container is the internal representation of a DeployItem of Type Container

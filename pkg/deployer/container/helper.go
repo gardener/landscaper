@@ -19,7 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/deployer/targetselector"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
