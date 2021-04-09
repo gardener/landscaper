@@ -39,6 +39,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/config/config.yaml"
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- end }}
           {{- if .Values.deployer.verbosityLevel }}
           - "-v={{ .Values.deployer.verbosityLevel }}"
           {{- end }}
@@ -48,6 +51,10 @@ spec:
           {{- if .Values.deployer.oci }}
           - name: ociregistry
             mountPath: /app/ls/registry/
+          {{- end }}
+          {{- if .Values.deployer.landscaperClusterKubeconfig }}
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -59,6 +66,15 @@ spec:
       - name: ociregistry
         secret:
           secretName: {{ include "deployer.fullname" . }}-registry
+      {{- end }}
+      {{- if .Values.deployer.landscaperClusterKubeconfig }}
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.deployer.landscaperClusterKubeconfig.kubeconfig }}
+          secretName:  {{ include "deployer.fullname" . }}-landscaper-cluster-kubeconfig
+          {{- else }}
+          secretName:  {{ .Values.deployer.landscaperClusterKubeconfig.secretRef }}
+          {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

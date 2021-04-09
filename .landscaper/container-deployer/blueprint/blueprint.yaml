@@ -4,6 +4,9 @@ kind: Blueprint
 imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: landscaperCluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+  required: false
 - name: releaseName
   schema:
     type: string
@@ -12,6 +15,7 @@ imports:
     type: string
 - name: values
   schema:
+    description: "values for the container-deployer Helm Chart. See `https://github.com/gardener/landscaper/blob/master/charts/container-deployer/values.yaml`"
     type: object
 
 deployExecutions:
@@ -39,11 +43,18 @@ deployExecutions:
     {{ $imgresource := getResource .cd "name" "container-deployer-image" }}
     {{ $imgrepo := ociRefRepo $imgresource.access.imageReference }}
     {{ $imgtag := ociRefVersion $imgresource.access.imageReference }}
-    
-    {{ $image := dict "image" .imports.values.image }}
     {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
-    {{ $newimg := dict "image" $imgref }}
-    {{ $newval := dict "values" $newimg }}
 
-    {{ $val := mergeOverwrite $values $newval }}   
+    {{ $newvals := dict "image" $imgref }}
+
+    {{ if .imports.landscaperCluster  }}
+    {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
+    {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}
+    {{ $newLsClusterKubeconfig := dict "landscaperClusterKubeconfig" $newKubeconfig }}
+    {{ $_ := set $newvals "deployer" $newLsClusterKubeconfig }}
+    {{ end }}
+
+    {{ $mergevals := dict "values" $newvals }}
+
+    {{ $val := mergeOverwrite $values $mergevals }}
     {{ toYaml $val | indent 4 }}
