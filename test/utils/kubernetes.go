@@ -16,8 +16,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 )
+
+// WaitForObjectDeletion waits until the given object is deleted
+func WaitForObjectDeletion(
+	ctx context.Context,
+	kubeClient client.Client,
+	obj client.Object,
+	timeout time.Duration) error {
+	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("error while waiting for installation to be deleted: %w", err)
+	}
+	return nil
+}
 
 // WaitForDeploymentToBeReady waits for a deployment to be ready
 func WaitForDeploymentToBeReady(ctx context.Context, logger simplelogger.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {

@@ -16,6 +16,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -70,7 +71,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			ginkgo.By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
@@ -98,7 +99,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create erroneous container deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseFailed, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseFailed, 2*time.Minute))
 
 			ginkgo.By("update the DeployItem and set a valid image")
 			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), di))
@@ -108,7 +109,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			di.Spec.Configuration = updatedDi.Spec.Configuration
 			utils.ExpectNoError(f.Client.Update(ctx, di))
 
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			ginkgo.By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
@@ -135,11 +136,11 @@ func ContainerDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "my-val": true }
 			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
-			exportData, err := utils.GetDeployItemExport(ctx, f.Client, di)
+			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
 			g.Expect(exportData).To(g.MatchJSON(`{ "my-val": true }`))
 
@@ -168,21 +169,21 @@ func ContainerDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "counter": 1 }
 			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
-			exportData, err := utils.GetDeployItemExport(ctx, f.Client, di)
+			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
 			g.Expect(exportData).To(g.MatchJSON(`{ "counter": 1 }`))
 
 			ginkgo.By("Rerun the deployitem")
 			metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 			utils.ExpectNoError(f.Client.Update(ctx, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 			// expect that the export contains a valid json with { "counter": 2 }
 			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
-			exportData, err = utils.GetDeployItemExport(ctx, f.Client, di)
+			exportData, err = lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
 			g.Expect(exportData).To(g.MatchJSON(`{ "counter": 2 }`))
 

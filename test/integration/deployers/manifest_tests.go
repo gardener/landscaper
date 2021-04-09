@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
@@ -79,7 +80,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create Manifest (v1alpha2) deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
 
 			ginkgo.By("Check presence of Kubernetes Objects")
 			config := &manifestv1alpha2.ProviderConfiguration{}
@@ -139,7 +140,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Create Manifest (v1alpha1) deploy item")
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
-			utils.ExpectNoError(utils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
 
 			ginkgo.By("Check presence of Kubernetes objects")
 			config := &manifestv1alpha1.ProviderConfiguration{}

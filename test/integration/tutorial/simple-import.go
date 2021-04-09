@@ -17,6 +17,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -64,7 +65,7 @@ func SimpleImport(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, nginxInst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, nginxInst, lsv1alpha1.ComponentPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, nginxInst, 2*time.Minute))
 
 			ginkgo.By("Create echo server Installation")
 			inst := &lsv1alpha1.Installation{}
@@ -73,9 +74,9 @@ func SimpleImport(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, inst, lsv1alpha1.ComponentPhaseSucceeded, 2*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
 
-			deployItems, err := utils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
+			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
 			g.Expect(deployItems).To(g.HaveLen(1))
 			g.Expect(deployItems[0].Status.Phase).To(g.Equal(lsv1alpha1.ExecutionPhaseSucceeded))

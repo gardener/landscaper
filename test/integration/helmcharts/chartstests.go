@@ -21,6 +21,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -132,7 +133,7 @@ func deployDeployItemAndWaitForSuccess(
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, f.Client, di))
 	By("Waiting for the DeployItem to succeed")
-	utils.ExpectNoError(utils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
+	utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 	By("Waiting for the corresponding Deployment to become ready")
 
 	// check deployment image version
