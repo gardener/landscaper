@@ -49,6 +49,9 @@ buildComponentArchive "mock-deployer"
 printf "> Create Landscaper ca archive\n"
 LS_CA_PATH="$(mktemp -d)"
 cp ${BASE_DEFINITION_PATH} "${LS_CA_PATH}/component-descriptor.yaml"
+component-cli ca resources add ${LS_CA_PATH} \
+    VERSION=${VERSION} \
+    ${SOURCE_PATH}/.landscaper/resources.yaml
 
 COMPONENT_ARCHIVE_ARTIFACT_PATH="$(mktemp -d)/ca.tar"
 component-cli ca export "${LS_CA_PATH}" --format tar -o "${COMPONENT_ARCHIVE_ARTIFACT_PATH}"

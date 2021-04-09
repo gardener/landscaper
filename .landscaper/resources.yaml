@@ -1,0 +1,8 @@
+---
+type: helm.io/chart
+name: landscaper-chart
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:${VERSION}
+---
