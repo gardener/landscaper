@@ -47,7 +47,7 @@ spec:
             mountPath: /app/ls/config/
           {{- if .Values.deployer.oci }}
           - name: ociregistry
-            mountPath: /app/ls/registry/
+            mountPath: /app/ls/registry/secrets
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

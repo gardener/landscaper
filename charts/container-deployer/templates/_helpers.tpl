@@ -83,7 +83,7 @@ oci:
   {{- if .Values.deployer.oci.secrets }}
   configFiles:
   {{- range $key, $value := .Values.deployer.oci.secrets }}
-  - /app/ls/registry/components/{{ $key }}
+  - /app/ls/registry/secrets/{{ $key }}
   {{- end }}
   {{- end }}
 {{- end }}
