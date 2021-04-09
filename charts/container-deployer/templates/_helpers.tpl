@@ -73,9 +73,9 @@ initContainer:
   image: "{{ .Values.deployer.initContainer.repository }}:{{ .Values.deployer.initContainer.tag | default .Chart.AppVersion }}"
 waitContainer:
   image: "{{ .Values.deployer.waitContainer.repository }}:{{ .Values.deployer.waitContainer.tag | default .Chart.AppVersion }}"
-{{- if .Values.deployer.defaultImage.image }}
+{{- if .Values.deployer.defaultImage }}
 defaultImage:
-  image: "{{ .Values.deployer.defaultImage.image }}"
+  image: "{{ required .Values.deployer.defaultImage.repository }}:{{ required .Values.deployer.defaultImage.tag }}"
 {{- end }}
 {{- if .Values.deployer.oci }}
 oci:

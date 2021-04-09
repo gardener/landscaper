@@ -22,7 +22,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/deployer/targetselector"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"

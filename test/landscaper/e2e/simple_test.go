@@ -19,6 +19,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
 	execctlr "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
@@ -54,7 +55,7 @@ var _ = Describe("Simple", func() {
 		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
+		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, &mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

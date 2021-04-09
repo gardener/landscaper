@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/logger"
 )
@@ -55,9 +55,10 @@ func (o *options) Complete() error {
 }
 
 func (o *options) parseConfigurationFile() (*manifestv1alpha2.Configuration, error) {
-	decoder := serializer.NewCodecFactory(manifest.ManifestScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
-		return &manifestv1alpha2.Configuration{}, nil
+		cfg := &manifestv1alpha2.Configuration{}
+		manifest.ManifestScheme.Default(cfg)
+		return cfg, nil
 	}
 	data, err := ioutil.ReadFile(o.configPath)
 	if err != nil {
@@ -65,7 +66,7 @@ func (o *options) parseConfigurationFile() (*manifestv1alpha2.Configuration, err
 	}
 
 	cfg := &manifestv1alpha2.Configuration{}
-	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
+	if _, _, err := api.NewDecoder(manifest.ManifestScheme).Decode(data, nil, cfg); err != nil {
 		return nil, err
 	}
 

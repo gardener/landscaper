@@ -100,6 +100,9 @@ type TargetSelector struct {
 	// Annotations matches a target based on annotations.
 	// +optional
 	Annotations []Requirement `json:"annotations,omitempty"`
+	// Labels matches a target based on its labels.
+	// +optional
+	Labels []Requirement `json:"labels,omitempty"`
 }
 
 // Requirement contains values, a key, and an operator that relates the key and values.

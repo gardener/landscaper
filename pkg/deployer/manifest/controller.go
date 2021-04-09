@@ -21,7 +21,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
-	"github.com/gardener/landscaper/pkg/deployer/targetselector"
+	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 

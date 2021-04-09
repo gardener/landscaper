@@ -19,7 +19,12 @@ to its updated number of scheduled pods.
 * `ReplicationController`: It is considered healthy if its controller observed
 its current revision and if the number of updated replicas is equal to the number of replicas.
 
-### Configuration
+**Index**:
+- [Provider Configuration](#provider-configuration)
+- [Provider Status](#status)
+- [Deployer Configuration](#deployer-configuration)
+
+### Provider Configuration
 
 This sections describes the provider specific configuration.
 
@@ -119,4 +124,31 @@ status:
       kind: my-type
       name: my-resource
       namespace: default
+```
+
+## Deployer Configuration
+
+When deploying the helm deployer controller it can be configured using the `--config` flag and providing a configuration file.
+
+The structure of the provided configuration file is defined as follows.
+
+:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. See the [helm values file](../../charts/helm-deployer/values.yaml) for details when deploying with the helm chart.
+```yaml
+apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+kind: Configuration
+oci:
+  # allow plain http connections to the oci registry.
+  # Use with care as the default docker registry does not serve http with any authentication
+  allowPlainHttp: false
+  # skip the tls validation
+  insecureSkipVerify: false
+  # path to docker compatible auth configuration files.
+#  configFiles:
+#  - "somepath"
+
+# target selector to only react on specific deploy items.
+# see the common config in "./README.md" for detailed documentation.
+targetSelector:
+  annotations: []
+  labels: []
 ```

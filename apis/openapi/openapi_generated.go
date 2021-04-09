@@ -132,6 +132,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest":                   schema_apis_deployer_manifest_v1alpha2_Manifest(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderConfiguration":      schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderStatus":             schema_apis_deployer_manifest_v1alpha2_ProviderStatus(ref),
+		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.Configuration":                  schema_apis_deployer_mock_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.ProviderConfiguration":          schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref),
 		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                       schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
 		"k8s.io/api/core/v1.Affinity":                                                               schema_k8sio_api_core_v1_Affinity(ref),
@@ -3933,6 +3934,20 @@ func schema_landscaper_apis_core_v1alpha1_TargetSelector(ref common.ReferenceCal
 							},
 						},
 					},
+					"labels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels matches a target based on its labels.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.Requirement"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -5452,6 +5467,49 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderStatus(ref common.ReferenceC
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ManagedResourceStatus"},
+	}
+}
+
+func schema_apis_deployer_mock_v1alpha1_Configuration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Configuration is the helm deployer configuration that configures the controller",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"targetSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetSelector describes all selectors the deployer should depend on.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector"},
 	}
 }
 

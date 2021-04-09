@@ -30,7 +30,16 @@ func Match(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bo
 // It only passes if all configured selector methods match.
 func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector) (bool, error) {
 	if len(selector.Annotations) != 0 {
-		ok, err := MatchAnnotations(target, selector.Annotations)
+		ok, err := MatchStringMap(target.GetAnnotations(), selector.Annotations)
+		if err != nil {
+			return false, err
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	if len(selector.Labels) != 0 {
+		ok, err := MatchStringMap(target.GetLabels(), selector.Labels)
 		if err != nil {
 			return false, err
 		}
@@ -41,10 +50,10 @@ func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector
 	return true, nil
 }
 
-// MatchAnnotations matches a targets annotation for configured requirements.
-// All requirements must match in order to match the target.
-func MatchAnnotations(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requirement) (bool, error) {
-	ann := annotations(target.GetAnnotations())
+// MatchStringMap matches a map of string -> string for the configured requirements.
+// All requirements must match in order to match the map.
+func MatchStringMap(m map[string]string, requirements []lsv1alpha1.Requirement) (bool, error) {
+	ann := labels.Set(m)
 	for _, req := range requirements {
 		req1, err := labels.NewRequirement(req.Key, req.Operator, req.Values)
 		if err != nil {
@@ -55,26 +64,4 @@ func MatchAnnotations(target *lsv1alpha1.Target, requirements []lsv1alpha1.Requi
 		}
 	}
 	return true, nil
-}
-
-type annotations map[string]string
-
-// Has returns whether the provided label exists.
-func (a annotations) Has(ann string) (exists bool) {
-	for key := range a {
-		if key == ann {
-			return true
-		}
-	}
-	return false
-}
-
-// Get returns the value for the provided label.
-func (a annotations) Get(ann string) (value string) {
-	for key, val := range a {
-		if key == ann {
-			return val
-		}
-	}
-	return ""
 }

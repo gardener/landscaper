@@ -3301,6 +3301,20 @@ string
 <p>Annotations matches a target based on annotations.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>labels</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Requirement">
+[]Requirement
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels matches a target based on its labels.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TargetSpec">TargetSpec

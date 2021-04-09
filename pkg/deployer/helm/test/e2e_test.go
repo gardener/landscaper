@@ -63,7 +63,7 @@ var _ = Describe("Helm Deployer", func() {
 		}
 		di.Spec.Type = helmctrl.Type
 
-		// Create Target
+		// Create target
 		target, err := testutil.CreateOrUpdateTarget(ctx,
 			testenv.Client,
 			di.Spec.Target.Namespace,
