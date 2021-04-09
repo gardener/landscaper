@@ -58,6 +58,8 @@ func (o *options) run(ctx context.Context) error {
 		WebhookMux: http.NewServeMux(),
 	}
 	webhookServer.WebhookMux.Handle("/healthz", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		writer.Header().Set("X-Content-Type-Options", "nosniff")
 		if _, err := writer.Write([]byte("Ok")); err != nil {
 			o.log.Error(err, "unable to send health response")
 		}
