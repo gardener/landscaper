@@ -13,7 +13,7 @@ VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
 
 printf "> Building components with version ${VERSION}\n"
 
-REPO_CTX="eu.gcr.io/sap-se-gcr-k8s-private/cnudie/gardener/development"
+REPO_CTX="${CURRENT_COMPONENT_REPOSITORY}"
 
 # creates a component archive for deployer
 # it expects 1 argument with

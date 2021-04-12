@@ -58,4 +58,4 @@ echo "> Creating ctf"
 CTF_PATH=./gen/ctf.tar
 mkdir -p ./gen
 [ -e $CTF_PATH ] && rm ${CTF_PATH}
-CTF_PATH=${CTF_PATH} BASE_DEFINITION_PATH=${BASE_DEFINITION_PATH} bash $SOURCE_PATH/.ci/component_descriptor
+CTF_PATH=${CTF_PATH} BASE_DEFINITION_PATH=${BASE_DEFINITION_PATH} CURRENT_COMPONENT_REPOSITORY=${REPO_CTX} bash $SOURCE_PATH/.ci/component_descriptor
