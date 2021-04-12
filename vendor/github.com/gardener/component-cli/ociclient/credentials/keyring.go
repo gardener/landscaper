@@ -31,6 +31,8 @@ type OCIKeyring interface {
 	Get(resourceURl string) (dockerconfigtypes.AuthConfig, bool)
 	// Resolver returns a new authenticated resolver.
 	Resolver(ctx context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
+	// GetCredentials returns the username and password for a hostname if defined.
+	GetCredentials(hostname string) (username, password string, err error)
 }
 
 // AuthConfigGetter is a function that returns a auth config for a given host name

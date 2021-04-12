@@ -36,6 +36,17 @@ func GetLayerByMediaType(layers []ocispecv1.Descriptor, mediaType string) []ocis
 	return descs
 }
 
+// GetLayerByDigest returns the layers with a given digest.
+func GetLayerByDigest(layers []ocispecv1.Descriptor, digest string) []ocispecv1.Descriptor {
+	descs := make([]ocispecv1.Descriptor, 0)
+	for _, desc := range layers {
+		if desc.Digest.String() == digest {
+			descs = append(descs, desc)
+		}
+	}
+	return descs
+}
+
 // ParseImageRef parses a valid image ref into its repository and version
 func ParseImageRef(ref string) (repository, version string, err error) {
 	// check if the ref contains a digest
