@@ -16,6 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 )
@@ -61,9 +62,9 @@ func AggregatedBlueprint(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, aggInst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(utils.WaitForInstallationToBeInPhase(ctx, f.Client, aggInst, lsv1alpha1.ComponentPhaseSucceeded, 4*time.Minute))
+			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, aggInst, 4*time.Minute))
 
-			subInstallations, err := utils.GetSubInstallationsOfInstallation(ctx, f.Client, aggInst)
+			subInstallations, err := lsutils.GetSubInstallationsOfInstallation(ctx, f.Client, aggInst)
 			utils.ExpectNoError(err)
 			g.Expect(subInstallations).To(g.HaveLen(2))
 			g.Expect(subInstallations[0].Status.Phase).To(g.Equal(lsv1alpha1.ComponentPhaseSucceeded))
