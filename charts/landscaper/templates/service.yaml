@@ -19,7 +19,7 @@ spec:
   selector:
     {{- include "landscaper.selectorLabels" . | nindent 4 }}
 ---
-{{- if not (has "all" .Values.disableWebhooks) }}
+{{- if not (has "all" .Values.webhooksServer.disableWebhooks) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -29,8 +29,8 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-  - port: {{ .Values.webhookConfig.servicePort }}
-    targetPort: {{ .Values.webhookConfig.servicePort }}
+  - port: {{ .Values.webhooksServer.servicePort }}
+    targetPort: {{ .Values.webhooksServer.servicePort }}
     protocol: TCP
     name: webhook
   selector:

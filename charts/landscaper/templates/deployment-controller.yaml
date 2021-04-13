@@ -36,9 +36,9 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.controllerRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
           {{- if .Values.serviceAccount.create }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           {{- end }}
           args:
           - "--config=/app/ls/config/config.yaml"

@@ -2,7 +2,7 @@
 
  SPDX-License-Identifier: Apache-2.0
 */}}
-{{- if not (has "all" .Values.disableWebhooks) }}
+{{- if not (has "all" .Values.webhooksServer.disableWebhooks) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,15 +36,15 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.webhookServerRepository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.webhooksServer.image.repository }}:{{ .Values.webhooksServer.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.webhooksServer.image.pullPolicy }}
           args:
           - "-v={{ .Values.landscaper.verbosity }}"
-          - --port={{ .Values.webhookConfig.servicePort }}
+          - --port={{ .Values.webhooksServer.servicePort }}
           - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.webhooks.fullname" . }}
-          - --webhook-service-port={{ .Values.webhookConfig.servicePort }}
-          {{- if .Values.disableWebhooks }}
-          - --disable-webhooks={{ .Values.disableWebhooks | join "," }}
+          - --webhook-service-port={{ .Values.webhooksServer.servicePort }}
+          {{- if .Values.webhooksServer.disableWebhooks }}
+          - --disable-webhooks={{ .Values.webhooksServer.disableWebhooks | join "," }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

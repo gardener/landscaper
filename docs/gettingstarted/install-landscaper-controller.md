@@ -35,8 +35,14 @@ For a very simple setup, internal deployers (`helm`, `manifest` and `container`)
 The following snippet shows a sample `values.yaml` file that is used to parameterize the Helm chart:
 
 ```yaml
-image:
-  tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
+controller:
+  image:
+    tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
+
+webhookServer:
+#  disableWebhooks: all # disables specific webhooks. If all are disabled the webhook server is not deployed
+  image:
+    tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
 
 landscaper:
   cache: {} # Landscaper caches pulled OCI artefacts on disk and optionally in-memory

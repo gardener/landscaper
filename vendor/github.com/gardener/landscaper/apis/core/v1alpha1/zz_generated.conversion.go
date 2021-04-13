@@ -1240,6 +1240,7 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.Phase = core.ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]core.Condition)(unsafe.Pointer(&in.Conditions))
+	out.LastError = (*core.Error)(unsafe.Pointer(in.LastError))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]core.VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	return nil
@@ -1254,6 +1255,7 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.Phase = ExecutionPhase(in.Phase)
 	out.ObservedGeneration = in.ObservedGeneration
 	out.Conditions = *(*[]Condition)(unsafe.Pointer(&in.Conditions))
+	out.LastError = (*Error)(unsafe.Pointer(in.LastError))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	return nil

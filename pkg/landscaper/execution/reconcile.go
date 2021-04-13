@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -25,15 +26,23 @@ type executionItem struct {
 
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
 func (o *Operation) Reconcile(ctx context.Context) error {
+	op := "Reconcile"
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
+	if o.exec.Status.ObservedGeneration != o.exec.Generation || o.exec.Status.Phase != lsv1alpha1.ExecutionPhaseProgressing {
+		o.exec.Status.ObservedGeneration = o.exec.Generation
+		o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+		if err := o.Client().Update(ctx, o.exec); err != nil {
+			return fmt.Errorf("unable to update status: %w", err)
+		}
+	}
 
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to list managed deploy items: %w", err)
+		return lsv1alpha1helper.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
 	}
 	executionItems, orphaned := o.getExecutionItems(managedItems)
 	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
-		return err
+		return lsv1alpha1helper.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
 	}
 
 	var phase lsv1alpha1.ExecutionPhase
@@ -56,10 +65,17 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			}
 
 			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
-				cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name))
 				// TODO: check if need to wait for other deploy items to finish
 				o.exec.Status.ObservedGeneration = o.exec.Generation
-				return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseFailed, cond)
+				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
+				return lsv1alpha1helper.NewError(
+					"DeployItemReconcile",
+					"DeployItemFailed",
+					fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
+				)
 			}
 
 			if lastAppliedGeneration == o.exec.Generation {
@@ -68,14 +84,22 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		}
 		runnable, err := o.checkRunnable(ctx, item, executionItems)
 		if err != nil {
-			return fmt.Errorf("unable to check runnable condition for %s: %w", item.Info.Name, err)
+			return lsv1alpha1helper.NewWrappedError(err,
+				"CheckReconcilable",
+				fmt.Sprintf("check if deploy item %q is able to bbe reconciled", item.DeployItem.Name),
+				err.Error(),
+			)
 		}
 		if !runnable {
 			o.Log().V(5).Info("deploy item not runnable", "name", item.Info.Name)
 			continue
 		}
 		if err := o.deployOrTrigger(ctx, item); err != nil {
-			return fmt.Errorf("error while triggering deployitem %s: %w", item.Info.Name, err)
+			msg := fmt.Sprintf("error while creating deploy item %q", item.Info.Name)
+			if item.DeployItem != nil {
+				msg = fmt.Sprintf("error while triggering deployitem %s", item.DeployItem.Name)
+			}
+			return lsv1alpha1helper.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
 		}
 		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
 	}
@@ -87,17 +111,27 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	}
 
 	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
-		return err
+		return lsv1alpha1helper.NewWrappedError(err, op, "CollectAndUpdateExports", err.Error())
 	}
 
-	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
-		"DeployItemsReconciled", "All DeployItems are successfully reconciled")
-	return o.UpdateStatus(ctx, phase, cond)
+	// remove force annotation
+	if o.forceReconcile {
+		old := o.exec.DeepCopy()
+		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := o.Client().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
+			return lsv1alpha1helper.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
+		}
+	}
+
+	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
+			"DeployItemsReconciled", "All DeployItems are successfully reconciled"))
+	return nil
 }
 
 // deployOrTrigger creates a new deploy item or triggers it if it already exists.
 func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) error {
-
 	if item.DeployItem == nil {
 		item.DeployItem = &lsv1alpha1.DeployItem{}
 		item.DeployItem.GenerateName = fmt.Sprintf("%s-%s-", o.exec.Name, item.Info.Name)
@@ -119,8 +153,10 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	ref.Reference.Namespace = item.DeployItem.Namespace
 	ref.Reference.ObservedGeneration = o.exec.Generation
 
+	old := o.exec.DeepCopy()
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
-	return o.UpdateStatus(ctx, lsv1alpha1.ExecutionPhaseProgressing)
+	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	return o.Client().Status().Patch(ctx, o.exec, client.MergeFrom(old))
 }
 
 // collectAndUpdateExports loads all exports of all deploy items and

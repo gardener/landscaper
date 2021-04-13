@@ -134,7 +134,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
 
 		err := eOp.Reconcile(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
 	})
 
@@ -149,7 +149,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
 
 		err := eOp.Reconcile(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
 	})
 

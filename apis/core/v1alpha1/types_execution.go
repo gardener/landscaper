@@ -81,15 +81,21 @@ type ExecutionSpec struct {
 
 // ExecutionStatus contains the current status of a execution.
 type ExecutionStatus struct {
-	// Phase is the current phase of the execution .
+	// Phase is the current phase of the execution.
 	Phase ExecutionPhase `json:"phase,omitempty"`
 
 	// ObservedGeneration is the most recent generation observed for this Execution.
 	// It corresponds to the Execution generation, which is updated on mutation by the landscaper.
+	// +optional
 	ObservedGeneration int64 `json:"observedGeneration"`
 
 	// Conditions contains the actual condition of a execution
+	// +optional
 	Conditions []Condition `json:"conditions,omitempty"`
+
+	// LastError describes the last error that occurred.
+	// +optional
+	LastError *Error `json:"lastError,omitempty"`
 
 	// ExportReference references the object that contains the exported values.
 	// only used for operation purpose.
@@ -98,6 +104,7 @@ type ExecutionStatus struct {
 
 	// DeployItemReferences contain the state of all deploy items.
 	// The observed generation is here the generation of the Execution not the DeployItem.
+	// +optional
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
 }
 

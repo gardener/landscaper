@@ -124,7 +124,7 @@ func (d *Dumper) DumpInstallationsInNamespace(ctx context.Context, namespace str
 // DumpInstallation dumps information about the installation
 func DumpInstallation(logger simplelogger.Logger, inst *lsv1alpha1.Installation) error {
 	logger.Logf("--- Installation %s\n", inst.Name)
-	logger.Logf("%s\n", FormatAsYAML(inst.Status, ""))
+	logger.Logf("%s\n", FormatAsYAML(inst.Status, 0))
 	return nil
 }
 
@@ -146,16 +146,23 @@ func (d *Dumper) DumpDeployItemsInNamespace(ctx context.Context, namespace strin
 func DumpDeployItems(logger simplelogger.Logger, deployItem *lsv1alpha1.DeployItem) error {
 	fmtMsg := `
 --- DeployItem %s
+Annotations: %s
 Type: %s
 Config: %s
 `
 
-	configData, err := deployItem.Spec.Configuration.Marshal()
-	if err != nil {
-		configData = []byte(fmt.Sprintf("error: %s", err.Error()))
+	configData := []byte("no config")
+	if deployItem.Spec.Configuration != nil {
+		var err error
+		configData, err = deployItem.Spec.Configuration.Marshal()
+		if err != nil {
+			configData = []byte(fmt.Sprintf("error: %s", err.Error()))
+		}
 	}
+
 	logger.Logf(fmtMsg,
 		deployItem.Name,
+		FormatAsYAML(deployItem.Annotations, 2),
 		deployItem.Spec.Type,
 		ApplyIdent(string(configData), 2))
 	fmtMsg = `
@@ -168,7 +175,7 @@ Status:
 	logger.Logf(fmtMsg,
 		deployItem.Status.Phase,
 		FormatLastError(deployItem.Status.LastError, "    "),
-		FormatAsYAML(deployItem.Status.ProviderStatus, "    "))
+		FormatAsYAML(deployItem.Status.ProviderStatus, 4))
 	return nil
 }
 
@@ -189,8 +196,8 @@ func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string)
 // DumpExecution dumps information about the execution
 func DumpExecution(logger simplelogger.Logger, inst *lsv1alpha1.Execution) error {
 	logger.Logf("--- Execution %s\n", inst.Name)
-	logger.Logf("%s\n", FormatAsYAML(inst.Spec, ""))
-	logger.Logf("%s\n", FormatAsYAML(inst.Status, ""))
+	logger.Logf("%s\n", FormatAsYAML(inst.Spec, 0))
+	logger.Logf("%s\n", FormatAsYAML(inst.Status, 0))
 	return nil
 }
 
@@ -211,7 +218,7 @@ func (d *Dumper) DumpConfigMapsInNamespace(ctx context.Context, namespace string
 // DumpConfigMap dumps information about the configmap
 func DumpConfigMap(logger simplelogger.Logger, cm *corev1.ConfigMap) error {
 	logger.Logf("--- ConfigMap %s\n", cm.Name)
-	logger.Logf("%s\n", FormatAsYAML(cm.Data, ""))
+	logger.Logf("%s\n", FormatAsYAML(cm.Data, 0))
 	return nil
 }
 
@@ -384,6 +391,9 @@ func StringIndent(indent int) string {
 
 // ApplyIdent applies the indentation to a string
 func ApplyIdent(s string, indent int) string {
+	if indent == 0 {
+		return s
+	}
 	return strings.ReplaceAll(s, "\n", "\n"+StringIndent(indent))
 }
 
@@ -404,7 +414,7 @@ Ready: %v
 }
 
 // FormatAsYAML formats a object as yaml
-func FormatAsYAML(obj interface{}, indent string) string {
+func FormatAsYAML(obj interface{}, indent int) string {
 	if obj == nil {
 		return "none"
 	}
@@ -412,11 +422,8 @@ func FormatAsYAML(obj interface{}, indent string) string {
 	if err != nil {
 		return fmt.Sprintf("Error during yaml serialization: %s", err.Error())
 	}
-	// add indentation
-	out := strings.ReplaceAll(string(data), "\n", "\n"+indent)
 	// add an additional newline to properly inline
-	out = "\n" + indent + out
-	return out
+	return ApplyIdent("\n"+string(data), indent)
 }
 
 // FormatLastError formats a error in a human readable format.
