@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"flag"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -48,7 +47,7 @@ func (o *CreateClusterOptions) AddFlags(fs *pflag.FlagSet) {
 		fs = pflag.CommandLine
 	}
 	o.CommonOptions.AddFlags(fs)
-	flag.StringVar(&o.ExportKubeconfigPath, "export", "", "path where the target kubeconfig should be written to")
+	fs.StringVar(&o.ExportKubeconfigPath, "export", "", "path where the target kubeconfig should be written to")
 }
 
 func (o *CreateClusterOptions) Complete() error {

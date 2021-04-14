@@ -7,7 +7,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"flag"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -56,9 +55,9 @@ func (o *CreateRegistryOptions) AddFlags(fs *pflag.FlagSet) {
 		fs = pflag.CommandLine
 	}
 	o.CommonOptions.AddFlags(fs)
-	flag.StringVar(&o.Password, "registry-password", "", "set the registry password")
-	flag.StringVar(&o.ExportRegistryCreds, "registry-auth", "", "path where the docker auth config is written to")
-	flag.StringVar(&o.OutputAddressFormat, "address-format", "hostname", "the format of the addresses in the generated output. Can be hostname or ip.")
+	fs.StringVar(&o.Password, "registry-password", "", "set the registry password")
+	fs.StringVar(&o.ExportRegistryCreds, "registry-auth", "", "path where the docker auth config is written to")
+	fs.StringVar(&o.OutputAddressFormat, "address-format", "hostname", "the format of the addresses in the generated output. Can be hostname or ip.")
 }
 
 func (o *CreateRegistryOptions) Complete() error {
