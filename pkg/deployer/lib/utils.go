@@ -32,7 +32,8 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
 		di.Status.ObservedGeneration = di.Generation
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-		di.Status.LastChangeReconcileTime = metav1.Now()
+		now := metav1.Now()
+		di.Status.LastChangeReconcileTime = &now
 
 		log.V(7).Info("updating status")
 		if err := c.Status().Update(ctx, di); err != nil {

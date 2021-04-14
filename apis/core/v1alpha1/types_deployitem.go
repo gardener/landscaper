@@ -91,7 +91,8 @@ type DeployItemStatus struct {
 	LastError *Error `json:"lastError,omitempty"`
 
 	// LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started
-	LastChangeReconcileTime metav1.Time `json:"lastChangeReconcileTime,omitempty"`
+	// +optional
+	LastChangeReconcileTime *metav1.Time `json:"lastChangeReconcileTime,omitempty"`
 
 	// ProviderStatus contains the provider specific status
 	// +optional

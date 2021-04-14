@@ -1668,6 +1668,7 @@ Kubernetes meta/v1.Time
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started</p>
 </td>
 </tr>
