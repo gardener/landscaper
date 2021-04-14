@@ -75,7 +75,7 @@ func (o *CreateRegistryOptions) Complete() error {
 	if len(o.Password) == 0 {
 		o.Password = pkg.RandString(10)
 	}
-	return o.Complete()
+	return o.CommonOptions.Complete()
 }
 
 func (o *CreateRegistryOptions) Validate() error {
