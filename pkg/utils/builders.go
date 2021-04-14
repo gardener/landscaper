@@ -11,10 +11,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // DeployItemBuilder is a helper struct to build deploy items
@@ -117,15 +117,8 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 		return nil, err
 	}
 
-	// set the apiversion and kind
-	gvk, err := apiutil.GVKForObject(b.ProviderConfiguration, b.scheme)
+	ext, err := kutil.ConvertToRawExtension(b.ProviderConfiguration, b.scheme)
 	if err != nil {
-		return nil, fmt.Errorf("unable to to get gvk for provider configuration: %w", err)
-	}
-	b.ProviderConfiguration.GetObjectKind().SetGroupVersionKind(gvk)
-
-	ext := &runtime.RawExtension{}
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&b.ProviderConfiguration, ext, nil); err != nil {
 		return nil, err
 	}
 

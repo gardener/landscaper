@@ -213,10 +213,10 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 	return target, nil
 }
 
-// CreateInternalKubernetesTarget creates a new target of type kubernetes
+// BuildInternalKubernetesTarget creates a new target of type kubernetes
 // whereas the hostname of the cluster will be set to the cluster internal host.
 // It is expected that the controller runs inside the same cluster where it also deploys to.
-func CreateInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config, internal bool) (*lsv1alpha1.Target, error) {
+func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client, namespace, name string, restConfig *rest.Config, internal bool) (*lsv1alpha1.Target, error) {
 	if internal {
 		oldHost := restConfig.Host
 		defer func() {

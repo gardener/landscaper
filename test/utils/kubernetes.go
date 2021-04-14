@@ -41,6 +41,28 @@ func WaitForObjectDeletion(
 	return nil
 }
 
+// DeleteObject deletes a object and waits until the given object is deleted
+func DeleteObject(
+	ctx context.Context,
+	kubeClient client.Client,
+	obj client.Object,
+	timeout time.Duration) error {
+
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		if err := kubeClient.Delete(ctx, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("error while waiting for installation to be deleted: %w", err)
+	}
+	return WaitForObjectDeletion(ctx, kubeClient, obj, timeout)
+}
+
 // WaitForDeploymentToBeReady waits for a deployment to be ready
 func WaitForDeploymentToBeReady(ctx context.Context, logger simplelogger.Logger, kubeClient client.Client, objKey types.NamespacedName, timeout time.Duration) error {
 	err := wait.PollImmediate(5*time.Second, timeout, func() (done bool, err error) {

@@ -262,6 +262,23 @@ func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
 	return val == value
 }
 
+// ConvertToRawExtension converts a object to a raw extension.
+// The type of the object is automatically set given the scheme.
+func ConvertToRawExtension(from runtime.Object, scheme *runtime.Scheme) (*runtime.RawExtension, error) {
+	// set the apiversion and kind
+	gvk, err := apiutil.GVKForObject(from, scheme)
+	if err != nil {
+		return nil, fmt.Errorf("unable to to get gvk for provider configuration: %w", err)
+	}
+	from.GetObjectKind().SetGroupVersionKind(gvk)
+
+	ext := &runtime.RawExtension{}
+	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&from, ext, nil); err != nil {
+		return nil, err
+	}
+	return ext, nil
+}
+
 // GenerateKubeconfigBytes generates a kubernetes kubeconfig config object from a rest config
 // and encodes it as yaml.
 func GenerateKubeconfigBytes(restConfig *rest.Config) ([]byte, error) {

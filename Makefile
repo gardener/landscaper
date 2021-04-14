@@ -48,7 +48,12 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG) --disable-cleanup=$(DISABLE_CLEANUP)
+	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress \
+		--kubeconfig $(KUBECONFIG) \
+		--ls-version $(EFFECTIVE_VERSION) \
+		--registry-config=$(REGISTRY_CONFIG) \
+		--disable-cleanup=$(DISABLE_CLEANUP)
+
 
 .PHONY: verify
 verify: check

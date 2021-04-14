@@ -23,14 +23,11 @@ import (
 )
 
 func ContainerDeployerTests(f *framework.Framework) {
-	var (
-		dumper     = f.Register()
-		exampleDir = path.Join(f.RootPath, "examples/deploy-items")
-	)
-
 	ginkgo.Describe("Container Deployer", func() {
-
 		var (
+			dumper     = f.Register()
+			exampleDir = path.Join(f.RootPath, "examples/deploy-items")
+
 			ctx     context.Context
 			state   *envtest.State
 			cleanup framework.CleanupFunc
@@ -55,7 +52,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -82,7 +79,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -120,7 +117,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -153,7 +150,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
