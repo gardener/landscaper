@@ -9,11 +9,9 @@ spec:
   command: [bash, -c]
   args:
   - >-
-    go run -mod=vendor ./hack/testcluster delete
+    go run -mod=vendor ./hack/testcluster registry delete
     --kubeconfig=$TM_KUBECONFIG_PATH/testmachinery.config
-    --namespace=kind
-    --enable-registry
-    --enable-cluster=false
+    --namespace=clusters
     --id=$TM_TESTRUN_ID$CLUSTER_NAME
     --timeout=10m
 

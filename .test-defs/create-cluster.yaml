@@ -9,13 +9,11 @@ spec:
   command: [bash, -c]
   args:
   - >-
-    go run -mod=vendor ./hack/testcluster create
+    go run -mod=vendor ./hack/testcluster cluster create
     --kubeconfig=$TM_KUBECONFIG_PATH/$HOST_CLUSTER_CONFIG
-    --namespace=kind
+    --namespace=clusters
     --export=$TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
     --id=$TM_TESTRUN_ID$CLUSTER_NAME
-    --enable-registry=false
-    --address-format=ip
     --timeout=10m
 
   image: golang:1.15.7
