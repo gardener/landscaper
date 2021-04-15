@@ -91,7 +91,7 @@ var _ = Describe("SubInstallation", func() {
 
 			inst, err := installations.New(&lsv1alpha1.Installation{}, blue)
 			Expect(err).ToNot(HaveOccurred())
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			si := subinstallations.New(instOp)

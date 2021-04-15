@@ -27,45 +27,45 @@ func NewValidator(op *installations.Operation) *Validator {
 }
 
 // OutdatedImports validates whether a imported data object or target is outdated.
-func (v *Validator) OutdatedImports(ctx context.Context, inst *installations.Installation) (bool, error) {
+func (v *Validator) OutdatedImports(ctx context.Context) (bool, error) {
 	const OutdatedImportsReason = "OutdatedImports"
-	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.Info.Name))
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", v.Inst.Info.Name))
+	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
-	for _, dataImport := range inst.Info.Spec.Imports.Data {
+	for _, dataImport := range v.Inst.Info.Spec.Imports.Data {
 		impPath := fldPath.Child(dataImport.Name)
-		outdated, err := v.checkDataImportIsOutdated(ctx, impPath, inst, dataImport)
+		outdated, err := v.checkDataImportIsOutdated(ctx, impPath, v.Inst, dataImport)
 		if err != nil {
-			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionUnknown,
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionUnknown,
 				OutdatedImportsReason,
 				fmt.Sprintf("Check for outdated data imports failed: %s", err.Error())))
 			return false, err
 		}
 		if outdated {
-			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 				OutdatedImportsReason,
 				"A least one data import is outdated"))
 			return true, nil
 		}
 	}
 
-	for _, targetImport := range inst.Info.Spec.Imports.Targets {
+	for _, targetImport := range v.Inst.Info.Spec.Imports.Targets {
 		impPath := fldPath.Child(targetImport.Name)
-		outdated, err := v.checkTargetImportIsOutdated(ctx, impPath, inst, targetImport)
+		outdated, err := v.checkTargetImportIsOutdated(ctx, impPath, v.Inst, targetImport)
 		if err != nil {
-			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionUnknown,
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionUnknown,
 				OutdatedImportsReason,
 				fmt.Sprintf("Check for outdated target imports failed: %s", err.Error())))
 			return false, err
 		}
 		if outdated {
-			inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 				OutdatedImportsReason,
 				"A least one target import is outdated"))
 			return true, nil
 		}
 	}
-	inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+	v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 		OutdatedImportsReason,
 		"All imports are up-to-date"))
 	return false, nil
@@ -73,21 +73,21 @@ func (v *Validator) OutdatedImports(ctx context.Context, inst *installations.Ins
 
 // CheckDependentInstallations checks whether all dependencies are succeeded.
 // It traverses through all dependent siblings and all dependent siblings of its parents.
-func (v *Validator) CheckDependentInstallations(ctx context.Context, inst *installations.Installation) (bool, error) {
+func (v *Validator) CheckDependentInstallations(ctx context.Context) (bool, error) {
 	const CheckSiblingDependentsOfParentsReason = "CheckSiblingDependentsOfParents"
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	// check if parent has sibling installation dependencies that are not finished yet
 	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
 	if err != nil {
-		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
 			fmt.Sprintf("Check for progressing dependents of the parent failed: %s", err.Error())))
 		return false, err
 	}
 
 	if !completed {
-		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
 			"Waiting until all progressing dependents of the parent are finished"))
 	}

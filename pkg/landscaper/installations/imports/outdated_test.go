@@ -65,7 +65,7 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		outdated, err := val.OutdatedImports(ctx, inInstA)
+		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeTrue())
 	})
@@ -89,7 +89,7 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		outdated, err := val.OutdatedImports(ctx, inInstB)
+		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeTrue())
 	})
@@ -109,7 +109,7 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
-		outdated, err := val.OutdatedImports(ctx, inInstB)
+		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeFalse())
 	})
@@ -131,7 +131,7 @@ var _ = Describe("OutdatedImports", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)
-			outdated, err := val.OutdatedImports(ctx, inInstRoot)
+			outdated, err := val.OutdatedImports(ctx)
 			Expect(err).To(Succeed())
 			Expect(outdated).To(BeTrue())
 		})
@@ -149,7 +149,7 @@ var _ = Describe("OutdatedImports", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)
-			outdated, err := val.OutdatedImports(ctx, inInstRoot)
+			outdated, err := val.OutdatedImports(ctx)
 			Expect(err).To(Succeed())
 			Expect(outdated).To(BeFalse())
 		})

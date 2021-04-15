@@ -126,7 +126,7 @@ func (c *controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 	}
 
 	validator := imports.NewValidator(op)
-	run, err := validator.OutdatedImports(ctx, op.Inst)
+	run, err := validator.OutdatedImports(ctx)
 	if err != nil {
 		return run, err
 	}
@@ -134,7 +134,7 @@ func (c *controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 		return false, nil
 	}
 
-	return validator.CheckDependentInstallations(ctx, op.Inst)
+	return validator.CheckDependentInstallations(ctx)
 }
 
 // Update redeploys subinstallations and deploy items.

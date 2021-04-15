@@ -185,7 +185,7 @@ var _ = Describe("Validation", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)
-			ok, err := val.CheckDependentInstallations(ctx, inInstA)
+			ok, err := val.CheckDependentInstallations(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeFalse())
 		})

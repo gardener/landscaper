@@ -134,8 +134,9 @@ func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	// default repository context if not defined
+	defaultRepoContext := c.lsConfig.RepositoryContext
 	if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil && inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = c.lsConfig.RepositoryContext
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = defaultRepoContext
 	}
 
 	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
@@ -153,7 +154,7 @@ func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			currOp, "InitInstallation", err.Error())
 	}
 
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation, defaultRepoContext)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
 		return nil, lsv1alpha1helper.NewWrappedError(err,

@@ -53,7 +53,7 @@ var _ = Describe("Context", func() {
 		instRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -68,7 +68,7 @@ var _ = Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -84,7 +84,7 @@ var _ = Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 

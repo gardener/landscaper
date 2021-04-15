@@ -47,18 +47,22 @@ type Operation struct {
 
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
+
+	// default repo context
+	DefaultRepoContext *cdv2.RepositoryContext
 }
 
 // NewInstallationOperation creates a new installation operation
 func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, cRegistry), inst)
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, cRegistry), inst, nil)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
-func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, inst *Installation) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, inst *Installation, defaultRepoContext *cdv2.RepositoryContext) (*Operation, error) {
 	instOp := &Operation{
-		Interface: op,
-		Inst:      inst,
+		Interface:          op,
+		Inst:               inst,
+		DefaultRepoContext: defaultRepoContext,
 	}
 
 	if err := instOp.ResolveComponentDescriptors(ctx); err != nil {
@@ -296,6 +300,12 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 			continue
 		}
 		inst := obj
+
+		if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil &&
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = o.DefaultRepoContext
+		}
+
 		installations = append(installations, &inst)
 	}
 	return installations, nil
