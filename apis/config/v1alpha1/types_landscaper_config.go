@@ -25,21 +25,28 @@ type LandscaperConfiguration struct {
 	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
 	// +optional
 	CrdManagement *CrdManagementConfiguration `json:"crdManagement,omitempty"`
-	// DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed.
+	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
+	// +optional
+	DeployItemTimeouts *DeployItemTimeouts `json:"deployItemTimeouts,omitempty"`
+}
+
+// DeployItemTimeouts contains multiple timeout configurations for deploy items
+type DeployItemTimeouts struct {
+	// PickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed.
 	// Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to five minutes if not specified.
 	// +optional
-	DeployItemPickupTimeout string `json:"deployItemPickupTimeout,omitempty"`
-	// DeployItemAbortingTimeout specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation.
+	Pickup string `json:"pickup,omitempty"`
+	// Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation.
 	// Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to five minutes if not specified.
 	// +optional
-	DeployItemAbortingTimeout string `json:"deployItemAbortingTimeout,omitempty"`
-	// DefaultDeployItemTimeout specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'.
+	Abort string `json:"abort,omitempty"`
+	// ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'.
 	// Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to ten minutes if not specified.
 	// +optional
-	DefaultDeployItemTimeout string `json:"defaultDeployItemTimeout,omitempty"`
+	ProgressingDefault string `json:"progressingDefault,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry

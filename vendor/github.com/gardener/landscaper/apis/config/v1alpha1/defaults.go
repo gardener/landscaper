@@ -22,14 +22,17 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 			UseInMemoryOverlay: false,
 		}
 	}
-	if len(obj.DeployItemPickupTimeout) == 0 {
-		obj.DeployItemPickupTimeout = "5m"
+	if obj.DeployItemTimeouts == nil {
+		obj.DeployItemTimeouts = &DeployItemTimeouts{}
 	}
-	if len(obj.DeployItemAbortingTimeout) == 0 {
-		obj.DeployItemAbortingTimeout = "5m"
+	if len(obj.DeployItemTimeouts.Pickup) == 0 {
+		obj.DeployItemTimeouts.Pickup = "5m"
 	}
-	if len(obj.DefaultDeployItemTimeout) == 0 {
-		obj.DefaultDeployItemTimeout = "10m"
+	if len(obj.DeployItemTimeouts.Abort) == 0 {
+		obj.DeployItemTimeouts.Abort = "5m"
+	}
+	if len(obj.DeployItemTimeouts.ProgressingDefault) == 0 {
+		obj.DeployItemTimeouts.ProgressingDefault = "10m"
 	}
 
 }
