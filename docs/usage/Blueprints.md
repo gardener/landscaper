@@ -58,12 +58,12 @@ imports:
 # Import a data object by specifying the expected structure of data
 # as jsonschema.
 - name: my-import-key
-  optional: false # optional, defaults to false
+  required: true # required, defaults to true
   schema: # expects a jsonschema
     type: string
 # Import a target by specifying the targetType
 - name: my-target-import-key
-  optional: false # optional, defaults to false
+  required: true # required, defaults to true
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # exports defines all values that are produced by the blueprint

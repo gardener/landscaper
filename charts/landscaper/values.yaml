@@ -19,6 +19,7 @@ landscaper:
     secrets: {}
 #     <name>: <docker config json>
 
+#  The default repositoryContext that will be used if no repositoryContext is defined in an installation
 #  repositoryContext:
 #    type: "ociRegistry"
 #    baseUrl: ""
