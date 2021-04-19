@@ -13,7 +13,14 @@ import (
 )
 
 func AddControllerToManager(mgr manager.Manager, deployItemPickupTimeout, deployItemAbortingTimeout, deployItemDefaultTimeout *lscore.Duration) error {
-	a, err := NewController(ctrl.Log.WithName("controllers").WithName("DeployItem"), mgr.GetClient(), mgr.GetScheme(), *deployItemPickupTimeout, *deployItemAbortingTimeout, *deployItemDefaultTimeout)
+	a, err := NewController(
+		ctrl.Log.WithName("controllers").WithName("DeployItem"),
+		mgr.GetClient(),
+		mgr.GetScheme(),
+		*deployItemPickupTimeout,
+		*deployItemAbortingTimeout,
+		*deployItemDefaultTimeout,
+	)
 	if err != nil {
 		return err
 	}

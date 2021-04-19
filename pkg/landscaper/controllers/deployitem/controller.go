@@ -77,24 +77,24 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 
 	// detect pickup timeout
 	if con.pickupTimeout != 0 {
-		logger.V(5).Info("check for pickup timeout")
+		logger.V(7).Info("check for pickup timeout")
 		requeue, err = con.detectPickupTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-	}
-	if !reflect.DeepEqual(old.Status, di.Status) {
-		if err := con.c.Status().Update(ctx, di); err != nil {
-			logger.Error(err, "unable to set deployitem status")
-			return reconcile.Result{}, err
+		if !reflect.DeepEqual(old.Status, di.Status) {
+			if err := con.c.Status().Update(ctx, di); err != nil {
+				logger.Error(err, "unable to set deployitem status")
+				return reconcile.Result{}, err
+			}
+			// if there was a pickup timeout, no need to check for anything else
+			return reconcile.Result{}, nil
 		}
-		// if there was a pickup timeout, no need to check for anything else
-		return reconcile.Result{}, nil
 	}
 
 	// detect aborting timeout
 	if con.abortingTimeout != 0 {
-		logger.V(5).Info("check for aborting timeout")
+		logger.V(7).Info("check for aborting timeout")
 		tmp, err := con.detectAbortingTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -104,20 +104,20 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		} else if tmp != nil && *tmp < *requeue {
 			requeue = tmp
 		}
-	}
-	if !reflect.DeepEqual(old.Status, di.Status) {
-		if err := con.c.Status().Update(ctx, di); err != nil {
-			logger.Error(err, "unable to set deployitem status")
-			return reconcile.Result{}, err
+		if !reflect.DeepEqual(old.Status, di.Status) {
+			if err := con.c.Status().Update(ctx, di); err != nil {
+				logger.Error(err, "unable to set deployitem status")
+				return reconcile.Result{}, err
+			}
+			// if there was an aborting timeout, no need to check for anything else
+			return reconcile.Result{}, nil
 		}
-		// if there was an aborting timeout, no need to check for anything else
-		return reconcile.Result{}, nil
 	}
 
 	// detect progressing timeout
 	// only do something if progressing timeout detection is neither deactivated on the deploy item, nor defaulted by the deploy item and deactivated by default
 	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
-		logger.V(5).Info("check for progressing timeout")
+		logger.V(7).Info("check for progressing timeout")
 		tmp, err := con.detectProgressingTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -127,11 +127,11 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		} else if tmp != nil && *tmp < *requeue {
 			requeue = tmp
 		}
-	}
-	if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-		if err := con.c.Update(ctx, di); err != nil {
-			logger.Error(err, "unable to update deploy item")
-			return reconcile.Result{}, err
+		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
+			if err := con.c.Update(ctx, di); err != nil {
+				logger.Error(err, "unable to update deploy item")
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
