@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -149,7 +151,7 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 		return nil, nil
 	}
 
-	if !lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp) {
+	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp)) {
 		logger.V(7).Info("deploy item doesn't have reconcile timestamp annotation, nothing to do")
 		return nil, nil
 	}
@@ -184,7 +186,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 	}
 
 	// no aborting timeout if timestamp is missing or deploy item is in a final phase
-	if !lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.AbortTimestamp) || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 		logger.V(7).Info("deploy item doesn't have abort timestamp annotation or is in a final phase, nothing to do")
 		return nil, nil
 	}

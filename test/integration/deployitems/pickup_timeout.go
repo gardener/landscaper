@@ -14,6 +14,8 @@ import (
 	g "github.com/onsi/gomega"
 	gs "github.com/onsi/gomega/gstruct"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 
@@ -83,7 +85,7 @@ func PickupTimeoutTests(f *framework.Framework) {
 			// checking whether the set timestamp is up-to-date is difficult due to potential differences between the
 			// system times of the machine running the landscaper and the machine running the tests
 			// so just check for existence of the annotation
-			g.Expect(lsv1alpha1helper.HasTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)).To(g.BeTrue(), "deploy item should have a reconcile timestamp annotation")
+			g.Expect(metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp))).To(g.BeTrue(), "deploy item should have a reconcile timestamp annotation")
 
 			ginkgo.By("check for pickup timeout")
 			time.Sleep(deployItemPickupTimeout)

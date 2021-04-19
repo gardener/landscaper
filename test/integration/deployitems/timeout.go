@@ -13,6 +13,8 @@ import (
 	g "github.com/onsi/gomega"
 	gs "github.com/onsi/gomega/gstruct"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/test/framework"
@@ -93,9 +95,9 @@ func ProgressingTimeoutTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Get(ctx, namespacedName(di2.ObjectMeta), di2))
 
 			ginkgo.By("check for abort annotation and timestamp")
-			g.Expect(lsv1alpha1helper.HasTimestampAnnotation(di1.ObjectMeta, lsv1alpha1helper.AbortTimestamp)).To(g.BeFalse(), "deploy item should not have an abort timestamp annotation")
+			g.Expect(metav1.HasAnnotation(di1.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp))).To(g.BeFalse(), "deploy item should not have an abort timestamp annotation")
 			g.Expect(lsv1alpha1helper.HasOperation(di1.ObjectMeta, lsv1alpha1.AbortOperation)).To(g.BeFalse(), "deploy item should not have the abort operation annotation")
-			g.Expect(lsv1alpha1helper.HasTimestampAnnotation(di2.ObjectMeta, lsv1alpha1helper.AbortTimestamp)).To(g.BeFalse(), "deploy item should not have an abort timestamp annotation")
+			g.Expect(metav1.HasAnnotation(di2.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp))).To(g.BeFalse(), "deploy item should not have an abort timestamp annotation")
 			g.Expect(lsv1alpha1helper.HasOperation(di2.ObjectMeta, lsv1alpha1.AbortOperation)).To(g.BeFalse(), "deploy item should not have the abort operation annotation")
 		})
 

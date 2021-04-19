@@ -39,24 +39,13 @@ func SetOperation(obj *metav1.ObjectMeta, op v1alpha1.Operation) {
 	metav1.SetMetaDataAnnotation(obj, v1alpha1.OperationAnnotation, string(op))
 }
 
-// HasTimestampAnnotation checks if the obj has the given timeout annotation
-func HasTimestampAnnotation(obj metav1.ObjectMeta, ta TimestampAnnotation) bool {
-	_, ok := obj.Annotations[string(ta)]
-	return ok
-}
-
 func GetTimestampAnnotation(obj metav1.ObjectMeta, ta TimestampAnnotation) (time.Time, error) {
 	return time.Parse(time.RFC3339, obj.Annotations[string(ta)])
 }
 
 // SetTimestampAnnotationNow sets the timeout annotation with the current timestamp.
 func SetTimestampAnnotationNow(obj *metav1.ObjectMeta, ta TimestampAnnotation) {
-	SetTimestampAnnotation(obj, ta, time.Now())
-}
-
-// SetTimestampAnnotation sets the timeout annotation with the given timestamp.
-func SetTimestampAnnotation(obj *metav1.ObjectMeta, ta TimestampAnnotation, ts time.Time) {
-	metav1.SetMetaDataAnnotation(obj, string(ta), ts.Format(time.RFC3339))
+	metav1.SetMetaDataAnnotation(obj, string(ta), time.Now().Format(time.RFC3339))
 }
 
 func SetAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
