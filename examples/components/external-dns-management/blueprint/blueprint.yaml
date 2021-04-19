@@ -9,19 +9,19 @@ jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 
 imports:
 - name: providers
-  optional: true
+  required: false
   schema:
     type: array
     items:
       $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # cd://componentReferences/github.com/gardener/external-dns-management-schemas/resources/schemas#definitions/provider
 
 - name: dnsClass
-  optional: true
+  required: false
   schema:
     type: string
 
 - name: identifier
-  optional: true
+  required: false
   example: ... # optional
   schema:
     description: ""

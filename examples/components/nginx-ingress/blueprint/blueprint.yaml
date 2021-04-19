@@ -18,7 +18,7 @@ localTypes:
 
 imports:
 - name: dnsClass
-  optional: true
+  required: false
   schema:
     type: string
 
@@ -32,7 +32,7 @@ imports:
   targetType: kubernetes-cluster
 
 - name: resources
-  optional: true
+  required: false
   schema:
     type: object
     properties:
