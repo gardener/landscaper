@@ -16,6 +16,8 @@ HELM_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY      := $(REGISTRY)/helm-deployer-cont
 MANIFEST_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY  := $(REGISTRY)/manifest-deployer-controller
 MOCK_DEPLOYER_CONTROLLER_IMAGE_REPOSITORY      := $(REGISTRY)/mock-deployer-controller
 
+DISABLE_CLEANUP := false
+
 .PHONY: install-requirements
 install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
@@ -46,7 +48,7 @@ test:
 
 .PHONY: integration-test
 integration-test:
-	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG)
+	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress --kubeconfig $(KUBECONFIG) --ls-version $(EFFECTIVE_VERSION) --registry-config=$(REGISTRY_CONFIG) --disable-cleanup=$(DISABLE_CLEANUP)
 
 .PHONY: verify
 verify: check

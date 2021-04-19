@@ -68,6 +68,26 @@ func NewWrappedError(err error, operation, reason, message string, codes ...lsv1
 	}
 }
 
+// NewErrorOrNil creates a new landscaper internal error that wraps another error.
+// if no error is set the functions return nil.
+// The error is automatically set as error message.
+func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) error {
+	if err == nil {
+		return nil
+	}
+	return &Error{
+		lsErr: lsv1alpha1.Error{
+			Operation:          operation,
+			Reason:             reason,
+			Message:            err.Error(),
+			LastTransitionTime: metav1.Now(),
+			LastUpdateTime:     metav1.Now(),
+			Codes:              codes,
+		},
+		err: err,
+	}
+}
+
 // IsError returns the landscaper if the given error is one.
 // If the err does not contain a landsacper error nil is returned.
 func IsError(err error) (*Error, bool) {
@@ -88,6 +108,9 @@ func IsError(err error) (*Error, bool) {
 
 // TryUpdateError tries to update the properties of the last error if the err is a internal landscaper error.
 func TryUpdateError(lastErr *lsv1alpha1.Error, err error) *lsv1alpha1.Error {
+	if err == nil {
+		return nil
+	}
 	if intErr, ok := IsError(err); ok {
 		return intErr.UpdatedError(lastErr)
 	}

@@ -72,6 +72,9 @@ type ExecutionStatus struct {
 	// Conditions contains the actual condition of a execution
 	Conditions []Condition `json:"conditions,omitempty"`
 
+	// LastError describes the last error that occurred.
+	LastError *Error `json:"lastError,omitempty"`
+
 	// ExportReference references the object that contains the exported values.
 	// only used for operation purpose.
 	// +optional

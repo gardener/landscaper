@@ -19,7 +19,7 @@ subjects:
   name: {{ include "landscaper.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 ---
-{{- if not (has "all" .Values.disableWebhooks) }}
+{{- if not (has "all" .Values.webhooksServer.disableWebhooks) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

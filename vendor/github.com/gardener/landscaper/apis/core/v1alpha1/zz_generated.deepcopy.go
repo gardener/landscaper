@@ -671,6 +671,11 @@ func (in *ExecutionStatus) DeepCopyInto(out *ExecutionStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.LastError != nil {
+		in, out := &in.LastError, &out.LastError
+		*out = new(Error)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ExportReference != nil {
 		in, out := &in.ExportReference, &out.ExportReference
 		*out = new(ObjectReference)

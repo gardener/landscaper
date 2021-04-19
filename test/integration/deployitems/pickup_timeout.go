@@ -6,18 +6,19 @@ package deployitems
 
 import (
 	"context"
+	"errors"
 	"path"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
-
 	"github.com/onsi/ginkgo"
 	g "github.com/onsi/gomega"
 	gs "github.com/onsi/gomega/gstruct"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/test/framework"
@@ -80,22 +81,28 @@ func PickupTimeoutTests(f *framework.Framework) {
 
 			ginkgo.By("verify that deploy items have been created")
 			di := &lsv1alpha1.DeployItem{}
-			g.Eventually(func() (*lsv1alpha1.DeployItem, error) {
+			g.Eventually(func() error {
 				err := f.Client.Get(ctx, namespacedName(inst.ObjectMeta), inst)
-				if err != nil || inst.Status.ExecutionReference == nil {
-					return nil, err
+				if err != nil {
+					return err
+				}
+				if inst.Status.ExecutionReference == nil {
+					return errors.New("no execution reference")
 				}
 				exec := &lsv1alpha1.Execution{}
 				err = f.Client.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec)
-				if err != nil || exec.Status.DeployItemReferences == nil || len(exec.Status.DeployItemReferences) == 0 {
-					return nil, err
+				if err != nil {
+					return err
+				}
+				if exec.Status.DeployItemReferences == nil || len(exec.Status.DeployItemReferences) == 0 {
+					return errors.New("no deployment references defined")
 				}
 				err = f.Client.Get(ctx, exec.Status.DeployItemReferences[0].Reference.NamespacedName(), di)
 				if err != nil {
-					return nil, err
+					return err
 				}
-				return di, err
-			}, waitingForDeployItems, resyncTime).ShouldNot(g.BeNil(), "unable to fetch deploy item")
+				return nil
+			}, waitingForDeployItems, resyncTime).Should(g.Succeed(), "unable to fetch deploy item")
 
 			ginkgo.By("check for timestamp annotation")
 			// checking whether the set timestamp is up-to-date is difficult due to potential differences between the

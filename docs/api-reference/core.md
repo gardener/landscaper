@@ -1760,6 +1760,7 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
 </p>
 <p>
@@ -1943,7 +1944,7 @@ ExecutionPhase
 </em>
 </td>
 <td>
-<p>Phase is the current phase of the execution .</p>
+<p>Phase is the current phase of the execution.</p>
 </td>
 </tr>
 <tr>
@@ -1954,6 +1955,7 @@ int64
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ObservedGeneration is the most recent generation observed for this Execution.
 It corresponds to the Execution generation, which is updated on mutation by the landscaper.</p>
 </td>
@@ -1968,7 +1970,22 @@ It corresponds to the Execution generation, which is updated on mutation by the 
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Conditions contains the actual condition of a execution</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastError</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Error">
+Error
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LastError describes the last error that occurred.</p>
 </td>
 </tr>
 <tr>
@@ -1996,6 +2013,7 @@ only used for operation purpose.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>DeployItemReferences contain the state of all deploy items.
 The observed generation is here the generation of the Execution not the DeployItem.</p>
 </td>

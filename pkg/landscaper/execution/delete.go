@@ -13,16 +13,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
 
 // Delete handles the delete flow for a execution
 func (o *Operation) Delete(ctx context.Context) error {
+	op := "Deletion"
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to list managed deploy items: %w", err)
+		return lsv1alpha1helper.NewWrappedError(err, op, "ListDeployItems", err.Error())
 	}
 	// todo: remove orphaned items and also remove them from the status
 	executionItems, _ := o.getExecutionItems(managedItems)
@@ -37,7 +39,11 @@ func (o *Operation) Delete(ctx context.Context) error {
 		if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(item, executionItems) {
 			if err := o.Client().Delete(ctx, item.DeployItem); err != nil {
 				if !apierrors.IsNotFound(err) {
-					return fmt.Errorf("unable to delete deploy item %s of step %s: %w", item.DeployItem.Name, item.Info.Name, err)
+					return lsv1alpha1helper.NewWrappedError(err,
+						"DeleteDeployItem",
+						fmt.Sprintf("unable to delete deploy item %s of step %s", item.DeployItem.Name, item.Info.Name),
+						err.Error(),
+					)
 				}
 				allDeleted = true
 			}
@@ -54,7 +60,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return o.Client().Update(ctx, o.exec)
+	return lsv1alpha1helper.NewErrorOrNil(o.Client().Update(ctx, o.exec), op, "RemoveFinalizer")
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.

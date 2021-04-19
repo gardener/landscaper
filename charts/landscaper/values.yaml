@@ -40,18 +40,28 @@ landscaper:
 
 #  deployItemPickupTimeout: 5m
 
+image:
+   # Overrides the image tag whose default is the chart appVersion.
+#  tag: ""
+
 controller:
   replicaCount: 1
+  image:
+    repository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the .Values.image.tag or chart appVersion.
+    #tag: ""
 
 webhooksServer:
   replicaCount: 1
+  image:
+    repository: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the .Values.image.tag or the chart appVersion.
+    #tag: ""
 
-image:
-  controllerRepository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
-  webhookServerRepository: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  #tag: ""
+  servicePort: 9443 # required unless disableWebhooks contains "all"
+  disableWebhooks: [] # options: installation, deployitem, execution, all
 
 imagePullSecrets: []
 nameOverride: ""
@@ -100,8 +110,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-webhookConfig: # required unless disableWebhooks contains "all"
-  servicePort: 9443
-
-disableWebhooks: [] # options: installation, deployitem, execution, all

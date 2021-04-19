@@ -2600,7 +2600,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 				Properties: map[string]spec.Schema{
 					"phase": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Phase is the current phase of the execution .",
+							Description: "Phase is the current phase of the execution.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2627,6 +2627,12 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"lastError": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastError describes the last error that occurred.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+						},
+					},
 					"exportRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExportReference references the object that contains the exported values. only used for operation purpose.",
@@ -2648,11 +2654,10 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 						},
 					},
 				},
-				Required: []string{"observedGeneration"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"},
 	}
 }
 

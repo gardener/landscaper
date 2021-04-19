@@ -6,10 +6,11 @@ package execution
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,75 +28,118 @@ import (
 func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme) (reconcile.Reconciler, error) {
 	return &controller{
 		log:    log,
-		c:      kubeClient,
+		client: kubeClient,
 		scheme: scheme,
 	}, nil
 }
 
 type controller struct {
 	log    logr.Logger
-	c      client.Client
+	client client.Client
 	scheme *runtime.Scheme
 }
 
-func (a *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	a.log.Info("reconcile", "resource", req.NamespacedName)
+func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := c.log.WithValues("resource", req.NamespacedName)
+	logger.Info("reconcile")
 
 	exec := &lsv1alpha1.Execution{}
-	if err := a.c.Get(ctx, req.NamespacedName, exec); err != nil {
+	if err := c.client.Get(ctx, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
-			a.log.V(5).Info(err.Error())
+			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
-	old := exec.DeepCopy()
+	errHdl := HandleErrorFunc(logger, c.client, exec)
 
-	isForceReconcileOperation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	isReconcileOperation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
-
-	if isForceReconcileOperation || isReconcileOperation {
-		a.log.Info("reconcile annotation found", "execution", req.String(),
-			"operation", lsv1alpha1helper.GetOperation(exec.ObjectMeta))
-		delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := a.c.Update(ctx, exec); err != nil {
-			return reconcile.Result{Requeue: true}, err
-		}
+	if err := HandleAnnotationsAndGeneration(ctx, logger, c.client, exec); err != nil {
+		return reconcile.Result{}, errHdl(ctx, err)
 	}
 
-	err := a.Ensure(ctx, exec, isForceReconcileOperation)
-	if !reflect.DeepEqual(exec.Status, old.Status) {
-		if err2 := a.c.Status().Update(ctx, exec); err2 != nil {
-			if err != nil {
-				err2 = errors.Wrapf(err, "update error: %s", err.Error())
-			}
-			return reconcile.Result{}, err2
-		}
-	}
-	if err != nil {
-		return reconcile.Result{}, err
+	if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
+		logger.V(7).Info("execution item is already in completion phase")
+		return reconcile.Result{}, nil
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, errHdl(ctx, c.Ensure(ctx, logger, exec))
 }
 
-func (a *controller) Ensure(ctx context.Context, exec *lsv1alpha1.Execution, forceReconcile bool) error {
-	op := execution.NewOperation(operation.NewOperation(a.log, a.c, a.scheme, nil), exec,
+func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) error {
+	forceReconcile := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+	op := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme, nil), exec,
 		forceReconcile)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		return a.c.Update(ctx, exec)
+		return lsv1alpha1helper.NewErrorOrNil(c.client.Update(ctx, exec), "Reconcile", "RemoveFinalizer")
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {
 		return op.Delete(ctx)
 	}
 
-	if err := op.Reconcile(ctx); err != nil {
+	return op.Reconcile(ctx)
+}
+
+// HandleAnnotationsAndGeneration is meant to be called at the beginning of a deployer's reconcile loop.
+// If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
+// It will also remove the timeout annotation if it is set.
+// Returns:
+//   - the modified execution
+//   - an error, if updating the execution failed, nil otherwise
+func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c client.Client, exec *lsv1alpha1.Execution) error {
+	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
+	if hasReconcileAnnotation || exec.Status.ObservedGeneration != exec.Generation {
+		// reconcile necessary due to one of
+		// - reconcile annotation
+		// - outdated generation
+		log.V(5).Info("reconcile required, setting observed generation and phase", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
+		exec.Status.ObservedGeneration = exec.Generation
+		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+
+		log.V(7).Info("updating status")
+		if err := c.Status().Update(ctx, exec); err != nil {
+			return err
+		}
+		log.V(7).Info("successfully updated status")
+	}
+	if hasReconcileAnnotation {
+		log.V(5).Info("removing reconcile annotation")
+		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
+		log.V(7).Info("updating metadata")
+		if err := c.Update(ctx, exec); err != nil {
+			return err
+		}
+		log.V(7).Info("successfully updated metadata")
+	}
+	return nil
+}
+
+// HandleErrorFunc returns a error handler func for deployers.
+// The functions automatically sets the phase for long running errors and updates the status accordingly.
+func HandleErrorFunc(log logr.Logger, client client.Client, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
+	old := exec.DeepCopy()
+	return func(ctx context.Context, err error) error {
+		exec.Status.LastError = lsv1alpha1helper.TryUpdateError(exec.Status.LastError, err)
+		exec.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+			lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase),
+			exec.Status.LastError,
+			5*time.Minute))
+		if !reflect.DeepEqual(old.Status, exec.Status) {
+			if err2 := client.Status().Update(ctx, exec); err2 != nil {
+				if apierrors.IsConflict(err2) { // reduce logging
+					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				} else {
+					log.Error(err2, "unable to update status")
+				}
+				// retry on conflict
+				if err != nil {
+					return err2
+				}
+			}
+		}
 		return err
 	}
-
-	return nil
 }
