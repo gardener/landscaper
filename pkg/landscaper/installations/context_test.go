@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
@@ -53,7 +55,7 @@ var _ = Describe("Context", func() {
 		instRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -68,7 +70,7 @@ var _ = Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -84,7 +86,7 @@ var _ = Describe("Context", func() {
 		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 		Expect(err).ToNot(HaveOccurred())
 		lCtx := instOp.Context()
 
@@ -92,6 +94,24 @@ var _ = Describe("Context", func() {
 		Expect(lCtx.Siblings).To(HaveLen(3))
 
 		Expect(lCtx.Parent.Info.Name).To(Equal("root"))
+	})
+
+	It("initialize root installations with default context", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+
+		defaultRepoContext := cdv2.RepositoryContext{
+			Type:    "local",
+			BaseURL: "../testdata/registry",
+		}
+
+		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root-test40"])
+		Expect(err).ToNot(HaveOccurred())
+
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)
+		Expect(err).ToNot(HaveOccurred())
+		repoContextOfOtherRoot := instOp.Context().Siblings[0].Info.Spec.ComponentDescriptor.Reference.RepositoryContext
+		Expect(repoContextOfOtherRoot).ToNot(BeNil())
 	})
 
 })
