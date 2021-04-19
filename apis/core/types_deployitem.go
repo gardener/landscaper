@@ -60,7 +60,7 @@ type DeployItemSpec struct {
 	// Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout).
 	// Defaults to ten minutes if not specified.
 	// +optional
-	Timeout string `json:"timeout,omitempty"`
+	Timeout *Duration `json:"timeout,omitempty"`
 }
 
 // DeployItemStatus contains the status of a deploy item

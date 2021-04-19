@@ -54,8 +54,7 @@ func ProgressingTimeoutTests(f *framework.Framework) {
 			di.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, di))
 
-			progressingTimeout, err := time.ParseDuration(di.Spec.Timeout)
-			utils.ExpectNoError(err)
+			progressingTimeout := di.Spec.Timeout.Duration
 
 			ginkgo.By("waiting for timeout")
 			time.Sleep(progressingTimeout)
@@ -82,10 +81,8 @@ func ProgressingTimeoutTests(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, f.Client, di1))
 			utils.ExpectNoError(state.Create(ctx, f.Client, di2))
 
-			progressingTimeout, err := time.ParseDuration(di1.Spec.Timeout)
-			utils.ExpectNoError(err)
-			tmp, err := time.ParseDuration(di2.Spec.Timeout)
-			utils.ExpectNoError(err)
+			progressingTimeout := di1.Spec.Timeout.Duration
+			tmp := di2.Spec.Timeout.Duration
 			if tmp > progressingTimeout {
 				progressingTimeout = tmp
 			}

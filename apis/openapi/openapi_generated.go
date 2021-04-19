@@ -67,6 +67,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                          schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemStatus":                        schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemTemplate":                      schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Duration":                                schema_landscaper_apis_core_v1alpha1_Duration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Error":                                   schema_landscaper_apis_core_v1alpha1_Error(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Execution":                               schema_landscaper_apis_core_v1alpha1_Execution(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionList":                           schema_landscaper_apis_core_v1alpha1_ExecutionList(ref),
@@ -1051,27 +1052,26 @@ func schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref common.Refere
 					"pickup": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
 					"abort": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
 					"progressingDefault": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core.Duration"},
 	}
 }
 
@@ -1327,27 +1327,26 @@ func schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref common.Refere
 					"pickup": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 					"abort": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 					"progressingDefault": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
 	}
 }
 
@@ -2304,8 +2303,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout specifies how long the deployer may take to apply the deploy item. When the time is exceeded, the landscaper will add the abort annotation to the deploy item and later put it in 'Failed' if the deployer doesn't handle the abort properly. Value has to be parsable by time.ParseDuration (or 'none' to deactivate the timeout). Defaults to ten minutes if not specified.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
@@ -2313,7 +2311,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -2458,6 +2456,18 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_Duration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+				Type:        v1alpha1.Duration{}.OpenAPISchemaType(),
+				Format:      v1alpha1.Duration{}.OpenAPISchemaFormat(),
+			},
+		},
 	}
 }
 

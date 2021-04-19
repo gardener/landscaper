@@ -346,7 +346,9 @@ Note that the type information is used to determine the secret key and the type 
 <td>
 <code>timeout</code></br>
 <em>
-string
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
 </em>
 </td>
 <td>
@@ -1574,7 +1576,9 @@ Note that the type information is used to determine the secret key and the type 
 <td>
 <code>timeout</code></br>
 <em>
-string
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
 </em>
 </td>
 <td>
@@ -1801,6 +1805,40 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 <p>
 <p>DeployItemType defines the type of the deploy item</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>)
+</p>
+<p>
+<p>Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Duration</code></br>
+<em>
+<a href="https://godoc.org/time#Duration">
+time.Duration
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>Duration</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Error">Error
 </h3>
 <p>

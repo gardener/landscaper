@@ -7,6 +7,8 @@ package config
 import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lscore "github.com/gardener/landscaper/apis/core"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -36,17 +38,17 @@ type DeployItemTimeouts struct {
 	// Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to five minutes if not specified.
 	// +optional
-	Pickup string `json:"pickup,omitempty"`
+	Pickup *lscore.Duration `json:"pickup,omitempty"`
 	// Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation.
 	// Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to five minutes if not specified.
 	// +optional
-	Abort string `json:"abort,omitempty"`
+	Abort *lscore.Duration `json:"abort,omitempty"`
 	// ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'.
 	// Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method.
 	// Defaults to ten minutes if not specified.
 	// +optional
-	ProgressingDefault string `json:"progressingDefault,omitempty"`
+	ProgressingDefault *lscore.Duration `json:"progressingDefault,omitempty"`
 }
 
 // RegistryConfiguration contains the configuration for the used definition registry

@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
@@ -31,51 +32,17 @@ const (
 // To detect pickup timeouts (when a DeployItem resource is not reconciled by any deployer within a specified timeframe), the controller checks for a timestamp annotation.
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
-// rawPickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(log logr.Logger, c client.Client, scheme *runtime.Scheme, rawPickupTimeout, rawAbortingTimeout, rawDefaultTimeout string) (reconcile.Reconciler, error) {
+// pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
+func NewController(log logr.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout lscore.Duration) (reconcile.Reconciler, error) {
 	con := controller{log: log, c: c, scheme: scheme}
-	if rawPickupTimeout == "none" {
-		con.pickupTimeout = nil
-	} else {
-		tmp, err := time.ParseDuration(rawPickupTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse deploy item pickup timeout into a duration: %w", err)
-		}
-		con.pickupTimeout = &tmp
-	}
-	if rawAbortingTimeout == "none" {
-		con.abortingTimeout = nil
-	} else {
-		tmp, err := time.ParseDuration(rawAbortingTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse deploy item aborting timeout into a duration: %w", err)
-		}
-		con.abortingTimeout = &tmp
-	}
-	if rawDefaultTimeout == "none" {
-		con.defaultTimeout = nil
-	} else {
-		tmp, err := time.ParseDuration(rawDefaultTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse deploy item default timeout into a duration: %w", err)
-		}
-		con.defaultTimeout = &tmp
-	}
+	con.pickupTimeout = pickupTimeout.Duration
+	con.abortingTimeout = abortingTimeout.Duration
+	con.defaultTimeout = defaultTimeout.Duration
 
 	// log pickup timeout
-	timeoutLog := ""
-	if con.pickupTimeout != nil {
-		timeoutLog = con.pickupTimeout.String()
-	}
-	log.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != nil, "timeout", timeoutLog)
-	if con.abortingTimeout != nil {
-		timeoutLog = con.abortingTimeout.String()
-	}
-	log.Info("deploy item aborting timeout detection", "active", con.abortingTimeout != nil, "timeout", timeoutLog)
-	if con.defaultTimeout != nil {
-		timeoutLog = con.defaultTimeout.String()
-	}
-	log.Info("deploy item default timeout", "active", con.defaultTimeout != nil, "timeout", timeoutLog)
+	log.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != 0, "timeout", con.pickupTimeout.String())
+	log.Info("deploy item aborting timeout detection", "active", con.abortingTimeout != 0, "timeout", con.abortingTimeout.String())
+	log.Info("deploy item default timeout", "active", con.defaultTimeout != 0, "timeout", con.defaultTimeout.String())
 
 	return &con, nil
 }
@@ -84,9 +51,9 @@ type controller struct {
 	log             logr.Logger
 	c               client.Client
 	scheme          *runtime.Scheme
-	pickupTimeout   *time.Duration
-	abortingTimeout *time.Duration
-	defaultTimeout  *time.Duration
+	pickupTimeout   time.Duration
+	abortingTimeout time.Duration
+	defaultTimeout  time.Duration
 }
 
 func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -107,7 +74,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	old := di.DeepCopy()
 
 	// detect pickup timeout
-	if con.pickupTimeout != nil {
+	if con.pickupTimeout != 0 {
 		logger.V(5).Info("check for pickup timeout")
 		requeue, err = con.detectPickupTimeouts(logger, di)
 		if err != nil {
@@ -124,7 +91,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	}
 
 	// detect aborting timeout
-	if con.abortingTimeout != nil {
+	if con.abortingTimeout != 0 {
 		logger.V(5).Info("check for aborting timeout")
 		tmp, err := con.detectAbortingTimeouts(logger, di)
 		if err != nil {
@@ -147,7 +114,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 
 	// detect progressing timeout
 	// only do something if progressing timeout detection is neither deactivated on the deploy item, nor defaulted by the deploy item and deactivated by default
-	if !(di.Spec.Timeout == "none" || (len(di.Spec.Timeout) == 0 && con.defaultTimeout == nil)) {
+	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
 		logger.V(5).Info("check for progressing timeout")
 		tmp, err := con.detectProgressingTimeouts(logger, di)
 		if err != nil {
@@ -192,18 +159,18 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 		return nil, fmt.Errorf("unable to parse reconcile timestamp annotation: %w", err)
 	}
 	waitingForPickupDuration := time.Since(ts)
-	if waitingForPickupDuration >= *con.pickupTimeout {
+	if waitingForPickupDuration >= con.pickupTimeout {
 		// no deployer has picked up the deploy item within the timeframe
 		// => pickup timeout
 		logger.V(5).Info("pickup timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", *con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
 		return nil, nil
 	}
 
 	// deploy item neither picked up nor timed out
 	// => requeue shortly after expected timeout
-	requeue := *con.pickupTimeout - waitingForPickupDuration + (5 * time.Second)
+	requeue := con.pickupTimeout - waitingForPickupDuration + (5 * time.Second)
 	return &requeue, nil
 }
 
@@ -227,18 +194,18 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 		return nil, fmt.Errorf("unable to parse abort timestamp annotation: %w", err)
 	}
 	waitingForAbortDuration := time.Since(ts)
-	if waitingForAbortDuration >= *con.abortingTimeout {
+	if waitingForAbortDuration >= con.abortingTimeout {
 		// deploy item has not been aborted within the timeframe
 		// => aborting timeout
 		logger.V(5).Info("aborting timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, AbortingTimeoutOperation, AbortingTimeoutReason, fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds", *con.abortingTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, AbortingTimeoutOperation, AbortingTimeoutReason, fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds", con.abortingTimeout/time.Second), lsv1alpha1.ErrorTimeout)
 		return nil, nil
 	}
 
 	// deploy item neither aborted nor timed out
 	// => requeue shortly after expected timeout
-	requeue := *con.abortingTimeout - waitingForAbortDuration + (5 * time.Second)
+	requeue := con.abortingTimeout - waitingForAbortDuration + (5 * time.Second)
 	return &requeue, nil
 }
 
@@ -251,14 +218,10 @@ func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1
 	}
 
 	var progressingTimeout time.Duration
-	var err error
-	if len(di.Spec.Timeout) == 0 { // timeout not specified in deploy item, use global default
-		progressingTimeout = *con.defaultTimeout
+	if di.Spec.Timeout == nil { // timeout not specified in deploy item, use global default
+		progressingTimeout = con.defaultTimeout
 	} else {
-		progressingTimeout, err = time.ParseDuration(di.Spec.Timeout)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse spec.timeout into a duration")
-		}
+		progressingTimeout = di.Spec.Timeout.Duration
 	}
 	progressingDuration := time.Since(di.Status.LastChangeReconcileTime.Time)
 	if progressingDuration >= progressingTimeout {
