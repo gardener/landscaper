@@ -34,6 +34,7 @@ func ValidateBlueprint(fs vfs.FileSystem, blueprint *core.Blueprint) field.Error
 	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("deployExecutions"), blueprint.DeployExecutions)...)
 	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("exportExecutions"), blueprint.ExportExecutions)...)
 	allErrs = append(allErrs, ValidateSubinstallations(field.NewPath("subinstallations"), fs, blueprint.Imports, blueprint.Subinstallations)...)
+	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("subinstallationExecutions"), blueprint.SubinstallationExecutions)...)
 	return allErrs
 }
 

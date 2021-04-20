@@ -419,6 +419,14 @@
       "description": "LocalTypes defines additional blueprint local schemas",
       "type": "object"
     },
+    "subinstallationExecutions": {
+      "description": "SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of installation templates. Both subinstallations and SubinstallationExecutions are valid options and will be merged.",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TemplateExecutor",
+        "default": {}
+      },
+      "type": "array"
+    },
     "subinstallations": {
       "description": "Subinstallations defines an optional list of subinstallations (for aggregating blueprints).",
       "items": {

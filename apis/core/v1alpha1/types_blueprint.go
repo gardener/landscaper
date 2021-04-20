@@ -45,6 +45,12 @@ type Blueprint struct {
 	// +optional
 	Subinstallations []SubinstallationTemplate `json:"subinstallations,omitempty"`
 
+	// SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper.
+	// The templates must return a list of installation templates.
+	// Both subinstallations and SubinstallationExecutions are valid options and will be merged.
+	// +optional
+	SubinstallationExecutions []TemplateExecutor `json:"subinstallationExecutions,omitempty"`
+
 	// DeployExecutions defines the templating executors that are sequentially executed by the landscaper.
 	// The templates must return a list of deploy item templates.
 	// +optional

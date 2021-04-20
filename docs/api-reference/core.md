@@ -138,6 +138,22 @@ ImportDefinitionList
 </tr>
 <tr>
 <td>
+<code>subinstallationExecutions</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TemplateExecutor">
+[]TemplateExecutor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper.
+The templates must return a list of installation templates.
+Both subinstallations and SubinstallationExecutions are valid options and will be merged.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>deployExecutions</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.TemplateExecutor">

@@ -1610,6 +1610,20 @@ func schema_landscaper_apis_core_v1alpha1_Blueprint(ref common.ReferenceCallback
 							},
 						},
 					},
+					"subinstallationExecutions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of installation templates. Both subinstallations and SubinstallationExecutions are valid options and will be merged.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor"),
+									},
+								},
+							},
+						},
+					},
 					"deployExecutions": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of deploy item templates.",

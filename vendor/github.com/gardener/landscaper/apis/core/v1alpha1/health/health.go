@@ -31,7 +31,7 @@ var (
 // * Its observed generation is up-to-date
 // * No annotation landscaper.gardener.cloud/operation is set
 // * No lastError is in the status
-// * A last operation is state succeeded is present
+// * A last operation in state succeeded is present
 // * landscaperv1alpha1.ComponentPhaseSucceeded
 func CheckInstallation(installation *lsv1alpha1.Installation) error {
 	if installation.Status.ObservedGeneration < installation.Generation {
