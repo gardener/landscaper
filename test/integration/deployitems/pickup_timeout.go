@@ -46,14 +46,11 @@ func namespacedName(meta metav1.ObjectMeta) types.NamespacedName {
 }
 
 func PickupTimeoutTests(f *framework.Framework) {
-	var (
-		dumper      = f.Register()
-		testdataDir = path.Join(f.RootPath, "test", "integration", "deployitems", "testdata")
-	)
-
 	ginkgo.Describe("Deploy Item Pickup Timeout", func() {
-
 		var (
+			dumper      = f.Register()
+			testdataDir = path.Join(f.RootPath, "test", "integration", "deployitems", "testdata")
+
 			ctx     context.Context
 			state   *envtest.State
 			cleanup framework.CleanupFunc

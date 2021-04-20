@@ -108,6 +108,7 @@ func (o *options) run(ctx context.Context) error {
 				return err
 			}
 			config.OCI = o.config.Registry.OCI
+			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
 			containerctlr.DefaultConfiguration(config)
 			if err := containerctlr.AddControllerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
@@ -118,6 +119,7 @@ func (o *options) run(ctx context.Context) error {
 				return err
 			}
 			config.OCI = o.config.Registry.OCI
+			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
 			if err := helmctlr.AddControllersToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
@@ -126,6 +128,7 @@ func (o *options) run(ctx context.Context) error {
 			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
 				return err
 			}
+			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
 			if err := manifestctlr.AddControllerToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
@@ -134,6 +137,7 @@ func (o *options) run(ctx context.Context) error {
 			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
 				return err
 			}
+			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
 			if err := mockctlr.AddControllerToManager(mgr, config); err != nil {
 				return fmt.Errorf("unable to add mock deployer: %w", err)
 			}

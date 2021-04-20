@@ -13,14 +13,18 @@ import (
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/config"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
+	mockinstall "github.com/gardener/landscaper/apis/deployer/mock/install"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/constants"
 	"github.com/gardener/landscaper/pkg/logger"
 )
 
@@ -121,6 +125,7 @@ func (o *deployerOptions) GetDeployerConfiguration(name string, config runtime.O
 	helminstall.Install(deployerScheme)
 	manifestinstall.Install(deployerScheme)
 	containerinstall.Install(deployerScheme)
+	mockinstall.Install(deployerScheme)
 
 	if _, _, err := serializer.NewCodecFactory(deployerScheme).UniversalDecoder().Decode(data.Raw, nil, config); err != nil {
 		return err
@@ -150,4 +155,20 @@ func (o *deployerOptions) parseDeployersConfigurationFile() error {
 	}
 
 	return yaml.Unmarshal(data, &o.DeployersConfig)
+}
+
+func addDefaultTargetSelector(selectors []lsv1alpha1.TargetSelector) []lsv1alpha1.TargetSelector {
+	if selectors == nil {
+		selectors = make([]lsv1alpha1.TargetSelector, 0)
+	}
+	selectors = append(selectors, lsv1alpha1.TargetSelector{
+		Annotations: []lsv1alpha1.Requirement{
+			{
+				Key:      constants.NotUseDefaultDeployerAnnotation,
+				Operator: selection.DoesNotExist,
+			},
+		},
+	})
+
+	return selectors
 }

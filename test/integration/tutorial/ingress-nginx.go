@@ -45,7 +45,7 @@ func NginxIngressTest(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err = utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -113,7 +113,7 @@ func NginxIngressTest(f *framework.Framework) {
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err = utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err = utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 

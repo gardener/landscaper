@@ -46,3 +46,7 @@ component-cli ca resources add ${LS_CA_PATH} \
 
 printf "> Add Landscaper CA to ctf\n"
 component-cli ctf add "${CTF_PATH}" -f "${LS_CA_PATH}"
+
+# also upload the components to a open source repo
+# todo: remove as soon as the default component repository is public
+component-cli ctf push --repo-ctx="eu.gcr.io/gardener-project/development" "${CTF_PATH}"

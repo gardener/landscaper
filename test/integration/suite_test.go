@@ -18,7 +18,6 @@ import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/deployers"
-	"github.com/gardener/landscaper/test/integration/helmcharts"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
 	"github.com/gardener/landscaper/test/utils"
@@ -51,7 +50,6 @@ func TestConfig(t *testing.T) {
 
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)
-	helmcharts.RegisterTests(f)
 	core.RegisterTests(f)
 	deployers.RegisterTests(f)
 	deployitems.RegisterTests(f)

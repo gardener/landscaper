@@ -16,6 +16,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
@@ -45,6 +47,11 @@ type Manifest struct {
 	Target                *lsv1alpha1.Target
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
+}
+
+// NewDeployItemBuilder creates a new deployitem builder for manifest deployitems
+func NewDeployItemBuilder() *utils.DeployItemBuilder {
+	return utils.NewDeployItemBuilder(string(Type)).Scheme(ManifestScheme)
 }
 
 // New creates a new internal manifest item

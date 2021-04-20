@@ -125,7 +125,7 @@ func deployDeployItemAndWaitForSuccess(
 	chartDir string,
 	valuesFile string) *lsv1alpha1.DeployItem {
 
-	target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, deployerName, f.RestConfig, true)
+	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, deployerName, f.RestConfig, true)
 	utils.ExpectNoError(err)
 	utils.ExpectNoError(state.Create(ctx, f.Client, target))
 

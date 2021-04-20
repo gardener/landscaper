@@ -2,18 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package deployers
+package blueprints
 
 import (
 	"github.com/gardener/landscaper/test/framework"
-	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
-	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
 )
 
 // RegisterTests registers all tests of this package
 func RegisterTests(f *framework.Framework) {
-	ContainerDeployerTests(f)
-	ManifestDeployerTests(f)
-	helmcharts.RegisterTests(f)
-	blueprints.RegisterTests(f)
+	DeployerBlueprintTests(f)
 }

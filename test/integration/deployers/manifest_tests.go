@@ -28,22 +28,20 @@ import (
 )
 
 func ManifestDeployerTests(f *framework.Framework) {
-	var (
-		dumper      = f.Register()
-		exampleDir  = path.Join(f.RootPath, "examples", "deploy-items")
-		testDataDir = path.Join(f.RootPath, "test", "testdata")
-	)
-
-	const (
-		timeout = 2 * time.Minute
-	)
-
 	ginkgo.Describe("Manifest Deployer", func() {
 
 		var (
+			dumper      = f.Register()
+			exampleDir  = path.Join(f.RootPath, "examples", "deploy-items")
+			testDataDir = path.Join(f.RootPath, "test", "testdata")
+
 			ctx     context.Context
 			state   *envtest.State
 			cleanup framework.CleanupFunc
+		)
+
+		const (
+			timeout = 2 * time.Minute
 		)
 
 		ginkgo.BeforeEach(func() {
@@ -64,7 +62,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
@@ -124,7 +122,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
-			target, err := utils.CreateInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
 			utils.ExpectNoError(state.Create(ctx, f.Client, target))
 
