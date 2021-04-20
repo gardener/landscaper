@@ -656,9 +656,9 @@ func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.B
 	out.Annotations = *(*map[string]string)(unsafe.Pointer(&in.Annotations))
 	out.JSONSchemaVersion = in.JSONSchemaVersion
 	out.LocalTypes = *(*map[string]core.JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
-	out.Imports = *(*[]core.ImportDefinition)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]core.ExportDefinition)(unsafe.Pointer(&in.Exports))
-	out.Subinstallations = *(*[]core.SubinstallationTemplate)(unsafe.Pointer(&in.Subinstallations))
+	out.Imports = *(*core.ImportDefinitionList)(unsafe.Pointer(&in.Imports))
+	out.Exports = *(*core.ExportDefinitionList)(unsafe.Pointer(&in.Exports))
+	out.Subinstallations = *(*core.SubinstallationTemplateList)(unsafe.Pointer(&in.Subinstallations))
 	out.SubinstallationExecutions = *(*[]core.TemplateExecutor)(unsafe.Pointer(&in.SubinstallationExecutions))
 	out.DeployExecutions = *(*[]core.TemplateExecutor)(unsafe.Pointer(&in.DeployExecutions))
 	out.ExportExecutions = *(*[]core.TemplateExecutor)(unsafe.Pointer(&in.ExportExecutions))
@@ -675,8 +675,8 @@ func autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *B
 	out.JSONSchemaVersion = in.JSONSchemaVersion
 	out.LocalTypes = *(*map[string]JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*ImportDefinitionList)(unsafe.Pointer(&in.Imports))
-	out.Exports = *(*[]ExportDefinition)(unsafe.Pointer(&in.Exports))
-	out.Subinstallations = *(*[]SubinstallationTemplate)(unsafe.Pointer(&in.Subinstallations))
+	out.Exports = *(*ExportDefinitionList)(unsafe.Pointer(&in.Exports))
+	out.Subinstallations = *(*SubinstallationTemplateList)(unsafe.Pointer(&in.Subinstallations))
 	out.SubinstallationExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.SubinstallationExecutions))
 	out.DeployExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.DeployExecutions))
 	out.ExportExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.ExportExecutions))

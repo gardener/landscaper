@@ -5,10 +5,6 @@
 package validation_test
 
 import (
-	"os"
-
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -181,23 +177,6 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	Context("Subinstallations", func() {
-		It("should pass if a InstallationTemplate defined by a file is valid", func() {
-			subinstallation := core.SubinstallationTemplate{
-				File: "mypath",
-			}
-			fs := memoryfs.New()
-			installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-`)
-			Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
-
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
-			Expect(allErrs).To(HaveLen(0))
-		})
 
 		It("should fail if subinstallation is defined by file and inline", func() {
 			subinstallation := core.SubinstallationTemplate{
@@ -205,7 +184,7 @@ blueprint:
 				InstallationTemplate: &core.InstallationTemplate{},
 			}
 
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), memoryfs.New(), []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), []core.SubinstallationTemplate{subinstallation})
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeInvalid),
 				"Field": Equal("b[0]"),
@@ -215,71 +194,34 @@ blueprint:
 		It("should fail if a subinstallation is not defined by file or inline", func() {
 			subinstallation := core.SubinstallationTemplate{}
 
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), memoryfs.New(), []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), []core.SubinstallationTemplate{subinstallation})
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("b[0]"),
 			}))))
 		})
 
-		It("should fail if the defined file path does not exist ", func() {
-			subinstallation := core.SubinstallationTemplate{
-				File: "mypath",
-			}
-
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), memoryfs.New(), []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeNotFound),
-				"Field": Equal("b[0].file"),
-			}))))
-		})
-
-		It("should fail if a InstallationTemplate defined by a file is invalid", func() {
-			subinstallation := core.SubinstallationTemplate{
-				File:                 "mypath",
-				InstallationTemplate: &core.InstallationTemplate{},
-			}
-			fs := memoryfs.New()
-			installationTemplateBytes := []byte(`wrong type`)
-			Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
-
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeInvalid),
-				"Field": Equal("b[0]"),
-			}))))
-		})
-
 		It("should fail if a secret or configmap reference is used in a InstallationTemplate", func() {
-			subinstallation := core.SubinstallationTemplate{
-				File: "mypath",
+			tmpl := &core.InstallationTemplate{}
+			tmpl.Imports.Data = []core.DataImport{
+				{
+					Name:      "myimport",
+					SecretRef: &core.SecretReference{ObjectReference: core.ObjectReference{Name: "mysecret"}},
+				},
+				{
+					Name:         "mysecondimport",
+					ConfigMapRef: &core.ConfigMapReference{ObjectReference: core.ObjectReference{Name: "mycm"}},
+				},
 			}
-			fs := memoryfs.New()
-			installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-imports:
-  data:
-  - name: myimport
-    secretRef:
-      name: mysecret
-  - name: mysecondimport
-    configMapRef:
-      name: mycm
-`)
-			Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-			allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+			allErrs := validation.ValidateInstallationTemplate(field.NewPath("b"), tmpl)
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeForbidden),
-				"Field": Equal("b[0].imports.data[0].secretRef"),
+				"Field": Equal("b.imports.data[0].secretRef"),
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeForbidden),
-				"Field": Equal("b[0].imports.data[1].configMapRef"),
+				"Field": Equal("b.imports.data[1].configMapRef"),
 			}))))
 		})
 
@@ -293,24 +235,17 @@ imports:
 						},
 					},
 				}
-				subinstallation := core.SubinstallationTemplate{
-					File: "mypath",
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Data = []core.DataImport{
+					{
+						Name:    "myimport",
+						DataRef: "myimportref",
+					},
 				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-imports:
-  data:
-  - name: myimport
-    dataRef: myimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, imports, []core.SubinstallationTemplate{subinstallation})
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
 				Expect(allErrs).To(HaveLen(0))
 			})
 
@@ -323,46 +258,32 @@ imports:
 						},
 					},
 				}
-				subinstallation := core.SubinstallationTemplate{
-					File: "mypath",
-				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-imports:
-  targets:
-  - name: myimport
-    target: myimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, imports, []core.SubinstallationTemplate{subinstallation})
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Name = "my-inst"
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImportExport{
+					{
+						Name:   "myimport",
+						Target: "myimportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), imports, []*core.InstallationTemplate{tmpl})
 				Expect(allErrs).To(HaveLen(0))
 			})
 
 			It("should fail if a data import of a subinstallation is not satisfied", func() {
-				subinstallation := core.SubinstallationTemplate{
-					File: "mypath",
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Data = []core.DataImport{
+					{
+						Name:    "myimport",
+						DataRef: "myimportref",
+					},
 				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-imports:
-  data:
-  - name: myimport
-    dataRef: myimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), nil, []*core.InstallationTemplate{tmpl})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeNotFound),
 					"Field": Equal("b[0].imports.data[0][myimport]"),
@@ -370,24 +291,16 @@ imports:
 			})
 
 			It("should fail if a target import of a subinstallation is not satisfied", func() {
-				subinstallation := core.SubinstallationTemplate{
-					File: "mypath",
+				tmpl := &core.InstallationTemplate{}
+				tmpl.Blueprint.Ref = "myref"
+				tmpl.Imports.Targets = []core.TargetImportExport{
+					{
+						Name:   "myimport",
+						Target: "myimportref",
+					},
 				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-imports:
-  targets:
-  - name: myimport
-    target: myimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, []core.ImportDefinition{}, []core.SubinstallationTemplate{subinstallation})
+				allErrs := validation.ValidateInstallationTemplates(field.NewPath("b"), nil, []*core.InstallationTemplate{tmpl})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeNotFound),
 					"Field": Equal("b[0].imports.targets[0][myimport]"),
@@ -403,50 +316,39 @@ imports:
 						},
 					},
 				}
-				subinstallations := []core.SubinstallationTemplate{
+				tmpl1 := &core.InstallationTemplate{}
+				tmpl1.Blueprint.Ref = "myref"
+				tmpl1.Exports.Data = []core.DataExport{
 					{
-						File: "mypath",
+						Name:    "myimport",
+						DataRef: "myimportref",
 					},
 					{
-						File: "mypath2",
+						Name:    "mysecondexport",
+						DataRef: "mysecondexportref",
 					},
 				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-exports:
-  data:
-  - name: myImport
-    dataRef: myimportref
-  - name: mySecondImport
-    dataRef: mysecondimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
-				installationTemplateBytes = []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl2
-blueprint:
-  ref: myref
-exports:
-  data:
-  - name: mySecondImport
-    dataRef: mysecondimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath2", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, imports, subinstallations)
+				tmpl2 := &core.InstallationTemplate{}
+				tmpl2.Blueprint.Ref = "myref"
+				tmpl2.Exports.Data = []core.DataExport{
+					{
+						Name:    "mysecondexport",
+						DataRef: "mysecondexportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(
+					field.NewPath("b"),
+					imports,
+					[]*core.InstallationTemplate{tmpl1, tmpl2})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[0].exports.data[0][myImport]"),
+					"Field": Equal("b[0].exports.data[0][myimport]"),
 				}))))
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[1].exports.data[0][mySecondImport]"),
+					"Field": Equal("b[1].exports.data[0][mysecondexport]"),
 				}))))
 			})
 
@@ -459,50 +361,39 @@ exports:
 						},
 					},
 				}
-				subinstallations := []core.SubinstallationTemplate{
+				tmpl1 := &core.InstallationTemplate{}
+				tmpl1.Blueprint.Ref = "myref"
+				tmpl1.Exports.Targets = []core.TargetImportExport{
 					{
-						File: "mypath",
+						Name:   "myimport",
+						Target: "myimportref",
 					},
 					{
-						File: "mypath2",
+						Name:   "mysecondexport",
+						Target: "mysecondexportref",
 					},
 				}
-				fs := memoryfs.New()
-				installationTemplateBytes := []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl
-blueprint:
-  ref: myref
-exports:
-  targets:
-  - name: myImport
-    target: myimportref
-  - name: mySecondImport
-    target: mysecondimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath", installationTemplateBytes, os.ModePerm)).To(Succeed())
-				installationTemplateBytes = []byte(`
-apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: InstallationTemplate
-name: my-tmpl2
-blueprint:
-  ref: myref
-exports:
-  targets:
-  - name: mySecondImport
-    target: mysecondimportref
-`)
-				Expect(vfs.WriteFile(fs, "mypath2", installationTemplateBytes, os.ModePerm)).To(Succeed())
 
-				allErrs := validation.ValidateSubinstallations(field.NewPath("b"), fs, imports, subinstallations)
+				tmpl2 := &core.InstallationTemplate{}
+				tmpl2.Blueprint.Ref = "myref"
+				tmpl2.Exports.Targets = []core.TargetImportExport{
+					{
+						Name:   "mysecondexport",
+						Target: "mysecondexportref",
+					},
+				}
+
+				allErrs := validation.ValidateInstallationTemplates(
+					field.NewPath("b"),
+					imports,
+					[]*core.InstallationTemplate{tmpl1, tmpl2})
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[0].exports.targets[0][myImport]"),
+					"Field": Equal("b[0].exports.targets[0][myimport]"),
 				}))))
 				Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":  Equal(field.ErrorTypeForbidden),
-					"Field": Equal("b[1].exports.targets[0][mySecondImport]"),
+					"Field": Equal("b[1].exports.targets[0][mysecondexport]"),
 				}))))
 			})
 		})

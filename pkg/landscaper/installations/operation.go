@@ -442,7 +442,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 }
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
-func (o *Operation) CreateOrUpdateImports(ctx context.Context, importedValues map[string]interface{}) error {
+func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
+	importedValues := o.Inst.Imports
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
 	for _, importDef := range o.Inst.Blueprint.Info.Imports {
 		importData, ok := importedValues[importDef.Name]

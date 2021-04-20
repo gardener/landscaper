@@ -67,11 +67,9 @@ var _ = Describe("Constructor", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		res, err := c.Construct(ctx, inInstB)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
-
-		Expect(res).To(Equal(expectedConfig))
+		Expect(c.Construct(ctx, inInstB)).To(Succeed())
+		Expect(inInstB.Imports).ToNot(BeNil())
+		Expect(inInstB.Imports).To(Equal(expectedConfig))
 	})
 
 	It("should construct the imported config from a sibling and the indirect parent import", func() {
@@ -89,11 +87,10 @@ var _ = Describe("Constructor", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		res, err := c.Construct(ctx, inInstC)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
+		Expect(c.Construct(ctx, inInstC)).To(Succeed())
+		Expect(inInstC.Imports).ToNot(BeNil())
 
-		Expect(res).To(Equal(expectedConfig))
+		Expect(inInstC.Imports).To(Equal(expectedConfig))
 	})
 
 	It("should construct the imported config from a manual created data object", func() {
@@ -110,11 +107,10 @@ var _ = Describe("Constructor", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		res, err := c.Construct(ctx, inInstRoot)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
+		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
+		Expect(inInstRoot.Imports).ToNot(BeNil())
 
-		Expect(res).To(Equal(expectedConfig))
+		Expect(inInstRoot.Imports).To(Equal(expectedConfig))
 	})
 
 	It("should construct the imported config from a secret", func() {
@@ -131,11 +127,9 @@ var _ = Describe("Constructor", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		res, err := c.Construct(ctx, inInstRoot)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
-
-		Expect(res).To(Equal(expectedConfig))
+		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
+		Expect(inInstRoot.Imports).ToNot(BeNil())
+		Expect(inInstRoot.Imports).To(Equal(expectedConfig))
 	})
 
 	It("should construct the imported config from a configmap", func() {
@@ -152,11 +146,9 @@ var _ = Describe("Constructor", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
-		res, err := c.Construct(ctx, inInstRoot)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(res).ToNot(BeNil())
-
-		Expect(res).To(Equal(expectedConfig))
+		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
+		Expect(inInstRoot.Imports).ToNot(BeNil())
+		Expect(inInstRoot.Imports).To(Equal(expectedConfig))
 	})
 
 	Context("schema validation", func() {
@@ -182,8 +174,7 @@ var _ = Describe("Constructor", func() {
 			Expect(fakeClient.Update(ctx, do)).To(Succeed())
 
 			c := imports.NewConstructor(op)
-			_, err = c.Construct(ctx, inInstA)
-			Expect(err).To(HaveOccurred())
+			err = c.Construct(ctx, inInstA)
 			Expect(installations.IsSchemaValidationFailedError(err)).To(BeTrue())
 		})
 	})
@@ -199,11 +190,10 @@ var _ = Describe("Constructor", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			c := imports.NewConstructor(op)
-			res, err := c.Construct(ctx, inInstRoot)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).ToNot(BeNil())
+			Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
+			Expect(inInstRoot.Imports).ToNot(BeNil())
 
-			Expect(res).To(HaveKeyWithValue("root.a", MatchKeys(IgnoreExtras, Keys{
+			Expect(inInstRoot.Imports).To(HaveKeyWithValue("root.a", MatchKeys(IgnoreExtras, Keys{
 				"spec": MatchKeys(IgnoreExtras, Keys{
 					"type":   Equal("landscaper.gardener.cloud/mock"),
 					"config": Equal("val-e"),
@@ -221,11 +211,10 @@ var _ = Describe("Constructor", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			c := imports.NewConstructor(op)
-			res, err := c.Construct(ctx, inInstF)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(res).ToNot(BeNil())
+			Expect(c.Construct(ctx, inInstF)).To(Succeed())
+			Expect(inInstF.Imports).ToNot(BeNil())
 
-			Expect(res).To(HaveKeyWithValue("f.a", MatchKeys(IgnoreExtras, Keys{
+			Expect(inInstF.Imports).To(HaveKeyWithValue("f.a", MatchKeys(IgnoreExtras, Keys{
 				"spec": MatchKeys(IgnoreExtras, Keys{
 					"type":   Equal("landscaper.gardener.cloud/mock"),
 					"config": Equal("val-e"),

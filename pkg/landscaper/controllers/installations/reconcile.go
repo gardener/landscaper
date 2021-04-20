@@ -150,13 +150,12 @@ func (c *controller) Update(ctx context.Context, op *installations.Operation) er
 	// as all imports are satisfied we can collect and merge all imports
 	// and then start the executions
 	constructor := imports.NewConstructor(op)
-	importedValues, err := constructor.Construct(ctx, inst)
-	if err != nil {
+	if err := constructor.Construct(ctx, inst); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ConstructImports", err.Error())
 	}
 
-	if err := op.CreateOrUpdateImports(ctx, importedValues); err != nil {
+	if err := op.CreateOrUpdateImports(ctx); err != nil {
 		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
 			"CreateImports",
 			"unable to update import objects",
@@ -172,7 +171,7 @@ func (c *controller) Update(ctx context.Context, op *installations.Operation) er
 		return err
 	}
 
-	// todop: check if this can be moved to ensure
+	// todo: check if this can be moved to ensure
 	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
 		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
 		return lsv1alpha1helper.NewWrappedError(err,
@@ -180,7 +179,7 @@ func (c *controller) Update(ctx context.Context, op *installations.Operation) er
 	}
 
 	exec := executions.New(op)
-	if err := exec.Ensure(ctx, inst, importedValues); err != nil {
+	if err := exec.Ensure(ctx, inst); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ReconcileExecution", err.Error())
 	}

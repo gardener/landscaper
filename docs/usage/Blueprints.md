@@ -196,6 +196,8 @@ deployItems:
     ...
 ```
 
+##### Executor Imports
+
 All template executors are given the same input data that can be used while templating.
 The input consists of the imported values as well as the installations component descriptor.
 
@@ -375,18 +377,19 @@ exportExecutions:
 
 ### Installation Templates
 Installation Templates are used to include subinstallation in a blueprint.
-As the name suggest, they are templates for installation which means that the landscaper will 
-create installation based on these templates.
+As the name suggest, they are templates for installation which means that the landscaper will create installation based on these templates.
 
 These subinstallations have a context that is defined by the parent installation.
 Context means that subinstallations can only import data that is also imported by the parent or exported by other subinstallations with the same parent.
 
 Installation templates offer the same configuration as real installation 
-expect that blueprints have to be defined in the component descriptor of the blueprint (either as resource or by a component reference).
+except that blueprints have to be defined in the component descriptor of the blueprint (either as resource or by a component reference).
 Inline blueprints are also possible.
 
-Subinstallations can also be defined in a separate file.
- That file is expected to contain a InstallationTemplate.
+Subinstallations can also be defined in a separate file or templated via executor (templated executors are defined in a separate field `.subinstallationExecutions`).
+If defined by file it is expected that that file contains one InstallationTemplate.
+
+All possible options to define a subinstallation can be used in parallel and are summed up.
 
 ```yaml
 - apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -415,6 +418,28 @@ Subinstallations can also be defined in a separate file.
       target: "" # target name
   #exportMappings: {}
 ```
+
+Similar to how deploy items can be defined, it is also possible to create template subinstallations based on the imports.
+A Blueprint's subinstallations executions may contain any number of template executors.
+A template executor must return a list of installation templates.<br>
+
+For a list of available templating imports see the [deploy item executor docs](#executor-imports).
+
+__Subinstallation Template__:
+```yaml
+subinstallationExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    subinstallations:
+    - apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: InstallationTemplate
+      name: my-subinstallation # must be unique
+      blueprint:
+        ref: cd://componentReferences/ingress/resources/blueprint
+      ...
+```
+
 
 ## Remote Access
 

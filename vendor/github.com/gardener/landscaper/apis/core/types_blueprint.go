@@ -34,15 +34,15 @@ type Blueprint struct {
 
 	// Imports define the import values that are needed for the definition and its sub-definitions.
 	// +optional
-	Imports []ImportDefinition `json:"imports,omitempty"`
+	Imports ImportDefinitionList `json:"imports,omitempty"`
 
 	// Exports define the exported values of the definition and its sub-definitions
 	// +optional
-	Exports []ExportDefinition `json:"exports,omitempty"`
+	Exports ExportDefinitionList `json:"exports,omitempty"`
 
 	// Subinstallations defines an optional list of subinstallations (for aggregating blueprints).
 	// +optional
-	Subinstallations []SubinstallationTemplate `json:"subinstallations,omitempty"`
+	Subinstallations SubinstallationTemplateList `json:"subinstallations,omitempty"`
 
 	// SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper.
 	// The templates must return a list of installation templates.
@@ -59,6 +59,9 @@ type Blueprint struct {
 	// +optional
 	ExportExecutions []TemplateExecutor `json:"exportExecutions,omitempty"`
 }
+
+// ImportDefinitionList defines a list of import defiinitions.
+type ImportDefinitionList []ImportDefinition
 
 // ImportDefinition defines a imported value
 type ImportDefinition struct {
@@ -79,6 +82,9 @@ type ImportDefinition struct {
 	// +optional
 	ConditionalImports []ImportDefinition `json:"imports,omitempty"`
 }
+
+// ExportDefinitionList defines a list of export definitions.
+type ExportDefinitionList []ExportDefinition
 
 // ExportDefinition defines a exported value
 type ExportDefinition struct {
@@ -145,6 +151,9 @@ type TemplateExecutor struct {
 	// + optional
 	Template AnyJSON `json:"template,omitempty"`
 }
+
+// SubinstallationTemplateList is a list of installation templates
+type SubinstallationTemplateList []SubinstallationTemplate
 
 // SubinstallationTemplate defines a subinstallation template.
 type SubinstallationTemplate struct {

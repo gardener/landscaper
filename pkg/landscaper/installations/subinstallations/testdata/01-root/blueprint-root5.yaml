@@ -14,5 +14,16 @@ imports:
   schema:
     type: string
 
+subinstallationExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    subinstallations:
+    - apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: InstallationTemplate
+      name: def2
+      blueprint:
+        ref: cd://resources/def2
+
 subinstallations:
 - file: ./def1.yaml

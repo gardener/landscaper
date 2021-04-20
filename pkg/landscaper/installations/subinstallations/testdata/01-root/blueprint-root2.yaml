@@ -9,6 +9,11 @@ annotations:
   local/name: root
   local/version: 1.0.0
 
+imports:
+- name: b
+  schema:
+    type: string
+
 subinstallations:
 - file: ./def1.yaml
 - file: ./def2.yaml
