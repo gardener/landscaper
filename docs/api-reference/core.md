@@ -1832,9 +1832,6 @@ time.Duration
 </em>
 </td>
 <td>
-<p>
-(Members of <code>Duration</code> are embedded into this type.)
-</p>
 </td>
 </tr>
 </tbody>
