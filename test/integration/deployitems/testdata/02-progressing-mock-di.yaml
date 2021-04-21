@@ -8,4 +8,4 @@ spec:
     apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
     initialPhase: Progressing
-  timeout: 5s
+  timeout: 10s
