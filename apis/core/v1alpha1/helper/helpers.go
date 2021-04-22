@@ -13,6 +13,13 @@ import (
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+type TimestampAnnotation string
+
+const (
+	ReconcileTimestamp = TimestampAnnotation(v1alpha1.ReconcileTimestampAnnotation)
+	AbortTimestamp     = TimestampAnnotation(v1alpha1.AbortTimestampAnnotation)
+)
+
 // HasOperation checks if the obj has the given operation annotation
 func HasOperation(obj metav1.ObjectMeta, op v1alpha1.Operation) bool {
 	currentOp, ok := obj.Annotations[v1alpha1.OperationAnnotation]
@@ -32,24 +39,18 @@ func SetOperation(obj *metav1.ObjectMeta, op v1alpha1.Operation) {
 	metav1.SetMetaDataAnnotation(obj, v1alpha1.OperationAnnotation, string(op))
 }
 
-// HasReconcileTimestampAnnotation checks if the obj has the given timeout annotation
-func HasReconcileTimestampAnnotation(obj metav1.ObjectMeta) bool {
-	_, ok := obj.Annotations[v1alpha1.ReconcileTimestampAnnotation]
-	return ok
+func GetTimestampAnnotation(obj metav1.ObjectMeta, ta TimestampAnnotation) (time.Time, error) {
+	return time.Parse(time.RFC3339, obj.Annotations[string(ta)])
 }
 
-func GetReconcileTimestampAnnotation(obj metav1.ObjectMeta) (time.Time, error) {
-	return time.Parse(time.RFC3339, obj.Annotations[v1alpha1.ReconcileTimestampAnnotation])
+// SetTimestampAnnotationNow sets the timeout annotation with the current timestamp.
+func SetTimestampAnnotationNow(obj *metav1.ObjectMeta, ta TimestampAnnotation) {
+	metav1.SetMetaDataAnnotation(obj, string(ta), time.Now().Format(time.RFC3339))
 }
 
-// SetReconcileTimestampAnnotationNow sets the timeout annotation with the current timestamp.
-func SetReconcileTimestampAnnotationNow(obj *metav1.ObjectMeta) {
-	SetReconcileTimestampAnnotation(obj, time.Now())
-}
-
-// SetReconcileTimestampAnnotation sets the timeout annotation with the given timestamp.
-func SetReconcileTimestampAnnotation(obj *metav1.ObjectMeta, ts time.Time) {
-	metav1.SetMetaDataAnnotation(obj, v1alpha1.ReconcileTimestampAnnotation, ts.Format(time.RFC3339))
+func SetAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
+	SetOperation(obj, v1alpha1.AbortOperation)
+	SetTimestampAnnotationNow(obj, AbortTimestamp)
 }
 
 // InitCondition initializes a new Condition with an Unknown status.

@@ -7,6 +7,8 @@ package v1alpha1
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +38,40 @@ func (s *JSONSchemaDefinition) UnmarshalJSON(data []byte) error {
 
 func (_ JSONSchemaDefinition) OpenAPISchemaType() []string { return []string{"object"} }
 func (_ JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
+
+// Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.
+type Duration struct {
+	time.Duration
+}
+
+// MarshalJSON implements the json marshaling for a Duration
+func (d Duration) MarshalJSON() ([]byte, error) {
+	if d.Duration == 0 {
+		return []byte("\"none\""), nil
+	}
+	return []byte(fmt.Sprintf("%q", d.Duration.String())), nil
+}
+
+// UnmarshalJSON implements json unmarshaling for a Duration
+func (d *Duration) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "none" {
+		*d = Duration{Duration: 0}
+		return nil
+	}
+	dur, err := time.ParseDuration(s)
+	if err != nil {
+		return fmt.Errorf("unable to parse string into a duration: %w", err)
+	}
+	*d = Duration{Duration: dur}
+	return nil
+}
+
+func (_ Duration) OpenAPISchemaType() []string { return []string{"string"} }
+func (_ Duration) OpenAPISchemaFormat() string { return "" }
 
 // AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all
 // it is correctly generated

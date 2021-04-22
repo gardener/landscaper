@@ -39,6 +39,24 @@
         }
       }
     },
+    "config-v1alpha1-DeployItemTimeouts": {
+      "description": "DeployItemTimeouts contains multiple timeout configurations for deploy items",
+      "type": "object",
+      "properties": {
+        "abort": {
+          "description": "Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        },
+        "pickup": {
+          "description": "PickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        },
+        "progressingDefault": {
+          "description": "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
     "config-v1alpha1-LocalRegistryConfiguration": {
       "description": "LocalRegistryConfiguration contains the configuration for a local registry",
       "type": "object",
@@ -128,6 +146,10 @@
           "$ref": "#/definitions/config-v1alpha1-OCIConfiguration"
         }
       }
+    },
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
     }
   },
   "description": "LandscaperConfiguration contains all configuration for the landscaper controllers",
@@ -140,9 +162,9 @@
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
       "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
-    "deployItemPickupTimeout": {
-      "description": "DeployItemPickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
-      "type": "string"
+    "deployItemTimeouts": {
+      "$ref": "#/definitions/config-v1alpha1-DeployItemTimeouts",
+      "description": "DeployItemTimeouts contains configuration for multiple deploy item timeouts"
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

@@ -113,7 +113,13 @@ func (a *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		return err
 	}
 
-	deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	if config.InitialPhase != nil {
+		if len(deployItem.Status.Phase) == 0 || deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseInit {
+			deployItem.Status.Phase = *config.InitialPhase
+		}
+	} else {
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	}
 
 	if config.Phase != nil {
 		deployItem.Status.Phase = *config.Phase

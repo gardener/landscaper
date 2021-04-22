@@ -77,6 +77,8 @@ spec:
                 required:
                 - name
                 type: object
+              timeout:
+                x-kubernetes-preserve-unknown-fields: true
               type:
                 description: Type is the type of the deployer that should handle the item.
                 type: string
@@ -171,6 +173,10 @@ spec:
                 - operation
                 - reason
                 type: object
+              lastReconcileTime:
+                description: LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started
+                format: date-time
+                type: string
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed for this DeployItem. It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
                 format: int64

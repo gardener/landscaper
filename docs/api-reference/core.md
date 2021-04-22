@@ -342,6 +342,24 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>timeout</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout specifies how long the deployer may take to apply the deploy item.
+When the time is exceeded, the landscaper will add the abort annotation to the deploy item
+and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
+Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
+Defaults to ten minutes if not specified.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1554,6 +1572,24 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>timeout</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout specifies how long the deployer may take to apply the deploy item.
+When the time is exceeded, the landscaper will add the abort annotation to the deploy item
+and later put it in &lsquo;Failed&rsquo; if the deployer doesn&rsquo;t handle the abort properly.
+Value has to be parsable by time.ParseDuration (or &lsquo;none&rsquo; to deactivate the timeout).
+Defaults to ten minutes if not specified.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus
@@ -1624,6 +1660,20 @@ Error
 </td>
 <td>
 <p>LastError describes the last error that occurred.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastReconcileTime</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started</p>
 </td>
 </tr>
 <tr>
@@ -1755,6 +1805,37 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 <p>
 <p>DeployItemType defines the type of the deploy item</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>)
+</p>
+<p>
+<p>Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>Duration</code></br>
+<em>
+<a href="https://godoc.org/time#Duration">
+time.Duration
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Error">Error
 </h3>
 <p>

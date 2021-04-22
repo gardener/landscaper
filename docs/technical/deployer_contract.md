@@ -54,6 +54,7 @@ Once handled by its deployer, a status similar to this one will be attached to t
 status:
   observedGeneration: 1
   phase: Succeeded
+  lastReconcileTime: "2021-04-15T12:10:51Z"
   providerStatus:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderStatus
@@ -103,15 +104,22 @@ As explained above, even if the type is correct, the deployer might still not be
 
 #### 3. Handle Annotations
 There are two important annotations that need to be handled by the deployer: 
-The reconcile annotation `landscaper.gardener.cloud/operation: reconcile` indicates that either a human operator or the landscaper wants this deploy item to be reconciled. The deployer has to remove this annotation. In addition, it should set the deploy item's phase to `Init` to show the beginning of a new reconciliation and avoid loss of information in case the deployer dies immediately after removing the annotation.
+The operation annotation `landscaper.gardener.cloud/operation` indicates that either a human operator or the landscaper wants a specific operation to be fulfilled on this deploy item. The value of the annotation specifies the expected operation:
+- `reconcile`: This deploy item needs to be reconciled. The deployer has to remove this annotation. In addition, it should set the deploy item's phase to `Init` to show the beginning of a new reconciliation and avoid loss of information in case the deployer dies immediately after removing the annotation. In the status, `lastReconcileTime` has to be set to the current timestamp (this value is used to recognize when a deployer is 'stuck' processing a deploy item).
+- `abort`: This annotation is usually attached to deploy items in the `Progressing` phase and means that the deployer should stop processing it. The main purpose of this annotation is to give the deployer time to gracefully stop processing the deploy item and clean up any already created resources before setting the phase to `Failed`. What 'aborting gracefully' means is highly specific to the corresponding deployer logic.
+
+> The landscaper will abort deploy items which are stuck in `Progressing` for too long. The timeout can be configured on the deploy item itself via `spec.timeout` and is defaulted to 10 minutes otherwise. The default can be overwritten by setting `deployItemTimeouts.progressingDefault` in the landscaper configuration. Instead of a time, `none` can be used to disable this check.
+
+> There is also a timeout for deploy items which take too long to abort. This is tracked via a timestamp annotation `landscaper.gardener.cloud/abort-time` which is set by the landscaper together with the abort operation annotation. After the specified time, landscaper will set the deploy item to `Failed`. The timeout can be configured via `deployItemTimeouts.abort` in the landscaper configuration (use `none` to disable, as above). It defaults to 5 minutes.
+
 The second important annotation is `landscaper.gardener.cloud/reconcile-time`. The landscaper adds this annotation - with the current time as value - whenever it expands an `execution` into its deploy items. If this annotation is still present after a defined time, this is interpreted as no deployer having picked up this deploy item and the landscaper will set its phase to `Failed`. Deployers are expected to remove this annotation whenever they start reconciling a deploy item they are responsible for.
 
-> The pickup timeout duration defaults to 5 minutes and can be configured by setting `deployItemPickupTimeout` in the landscaper configuration. Checking for pickup timeouts can also be disabled by setting the aforementioned value to `none`.
+> The pickup timeout duration defaults to 5 minutes and can be configured by setting `deployItemTimeouts.pickup` in the landscaper configuration. As for the other timeouts, checking for pickup timeouts can also be disabled by setting the aforementioned value to `none`.
 
 #### 4. Handle Generation
 Another indicator that something needs to be done is when `status.observedGeneration` differs from `metadata.generation`. The latter one changes every time the `spec` is modified and a difference in both shows that the deployer has not yet reacted on the latest changes to this deploy item. For this logic to work, the deployer has to set `status.observedGeneration` to the deploy item's generation at the beginning of the reconcile loop. Similarly to the reconcile annotation, the deployer should set the phase of the deploy item to `Init` if it updated the observed generation.
 
-> There is an auxiliary method `HandleAnnotationsAndGeneration` that handles steps 3 and 4 [defined here](../../pkg/deployer/utils/utils.go).
+> There is an auxiliary method `HandleAnnotationsAndGeneration` that handles steps 3 and 4 [defined here](../../pkg/deployer/lib/utils.go).
 
 #### 5. Check for Need for Action
 For most deployers, there probably isn't anything to do now if the deploy item is still in a final state (phase `Succeeded` or `Failed`) - it was finished before and nothing has changed, so the reconcile can be aborted at this point. Please note that this does not apply to all deployers and only works if the phase is actually set to `Init` when a reconcile annotation or an outdated observed generation is found.

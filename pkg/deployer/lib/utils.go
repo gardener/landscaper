@@ -10,6 +10,8 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
@@ -27,9 +29,11 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		// reconcile necessary due to one of
 		// - reconcile annotation
 		// - outdated generation
-		log.V(5).Info("reconcile required, setting observed generation and phase", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
+		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
 		di.Status.ObservedGeneration = di.Generation
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+		now := metav1.Now()
+		di.Status.LastReconcileTime = &now
 
 		log.V(7).Info("updating status")
 		if err := c.Status().Update(ctx, di); err != nil {
@@ -42,7 +46,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 	}
-	if lsv1alpha1helper.HasReconcileTimestampAnnotation(di.ObjectMeta) {
+	if metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp)) {
 		log.V(5).Info("removing timestamp annotation")
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
