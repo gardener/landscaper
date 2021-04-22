@@ -35,11 +35,23 @@ const (
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(log logr.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout lscore.Duration) (reconcile.Reconciler, error) {
+func NewController(log logr.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
 	con := controller{log: log, c: c, scheme: scheme}
-	con.pickupTimeout = pickupTimeout.Duration
-	con.abortingTimeout = abortingTimeout.Duration
-	con.defaultTimeout = defaultTimeout.Duration
+	if pickupTimeout != nil {
+		con.pickupTimeout = pickupTimeout.Duration
+	} else {
+		con.pickupTimeout = time.Duration(0)
+	}
+	if abortingTimeout != nil {
+		con.abortingTimeout = abortingTimeout.Duration
+	} else {
+		con.abortingTimeout = time.Duration(0)
+	}
+	if defaultTimeout != nil {
+		con.defaultTimeout = defaultTimeout.Duration
+	} else {
+		con.defaultTimeout = time.Duration(0)
+	}
 
 	// log pickup timeout
 	log.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != 0, "timeout", con.pickupTimeout.String())
@@ -106,6 +118,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
 			if err := con.c.Status().Update(ctx, di); err != nil {
+				// we might need to expose this as event on the deploy item
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
 			}

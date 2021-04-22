@@ -38,7 +38,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	BeforeEach(func() {
 		var err error
 
-		deployItemController, err = dictrl.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, testPickupTimeoutDuration, testAbortingTimeoutDuration, testProgressingTimeoutDuration)
+		deployItemController, err = dictrl.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testAbortingTimeoutDuration, &testProgressingTimeoutDuration)
 		Expect(err).ToNot(HaveOccurred())
 
 		mockController, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, &mockv1alpha1.Configuration{})

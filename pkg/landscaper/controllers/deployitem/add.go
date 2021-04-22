@@ -17,9 +17,9 @@ func AddControllerToManager(mgr manager.Manager, deployItemPickupTimeout, deploy
 		ctrl.Log.WithName("controllers").WithName("DeployItem"),
 		mgr.GetClient(),
 		mgr.GetScheme(),
-		*deployItemPickupTimeout,
-		*deployItemAbortingTimeout,
-		*deployItemDefaultTimeout,
+		deployItemPickupTimeout,
+		deployItemAbortingTimeout,
+		deployItemDefaultTimeout,
 	)
 	if err != nil {
 		return err
