@@ -140,10 +140,6 @@ spec:
                 required:
                 - name
                 type: object
-              lastChangeReconcileTime:
-                description: LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started
-                format: date-time
-                type: string
               lastError:
                 description: LastError describes the last error that occurred.
                 properties:
@@ -177,6 +173,10 @@ spec:
                 - operation
                 - reason
                 type: object
+              lastReconcileTime:
+                description: LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started
+                format: date-time
+                type: string
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed for this DeployItem. It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
                 format: int64

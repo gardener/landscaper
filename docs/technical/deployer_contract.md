@@ -54,7 +54,7 @@ Once handled by its deployer, a status similar to this one will be attached to t
 status:
   observedGeneration: 1
   phase: Succeeded
-  lastChangeReconcileTime: "2021-04-15T12:10:51Z"
+  lastReconcileTime: "2021-04-15T12:10:51Z"
   providerStatus:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderStatus
@@ -105,7 +105,7 @@ As explained above, even if the type is correct, the deployer might still not be
 #### 3. Handle Annotations
 There are two important annotations that need to be handled by the deployer: 
 The operation annotation `landscaper.gardener.cloud/operation` indicates that either a human operator or the landscaper wants a specific operation to be fulfilled on this deploy item. The value of the annotation specifies the expected operation:
-- `reconcile`: This deploy item needs to be reconciled. The deployer has to remove this annotation. In addition, it should set the deploy item's phase to `Init` to show the beginning of a new reconciliation and avoid loss of information in case the deployer dies immediately after removing the annotation. In the status, `lastChangeReconcileTime` has to be set to the current timestamp (this value is used to recognize when a deployer is 'stuck' processing a deploy item).
+- `reconcile`: This deploy item needs to be reconciled. The deployer has to remove this annotation. In addition, it should set the deploy item's phase to `Init` to show the beginning of a new reconciliation and avoid loss of information in case the deployer dies immediately after removing the annotation. In the status, `lastReconcileTime` has to be set to the current timestamp (this value is used to recognize when a deployer is 'stuck' processing a deploy item).
 - `abort`: This annotation is usually attached to deploy items in the `Progressing` phase and means that the deployer should stop processing it. The main purpose of this annotation is to give the deployer time to gracefully stop processing the deploy item and clean up any already created resources before setting the phase to `Failed`. What 'aborting gracefully' means is highly specific to the corresponding deployer logic.
 
 > The landscaper will abort deploy items which are stuck in `Progressing` for too long. The timeout can be configured on the deploy item itself via `spec.timeout` and is defaulted to 10 minutes otherwise. The default can be overwritten by setting `deployItemTimeouts.progressingDefault` in the landscaper configuration. Instead of a time, `none` can be used to disable this check.

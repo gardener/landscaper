@@ -2357,9 +2357,9 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
 						},
 					},
-					"lastChangeReconcileTime": {
+					"lastReconcileTime": {
 						SchemaProps: spec.SchemaProps{
-							Description: "LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started",
+							Description: "LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},

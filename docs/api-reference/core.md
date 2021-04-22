@@ -1664,7 +1664,7 @@ Error
 </tr>
 <tr>
 <td>
-<code>lastChangeReconcileTime</code></br>
+<code>lastReconcileTime</code></br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
 Kubernetes meta/v1.Time
@@ -1673,7 +1673,7 @@ Kubernetes meta/v1.Time
 </td>
 <td>
 <em>(Optional)</em>
-<p>LastChangeReconcileTime indicates when the reconciliation of the last change to the deploy item has started</p>
+<p>LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started</p>
 </td>
 </tr>
 <tr>

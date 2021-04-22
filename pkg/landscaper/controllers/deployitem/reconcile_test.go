@@ -102,7 +102,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		// verify state
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
-		Expect(di.Status.LastChangeReconcileTime).NotTo(BeNil())
+		Expect(di.Status.LastReconcileTime).NotTo(BeNil())
 		old := di.DeepCopy()
 
 		// reconcile with deploy item controller should not do anything to the deploy item
@@ -111,9 +111,9 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
 		Expect(di).To(Equal(old))
 
-		By("Set timed out LastChangeReconcileTime timestamp")
+		By("Set timed out LastReconcileTime timestamp")
 		timedOut := metav1.Time{Time: time.Now().Add(-(testProgressingTimeoutDuration.Duration + (5 * time.Second)))}
-		di.Status.LastChangeReconcileTime = &timedOut
+		di.Status.LastReconcileTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
 		By("Verify that timed out deploy items get an abort annotation")
@@ -148,13 +148,13 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReqF.NamespacedName, diF))
 		Expect(diS.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 		Expect(diF.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
-		Expect(diS.Status.LastChangeReconcileTime).NotTo(BeNil())
-		Expect(diF.Status.LastChangeReconcileTime).NotTo(BeNil())
+		Expect(diS.Status.LastReconcileTime).NotTo(BeNil())
+		Expect(diF.Status.LastReconcileTime).NotTo(BeNil())
 
-		By("Set timed out LastChangeReconcileTime timestamp")
+		By("Set timed out LastReconcileTime timestamp")
 		timedOut := metav1.Time{Time: time.Now().Add(-(testProgressingTimeoutDuration.Duration + (5 * time.Second)))}
-		diS.Status.LastChangeReconcileTime = &timedOut
-		diF.Status.LastChangeReconcileTime = &timedOut
+		diS.Status.LastReconcileTime = &timedOut
+		diF.Status.LastReconcileTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, diS))
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, diF))
 
@@ -185,9 +185,9 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
 
-		By("Set timed out LastChangeReconcileTime timestamp (using default timeout duration)")
+		By("Set timed out LastReconcileTime timestamp (using default timeout duration)")
 		timedOut := metav1.Time{Time: time.Now().Add(-(testProgressingTimeoutDuration.Duration + (5 * time.Second)))}
-		di.Status.LastChangeReconcileTime = &timedOut
+		di.Status.LastReconcileTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
 		By("Verify that deploy item is not timed out")
@@ -195,9 +195,9 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
 		Expect(di.Annotations).To(BeNil())
 
-		By("Set timed out LastChangeReconcileTime timestamp (deploy item specific timeout duration)")
+		By("Set timed out LastReconcileTime timestamp (deploy item specific timeout duration)")
 		timedOut = metav1.Time{Time: time.Now().Add(-(di.Spec.Timeout.Duration + (5 * time.Second)))}
-		di.Status.LastChangeReconcileTime = &timedOut
+		di.Status.LastReconcileTime = &timedOut
 		utils.ExpectNoError(testenv.Client.Status().Update(ctx, di))
 
 		By("Verify that deploy item is timed out")

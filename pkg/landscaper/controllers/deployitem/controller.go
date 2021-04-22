@@ -227,7 +227,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectProgressingTimeouts")
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
-	if di.Status.LastChangeReconcileTime.IsZero() || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if di.Status.LastReconcileTime.IsZero() || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 		logger.V(7).Info("deploy item is reconciled for the first time or in a final phase, nothing to do")
 		return nil, nil
 	}
@@ -238,7 +238,7 @@ func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1
 	} else {
 		progressingTimeout = di.Spec.Timeout.Duration
 	}
-	progressingDuration := time.Since(di.Status.LastChangeReconcileTime.Time)
+	progressingDuration := time.Since(di.Status.LastReconcileTime.Time)
 	if progressingDuration >= progressingTimeout {
 		// the deployer has not finished processing this deploy item within the timeframe
 		// => abort it

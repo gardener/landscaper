@@ -494,8 +494,8 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		*out = new(Error)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.LastChangeReconcileTime != nil {
-		in, out := &in.LastChangeReconcileTime, &out.LastChangeReconcileTime
+	if in.LastReconcileTime != nil {
+		in, out := &in.LastReconcileTime, &out.LastReconcileTime
 		*out = (*in).DeepCopy()
 	}
 	if in.ProviderStatus != nil {

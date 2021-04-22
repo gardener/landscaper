@@ -33,7 +33,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		di.Status.ObservedGeneration = di.Generation
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 		now := metav1.Now()
-		di.Status.LastChangeReconcileTime = &now
+		di.Status.LastReconcileTime = &now
 
 		log.V(7).Info("updating status")
 		if err := c.Status().Update(ctx, di); err != nil {
