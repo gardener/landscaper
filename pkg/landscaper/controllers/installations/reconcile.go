@@ -17,7 +17,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
-func (c *controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	c.Log().Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
 	instOp, err := c.initPrerequisites(ctx, inst)
@@ -96,7 +96,7 @@ func (c *controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	return nil
 }
 
-func (c *controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	c.Log().Info("Force Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 	instOp, err := c.initPrerequisites(ctx, inst)
 	if err != nil {
@@ -120,7 +120,7 @@ func (c *controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 
 // eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
 // The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
-func (c *controller) eligibleToUpdate(ctx context.Context, op *installations.Operation) (bool, error) {
+func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Operation) (bool, error) {
 	if op.Inst.Info.Generation != op.Inst.Info.Status.ObservedGeneration {
 		return true, nil
 	}
@@ -138,7 +138,7 @@ func (c *controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 }
 
 // Update redeploys subinstallations and deploy items.
-func (c *controller) Update(ctx context.Context, op *installations.Operation) error {
+func (c *Controller) Update(ctx context.Context, op *installations.Operation) error {
 	currOp := "Validate"
 	inst := op.Inst
 	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {

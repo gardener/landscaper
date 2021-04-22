@@ -1,0 +1,92 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
+  creationTimestamp: null
+  name: componentoverwrites.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: ComponentOverwrites
+    listKind: ComponentOverwritesList
+    plural: componentoverwrites
+    shortNames:
+    - compoverwrite
+    - co
+    - overwrite
+    singular: componentoverwrites
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComponentOverwrites are resources that can hold any kind json or yaml data.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          overwrites:
+            description: Overwrites defines a list of component overwrites
+            items:
+              description: ComponentOverwrite defines an overwrite for a specific component and/or version of a component.
+              properties:
+                component:
+                  description: Component defines the component that should be replaced. The version is optional and will default to all found versions
+                  properties:
+                    componentName:
+                      description: ComponentName defines the unique of the component containing the resource.
+                      type: string
+                    repositoryContext:
+                      description: RepositoryContext defines the context of the component repository to resolve blueprints.
+                      properties:
+                        baseUrl:
+                          description: BaseURL is the base url of the repository to resolve components.
+                          type: string
+                        type:
+                          description: Type defines the type of the component repository to resolve references.
+                          type: string
+                      required:
+                      - baseUrl
+                      - type
+                      type: object
+                    version:
+                      description: Version defines the version of the component.
+                      type: string
+                  type: object
+                target:
+                  description: Target defines the replacement target for the component or version.
+                  properties:
+                    componentName:
+                      description: ComponentName defines the unique of the component containing the resource.
+                      type: string
+                    repositoryContext:
+                      description: RepositoryContext defines the context of the component repository to resolve blueprints.
+                      properties:
+                        baseUrl:
+                          description: BaseURL is the base url of the repository to resolve components.
+                          type: string
+                        type:
+                          description: Type defines the type of the component repository to resolve references.
+                          type: string
+                      required:
+                      - baseUrl
+                      - type
+                      type: object
+                    version:
+                      description: Version defines the version of the component.
+                      type: string
+                  type: object
+              required:
+              - component
+              - target
+              type: object
+            type: array
+        type: object
+    served: true
+    storage: true

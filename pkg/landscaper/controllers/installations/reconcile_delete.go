@@ -21,7 +21,7 @@ var (
 	WaitingForDeletionError = errors.New("waiting for deletion")
 )
 
-func (c *controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	instOp, err := c.initPrerequisites(ctx, inst)
 	if err != nil {
 		return err

@@ -20,27 +20,27 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (c *Controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
 		return err
 	}
 
-	if c.lsConfig.Registry.Local != nil {
-		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.lsConfig.Registry.Local.RootPath)
+	if c.LsConfig.Registry.Local != nil {
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.LsConfig.Registry.Local.RootPath)
 		if err != nil {
 			return err
 		}
-		if err := c.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+		if err := c.ComponentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 			return err
 		}
 	}
 
 	// always add c oci client to support unauthenticated requests
 	ociConfigFiles := make([]string, 0)
-	if c.lsConfig.Registry.OCI != nil {
-		ociConfigFiles = c.lsConfig.Registry.OCI.ConfigFiles
+	if c.LsConfig.Registry.OCI != nil {
+		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles
 	}
 	ociKeyring, err := credentials.NewBuilder(c.Log()).DisableDefaultConfig().
 		WithFS(osfs.New()).
@@ -51,9 +51,9 @@ func (c *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 		return err
 	}
 	ociClient, err := ociclient.NewClient(c.Log(),
-		utils.WithConfiguration(c.lsConfig.Registry.OCI),
+		utils.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithResolver{Resolver: ociKeyring},
-		ociclient.WithCache{Cache: c.componentsRegistryMgr.SharedCache()},
+		ociclient.WithCache{Cache: c.ComponentsRegistryMgr.SharedCache()},
 	)
 	if err != nil {
 		return err
@@ -68,14 +68,14 @@ func (c *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 	if err != nil {
 		return err
 	}
-	if err := c.componentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+	if err := c.ComponentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
+func (c *Controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {
 	secrets := make([]corev1.Secret, len(secretRefs))
 	for i, secretRef := range secretRefs {
 		secret := corev1.Secret{}

@@ -5,8 +5,6 @@
 package validation_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -17,11 +15,6 @@ import (
 	"github.com/gardener/landscaper/apis/core"
 	"github.com/gardener/landscaper/apis/core/validation"
 )
-
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Validation Testing")
-}
 
 var _ = Describe("Installation", func() {
 	Context("ObjectReference", func() {

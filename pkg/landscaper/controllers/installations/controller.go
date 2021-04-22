@@ -17,6 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -28,11 +31,15 @@ import (
 )
 
 const (
-	cacheIdentifier = "landscaper-installation-controller"
+	cacheIdentifier = "landscaper-installation-Controller"
 )
 
-// NewController creates a new controller that reconciles Installation resources.
-func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
+// NewController creates a new Controller that reconciles Installation resources.
+func NewController(log logr.Logger,
+	kubeClient client.Client,
+	scheme *runtime.Scheme,
+	overwriter componentoverwrites.Overwriter,
+	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 	componentRegistryMgr, err := componentsregistry.SetupManagerFromConfig(log, lsConfig.Registry.OCI, cacheIdentifier)
 	if err != nil {
 		return nil, err
@@ -40,26 +47,27 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 	log.V(3).Info("setup components registry")
 
 	op := operation.NewOperation(log, kubeClient, scheme, componentRegistryMgr)
-	return &controller{
+	return &Controller{
 		Interface:             op,
-		lsConfig:              lsConfig,
-		componentsRegistryMgr: componentRegistryMgr,
+		LsConfig:              lsConfig,
+		ComponentsRegistryMgr: componentRegistryMgr,
+		ComponentOverwriter:   overwriter,
 	}, nil
 }
 
-// NewTestActuator creates a new controller that is only meant for testing.
-func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *controller {
-	a := &controller{
+// NewTestActuator creates a new Controller that is only meant for testing.
+func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *Controller {
+	a := &Controller{
 		Interface:             op,
-		lsConfig:              configuration,
-		componentsRegistryMgr: &componentsregistry.Manager{},
+		LsConfig:              configuration,
+		ComponentsRegistryMgr: &componentsregistry.Manager{},
 	}
 	resolver := op.ComponentsRegistry().(componentsregistry.TypedRegistry)
-	err := a.componentsRegistryMgr.Set(resolver)
+	err := a.ComponentsRegistryMgr.Set(resolver)
 	if err != nil {
 		return nil
 	}
-	err = operation.InjectComponentsRegistryInto(op, a.componentsRegistryMgr)
+	err = operation.InjectComponentsRegistryInto(op, a.ComponentsRegistryMgr)
 	if err != nil {
 		return nil
 	}
@@ -67,13 +75,15 @@ func NewTestActuator(op operation.Interface, configuration *config.LandscaperCon
 	return a
 }
 
-type controller struct {
+// Controller is the controller that reconciles a installtion resource.
+type Controller struct {
 	operation.Interface
-	lsConfig              *config.LandscaperConfiguration
-	componentsRegistryMgr *componentsregistry.Manager
+	LsConfig              *config.LandscaperConfiguration
+	ComponentsRegistryMgr *componentsregistry.Manager
+	ComponentOverwriter   componentoverwrites.Overwriter
 }
 
-func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.Log().WithValues("installation", req.NamespacedName.String())
 	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
 
@@ -85,8 +95,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, err
 	}
-	// default the installation as it not done by the controller runtime
-	lsv1alpha1.SetDefaults_Installation(inst)
+	// default the installation as it not done by the Controller runtime
+	api.LandscaperScheme.Default(inst)
 	errHdl := HandleErrorFunc(logger, c.Client(), inst)
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
@@ -126,7 +136,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
 }
 
-func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
 	if err := c.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
@@ -134,9 +144,8 @@ func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 
 	// default repository context if not defined
-	defaultRepoContext := c.lsConfig.RepositoryContext
-	if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil && inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = defaultRepoContext
+	if err := c.HandleComponentReference(inst); err != nil {
+		return nil, err
 	}
 
 	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
@@ -154,13 +163,54 @@ func (c *controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			currOp, "InitInstallation", err.Error())
 	}
 
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation, defaultRepoContext)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation, c.LsConfig.RepositoryContext)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
 	return instOp, nil
+}
+
+// HandleComponentReference defaults and optionally replaces the component reference of a installation.
+func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) error {
+	if inst.Spec.ComponentDescriptor == nil || inst.Spec.ComponentDescriptor.Reference == nil {
+		return nil
+	}
+	// default repository context if not defined
+	if inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = c.LsConfig.RepositoryContext
+	}
+
+	if c.ComponentOverwriter == nil {
+		return nil
+	}
+
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.ComponentReferenceOverwriteCondition)
+	oldRef := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
+	overwritten, err := c.ComponentOverwriter.Replace(inst.Spec.ComponentDescriptor.Reference)
+	if err != nil {
+		return lsv1alpha1helper.NewWrappedError(err,
+			"HandleComponentReference", "OverwriteComponentReference", err.Error())
+	}
+	if overwritten {
+		newRef := inst.Spec.ComponentDescriptor.Reference
+		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
+			"FoundOverwrite",
+			fmt.Sprintf(`
+Componenten reference has been overwritten:
+%s -> %s
+%s -> %s
+%s -> %s
+`, oldRef.RepositoryContext.BaseURL, newRef.RepositoryContext.BaseURL, oldRef.ComponentName, newRef.ComponentName, oldRef.Version, newRef.Version))
+	} else {
+		cond = lsv1alpha1helper.UpdatedCondition(cond,
+			lsv1alpha1.ConditionFalse,
+			"No overwrite defined",
+			"component refernece has not been overwritten")
+	}
+	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
+	return nil
 }
 
 // HandleErrorFunc returns a error handler func for deployers.

@@ -13,6 +13,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
 	install "github.com/gardener/landscaper/apis/core/install"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
@@ -22,9 +25,9 @@ import (
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	mockctlr "github.com/gardener/landscaper/pkg/deployer/mock"
-	deployitemactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
-	executionactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
-	installationsactuator "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
+	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
+	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
+	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
 
 	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
@@ -88,15 +91,20 @@ func (o *options) run(ctx context.Context) error {
 
 	install.Install(mgr.GetScheme())
 
-	if err := installationsactuator.AddControllerToManager(mgr, o.config); err != nil {
+	componentOverwriteMgr := componentoverwrites.New()
+	if err := coctrl.AddControllerToManager(mgr, componentOverwriteMgr); err != nil {
+		return fmt.Errorf("unable to setup commponent overwrites controller: %w", err)
+	}
+
+	if err := installationsctrl.AddControllerToManager(mgr, componentOverwriteMgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactuator.AddControllerToManager(mgr); err != nil {
+	if err := executionactrl.AddControllerToManager(mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
-	if err := deployitemactuator.AddControllerToManager(mgr, o.config.DeployItemTimeouts.Pickup, o.config.DeployItemTimeouts.Abort, o.config.DeployItemTimeouts.ProgressingDefault); err != nil {
+	if err := deployitemctrl.AddControllerToManager(mgr, o.config.DeployItemTimeouts.Pickup, o.config.DeployItemTimeouts.Abort, o.config.DeployItemTimeouts.ProgressingDefault); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 

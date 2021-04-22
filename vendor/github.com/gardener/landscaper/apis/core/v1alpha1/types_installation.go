@@ -43,6 +43,9 @@ const EnsureExecutionsCondition ConditionType = "EnsureExecutions"
 // ValidateExportCondition is the Conditions type to indicate validation status of teh exported data.
 const ValidateExportCondition ConditionType = "ValidateExport"
 
+// ComponentReferenceOverwriteCondition is the Conditions type to indicate that the component reference was overwritten.
+const ComponentReferenceOverwriteCondition ConditionType = "ComponentReferenceOverwrite"
+
 type ComponentInstallationPhase string
 
 const (
