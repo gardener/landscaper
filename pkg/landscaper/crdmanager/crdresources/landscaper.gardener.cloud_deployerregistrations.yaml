@@ -1,0 +1,411 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
+  creationTimestamp: null
+  name: deployerregistrations.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: DeployerRegistration
+    listKind: DeployerRegistrationList
+    plural: deployerregistrations
+    shortNames:
+    - deployreg,deployerreg,dreg
+    singular: deployerregistration
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DeployerRegistration defines a installation template for a deployer.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the deployer registration configuration.
+            properties:
+              installationTemplate:
+                description: InstallationTemplate defines the installation template for installing a deployer.´
+                properties:
+                  blueprint:
+                    description: Blueprint is the resolved reference to the definition.
+                    properties:
+                      inline:
+                        description: Inline defines a inline yaml filesystem with a blueprint.
+                        properties:
+                          filesystem:
+                            x-kubernetes-preserve-unknown-fields: true
+                        required:
+                        - filesystem
+                        type: object
+                      ref:
+                        description: Reference defines a remote reference to a blueprint
+                        properties:
+                          resourceName:
+                            description: ResourceName is the name of the blueprint as defined by a component descriptor.
+                            type: string
+                        required:
+                        - resourceName
+                        type: object
+                    type: object
+                  componentDescriptor:
+                    description: ComponentDescriptor is a reference to the installation's component descriptor
+                    properties:
+                      inline:
+                        description: InlineDescriptorReference defines an inline component descriptor
+                        properties:
+                          component:
+                            description: Spec contains the specification of the component.
+                            properties:
+                              componentReferences:
+                                description: ComponentReferences references component dependencies that can be resolved in the current context.
+                                items:
+                                  description: ComponentReference describes the reference to another component in the registry.
+                                  properties:
+                                    componentName:
+                                      description: ComponentName describes the remote name of the referenced object
+                                      type: string
+                                    extraIdentity:
+                                      additionalProperties:
+                                        type: string
+                                      description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                      type: object
+                                    labels:
+                                      description: Labels defines an optional set of additional labels describing the object.
+                                      items:
+                                        description: Label is a label that can be set on objects.
+                                        properties:
+                                          name:
+                                            description: Name is the unique name of the label.
+                                            type: string
+                                          value:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                        required:
+                                        - name
+                                        - value
+                                        type: object
+                                      type: array
+                                    name:
+                                      description: Name is the context unique name of the object.
+                                      type: string
+                                    version:
+                                      description: Version is the semver version of the object.
+                                      type: string
+                                  required:
+                                  - componentName
+                                  - name
+                                  - version
+                                  type: object
+                                type: array
+                              labels:
+                                description: Labels defines an optional set of additional labels describing the object.
+                                items:
+                                  description: Label is a label that can be set on objects.
+                                  properties:
+                                    name:
+                                      description: Name is the unique name of the label.
+                                      type: string
+                                    value:
+                                      x-kubernetes-preserve-unknown-fields: true
+                                  required:
+                                  - name
+                                  - value
+                                  type: object
+                                type: array
+                              name:
+                                description: Name is the context unique name of the object.
+                                type: string
+                              provider:
+                                description: Provider defines the provider type of a component. It can be external or internal.
+                                type: string
+                              repositoryContexts:
+                                description: RepositoryContexts defines the previous repositories of the component
+                                items:
+                                  description: RepositoryContext describes a repository context.
+                                  properties:
+                                    baseUrl:
+                                      description: BaseURL is the base url of the repository to resolve components.
+                                      type: string
+                                    type:
+                                      description: Type defines the type of the component repository to resolve references.
+                                      type: string
+                                  required:
+                                  - baseUrl
+                                  - type
+                                  type: object
+                                type: array
+                              resources:
+                                description: Resources defines all resources that are created by the component and by a third party.
+                                items:
+                                  description: Resource describes a resource dependency of a component.
+                                  properties:
+                                    access:
+                                      x-kubernetes-preserve-unknown-fields: true
+                                    extraIdentity:
+                                      additionalProperties:
+                                        type: string
+                                      description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                      type: object
+                                    labels:
+                                      description: Labels defines an optional set of additional labels describing the object.
+                                      items:
+                                        description: Label is a label that can be set on objects.
+                                        properties:
+                                          name:
+                                            description: Name is the unique name of the label.
+                                            type: string
+                                          value:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                        required:
+                                        - name
+                                        - value
+                                        type: object
+                                      type: array
+                                    name:
+                                      description: Name is the context unique name of the object.
+                                      type: string
+                                    relation:
+                                      description: Relation describes the relation of the resource to the component. Can be a local or external resource
+                                      type: string
+                                    srcRef:
+                                      description: SourceRef defines a list of source names. These names reference the sources defines in `component.sources`.
+                                      items:
+                                        description: SourceRef defines a reference to a source
+                                        properties:
+                                          identitySelector:
+                                            additionalProperties:
+                                              type: string
+                                            description: IdentitySelector defines the identity that is used to match a source.
+                                            type: object
+                                          labels:
+                                            description: Labels defines an optional set of additional labels describing the object.
+                                            items:
+                                              description: Label is a label that can be set on objects.
+                                              properties:
+                                                name:
+                                                  description: Name is the unique name of the label.
+                                                  type: string
+                                                value:
+                                                  x-kubernetes-preserve-unknown-fields: true
+                                              required:
+                                              - name
+                                              - value
+                                              type: object
+                                            type: array
+                                        type: object
+                                      type: array
+                                    type:
+                                      description: Type describes the type of the object.
+                                      type: string
+                                    version:
+                                      description: Version is the semver version of the object.
+                                      type: string
+                                  required:
+                                  - access
+                                  - name
+                                  - type
+                                  - version
+                                  type: object
+                                type: array
+                              sources:
+                                description: Sources defines sources that produced the component
+                                items:
+                                  description: Source is the definition of a component's source.
+                                  properties:
+                                    access:
+                                      x-kubernetes-preserve-unknown-fields: true
+                                    extraIdentity:
+                                      additionalProperties:
+                                        type: string
+                                      description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                      type: object
+                                    labels:
+                                      description: Labels defines an optional set of additional labels describing the object.
+                                      items:
+                                        description: Label is a label that can be set on objects.
+                                        properties:
+                                          name:
+                                            description: Name is the unique name of the label.
+                                            type: string
+                                          value:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                        required:
+                                        - name
+                                        - value
+                                        type: object
+                                      type: array
+                                    name:
+                                      description: Name is the context unique name of the object.
+                                      type: string
+                                    type:
+                                      description: Type describes the type of the object.
+                                      type: string
+                                    version:
+                                      description: Version is the semver version of the object.
+                                      type: string
+                                  required:
+                                  - access
+                                  - name
+                                  - type
+                                  - version
+                                  type: object
+                                type: array
+                              version:
+                                description: Version is the semver version of the object.
+                                type: string
+                            required:
+                            - componentReferences
+                            - name
+                            - provider
+                            - repositoryContexts
+                            - resources
+                            - sources
+                            - version
+                            type: object
+                          meta:
+                            description: Metadata specifies the schema version of the component.
+                            properties:
+                              schemaVersion:
+                                description: Version is the schema version of the component descriptor.
+                                type: string
+                            required:
+                            - schemaVersion
+                            type: object
+                        required:
+                        - component
+                        - meta
+                        type: object
+                      ref:
+                        description: ComponentDescriptorReference is the reference to a component descriptor
+                        properties:
+                          componentName:
+                            description: ComponentName defines the unique of the component containing the resource.
+                            type: string
+                          repositoryContext:
+                            description: RepositoryContext defines the context of the component repository to resolve blueprints.
+                            properties:
+                              baseUrl:
+                                description: BaseURL is the base url of the repository to resolve components.
+                                type: string
+                              type:
+                                description: Type defines the type of the component repository to resolve references.
+                                type: string
+                            required:
+                            - baseUrl
+                            - type
+                            type: object
+                          version:
+                            description: Version defines the version of the component.
+                            type: string
+                        required:
+                        - componentName
+                        - version
+                        type: object
+                    type: object
+                  importDataMappings:
+                    additionalProperties:
+                      x-kubernetes-preserve-unknown-fields: true
+                    description: 'ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace ))'
+                    type: object
+                  imports:
+                    description: Imports define the imported data objects and targets.
+                    properties:
+                      data:
+                        description: Data defines all data object imports.
+                        items:
+                          description: DataImport is a data object import.
+                          properties:
+                            configMapRef:
+                              description: ConfigMapRef defines a data reference from a configmap. This method is not allowed in installation templates.
+                              properties:
+                                key:
+                                  description: Key is the name of the key in the configmap that holds the data.
+                                  type: string
+                                name:
+                                  description: Name is the name of the kubernetes object.
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of kubernetes object.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                            dataRef:
+                              description: DataRef is the name of the in-cluster data object. The reference can also be a namespaces name. E.g. "default/mydataref"
+                              type: string
+                            name:
+                              description: Name the internal name of the imported/exported data.
+                              type: string
+                            secretRef:
+                              description: SecretRef defines a data reference from a secret. This method is not allowed in installation templates.
+                              properties:
+                                key:
+                                  description: Key is the name of the key in the secret that holds the data.
+                                  type: string
+                                name:
+                                  description: Name is the name of the kubernetes object.
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of kubernetes object.
+                                  type: string
+                              required:
+                              - key
+                              - name
+                              type: object
+                            version:
+                              description: Version specifies the imported data version. defaults to "v1"
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                      targets:
+                        description: Targets defines all target imports.
+                        items:
+                          description: TargetImportExport is a target import/export.
+                          properties:
+                            name:
+                              description: Name the internal name of the imported/exported target.
+                              type: string
+                            target:
+                              description: Target is the name of the in-cluster target object.
+                              type: string
+                          required:
+                          - name
+                          - target
+                          type: object
+                        type: array
+                    type: object
+                required:
+                - blueprint
+                type: object
+              types:
+                description: DeployItemTypes defines the types of deploy items that are handled by the deployer.
+                items:
+                  description: DeployItemType defines the type of the deploy item
+                  type: string
+                type: array
+            required:
+            - installationTemplate
+            - types
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

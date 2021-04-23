@@ -1,0 +1,104 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
+  creationTimestamp: null
+  name: environments.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: Environment
+    listKind: EnvironmentList
+    plural: environments
+    shortNames:
+    - env
+    singular: environment
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Environment defines a environment that is created by a agent.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec defines the environment.
+            properties:
+              hostTarget:
+                description: HostTarget points to the target that is created by the agent with the environment.
+                properties:
+                  name:
+                    description: Name is the name of the kubernetes object.
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of kubernetes object.
+                    type: string
+                required:
+                - name
+                type: object
+              targetSelector:
+                description: TargetSelector defines the target selector that is applied to all installed deployers
+                properties:
+                  annotations:
+                    description: Annotations matches a target based on annotations.
+                    items:
+                      description: Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          description: Operator represents a key/field's relationship to value(s). See labels.Requirement and fields.Requirement for more details.
+                          type: string
+                        values:
+                          description: In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  labels:
+                    description: Labels matches a target based on its labels.
+                    items:
+                      description: Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          description: Operator represents a key/field's relationship to value(s). See labels.Requirement and fields.Requirement for more details.
+                          type: string
+                        values:
+                          description: In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                type: object
+            required:
+            - hostTarget
+            - targetSelector
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources: {}
