@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lscore "github.com/gardener/landscaper/apis/core"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -29,7 +29,7 @@ type ProviderConfiguration struct {
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
 	// +optional
-	DeleteTimeout string `json:"deleteTimeout,omitempty"`
+	DeleteTimeout *lscore.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []Manifest `json:"manifests,omitempty"`
 }
@@ -76,7 +76,7 @@ type HealthChecksConfiguration struct {
 	// Timeout is the time to wait before giving up on a resource to be healthy.
 	// Defaults to 180s.
 	// +optional
-	Timeout string `json:"timeout,omitempty"`
+	Timeout *lscore.Duration `json:"timeout,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -96,5 +96,5 @@ type ManagedResourceStatus struct {
 	// Policy defines the manage policy for that resource.
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Resources describes the managed kubernetes resource.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	Resource lscore.TypedObjectReference `json:"resource"`
 }

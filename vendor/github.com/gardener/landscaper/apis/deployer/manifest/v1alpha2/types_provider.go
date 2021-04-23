@@ -30,7 +30,7 @@ type ProviderConfiguration struct {
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
 	// +optional
-	DeleteTimeout string `json:"deleteTimeout,omitempty"`
+	DeleteTimeout *lsv1alpha1.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []Manifest `json:"manifests,omitempty"`
 }
@@ -77,7 +77,7 @@ type HealthChecksConfiguration struct {
 	// Timeout is the time to wait before giving up on a resource to be healthy.
 	// Defaults to 180s.
 	// +optional
-	Timeout string `json:"timeout,omitempty"`
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

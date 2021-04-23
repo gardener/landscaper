@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,6 +16,7 @@ import (
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -30,7 +30,7 @@ type ObjectApplier struct {
 	kubeClient client.Client
 
 	deployItemName   string
-	deleteTimeout    string
+	deleteTimeout    lsv1alpha1.Duration
 	updateStrategy   manifestv1alpha2.UpdateStrategy
 	manifests        []manifestv1alpha2.Manifest
 	managedResources []manifestv1alpha2.ManagedResourceStatus
@@ -169,7 +169,7 @@ func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedRes
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 				// Delete object and ensure it is actually deleted from the cluster.
-				timeout, _ := time.ParseDuration(a.deleteTimeout)
+				timeout := a.deleteTimeout.Duration
 				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
 				if err != nil {
 					allErrs = append(allErrs, err)

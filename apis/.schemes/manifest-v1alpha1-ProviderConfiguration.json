@@ -1,6 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
     "manifest-v1alpha1-HealthChecksConfiguration": {
       "description": "HealthChecksConfiguration contains the configuration for health checks.",
       "type": "object",
@@ -11,7 +15,7 @@
         },
         "timeout": {
           "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-          "type": "string"
+          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },
@@ -27,8 +31,8 @@
       "type": "string"
     },
     "deleteTimeout": {
-      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-      "type": "string"
+      "$ref": "#/definitions/core-v1alpha1-Duration",
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "healthChecks": {
       "$ref": "#/definitions/manifest-v1alpha1-HealthChecksConfiguration",

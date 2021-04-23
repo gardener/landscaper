@@ -15,6 +15,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
+	core "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 )
@@ -91,7 +92,7 @@ func Convert_manifest_Configuration_To_v1alpha1_Configuration(in *manifest.Confi
 
 func autoConvert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -102,7 +103,7 @@ func Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfigur
 
 func autoConvert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *manifest.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -117,7 +118,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	if err := Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]manifest.Manifest, len(*in))
@@ -139,7 +140,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguratio
 	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
 		*out = make([]*runtime.RawExtension, len(*in))

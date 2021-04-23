@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/manifest"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
@@ -97,10 +98,10 @@ var _ = Describe("Conversion", func() {
 				ManagedResources: []manifest.ManagedResourceStatus{
 					{
 						Policy: manifest.ManagePolicy,
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: lscore.TypedObjectReference{
 							APIVersion: "v1",
 							Kind:       "Secret",
-							ObjectReference: lsv1alpha1.ObjectReference{
+							ObjectReference: lscore.ObjectReference{
 								Name:      "s1",
 								Namespace: "default",
 							},
@@ -108,10 +109,10 @@ var _ = Describe("Conversion", func() {
 					},
 					{
 						Policy: manifest.ManagePolicy,
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: lscore.TypedObjectReference{
 							APIVersion: "v1",
 							Kind:       "Secret",
-							ObjectReference: lsv1alpha1.ObjectReference{
+							ObjectReference: lscore.ObjectReference{
 								Name:      "s2",
 								Namespace: "default",
 							},

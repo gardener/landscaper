@@ -6,6 +6,7 @@ package test_test
 
 import (
 	"context"
+	"time"
 
 	logtesting "github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
@@ -21,6 +22,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/test/utils"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -82,7 +84,7 @@ var _ = Describe("Helm Deployer", func() {
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
 		providerConfig.HealthChecks = helmv1alpha1.HealthChecksConfiguration{
-			Timeout: "1s",
+			Timeout: &lsv1alpha1.Duration{Duration: 1 * time.Second},
 		}
 
 		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
@@ -105,7 +107,9 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		for _, ref := range status.ManagedResources {
-			obj := kutil.ObjectFromTypedObjectReference(&ref)
+			tmpRef := &lsv1alpha1.TypedObjectReference{}
+			utils.ExpectNoError(lsv1alpha1.Convert_core_TypedObjectReference_To_v1alpha1_TypedObjectReference(&ref, tmpRef, nil))
+			obj := kutil.ObjectFromTypedObjectReference(tmpRef)
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}

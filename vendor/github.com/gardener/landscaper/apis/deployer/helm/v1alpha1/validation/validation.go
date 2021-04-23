@@ -6,12 +6,11 @@ package validation
 
 import (
 	"fmt"
-	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 )
 
@@ -124,13 +123,14 @@ func ValidateFromResource(fldPath *field.Path, resourceRef *helmv1alpha1.RemoteC
 }
 
 // ValidateTimeout validates that a timeout can be parsed as Duration.
-func ValidateTimeout(fldPath *field.Path, timeout string) field.ErrorList {
+func ValidateTimeout(fldPath *field.Path, timeout *lsv1alpha1.Duration) field.ErrorList {
 	allErrs := field.ErrorList{}
-	if strings.HasPrefix(timeout, "-") {
-		allErrs = append(allErrs, field.Invalid(fldPath, timeout, "timeout can not be negative"))
+	if timeout == nil {
+		allErrs = append(allErrs, field.Required(fldPath, "timeout can not be empty"))
+		return allErrs
 	}
-	if _, err := time.ParseDuration(timeout); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath, timeout, "invalid duration string"))
+	if timeout.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath, timeout, "timeout can not be negative"))
 	}
 	return allErrs
 }
