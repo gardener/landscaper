@@ -61,11 +61,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, blue); err != nil {
 			return nil, fmt.Errorf("unable to decode blueprint definition from inline defined blueprint. %w", err)
 		}
-		intBlueprint, err := New(blue, readonlyfs.New(fs))
-		if err != nil {
-			return nil, fmt.Errorf("unable to create internal blueprint representation for inline config: %w", err)
-		}
-		return intBlueprint, nil
+		return New(blue, readonlyfs.New(fs)), nil
 	}
 
 	if cdRef == nil {
@@ -86,12 +82,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 	if err != nil {
 		return nil, err
 	}
-
-	intBlueprint, err := New(blueprint, readonlyfs.New(fs))
-	if err != nil {
-		return nil, fmt.Errorf("unable to create internal blueprint representation for ref %#v: %w", cdRef, err)
-	}
-	return intBlueprint, nil
+	return New(blueprint, readonlyfs.New(fs)), nil
 }
 
 // ResolveBlueprintFromBlobResolver resolves a blueprint defined by a component descriptor with

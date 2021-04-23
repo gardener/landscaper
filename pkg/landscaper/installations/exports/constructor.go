@@ -14,6 +14,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -66,11 +69,12 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 	internalExports["targets"] = targetsMap
 
-	templater := template.New(c.BlobResolver, template.KubernetesStateHandler{
+	stateHdlr := template.KubernetesStateHandler{
 		KubeClient: c.Client(),
 		Inst:       c.Inst.Info,
-	})
-	exports, err := templater.TemplateExportExecutions(c.Inst.Blueprint, internalExports)
+	}
+	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr), spiff.New(stateHdlr)).
+		TemplateExportExecutions(c.Inst.Blueprint, internalExports)
 	if err != nil {
 		return nil, nil, err
 	}

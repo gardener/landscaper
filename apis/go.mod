@@ -7,7 +7,6 @@ require (
 	github.com/go-logr/logr v0.3.0 // indirect
 	github.com/go-openapi/jsonreference v0.19.3
 	github.com/go-openapi/spec v0.19.3
-	github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
 	golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d // indirect

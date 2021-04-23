@@ -12,6 +12,10 @@ import (
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+
 	"github.com/gardener/landscaper/apis/core/validation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
@@ -20,7 +24,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
@@ -42,10 +45,10 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
 func (o *Operation) Ensure(ctx context.Context) error {
 	var (
-		inst      = o.Inst.Info
-		blueprint = o.Inst.Blueprint
+		inst = o.Inst.Info
+		cond = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 	)
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
+
 	o.CurrentOperation = string(lsv1alpha1.EnsureSubInstallationsCondition)
 
 	subInstallations, err := o.GetSubInstallations(ctx, inst)
@@ -66,12 +69,23 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		if subInstallations.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
-			return o.NewError(err, "RunningSubinstalltion", err.Error())
+			return o.NewError(err, "RunningSubinstallation", err.Error())
 		}
 	}
 
+	installationTmpl, err := o.getInstallationTemplates()
+	if err != nil {
+		err = fmt.Errorf("unable to get installation templates of blueprint: %w", err)
+		return o.NewError(err, "GetInstallationTemplates", err.Error())
+	}
+
+	// validate all installation templates before do any follow up actions
+	if err := o.ValidateSubinstallations(installationTmpl); err != nil {
+		return err
+	}
+
 	// delete removed subreferences
-	deletionTriggered, err := o.cleanupOrphanedSubInstallations(ctx, blueprint, inst, subInstallations)
+	deletionTriggered, err := o.cleanupOrphanedSubInstallations(ctx, subInstallations, installationTmpl)
 	if err != nil {
 		return err
 	}
@@ -79,14 +93,8 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		return nil
 	}
 
-	for _, subInstTmpl := range blueprint.Subinstallations {
-		subInst := subInstallations[subInstTmpl.Name]
-
-		_, err := o.createOrUpdateNewInstallation(ctx, inst, subInstTmpl, subInst)
-		if err != nil {
-			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
-			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())
-		}
+	if err := o.createOrUpdateSubinstallations(ctx, subInstallations, installationTmpl); err != nil {
+		return err
 	}
 
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
@@ -137,14 +145,17 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 	return subInstallations, nil
 }
 
-func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *blueprints.Blueprint, inst *lsv1alpha1.Installation, subInstallations map[string]*lsv1alpha1.Installation) (bool, error) {
+func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
+	subInstallations map[string]*lsv1alpha1.Installation,
+	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
 	var (
+		inst    = o.Inst.Info
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
 	)
 
 	for defName, subInst := range subInstallations {
-		if _, ok := getSubinstallationTemplate(blue, defName); ok {
+		if _, ok := getInstallationTemplate(installationTmpl, defName); ok {
 			continue
 		}
 
@@ -166,7 +177,60 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context, blue *b
 	return deleted, nil
 }
 
-func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv1alpha1.Installation, subInstTmpl *lsv1alpha1.InstallationTemplate, subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
+// getInstallationTemplates returns all installation templates defined by the referenced blueprint.
+func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTemplate, error) {
+	var instTmpls []*lsv1alpha1.InstallationTemplate
+	if len(o.Inst.Blueprint.Info.SubinstallationExecutions) != 0 {
+		templateStateHandler := template.KubernetesStateHandler{
+			KubeClient: o.Client(),
+			Inst:       o.Inst.Info,
+		}
+		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
+		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.DeployExecutionOptions{
+			Imports:              o.Inst.Imports,
+			Installation:         o.Inst.Info,
+			Blueprint:            o.Inst.Blueprint,
+			ComponentDescriptor:  o.ComponentDescriptor,
+			ComponentDescriptors: o.ResolvedComponentDescriptorList,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to template subinstllations: %w", err)
+		}
+		instTmpls = append(instTmpls, templatedTmpls...)
+	}
+	if len(o.Inst.Blueprint.Info.Subinstallations) != 0 {
+		defaultTemplates, err := o.Inst.Blueprint.GetSubinstallations()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get default subinstallation templates: %w", err)
+		}
+		instTmpls = append(instTmpls, defaultTemplates...)
+	}
+	return instTmpls, nil
+}
+
+func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
+	subInstallations map[string]*lsv1alpha1.Installation,
+	installationTmpl []*lsv1alpha1.InstallationTemplate) error {
+	if len(installationTmpl) == 0 {
+		// do nothing
+		return nil
+	}
+
+	for _, subInstTmpl := range installationTmpl {
+		subInst := subInstallations[subInstTmpl.Name]
+		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.Info, subInstTmpl, subInst)
+		if err != nil {
+			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
+			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())
+		}
+	}
+	return nil
+}
+
+func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
+	inst *lsv1alpha1.Installation,
+	subInstTmpl *lsv1alpha1.InstallationTemplate,
+	subInst *lsv1alpha1.Installation) (*lsv1alpha1.Installation, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 
 	if subInst == nil {
@@ -180,13 +244,6 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context, inst *lsv
 		subInst.GenerateName = fmt.Sprintf("%s-", generateName)
 		subInst.Namespace = inst.Namespace
 	}
-
-	//// get version for referenced reference
-	//// todo: revisit for subinstallations
-	//remoteRef, err := subInstTmpl.RemoteBlueprintReference(o.ResolvedComponentDescriptorList)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,

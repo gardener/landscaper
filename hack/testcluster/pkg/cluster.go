@@ -73,11 +73,11 @@ spec:
       protocol: TCP
     resources:
       requests:
-        memory: "500M"
+        memory: "1G"
         cpu: "1"
       limits:
-        memory: "2G"
-        cpu: "2"
+        memory: "3G"
+        cpu: "3"
     volumeMounts:
     - name: shared-data
       mountPath: /shared

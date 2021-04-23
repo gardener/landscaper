@@ -161,9 +161,7 @@ func CreateBlueprintFromFile(filePath, contentPath string) *blueprints.Blueprint
 
 	fs, err := projectionfs.New(osfs.New(), contentPath)
 	gomega.Expect(err).To(gomega.Succeed())
-	blue, err := blueprints.New(def, fs)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	return blue
+	return blueprints.New(def, fs)
 }
 
 // CreateOrUpdateTarget creates or updates a target with specific name, namespace and type

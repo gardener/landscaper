@@ -6,9 +6,13 @@ package blueprints
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/landscaper/apis/core"
+	"github.com/gardener/landscaper/apis/core/validation"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
@@ -16,50 +20,68 @@ import (
 
 // Blueprint is the internal resolved type of a blueprint.
 type Blueprint struct {
-	Info             *lsv1alpha1.Blueprint
-	Fs               vfs.FileSystem
-	Subinstallations []*lsv1alpha1.InstallationTemplate
+	Info *lsv1alpha1.Blueprint
+	Fs   vfs.FileSystem
 }
 
 // New creates a new internal Blueprint from a blueprint definition and its filesystem content.
-func New(blueprint *lsv1alpha1.Blueprint, content vfs.FileSystem) (*Blueprint, error) {
+func New(blueprint *lsv1alpha1.Blueprint, content vfs.FileSystem) *Blueprint {
 	b := &Blueprint{
 		Info: blueprint,
 		Fs:   content,
 	}
-
-	if err := ResolveBlueprintReferences(b); err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return b
 }
 
-func ResolveBlueprintReferences(blueprint *Blueprint) error {
-	refs := make([]*lsv1alpha1.InstallationTemplate, len(blueprint.Info.Subinstallations))
-	for i, subInstTmpl := range blueprint.Info.Subinstallations {
+// GetSubinstallations gets the direct subinstallation templates for a blueprint.
+func (b *Blueprint) GetSubinstallations() ([]*lsv1alpha1.InstallationTemplate, error) {
+	var (
+		allErrs   field.ErrorList
+		fldPath   = field.NewPath("subinstallations")
+		templates = make([]*lsv1alpha1.InstallationTemplate, len(b.Info.Subinstallations))
+	)
+	for i, subInstTmpl := range b.Info.Subinstallations {
+		instPath := fldPath.Index(i)
 		if subInstTmpl.InstallationTemplate != nil {
-			refs[i] = subInstTmpl.InstallationTemplate
+			templates[i] = subInstTmpl.InstallationTemplate
 			continue
 		}
 
 		if len(subInstTmpl.File) == 0 {
-			return fmt.Errorf("neither a inline installtion template nor a file is defined in index %d", i)
+			return nil, fmt.Errorf("neither a inline installation template nor a file is defined in index %d", i)
 		}
-		data, err := vfs.ReadFile(blueprint.Fs, subInstTmpl.File)
+		data, err := vfs.ReadFile(b.Fs, subInstTmpl.File)
 		if err != nil {
-			return err
+			if os.IsNotExist(err) {
+				allErrs = append(allErrs, field.NotFound(instPath.Child("file"), subInstTmpl.File))
+				continue
+			}
+			allErrs = append(allErrs, field.InternalError(instPath.Child("file"), err))
+			continue
+		}
+
+		coreInstTmpl := &core.InstallationTemplate{}
+		if _, _, err := api.Decoder.Decode(data, nil, coreInstTmpl); err != nil {
+			allErrs = append(allErrs, field.Invalid(instPath.Child("file"), subInstTmpl.File, fmt.Sprintf("unable to decode installation template: %s", err.Error())))
+			continue
+		}
+		if valErrs := validation.ValidateInstallationTemplate(instPath, coreInstTmpl); len(valErrs) != 0 {
+			allErrs = append(allErrs, valErrs...)
+			continue
 		}
 
 		instTmpl := &lsv1alpha1.InstallationTemplate{}
-		if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, instTmpl); err != nil {
-			return err
+		if err := lsv1alpha1.Convert_core_InstallationTemplate_To_v1alpha1_InstallationTemplate(coreInstTmpl, instTmpl, nil); err != nil {
+			allErrs = append(allErrs, field.InternalError(instPath, err))
+			continue
 		}
-		refs[i] = instTmpl
+		templates[i] = instTmpl
+	}
+	if len(allErrs) != 0 {
+		return nil, allErrs.ToAggregate()
 	}
 
-	blueprint.Subinstallations = refs
-	return nil
+	return templates, nil
 }
 
 //// RemoteBlueprintReference returns the remote blueprint ref for the current component given the effective component descriptor

@@ -5,14 +5,10 @@
 package validation
 
 import (
-	"os"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -27,13 +23,22 @@ func init() {
 }
 
 // ValidateBlueprint validates a Blueprint
-func ValidateBlueprint(fs vfs.FileSystem, blueprint *core.Blueprint) field.ErrorList {
+func ValidateBlueprint(blueprint *core.Blueprint) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateBlueprintImportDefinitions(field.NewPath("imports"), blueprint.Imports)...)
 	allErrs = append(allErrs, ValidateBlueprintExportDefinitions(field.NewPath("exports"), blueprint.Exports)...)
 	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("deployExecutions"), blueprint.DeployExecutions)...)
 	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("exportExecutions"), blueprint.ExportExecutions)...)
-	allErrs = append(allErrs, ValidateSubinstallations(field.NewPath("subinstallations"), fs, blueprint.Imports, blueprint.Subinstallations)...)
+	allErrs = append(allErrs, ValidateSubinstallations(field.NewPath("subinstallations"), blueprint.Subinstallations)...)
+	allErrs = append(allErrs, ValidateTemplateExecutorList(field.NewPath("subinstallationExecutions"), blueprint.SubinstallationExecutions)...)
+	return allErrs
+}
+
+// ValidateBlueprintWithInstallationTemplates validates a Blueprint
+func ValidateBlueprintWithInstallationTemplates(blueprint *core.Blueprint, installationTemplates []*core.InstallationTemplate) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateBlueprint(blueprint)...)
+	allErrs = append(allErrs, ValidateInstallationTemplates(field.NewPath(""), blueprint.Imports, installationTemplates)...)
 	return allErrs
 }
 
@@ -144,7 +149,31 @@ func ValidateTemplateExecutorList(fldPath *field.Path, list []core.TemplateExecu
 }
 
 // ValidateSubinstallations validates all inline subinstallation and installation templates from a file
-func ValidateSubinstallations(fldPath *field.Path, fs vfs.FileSystem, blueprintImportDefs []core.ImportDefinition, subinstallations []core.SubinstallationTemplate) field.ErrorList {
+func ValidateSubinstallations(fldPath *field.Path, subinstallations []core.SubinstallationTemplate) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for i, subinst := range subinstallations {
+		instPath := fldPath.Index(i)
+
+		if subinst.InstallationTemplate == nil && len(subinst.File) == 0 {
+			allErrs = append(allErrs, field.Required(instPath, "subinstallation has to be defined inline or by file"))
+			continue
+		}
+		if subinst.InstallationTemplate != nil && len(subinst.File) != 0 {
+			allErrs = append(allErrs, field.Invalid(instPath, subinst, "subinstallation must not be defined inline and by file"))
+			continue
+		}
+
+		if subinst.InstallationTemplate != nil {
+			allErrs = append(allErrs, ValidateInstallationTemplate(instPath, subinst.InstallationTemplate)...)
+		}
+	}
+	return allErrs
+}
+
+// ValidateInstallationTemplates validates a list of subinstallations.
+// Take care to also include all templated templates for proper validation.
+func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []core.ImportDefinition, subinstallations []*core.InstallationTemplate) field.ErrorList {
 	var (
 		allErrs             = field.ErrorList{}
 		names               = sets.NewString()
@@ -166,37 +195,30 @@ func ValidateSubinstallations(fldPath *field.Path, fs vfs.FileSystem, blueprintI
 
 	}
 
-	for i, subinst := range subinstallations {
+	for i, instTmpl := range subinstallations {
 		instPath := fldPath.Index(i)
-
-		if subinst.InstallationTemplate == nil && len(subinst.File) == 0 {
-			allErrs = append(allErrs, field.Required(instPath, "subinstallation has to be defined inline or by file"))
-			continue
-		}
-		if subinst.InstallationTemplate != nil && len(subinst.File) != 0 {
-			allErrs = append(allErrs, field.Invalid(instPath, subinst, "subinstallation must not be defined inline and by file"))
-			continue
+		if len(instTmpl.Name) != 0 {
+			instPath = fldPath.Child(instTmpl.Name)
 		}
 
-		instTmpl := subinst.InstallationTemplate
-		if len(subinst.File) != 0 {
-			data, err := vfs.ReadFile(fs, subinst.File)
-			if err != nil {
-				if os.IsNotExist(err) {
-					allErrs = append(allErrs, field.NotFound(instPath.Child("file"), subinst.File))
-					continue
-				}
-				allErrs = append(allErrs, field.InternalError(instPath.Child("file"), err))
-				continue
-			}
-
-			instTmpl = &core.InstallationTemplate{}
-
-			if _, _, err := serializer.NewCodecFactory(landscaperScheme).UniversalDecoder().Decode(data, nil, instTmpl); err != nil {
-				allErrs = append(allErrs, field.Invalid(instPath.Child("file"), subinst.File, err.Error()))
-				continue
-			}
-		}
+		//if len(subinst.File) != 0 {
+		//	data, err := vfs.ReadFile(fs, subinst.File)
+		//	if err != nil {
+		//		if os.IsNotExist(err) {
+		//			allErrs = append(allErrs, field.NotFound(instPath.Child("file"), subinst.File))
+		//			continue
+		//		}
+		//		allErrs = append(allErrs, field.InternalError(instPath.Child("file"), err))
+		//		continue
+		//	}
+		//
+		//	instTmpl = &core.InstallationTemplate{}
+		//
+		//	if _, _, err := serializer.NewCodecFactory(landscaperScheme).UniversalDecoder().Decode(data, nil, instTmpl); err != nil {
+		//		allErrs = append(allErrs, field.Invalid(instPath.Child("file"), subinst.File, err.Error()))
+		//		continue
+		//	}
+		//}
 
 		for i, do := range instTmpl.Exports.Data {
 			dataPath := instPath.Child("exports").Child("data").Index(i).Key(do.Name)

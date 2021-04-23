@@ -112,8 +112,8 @@ ImportDefinitionList
 <td>
 <code>exports</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ExportDefinition">
-[]ExportDefinition
+<a href="#landscaper.gardener.cloud/v1alpha1.ExportDefinitionList">
+ExportDefinitionList
 </a>
 </em>
 </td>
@@ -126,14 +126,30 @@ ImportDefinitionList
 <td>
 <code>subinstallations</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.SubinstallationTemplate">
-[]SubinstallationTemplate
+<a href="#landscaper.gardener.cloud/v1alpha1.SubinstallationTemplateList">
+SubinstallationTemplateList
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
 <p>Subinstallations defines an optional list of subinstallations (for aggregating blueprints).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>subinstallationExecutions</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TemplateExecutor">
+[]TemplateExecutor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SubinstallationExecutions defines the templating executors that are sequentially executed by the landscaper.
+The templates must return a list of installation templates.
+Both subinstallations and SubinstallationExecutions are valid options and will be merged.</p>
 </td>
 </tr>
 <tr>
@@ -2104,10 +2120,6 @@ The observed generation is here the generation of the Execution not the DeployIt
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition
 </h3>
 <p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>)
-</p>
-<p>
 <p>ExportDefinition defines a exported value</p>
 </p>
 <table>
@@ -3285,10 +3297,6 @@ that matches the given labels.</p>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.SubinstallationTemplate">SubinstallationTemplate
 </h3>
-<p>
-(<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>)
-</p>
 <p>
 <p>SubinstallationTemplate defines a subinstallation template.</p>
 </p>

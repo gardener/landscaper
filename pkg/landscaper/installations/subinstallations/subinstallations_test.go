@@ -86,17 +86,14 @@ var _ = Describe("SubInstallation", func() {
 				},
 			)
 
-			blue, err := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
-			Expect(err).ToNot(HaveOccurred())
-
+			blue := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
 			inst, err := installations.New(&lsv1alpha1.Installation{}, blue)
 			Expect(err).ToNot(HaveOccurred())
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			si := subinstallations.New(instOp)
-			err = si.Ensure(ctx)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(si.Ensure(ctx)).To(Succeed())
 		})
 
 		It("should create one installation if a subinstallation is defined", func() {
@@ -145,6 +142,30 @@ var _ = Describe("SubInstallation", func() {
 			}))
 		})
 
+		It("should create one installation if a subinstallationExecution is defined", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root4.yaml"
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+
+			subInstallations := make([]*lsv1alpha1.Installation, 0)
+
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
+			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+			mockClient.EXPECT().Create(gomock.Any(), gomock.AssignableToTypeOf(&lsv1alpha1.Installation{}), gomock.Any()).AnyTimes().Return(nil).Do(
+				func(ctx context.Context, inst *lsv1alpha1.Installation) {
+					subInstallations = append(subInstallations, inst)
+				},
+			)
+
+			si := subinstallations.New(rootInstOp)
+			Expect(si.Ensure(ctx)).To(Succeed())
+
+			Expect(len(subInstallations)).To(Equal(1))
+		})
+
 		It("should update the status and add the newly created sub installations", func() {
 			ctx := context.Background()
 			defer ctx.Done()
@@ -180,6 +201,30 @@ var _ = Describe("SubInstallation", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root2.yaml"
+			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
+
+			subInstallations := make([]*lsv1alpha1.Installation, 0)
+
+			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
+				Return(nil)
+			mockStatusWriter.EXPECT().Update(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+			mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
+			mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(
+				func(ctx context.Context, inst *lsv1alpha1.Installation) {
+					subInstallations = append(subInstallations, inst)
+				},
+			)
+
+			si := subinstallations.New(rootInstOp)
+			Expect(si.Ensure(ctx)).To(Succeed())
+
+			Expect(len(subInstallations)).To(Equal(2))
+		})
+
+		It("should create multiple installations for all templates defined by default subinstallations and executions", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			defaultTestConfig.BlueprintFilePath = "./testdata/01-root/blueprint-root5.yaml"
 			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			subInstallations := make([]*lsv1alpha1.Installation, 0)

@@ -11,6 +11,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
@@ -44,16 +47,16 @@ func New(op *installations.Operation) *ExecutionOperation {
 	}
 }
 
-func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation, imports interface{}) error {
+func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
 		KubeClient: o.Client(),
 		Inst:       inst.Info,
 	}
-
-	executions, err := template.New(o.BlobResolver, templateStateHandler).TemplateDeployExecutions(template.DeployExecutionOptions{
-		Imports:              imports,
+	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
+	executions, err := tmpl.TemplateDeployExecutions(template.DeployExecutionOptions{
+		Imports:              inst.Imports,
 		Installation:         inst.Info,
 		Blueprint:            inst.Blueprint,
 		ComponentDescriptor:  o.ComponentDescriptor,

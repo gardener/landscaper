@@ -45,6 +45,9 @@ type InstallationTemplate struct {
 	ExportDataMappings map[string]AnyJSON `json:"exportDataMappings,omitempty"`
 }
 
+// InstallationTemplateList is a list of installation templates.
+type InstallationTemplateList []*InstallationTemplate
+
 // InstallationTemplateBlueprintDefinition contains either a reference to a blueprint or an inline definition.
 type InstallationTemplateBlueprintDefinition struct {
 	// Ref is a reference to a blueprint.

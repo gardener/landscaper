@@ -14,6 +14,7 @@ import (
 
 // Installation is the internal representation of a installation
 type Installation struct {
+	Imports   map[string]interface{}
 	Info      *lsv1alpha1.Installation
 	Blueprint *blueprints.Blueprint
 
