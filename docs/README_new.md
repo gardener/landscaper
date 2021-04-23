@@ -1,31 +1,25 @@
-### 1. Motivation
-In this chapter, it is described what the Landscaper is, what it does and why you should start using it.
+# Motivation
+In this chapter, it is described what Landscaper is, what it does and why you should start using it.
 
-1.1. Landscaper 
-- What it is, what it does, why it is needed
+- [What is Landscaper, why do I need it, what does it?](motivation/motivation.md) 
 
-1.2. First Example 
-- Installing Landscaper and creating a simple deployment
+- [Install Landscaper](./gettingstarted/install-landscaper-controller.md)
 
+# Level 0 (Beginner)
 
-### 2. Level 0 (Beginner)
+- [Basic Concepts](./level_0/basic_concepts.md)
 
-2.1. Landscaper Components
-- Component Overview
-- Relationship of Landscaper Components
-- Component Details
-  - Blueprints
-  - Component Descriptors
-  - Installations
-  - Targets
-  - DataObjects
-  - DeployItems
+- [First Example Installation](./level_0/first_example_installation.md)
+
+- [First Example Component](./level_0/first_example_component.md)
+
+- [Architecture Overview](./level_0/basic_architecture.md)
   
-2.2. Running a local Landscaper using the landscaper-cli
-- Landscaper CLI in a nutshell
+- [Simple Component Development with Landscaper CLI](https://github.com/gardener/landscapercli)
+  
 - Landscaper configuration options
 
-### 3. Level 1 (Intermediate) 
+# Level 1 (Intermediate) 
 
 #### 3.1. Landscaper Operator
 
@@ -64,3 +58,6 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
 3.3.1. OCI Artifacts
 - Manifests
 - Blobs
+
+# TODO
+- Describe strorage of component descriptors and blueprints in OCI registry.

@@ -1,0 +1,22 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: demo
+  namespace: demo
+spec:
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: ociRegistry
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      componentName: github.com/gardener/landscaper/first-example
+      version: v0.1.0
+
+  blueprint:
+    ref:
+      resourceName: first-example-blueprint
+
+  imports:
+    targets:
+      - name: target-cluster
+        target: "#my-cluster"

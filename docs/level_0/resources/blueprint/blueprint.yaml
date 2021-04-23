@@ -1,0 +1,11 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: target-cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+deployExecutions:
+- name: nginx-execution
+  file: /deploy-execution-nginx.yaml
+  type: GoTemplate
