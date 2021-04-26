@@ -48,6 +48,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
+		out.DeleteTimeout = &lscore.Duration{}
 		if err := lsv1alpha1.Convert_v1alpha1_Duration_To_core_Duration(in.DeleteTimeout, out.DeleteTimeout, s); err != nil {
 			return err
 		}
@@ -77,6 +78,7 @@ func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
+		out.DeleteTimeout = &lsv1alpha1.Duration{}
 		if err := lsv1alpha1.Convert_core_Duration_To_v1alpha1_Duration(in.DeleteTimeout, out.DeleteTimeout, s); err != nil {
 			return err
 		}
