@@ -86,6 +86,7 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
+		WithLogger(log).
 		Complete(con)
 }
 
@@ -149,7 +150,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
 		}
 		if len(c.targetSelectors) != 0 {
-			matched, err := targetselector.Match(target, c.targetSelectors)
+			matched, err := targetselector.MatchOne(target, c.targetSelectors)
 			if err != nil {
 				return reconcile.Result{}, fmt.Errorf("unable to match target selector: %w", err)
 			}
@@ -161,8 +162,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 	}
 
-	logger.Info("reconcile deploy item")
-
+	logger.V(3).Info("check deploy item reconciliation")
 	err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, deployItem, c.info)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -172,6 +172,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.log.V(5).Info("aborting reconcile", "phase", deployItem.Status.Phase)
 		return reconcile.Result{}, nil
 	}
+	logger.Info("reconcile deploy item")
 
 	errHdl := HandleErrorFunc(logger, c.lsClient, deployItem)
 

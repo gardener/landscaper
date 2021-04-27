@@ -19,7 +19,7 @@ type options struct {
 
 func NewOptions() *options {
 	return &options{
-		DeployerOptions: deployercmd.NewDefaultOptions(manifest.ManifestScheme),
+		DeployerOptions: deployercmd.NewDefaultOptions(manifest.Scheme),
 	}
 }
 

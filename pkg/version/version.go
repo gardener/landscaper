@@ -19,7 +19,7 @@ var (
 	buildDate    = "1970-01-01T00:00:00Z"
 )
 
-// GetInterface returns the overall codebase version. It's for detecting
+// Get returns the overall codebase version. It's for detecting
 // what code a binary was built from.
 // These variables typically come from -ldflags settings and in
 // their absence fallback to the settings in pkg/version/base.go

@@ -22,8 +22,8 @@ imports:
     replicaCount: 1
     image:
       pullPolicy: IfNotPresent
-    # targetSelector:
-    #   - annotations:
-    #     - key:
-    #       operator:
-    #       value:
+  targetSelectors:
+  - annotations:
+    - key: "abc"
+      operator: "="
+      value: "xyz"

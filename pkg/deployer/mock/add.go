@@ -7,7 +7,6 @@ package mock
 import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -18,8 +17,8 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration) error {
-	log := ctrl.Log.WithName("controllers").WithName("MockDeployer")
+func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration) error {
+	log := logger.WithName("MockDeployer")
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),

@@ -39,7 +39,7 @@ spec:
           args:
           - "--config=/app/ls/config/config.yaml"
           {{- if .Values.deployer.landscaperClusterKubeconfig }}
-          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          - "--landscaper-kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
           {{- end }}
           volumeMounts:
           - name: config

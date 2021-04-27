@@ -17,6 +17,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/version"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
@@ -46,6 +48,8 @@ func (o *options) AddFlags(fs *flag.FlagSet) {
 		`Specify additional deployers that should be enabled.
 Controllers are specified as a comma separated list of controller names.
 Available deployers are mock,helm,container.`)
+	fs.StringVar(&o.deployer.Version, "deployer-version", version.Get().String(),
+		"set the version for the automatically deployed deployers.")
 	fs.StringVar(&o.deployer.deployersConfigPath, "deployers-config", "", "Specify the path to the deployers-configuration file")
 	logger.InitFlags(fs)
 
@@ -81,7 +85,9 @@ func (o *options) Complete() error {
 func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {
 	decoder := serializer.NewCodecFactory(api.ConfigScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
-		return &config.LandscaperConfiguration{}, nil
+		cfg := &config.LandscaperConfiguration{}
+		api.ConfigScheme.Default(cfg)
+		return cfg, nil
 	}
 	data, err := ioutil.ReadFile(o.configPath)
 	if err != nil {
@@ -110,6 +116,7 @@ type deployerOptions struct {
 	deployersConfigPath string
 
 	EnabledDeployers []string
+	Version          string
 	DeployersConfig  DeployersConfiguration
 }
 

@@ -36,16 +36,17 @@ const (
 	Name string                    = "manifest.deployer.landscaper.gardener.cloud"
 )
 
-var ManifestScheme = runtime.NewScheme()
+var Scheme = runtime.NewScheme()
 
 func init() {
-	manifestinstall.Install(ManifestScheme)
+	manifestinstall.Install(Scheme)
 }
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
-	log        logr.Logger
-	kubeClient client.Client
+	log            logr.Logger
+	lsKubeClient   client.Client
+	hostKubeClient client.Client
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -58,14 +59,19 @@ type Manifest struct {
 
 // NewDeployItemBuilder creates a new deployitem builder for manifest deployitems
 func NewDeployItemBuilder() *utils.DeployItemBuilder {
-	return utils.NewDeployItemBuilder(string(Type)).Scheme(ManifestScheme)
+	return utils.NewDeployItemBuilder(string(Type)).Scheme(Scheme)
 }
 
 // New creates a new internal manifest item
-func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) (*Manifest, error) {
+func New(log logr.Logger,
+	lsKubeClient client.Client,
+	hostKubeClient client.Client,
+	item *lsv1alpha1.DeployItem,
+	target *lsv1alpha1.Target) (*Manifest, error) {
+
 	config := &manifestv1alpha2.ProviderConfiguration{}
 	currOp := "InitManifestOperation"
-	manifestDecoder := api.NewDecoder(ManifestScheme)
+	manifestDecoder := api.NewDecoder(Scheme)
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
@@ -87,7 +93,8 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 
 	return &Manifest{
 		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
-		kubeClient:            kubeClient,
+		lsKubeClient:          lsKubeClient,
+		hostKubeClient:        hostKubeClient,
 		DeployItem:            item,
 		Target:                target,
 		ProviderConfiguration: config,
@@ -126,7 +133,7 @@ func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Clien
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.kubeClient)
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.lsKubeClient, m.hostKubeClient)
 		if err != nil {
 			return nil, nil, err
 		}

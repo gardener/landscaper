@@ -16,6 +16,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,7 +64,7 @@ func (d *Dumper) ClearNamespaces() {
 // Currently information about the main landscaper resources in dumped:
 // - Installations
 // - DeployItems
-// todo: add additional resources
+// todo: dump additional resources
 func (d *Dumper) Dump(ctx context.Context) error {
 	d.logger.Logln("Dump")
 	if err := d.DumpNamespaces(ctx); err != nil {
@@ -123,7 +125,13 @@ func (d *Dumper) DumpInstallationsInNamespace(ctx context.Context, namespace str
 
 // DumpInstallation dumps information about the installation
 func DumpInstallation(logger simplelogger.Logger, inst *lsv1alpha1.Installation) error {
+	// do not dummp the full spec if the installation was successfull
+	if inst.Status.Phase == lsv1alpha1.ComponentPhaseSucceeded {
+		logger.Logf("--- Installation %s succeeded\n", inst.Name)
+		return nil
+	}
 	logger.Logf("--- Installation %s\n", inst.Name)
+	logger.Logf("%s\n", FormatAsYAML(inst.Spec, 0))
 	logger.Logf("%s\n", FormatAsYAML(inst.Status, 0))
 	return nil
 }
@@ -144,6 +152,10 @@ func (d *Dumper) DumpDeployItemsInNamespace(ctx context.Context, namespace strin
 
 // DumpDeployItems dumps information about the deploy items
 func DumpDeployItems(logger simplelogger.Logger, deployItem *lsv1alpha1.DeployItem) error {
+	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+		logger.Logf("--- DeployItem %s succeeded\n", deployItem.Name)
+		return nil
+	}
 	fmtMsg := `
 --- DeployItem %s
 Annotations: %s
@@ -153,10 +165,11 @@ Config: %s
 
 	configData := []byte("no config")
 	if deployItem.Spec.Configuration != nil {
-		var err error
-		configData, err = deployItem.Spec.Configuration.Marshal()
-		if err != nil {
-			configData = []byte(fmt.Sprintf("error: %s", err.Error()))
+		var configData interface{}
+		if err := yaml.Unmarshal(deployItem.Spec.Configuration.Raw, &configData); err != nil {
+			configData = map[string]string{
+				"error": err.Error(),
+			}
 		}
 	}
 
@@ -164,7 +177,7 @@ Config: %s
 		deployItem.Name,
 		FormatAsYAML(deployItem.Annotations, 2),
 		deployItem.Spec.Type,
-		ApplyIdent(string(configData), 2))
+		FormatAsYAML(configData, 2))
 	fmtMsg = `
 Status:
   Phase: %s
@@ -194,10 +207,14 @@ func (d *Dumper) DumpExecutionInNamespace(ctx context.Context, namespace string)
 }
 
 // DumpExecution dumps information about the execution
-func DumpExecution(logger simplelogger.Logger, inst *lsv1alpha1.Execution) error {
-	logger.Logf("--- Execution %s\n", inst.Name)
-	logger.Logf("%s\n", FormatAsYAML(inst.Spec, 0))
-	logger.Logf("%s\n", FormatAsYAML(inst.Status, 0))
+func DumpExecution(logger simplelogger.Logger, exec *lsv1alpha1.Execution) error {
+	if exec.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+		logger.Logf("--- Execution %s succeeded\n", exec.Name)
+		return nil
+	}
+	logger.Logf("--- Execution %s\n", exec.Name)
+	logger.Logf("%s\n", FormatAsYAML(exec.Spec, 0))
+	logger.Logf("%s\n", FormatAsYAML(exec.Status, 0))
 	return nil
 }
 
@@ -238,6 +255,81 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 			d.FormatPodsWithSelector(ctx, 2, client.InNamespace(d.lsNamespace), client.MatchingLabels(deploy.Spec.Template.Labels)))
 	}
 
+	// dump deployer lcm resources
+	if err := d.DumpEnvironments(ctx); err != nil {
+		return err
+	}
+	if err := d.DumpDeployerRegistrations(ctx); err != nil {
+		return err
+	}
+	if err := d.DumpInstallationsInNamespace(ctx, d.lsNamespace); err != nil {
+		return err
+	}
+	if err := d.DumpDeployItemsInNamespace(ctx, d.lsNamespace); err != nil {
+		return err
+	}
+
+	deployments = &appsv1.DeploymentList{}
+	req, err := labels.NewRequirement(lsv1alpha1.LandscaperComponentLabelName, selection.DoesNotExist, nil)
+	if err != nil {
+		return err
+	}
+	sel := labels.NewSelector().Add(*req)
+	if err := d.kubeClient.List(ctx, deployments,
+		client.InNamespace(d.lsNamespace),
+		client.MatchingLabelsSelector{Selector: sel}); err != nil {
+		return fmt.Errorf("unable to list deployments for namespace %q: %w", d.lsNamespace, err)
+	}
+	for _, deploy := range deployments.Items {
+		if err := DumpDeployment(d.logger, &deploy); err != nil {
+			return err
+		}
+		d.logger.Logf("Pods: %s",
+			d.FormatPodsWithSelector(ctx, 2, client.InNamespace(d.lsNamespace), client.MatchingLabels(deploy.Spec.Template.Labels)))
+	}
+
+	return nil
+}
+
+// DumpEnvironments dumps all environments that are in the current system
+func (d *Dumper) DumpEnvironments(ctx context.Context) error {
+	envList := &lsv1alpha1.EnvironmentList{}
+	if err := d.kubeClient.List(ctx, envList); err != nil {
+		return fmt.Errorf("unable to list environments: %w", err)
+	}
+	for _, env := range envList.Items {
+		if err := DumpEnvironment(d.logger, &env); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpEnvironment dumps information about the environment
+func DumpEnvironment(logger simplelogger.Logger, env *lsv1alpha1.Environment) error {
+	logger.Logf("--- Environment %s\n", env.Name)
+	logger.Logf("%s\n", FormatAsYAML(env.Spec, 0))
+	return nil
+}
+
+// DumpDeployerRegistrations dumps all deployer registrations that are in the current system
+func (d *Dumper) DumpDeployerRegistrations(ctx context.Context) error {
+	drList := &lsv1alpha1.DeployerRegistrationList{}
+	if err := d.kubeClient.List(ctx, drList); err != nil {
+		return fmt.Errorf("unable to list environments: %w", err)
+	}
+	for _, dr := range drList.Items {
+		if err := DumpDeployerRegistration(d.logger, &dr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// DumpDeployerRegistration dumps information about the deployer registration
+func DumpDeployerRegistration(logger simplelogger.Logger, dr *lsv1alpha1.DeployerRegistration) error {
+	logger.Logf("--- Deployer Registration %s\n", dr.Name)
+	logger.Logf("%s\n", FormatAsYAML(dr.Spec, 0))
 	return nil
 }
 

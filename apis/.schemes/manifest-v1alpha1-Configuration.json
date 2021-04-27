@@ -1,6 +1,25 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "core-v1alpha1-ObjectReference": {
+      "description": "ObjectReference is the reference to a kubernetes object.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "core-v1alpha1-Requirement": {
       "description": "Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.",
       "type": "object",
@@ -45,6 +64,14 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/core-v1alpha1-Requirement"
+          }
+        },
+        "targets": {
+          "description": "Targets defines a list of specific targets (name and namespace) that should be reconciled.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-ObjectReference"
           }
         }
       }

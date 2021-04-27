@@ -5,16 +5,22 @@
 package deployitem
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-func AddControllerToManager(mgr manager.Manager, deployItemPickupTimeout, deployItemAbortingTimeout, deployItemDefaultTimeout *lscore.Duration) error {
+func AddControllerToManager(logger logr.Logger,
+	mgr manager.Manager,
+	deployItemPickupTimeout,
+	deployItemAbortingTimeout,
+	deployItemDefaultTimeout *lscore.Duration) error {
+	log := logger.WithName("DeployItem")
 	a, err := NewController(
-		ctrl.Log.WithName("controllers").WithName("DeployItem"),
+		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		deployItemPickupTimeout,
@@ -25,7 +31,8 @@ func AddControllerToManager(mgr manager.Manager, deployItemPickupTimeout, deploy
 		return err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	return builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.DeployItem{}).
+		WithLogger(log).
 		Complete(a)
 }

@@ -6,12 +6,15 @@ package landscaper
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -19,7 +22,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// WaitForInstallationToBeInPhase waits until the given installation is in the expected phase
+// WaitForInstallationToBeHealthy waits until the given installation is in the expected phase
 func WaitForInstallationToBeHealthy(
 	ctx context.Context,
 	kubeClient client.Reader,
@@ -171,4 +174,38 @@ func GetDeployItemExport(ctx context.Context, kubeClient client.Client, di *lsv1
 	}
 
 	return secret.Data[lsv1alpha1.DataObjectSecretDataKey], nil
+}
+
+// CreateKubernetesTarget creates a new target of type kubernetes
+func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*lsv1alpha1.Target, error) {
+	target := &lsv1alpha1.Target{}
+	target.Name = name
+	target.Namespace = namespace
+	if err := BuildKubernetesTarget(target, restConfig); err != nil {
+		return nil, err
+	}
+	return target, nil
+}
+
+// BuildKubernetesTarget adds all kubernetes type related attributes to the target
+func BuildKubernetesTarget(target *lsv1alpha1.Target, restConfig *rest.Config) error {
+	data, err := kutil.GenerateKubeconfigBytes(restConfig)
+	if err != nil {
+		return err
+	}
+
+	config := lsv1alpha1.KubernetesClusterTargetConfig{
+		Kubeconfig: lsv1alpha1.ValueRef{
+			StrVal: pointer.StringPtr(string(data)),
+		},
+	}
+	data, err = json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+
+	return nil
 }

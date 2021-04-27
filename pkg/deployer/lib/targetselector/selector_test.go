@@ -21,6 +21,60 @@ var _ = Describe("Selectors", func() {
 		target = &lsv1alpha1.Target{}
 	})
 
+	Context("ObjectReference", func() {
+		It("should pass if a reference name and namespace matches", func() {
+			target.Name = "mytarget"
+			target.Namespace = "test"
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Targets: []lsv1alpha1.ObjectReference{
+				{
+					Name:      "mytarget",
+					Namespace: "test",
+				},
+			}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should pass if a reference name matches and no namespace is provided", func() {
+			target.Name = "mytarget"
+			target.Namespace = "test"
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Targets: []lsv1alpha1.ObjectReference{
+				{
+					Name: "mytarget",
+				},
+			}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should not pass if a reference namespace do not match", func() {
+			target.Name = "mytarget"
+			target.Namespace = "test"
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Targets: []lsv1alpha1.ObjectReference{
+				{
+					Name:      "mytarget",
+					Namespace: "te",
+				},
+			}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
+
+		It("should not pass if a reference name do not match", func() {
+			target.Name = "mytarget"
+			target.Namespace = "test"
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Targets: []lsv1alpha1.ObjectReference{
+				{
+					Name:      "my",
+					Namespace: "test",
+				},
+			}})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
+
+	})
+
 	Context("Annotations", func() {
 		It("should pass if all annotations match", func() {
 			target.Annotations = map[string]string{
@@ -57,6 +111,21 @@ var _ = Describe("Selectors", func() {
 			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Annotations: req})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeTrue())
+		})
+
+		It("should forbid if a target does not have a given annotation", func() {
+			target.Annotations = map[string]string{
+				"deployer.landscaper.cloud/class": "key1",
+			}
+			req := []lsv1alpha1.Requirement{
+				{
+					Key:      "deployer.landscaper.cloud/class",
+					Operator: selection.DoesNotExist,
+				},
+			}
+			ok, err := targetselector.MatchSelector(target, lsv1alpha1.TargetSelector{Annotations: req})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
 		})
 
 		It("should forbid if one annotations does not match", func() {

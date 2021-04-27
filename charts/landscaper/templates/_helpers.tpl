@@ -112,6 +112,11 @@ crdManagement:
     forceUpdate: {{ .Values.landscaper.crdManagement.forceUpdate }}
     {{- end }}
 {{- end }}
+
+{{- if .Values.landscaper.deployerManagement -}}
+{{ toYaml .Values.landscaper.deployerManagement }}
+{{- end -}}
+
 {{- if .Values.landscaper.deployItemTimeouts }}
 deployItemTimeouts:
   {{- range $key, $value := .Values.landscaper.deployItemTimeouts }}

@@ -22,7 +22,7 @@ type DeployerRegistrationList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployerRegistration defines a installation template for a deployer.
-// +kubebuilder:resource:path="deployerregistrations",scope="Cluster",shortName="deployreg,deployerreg,dreg",singular="deployerregistration"
+// +kubebuilder:resource:path="deployerregistrations",scope="Cluster",shortName={"deployreg","deployerreg","dreg"},singular="deployerregistration"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 // +kubebuilder:subresource:status
 type DeployerRegistration struct {

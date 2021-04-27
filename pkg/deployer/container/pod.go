@@ -353,7 +353,7 @@ func (c *Container) ensureServiceAccounts(ctx context.Context) error {
 	initSA := &corev1.ServiceAccount{}
 	initSA.Name = InitContainerServiceAccountName(c.DeployItem)
 	initSA.Namespace = c.Configuration.Namespace
-	if _, err := kutil.CreateOrUpdate(ctx, c.directHostClient, initSA, func() error { return nil }); err != nil {
+	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, initSA, func() error { return nil }); err != nil {
 		return err
 	}
 

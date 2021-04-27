@@ -27,6 +27,9 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 			UseInMemoryOverlay: false,
 		}
 	}
+	if len(obj.DeployerManagement.Namespace) == 0 {
+		obj.DeployerManagement.Namespace = "ls-system"
+	}
 	if obj.DeployItemTimeouts == nil {
 		obj.DeployItemTimeouts = &DeployItemTimeouts{}
 	}
@@ -41,6 +44,19 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	}
 
 	SetDefaults_CrdManagementConfiguration(&obj.CrdManagement)
+
+	if obj.DeployerManagement.Disable {
+		obj.DeployerManagement.Agent.Disable = true
+	}
+	if len(obj.DeployerManagement.Agent.Name) == 0 {
+		obj.DeployerManagement.Agent.Name = "default"
+	}
+	if len(obj.DeployerManagement.Agent.Namespace) == 0 {
+		obj.DeployerManagement.Agent.Namespace = obj.DeployerManagement.Namespace
+	}
+	if obj.DeployerManagement.Agent.OCI == nil {
+		obj.DeployerManagement.Agent.OCI = obj.Registry.OCI
+	}
 }
 
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
@@ -50,5 +66,12 @@ func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 	}
 	if obj.ForceUpdate == nil {
 		obj.ForceUpdate = pointer.BoolPtr(true)
+	}
+}
+
+// SetDefaults_AgentConfiguration sets the defaults for the landscaper configuration.
+func SetDefaults_AgentConfiguration(obj *AgentConfiguration) {
+	if len(obj.Namespace) == 0 {
+		obj.Namespace = "ls-system"
 	}
 }

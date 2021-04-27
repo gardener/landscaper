@@ -20,6 +20,7 @@ deployer:
   namespace: ""
   oci:
     allowPlainHttp: false
+    insecureSkipVerify: false
     secrets: {}
 #      <name>: <docker config json>
 #  verbosityLevel: 9

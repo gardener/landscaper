@@ -29,6 +29,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
@@ -200,7 +202,6 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 	f.logger.WithTimestamp().Logf("Waiting for Landscaper components to be ready in %s", f.LsNamespace)
 	// get all deployments
 	deploymentList := &appsv1.DeploymentList{}
-
 	if err := f.Client.List(ctx, deploymentList,
 		client.InNamespace(f.LsNamespace),
 		client.HasLabels{lsv1alpha1.LandscaperComponentLabelName}); err != nil {
@@ -212,6 +213,23 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 			return err
 		}
 	}
+
+	// get all deployments
+	installationList := &lsv1alpha1.InstallationList{}
+	if err := f.Client.List(ctx, installationList, client.InNamespace(f.LsNamespace)); err != nil {
+		return err
+	}
+	if len(installationList.Items) == 0 {
+		f.logger.WithTimestamp().Logf("No installations found in %s", f.LsNamespace)
+		return nil
+	}
+	f.logger.WithTimestamp().Logf("Waiting for Deployer Installations to be ready in %s", f.LsNamespace)
+	for _, inst := range installationList.Items {
+		if err := lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, &inst, 2*time.Minute); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -249,14 +267,14 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 // that is called by ginkgo before and after each test
 func (f *Framework) Register() *State {
 	state := &State{}
-	dumper := NewDumper(f.logger, f.Client, f.ClientSet, f.LsNamespace)
+
 	ginkgo.BeforeEach(func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		envState, cleanup, err := f.NewState(ctx)
 		utils.ExpectNoError(err)
+		dumper := NewDumper(f.logger, f.Client, f.ClientSet, f.LsNamespace, envState.Namespace)
 		dumper.startTime = time.Now()
-		dumper.AddNamespaces(envState.Namespace)
 
 		s := State{
 			State:   *envState,
@@ -298,9 +316,6 @@ func (f *Framework) Register() *State {
 		for ns := range dumper.namespaces {
 			utils.ExpectNoError(CleanupLandscaperResources(ctx, f.Client, ns))
 		}
-	})
-	ginkgo.BeforeEach(func() {
-		dumper.ClearNamespaces()
 	})
 	return state
 }

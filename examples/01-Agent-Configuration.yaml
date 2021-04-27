@@ -1,0 +1,13 @@
+apiVersion: config.landscaper.gardener.cloud/v1alpha1
+kind: AgentConfiguration
+
+name: "default" # name of the environment. MUST be unique within one landscaper cluster.
+namespace: "ls-system" # name of the namespace where the deployers should be created. defaults to "ls-system"
+targetSelectors: # custom selectors for the default deployers.
+- annotations:
+  - key: my-ann
+    operation: "="
+    values: ["env"]
+oci: # defaulted to the landscaper configured oci registries. Only used for the helm deployer resources.
+  configFiles:
+  - "/home/some/path/docker.json"

@@ -206,6 +206,11 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 	}
 	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
 
+	// do not validate if I'm the owner of the resource
+	if lsv1alpha1helper.ReferenceIsObject(ref, v.Inst.Info) {
+		return nil
+	}
+
 	// check if the data object comes from the parent
 	if v.parent != nil && lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
 		return v.checkStateForParentImport(fldPath, dataImport.DataRef)
@@ -231,8 +236,12 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 	}
 	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
 
+	if lsv1alpha1helper.ReferenceIsObject(ref, v.Inst.Info) {
+		return nil
+	}
+
 	// check if the data object comes from the parent
-	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
+	if v.parent != nil && lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
 		return v.checkStateForParentImport(fldPath, targetImport.Target)
 	}
 

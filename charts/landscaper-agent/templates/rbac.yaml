@@ -1,0 +1,28 @@
+{{/* SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+
+ SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "landscaper.fullname" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - landscaper.gardener.cloud
+  resources:
+  - "*"
+  verbs:
+  - "*"
+# the agent contains a helm deployer to deploy other deployers.
+# Its unknown what deployers might need we have to give the agent all possible permissions for resources.
+- apiGroups:
+  - "*"
+  resources:
+  - "*"
+  verbs:
+  - "*"
+{{- end -}}

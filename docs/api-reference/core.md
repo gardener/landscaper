@@ -610,21 +610,48 @@ EnvironmentSpec
 <td>
 <code>hostTarget</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-ObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetTemplate">
+TargetTemplate
 </a>
 </em>
 </td>
 <td>
-<p>HostTarget points to the target that is created by the agent with the environment.</p>
+<p>HostTarget describes the target that is used for the deployers.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>targetSelector</code></br>
+<code>namespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Namespace is the host cluster namespace where the deployers should be installed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>landscaperClusterConfig</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">
+ClusterRestConfig
+</a>
+</em>
+</td>
+<td>
+<p>LandscaperClusterRestConfig describes the connection information to connect to the
+landscaper cluster.
+This information should be provided by the agent as the access information may differ
+when calling from different networking zones.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetSelectors</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSelector">
-TargetSelector
+[]TargetSelector
 </a>
 </em>
 </td>
@@ -1299,6 +1326,66 @@ string
 <td>
 <em>(Optional)</em>
 <p>Selects a key of a secret in the installations&rsquo;s namespace</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">ClusterRestConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.EnvironmentSpec">EnvironmentSpec</a>)
+</p>
+<p>
+<p>ClusterRestConfig describes parts of a rest.Config
+that is used to access the</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>host</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Host must be a host string, a host:port pair, or a URL to the base of the apiserver.
+If a URL is given then the (optional) Path of that URL represents a prefix that must
+be appended to all request URIs used to access the apiserver. This allows a frontend
+proxy to easily relocate all of the apiserver endpoints.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>apiPath</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>APIPath is a sub-path that points to an API root.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>TLSClientConfig</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TLSClientConfig">
+TLSClientConfig
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>TLSClientConfig</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 </tbody>
@@ -2407,21 +2494,48 @@ time.Duration
 <td>
 <code>hostTarget</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
-ObjectReference
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetTemplate">
+TargetTemplate
 </a>
 </em>
 </td>
 <td>
-<p>HostTarget points to the target that is created by the agent with the environment.</p>
+<p>HostTarget describes the target that is used for the deployers.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>targetSelector</code></br>
+<code>namespace</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Namespace is the host cluster namespace where the deployers should be installed.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>landscaperClusterConfig</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">
+ClusterRestConfig
+</a>
+</em>
+</td>
+<td>
+<p>LandscaperClusterRestConfig describes the connection information to connect to the
+landscaper cluster.
+This information should be provided by the agent as the access information may differ
+when calling from different networking zones.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetSelectors</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSelector">
-TargetSelector
+[]TargetSelector
 </a>
 </em>
 </td>
@@ -3520,7 +3634,6 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.EnvironmentSpec">EnvironmentSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionSpec">ExecutionSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>, 
@@ -3528,6 +3641,7 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetSelector">TargetSelector</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TypedObjectReference">TypedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.VersionedObjectReference">VersionedObjectReference</a>)
 </p>
@@ -3923,6 +4037,79 @@ InstallationTemplate
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TLSClientConfig">TLSClientConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">ClusterRestConfig</a>)
+</p>
+<p>
+<p>TLSClientConfig contains settings to enable transport layer security</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>insecure</code></br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Server should be accessed without verifying the TLS certificate. For testing only.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serverName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServerName is passed to the server for SNI and is used in the client to check server
+ceritificates against. If ServerName is empty, the hostname used to contact the
+server is used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>caData</code></br>
+<em>
+[]byte
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CAData holds PEM-encoded bytes (typically read from a root certificates bundle).
+CAData takes precedence over CAFile</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nextProtos</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NextProtos is a list of supported application level protocols, in order of preference.
+Used to populate tls.Config.NextProtos.
+To indicate to the server http/1.1 is preferred over http/2, set to <a href="though the server is free to ignore that preference">&ldquo;http/1.1&rdquo;, &ldquo;h2&rdquo;</a>.
+To use only http/1.1, set to [&ldquo;http/1.1&rdquo;].</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TargetImportExport">TargetImportExport
 </h3>
 <p>
@@ -3982,6 +4169,21 @@ string
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>targets</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
+[]ObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Targets defines a list of specific targets (name and namespace)
+that should be reconciled.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>annotations</code></br>
@@ -4062,6 +4264,10 @@ AnyJSON
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.TargetTemplate">TargetTemplate
 </h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.EnvironmentSpec">EnvironmentSpec</a>)
+</p>
 <p>
 <p>TargetTemplate exposes specific parts of a target that are used in the exports
 to export a target</p>
@@ -4311,7 +4517,7 @@ SecretReference
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
 </p>
 <p>
-<p>VersionedObjectReference is a named reference to a object with its last observed resource generation.
+<p>VersionedNamedObjectReference is a named reference to a object with its last observed resource generation.
 This struct is used by status fields.</p>
 </p>
 <table>

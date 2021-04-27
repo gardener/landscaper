@@ -12,7 +12,9 @@ spec:
     listKind: DeployerRegistrationList
     plural: deployerregistrations
     shortNames:
-    - deployreg,deployerreg,dreg
+    - deployreg
+    - deployerreg
+    - dreg
     singular: deployerregistration
   scope: Cluster
   versions:

@@ -123,6 +123,10 @@ type DeployerInformation struct {
 // TargetSelector describes a selector that matches specific targets.
 // +k8s:deepcopy-gen=true
 type TargetSelector struct {
+	// Targets defines a list of specific targets (name and namespace)
+	// that should be reconciled.
+	// +optional
+	Targets []ObjectReference `json:"targets,omitempty"`
 	// Annotations matches a target based on annotations.
 	// +optional
 	Annotations []Requirement `json:"annotations,omitempty"`

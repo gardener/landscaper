@@ -27,6 +27,11 @@ landscaper:
 #  metrics:
 #    port: 8080
 
+#  deployerManagement:
+#    disable: false
+#    agent:
+#      disable: false
+
   deployers: []
 #  - container
 #  - helm

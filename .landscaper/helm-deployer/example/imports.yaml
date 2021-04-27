@@ -12,17 +12,17 @@ imports:
           apiVersion:...
   releaseNamespace: helm-deployer
   releaseName: landscaper-helm-deployer
-  values: 
+  values:
     deployer:
       namespace: ""
-      oci: 
+      oci:
         allowPlainHttp: false
         secrets: {}
     replicaCount: 1
     image:
       pullPolicy: IfNotPresent
-    # targetSelector:
-    #   - annotations:
-    #     - key:
-    #       operator:
-    #       value:
+# targetSelectors:
+#   - annotations:
+#     - key:
+#       operator:
+#       value:
