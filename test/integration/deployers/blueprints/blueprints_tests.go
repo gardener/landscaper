@@ -118,11 +118,8 @@ type testDefinition struct {
 
 func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 	var (
-		dumper = f.Register()
-
-		ctx     context.Context
-		state   *envtest.State
-		cleanup framework.CleanupFunc
+		state = f.Register()
+		ctx   context.Context
 
 		name                    = td.Name
 		componentDescriptorName = td.ComponentDescriptorName
@@ -131,15 +128,10 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 
 	ginkgo.BeforeEach(func() {
 		ctx = context.Background()
-		var err error
-		state, cleanup, err = f.NewState(ctx)
-		utils.ExpectNoError(err)
-		dumper.AddNamespaces(state.Namespace)
 	})
 
 	ginkgo.AfterEach(func() {
 		defer ctx.Done()
-		g.Expect(cleanup(ctx)).ToNot(g.HaveOccurred())
 	})
 
 	ginkgo.It(fmt.Sprintf("[%s] should deploy a deployer with its blueprint", name), func() {
@@ -230,7 +222,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 				Build()
 			utils.ExpectNoError(err)
 		} else if td.DeployItem != nil {
-			di, err = td.DeployItem(state, target)
+			di, err = td.DeployItem(&state.State, target)
 			utils.ExpectNoError(err)
 		}
 		g.Expect(di).ToNot(g.BeNil())

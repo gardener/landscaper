@@ -39,27 +39,16 @@ func RegisterTests(f *framework.Framework) {
 // DeployerTests tests if the deployers can be deployed into a cluster through their Helm Charts and the Helm Deployer
 func DeployerTests(f *framework.Framework) {
 	_ = Describe("DeployerTests", func() {
-		dumper := f.Register()
 		var (
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			state = f.Register()
+			ctx   context.Context
 		)
 		BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		AfterEach(func() {
-			defer ctx.Done()
-			if CurrentGinkgoTestDescription().Failed {
-				// dump before cleanup
-				utils.ExpectNoError(dumper.DumpNamespaces(ctx))
-			}
-			utils.ExpectNoError(cleanup(ctx))
+			ctx.Done()
 		})
 
 		It("should deploy the Helm-Deployer through its Helm Chart", func() {
@@ -71,8 +60,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "helm-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, state, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, state, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
 		It("should deploy the Container-Deployer through its Helm Chart", func() {
@@ -84,8 +73,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "container-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, state, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, state, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
 		It("should deploy the Manifest-Deployer through its Helm Chart", func() {
@@ -97,8 +86,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "manifest-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, state, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, state, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
 		It("should deploy the Mock-Deployer through its Helm Chart", func() {
@@ -110,8 +99,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "mock-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, state, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, state, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 	})
 }

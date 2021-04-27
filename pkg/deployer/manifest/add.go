@@ -8,23 +8,27 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 )
 
-// AddControllerToManager adds a new manifest deployer to a controller manager.
-func AddControllerToManager(mgr manager.Manager, config *manifestv1alpha2.Configuration) error {
-	deployer, err := NewController(
-		ctrl.Log.WithName("controllers").WithName("ManifestDeployer"),
-		mgr.GetClient(),
-		mgr.GetScheme(),
+// AddDeployerToManager adds a new helm deployers to a controller manager.
+func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration) error {
+	log := ctrl.Log.WithName("controllers").WithName("ManifestDeployer")
+	d, err := NewDeployer(
+		log,
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
 		config,
 	)
 	if err != nil {
 		return err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&lsv1alpha1.DeployItem{}).
-		Complete(deployer)
+	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Type:            Type,
+		Deployer:        d,
+		TargetSelectors: config.TargetSelector,
+	})
 }

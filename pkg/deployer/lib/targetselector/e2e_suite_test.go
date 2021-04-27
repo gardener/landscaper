@@ -80,7 +80,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, &mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{
@@ -99,7 +99,7 @@ var _ = Describe("E2E", func() {
 
 		resDi := &lsv1alpha1.DeployItem{}
 		testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), resDi))
-		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseInit))
+		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 	})
 
 	It("should not reconcile a deploy item if the annotation selector does not match", func() {
@@ -129,7 +129,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, &mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{

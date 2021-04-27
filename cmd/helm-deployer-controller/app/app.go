@@ -7,13 +7,9 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/apis/core/install"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 )
 
@@ -21,46 +17,24 @@ func NewHelmDeployerControllerCommand(ctx context.Context) *cobra.Command {
 	options := NewOptions()
 
 	cmd := &cobra.Command{
-		Use:   "helm-deployer",
-		Short: "Helm Deployer is a controller that deploys helm charts based on DeployItems of type Helm",
-
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:          "helm-deployer",
+		Short:        fmt.Sprintf("Helm Deployer is a controller that deploys helm charts based on DeployItems of type %s", helmctrl.Type),
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := options.Complete(); err != nil {
-				fmt.Print(err)
-				os.Exit(1)
+				return err
 			}
-			options.run(ctx)
+			return options.run(ctx)
 		},
 	}
 
 	options.AddFlags(cmd.Flags())
-
 	return cmd
 }
 
-func (o *options) run(ctx context.Context) {
-
-	opts := manager.Options{
-		LeaderElection:     false,
-		MetricsBindAddress: "0", // disable the metrics serving by default
+func (o *options) run(ctx context.Context) error {
+	if err := helmctrl.AddDeployerToManager(o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
+		return fmt.Errorf("unable to setup helm controller")
 	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
-	if err != nil {
-		o.log.Error(err, "unable to setup manager")
-		os.Exit(1)
-	}
-
-	install.Install(mgr.GetScheme())
-
-	if err := helmctrl.AddControllersToManager(mgr, o.config); err != nil {
-		o.log.Error(err, "unable to setup controller")
-		os.Exit(1)
-	}
-
-	o.log.Info("starting the controller")
-	if err := mgr.Start(ctx); err != nil {
-		o.log.Error(err, "error while running manager")
-		os.Exit(1)
-	}
+	return o.DeployerOptions.StartManagers(ctx)
 }

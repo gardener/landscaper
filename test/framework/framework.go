@@ -215,8 +215,6 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 	return nil
 }
 
-type CleanupFunc func(ctx context.Context) error
-
 // NewState creates a new state with a test namespace.
 // It also returns a cleanup function that should be called when the test has finished.
 func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, error) {
@@ -249,19 +247,49 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 
 // Register registers the frameworks function
 // that is called by ginkgo before and after each test
-func (f *Framework) Register() *Dumper {
+func (f *Framework) Register() *State {
+	state := &State{}
 	dumper := NewDumper(f.logger, f.Client, f.ClientSet, f.LsNamespace)
 	ginkgo.BeforeEach(func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		envState, cleanup, err := f.NewState(ctx)
+		utils.ExpectNoError(err)
 		dumper.startTime = time.Now()
+		dumper.AddNamespaces(envState.Namespace)
+
+		s := State{
+			State:   *envState,
+			dumper:  dumper,
+			cleanup: cleanup,
+		}
+		*state = s
 	})
 	ginkgo.AfterEach(func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		dumper := state.dumper
 		dumper.endTime = time.Now()
+
+		// dump before cleanup if the test failed
+		if ginkgo.CurrentGinkgoTestDescription().Failed {
+			utils.ExpectNoError(dumper.Dump(ctx))
+		}
+
+		if err := state.cleanup(ctx); err != nil {
+			{
+				// try to dump
+				if err := dumper.Dump(ctx); err != nil {
+					f.logger.Logln(err.Error())
+				}
+				utils.ExpectNoError(err)
+			}
+		}
+
+		// do global cleanup if the ginkgo description failed.
 		if !ginkgo.CurrentGinkgoTestDescription().Failed {
 			return
 		}
-		ctx := context.Background()
-		defer ctx.Done()
-		utils.ExpectNoError(dumper.Dump(ctx))
 		if f.DisableCleanup {
 			f.Log().Logln("Skipping cleanup...")
 			return
@@ -274,7 +302,7 @@ func (f *Framework) Register() *Dumper {
 	ginkgo.BeforeEach(func() {
 		dumper.ClearNamespaces()
 	})
-	return dumper
+	return state
 }
 
 // IsRegistryEnabled returns true if a docker registry is configured.

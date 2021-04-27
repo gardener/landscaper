@@ -21,7 +21,6 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 // RegisterTests registers all tests of the package
@@ -31,25 +30,17 @@ func RegisterTests(f *framework.Framework) {
 
 func WebhookTest(f *framework.Framework) {
 	_ = ginkgo.Describe("WebhookTest", func() {
-		dumper := f.Register()
-
 		var (
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			ctx   context.Context
+			state = f.Register()
 		)
 
 		ginkgo.BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		ginkgo.AfterEach(func() {
-			defer ctx.Done()
-			gomega.Expect(cleanup(ctx)).ToNot(gomega.HaveOccurred())
+			ctx.Done()
 		})
 
 		ginkgo.It("should have created a ValidatingWebhookConfiguration", func() {

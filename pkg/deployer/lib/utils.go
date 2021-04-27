@@ -12,9 +12,12 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -116,4 +119,14 @@ func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.Kuber
 	return nil, apierrors.NewNotFound(schema.GroupResource{
 		Resource: "secret",
 	}, ref.Name)
+}
+
+// SetProviderStatus sets the provider specific status for a deploy item.
+func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme *runtime.Scheme) error {
+	rawStatus, err := kutil.ConvertToRawExtension(status, scheme)
+	if err != nil {
+		return err
+	}
+	di.Status.ProviderStatus = rawStatus
+	return nil
 }

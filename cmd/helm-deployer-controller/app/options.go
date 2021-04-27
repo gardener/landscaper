@@ -5,69 +5,35 @@
 package app
 
 import (
-	goflag "flag"
-	"io/ioutil"
-
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
-	"github.com/gardener/landscaper/pkg/logger"
+	deployercmd "github.com/gardener/landscaper/pkg/deployer/lib/cmd"
 )
 
 type options struct {
-	log        logr.Logger
-	configPath string
-
-	config *helmv1alpha1.Configuration
+	DeployerOptions *deployercmd.DefaultOptions
+	Config          helmv1alpha1.Configuration
 }
 
 func NewOptions() *options {
-	return &options{}
+	return &options{
+		DeployerOptions: deployercmd.NewDefaultOptions(helm.HelmScheme),
+	}
 }
 
 func (o *options) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&o.configPath, "config", "", "Specify the path to the configuration file")
-	logger.InitFlags(fs)
-
-	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
+	o.DeployerOptions.AddFlags(fs)
 }
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *options) Complete() error {
-	log, err := logger.New(nil)
-	if err != nil {
+	if err := o.DeployerOptions.Complete(); err != nil {
 		return err
 	}
-	o.log = log.WithName("setup")
-	logger.SetLogger(log)
-	ctrl.SetLogger(log)
-
-	o.config, err = o.parseConfigurationFile()
-	if err != nil {
+	if err := o.DeployerOptions.GetConfig(&o.Config); err != nil {
 		return err
 	}
-
 	return nil
-}
-
-func (o *options) parseConfigurationFile() (*helmv1alpha1.Configuration, error) {
-	decoder := serializer.NewCodecFactory(helm.HelmScheme).UniversalDecoder()
-	if len(o.configPath) == 0 {
-		return &helmv1alpha1.Configuration{}, nil
-	}
-	data, err := ioutil.ReadFile(o.configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := &helmv1alpha1.Configuration{}
-	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
 }

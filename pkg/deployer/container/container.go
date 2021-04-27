@@ -49,7 +49,7 @@ type Container struct {
 	// directHostClient is non-cached client that directly interact with the apiserver.
 	// it is mainly used for secret and rbac resources
 	directHostClient client.Client
-	Configuration    *containerv1alpha1.Configuration
+	Configuration    containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	ProviderStatus        *containerv1alpha1.ProviderStatus
@@ -66,7 +66,7 @@ func New(log logr.Logger,
 	lsClient,
 	hostClient,
 	directHostClient client.Client,
-	config *containerv1alpha1.Configuration,
+	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
 	componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
@@ -76,7 +76,7 @@ func New(log logr.Logger,
 			"Init", "DecodeProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	applyDefaults(config, providerConfig)
+	applyDefaults(&config, providerConfig)
 
 	if err := container1alpha1validation.ValidateProviderConfiguration(providerConfig); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,

@@ -31,6 +31,9 @@ func HasOperation(obj metav1.ObjectMeta, op v1alpha1.Operation) bool {
 }
 
 func GetOperation(obj metav1.ObjectMeta) string {
+	if obj.Annotations == nil {
+		return ""
+	}
 	return obj.Annotations[v1alpha1.OperationAnnotation]
 }
 
