@@ -2,6 +2,8 @@
 
 This documents the resource and media type that are used by the landscaper and somme deployers.
 
+For known target types see [target types](./target_types.md)
+
 Resource type refer to the type defined in a component descriptor.
 
 **Index**:

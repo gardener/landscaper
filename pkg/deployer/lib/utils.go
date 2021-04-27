@@ -6,8 +6,14 @@ package lib
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,4 +76,44 @@ func ShouldReconcile(di *lsv1alpha1.DeployItem) bool {
 	}
 
 	return false
+}
+
+// GetKubeconfigFromTargetConfig fetches the kubeconfig from a given config.
+// If the config defines the target from a secret that secret is read from all provided clients.
+func GetKubeconfigFromTargetConfig(ctx context.Context, config *lsv1alpha1.KubernetesClusterTargetConfig, kubeClients ...client.Client) ([]byte, error) {
+	if config.Kubeconfig.StrVal != nil {
+		return []byte(*config.Kubeconfig.StrVal), nil
+	}
+	if config.Kubeconfig.SecretRef == nil {
+		return nil, errors.New("kubeconfig not defined")
+	}
+
+	ref := config.Kubeconfig.SecretRef
+	var errList []error
+	for _, kubeClient := range kubeClients {
+		secret := &corev1.Secret{}
+		if err := kubeClient.Get(ctx, ref.NamespacedName(), secret); err != nil {
+			if !apierrors.IsNotFound(err) {
+				errList = append(errList, err)
+			}
+			continue
+		}
+
+		if len(ref.Key) == 0 {
+			ref.Key = lsv1alpha1.DefaultKubeconfigKey
+		}
+
+		kubeconfig, ok := secret.Data[ref.Key]
+		if !ok {
+			errList = append(errList, fmt.Errorf("secret found but key %q not found", ref.Key))
+			continue
+		}
+		return kubeconfig, nil
+	}
+	if len(errList) != 0 {
+		return nil, utilerrors.NewAggregate(errList)
+	}
+	return nil, apierrors.NewNotFound(schema.GroupResource{
+		Resource: "secret",
+	}, ref.Name)
 }

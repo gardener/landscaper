@@ -34,7 +34,7 @@ import (
 // ApplyFiles applies the helm templated files to the target cluster.
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
 	currOp := "ApplyFile"
-	_, targetClient, err := h.TargetClient()
+	_, targetClient, err := h.TargetClient(ctx)
 	if err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
@@ -177,7 +177,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 		return h.kubeClient.Update(ctx, h.DeployItem)
 	}
 
-	_, targetClient, err := h.TargetClient()
+	_, targetClient, err := h.TargetClient(ctx)
 	if err != nil {
 		return err
 	}

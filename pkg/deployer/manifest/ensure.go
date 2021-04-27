@@ -28,7 +28,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	currOp := "ReconcileManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
-	_, targetClient, err := m.TargetClient()
+	_, targetClient, err := m.TargetClient(ctx)
 	if err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
@@ -102,7 +102,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		return m.kubeClient.Update(ctx, m.DeployItem)
 	}
 
-	_, kubeClient, err := m.TargetClient()
+	_, kubeClient, err := m.TargetClient(ctx)
 	if err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())

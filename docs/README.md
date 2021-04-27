@@ -37,3 +37,4 @@
 - [Types](./technical/types.md)
 - [Core](./api-reference/core.md)
 - [Deployer Contract](./technical/deployer_contract.md)
+- [Target Types](./technical/target_types.md)

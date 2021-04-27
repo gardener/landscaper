@@ -50,7 +50,7 @@ var _ = AfterSuite(func() {
 	Expect(testenv.Stop()).ToNot(HaveOccurred())
 })
 
-var _ = Describe("RunInstallation", func() {
+var _ = Describe("Template", func() {
 	It("should ignore non-kubernetes manifests that are valid yaml", func() {
 		ctx := context.Background()
 		defer ctx.Done()

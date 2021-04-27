@@ -5,6 +5,7 @@
 package manifest
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -47,6 +50,9 @@ type Manifest struct {
 	Target                *lsv1alpha1.Target
 	ProviderConfiguration *manifestv1alpha2.ProviderConfiguration
 	ProviderStatus        *manifestv1alpha2.ProviderStatus
+
+	TargetKubeClient client.Client
+	TargetRestConfig *rest.Config
 }
 
 // NewDeployItemBuilder creates a new deployitem builder for manifest deployitems
@@ -88,7 +94,10 @@ func New(log logr.Logger, kubeClient client.Client, item *lsv1alpha1.DeployItem,
 	}, nil
 }
 
-func (m *Manifest) TargetClient() (*rest.Config, client.Client, error) {
+func (m *Manifest) TargetClient(ctx context.Context) (*rest.Config, client.Client, error) {
+	if m.TargetKubeClient != nil {
+		return m.TargetRestConfig, m.TargetKubeClient, nil
+	}
 	// use the configured kubeconfig over the target if defined
 	if len(m.ProviderConfiguration.Kubeconfig) != 0 {
 		kubeconfig, err := base64.StdEncoding.DecodeString(m.ProviderConfiguration.Kubeconfig)
@@ -115,7 +124,13 @@ func (m *Manifest) TargetClient() (*rest.Config, client.Client, error) {
 		if err := json.Unmarshal(m.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(targetConfig.Kubeconfig))
+
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, m.kubeClient)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
 		if err != nil {
 			return nil, nil, err
 		}

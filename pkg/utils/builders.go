@@ -203,7 +203,7 @@ func (b *TargetBuilder) AddAnnotation(key, val string) *TargetBuilder {
 	return b
 }
 
-// Scheme sets the deployitem scheme that is used for the provider config
+// Config sets the target config that is used for the provider config
 func (b *TargetBuilder) Config(obj interface{}) *TargetBuilder {
 	b.Configuration = obj
 	return b

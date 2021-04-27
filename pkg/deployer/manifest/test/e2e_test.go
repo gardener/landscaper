@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -257,7 +258,9 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 		di.Spec.Target.Name,
 		string(lsv1alpha1.KubernetesClusterTargetType),
 		lsv1alpha1.KubernetesClusterTargetConfig{
-			Kubeconfig: string(kubeconfigBytes),
+			Kubeconfig: lsv1alpha1.ValueRef{
+				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
+			},
 		},
 	)
 	Expect(err).ToNot(HaveOccurred())

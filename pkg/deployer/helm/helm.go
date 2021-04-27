@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -63,6 +65,9 @@ type Helm struct {
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
 	componentsRegistryMgr *componentsregistry.Manager
+
+	TargetKubeClient client.Client
+	TargetRestConfig *rest.Config
 }
 
 // New creates a new internal helm item
@@ -106,7 +111,7 @@ func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient cli
 func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]interface{}, error) {
 	currOp := "TemplateChart"
 
-	restConfig, _, err := h.TargetClient()
+	restConfig, _, err := h.TargetClient(ctx)
 	if err != nil {
 		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "GetTargetClient", err.Error())
@@ -153,7 +158,10 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 	return files, values, nil
 }
 
-func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
+func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, error) {
+	if h.TargetKubeClient != nil {
+		return h.TargetRestConfig, h.TargetKubeClient, nil
+	}
 	// use the configured kubeconfig over the target if defined
 	if len(h.ProviderConfiguration.Kubeconfig) != 0 {
 		kubeconfig, err := base64.StdEncoding.DecodeString(h.ProviderConfiguration.Kubeconfig)
@@ -173,6 +181,8 @@ func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+		h.TargetRestConfig = restConfig
+		h.TargetKubeClient = kubeClient
 		return restConfig, kubeClient, nil
 	}
 	if h.Target != nil {
@@ -180,7 +190,13 @@ func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 		if err := json.Unmarshal(h.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
-		kubeconfig, err := clientcmd.NewClientConfigFromBytes([]byte(targetConfig.Kubeconfig))
+
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.kubeClient)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -193,6 +209,8 @@ func (h *Helm) TargetClient() (*rest.Config, client.Client, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+		h.TargetRestConfig = restConfig
+		h.TargetKubeClient = kubeClient
 		return restConfig, kubeClient, nil
 	}
 	return nil, nil, errors.New("neither a target nor kubeconfig are defined")

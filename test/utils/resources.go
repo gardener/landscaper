@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -194,9 +195,46 @@ func CreateKubernetesTarget(namespace, name string, restConfig *rest.Config) (*l
 	}
 
 	config := lsv1alpha1.KubernetesClusterTargetConfig{
-		Kubeconfig: string(data),
+		Kubeconfig: lsv1alpha1.ValueRef{
+			StrVal: pointer.StringPtr(string(data)),
+		},
 	}
 	data, err = json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	target := &lsv1alpha1.Target{}
+	target.Name = name
+	target.Namespace = namespace
+
+	target.Spec.Type = lsv1alpha1.KubernetesClusterTargetType
+	target.Spec.Configuration = lsv1alpha1.NewAnyJSON(data)
+
+	return target, nil
+}
+
+// CreateKubernetesTargetFromSecret creates a new target of type kubernetes from a secret
+func CreateKubernetesTargetFromSecret(namespace, name string, secret *corev1.Secret) (*lsv1alpha1.Target, error) {
+	// guess the key by using the first one
+	var key string
+	for sKey := range secret.Data {
+		key = sKey
+		break
+	}
+
+	config := lsv1alpha1.KubernetesClusterTargetConfig{
+		Kubeconfig: lsv1alpha1.ValueRef{
+			SecretRef: &lsv1alpha1.SecretReference{
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Name:      secret.Name,
+					Namespace: secret.Namespace,
+				},
+				Key: key,
+			},
+		},
+	}
+	data, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
 	}
