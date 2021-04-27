@@ -106,6 +106,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetTemplate":                          schema_landscaper_apis_core_v1alpha1_TargetTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor":                        schema_landscaper_apis_core_v1alpha1_TemplateExecutor(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference":                    schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef":                                schema_landscaper_apis_core_v1alpha1_ValueRef(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":           schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":              schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
@@ -3507,15 +3508,16 @@ func schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref comm
 					"kubeconfig": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Kubeconfig defines kubeconfig as string.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef"),
 						},
 					},
 				},
 				Required: []string{"kubeconfig"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef"},
 	}
 }
 
@@ -4247,6 +4249,18 @@ func schema_landscaper_apis_core_v1alpha1_TypedObjectReference(ref common.Refere
 					},
 				},
 				Required: []string{"apiVersion", "kind", "name"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ValueRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ValueRef holds a value that can be either defined by string or by a secret ref.",
+				Type:        v1alpha1.ValueRef{}.OpenAPISchemaType(),
+				Format:      v1alpha1.ValueRef{}.OpenAPISchemaFormat(),
 			},
 		},
 	}
