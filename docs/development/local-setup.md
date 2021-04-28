@@ -13,10 +13,9 @@ Further details could be found in
 
 1. [Principles of Kubernetes](https://kubernetes.io/docs/concepts/), and its [components](https://kubernetes.io/docs/concepts/overview/components/)
 1. [Kubernetes Development Guide](https://github.com/kubernetes/community/tree/master/contributors/devel)
-1. [Architecture of Gardener](https://github.com/gardener/documentation/wiki/Architecture)
 
-This setup is based on [kind](https://github.com/kubernetes-sigs/kind). 
-Docker for Desktop, [minikube](https://github.com/kubernetes/minikube) or [k3d](https://github.com/rancher/k3d) are also supported.
+This setup is based on [k3d](https://github.com/rancher/k3d).
+Docker for Desktop, [minikube](https://github.com/kubernetes/minikube) or [kind](https://github.com/kubernetes-sigs/kind) are also supported.
 
 ## Installing Golang environment
 
@@ -65,11 +64,15 @@ brew install git
 On other OS, please check the [Git installation documentation](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 
-## Installing Kind
+## Installing K3d
 
 You'll need to have [Docker](https://docs.docker.com/get-docker/) installed and running.
 
-Follow the [kind quickstart guide](https://kind.sigs.k8s.io/docs/user/quick-start/) to start a kubernetes cluster .
+Follow the [k3s installation guide](https://k3d.io/#installation) to start a kubernetes cluster.
+
+:warning: note that with the default k8s cluster installation some development resources like target may not work as on some os's docker is running in VM with different network access.
+We therefore recommend to use our local setup script in [hack/setup-local-env.sh](../../hack/setup-local-env.sh) which automatically setups a local environment. 
+In that environment controllers running in- and outside of the cluster can access the apiserver. (Note that this script modifies the `/etc/hosts` file which may require root permissions)
 
 ## [MacOS only] Install GNU core utilities
 
