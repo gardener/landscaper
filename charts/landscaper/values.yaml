@@ -46,7 +46,7 @@ landscaper:
 #    # default for how long deployers may take to process a deploy item before being aborted, can be overwritten via the deploy item's 'spec.timeout' field
 #    progressingDefault: 10m
 
-image:
+image: {}
    # Overrides the image tag whose default is the chart appVersion.
 #  tag: ""
 
