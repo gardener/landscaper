@@ -13,6 +13,7 @@
 - [Installations](./usage/Installations.md)
 - [Template Executors](./usage/TemplateExecutors.md)
 - [JSON Schema](./usage/JSONSchema.md)
+- [Component Overwrites](./usage/ComponentOverwrites.md)
 
 ### Deployers
 - [Overview](./deployer)

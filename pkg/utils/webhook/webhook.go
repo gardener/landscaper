@@ -31,6 +31,8 @@ func ValidatorFromResourceType(log logr.Logger, kubeClient client.Client, scheme
 		val = &DeployItemValidator{abstrVal}
 	} else if resource == "executions" {
 		val = &ExecutionValidator{abstrVal}
+	} else if resource == "componentoverwrites" {
+		val = &ComponentOverwritesValidator{abstrVal}
 	} else {
 		return nil, fmt.Errorf("unable to find validator for resource type %q", resource)
 	}
@@ -127,4 +129,24 @@ func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request)
 	}
 
 	return admission.Allowed("Execution is valid")
+}
+
+// EXECUTION
+
+// ComponentOverwritesValidator represents a validator for ComponentOverwrites
+type ComponentOverwritesValidator struct{ abstractValidator }
+
+// Handle handles a request to the webhook
+func (ev *ComponentOverwritesValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	ev.log.V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	co := &lscore.ComponentOverwrites{}
+	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, co); err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if errs := validation.ValidateComponentOverwrites(co); len(errs) > 0 {
+		return admission.Denied(errs.ToAggregate().Error())
+	}
+
+	return admission.Allowed("ComponentOverwrite is valid")
 }

@@ -46,6 +46,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ExecutionList{},
 		&DeployItem{},
 		&DeployItemList{},
+		&ComponentOverwrites{},
+		&ComponentOverwritesList{},
 	)
 	return nil
 }

@@ -49,6 +49,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ExecutionList{},
 		&DeployItem{},
 		&DeployItemList{},
+		&ComponentOverwrites{},
+		&ComponentOverwritesList{},
 	)
 	if err := RegisterConversions(scheme); err != nil {
 		return err

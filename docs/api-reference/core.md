@@ -12,6 +12,8 @@ Resource Types:
 <ul><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint</a>
 </li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwrites">ComponentOverwrites</a>
+</li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItem">DeployItem</a>
@@ -179,6 +181,65 @@ The templates must return a list of deploy item templates.</p>
 <td>
 <em>(Optional)</em>
 <p>ExportExecutions defines the templating executors that are used to generate the exports.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwrites">ComponentOverwrites
+</h3>
+<p>
+<p>ComponentOverwrites are resources that can hold any kind json or yaml data.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>ComponentOverwrites</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>overwrites</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteList">
+ComponentOverwriteList
+</a>
+</em>
+</td>
+<td>
+<p>Overwrites defines a list of component overwrites</p>
 </td>
 </tr>
 </tbody>
@@ -1176,6 +1237,105 @@ string
 </p>
 <p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwrite">ComponentOverwrite
+</h3>
+<p>
+<p>ComponentOverwrite defines an overwrite for a specific component and/or version of a component.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>component</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">
+ComponentOverwriteReference
+</a>
+</em>
+</td>
+<td>
+<p>Component defines the component that should be replaced.
+The version is optional and will default to all found versions</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">
+ComponentOverwriteReference
+</a>
+</em>
+</td>
+<td>
+<p>Target defines the replacement target for the component or version.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentOverwriteReference">ComponentOverwriteReference
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwrite">ComponentOverwrite</a>)
+</p>
+<p>
+<p>ComponentOverwriteReference defines a component reference by</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>repositoryContext</code></br>
+<em>
+<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext">
+github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RepositoryContext defines the context of the component repository to resolve blueprints.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentName</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentName defines the unique of the component containing the resource.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>version</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Version defines the version of the component.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Condition">Condition
 </h3>
 <p>
