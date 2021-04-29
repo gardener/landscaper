@@ -8,13 +8,15 @@ import (
 	"context"
 	"time"
 
-	logtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm"
@@ -46,13 +48,25 @@ var _ = Describe("Helm Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := helmctrl.NewController(
-			logtesting.NullLogger{},
+		deployer, err := helmctrl.NewDeployer(
+			logr.Discard(),
 			testenv.Client,
-			api.LandscaperScheme,
-			&helmv1alpha1.Configuration{},
+			testenv.Client,
+			helmv1alpha1.Configuration{},
 		)
 		Expect(err).ToNot(HaveOccurred())
+
+		ctrl := deployerlib.NewController(
+			logr.Discard(),
+			testenv.Client,
+			api.LandscaperScheme,
+			testenv.Client,
+			api.LandscaperScheme,
+			deployerlib.DeployerArgs{
+				Type:     helmctrl.Type,
+				Deployer: deployer,
+			},
+		)
 
 		kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
@@ -95,10 +109,8 @@ var _ = Describe("Helm Deployer", func() {
 
 		Expect(state.Create(ctx, testenv.Client, di, envtest.UpdateStatus(true))).To(Succeed())
 
-		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
 		// At this stage, resources are not yet ready
-		err = testutil.ShouldNotReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		err = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(err).To(HaveOccurred())
 
 		// Get the managed objects from Status and set them in Ready status
@@ -119,7 +131,7 @@ var _ = Describe("Helm Deployer", func() {
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))

@@ -14,12 +14,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
-func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, config *containerv1alpha1.Configuration) error {
+func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
 	ctrlLogger := ctrl.Log.WithName("controllers")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
@@ -28,7 +30,7 @@ func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, conf
 	if err != nil {
 		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
-	diRec, err := NewDeployItemReconciler(
+	deployer, err := NewDeployer(
 		ctrlLogger.WithName("ContainerDeployer"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
@@ -44,11 +46,13 @@ func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, conf
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		config,
-		diRec)
+		deployer)
 
-	err = ctrl.NewControllerManagedBy(lsMgr).
-		For(&lsv1alpha1.DeployItem{}).
-		Complete(diRec)
+	err = deployerlib.Add(ctrl.Log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Type:            Type,
+		Deployer:        deployer,
+		TargetSelectors: config.TargetSelector,
+	})
 	if err != nil {
 		return err
 	}

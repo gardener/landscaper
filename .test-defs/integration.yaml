@@ -4,16 +4,16 @@ metadata:
 spec:
   owner: gardener-oq@listserv.sap.com
   description: runs the intergration test suite of the landscaper
-  activeDeadlineSeconds: 1800
+  activeDeadlineSeconds: 3600
 
   command: [bash, -c]
   args:
   - >-
-    go test -timeout=0 -mod=vendor ./test/integration
+    go test -timeout=30m -mod=vendor ./test/integration
     --v -ginkgo.v -ginkgo.progress -ginkgo.noColor
     --kubeconfig $TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
     --registry-config=$TM_SHARED_PATH/docker.config
     --ls-namespace=ls-system
     --ls-version=$(./hack/get-version.sh)
 
-  image: golang:1.15.7
+  image: golang:1.16.3

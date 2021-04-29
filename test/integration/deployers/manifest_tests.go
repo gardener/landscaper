@@ -24,20 +24,17 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 func ManifestDeployerTests(f *framework.Framework) {
 	ginkgo.Describe("Manifest Deployer", func() {
 
 		var (
-			dumper      = f.Register()
+			state       = f.Register()
 			exampleDir  = path.Join(f.RootPath, "examples", "deploy-items")
 			testDataDir = path.Join(f.RootPath, "test", "testdata")
 
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			ctx context.Context
 		)
 
 		const (
@@ -46,15 +43,10 @@ func ManifestDeployerTests(f *framework.Framework) {
 
 		ginkgo.BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		ginkgo.AfterEach(func() {
 			defer ctx.Done()
-			g.Expect(cleanup(ctx)).ToNot(g.HaveOccurred())
 		})
 
 		ginkgo.It("should deploy Kubernetes objects through their v1alpha2 manifests", func() {

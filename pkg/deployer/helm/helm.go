@@ -58,7 +58,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 type Helm struct {
 	log           logr.Logger
 	kubeClient    client.Client
-	Configuration *helmv1alpha1.Configuration
+	Configuration helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -71,7 +71,12 @@ type Helm struct {
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger, helmconfig *helmv1alpha1.Configuration, kubeClient client.Client, item *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
+func New(log logr.Logger,
+	helmconfig helmv1alpha1.Configuration,
+	kubeClient client.Client,
+	item *lsv1alpha1.DeployItem,
+	target *lsv1alpha1.Target,
+	componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
 	currOp := "InitHelmOperation"
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := api.NewDecoder(HelmScheme)
@@ -216,7 +221,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, e
 	return nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config *helmv1alpha1.Configuration, componentsRegistryMgr *componentsregistry.Manager) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config helmv1alpha1.Configuration, componentsRegistryMgr *componentsregistry.Manager) (ociclient.Client, error) {
 	// resolve all pull secrets
 	secrets, err := kubernetes.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
 	if err != nil {

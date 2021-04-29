@@ -5,31 +5,56 @@
 package mock
 
 import (
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 )
 
-// AddControllerToManager adds a new mock deployer to a controller manager.
-func AddControllerToManager(mgr manager.Manager, config *mockv1alpha1.Configuration) error {
-	a, err := NewController(
-		ctrl.Log.WithName("controllers").WithName("mock"),
-		mgr.GetClient(),
-		mgr.GetScheme(),
+// AddDeployerToManager adds a new helm deployers to a controller manager.
+func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config mockv1alpha1.Configuration) error {
+	log := ctrl.Log.WithName("controllers").WithName("MockDeployer")
+	d, err := NewDeployer(
+		log,
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
 		config,
 	)
 	if err != nil {
 		return err
 	}
 
-	if _, err := inject.LoggerInto(ctrl.Log.WithName("controllers").WithName("MockDeployer"), a); err != nil {
-		return err
+	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Type:            Type,
+		Deployer:        d,
+		TargetSelectors: config.TargetSelector,
+	})
+}
+
+// NewController creates a new simple controller.
+// This method should only be used for testing.
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config mockv1alpha1.Configuration) (reconcile.Reconciler, error) {
+	d, err := NewDeployer(
+		log,
+		kubeClient,
+		kubeClient,
+		config,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&lsv1alpha1.DeployItem{}).
-		Complete(a)
+	return deployerlib.NewController(log,
+		kubeClient, scheme,
+		kubeClient, scheme,
+		deployerlib.DeployerArgs{
+			Type:            Type,
+			Deployer:        d,
+			TargetSelectors: config.TargetSelector,
+		}), nil
 }

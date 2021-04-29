@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	logtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +16,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
@@ -28,12 +31,35 @@ import (
 
 var _ = Describe("Manifest Deployer", func() {
 
-	var state *envtest.State
+	var (
+		state *envtest.State
+		ctrl  reconcile.Reconciler
+	)
 
 	BeforeEach(func() {
 		var err error
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
+
+		deployer, err := manifestctlr.NewDeployer(
+			logr.Discard(),
+			testenv.Client,
+			testenv.Client,
+			manifestv1alpha2.Configuration{},
+		)
+		Expect(err).ToNot(HaveOccurred())
+
+		ctrl = deployerlib.NewController(
+			logr.Discard(),
+			testenv.Client,
+			api.LandscaperScheme,
+			testenv.Client,
+			api.LandscaperScheme,
+			deployerlib.DeployerArgs{
+				Type:     manifestctlr.Type,
+				Deployer: deployer,
+			},
+		)
 	})
 
 	AfterEach(func() {
@@ -44,20 +70,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestctlr.NewController(
-			logtesting.NullLogger{},
-			testenv.Client,
-			api.LandscaperScheme,
-			&manifestv1alpha2.Configuration{},
-		)
-		Expect(err).ToNot(HaveOccurred())
-
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -66,7 +84,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		status := &manifestv1alpha2.ProviderStatus{}
 		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
-		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
+		_, _, err := manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(1))
 
@@ -78,7 +96,7 @@ var _ = Describe("Manifest Deployer", func() {
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
-			_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
 			return err
 		}, time.Minute, 5*time.Second).Should(Succeed())
 
@@ -92,20 +110,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestctlr.NewController(
-			logtesting.NullLogger{},
-			testenv.Client,
-			api.LandscaperScheme,
-			&manifestv1alpha2.Configuration{},
-		)
-		Expect(err).ToNot(HaveOccurred())
-
 		By("create deploy item")
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -117,7 +127,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		By("update deploy item")
 		di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/02-di-updated.yaml")
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 		// Expect that the secret has been updated
@@ -128,13 +138,13 @@ var _ = Describe("Manifest Deployer", func() {
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
-			_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
 			return err
 		}, time.Minute, 5*time.Second).Should(Succeed())
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 
-		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
+		err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
 	})
 
@@ -142,20 +152,12 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestctlr.NewController(
-			logtesting.NullLogger{},
-			testenv.Client,
-			api.LandscaperScheme,
-			&manifestv1alpha2.Configuration{},
-		)
-		Expect(err).ToNot(HaveOccurred())
-
 		By("create deploy item")
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -167,12 +169,12 @@ var _ = Describe("Manifest Deployer", func() {
 
 		By("update deploy item")
 		di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 
 		// Expect that the secret has been deleted and a configmap has been created.
-		err = testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
+		err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
 		cm := &corev1.ConfigMap{}
 		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-configmap", "default"), cm))
@@ -181,7 +183,7 @@ var _ = Describe("Manifest Deployer", func() {
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
-			_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
 			return err
 		}, time.Minute, 5*time.Second).Should(Succeed())
 
@@ -195,19 +197,10 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		actuator, err := manifestctlr.NewController(
-			logtesting.NullLogger{},
-			testenv.Client,
-			api.LandscaperScheme,
-			&manifestv1alpha2.Configuration{},
-		)
-		Expect(err).ToNot(HaveOccurred())
-
 		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
 
 		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
-		_ = testutil.ShouldNotReconcile(ctx, actuator, testutil.Request(di.GetName(), di.GetNamespace()))
+		_ = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
@@ -216,7 +209,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		status := &manifestv1alpha2.ProviderStatus{}
 		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
-		_, _, err = manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
+		_, _, err := manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(0))
 
@@ -228,7 +221,7 @@ var _ = Describe("Manifest Deployer", func() {
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
-			_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
 			return err
 		}, time.Minute, 5*time.Second).Should(Succeed())
 

@@ -19,31 +19,23 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 func ContainerDeployerTests(f *framework.Framework) {
 	ginkgo.Describe("Container Deployer", func() {
 		var (
-			dumper     = f.Register()
+			state      = f.Register()
 			exampleDir = path.Join(f.RootPath, "examples/deploy-items")
 
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			ctx context.Context
 		)
 
 		ginkgo.BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		ginkgo.AfterEach(func() {
-			defer ctx.Done()
-			g.Expect(cleanup(ctx)).ToNot(g.HaveOccurred())
+			ctx.Done()
 		})
 
 		ginkgo.It("should run a simple docker image with a sleep command", func() {

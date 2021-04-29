@@ -28,17 +28,17 @@ type PodReconciler struct {
 	log        logr.Logger
 	lsClient   client.Client
 	hostClient client.Client
-	config     *containerv1alpha1.Configuration
-	diRec      *DeployItemReconciler
+	config     containerv1alpha1.Configuration
+	diRec      deployerlib.Deployer
 }
 
-func NewPodReconciler(log logr.Logger, lsClient, hostClient client.Client, config *containerv1alpha1.Configuration, diRec *DeployItemReconciler) *PodReconciler {
+func NewPodReconciler(log logr.Logger, lsClient, hostClient client.Client, config containerv1alpha1.Configuration, deployer deployerlib.Deployer) *PodReconciler {
 	return &PodReconciler{
 		log:        log,
 		config:     config,
 		lsClient:   lsClient,
 		hostClient: hostClient,
-		diRec:      diRec,
+		diRec:      deployer,
 	}
 }
 
@@ -51,7 +51,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, deployItem)
-	if err := errHdl(ctx, r.diRec.reconcile(ctx, deployItem)); err != nil {
+	if err := errHdl(ctx, r.diRec.Reconcile(ctx, deployItem, nil)); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

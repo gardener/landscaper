@@ -23,7 +23,7 @@ import (
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
-func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config *containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, error) {
+func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, error) {
 	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, error) {
 		logger := log.WithValues("resource", req.NamespacedName)
 		logger.V(7).Info("Reconcile deploy item")

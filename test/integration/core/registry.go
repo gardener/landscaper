@@ -30,7 +30,6 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 func RegistryTest(f *framework.Framework) {
@@ -40,25 +39,18 @@ func RegistryTest(f *framework.Framework) {
 	}
 
 	_ = ginkgo.Describe("RegistryTest", func() {
-		dumper := f.Register()
 
 		var (
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			state = f.Register()
+			ctx   context.Context
 		)
 
 		ginkgo.BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		ginkgo.AfterEach(func() {
-			defer ctx.Done()
-			gomega.Expect(cleanup(ctx)).ToNot(gomega.HaveOccurred())
+			ctx.Done()
 		})
 
 		ginkgo.It("should upload a component descriptor and blueprint to a private registry and install that blueprint", func() {

@@ -55,7 +55,7 @@ var _ = Describe("Simple", func() {
 		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, &mockv1alpha1.Configuration{})
+		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

@@ -111,42 +111,42 @@ func (o *options) run(ctx context.Context) error {
 	for _, deployerName := range o.deployer.EnabledDeployers {
 		o.log.Info("Enable Deployer", "name", deployerName)
 		if deployerName == "container" {
-			config := &containerv1alpha1.Configuration{}
-			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+			config := containerv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, &config); err != nil {
 				return err
 			}
 			config.OCI = o.config.Registry.OCI
 			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
-			containerctlr.DefaultConfiguration(config)
+			containerctlr.DefaultConfiguration(&config)
 			if err := containerctlr.AddControllerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add container deployer: %w", err)
 			}
 		} else if deployerName == "helm" {
-			config := &helmv1alpha1.Configuration{}
-			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+			config := helmv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, &config); err != nil {
 				return err
 			}
 			config.OCI = o.config.Registry.OCI
 			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
-			if err := helmctlr.AddControllersToManager(mgr, config); err != nil {
+			if err := helmctlr.AddDeployerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "manifest" {
-			config := &manifestv1alpha2.Configuration{}
-			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+			config := manifestv1alpha2.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, &config); err != nil {
 				return err
 			}
 			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
-			if err := manifestctlr.AddControllerToManager(mgr, config); err != nil {
+			if err := manifestctlr.AddDeployerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add helm deployer: %w", err)
 			}
 		} else if deployerName == "mock" {
-			config := &mockv1alpha1.Configuration{}
-			if err := o.deployer.GetDeployerConfiguration(deployerName, config); err != nil {
+			config := mockv1alpha1.Configuration{}
+			if err := o.deployer.GetDeployerConfiguration(deployerName, &config); err != nil {
 				return err
 			}
 			config.TargetSelector = addDefaultTargetSelector(config.TargetSelector)
-			if err := mockctlr.AddControllerToManager(mgr, config); err != nil {
+			if err := mockctlr.AddDeployerToManager(mgr, mgr, config); err != nil {
 				return fmt.Errorf("unable to add mock deployer: %w", err)
 			}
 		} else {

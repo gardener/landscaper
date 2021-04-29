@@ -74,7 +74,7 @@ var _ = Describe("Template", func() {
 		dummyManager, err := componentsregistry.New(cacheDummy)
 		Expect(err).NotTo(HaveOccurred())
 
-		h, err := helm.New(logtesting.NullLogger{}, &helmv1alpha1.Configuration{}, testenv.Client, item, nil, dummyManager)
+		h, err := helm.New(logtesting.NullLogger{}, helmv1alpha1.Configuration{}, testenv.Client, item, nil, dummyManager)
 		Expect(err).ToNot(HaveOccurred())
 		files, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())

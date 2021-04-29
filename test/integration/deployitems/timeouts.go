@@ -22,7 +22,6 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 // RegisterTests registers all tests of this package
@@ -50,29 +49,22 @@ func maxDuration(durs ...time.Duration) time.Duration {
 
 func TimeoutTests(f *framework.Framework) {
 	var (
-		dumper      = f.Register()
 		testdataDir = filepath.Join(f.RootPath, "test", "integration", "deployitems", "testdata")
 	)
 
 	Describe("Deploy Item Timeouts", func() {
 
 		var (
-			ctx     context.Context
-			state   *envtest.State
-			cleanup framework.CleanupFunc
+			state = f.Register()
+			ctx   context.Context
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
-			var err error
-			state, cleanup, err = f.NewState(ctx)
-			utils.ExpectNoError(err)
-			dumper.AddNamespaces(state.Namespace)
 		})
 
 		AfterEach(func() {
-			defer ctx.Done()
-			Expect(cleanup(ctx)).ToNot(HaveOccurred())
+			ctx.Done()
 		})
 
 		It("should detect timeouts", func() {
