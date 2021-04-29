@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -273,7 +272,7 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 				// Delete object and ensure it is deleted from the cluster.
-				timeout, _ := time.ParseDuration(h.ProviderConfiguration.DeleteTimeout)
+				timeout := h.ProviderConfiguration.DeleteTimeout.Duration
 				err := kutil.DeleteAndWaitForObjectDeleted(ctx, kubeClient, timeout, obj)
 				if err != nil {
 					allErrs = append(allErrs, err)
@@ -410,7 +409,7 @@ func (h *Helm) defaultCheckResourcesHealth(ctx context.Context, client client.Cl
 		objects[i] = obj
 	}
 
-	timeout, _ := time.ParseDuration(h.ProviderConfiguration.HealthChecks.Timeout)
+	timeout := h.ProviderConfiguration.HealthChecks.Timeout.Duration
 	if err := health.WaitForObjectsHealthy(ctx, timeout, h.log, client, objects); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)

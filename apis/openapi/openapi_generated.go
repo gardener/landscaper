@@ -5124,13 +5124,14 @@ func schema_apis_deployer_helm_v1alpha1_HealthChecksConfiguration(ref common.Ref
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
 	}
 }
 
@@ -5180,8 +5181,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 					"chart": {
@@ -5233,7 +5233,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HealthChecksConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HealthChecksConfiguration"},
 	}
 }
 
@@ -5396,13 +5396,14 @@ func schema_apis_deployer_manifest_v1alpha1_HealthChecksConfiguration(ref common
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
 	}
 }
 
@@ -5452,8 +5453,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 					"manifests": {
@@ -5473,7 +5473,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.HealthChecksConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -5580,13 +5580,14 @@ func schema_apis_deployer_manifest_v1alpha2_HealthChecksConfiguration(ref common
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
 	}
 }
 
@@ -5694,8 +5695,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 					"deleteTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-							Type:        []string{"string"},
-							Format:      "",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
 					"manifests": {
@@ -5716,7 +5716,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.HealthChecksConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest"},
 	}
 }
 

@@ -15,6 +15,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
+	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
 )
@@ -111,7 +112,7 @@ func Convert_manifest_Configuration_To_v1alpha2_Configuration(in *manifest.Confi
 
 func autoConvert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -122,7 +123,7 @@ func Convert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfigur
 
 func autoConvert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfiguration(in *manifest.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*v1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -133,7 +134,10 @@ func Convert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfigur
 
 func autoConvert_v1alpha2_ManagedResourceStatus_To_manifest_ManagedResourceStatus(in *ManagedResourceStatus, out *manifest.ManagedResourceStatus, s conversion.Scope) error {
 	out.Policy = manifest.ManifestPolicy(in.Policy)
-	out.Resource = in.Resource
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.Resource, &out.Resource, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -144,7 +148,10 @@ func Convert_v1alpha2_ManagedResourceStatus_To_manifest_ManagedResourceStatus(in
 
 func autoConvert_manifest_ManagedResourceStatus_To_v1alpha2_ManagedResourceStatus(in *manifest.ManagedResourceStatus, out *ManagedResourceStatus, s conversion.Scope) error {
 	out.Policy = ManifestPolicy(in.Policy)
-	out.Resource = in.Resource
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.Resource, &out.Resource, 0); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -181,7 +188,7 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	if err := Convert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]manifest.Manifest)(unsafe.Pointer(&in.Manifests))
 	return nil
 }
@@ -197,7 +204,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguratio
 	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]Manifest)(unsafe.Pointer(&in.Manifests))
 	return nil
 }

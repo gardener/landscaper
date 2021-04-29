@@ -9,7 +9,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lscore "github.com/gardener/landscaper/apis/core"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -30,7 +30,7 @@ type ProviderConfiguration struct {
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
 	// +optional
-	DeleteTimeout string `json:"deleteTimeout,omitempty"`
+	DeleteTimeout *lscore.Duration `json:"deleteTimeout,omitempty"`
 
 	// UpdateStrategy defines the strategy how the manifests are updated in the cluster.
 	// Defaults to "update".
@@ -70,7 +70,7 @@ type HealthChecksConfiguration struct {
 	// Timeout is the time to wait before giving up on a resource to be healthy.
 	// Defaults to 180s.
 	// +optional
-	Timeout string `json:"timeout,omitempty"`
+	Timeout *lscore.Duration `json:"timeout,omitempty"`
 }
 
 // Chart defines the helm chart to render and apply.
@@ -90,7 +90,7 @@ type Chart struct {
 
 // RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor
 type RemoteChartReference struct {
-	lsv1alpha1.ComponentDescriptorDefinition `json:",inline"`
+	lscore.ComponentDescriptorDefinition `json:",inline"`
 	// ResourceName is the name of the Helm chart as defined by a component descriptor.
 	ResourceName string `json:"resourceName"`
 }
@@ -122,7 +122,7 @@ type ExportFromManifestItem struct {
 	JSONPath string `json:"jsonPath"`
 
 	// FromResource specifies the name of the resource where the value should be read.
-	FromResource *lsv1alpha1.TypedObjectReference `json:"fromResource,omitempty"`
+	FromResource *lscore.TypedObjectReference `json:"fromResource,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -132,5 +132,5 @@ type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 
 	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
-	ManagedResources []lsv1alpha1.TypedObjectReference `json:"managedResources,omitempty"`
+	ManagedResources []lscore.TypedObjectReference `json:"managedResources,omitempty"`
 }

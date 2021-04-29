@@ -359,6 +359,10 @@
         }
       }
     },
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
     "core-v1alpha1-TypedObjectReference": {
       "description": "TypedObjectReference is a reference to a typed kubernetes object.",
       "type": "object",
@@ -456,7 +460,7 @@
         },
         "timeout": {
           "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-          "type": "string"
+          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },
@@ -505,8 +509,8 @@
       "description": "Chart defines helm chart to be templated and applied."
     },
     "deleteTimeout": {
-      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s.",
-      "type": "string"
+      "$ref": "#/definitions/core-v1alpha1-Duration",
+      "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "exportsFromManifests": {
       "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.",

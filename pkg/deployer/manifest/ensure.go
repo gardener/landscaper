@@ -7,7 +7,6 @@ package manifest
 import (
 	"context"
 	"errors"
-	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +48,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		decoder:          serializer.NewCodecFactory(ManifestScheme).UniversalDecoder(),
 		kubeClient:       targetClient,
 		deployItemName:   m.DeployItem.Name,
-		deleteTimeout:    m.ProviderConfiguration.DeleteTimeout,
+		deleteTimeout:    *m.ProviderConfiguration.DeleteTimeout,
 		updateStrategy:   m.ProviderConfiguration.UpdateStrategy,
 		manifests:        m.ProviderConfiguration.Manifests,
 		managedResources: m.ProviderStatus.ManagedResources,
@@ -187,7 +186,7 @@ func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client clien
 		objects[i] = obj
 	}
 
-	timeout, _ := time.ParseDuration(m.ProviderConfiguration.HealthChecks.Timeout)
+	timeout := m.ProviderConfiguration.HealthChecks.Timeout.Duration
 	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "CheckResourcesHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)

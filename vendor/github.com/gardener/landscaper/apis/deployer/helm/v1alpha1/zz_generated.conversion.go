@@ -17,6 +17,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
 	config "github.com/gardener/landscaper/apis/config"
+	core "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helm "github.com/gardener/landscaper/apis/deployer/helm"
 )
@@ -192,7 +193,7 @@ func Convert_helm_Configuration_To_v1alpha1_Configuration(in *helm.Configuration
 func autoConvert_v1alpha1_ExportFromManifestItem_To_helm_ExportFromManifestItem(in *ExportFromManifestItem, out *helm.ExportFromManifestItem, s conversion.Scope) error {
 	out.Key = in.Key
 	out.JSONPath = in.JSONPath
-	out.FromResource = (*corev1alpha1.TypedObjectReference)(unsafe.Pointer(in.FromResource))
+	out.FromResource = (*core.TypedObjectReference)(unsafe.Pointer(in.FromResource))
 	return nil
 }
 
@@ -215,7 +216,7 @@ func Convert_helm_ExportFromManifestItem_To_v1alpha1_ExportFromManifestItem(in *
 
 func autoConvert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguration(in *HealthChecksConfiguration, out *helm.HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -226,7 +227,7 @@ func Convert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguratio
 
 func autoConvert_helm_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *helm.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = in.Timeout
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -241,7 +242,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	if err := Convert_v1alpha1_HealthChecksConfiguration_To_helm_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	if err := Convert_v1alpha1_Chart_To_helm_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err
 	}
@@ -262,7 +263,7 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	if err := Convert_helm_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
 		return err
 	}
-	out.DeleteTimeout = in.DeleteTimeout
+	out.DeleteTimeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	if err := Convert_helm_Chart_To_v1alpha1_Chart(&in.Chart, &out.Chart, s); err != nil {
 		return err
@@ -280,7 +281,7 @@ func Convert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *he
 }
 
 func autoConvert_v1alpha1_ProviderStatus_To_helm_ProviderStatus(in *ProviderStatus, out *helm.ProviderStatus, s conversion.Scope) error {
-	out.ManagedResources = *(*[]corev1alpha1.TypedObjectReference)(unsafe.Pointer(&in.ManagedResources))
+	out.ManagedResources = *(*[]core.TypedObjectReference)(unsafe.Pointer(&in.ManagedResources))
 	return nil
 }
 
@@ -320,7 +321,10 @@ func Convert_helm_RemoteArchiveAccess_To_v1alpha1_RemoteArchiveAccess(in *helm.R
 }
 
 func autoConvert_v1alpha1_RemoteChartReference_To_helm_RemoteChartReference(in *RemoteChartReference, out *helm.RemoteChartReference, s conversion.Scope) error {
-	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ComponentDescriptorDefinition, &out.ComponentDescriptorDefinition, 0); err != nil {
+		return err
+	}
 	out.ResourceName = in.ResourceName
 	return nil
 }
@@ -331,7 +335,10 @@ func Convert_v1alpha1_RemoteChartReference_To_helm_RemoteChartReference(in *Remo
 }
 
 func autoConvert_helm_RemoteChartReference_To_v1alpha1_RemoteChartReference(in *helm.RemoteChartReference, out *RemoteChartReference, s conversion.Scope) error {
-	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ComponentDescriptorDefinition, &out.ComponentDescriptorDefinition, 0); err != nil {
+		return err
+	}
 	out.ResourceName = in.ResourceName
 	return nil
 }
