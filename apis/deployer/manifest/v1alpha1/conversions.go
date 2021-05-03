@@ -33,9 +33,7 @@ func Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfigur
 func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
@@ -63,9 +61,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {

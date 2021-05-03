@@ -18,9 +18,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
-	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
 
 func (m *Manifest) Reconcile(ctx context.Context) error {
@@ -80,10 +79,43 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 // CheckResourcesHealth checks if the managed resources are Ready/Healthy.
 func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Client) error {
+	var managedResources []lsv1alpha1.TypedObjectReference
+	for _, mr := range m.ProviderStatus.ManagedResources {
+		if mr.Policy == manifestv1alpha2.IgnorePolicy {
+			continue
+		}
+		managedResources = append(managedResources, mr.Resource)
+	}
+
 	if !m.ProviderConfiguration.HealthChecks.DisableDefault {
-		err := m.defaultCheckResourcesHealth(ctx, client)
+		defaultHealthCheck := healthcheck.DefaultHealthCheck{
+			Context:          ctx,
+			Client:           client,
+			CurrentOp:        "DefaultCheckResourcesHealthManifest",
+			Log:              m.log,
+			Timeout:          m.ProviderConfiguration.HealthChecks.Timeout,
+			ManagedResources: managedResources,
+		}
+		err := defaultHealthCheck.CheckResourcesHealth()
 		if err != nil {
 			return err
+		}
+	} else if m.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
+		//TODO: thread this
+		for _, customHealthCheckConfig := range m.ProviderConfiguration.HealthChecks.CustomHealthChecks {
+			customHealthCheck := healthcheck.CustomHealthCheck{
+				Context:          ctx,
+				Client:           client,
+				Log:              m.log,
+				CurrentOp:        "CustomCheckResourcesHealthManifest",
+				Timeout:          m.ProviderConfiguration.HealthChecks.Timeout,
+				ManagedResources: managedResources,
+				Configuration:    customHealthCheckConfig,
+			}
+			err := customHealthCheck.CheckResourcesHealth()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -165,32 +197,4 @@ func encodeStatus(status *manifestv1alpha2.ProviderStatus) (*runtime.RawExtensio
 		return nil, err
 	}
 	return raw, nil
-}
-
-// defaultCheckResourcesHealth implements the default health check for all managed resources
-func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client client.Client) error {
-	currOp := "DefaultCheckResourcesHealthManifests"
-
-	if len(m.ProviderStatus.ManagedResources) == 0 {
-		return nil
-	}
-
-	objects := make([]*unstructured.Unstructured, len(m.ProviderStatus.ManagedResources))
-	for i, managedResource := range m.ProviderStatus.ManagedResources {
-		// do not check ignored resources.
-		if managedResource.Policy == manifestv1alpha2.IgnorePolicy {
-			continue
-		}
-		ref := managedResource.Resource
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
-	}
-
-	timeout := m.ProviderConfiguration.HealthChecks.Timeout.Duration
-	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "CheckResourcesHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
-	}
-
-	return nil
 }

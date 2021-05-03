@@ -92,6 +92,8 @@ github.com/gardener/landscaper/apis/deployer/container
 github.com/gardener/landscaper/apis/deployer/container/install
 github.com/gardener/landscaper/apis/deployer/container/v1alpha1
 github.com/gardener/landscaper/apis/deployer/container/v1alpha1/validation
+github.com/gardener/landscaper/apis/deployer/healthchecks
+github.com/gardener/landscaper/apis/deployer/healthchecks/validation
 github.com/gardener/landscaper/apis/deployer/helm
 github.com/gardener/landscaper/apis/deployer/helm/install
 github.com/gardener/landscaper/apis/deployer/helm/v1alpha1

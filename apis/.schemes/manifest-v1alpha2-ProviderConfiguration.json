@@ -5,10 +5,87 @@
       "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
       "type": "string"
     },
-    "manifest-v1alpha2-HealthChecksConfiguration": {
+    "core-v1alpha1-TypedObjectReference": {
+      "description": "TypedObjectReference is a reference to a typed kubernetes object.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "deployer-healthchecks-CustomHealthCheckConfiguration": {
+      "type": "object",
+      "required": [
+        "name",
+        "requirements"
+      ],
+      "properties": {
+        "disabled": {
+          "description": "Disabled deactivates this custom resource health check",
+          "type": "boolean"
+        },
+        "labelSelector": {
+          "description": "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
+          "$ref": "#/definitions/deployer-healthchecks-LabelSelectorSpec"
+        },
+        "name": {
+          "description": "Name is the name of the HealthCheck",
+          "type": "string",
+          "default": ""
+        },
+        "requirements": {
+          "description": "Requirements is the actual health-check which compares an object's property to a value",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/deployer-healthchecks-RequirementSpec"
+          }
+        },
+        "resourceSelector": {
+          "description": "Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name",
+          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        },
+        "timeout": {
+          "description": "Timeout is the value after which a HealthCheck should time out",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
+    "deployer-healthchecks-HealthChecksConfiguration": {
       "description": "HealthChecksConfiguration contains the configuration for health checks.",
       "type": "object",
       "properties": {
+        "customHealthChecks": {
+          "description": "CustomHealthChecks is a set of custom health check configurations",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/deployer-healthchecks-CustomHealthCheckConfiguration"
+          }
+        },
         "disableDefault": {
           "description": "DisableDefault allows to disable the default health checks.",
           "type": "boolean"
@@ -16,6 +93,59 @@
         "timeout": {
           "description": "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
           "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
+    "deployer-healthchecks-LabelSelectorSpec": {
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "matchLabels"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion is the API version of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the Kind of the object to be selected by labels",
+          "type": "string",
+          "default": ""
+        },
+        "matchLabels": {
+          "description": "Labels are the labels used to identify multiple resources of the given kind",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "deployer-healthchecks-RequirementSpec": {
+      "type": "object",
+      "required": [
+        "jsonPath",
+        "operator"
+      ],
+      "properties": {
+        "jsonPath": {
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "type": "string",
+          "default": ""
+        },
+        "values": {
+          "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/pkg-runtime-RawExtension"
+          }
         }
       }
     },
@@ -49,7 +179,7 @@
       "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "healthChecks": {
-      "$ref": "#/definitions/manifest-v1alpha2-HealthChecksConfiguration",
+      "$ref": "#/definitions/deployer-healthchecks-HealthChecksConfiguration",
       "default": {},
       "description": "HealthChecks configures the health checks."
     },

@@ -36,11 +36,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddConversionFunc((*manifest.HealthChecksConfiguration)(nil), (*HealthChecksConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(a.(*manifest.HealthChecksConfiguration), b.(*HealthChecksConfiguration), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddConversionFunc((*manifest.ProviderConfiguration)(nil), (*ProviderConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(a.(*manifest.ProviderConfiguration), b.(*ProviderConfiguration), scope)
 	}); err != nil {
@@ -91,14 +86,74 @@ func Convert_manifest_Configuration_To_v1alpha1_Configuration(in *manifest.Confi
 	return autoConvert_manifest_Configuration_To_v1alpha1_Configuration(in, out, s)
 }
 
-func autoConvert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
-	out.DisableDefault = in.DisableDefault
-	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+func autoConvert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
+	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
+	out.HealthChecks = in.HealthChecks
+	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
+	if in.Manifests != nil {
+		in, out := &in.Manifests, &out.Manifests
+		*out = make([]manifest.Manifest, len(*in))
+		for i := range *in {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Manifests = nil
+	}
 	return nil
 }
 
-func autoConvert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *manifest.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
-	out.DisableDefault = in.DisableDefault
-	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+func autoConvert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
+	out.Kubeconfig = in.Kubeconfig
+	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
+	out.HealthChecks = in.HealthChecks
+	out.DeleteTimeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
+	if in.Manifests != nil {
+		in, out := &in.Manifests, &out.Manifests
+		*out = make([]*runtime.RawExtension, len(*in))
+		for i := range *in {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Manifests = nil
+	}
+	return nil
+}
+
+func autoConvert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStatus, out *manifest.ProviderStatus, s conversion.Scope) error {
+	if in.ManagedResources != nil {
+		in, out := &in.ManagedResources, &out.ManagedResources
+		*out = make(manifest.ManagedResourceStatusList, len(*in))
+		for i := range *in {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.ManagedResources = nil
+	}
+	return nil
+}
+
+func autoConvert_manifest_ProviderStatus_To_v1alpha1_ProviderStatus(in *manifest.ProviderStatus, out *ProviderStatus, s conversion.Scope) error {
+	if in.ManagedResources != nil {
+		in, out := &in.ManagedResources, &out.ManagedResources
+		*out = make([]corev1alpha1.TypedObjectReference, len(*in))
+		for i := range *in {
+			// TODO: Inefficient conversion - can we improve it?
+			if err := s.Convert(&(*in)[i], &(*out)[i], 0); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.ManagedResources = nil
+	}
 	return nil
 }

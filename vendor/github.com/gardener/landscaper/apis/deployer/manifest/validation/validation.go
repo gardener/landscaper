@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	healthchecks "github.com/gardener/landscaper/apis/deployer/healthchecks/validation"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 )
 
@@ -17,6 +18,7 @@ func ValidateProviderConfiguration(config *manifestv1alpha2.ProviderConfiguratio
 	allErrs = append(allErrs, ValidateManifestList(field.NewPath(""), config.Manifests)...)
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("healthChecks", "timeout"), config.HealthChecks.Timeout)...)
+	allErrs = append(allErrs, healthchecks.ValidateHealthCheckConfiguration(field.NewPath(""), &config.HealthChecks)...)
 	return allErrs.ToAggregate()
 }
 

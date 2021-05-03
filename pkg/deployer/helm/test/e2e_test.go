@@ -20,6 +20,7 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	health "github.com/gardener/landscaper/apis/deployer/healthchecks"
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
@@ -102,7 +103,7 @@ var _ = Describe("Helm Deployer", func() {
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
-		providerConfig.HealthChecks = helmv1alpha1.HealthChecksConfiguration{
+		providerConfig.HealthChecks = health.HealthChecksConfiguration{
 			Timeout: &lsv1alpha1.Duration{Duration: 1 * time.Second},
 		}
 

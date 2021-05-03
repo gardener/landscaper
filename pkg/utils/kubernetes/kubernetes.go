@@ -248,6 +248,14 @@ func ObjectFromTypedObjectReference(ref *v1alpha1.TypedObjectReference) *unstruc
 	}
 }
 
+// ObjectKeyFromTypedObjectReference returns the object key (NamespacedName) from a TypedObjectReference
+func ObjectKeyFromTypedObjectReference(obj *v1alpha1.TypedObjectReference) *types.NamespacedName {
+	return &types.NamespacedName{
+		Name:      obj.Name,
+		Namespace: obj.Namespace,
+	}
+}
+
 // HasFinalizer checks if the object constains a finalizer with the given name.
 func HasFinalizer(obj metav1.Object, finalizer string) bool {
 	for _, f := range obj.GetFinalizers() {

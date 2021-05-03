@@ -370,6 +370,9 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
+## explicit
+k8s.io/client-go/third_party/forked/golang/template
+k8s.io/client-go/util/jsonpath
 # k8s.io/code-generator v0.21.2
 ## explicit
 k8s.io/code-generator

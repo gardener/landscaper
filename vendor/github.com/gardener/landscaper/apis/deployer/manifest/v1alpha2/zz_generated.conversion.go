@@ -37,16 +37,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*HealthChecksConfiguration)(nil), (*manifest.HealthChecksConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(a.(*HealthChecksConfiguration), b.(*manifest.HealthChecksConfiguration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*manifest.HealthChecksConfiguration)(nil), (*HealthChecksConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfiguration(a.(*manifest.HealthChecksConfiguration), b.(*HealthChecksConfiguration), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*ManagedResourceStatus)(nil), (*manifest.ManagedResourceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha2_ManagedResourceStatus_To_manifest_ManagedResourceStatus(a.(*ManagedResourceStatus), b.(*manifest.ManagedResourceStatus), scope)
 	}); err != nil {
@@ -181,9 +171,7 @@ func Convert_manifest_Manifest_To_v1alpha2_Manifest(in *manifest.Manifest, out *
 func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*manifest.Manifests)(unsafe.Pointer(&in.Manifests))
 	return nil
@@ -197,9 +185,7 @@ func Convert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]Manifest)(unsafe.Pointer(&in.Manifests))
 	return nil

@@ -11,6 +11,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
 	lscore "github.com/gardener/landscaper/apis/core"
+	health "github.com/gardener/landscaper/apis/deployer/healthchecks"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -27,7 +28,7 @@ type ProviderConfiguration struct {
 	UpdateStrategy UpdateStrategy `json:"updateStrategy"`
 	// HealthChecks configures the health checks.
 	// +optional
-	HealthChecks HealthChecksConfiguration `json:"healthChecks,omitempty"`
+	HealthChecks health.HealthChecksConfiguration `json:"healthChecks,omitempty"`
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
 	// +optional
@@ -72,17 +73,6 @@ const (
 	UpdateStrategyUpdate UpdateStrategy = "update"
 	UpdateStrategyPatch  UpdateStrategy = "patch"
 )
-
-// HealthChecksConfiguration contains the configuration for health checks.
-type HealthChecksConfiguration struct {
-	// DisableDefault allows to disable the default health checks.
-	// +optional
-	DisableDefault bool `json:"disableDefault,omitempty"`
-	// Timeout is the time to wait before giving up on a resource to be healthy.
-	// Defaults to 180s.
-	// +optional
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
