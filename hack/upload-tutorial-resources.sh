@@ -6,10 +6,6 @@
 
 set -e
 
-BLUEPRINT_INGRESS_NGINX_VERSION="v0.2.1"
-BLUEPRINT_ECHO_SERVER_VERSION="v0.1.1"
-BLUEPRINT_AGGREGATED_VERSION="v0.1.1"
-
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
@@ -35,20 +31,37 @@ component_descriptors=(
   "./docs/tutorials/resources/echo-server"
   "./docs/tutorials/resources/aggregated"
   "./docs/tutorials/resources/local-ingress-nginx"
+  "./docs/tutorials/resources/external-jsonschema/echo-server"
 )
 
 function prepare_local_nginx_resources() {
+  cp ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yam_
   landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
   landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
+}
+
+function prepare_external_json_schema_resourcess() {
+  cp ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yam_
+  landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server  ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
 }
 
 function cleanup_local_nginx_resources() {
   if [ -d ./docs/tutorials/resources/local-ingress-nginx/blobs ]; then
     rm -rf ./docs/tutorials/resources/local-ingress-nginx/blobs
   fi
+  mv -f ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yam_ ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml
+}
+
+function cleanup_external_json_schema_resourcess() {
+  if [ -d ./docs/tutorials/resources/external-jsonschema/echo-server/blobs ]; then
+    rm -rf ./docs/tutorials/resources/external-jsonschema/echo-server/blobs
+  fi
+  mv -f ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yam_ ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml
 }
 
 prepare_local_nginx_resources
+prepare_external_json_schema_resourcess
+
 for i in "${blueprints[@]}"; do
   IFS=';' read ref blueprints_path version <<< "${i}"
 
@@ -64,4 +77,6 @@ done
 for i in "${component_descriptors[@]}"; do
   landscaper-cli components-cli ca remote push $i
 done
+
 cleanup_local_nginx_resources
+cleanup_external_json_schema_resourcess
