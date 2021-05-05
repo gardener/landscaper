@@ -42,7 +42,7 @@ var _ = Describe("GetChart", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		chartAccess := &helmv1alpha1.Chart{
-			Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0",
+			Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 		}
 
 		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)

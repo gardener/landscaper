@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -13,7 +13,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/local/ingress-nginx
-      version: v0.2.0
+      version: v0.3.1
   blueprint:
     ref:
       resourceName: ingress-nginx-blueprint

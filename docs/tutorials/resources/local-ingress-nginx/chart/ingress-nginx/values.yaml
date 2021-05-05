@@ -1,5 +1,5 @@
 ## nginx configuration
-## Ref: https://github.com/kubernetes/ingress-nginx/blob/master/controllers/nginx/configuration.md
+## Ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/index.md
 ##
 
 ## Overrides for generated resource names
@@ -11,12 +11,15 @@ controller:
   name: controller
   image:
     repository: k8s.gcr.io/ingress-nginx/controller
-    tag: "v0.43.0"
-    digest: sha256:9bba603b99bf25f6d117cf1235b6598c16033ad027b143c90fa5b3cc583c5713
+    tag: "v0.45.0"
+    digest: sha256:c4390c53f348c3bd4e60a5dd6a11c35799ae78c49388090140b9d72ccede1755
     pullPolicy: IfNotPresent
     # www-data -> uid 101
     runAsUser: 101
     allowPrivilegeEscalation: true
+
+  # Use an existing PSP instead of creating one
+  existingPsp: ""
 
   # Configures the ports the nginx-controller listens on
   containerPort:
@@ -315,6 +318,11 @@ controller:
     pollingInterval: 30
     cooldownPeriod: 300
     restoreToOriginalReplicaCount: false
+    scaledObject:
+      annotations: {}
+      # Custom annotations for ScaledObject resource
+      #  annotations:
+      # key: value
     triggers: []
  #     - type: prometheus
  #       metadata:
@@ -468,6 +476,9 @@ controller:
     namespaceSelector: {}
     objectSelector: {}
 
+    # Use an existing PSP instead of creating one
+    existingPsp: ""
+
     service:
       annotations: {}
       # clusterIP: ""
@@ -481,7 +492,7 @@ controller:
       enabled: true
       image:
         repository: docker.io/jettech/kube-webhook-certgen
-        tag: v1.5.0
+        tag: v1.5.1
         pullPolicy: IfNotPresent
       ## Provide a priority class name to the webhook patching job
       ##
@@ -510,7 +521,7 @@ controller:
 
       # loadBalancerIP: ""
       loadBalancerSourceRanges: []
-      servicePort: 9913
+      servicePort: 10254
       type: ClusterIP
       # externalTrafficPolicy: ""
       # nodePort: ""
@@ -518,6 +529,8 @@ controller:
     serviceMonitor:
       enabled: false
       additionalLabels: {}
+      # The label to use to retrieve the job name from.
+      # jobLabel: "app.kubernetes.io/name"
       namespace: ""
       namespaceSelector: {}
       # Default: scrape .Release.Namespace only
@@ -604,11 +617,15 @@ defaultBackend:
     readOnlyRootFilesystem: true
     allowPrivilegeEscalation: false
 
+  # Use an existing PSP instead of creating one
+  existingPsp: ""
+
   extraArgs: {}
 
   serviceAccount:
     create: true
-    name:
+    name: ""
+    automountServiceAccountToken: true
   ## Additional environment variables to set for defaultBackend pods
   extraEnvs: []
 
@@ -672,6 +689,16 @@ defaultBackend:
   #   cpu: 10m
   #   memory: 20Mi
 
+  extraVolumeMounts: []
+  ## Additional volumeMounts to the default backend container.
+  #  - name: copy-portal-skins
+  #   mountPath: /var/lib/lemonldap-ng/portal/skins
+
+  extraVolumes: []
+  ## Additional volumes to the default backend pod.
+  #  - name: copy-portal-skins
+  #    emptyDir: {}
+
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -708,7 +735,8 @@ podSecurityPolicy:
 
 serviceAccount:
   create: true
-  name:
+  name: ""
+  automountServiceAccountToken: true
 
 ## Optional array of imagePullSecrets containing private registry credentials
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -726,3 +754,8 @@ tcp: {}
 ##
 udp: {}
 #  53: "kube-system/kube-dns:53"
+
+# A base64ed Diffie-Hellman parameter
+# This can be generated with: openssl dhparam 4096 2> /dev/null | base64
+# Ref: https://github.com/krmichel/ingress-nginx/blob/master/docs/examples/customization/ssl-dh-param
+dhParam:
