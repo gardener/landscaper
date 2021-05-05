@@ -79,6 +79,18 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		return o.NewError(err, "GetInstallationTemplates", err.Error())
 	}
 
+	// remove imports based on optional and conditional imports which are not satisfied in the parent
+	for _, instT := range installationTmpl {
+		imports := []lsv1alpha1.DataImport{}
+		for _, imp := range instT.Imports.Data {
+			_, ok := o.Inst.Imports[imp.DataRef]
+			if ok {
+				imports = append(imports, imp)
+			}
+		}
+		instT.Imports.Data = imports
+	}
+
 	// validate all installation templates before do any follow up actions
 	if err := o.ValidateSubinstallations(installationTmpl); err != nil {
 		return err
