@@ -12,6 +12,12 @@ if [ -n "$TM_GIT_REF" ] ; then
   exit 0
 fi
 
+if [ -n "$EFFECTIVE_VERSION" ] ; then
+  # running in the pipeline use the provided EFFECTIVE_VERSION
+  echo "$EFFECTIVE_VERSION"
+  exit 0
+fi
+
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(cat "${SOURCE_PATH}/VERSION")"
 
