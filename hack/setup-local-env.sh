@@ -6,19 +6,30 @@
 
 set -e
 
+CLUSTER_NAME="test"
+K3D_INTERNAL_HOST="host.k3d.internal"
+
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
-if [[ $EFFECTIVE_VERSION == "" ]]; then
-  EFFECTIVE_VERSION=$(cat $PROJECT_ROOT/VERSION)
+echo "Setup local Landscaper development environment"
+
+if ! which k3d 1>/dev/null; then
+  echo "K3d is not installed, see https://k3d.io/ how to install it..."
+  exit 1
 fi
 
-echo "> Install $EFFECTIVE_VERSION"
 
-CGO_ENABLED=0 GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) GO111MODULE=on \
-  go install -mod=vendor \
-  -ldflags "-X github.com/gardener/landscaper/pkg/version.GitVersion=$EFFECTIVE_VERSION \
-            -X github.com/gardener/landscaper/pkg/version.gitTreeState=$([ -z git status --porcelain 2>/dev/null ] && echo clean || echo dirty) \
-            -X github.com/gardener/landscaper/pkg/version.gitCommit=$(git rev-parse --verify HEAD) \
-            -X github.com/gardener/landscaper/pkg/version.buildDate=$(date --rfc-3339=seconds | sed 's/ /T/')" \
-  ${PROJECT_ROOT}/cmd/...
+found_cluster=$(k3d cluster list -o json | jq ".[] | select(.name==\"${CLUSTER_NAME}\").name")
+if [[ -z $found_cluster ]]; then
+  echo "Creating k3d cluster ..."
+  k3d cluster create $CLUSTER_NAME --config ${CURRENT_DIR}/resources/k3d-cluster-config.yaml
+else
+  echo "k3d cluster ${CLUSTER_NAME} already exists. Skipping..."
+fi
+
+echo "Note: the new cluster context is automatically added to your current scope"
+
+echo "Adding k3d host entry ..."
+echo "# Local k3d cluster" >> /etc/hosts
+echo "0.0.0.0 ${K3D_INTERNAL_HOST}" >> /etc/hosts
