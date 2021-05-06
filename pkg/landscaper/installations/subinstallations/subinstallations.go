@@ -84,7 +84,7 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		imports := []lsv1alpha1.DataImport{}
 		for _, imp := range instT.Imports.Data {
 			_, ok := o.Inst.Imports[imp.DataRef]
-			if ok {
+			if ok || !isOptionalParentImport(imp.DataRef, o.Inst.Blueprint.Info.Imports, false) {
 				imports = append(imports, imp)
 			}
 		}
@@ -112,6 +112,24 @@ func (o *Operation) Ensure(ctx context.Context) error {
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		"InstallationsInstalled", "All Installations are successfully installed")
 	return o.UpdateInstallationStatus(ctx, inst, inst.Status.Phase, cond)
+}
+
+// isOptionalParentImport returns true if the specified import data reference
+// - exists in the parents blueprint (= in the given import definition list) AND
+//   - is optional (required: false) OR
+//	 - is a conditional import
+func isOptionalParentImport(impRef string, impDefs lsv1alpha1.ImportDefinitionList, isConditional bool) bool {
+	for _, imp := range impDefs {
+		if imp.Name == impRef {
+			return isConditional || (imp.Required != nil && !*imp.Required)
+		}
+		if imp.ConditionalImports != nil && len(imp.ConditionalImports) > 0 {
+			if ok := isOptionalParentImport(impRef, imp.ConditionalImports, true); ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // GetSubInstallations returns a map of all subinstallations indexed by the unique blueprint ref name.

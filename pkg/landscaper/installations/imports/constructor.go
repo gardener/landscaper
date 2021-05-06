@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/yaml"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -36,7 +37,6 @@ func NewConstructor(op *installations.Operation) *Constructor {
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) error {
 	var (
 		fldPath = field.NewPath(inst.Info.Name)
-		imports = make(map[string]interface{})
 	)
 
 	// read imports and construct internal templating imports
@@ -55,7 +55,20 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	}
 
 	// add additional imports and targets
-	for _, def := range inst.Blueprint.Info.Imports {
+	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, templatedDataMappings, fldPath)
+	if err != nil {
+		return err
+	}
+
+	inst.SetImports(imports)
+	return nil
+}
+
+// constructImports is an auxiliary function that can be called in a recursive manner to traverse the tree of conditional imports
+func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionList, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target, templatedDataMappings map[string]interface{}, fldPath *field.Path) (map[string]interface{}, error) {
+	imports := map[string]interface{}{}
+	for _, def := range importList {
+		var err error
 		defPath := fldPath.Child(def.Name)
 		if def.Schema != nil {
 			if val, ok := templatedDataMappings[def.Name]; ok {
@@ -67,10 +80,20 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
 			}
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, imports[def.Name]); err != nil {
-				return installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
+				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
+			}
+			if def.ConditionalImports != nil && len(def.ConditionalImports) > 0 {
+				// recursively check conditional imports
+				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, templatedDataMappings, defPath)
+				if err != nil {
+					return nil, err
+				}
+				for k, v := range conditionalImports {
+					imports[k] = v
+				}
 			}
 			continue
 		}
@@ -80,7 +103,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 			} else if val, ok := importedTargets[def.Name]; ok {
 				imports[def.Name], err = val.GetData()
 				if err != nil {
-					return installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
 				}
 			}
 			data, ok := imports[def.Name]
@@ -88,23 +111,22 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
 			}
 
 			var targetType string
 			if err := jsonpath.GetValue(".spec.type", data, &targetType); err != nil {
-				return installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: exported target does not match the expected target template schema", defPath.String())
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: exported target does not match the expected target template schema", defPath.String())
 			}
 			if def.TargetType != targetType {
-				return installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: exported target type is %s but expected %s", defPath.String(), targetType, def.TargetType)
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: exported target type is %s but expected %s", defPath.String(), targetType, def.TargetType)
 			}
 			continue
 		}
-		return errors.New("neither a target nor a schema is defined")
+		return nil, errors.New("neither a target nor a schema is defined")
 	}
 
-	inst.SetImports(imports)
-	return nil
+	return imports, nil
 }
 
 func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target) (map[string]interface{}, error) {

@@ -114,6 +114,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":           schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":              schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.valueRefJSON":                            schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":             schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":             schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":           schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
@@ -4539,6 +4540,26 @@ func schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref common.
 				Required: []string{"componentName", "resourceName", "version"},
 			},
 		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "valueRefJSON is a helper struct to decode json into a secret ref object.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
 	}
 }
 

@@ -124,7 +124,8 @@ func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Insta
 
 // GetImportDefinition return the import for a given key
 func (i *Installation) GetImportDefinition(key string) (lsv1alpha1.ImportDefinition, error) {
-	for _, def := range i.Blueprint.Info.Imports {
+	imports := getFlattenedImports(i.Blueprint.Info.Imports)
+	for _, def := range imports {
 		if def.Name == key {
 			return def, nil
 		}
@@ -140,4 +141,16 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.ExportDefinit
 		}
 	}
 	return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
+}
+
+// getFlattenedImports is an auxiliary method that flattens the tree of conditional imports into a list
+func getFlattenedImports(importList lsv1alpha1.ImportDefinitionList) lsv1alpha1.ImportDefinitionList {
+	res := lsv1alpha1.ImportDefinitionList{}
+	for _, def := range importList {
+		res = append(res, def)
+		if def.ConditionalImports != nil && len(def.ConditionalImports) > 0 {
+			res = append(res, getFlattenedImports(def.ConditionalImports)...)
+		}
+	}
+	return res
 }
