@@ -10,8 +10,9 @@ set -o pipefail
 
 SOURCE_PATH="$(dirname $0)/.."
 VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
+COMMIT_SHA="$(git --git-dir ${SOURCE_PATH}/.git rev-parse HEAD)"
 
-printf "> Building components with version ${VERSION}\n"
+printf "> Building components with version ${VERSION} - ${COMMIT_SHA}\n"
 
 REPO_CTX="${CURRENT_COMPONENT_REPOSITORY}"
 
@@ -27,7 +28,9 @@ function buildComponentArchive() {
     --component-name=github.com/gardener/landscaper/${COMPONENT_NAME} \
     --component-version=${VERSION} \
     --repo-ctx=${REPO_CTX} \
+    -s ${SOURCE_PATH}/.landscaper/sources.yaml \
     -r ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml \
+    COMMIT_SHA=${COMMIT_SHA} \
     VERSION=${VERSION}
 }
 
