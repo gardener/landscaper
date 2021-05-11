@@ -78,7 +78,9 @@ var _ = g.Describe("helper", func() {
 			Expect(kubeClient.Create(ctx, data)).To(Succeed())
 
 			inst := &Installation{
-				Info: &lsv1alpha1.Installation{},
+				InstallationBase: InstallationBase{
+					Info: &lsv1alpha1.Installation{},
+				},
 			}
 			inst.Info.Namespace = data.Namespace
 			do, owner, err := GetDataImport(ctx, kubeClient, "", inst, lsv1alpha1.DataImport{
@@ -95,7 +97,9 @@ var _ = g.Describe("helper", func() {
 			defer ctx.Done()
 
 			inst := &Installation{
-				Info: &lsv1alpha1.Installation{},
+				InstallationBase: InstallationBase{
+					Info: &lsv1alpha1.Installation{},
+				},
 			}
 			inst.Info.Namespace = "default"
 			_, _, err := GetDataImport(ctx, kubeClient, "", inst, lsv1alpha1.DataImport{
