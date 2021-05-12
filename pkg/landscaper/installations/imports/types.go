@@ -14,7 +14,7 @@ type Validator struct {
 	*installations.Operation
 
 	parent   *installations.Installation
-	siblings []*installations.Installation
+	siblings []installations.InstallationBaseInterface
 }
 
 // Constructor is a struct that contains all values
@@ -25,5 +25,5 @@ type Constructor struct {
 	validator *Validator
 
 	parent   *installations.Installation
-	siblings []*installations.Installation
+	siblings []installations.InstallationBaseInterface
 }

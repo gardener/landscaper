@@ -35,7 +35,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 // The imported data is added to installation resource.
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) error {
 	var (
-		fldPath = field.NewPath(inst.Info.Name)
+		fldPath = field.NewPath(inst.GetInfo().Name)
 		imports = make(map[string]interface{})
 	)
 
@@ -103,7 +103,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 		return errors.New("neither a target nor a schema is defined")
 	}
 
-	inst.Imports = imports
+	inst.SetImports(imports)
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 	}
 
 	values := make(map[string]interface{})
-	for key, dataMapping := range c.Inst.Info.Spec.ImportDataMappings {
+	for key, dataMapping := range c.Inst.GetInfo().Spec.ImportDataMappings {
 		impPath := fldPath.Child(key)
 
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)

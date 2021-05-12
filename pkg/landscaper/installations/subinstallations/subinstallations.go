@@ -45,7 +45,7 @@ func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha
 // Ensure ensures that all referenced definitions are mapped to a sub-installation.
 func (o *Operation) Ensure(ctx context.Context) error {
 	var (
-		inst = o.Inst.Info
+		inst = o.Inst.GetInfo()
 		cond = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 	)
 
@@ -124,7 +124,7 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 		name, ok := inst.Annotations[lsv1alpha1.SubinstallationNameAnnotation]
 		if !ok {
 			// todo: remove after some deprecation period.
-			name, ok = getSubinstallationNameByReference(o.Inst.Info.Status.InstallationReferences, inst.Namespace, inst.Name)
+			name, ok = getSubinstallationNameByReference(o.Inst.GetInfo().Status.InstallationReferences, inst.Namespace, inst.Name)
 			if !ok {
 				err := fmt.Errorf("dangling installation found %s", inst.Name)
 				return nil, o.NewError(err, "DanglingSubinstallation", err.Error())
@@ -149,7 +149,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
 	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
 	var (
-		inst    = o.Inst.Info
+		inst    = o.Inst.GetInfo()
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
 		deleted = false
 	)
@@ -183,12 +183,12 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 	if len(o.Inst.Blueprint.Info.SubinstallationExecutions) != 0 {
 		templateStateHandler := template.KubernetesStateHandler{
 			KubeClient: o.Client(),
-			Inst:       o.Inst.Info,
+			Inst:       o.Inst.GetInfo(),
 		}
 		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-			Imports:              o.Inst.Imports,
-			Installation:         o.Inst.Info,
+			Imports:              o.Inst.GetImports(),
+			Installation:         o.Inst.GetInfo(),
 			Blueprint:            o.Inst.Blueprint,
 			ComponentDescriptor:  o.ComponentDescriptor,
 			ComponentDescriptors: o.ResolvedComponentDescriptorList,
@@ -218,7 +218,7 @@ func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 
 	for _, subInstTmpl := range installationTmpl {
 		subInst := subInstallations[subInstTmpl.Name]
-		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.Info, subInstTmpl, subInst)
+		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.GetInfo(), subInstTmpl, subInst)
 		if err != nil {
 			err = fmt.Errorf("unable to create installation for %s: %w", subInstTmpl.Name, err)
 			return o.NewError(err, "CreateOrUpdateInstallation", err.Error())
