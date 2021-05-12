@@ -60,8 +60,8 @@ func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, 
 }
 
 // CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
-func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) ([]InstallationBaseInterface, error) {
-	internalInstallations := make([]InstallationBaseInterface, len(installations))
+func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) ([]*InstallationBase, error) {
+	internalInstallations := make([]*InstallationBase, len(installations))
 	for i, inst := range installations {
 		inInst := CreateInternalInstallationBase(inst)
 		internalInstallations[i] = inInst
@@ -103,12 +103,12 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 }
 
 // CreateInternalInstallationBase creates an internal installation base for an Installation
-func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) InstallationBaseInterface {
+func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
 	return NewInstallationBase(inst)
 }
 
 // GetDataImport fetches the data import from the cluster.
-func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst InstallationBaseInterface,
+func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst *InstallationBase,
 	dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
 	var rawDataObject *lsv1alpha1.DataObject
 	// get deploy item from current context

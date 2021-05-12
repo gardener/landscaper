@@ -13,17 +13,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
-type InstallationBaseInterface interface {
-	ImportStatus() *ImportStatus
-	IsExportingData(name string) bool
-	IsExportingTarget(name string) bool
-	IsImportingData(name string) bool
-	MergeConditions(conditions ...lsv1alpha1.Condition)
-	GetInfo() *lsv1alpha1.Installation
-	GetImports() map[string]interface{}
-	SetImports(map[string]interface{})
-}
-
 // Installation is the internal representation of an installation without resolved blueprint.
 type InstallationBase struct {
 	Imports map[string]interface{}
@@ -33,7 +22,7 @@ type InstallationBase struct {
 }
 
 // New creates a new internal representation of an installation without blueprint
-func NewInstallationBase(inst *lsv1alpha1.Installation) InstallationBaseInterface {
+func NewInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
 	internalInst := &InstallationBase{
 		Info: inst,
 		importsStatus: ImportStatus{
@@ -113,15 +102,15 @@ func (i *InstallationBase) MergeConditions(conditions ...lsv1alpha1.Condition) {
 
 // Installation is the internal representation of a installation
 type Installation struct {
-	InstallationBaseInterface
+	*InstallationBase
 	Blueprint *blueprints.Blueprint
 }
 
 // New creates a new internal representation of an installation with blueprint
 func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
-		InstallationBaseInterface: NewInstallationBase(inst),
-		Blueprint:                 blueprint,
+		InstallationBase: NewInstallationBase(inst),
+		Blueprint:        blueprint,
 	}
 
 	return internalInst, nil
