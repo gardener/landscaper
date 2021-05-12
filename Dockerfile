@@ -13,10 +13,9 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM eu.gcr.io/gardenlinux/gardenlinux:184.0 AS base
+FROM alpine:3.13.5 AS base
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --yes -o Dpkg::Options::="--force-confnew" install ca-certificates \
-    && rm -rf /var/lib/apt /var/cache/apt
+RUN apk add --no-cache ca-certificates
 
 #### Landscaper Controller ####
 FROM base as landscaper-controller
