@@ -20,7 +20,7 @@ mkdir -p /tm
     --tm-kubeconfig-path=/tm/kubeconfig \
     --no-execution-group \
     --testrun-prefix landscaper-e2e- \
-    --timeout=1800 \
+    --timeout=3700 \
     --testruns-chart-path=.ci/testruns/integration-test \
     --set imageTag="$(cat ./VERSION)" \
     --set revision="$(git rev-parse HEAD)"
