@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: root-cond
+  local/version: 1.0.0
+
+imports:
+- name: rootcond.foo
+  required: false
+  schema:
+    type: string
+  imports:
+  - name: rootcond.bar
+    schema:
+      type: string
+
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: subinst-import
+  imports:
+    data:
+    - name: internalFoo
+      dataRef: rootcond.foo
+    - name: internalBar
+      dataRef: rootcond.bar
+    - name: internalBaz
+      dataRef: exp.baz
+  blueprint:
+    filesystem:
+      blueprint.yaml: |
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+        deployExecutions:
+        - type: GoTemplate
+          template: |
+            deployItems:
+            - name: submain-import
+              type: landscaper.gardener.cloud/mock
+              config:
+                apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                kind: ProviderConfiguration
+                providerStatus:
+                  apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderStatus
+        imports:
+        - name: internalFoo
+          required: false
+          schema:
+            type: string
+        - name: internalBar
+          required: false
+          schema:
+            type: string
+        - name: internalBaz
+          required: false
+          schema:
+            type: string
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: subinst-export
+  exports:
+    data:
+    - name: internalBaz
+      dataRef: exp.baz
+  blueprint:
+    filesystem:
+      blueprint.yaml: |
+        apiVersion: landscaper.gardener.cloud/v1alpha1
+        kind: Blueprint
+        deployExecutions:
+        - type: GoTemplate
+          template: |
+            deployItems:
+            - name: submain-export
+              type: landscaper.gardener.cloud/mock
+              config:
+                apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                kind: ProviderConfiguration
+                providerStatus:
+                  apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderStatus
+        exportExecutions:
+        - type: GoTemplate
+          template: |
+            exports:
+              internalBaz: baz
+        exports:
+        - name: internalBaz
+          schema:
+            type: string
