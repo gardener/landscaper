@@ -48,16 +48,16 @@ func New(op *installations.Operation) *ExecutionOperation {
 }
 
 func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInfo().Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
 		KubeClient: o.Client(),
-		Inst:       inst.Info,
+		Inst:       inst.GetInfo(),
 	}
 	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 	executions, err := tmpl.TemplateDeployExecutions(template.DeployExecutionOptions{
-		Imports:              inst.Imports,
-		Installation:         inst.Info,
+		Imports:              inst.GetImports(),
+		Installation:         inst.GetInfo(),
 		Blueprint:            inst.Blueprint,
 		ComponentDescriptor:  o.ComponentDescriptor,
 		ComponentDescriptors: o.ResolvedComponentDescriptorList,
@@ -73,34 +73,34 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 
 	exec := &lsv1alpha1.Execution{}
-	exec.Name = inst.Info.Name
-	exec.Namespace = inst.Info.Namespace
-	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
+	exec.Name = inst.GetInfo().Name
+	exec.Namespace = inst.GetInfo().Namespace
+	exec.Spec.RegistryPullSecrets = inst.GetInfo().Spec.RegistryPullSecrets
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
 		exec.Spec.DeployItems = executions
 
-		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		if lsv1alpha1helper.HasOperation(inst.GetInfo().ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
 		} else {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		}
 
-		if err := controllerutil.SetControllerReference(inst.Info, exec, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetControllerReference(inst.GetInfo(), exec, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return nil
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CreateOrUpdateExecutionReason, "Unable to create or update execution")
-		_ = o.UpdateInstallationStatus(ctx, inst.Info, lsv1alpha1.ComponentPhaseProgressing, cond)
+		_ = o.UpdateInstallationStatus(ctx, inst.GetInfo(), lsv1alpha1.ComponentPhaseProgressing, cond)
 		return err
 	}
 
-	inst.Info.Status.ExecutionReference = &lsv1alpha1.ObjectReference{
+	inst.GetInfo().Status.ExecutionReference = &lsv1alpha1.ObjectReference{
 		Name:      exec.Name,
 		Namespace: exec.Namespace,
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
-	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
+	return o.UpdateInstallationStatus(ctx, inst.GetInfo(), inst.GetInfo().Status.Phase, cond)
 }

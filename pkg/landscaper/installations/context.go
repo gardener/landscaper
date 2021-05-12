@@ -26,7 +26,7 @@ type Context struct {
 
 	// Siblings are installations with the same parent.
 	// The installation has access to the exports of theses components
-	Siblings []*Installation
+	Siblings []InstallationBaseInterface
 }
 
 // SetInstallationContext determines the current context and updates the operation context.
@@ -43,13 +43,15 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.
 func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context, error) {
-	if IsRootInstallation(o.Inst.Info) {
+	if IsRootInstallation(o.Inst.GetInfo()) {
 		// get all root object as siblings
-		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool { return inst.Name == o.Inst.Info.Name }, client.InNamespace(o.Inst.Info.Namespace))
+		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool {
+			return inst.Name == o.Inst.GetInfo().Name
+		}, client.InNamespace(o.Inst.GetInfo().Namespace))
 		if err != nil {
 			return nil, err
 		}
-		intInstallations, err := CreateInternalInstallations(ctx, o, rootInstallations...)
+		intInstallations, err := CreateInternalInstallationBases(rootInstallations...)
 		if err != nil {
 			return nil, err
 		}
@@ -64,8 +66,8 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 
 	// siblings are all encompassed installation of the parent installation
 	subInstallations := make([]*lsv1alpha1.Installation, 0)
-	for _, installationRef := range parent.Info.Status.InstallationReferences {
-		if installationRef.Reference.Name == o.Inst.Info.Name {
+	for _, installationRef := range parent.GetInfo().Status.InstallationReferences {
+		if installationRef.Reference.Name == o.Inst.GetInfo().Name {
 			continue
 		}
 		subInst := &lsv1alpha1.Installation{}
@@ -75,13 +77,13 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	intSubInstallations, err := CreateInternalInstallations(ctx, o, subInstallations...)
+	intSubInstallations, err := CreateInternalInstallationBases(subInstallations...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Context{
-		Name:     lsv1alpha1helper.DataObjectSourceFromInstallation(parent.Info),
+		Name:     lsv1alpha1helper.DataObjectSourceFromInstallation(parent.GetInfo()),
 		Parent:   parent,
 		Siblings: intSubInstallations,
 	}, nil
@@ -89,14 +91,14 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 
 // GetParent returns the parent of a installation.
 // It returns nil if the installation has no parent
-func GetParent(ctx context.Context, op operation.Interface, inst *Installation) (*Installation, error) {
-	if IsRootInstallation(inst.Info) {
+func GetParent(ctx context.Context, op operation.Interface, inst InstallationBaseInterface) (*Installation, error) {
+	if IsRootInstallation(inst.GetInfo()) {
 		return nil, nil
 	}
 	// get the parent by owner reference
-	parentName := GetParentInstallationName(inst.Info)
+	parentName := GetParentInstallationName(inst.GetInfo())
 	parent := &lsv1alpha1.Installation{}
-	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
+	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.GetInfo().Namespace}, parent); err != nil {
 		return nil, err
 	}
 	intParent, err := CreateInternalInstallation(ctx, op, parent)
@@ -104,6 +106,22 @@ func GetParent(ctx context.Context, op operation.Interface, inst *Installation) 
 		return nil, err
 	}
 	return intParent, err
+}
+
+// GetParentBase returns the parent of an installation base.
+// It returns nil if the installation has no parent
+func GetParentBase(ctx context.Context, op operation.Interface, inst InstallationBaseInterface) (InstallationBaseInterface, error) {
+	if IsRootInstallation(inst.GetInfo()) {
+		return nil, nil
+	}
+	// get the parent by owner reference
+	parentName := GetParentInstallationName(inst.GetInfo())
+	parent := &lsv1alpha1.Installation{}
+	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.GetInfo().Namespace}, parent); err != nil {
+		return nil, err
+	}
+	intParent := CreateInternalInstallationBase(parent)
+	return intParent, nil
 }
 
 // IsRoot returns if the current component is a root component

@@ -42,7 +42,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 // Construct loads the exported data from the execution and the subinstallations.
 func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, []*dataobjects.Target, error) {
 	var (
-		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
+		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.GetInfo().Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
 			"deployitems": struct{}{},
 			"dataobjects": struct{}{},
@@ -71,7 +71,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 
 	stateHdlr := template.KubernetesStateHandler{
 		KubeClient: c.Client(),
-		Inst:       c.Inst.Info,
+		Inst:       c.Inst.GetInfo(),
 	}
 	exports, err := template.New(gotemplate.New(c.BlobResolver, stateHdlr), spiff.New(stateHdlr)).
 		TemplateExportExecutions(c.Inst.Blueprint, internalExports)
@@ -104,9 +104,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// Resolve export mapping for all internalExports
-	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.Info.Spec.Exports.Data))
+	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.GetInfo().Spec.Exports.Data))
 	dataExportsPath := fldPath.Child("exports").Child("data")
-	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
+	for i, dataExport := range c.Inst.GetInfo().Spec.Exports.Data {
 		dataExportPath := dataExportsPath.Child(dataExport.Name)
 		data, ok := exports[dataExport.Name]
 		if !ok {
@@ -119,9 +119,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		dataObjects[i] = do
 	}
 
-	targets := make([]*dataobjects.Target, len(c.Inst.Info.Spec.Exports.Targets))
+	targets := make([]*dataobjects.Target, len(c.Inst.GetInfo().Spec.Exports.Targets))
 	targetExportsPath := fldPath.Child("exports").Child("targets")
-	for i, targetExport := range c.Inst.Info.Spec.Exports.Targets {
+	for i, targetExport := range c.Inst.GetInfo().Spec.Exports.Targets {
 		targetExportPath := targetExportsPath.Child(targetExport.Name)
 		data, ok := exports[targetExport.Name]
 		if !ok {
@@ -140,9 +140,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 }
 
 func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[string]interface{}, error) {
-	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.Info)
+	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInfo())
 	dataObjectList := &lsv1alpha1.DataObjectList{}
-	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := c.Client().List(ctx, dataObjectList, client.InNamespace(c.Inst.GetInfo().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 
@@ -159,9 +159,9 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 }
 
 func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string]interface{}, error) {
-	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.Info)
+	installationContext := lsv1alpha1helper.DataObjectSourceFromInstallation(c.Inst.GetInfo())
 	targetList := &lsv1alpha1.TargetList{}
-	if err := c.Client().List(ctx, targetList, client.InNamespace(c.Inst.Info.Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
+	if err := c.Client().List(ctx, targetList, client.InNamespace(c.Inst.GetInfo().Namespace), client.MatchingLabels{lsv1alpha1.DataObjectContextLabel: installationContext}); err != nil {
 		return nil, err
 	}
 

@@ -132,7 +132,7 @@ func (o *Operation) ValidateSubinstallations(installationTmpl []*lsv1alpha1.Inst
 
 // CombinedState returns the combined state of all subinstallations
 func (o *Operation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ComponentInstallationPhase, error) {
-	subinsts, err := o.GetSubInstallations(ctx, inst.Info)
+	subinsts, err := o.GetSubInstallations(ctx, inst.GetInfo())
 	if err != nil {
 		return "", err
 	}

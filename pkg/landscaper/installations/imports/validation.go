@@ -29,10 +29,10 @@ func NewValidator(op *installations.Operation) *Validator {
 // OutdatedImports validates whether a imported data object or target is outdated.
 func (v *Validator) OutdatedImports(ctx context.Context) (bool, error) {
 	const OutdatedImportsReason = "OutdatedImports"
-	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", v.Inst.Info.Name))
-	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", v.Inst.GetInfo().Name))
+	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.GetInfo().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
-	for _, dataImport := range v.Inst.Info.Spec.Imports.Data {
+	for _, dataImport := range v.Inst.GetInfo().Spec.Imports.Data {
 		impPath := fldPath.Child(dataImport.Name)
 		outdated, err := v.checkDataImportIsOutdated(ctx, impPath, v.Inst, dataImport)
 		if err != nil {
@@ -49,7 +49,7 @@ func (v *Validator) OutdatedImports(ctx context.Context) (bool, error) {
 		}
 	}
 
-	for _, targetImport := range v.Inst.Info.Spec.Imports.Targets {
+	for _, targetImport := range v.Inst.GetInfo().Spec.Imports.Targets {
 		impPath := fldPath.Child(targetImport.Name)
 		outdated, err := v.checkTargetImportIsOutdated(ctx, impPath, v.Inst, targetImport)
 		if err != nil {
@@ -75,7 +75,7 @@ func (v *Validator) OutdatedImports(ctx context.Context) (bool, error) {
 // It traverses through all dependent siblings and all dependent siblings of its parents.
 func (v *Validator) CheckDependentInstallations(ctx context.Context) (bool, error) {
 	const CheckSiblingDependentsOfParentsReason = "CheckSiblingDependentsOfParents"
-	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.GetInfo().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	// check if parent has sibling installation dependencies that are not finished yet
 	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
@@ -97,10 +97,10 @@ func (v *Validator) CheckDependentInstallations(ctx context.Context) (bool, erro
 // ImportsSatisfied validates if all imports are satisfied with the correct version.
 func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.Installation) error {
 	const ImportsSatisfiedReason = "ImportsSatisfied"
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
-	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.Info.Name))
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.GetInfo().Status.Conditions, lsv1alpha1.ValidateImportsCondition)
+	fldPath := field.NewPath(fmt.Sprintf("(Inst %s)", inst.GetInfo().Name))
 
-	for _, dataImport := range inst.Info.Spec.Imports.Data {
+	for _, dataImport := range inst.GetInfo().Spec.Imports.Data {
 		impPath := fldPath.Child(dataImport.Name)
 		err := v.checkDataImportIsSatisfied(ctx, impPath, inst, dataImport)
 		if err != nil {
@@ -111,7 +111,7 @@ func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.In
 		}
 	}
 
-	for _, targetImport := range inst.Info.Spec.Imports.Targets {
+	for _, targetImport := range inst.GetInfo().Spec.Imports.Targets {
 		impPath := fldPath.Child(targetImport.Name)
 		err := v.checkTargetImportIsSatisfied(ctx, impPath, inst, targetImport)
 		if err != nil {
@@ -148,7 +148,7 @@ func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *fiel
 		return false, nil
 	}
 
-	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}
 	src := &lsv1alpha1.Installation{}
 	if err := v.Client().Get(ctx, ref.NamespacedName(), src); err != nil {
 		return false, fmt.Errorf("%s: unable to get source installation %s for '%s': %w", fldPath.String(), ref.NamespacedName().String(), dataImport.Name, err)
@@ -179,7 +179,7 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 		return false, nil
 	}
 
-	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}
 	src := &lsv1alpha1.Installation{}
 	if err := v.Client().Get(ctx, ref.NamespacedName(), src); err != nil {
 		return false, fmt.Errorf("%s: unable to get source installation %s for '%s': %w", fldPath.String(), ref.NamespacedName().String(), targetImport.Name, err)
@@ -204,10 +204,10 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 	if owner.Kind != "Installation" {
 		return nil
 	}
-	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}
 
 	// check if the data object comes from the parent
-	if v.parent != nil && lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
+	if v.parent != nil && lsv1alpha1helper.ReferenceIsObject(ref, v.parent.GetInfo()) {
 		return v.checkStateForParentImport(fldPath, dataImport.DataRef)
 	}
 
@@ -229,10 +229,10 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 	if owner.Kind != "Installation" {
 		return nil
 	}
-	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}
+	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}
 
 	// check if the data object comes from the parent
-	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.Info) {
+	if lsv1alpha1helper.ReferenceIsObject(ref, v.parent.GetInfo()) {
 		return v.checkStateForParentImport(fldPath, targetImport.Target)
 	}
 
@@ -247,7 +247,7 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName st
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
 	// parent has to be progressing
-	if v.parent.Info.Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
+	if v.parent.GetInfo().Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
 	}
 	return nil
@@ -264,7 +264,7 @@ func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath 
 		return installations.NewImportNotFoundErrorf(nil, "%s: export in sibling not found", fldPath.String())
 	}
 
-	if sibling.Info.Status.Phase != lsv1alpha1.ComponentPhaseSucceeded {
+	if sibling.GetInfo().Status.Phase != lsv1alpha1.ComponentPhaseSucceeded {
 		return installations.NewNotCompletedDependentsErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 
@@ -281,9 +281,9 @@ func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath 
 	return nil
 }
 
-func (v *Validator) getSiblingForObjectReference(ref lsv1alpha1.ObjectReference) *installations.Installation {
+func (v *Validator) getSiblingForObjectReference(ref lsv1alpha1.ObjectReference) installations.InstallationBaseInterface {
 	for _, sibling := range v.siblings {
-		if lsv1alpha1helper.ReferenceIsObject(ref, sibling.Info) {
+		if lsv1alpha1helper.ReferenceIsObject(ref, sibling.GetInfo()) {
 			return sibling
 		}
 	}

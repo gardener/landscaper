@@ -76,7 +76,7 @@ func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.I
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.GetInfo())
 	if err != nil {
 		return err
 	}
@@ -97,8 +97,8 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 // Log returns a modified logger for the installation.
 func (o *Operation) Log() logr.Logger {
 	return o.Interface.Log().WithValues("installation", types.NamespacedName{
-		Namespace: o.Inst.Info.Namespace,
-		Name:      o.Inst.Info.Name,
+		Namespace: o.Inst.GetInfo().Namespace,
+		Name:      o.Inst.GetInfo().Name,
 	})
 }
 
@@ -130,8 +130,8 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 func (o *Operation) ListSubinstallations(ctx context.Context) ([]*lsv1alpha1.Installation, error) {
 	installationList := &lsv1alpha1.InstallationList{}
 
-	err := o.Client().List(ctx, installationList, client.InNamespace(o.Inst.Info.Namespace), client.MatchingLabels{
-		lsv1alpha1.EncompassedByLabel: o.Inst.Info.Name,
+	err := o.Client().List(ctx, installationList, client.InNamespace(o.Inst.GetInfo().Namespace), client.MatchingLabels{
+		lsv1alpha1.EncompassedByLabel: o.Inst.GetInfo().Name,
 	})
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alph
 // It also updates the imports.
 func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dataobjects.DataObject, error) {
 	dataObjects := map[string]*dataobjects.DataObject{}
-	for _, def := range o.Inst.Info.Spec.Imports.Data {
+	for _, def := range o.Inst.GetInfo().Spec.Imports.Data {
 
 		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, o.Inst, def)
 		if err != nil {
@@ -177,7 +177,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 		if owner != nil && owner.Kind == "Installation" {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
-				Namespace: o.Inst.Info.Namespace,
+				Namespace: o.Inst.GetInfo().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
 			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
@@ -211,7 +211,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 // GetImportedTargets returns all imported targets of the installation.
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
 	targets := map[string]*dataobjects.Target{}
-	for _, def := range o.Inst.Info.Spec.Imports.Targets {
+	for _, def := range o.Inst.GetInfo().Spec.Imports.Targets {
 		target, _, err := GetTargetImport(ctx, o, o.Context().Name, o.Inst, def.Target)
 		if err != nil {
 			return nil, err
@@ -226,7 +226,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 		if owner != nil && owner.Kind == "Installation" {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
-				Namespace: o.Inst.Info.Namespace,
+				Namespace: o.Inst.GetInfo().Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
 			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
@@ -317,12 +317,12 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 //		return o.staticData, nil
 //	}
 //
-//	if len(o.Inst.Info.Spec.StaticData) == 0 {
+//	if len(o.Inst.GetInfo().Spec.StaticData) == 0 {
 //		return nil, nil
 //	}
 //
 //	data := make(map[string]interface{})
-//	for _, source := range o.Inst.Info.Spec.StaticData {
+//	for _, source := range o.Inst.GetInfo().Spec.StaticData {
 //		if source.Value != nil {
 //			var values map[string]interface{}
 //			if err := yaml.Unmarshal(source.Value, &values); err != nil {
@@ -337,7 +337,7 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 //		}
 //
 //		if source.ValueFrom.SecretKeyRef != nil {
-//			values, err := GetDataFromSecretKeyRef(ctx, o.Client(), source.ValueFrom.SecretKeyRef, o.Inst.Info.Namespace)
+//			values, err := GetDataFromSecretKeyRef(ctx, o.Client(), source.ValueFrom.SecretKeyRef, o.Inst.GetInfo().Namespace)
 //			if err != nil {
 //				return nil, err
 //			}
@@ -345,7 +345,7 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 //			continue
 //		}
 //		if source.ValueFrom.SecretLabelSelector != nil {
-//			values, err := GetDataFromSecretLabelSelectorRef(ctx, o.Client(), source.ValueFrom.SecretLabelSelector, o.Inst.Info.Namespace)
+//			values, err := GetDataFromSecretLabelSelectorRef(ctx, o.Client(), source.ValueFrom.SecretLabelSelector, o.Inst.GetInfo().Namespace)
 //			if err != nil {
 //				return nil, err
 //			}
@@ -365,9 +365,9 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 		}
 
 		// todo: maybe use patch
-		metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		if err := o.Client().Update(ctx, sibling.Info); err != nil {
-			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
+		metav1.SetMetaDataAnnotation(&sibling.GetInfo().ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		if err := o.Client().Update(ctx, sibling.GetInfo()); err != nil {
+			return errors.Wrapf(err, "unable to trigger installation %s", sibling.GetInfo().Name)
 		}
 	}
 	return nil
@@ -378,29 +378,29 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
-	o.Inst.Info.Status.ConfigGeneration = ""
-	return o.Client().Status().Update(ctx, o.Inst.Info)
+	o.Inst.GetInfo().Status.ConfigGeneration = ""
+	return o.Client().Status().Update(ctx, o.Inst.GetInfo())
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
 func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*dataobjects.DataObject, targetExports []*dataobjects.Target) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateExportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInfo().Status.Conditions, lsv1alpha1.CreateExportsCondition)
 
-	configGen, err := CreateGenerationHash(o.Inst.Info)
+	configGen, err := CreateGenerationHash(o.Inst.GetInfo())
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateConfigHash",
 				fmt.Sprintf("unable to create config hash: %s", err.Error())))
 		return err
 	}
 
-	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInfo())
 	for _, do := range dataExports {
-		do = do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		do = do.SetNamespace(o.Inst.GetInfo().Namespace).SetSource(src).SetContext(o.InstallationContextName())
 		raw, err := do.Build()
 		if err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateDataObjects",
 					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
@@ -409,12 +409,12 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInfo(), raw, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return do.Apply(raw)
 		}); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateDataObjects",
 					fmt.Sprintf("unable to create data object for export %s", do.Metadata.Key)))
 			return fmt.Errorf("unable to create or update data object %s for export %s: %w", raw.Name, do.Metadata.Key, err)
@@ -422,10 +422,10 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		target = target.SetNamespace(o.Inst.GetInfo().Namespace).SetSource(src).SetContext(o.InstallationContextName())
 		raw, err := target.Build()
 		if err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateTargets",
 					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
@@ -434,27 +434,27 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
+			if err := controllerutil.SetOwnerReference(o.Inst.GetInfo(), raw, api.LandscaperScheme); err != nil {
 				return err
 			}
 			return target.Apply(raw)
 		}); err != nil {
-			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse, "CreateTargets",
 					fmt.Sprintf("unable to create target for export %s", target.Metadata.Key)))
 			return fmt.Errorf("unable to create or update target %s for export %s: %w", raw.Name, target.Metadata.Key, err)
 		}
 	}
 
-	o.Inst.Info.Status.ConfigGeneration = configGen
+	o.Inst.GetInfo().Status.ConfigGeneration = configGen
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue, "DataObjectsCreated", "DataObjects successfully created")
-	return o.UpdateInstallationStatus(ctx, o.Inst.Info, o.Inst.Info.Status.Phase, cond)
+	return o.UpdateInstallationStatus(ctx, o.Inst.GetInfo(), o.Inst.GetInfo().Status.Phase, cond)
 }
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
 func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
-	importedValues := o.Inst.Imports
-	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
+	importedValues := o.Inst.GetImports()
+	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.GetInfo())
 	for _, importDef := range o.Inst.Blueprint.Info.Imports {
 		importData, ok := importedValues[importDef.Name]
 		if !ok {
@@ -480,19 +480,19 @@ func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
 }
 
 func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, importData interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInfo().Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	do := dataobjects.New().
-		SetNamespace(o.Inst.Info.Namespace).SetSource(src).
+		SetNamespace(o.Inst.GetInfo().Namespace).SetSource(src).
 		SetContext(src).
 		SetKey(importDef.Name).SetSourceType(lsv1alpha1.ImportDataObjectSourceType).
 		SetData(importData)
 	raw, err := do.Build()
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+		o.Inst.GetInfo().Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.GetInfo().Status.LastError,
 			"CreateDataObjects", fmt.Sprintf("unable to create dataobjects for import '%s'", importDef.Name),
 			err.Error())
 		return fmt.Errorf("unable to build data object for import '%s': %w", importDef.Name, err)
@@ -500,16 +500,16 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.GetInfo(), raw, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return do.Apply(raw)
 	}); err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+		o.Inst.GetInfo().Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.GetInfo().Status.LastError,
 			"CreateDatatObjects", fmt.Sprintf("unable to create data objects for import '%s'", importDef.Name),
 			err.Error())
 		return fmt.Errorf("unable to create or update data object '%s' for import '%s': %w", raw.Name, importDef.Name, err)
@@ -518,7 +518,7 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 }
 
 func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values interface{}) error {
-	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.GetInfo().Status.Conditions, lsv1alpha1.CreateImportsCondition)
 	data, err := json.Marshal(values)
 	if err != nil {
 		return err
@@ -531,18 +531,18 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	if err != nil {
 		return err
 	}
-	intTarget.SetNamespace(o.Inst.Info.Namespace).
+	intTarget.SetNamespace(o.Inst.GetInfo().Namespace).
 		SetContext(src).
 		SetKey(importDef.Name).
 		SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
 
 	target, err = intTarget.Build()
 	if err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+		o.Inst.GetInfo().Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.GetInfo().Status.LastError,
 			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
 			err.Error())
 		return fmt.Errorf("unable to build target for import '%s': %w", importDef.Name, err)
@@ -550,16 +550,16 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
-		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
+		if err := controllerutil.SetOwnerReference(o.Inst.GetInfo(), target, api.LandscaperScheme); err != nil {
 			return err
 		}
 		return intTarget.Apply(target)
 	}); err != nil {
-		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+		o.Inst.GetInfo().Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.GetInfo().Status.Conditions,
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.Info.Status.LastError,
+		o.Inst.GetInfo().Status.LastError = lsv1alpha1helper.UpdatedError(o.Inst.GetInfo().Status.LastError,
 			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
 			err.Error())
 		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
@@ -572,22 +572,22 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjects.DataObject, error) {
 	doName := lsv1alpha1helper.GenerateDataObjectName(o.context.Name, key)
 	rawDO := &lsv1alpha1.DataObject{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.GetInfo().Namespace), rawDO); err != nil {
 		return nil, err
 	}
 	return dataobjects.NewFromDataObject(rawDO)
 }
 
-func importsAnyExport(exporter, importer *Installation) bool {
-	for _, export := range exporter.Info.Spec.Exports.Data {
-		for _, def := range importer.Info.Spec.Imports.Data {
+func importsAnyExport(exporter *Installation, importer InstallationBaseInterface) bool {
+	for _, export := range exporter.GetInfo().Spec.Exports.Data {
+		for _, def := range importer.GetInfo().Spec.Imports.Data {
 			if def.DataRef == export.DataRef {
 				return true
 			}
 		}
 	}
-	for _, export := range exporter.Info.Spec.Exports.Targets {
-		for _, def := range importer.Info.Spec.Imports.Targets {
+	for _, export := range exporter.GetInfo().Spec.Exports.Targets {
+		for _, def := range importer.GetInfo().Spec.Imports.Targets {
 			if def.Target == export.Target {
 				return true
 			}

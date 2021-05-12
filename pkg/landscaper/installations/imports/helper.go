@@ -45,12 +45,13 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 }
 
 // CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed
-func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
+func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Operation,
+	inst installations.InstallationBaseInterface) (bool, error) {
 	if inst == nil {
 		return true, nil
 	}
 	// todo: add target support
-	for _, dataImport := range inst.Info.Spec.Imports.Data {
+	for _, dataImport := range inst.GetInfo().Spec.Imports.Data {
 		sourceRef, err := getImportSource(ctx, op, inst, dataImport)
 		if err != nil {
 			return false, err
@@ -60,15 +61,15 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 		}
 		// check if the import is imported from myself or the parent
 		// and continue if so as we have a different check for the parent
-		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.Info) {
+		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.GetInfo()) {
 			continue
 		}
 
-		parent, err := installations.GetParent(ctx, op, inst)
+		parent, err := installations.GetParentBase(ctx, op, inst)
 		if err != nil {
 			return false, err
 		}
-		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.Info) {
+		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.GetInfo()) {
 			continue
 		}
 
@@ -83,10 +84,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			return false, nil
 		}
 
-		intInst, err := installations.CreateInternalInstallation(ctx, op, inst)
-		if err != nil {
-			return false, err
-		}
+		intInst := installations.CreateInternalInstallationBase(inst)
 
 		isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
 		if err != nil {
@@ -101,7 +99,8 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 }
 
 // getImportSource returns a reference to the owner of a data import.
-func getImportSource(ctx context.Context, op *installations.Operation, inst *installations.Installation, dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
+func getImportSource(ctx context.Context, op *installations.Operation, inst installations.InstallationBaseInterface,
+	dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
 	status, err := inst.ImportStatus().GetData(dataImport.Name)
 	if err == nil && status.SourceRef != nil {
 		return status.SourceRef, nil
@@ -117,5 +116,5 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	if owner == nil || owner.Kind != "Installation" {
 		return nil, nil
 	}
-	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
+	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}, nil
 }

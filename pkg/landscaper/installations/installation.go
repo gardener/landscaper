@@ -13,16 +13,27 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
+type InstallationBaseInterface interface {
+	ImportStatus() *ImportStatus
+	IsExportingData(name string) bool
+	IsExportingTarget(name string) bool
+	IsImportingData(name string) bool
+	MergeConditions(conditions ...lsv1alpha1.Condition)
+	GetInfo() *lsv1alpha1.Installation
+	GetImports() map[string]interface{}
+	SetImports(map[string]interface{})
+}
+
+// Installation is the internal representation of an installation without resolved blueprint.
 type InstallationBase struct {
 	Imports map[string]interface{}
 	Info    *lsv1alpha1.Installation
-
 	// indexes the import state with from/to as key
 	importsStatus ImportStatus
 }
 
 // New creates a new internal representation of an installation without blueprint
-func NewInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
+func NewInstallationBase(inst *lsv1alpha1.Installation) InstallationBaseInterface {
 	internalInst := &InstallationBase{
 		Info: inst,
 		importsStatus: ImportStatus{
@@ -41,6 +52,18 @@ func NewInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
 // ImportStatus returns the internal representation of the internal import state
 func (i *InstallationBase) ImportStatus() *ImportStatus {
 	return &i.importsStatus
+}
+
+func (i *InstallationBase) GetImports() map[string]interface{} {
+	return i.Imports
+}
+
+func (i *InstallationBase) SetImports(imports map[string]interface{}) {
+	i.Imports = imports
+}
+
+func (i *InstallationBase) GetInfo() *lsv1alpha1.Installation {
+	return i.Info
 }
 
 // IsExportingData checks if the current component exports a data object with the given name.
@@ -90,15 +113,15 @@ func (i *InstallationBase) MergeConditions(conditions ...lsv1alpha1.Condition) {
 
 // Installation is the internal representation of a installation
 type Installation struct {
-	InstallationBase
+	InstallationBaseInterface
 	Blueprint *blueprints.Blueprint
 }
 
 // New creates a new internal representation of an installation with blueprint
 func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
-		InstallationBase: *NewInstallationBase(inst),
-		Blueprint:        blueprint,
+		InstallationBaseInterface: NewInstallationBase(inst),
+		Blueprint:                 blueprint,
 	}
 
 	return internalInst, nil

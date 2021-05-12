@@ -17,12 +17,12 @@ import (
 )
 
 func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ExecutionPhase, error) {
-	if inst.Info.Status.ExecutionReference == nil {
+	if inst.GetInfo().Status.ExecutionReference == nil {
 		return "", nil
 	}
 
 	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := o.Client().Get(ctx, inst.GetInfo().Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		return "", err
 	}
 
@@ -34,17 +34,17 @@ func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installati
 }
 
 func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installations.Installation) error {
-	if inst.Info.Status.ExecutionReference == nil {
+	if inst.GetInfo().Status.ExecutionReference == nil {
 		return nil
 	}
 
 	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := o.Client().Get(ctx, inst.GetInfo().Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		return err
 	}
 
 	if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseFailed
+		inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseFailed
 		return nil
 	}
 
@@ -54,7 +54,7 @@ func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installatio
 // GetExportedValues returns the exported values of the execution
 func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.Installation) (*dataobjects.DataObject, error) {
 	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(inst.Info.Name, inst.Info.Namespace), exec); err != nil {
+	if err := o.Client().Get(ctx, kutil.ObjectKey(inst.GetInfo().Name, inst.GetInfo().Namespace), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -63,7 +63,7 @@ func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *instal
 
 	doName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromExecution(exec), "")
 	rawDO := &lsv1alpha1.DataObject{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
+	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.GetInfo().Namespace), rawDO); err != nil {
 		return nil, err
 	}
 

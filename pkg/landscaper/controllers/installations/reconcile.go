@@ -103,25 +103,25 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 		return err
 	}
 
-	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
+	instOp.Inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhasePending
 	if err := c.Update(ctx, instOp); err != nil {
 		return err
 	}
 
-	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := c.Client().Update(ctx, instOp.Inst.Info); err != nil {
+	delete(instOp.Inst.GetInfo().Annotations, lsv1alpha1.OperationAnnotation)
+	if err := c.Client().Update(ctx, instOp.Inst.GetInfo()); err != nil {
 		return err
 	}
 
-	instOp.Inst.Info.Status.ObservedGeneration = instOp.Inst.Info.Generation
-	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	instOp.Inst.GetInfo().Status.ObservedGeneration = instOp.Inst.GetInfo().Generation
+	instOp.Inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 	return nil
 }
 
 // eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
 // The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
 func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Operation) (bool, error) {
-	if op.Inst.Info.Generation != op.Inst.Info.Status.ObservedGeneration {
+	if op.Inst.GetInfo().Generation != op.Inst.GetInfo().Status.ObservedGeneration {
 		return true, nil
 	}
 
@@ -156,7 +156,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	}
 
 	if err := op.CreateOrUpdateImports(ctx); err != nil {
-		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+		inst.GetInfo().Status.LastError = lsv1alpha1helper.UpdatedError(inst.GetInfo().Status.LastError,
 			"CreateImports",
 			"unable to update import objects",
 			err.Error())
@@ -164,7 +164,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 			currOp, "CreateOrUpdateImports", err.Error())
 	}
 
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx); err != nil {
@@ -172,7 +172,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	}
 
 	// todo: check if this can be moved to ensure
-	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
+	if err := subinstallation.TriggerSubInstallations(ctx, inst.GetInfo(), lsv1alpha1.ReconcileOperation); err != nil {
 		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ReconcileSubinstallations", err.Error())
@@ -184,9 +184,9 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 			currOp, "ReconcileExecution", err.Error())
 	}
 
-	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
-	inst.Info.Status.ObservedGeneration = inst.Info.Generation
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	inst.Info.Status.LastError = nil
+	inst.GetInfo().Status.Imports = inst.ImportStatus().GetStatus()
+	inst.GetInfo().Status.ObservedGeneration = inst.GetInfo().Generation
+	inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	inst.GetInfo().Status.LastError = nil
 	return nil
 }

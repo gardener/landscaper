@@ -59,6 +59,16 @@ func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, 
 	return internalInstallations, nil
 }
 
+// CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
+func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) ([]InstallationBaseInterface, error) {
+	internalInstallations := make([]InstallationBaseInterface, len(installations))
+	for i, inst := range installations {
+		inInst := CreateInternalInstallationBase(inst)
+		internalInstallations[i] = inInst
+	}
+	return internalInstallations, nil
+}
+
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
 // Inline Component Descriptors take precedence
 func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
@@ -82,7 +92,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 	return compRepo.Resolve(ctx, repoCtx, ref.GetName(), ref.GetVersion())
 }
 
-// CreateInternalInstallation creates an internal installation for a Installation
+// CreateInternalInstallation creates an internal installation for an Installation
 func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
 	cdRef := GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 	blue, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
@@ -92,14 +102,20 @@ func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, i
 	return New(inst, blue)
 }
 
+// CreateInternalInstallationBase creates an internal installation base for an Installation
+func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) InstallationBaseInterface {
+	return NewInstallationBase(inst)
+}
+
 // GetDataImport fetches the data import from the cluster.
-func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
+func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst InstallationBaseInterface,
+	dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
 	var rawDataObject *lsv1alpha1.DataObject
 	// get deploy item from current context
 	if len(dataImport.DataRef) != 0 {
 		rawDataObject = &lsv1alpha1.DataObject{}
 		doName := helper.GenerateDataObjectName(contextName, dataImport.DataRef)
-		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.GetInfo().Namespace), rawDataObject); err != nil {
 			return nil, nil, fmt.Errorf("unable to fetch data object %s (%s/%s): %w", doName, contextName, dataImport.DataRef, err)
 		}
 	}
@@ -146,7 +162,7 @@ func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName 
 	// get deploy item from current context
 	raw := &lsv1alpha1.Target{}
 	targetName = helper.GenerateDataObjectName(contextName, targetName)
-	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.GetInfo().Namespace), raw); err != nil {
 		return nil, nil, err
 	}
 
