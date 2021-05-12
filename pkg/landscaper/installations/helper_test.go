@@ -78,12 +78,12 @@ var _ = g.Describe("helper", func() {
 			Expect(kubeClient.Create(ctx, data)).To(Succeed())
 
 			inst := &Installation{
-				InstallationBaseInterface: &InstallationBase{
+				InstallationBase: &InstallationBase{
 					Info: &lsv1alpha1.Installation{},
 				},
 			}
 			inst.GetInfo().Namespace = data.Namespace
-			do, owner, err := GetDataImport(ctx, kubeClient, "", inst, lsv1alpha1.DataImport{
+			do, owner, err := GetDataImport(ctx, kubeClient, "", inst.InstallationBase, lsv1alpha1.DataImport{
 				Name:    "imp",
 				DataRef: "#test-do",
 			})
@@ -97,12 +97,12 @@ var _ = g.Describe("helper", func() {
 			defer ctx.Done()
 
 			inst := &Installation{
-				InstallationBaseInterface: &InstallationBase{
+				InstallationBase: &InstallationBase{
 					Info: &lsv1alpha1.Installation{},
 				},
 			}
 			inst.GetInfo().Namespace = "default"
-			_, _, err := GetDataImport(ctx, kubeClient, "", inst, lsv1alpha1.DataImport{
+			_, _, err := GetDataImport(ctx, kubeClient, "", inst.InstallationBase, lsv1alpha1.DataImport{
 				Name:    "imp",
 				DataRef: "#test-do",
 			})
@@ -120,7 +120,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := GetDataImport(ctx, kubeClient, "", &Installation{}, lsv1alpha1.DataImport{
+			do, owner, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -146,7 +146,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			_, _, err := GetDataImport(ctx, kubeClient, "", &Installation{}, lsv1alpha1.DataImport{
+			_, _, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -170,7 +170,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			do, owner, err := GetDataImport(ctx, kubeClient, "", &Installation{}, lsv1alpha1.DataImport{
+			do, owner, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				SecretRef: &lsv1alpha1.SecretReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -196,7 +196,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			_, _, err := GetDataImport(ctx, kubeClient, "", &Installation{}, lsv1alpha1.DataImport{
+			_, _, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				SecretRef: &lsv1alpha1.SecretReference{
 					ObjectReference: lsv1alpha1.ObjectReference{

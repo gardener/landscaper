@@ -26,7 +26,7 @@ type Context struct {
 
 	// Siblings are installations with the same parent.
 	// The installation has access to the exports of theses components
-	Siblings []InstallationBaseInterface
+	Siblings []*InstallationBase
 }
 
 // SetInstallationContext determines the current context and updates the operation context.
@@ -59,7 +59,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 	}
 
 	// get the parent by owner reference
-	parent, err := GetParent(ctx, o, o.Inst)
+	parent, err := GetParent(ctx, o, o.Inst.InstallationBase)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 
 // GetParent returns the parent of a installation.
 // It returns nil if the installation has no parent
-func GetParent(ctx context.Context, op operation.Interface, inst InstallationBaseInterface) (*Installation, error) {
+func GetParent(ctx context.Context, op operation.Interface, inst *InstallationBase) (*Installation, error) {
 	if IsRootInstallation(inst.GetInfo()) {
 		return nil, nil
 	}
@@ -110,7 +110,7 @@ func GetParent(ctx context.Context, op operation.Interface, inst InstallationBas
 
 // GetParentBase returns the parent of an installation base.
 // It returns nil if the installation has no parent
-func GetParentBase(ctx context.Context, op operation.Interface, inst InstallationBaseInterface) (InstallationBaseInterface, error) {
+func GetParentBase(ctx context.Context, op operation.Interface, inst *InstallationBase) (*InstallationBase, error) {
 	if IsRootInstallation(inst.GetInfo()) {
 		return nil, nil
 	}
