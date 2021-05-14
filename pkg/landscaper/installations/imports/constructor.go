@@ -35,7 +35,7 @@ func NewConstructor(op *installations.Operation) *Constructor {
 // The imported data is added to installation resource.
 func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) error {
 	var (
-		fldPath = field.NewPath(inst.GetInfo().Name)
+		fldPath = field.NewPath(inst.Info.Name)
 		imports = make(map[string]interface{})
 	)
 
@@ -125,7 +125,7 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 	}
 
 	values := make(map[string]interface{})
-	for key, dataMapping := range c.Inst.GetInfo().Spec.ImportDataMappings {
+	for key, dataMapping := range c.Inst.Info.Spec.ImportDataMappings {
 		impPath := fldPath.Child(key)
 
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)

@@ -30,7 +30,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 }
 
 func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
-	op.Inst.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseDeleting
+	op.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 	// check if suitable for deletion
 	// todo: replacements and internal deletions
 	if checkIfSiblingImports(op) {
@@ -51,16 +51,16 @@ func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 		return WaitingForDeletionError
 	}
 
-	controllerutil.RemoveFinalizer(op.Inst.GetInfo(), lsv1alpha1.LandscaperFinalizer)
-	return op.Client().Update(ctx, op.Inst.GetInfo())
+	controllerutil.RemoveFinalizer(op.Inst.Info, lsv1alpha1.LandscaperFinalizer)
+	return op.Client().Update(ctx, op.Inst.Info)
 }
 
 func deleteExecution(ctx context.Context, op *installations.Operation) (bool, error) {
-	if op.Inst.GetInfo().Status.ExecutionReference == nil {
+	if op.Inst.Info.Status.ExecutionReference == nil {
 		return true, nil
 	}
 	exec := &lsv1alpha1.Execution{}
-	if err := op.Client().Get(ctx, op.Inst.GetInfo().Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := op.Client().Get(ctx, op.Inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -77,7 +77,7 @@ func deleteExecution(ctx context.Context, op *installations.Operation) (bool, er
 
 func deleteSubInstallations(ctx context.Context, op *installations.Operation) (bool, error) {
 	op.CurrentOperation = "DeleteSubInstallation"
-	subInsts, err := subinstallations.New(op).GetSubInstallations(ctx, op.Inst.GetInfo())
+	subInsts, err := subinstallations.New(op).GetSubInstallations(ctx, op.Inst.Info)
 	if err != nil {
 		return false, err
 	}
@@ -98,12 +98,12 @@ func deleteSubInstallations(ctx context.Context, op *installations.Operation) (b
 
 func checkIfSiblingImports(op *installations.Operation) bool {
 	for _, sibling := range op.Context().Siblings {
-		for _, dataImports := range op.Inst.GetInfo().Spec.Exports.Data {
+		for _, dataImports := range op.Inst.Info.Spec.Exports.Data {
 			if sibling.IsImportingData(dataImports.DataRef) {
 				return true
 			}
 		}
-		for _, targetImport := range op.Inst.GetInfo().Spec.Exports.Targets {
+		for _, targetImport := range op.Inst.Info.Spec.Exports.Targets {
 			if sibling.IsImportingData(targetImport.Target) {
 				return true
 			}

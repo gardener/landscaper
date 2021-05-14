@@ -77,7 +77,7 @@ var _ = Describe("Validation", func() {
 
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
-		inInstA.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
@@ -85,7 +85,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{inInstA.InstallationBase}
+		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
@@ -102,8 +102,8 @@ var _ = Describe("Validation", func() {
 
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
-		inInstRoot.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseInit
-		Expect(fakeClient.Status().Update(ctx, inInstRoot.GetInfo()))
+		inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseInit
+		Expect(fakeClient.Status().Update(ctx, inInstRoot.Info))
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
@@ -128,7 +128,7 @@ var _ = Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{inInstA.InstallationBase}
+		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
@@ -141,16 +141,16 @@ var _ = Describe("Validation", func() {
 		defer ctx.Done()
 		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
-		inInstA.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-		Expect(fakeClient.Update(ctx, inInstA.GetInfo())).To(Succeed())
+		inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+		Expect(fakeClient.Update(ctx, inInstA.Info)).To(Succeed())
 
 		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
-		inInstB.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		inInstB.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 		inInstC, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/c"])
 		Expect(err).ToNot(HaveOccurred())
-		inInstC.GetInfo().Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		inInstC.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 		inInstD, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/d"])
 		Expect(err).ToNot(HaveOccurred())
@@ -160,9 +160,9 @@ var _ = Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 		op.Context().Parent = inInstRoot
 		op.Context().Siblings = []*installations.InstallationBase{
-			inInstA.InstallationBase,
-			inInstB.InstallationBase,
-			inInstC.InstallationBase,
+			&inInstA.InstallationBase,
+			&inInstB.InstallationBase,
+			&inInstC.InstallationBase,
 		}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
@@ -185,7 +185,7 @@ var _ = Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Context().Parent = inInstRoot
-			op.Context().Siblings = []*installations.InstallationBase{inInstA.InstallationBase}
+			op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)

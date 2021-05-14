@@ -93,7 +93,7 @@ var _ = Describe("Context", func() {
 		Expect(lCtx.Parent).ToNot(BeNil())
 		Expect(lCtx.Siblings).To(HaveLen(3))
 
-		Expect(lCtx.Parent.GetInfo().Name).To(Equal("root"))
+		Expect(lCtx.Parent.Info.Name).To(Equal("root"))
 	})
 
 	It("initialize root installations with default context", func() {
@@ -110,7 +110,7 @@ var _ = Describe("Context", func() {
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)
 		Expect(err).ToNot(HaveOccurred())
-		repoContextOfOtherRoot := instOp.Context().Siblings[0].GetInfo().Spec.ComponentDescriptor.Reference.RepositoryContext
+		repoContextOfOtherRoot := instOp.Context().Siblings[0].Info.Spec.ComponentDescriptor.Reference.RepositoryContext
 		Expect(repoContextOfOtherRoot).ToNot(BeNil())
 	})
 

@@ -115,7 +115,7 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 	if len(dataImport.DataRef) != 0 {
 		rawDataObject = &lsv1alpha1.DataObject{}
 		doName := helper.GenerateDataObjectName(contextName, dataImport.DataRef)
-		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.GetInfo().Namespace), rawDataObject); err != nil {
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(doName, inst.Info.Namespace), rawDataObject); err != nil {
 			return nil, nil, fmt.Errorf("unable to fetch data object %s (%s/%s): %w", doName, contextName, dataImport.DataRef, err)
 		}
 	}
@@ -162,7 +162,7 @@ func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName 
 	// get deploy item from current context
 	raw := &lsv1alpha1.Target{}
 	targetName = helper.GenerateDataObjectName(contextName, targetName)
-	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.GetInfo().Namespace), raw); err != nil {
+	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
 		return nil, nil, err
 	}
 

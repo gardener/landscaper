@@ -24,7 +24,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	if err != nil {
 		return false, fmt.Errorf("unable to create parent operation: %w", err)
 	}
-	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, parent.InstallationBase)
+	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, &parent.InstallationBase)
 	if err != nil {
 		return false, err
 	}
@@ -33,7 +33,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	}
 
 	// check its own parent
-	parentsParent, err := installations.GetParent(ctx, op, parent.InstallationBase)
+	parentsParent, err := installations.GetParent(ctx, op, &parent.InstallationBase)
 	if err != nil {
 		return false, errors.Wrap(err, "unable to get parent of parent")
 	}
@@ -51,7 +51,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 		return true, nil
 	}
 	// todo: add target support
-	for _, dataImport := range inst.GetInfo().Spec.Imports.Data {
+	for _, dataImport := range inst.Info.Spec.Imports.Data {
 		sourceRef, err := getImportSource(ctx, op, inst, dataImport)
 		if err != nil {
 			return false, err
@@ -61,7 +61,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 		}
 		// check if the import is imported from myself or the parent
 		// and continue if so as we have a different check for the parent
-		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.GetInfo()) {
+		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.Info) {
 			continue
 		}
 
@@ -69,7 +69,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 		if err != nil {
 			return false, err
 		}
-		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.GetInfo()) {
+		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.Info) {
 			continue
 		}
 
@@ -116,5 +116,5 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	if owner == nil || owner.Kind != "Installation" {
 		return nil, nil
 	}
-	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.GetInfo().Namespace}, nil
+	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
 }

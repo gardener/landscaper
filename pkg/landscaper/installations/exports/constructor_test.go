@@ -250,7 +250,7 @@ var _ = Describe("Constructor", func() {
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			target := &lsv1alpha1.Target{}
-			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.GetInfo()), "root.z")
+			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.z")
 			key := kutil.ObjectKey(targetName, "test4")
 			Expect(fakeClient.Get(ctx, key, target)).To(Succeed())
 			target.Spec.Type = "unknownType"
