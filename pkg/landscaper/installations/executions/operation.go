@@ -56,7 +56,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 	executions, err := tmpl.TemplateDeployExecutions(template.DeployExecutionOptions{
-		Imports:              inst.Imports,
+		Imports:              inst.GetImports(),
 		Installation:         inst.Info,
 		Blueprint:            inst.Blueprint,
 		ComponentDescriptor:  o.ComponentDescriptor,

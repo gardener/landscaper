@@ -24,7 +24,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	if err != nil {
 		return false, fmt.Errorf("unable to create parent operation: %w", err)
 	}
-	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, parent)
+	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, &parent.InstallationBase)
 	if err != nil {
 		return false, err
 	}
@@ -33,7 +33,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	}
 
 	// check its own parent
-	parentsParent, err := installations.GetParent(ctx, op, parent)
+	parentsParent, err := installations.GetParent(ctx, op, &parent.InstallationBase)
 	if err != nil {
 		return false, errors.Wrap(err, "unable to get parent of parent")
 	}
@@ -45,7 +45,8 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 }
 
 // CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed
-func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Operation, inst *installations.Installation) (bool, error) {
+func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Operation,
+	inst *installations.InstallationBase) (bool, error) {
 	if inst == nil {
 		return true, nil
 	}
@@ -64,7 +65,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			continue
 		}
 
-		parent, err := installations.GetParent(ctx, op, inst)
+		parent, err := installations.GetParentBase(ctx, op, inst)
 		if err != nil {
 			return false, err
 		}
@@ -83,10 +84,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			return false, nil
 		}
 
-		intInst, err := installations.CreateInternalInstallation(ctx, op, inst)
-		if err != nil {
-			return false, err
-		}
+		intInst := installations.CreateInternalInstallationBase(inst)
 
 		isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
 		if err != nil {
@@ -101,7 +99,8 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 }
 
 // getImportSource returns a reference to the owner of a data import.
-func getImportSource(ctx context.Context, op *installations.Operation, inst *installations.Installation, dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
+func getImportSource(ctx context.Context, op *installations.Operation, inst *installations.InstallationBase,
+	dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
 	status, err := inst.ImportStatus().GetData(dataImport.Name)
 	if err == nil && status.SourceRef != nil {
 		return status.SourceRef, nil

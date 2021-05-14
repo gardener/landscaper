@@ -187,7 +187,7 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 		}
 		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-			Imports:              o.Inst.Imports,
+			Imports:              o.Inst.GetImports(),
 			Installation:         o.Inst.Info,
 			Blueprint:            o.Inst.Blueprint,
 			ComponentDescriptor:  o.ComponentDescriptor,

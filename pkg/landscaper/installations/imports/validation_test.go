@@ -85,7 +85,7 @@ var _ = Describe("Validation", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.Installation{inInstA}
+		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
@@ -128,7 +128,7 @@ var _ = Describe("Validation", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.Installation{inInstA}
+		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
@@ -159,7 +159,11 @@ var _ = Describe("Validation", func() {
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.Installation{inInstA, inInstB, inInstC}
+		op.Context().Siblings = []*installations.InstallationBase{
+			&inInstA.InstallationBase,
+			&inInstB.InstallationBase,
+			&inInstC.InstallationBase,
+		}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
@@ -181,7 +185,7 @@ var _ = Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Context().Parent = inInstRoot
-			op.Context().Siblings = []*installations.Installation{inInstA}
+			op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)

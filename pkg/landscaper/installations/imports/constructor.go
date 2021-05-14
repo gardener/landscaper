@@ -103,7 +103,7 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 		return errors.New("neither a target nor a schema is defined")
 	}
 
-	inst.Imports = imports
+	inst.SetImports(imports)
 	return nil
 }
 
