@@ -21,9 +21,15 @@ type InstallationBase struct {
 	importsStatus ImportStatus
 }
 
-// New creates a new internal representation of an installation without blueprint
+// NewInstallationBase creates a new internal representation of an installation without blueprint
 func NewInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
-	internalInst := &InstallationBase{
+	internalInst := newInstallationBase(inst)
+	return &internalInst
+}
+
+// newInstallationBase creates a new internal representation of an installation without blueprint
+func newInstallationBase(inst *lsv1alpha1.Installation) InstallationBase {
+	internalInst := InstallationBase{
 		Info: inst,
 		importsStatus: ImportStatus{
 			Data:   make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
@@ -102,14 +108,14 @@ func (i *InstallationBase) MergeConditions(conditions ...lsv1alpha1.Condition) {
 
 // Installation is the internal representation of a installation
 type Installation struct {
-	*InstallationBase
+	InstallationBase
 	Blueprint *blueprints.Blueprint
 }
 
 // New creates a new internal representation of an installation with blueprint
 func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
-		InstallationBase: NewInstallationBase(inst),
+		InstallationBase: newInstallationBase(inst),
 		Blueprint:        blueprint,
 	}
 
