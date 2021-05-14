@@ -10,7 +10,7 @@ require (
 	github.com/docker/cli v20.10.0-rc1+incompatible
 	github.com/gardener/component-cli v0.17.0
 	github.com/gardener/component-spec/bindings-go v0.0.36
-	github.com/gardener/landscaper/apis v0.8.0
+	github.com/gardener/landscaper/apis v0.8.2
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0
 	github.com/golang/mock v1.4.4
