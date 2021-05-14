@@ -163,7 +163,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.Info.Spec.Imports.Data {
 
-		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, o.Inst, def)
+		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, &o.Inst.InstallationBase, def)
 		if err != nil {
 			return nil, err
 		}
@@ -577,7 +577,7 @@ func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjec
 	return dataobjects.NewFromDataObject(rawDO)
 }
 
-func importsAnyExport(exporter, importer *Installation) bool {
+func importsAnyExport(exporter *Installation, importer *InstallationBase) bool {
 	for _, export := range exporter.Info.Spec.Exports.Data {
 		for _, def := range importer.Info.Spec.Imports.Data {
 			if def.DataRef == export.DataRef {

@@ -26,7 +26,7 @@ type Context struct {
 
 	// Siblings are installations with the same parent.
 	// The installation has access to the exports of theses components
-	Siblings []*Installation
+	Siblings []*InstallationBase
 }
 
 // SetInstallationContext determines the current context and updates the operation context.
@@ -45,11 +45,13 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context, error) {
 	if IsRootInstallation(o.Inst.Info) {
 		// get all root object as siblings
-		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool { return inst.Name == o.Inst.Info.Name }, client.InNamespace(o.Inst.Info.Namespace))
+		rootInstallations, err := o.GetRootInstallations(ctx, func(inst lsv1alpha1.Installation) bool {
+			return inst.Name == o.Inst.Info.Name
+		}, client.InNamespace(o.Inst.Info.Namespace))
 		if err != nil {
 			return nil, err
 		}
-		intInstallations, err := CreateInternalInstallations(ctx, o, rootInstallations...)
+		intInstallations, err := CreateInternalInstallationBases(rootInstallations...)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +59,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 	}
 
 	// get the parent by owner reference
-	parent, err := GetParent(ctx, o, o.Inst)
+	parent, err := GetParent(ctx, o, &o.Inst.InstallationBase)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 		subInstallations = append(subInstallations, subInst)
 	}
 
-	intSubInstallations, err := CreateInternalInstallations(ctx, o, subInstallations...)
+	intSubInstallations, err := CreateInternalInstallationBases(subInstallations...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +91,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 
 // GetParent returns the parent of a installation.
 // It returns nil if the installation has no parent
-func GetParent(ctx context.Context, op operation.Interface, inst *Installation) (*Installation, error) {
+func GetParent(ctx context.Context, op operation.Interface, inst *InstallationBase) (*Installation, error) {
 	if IsRootInstallation(inst.Info) {
 		return nil, nil
 	}
@@ -104,6 +106,22 @@ func GetParent(ctx context.Context, op operation.Interface, inst *Installation) 
 		return nil, err
 	}
 	return intParent, err
+}
+
+// GetParentBase returns the parent of an installation base.
+// It returns nil if the installation has no parent
+func GetParentBase(ctx context.Context, op operation.Interface, inst *InstallationBase) (*InstallationBase, error) {
+	if IsRootInstallation(inst.Info) {
+		return nil, nil
+	}
+	// get the parent by owner reference
+	parentName := GetParentInstallationName(inst.Info)
+	parent := &lsv1alpha1.Installation{}
+	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
+		return nil, err
+	}
+	intParent := CreateInternalInstallationBase(parent)
+	return intParent, nil
 }
 
 // IsRoot returns if the current component is a root component
