@@ -51,6 +51,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_Configuration_To_mock_Configuration(in *Configuration, out *mock.Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }
@@ -61,6 +62,7 @@ func Convert_v1alpha1_Configuration_To_mock_Configuration(in *Configuration, out
 }
 
 func autoConvert_mock_Configuration_To_v1alpha1_Configuration(in *mock.Configuration, out *Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }

@@ -137,7 +137,7 @@
       }
     }
   },
-  "description": "ProviderConfiguration is the container deployer configuration that configures the controller",
+  "description": "Configuration is the container deployer configuration that configures the controller",
   "properties": {
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
@@ -151,6 +151,10 @@
       "$ref": "#/definitions/container-v1alpha1-ContainerSpec",
       "default": {},
       "description": "DefaultImage configures the default images that is used if the DeployItem does not specify one."
+    },
+    "identity": {
+      "description": "Identity identity describes the unique identity of the deployer.",
+      "type": "string"
     },
     "initContainer": {
       "$ref": "#/definitions/container-v1alpha1-ContainerSpec",

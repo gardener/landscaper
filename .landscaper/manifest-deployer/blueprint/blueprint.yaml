@@ -11,7 +11,11 @@ imports:
   schema:
     type: string
 - name: releaseNamespace
-  schema: 
+  schema:
+    type: string
+- name: identity
+  required: false
+  schema:
     type: string
 - name: values
   schema:
@@ -25,7 +29,7 @@ deployExecutions:
     deployItems:
     - name: deploy
       type: landscaper.gardener.cloud/helm
-      target: 
+      target:
         name: {{ .imports.cluster.metadata.name }}
         namespace: {{ .imports.cluster.metadata.namespace }}
       config:
@@ -37,7 +41,7 @@ deployExecutions:
         chart:
           {{ $resource := getResource .cd "name" "manifest-deployer-chart" }}
           ref: {{ $resource.access.imageReference }}
-    
+
     {{ $values := dict "values" .imports.values }}
 
     {{ $imgresource := getResource .cd "name" "manifest-deployer-image" }}
@@ -46,14 +50,19 @@ deployExecutions:
     {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
 
     {{ $newvals := dict "image" $imgref }}
+    {{ $deployerVal := dict }}
 
     {{ if .imports.landscaperCluster  }}
     {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
     {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}
-    {{ $newLsClusterKubeconfig := dict "landscaperClusterKubeconfig" $newKubeconfig }}
-    {{ $_ := set $newvals "deployer" $newLsClusterKubeconfig }}
+    {{ $_ := set $deployerVal "landscaperClusterKubeconfig" $newKubeconfig }}
     {{ end }}
 
+    {{ if .imports.identity  }}
+    {{ $_ := set $deployerVal "identity" .imports.identity }}
+    {{ end }}
+
+    {{ $_ := set $newvals "deployer" $deployerVal }}
     {{ $mergevals := dict "values" $newvals }}
 
     {{ $val := mergeOverwrite $values $mergevals }}

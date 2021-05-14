@@ -16,6 +16,7 @@ deployer:
   #   kubeconfig: |
   #     <landscaper-cluster-kubeconfig>
 
+#  identity: ""
   namespace: ""
 #  verbosityLevel: 9
 

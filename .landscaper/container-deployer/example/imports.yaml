@@ -12,10 +12,11 @@ imports:
           apiVersion:...
   releaseNamespace: container-deployer
   releaseName: landscaper-container-deployer
+  identity: my-id
   values:
     deployer:
       namespace: ""
-      oci: 
+      oci:
         allowPlainHttp: false
         secrets: {}
     replicaCount: 1

@@ -16,6 +16,8 @@ import (
 // Type is the type name of the deployer.
 const Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/mock"
 
+const Name = "mock.deployer.landscaper.gardener.cloud"
+
 var (
 	MockScheme = runtime.NewScheme()
 	Decoder    runtime.Decoder

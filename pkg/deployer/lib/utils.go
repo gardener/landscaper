@@ -31,7 +31,11 @@ import (
 // Returns:
 //   - the modified deployitem
 //   - an error, if updating the deployitem failed, nil otherwise
-func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c client.Client, di *lsv1alpha1.DeployItem) error {
+func HandleAnnotationsAndGeneration(ctx context.Context,
+	log logr.Logger,
+	kubeClient client.Client,
+	di *lsv1alpha1.DeployItem,
+	deployerInfo lsv1alpha1.DeployerInformation) error {
 	changedMeta := false
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	if hasReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
@@ -45,7 +49,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		di.Status.LastReconcileTime = &now
 
 		log.V(7).Info("updating status")
-		if err := c.Status().Update(ctx, di); err != nil {
+		if err := kubeClient.Status().Update(ctx, di); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated status")
@@ -60,10 +64,14 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
 	}
+	if di.Status.Deployer.Identity != deployerInfo.Identity {
+		di.Status.Deployer = deployerInfo
+		changedMeta = true
+	}
 
 	if changedMeta {
 		log.V(7).Info("updating metadata")
-		if err := c.Update(ctx, di); err != nil {
+		if err := kubeClient.Update(ctx, di); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")

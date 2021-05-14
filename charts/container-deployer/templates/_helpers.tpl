@@ -68,6 +68,9 @@ Creates the container deployer configuration file which will be encapsulated in 
 {{- define "deployer-config" -}}
 apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
+{{- if .Values.deployer.identity }}
+identity: {{ .Values.deployer.identity }}
+{{- end }}
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 initContainer:
   image: "{{ .Values.deployer.initContainer.repository }}:{{ .Values.deployer.initContainer.tag | default .Chart.AppVersion }}"

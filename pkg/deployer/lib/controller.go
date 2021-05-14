@@ -7,10 +7,12 @@ package lib
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -18,6 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/landscaper/pkg/version"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -39,13 +43,45 @@ type Deployer interface {
 
 // DeployerArgs defines the deployer arguments for the initializing a generic deployer controller.
 type DeployerArgs struct {
+	Name            string
+	Version         string
+	Identity        string
 	Type            lsv1alpha1.DeployItemType
 	Deployer        Deployer
 	TargetSelectors []lsv1alpha1.TargetSelector
 }
 
+// Default defaults deployer arguments
+func (args *DeployerArgs) Default() {
+	if len(args.Name) == 0 {
+		args.Name = "generic-deployer-library"
+	}
+	if len(args.Version) == 0 {
+		args.Version = version.Get().String()
+	}
+	if len(args.Identity) == 0 {
+		args.Identity = fmt.Sprintf("%s-%d", args.Name, time.Now().UTC().Unix())
+	}
+}
+
+// Validate validates the provided deployer arguments
+func (args DeployerArgs) Validate() error {
+	var allErrs []error
+	if len(args.Type) == 0 {
+		allErrs = append(allErrs, fmt.Errorf("a type must be provided"))
+	}
+	if args.Deployer == nil {
+		allErrs = append(allErrs, fmt.Errorf("a deployer implementation must be provided"))
+	}
+	return errors.NewAggregate(allErrs)
+}
+
 // Add adds a deployer to the given managers using the given args.
 func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
+	args.Default()
+	if err := args.Validate(); err != nil {
+		return err
+	}
 	con := NewController(log, lsMgr.GetClient(), lsMgr.GetScheme(), hostMgr.GetClient(), hostMgr.GetScheme(), args)
 
 	return builder.ControllerManagedBy(lsMgr).
@@ -57,6 +93,7 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 type controller struct {
 	log      logr.Logger
 	deployer Deployer
+	info     lsv1alpha1.DeployerInformation
 	// deployerType defines the deployer type the deployer is responsible for.
 	deployerType    lsv1alpha1.DeployItemType
 	targetSelectors []lsv1alpha1.TargetSelector
@@ -75,9 +112,14 @@ func NewController(log logr.Logger,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs) *controller {
 	return &controller{
-		log:             log,
-		deployerType:    args.Type,
-		deployer:        args.Deployer,
+		log:          log,
+		deployerType: args.Type,
+		deployer:     args.Deployer,
+		info: lsv1alpha1.DeployerInformation{
+			Identity: args.Identity,
+			Name:     args.Name,
+			Version:  args.Version,
+		},
 		targetSelectors: args.TargetSelectors,
 		lsClient:        lsClient,
 		lsScheme:        lsScheme,
@@ -121,7 +163,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	logger.Info("reconcile deploy item")
 
-	err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, deployItem)
+	err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, deployItem, c.info)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

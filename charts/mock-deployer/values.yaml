@@ -18,6 +18,7 @@ deployer:
   #   kubeconfig: |
   #     <landscaper-cluster-kubeconfig>
 
+#  identity: ""
   namespace: ""
 
 image:

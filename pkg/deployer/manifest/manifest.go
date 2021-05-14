@@ -33,6 +33,7 @@ import (
 
 const (
 	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/kubernetes-manifest"
+	Name string                    = "manifest.deployer.landscaper.gardener.cloud"
 )
 
 var ManifestScheme = runtime.NewScheme()

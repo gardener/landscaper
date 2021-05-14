@@ -61,3 +61,18 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the Mock deployer config file which will be encapsulated in a secret.
+*/}}
+{{- define "deployer-config" -}}
+apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+kind: Configuration
+{{- if .Values.deployer.identity }}
+identity: {{ .Values.deployer.identity }}
+{{- end }}
+{{- with .Values.targetSelector }}
+targetSelector:
+{{ toYaml . }}
+{{- end }}
+{{- end }}

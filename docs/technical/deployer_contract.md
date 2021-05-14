@@ -55,6 +55,10 @@ status:
   observedGeneration: 1
   phase: Succeeded
   lastReconcileTime: "2021-04-15T12:10:51Z"
+  deployer:
+    nname: "my-deployer"
+    identity: "some unique identity"
+    version: "v0.0.1"
   providerStatus:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderStatus

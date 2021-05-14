@@ -14,6 +14,7 @@ import (
 
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
@@ -30,6 +31,9 @@ func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config mockv1alpha1.Co
 	}
 
 	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Name:            Name,
+		Version:         version.Get().String(),
+		Identity:        config.Identity,
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,

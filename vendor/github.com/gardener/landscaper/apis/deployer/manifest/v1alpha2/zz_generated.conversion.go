@@ -91,6 +91,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha2_Configuration_To_manifest_Configuration(in *Configuration, out *manifest.Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.TargetSelector = *(*[]v1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }
@@ -101,6 +102,7 @@ func Convert_v1alpha2_Configuration_To_manifest_Configuration(in *Configuration,
 }
 
 func autoConvert_manifest_Configuration_To_v1alpha2_Configuration(in *manifest.Configuration, out *Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.TargetSelector = *(*[]v1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	return nil
 }

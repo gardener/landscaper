@@ -71,6 +71,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemSpec":                          schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemStatus":                        schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployItemTemplate":                      schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerInformation":                     schema_landscaper_apis_core_v1alpha1_DeployerInformation(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Duration":                                schema_landscaper_apis_core_v1alpha1_Duration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Error":                                   schema_landscaper_apis_core_v1alpha1_Error(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Execution":                               schema_landscaper_apis_core_v1alpha1_Execution(ref),
@@ -114,6 +115,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference":           schema_landscaper_apis_core_v1alpha1_VersionedNamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedObjectReference":                schema_landscaper_apis_core_v1alpha1_VersionedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.VersionedResourceReference":              schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.valueRefJSON":                            schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":             schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":             schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":           schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
@@ -2547,6 +2549,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
+					"deployer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deployer describes the deployer that has reconciled the deploy item.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployerInformation"),
+						},
+					},
 					"providerStatus": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProviderStatus contains the provider specific status",
@@ -2564,7 +2573,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployerInformation", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -2640,6 +2649,44 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemTemplate(ref common.Referenc
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_DeployerInformation(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployerInformation holds additional information about the deployer that has reconciled or is reconciling the deploy item.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity describes the unique identity of the deployer.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the deployer.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Version is the version of the deployer.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"identity", "name", "version"},
+			},
+		},
 	}
 }
 
@@ -4542,11 +4589,31 @@ func schema_landscaper_apis_core_v1alpha1_VersionedResourceReference(ref common.
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_valueRefJSON(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "valueRefJSON is a helper struct to decode json into a secret ref object.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"secretRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"},
+	}
+}
+
 func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProviderConfiguration is the container deployer configuration that configures the controller",
+				Description: "Configuration is the container deployer configuration that configures the controller",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -4559,6 +4626,13 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity identity describes the unique identity of the deployer.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5041,6 +5115,13 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 							Format:      "",
 						},
 					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity identity describes the unique identity of the deployer.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"oci": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OCI configures the oci client of the controller",
@@ -5357,6 +5438,13 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 							Format:      "",
 						},
 					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity identity describes the unique identity of the deployer.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"targetSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TargetSelector describes all selectors the deployer should depend on.",
@@ -5537,6 +5625,13 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity identity describes the unique identity of the deployer.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -5780,6 +5875,13 @@ func schema_apis_deployer_mock_v1alpha1_Configuration(ref common.ReferenceCallba
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
 							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity identity describes the unique identity of the deployer.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
