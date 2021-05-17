@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -39,4 +40,15 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		obj.DeployItemTimeouts.ProgressingDefault = &v1alpha1.Duration{Duration: 10 * time.Minute}
 	}
 
+	SetDefaults_CrdManagementConfiguration(&obj.CrdManagement)
+}
+
+// SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
+func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
+	if obj.DeployCustomResourceDefinitions == nil {
+		obj.DeployCustomResourceDefinitions = pointer.BoolPtr(true)
+	}
+	if obj.ForceUpdate == nil {
+		obj.ForceUpdate = pointer.BoolPtr(true)
+	}
 }

@@ -30,8 +30,7 @@
       "properties": {
         "deployCrd": {
           "description": "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
-          "type": "boolean",
-          "default": false
+          "type": "boolean"
         },
         "forceUpdate": {
           "description": "ForceUpdate specifies whether existing CRDs should be updated",
@@ -160,6 +159,7 @@
     },
     "crdManagement": {
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
+      "default": {},
       "description": "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster"
     },
     "deployItemTimeouts": {
