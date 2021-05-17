@@ -14,6 +14,7 @@
 - [Template Executors](./usage/TemplateExecutors.md)
 - [JSON Schema](./usage/JSONSchema.md)
 - [Component Overwrites](./usage/ComponentOverwrites.md)
+- [Conditional Imports](./usage/ConditionalImports.md)
 
 ### Deployers
 - [Overview](./deployer)
