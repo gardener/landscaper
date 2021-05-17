@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -46,6 +47,19 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	}
 
 	return values
+}
+
+// JSONSerializeToGenericObject converts a typed struct to an generic interface using json serialization.
+func JSONSerializeToGenericObject(in interface{}) (interface{}, error) {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+	var val interface{}
+	if err := json.Unmarshal(data, &val); err != nil {
+		return nil, err
+	}
+	return val, nil
 }
 
 // StringIsOneOf checks whether in is one of s.
