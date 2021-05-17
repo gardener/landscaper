@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/version"
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 )
@@ -27,6 +28,9 @@ func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config helmv1alpha1.Co
 	}
 
 	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Name:            Name,
+		Version:         version.Get().String(),
+		Identity:        config.Identity,
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,

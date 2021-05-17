@@ -1854,6 +1854,20 @@ Kubernetes meta/v1.Time
 </tr>
 <tr>
 <td>
+<code>deployer</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerInformation">
+DeployerInformation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Deployer describes the deployer that has reconciled the deploy item.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>providerStatus</code></br>
 <em>
 <a href="https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension">
@@ -1981,6 +1995,59 @@ k8s.io/apimachinery/pkg/runtime.RawExtension
 <p>
 <p>DeployItemType defines the type of the deploy item</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployerInformation">DeployerInformation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
+</p>
+<p>
+<p>DeployerInformation holds additional information about the deployer that
+has reconciled or is reconciling the deploy item.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>identity</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Identity describes the unique identity of the deployer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the deployer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>version</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Version is the version of the deployer.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
 </h3>
 <p>

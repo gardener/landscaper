@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/version"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -49,6 +50,9 @@ func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, conf
 		deployer)
 
 	err = deployerlib.Add(ctrl.Log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+		Name:            Name,
+		Version:         version.Get().String(),
+		Identity:        config.Identity,
 		Type:            Type,
 		Deployer:        deployer,
 		TargetSelectors: config.TargetSelector,

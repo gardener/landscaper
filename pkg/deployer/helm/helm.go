@@ -41,6 +41,7 @@ import (
 
 const (
 	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/helm"
+	Name string                    = "helm.deployer.landscaper.gardener.cloud"
 )
 
 var HelmScheme = runtime.NewScheme()

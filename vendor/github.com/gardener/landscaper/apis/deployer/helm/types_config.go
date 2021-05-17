@@ -16,6 +16,9 @@ import (
 // Configuration is the helm deployer configuration that configures the controller
 type Configuration struct {
 	metav1.TypeMeta `json:",inline"`
+	// Identity identity describes the unique identity of the deployer.
+	// +optional
+	Identity string `json:"identity,omitempty"`
 	// OCI configures the oci client of the controller
 	OCI *config.OCIConfiguration `json:"oci,omitempty"`
 	// TargetSelector describes all selectors the deployer should depend on.

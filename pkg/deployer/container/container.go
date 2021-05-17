@@ -23,6 +23,7 @@ import (
 
 const (
 	Type lsv1alpha1.DeployItemType = "landscaper.gardener.cloud/container"
+	Name string                    = "container.deployer.landscaper.gardener.cloud"
 )
 
 var (

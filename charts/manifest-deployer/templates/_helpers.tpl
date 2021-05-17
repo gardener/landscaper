@@ -68,6 +68,9 @@ Create the Manifest deployer config file which will be encapsulated in a secret.
 {{- define "deployer-config" -}}
 apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
 kind: Configuration
+{{- if .Values.deployer.identity }}
+identity: {{ .Values.deployer.identity }}
+{{- end }}
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 {{- with .Values.targetSelector }}
 targetSelector:

@@ -94,6 +94,10 @@ type DeployItemStatus struct {
 	// +optional
 	LastReconcileTime *metav1.Time `json:"lastReconcileTime,omitempty"`
 
+	// Deployer describes the deployer that has reconciled the deploy item.
+	// +optional
+	Deployer DeployerInformation `json:"deployer,omitempty"`
+
 	// ProviderStatus contains the provider specific status
 	// +optional
 	// +kubebuilder:validation:XEmbeddedResource
@@ -103,6 +107,17 @@ type DeployItemStatus struct {
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
+}
+
+// DeployerInformation holds additional information about the deployer that
+// has reconciled or is reconciling the deploy item.
+type DeployerInformation struct {
+	// Identity describes the unique identity of the deployer.
+	Identity string `json:"identity"`
+	// Name is the name of the deployer.
+	Name string `json:"name"`
+	// Version is the version of the deployer.
+	Version string `json:"version"`
 }
 
 // TargetSelector describes a selector that matches specific targets.

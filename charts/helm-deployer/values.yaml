@@ -16,8 +16,9 @@ deployer:
   #   kubeconfig: |
   #     <landscaper-cluster-kubeconfig>
 
+#  identity: ""
   namespace: ""
-  oci: 
+  oci:
     allowPlainHttp: false
     secrets: {}
 #      <name>: <docker config json>

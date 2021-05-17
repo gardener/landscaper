@@ -104,6 +104,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_Configuration_To_container_Configuration(in *Configuration, out *container.Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	out.Namespace = in.Namespace
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
@@ -126,6 +127,7 @@ func Convert_v1alpha1_Configuration_To_container_Configuration(in *Configuration
 }
 
 func autoConvert_container_Configuration_To_v1alpha1_Configuration(in *container.Configuration, out *Configuration, s conversion.Scope) error {
+	out.Identity = in.Identity
 	out.OCI = (*config.OCIConfiguration)(unsafe.Pointer(in.OCI))
 	out.TargetSelector = *(*[]corev1alpha1.TargetSelector)(unsafe.Pointer(&in.TargetSelector))
 	out.Namespace = in.Namespace

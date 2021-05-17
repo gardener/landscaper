@@ -16,6 +16,7 @@ spec:
   template:
     metadata:
       annotations:
+        checksum/config: {{ include "deployer-config" . |  sha256sum }}
         {{- range $key, $value := .Values.podAnnotations }}
         {{ $key }}: {{ $value}}
         {{- end }}
@@ -36,10 +37,13 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+          - "--config=/app/ls/config/config.yaml"
           {{- if .Values.deployer.landscaperClusterKubeconfig }}
           - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
           {{- end }}
           volumeMounts:
+          - name: config
+            mountPath: /app/ls/config/
           {{- if .Values.deployer.landscaperClusterKubeconfig }}
           - name: landscaper-cluster-kubeconfig
             mountPath: /app/ls/landscaper-cluster-kubeconfig
@@ -47,6 +51,9 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+      - name: config
+        secret:
+          secretName: {{ include "deployer.fullname" . }}-config
       {{- if .Values.deployer.landscaperClusterKubeconfig }}
       - name: landscaper-cluster-kubeconfig
         secret:

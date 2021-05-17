@@ -22,9 +22,9 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 		obj.UpdateStrategy = UpdateStrategyUpdate
 	}
 	if obj.HealthChecks.Timeout == nil {
-		obj.HealthChecks.Timeout = &lsv1alpha1.Duration{Duration: 180 * time.Second}
+		obj.HealthChecks.Timeout = &lsv1alpha1.Duration{Duration: 3 * time.Minute}
 	}
 	if obj.DeleteTimeout == nil {
-		obj.DeleteTimeout = &lsv1alpha1.Duration{Duration: 180 * time.Second}
+		obj.DeleteTimeout = &lsv1alpha1.Duration{Duration: 3 * time.Minute}
 	}
 }

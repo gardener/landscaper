@@ -68,6 +68,9 @@ Create the Helm deployer config file which will be encapsulated in a secret.
 {{- define "deployer-config" -}}
 apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
+{{- if .Values.deployer.identity }}
+identity: {{ .Values.deployer.identity }}
+{{- end }}
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 {{- if .Values.deployer.oci }}
 oci:

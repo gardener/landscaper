@@ -38,6 +38,7 @@ func init() {
 // Adds the list of known types to Schema.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
+		&Configuration{},
 		&ProviderConfiguration{},
 	)
 	return nil
