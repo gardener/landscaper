@@ -86,14 +86,14 @@ func (o *Templater) TemplateDeployExecutions(opts DeployExecutionOptions) ([]lsv
 
 	// add blueprint and component descriptor ref information to the input values
 	if opts.Installation != nil {
-		blueprintDef, err := serializeObject(opts.Installation.Spec.Blueprint)
+		blueprintDef, err := utils.JSONSerializeToGenericObject(opts.Installation.Spec.Blueprint)
 		if err != nil {
 			return nil, fmt.Errorf("unable to serialize the blueprint definition")
 		}
 		values["blueprint"] = blueprintDef
 
 		if opts.Installation.Spec.ComponentDescriptor != nil {
-			cdDef, err := serializeObject(opts.Installation.Spec.ComponentDescriptor)
+			cdDef, err := utils.JSONSerializeToGenericObject(opts.Installation.Spec.ComponentDescriptor)
 			if err != nil {
 				return nil, fmt.Errorf("unable to serialize the component descriptor definition")
 			}
@@ -187,18 +187,6 @@ func serializeComponentDescriptorList(cd *cdv2.ComponentDescriptorList) (interfa
 		return nil, nil
 	}
 	data, err := codec.Encode(cd)
-	if err != nil {
-		return nil, err
-	}
-	var val interface{}
-	if err := json.Unmarshal(data, &val); err != nil {
-		return nil, err
-	}
-	return val, nil
-}
-
-func serializeObject(in interface{}) (interface{}, error) {
-	data, err := json.Marshal(in)
 	if err != nil {
 		return nil, err
 	}

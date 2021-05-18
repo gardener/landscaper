@@ -7,8 +7,11 @@ package dataobjects
 import (
 	"encoding/json"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Target is the internal representation of a target.
@@ -18,12 +21,12 @@ type Target struct {
 	Metadata   Metadata
 }
 
-// New creates a new internal dataobject.
+// NewTarget creates a new internal target.
 func NewTarget() *Target {
 	return &Target{}
 }
 
-// NewFromDataObject creates a new internal target instance from a raw target.
+// NewFromTarget creates a new internal target instance from a raw target.
 func NewFromTarget(target *lsv1alpha1.Target) (*Target, error) {
 	return &Target{
 		Raw:      target,
@@ -79,10 +82,16 @@ func (t Target) Build() (*lsv1alpha1.Target, error) {
 	newTarget := &lsv1alpha1.Target{}
 	newTarget.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	newTarget.Namespace = t.Metadata.Namespace
-	SetMetadataFromObject(newTarget, t.Metadata)
 	if t.Raw != nil {
 		newTarget.Spec = t.Raw.Spec
+		for key, val := range t.Raw.Annotations {
+			metav1.SetMetaDataAnnotation(&newTarget.ObjectMeta, key, val)
+		}
+		for key, val := range t.Raw.Labels {
+			kutil.SetMetaDataLabel(newTarget, key, val)
+		}
 	}
+	SetMetadataFromObject(newTarget, t.Metadata)
 	t.Raw = newTarget
 	return newTarget, nil
 }

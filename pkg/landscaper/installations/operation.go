@@ -18,7 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -523,7 +522,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 		return err
 	}
 	target := &lsv1alpha1.Target{}
-	if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).UniversalDecoder().Decode(data, nil, target); err != nil {
+	if _, _, err := api.Decoder.Decode(data, nil, target); err != nil {
 		return err
 	}
 	intTarget, err := dataobjects.NewFromTarget(target)
