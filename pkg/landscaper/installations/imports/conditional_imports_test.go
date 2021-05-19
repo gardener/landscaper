@@ -35,16 +35,12 @@ var _ = Describe("ConditionalImports", func() {
 		instRef types.NamespacedName
 		cmRef   lsv1alpha1.ObjectReference
 
-		fakeInstallations map[string]*lsv1alpha1.Installation
-		fakeClient        client.Client
-		fakeCompRepo      ctf.ComponentResolver
+		fakeClient   client.Client
+		fakeCompRepo ctf.ComponentResolver
 	)
 
 	BeforeEach(func() {
-		var (
-			err   error
-			state *envtest.State
-		)
+		var err error
 
 		instRef = kutil.ObjectKey("conditional-import-inst", "test8")
 		cmRef = lsv1alpha1.ObjectReference{
@@ -52,10 +48,8 @@ var _ = Describe("ConditionalImports", func() {
 			Namespace: instRef.Namespace,
 		}
 
-		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
+		fakeClient, _, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
-
-		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -68,7 +62,9 @@ var _ = Describe("ConditionalImports", func() {
 	It("should remove imports based on optional/conditional parent imports from subinstallation", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		conInst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations[instRef.String()])
+		inst := &lsv1alpha1.Installation{}
+		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
+		conInst, err := installations.CreateInternalInstallation(ctx, op, inst)
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())

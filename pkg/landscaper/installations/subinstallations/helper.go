@@ -126,6 +126,7 @@ func (o *Operation) ValidateSubinstallations(installationTmpl []*lsv1alpha1.Inst
 	return nil
 }
 
+// buildCoreImports converts the given list of versioned ImportDefinitions (potentially containing nested conditional imports) into a flattened list of core ImportDefinitions.
 func (o *Operation) buildCoreImports(importList lsv1alpha1.ImportDefinitionList) ([]core.ImportDefinition, error) {
 	coreImports := []core.ImportDefinition{}
 	for _, importDef := range importList {
@@ -136,7 +137,7 @@ func (o *Operation) buildCoreImports(importList lsv1alpha1.ImportDefinitionList)
 		coreImports = append(coreImports, coreImport)
 		// recursively check for conditional imports
 		_, ok := o.Inst.Imports[importDef.Name]
-		if ok && importDef.ConditionalImports != nil && len(importDef.ConditionalImports) > 0 {
+		if ok && len(importDef.ConditionalImports) > 0 {
 			conditionalCoreImports, err := o.buildCoreImports(importDef.ConditionalImports)
 			if err != nil {
 				return nil, err

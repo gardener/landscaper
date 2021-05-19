@@ -469,7 +469,7 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			return fmt.Errorf("import %s not defined", importDef.Name)
 		}
 
-		if importDef.ConditionalImports != nil && len(importDef.ConditionalImports) > 0 {
+		if len(importDef.ConditionalImports) > 0 {
 			if err := o.createOrUpdateImports(ctx, importDef.ConditionalImports); err != nil {
 				return err
 			}

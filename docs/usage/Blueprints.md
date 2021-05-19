@@ -147,6 +147,8 @@ imports:
 
 :warning: in the following data import and target import is used as synonym for import and export. The specification applies to both.
 
+For advanced configuration options regarding import definitions, have a look at [conditional imports](./ConditionalImports.md).
+
 #### Data Imports
 
 Data imports are the default import type that can describe arbitrary data in json or yaml format.

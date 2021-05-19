@@ -85,7 +85,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, imports[def.Name]); err != nil {
 				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
 			}
-			if def.ConditionalImports != nil && len(def.ConditionalImports) > 0 {
+			if len(def.ConditionalImports) > 0 {
 				// recursively check conditional imports
 				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, templatedDataMappings, defPath)
 				if err != nil {
