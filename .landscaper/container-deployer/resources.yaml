@@ -22,3 +22,17 @@ access:
   type: ociRegistry
   imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-controller:${VERSION}
 ---
+type: ociImage
+name: container-init-image
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-init:${VERSION}
+---
+type: ociImage
+name: container-wait-image
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-wait:${VERSION}
+---
