@@ -47,6 +47,18 @@ deployExecutions:
 
     {{ $newvals := dict "image" $imgref }}
 
+    {{ $initResource := getResource .cd "name" "container-init-image" }}
+    {{ $initImgRepo := ociRefRepo $initResource.access.imageReference }}
+    {{ $initImgTag := ociRefVersion $initResource.access.imageReference }}
+    {{ $initImgRef := dict "repository" $initImgRepo "tag" $initImgTag }}
+    {{ $_ := set $deployerVal "initContainer" $initImgRef }}
+
+    {{ $waitResource := getResource .cd "name" "container-wait-image" }}
+    {{ $waitImgRepo := ociRefRepo $waitResource.access.imageReference }}
+    {{ $waitImgTag := ociRefVersion $waitResource.access.imageReference }}
+    {{ $waitImgRef := dict "repository" $waitImgRepo "tag" $waitImgTag }}
+    {{ $_ := set $deployerVal "waitContainer" $waitImgRef }}
+
     {{ if .imports.landscaperCluster  }}
     {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
     {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}

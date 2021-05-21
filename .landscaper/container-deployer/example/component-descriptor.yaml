@@ -24,6 +24,20 @@ component:
     access:
       type: ociRegistry
       imageReference: eu.gcr.io/gardener-project/landscaper/container-deployer-controller:v0.5.3
+  - type: ociImage
+    name: container-init-image
+    version: v0.5.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/landscaper/container-init-controller:v0.5.3
+  - type: ociImage
+    name: container-wait-image
+    version: v0.5.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: eu.gcr.io/gardener-project/landscaper/container-wait-controller:v0.5.3
   - type: blueprint
     name: container-deployer-blueprint
     version: v0.5.3
