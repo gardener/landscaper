@@ -106,14 +106,6 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	o.exec.Status.ObservedGeneration = o.exec.Generation
 
-	if !lsv1alpha1helper.IsCompletedExecutionPhase(phase) {
-		return nil
-	}
-
-	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err, op, "CollectAndUpdateExports", err.Error())
-	}
-
 	// remove force annotation
 	if o.forceReconcile {
 		old := o.exec.DeepCopy()
@@ -121,6 +113,14 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		if err := o.Client().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
 			return lsv1alpha1helper.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
 		}
+	}
+
+	if !lsv1alpha1helper.IsCompletedExecutionPhase(phase) {
+		return nil
+	}
+
+	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
+		return lsv1alpha1helper.NewWrappedError(err, op, "CollectAndUpdateExports", err.Error())
 	}
 
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
