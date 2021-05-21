@@ -82,7 +82,7 @@ func (o *options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup CRD manager: %w", err)
 	}
 
-	if err := crdmgr.EnsureCRDs(); err != nil {
+	if err := crdmgr.EnsureCRDs(ctx); err != nil {
 		return fmt.Errorf("failed to handle CRDs: %w", err)
 	}
 

@@ -112,8 +112,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_CrdManagementConfiguration_To_config_CrdManagementConfiguration(in *CrdManagementConfiguration, out *config.CrdManagementConfiguration, s conversion.Scope) error {
-	out.DeployCustomResourceDefinitions = in.DeployCustomResourceDefinitions
-	out.ForceUpdate = in.ForceUpdate
+	out.DeployCustomResourceDefinitions = (*bool)(unsafe.Pointer(in.DeployCustomResourceDefinitions))
+	out.ForceUpdate = (*bool)(unsafe.Pointer(in.ForceUpdate))
 	return nil
 }
 
@@ -123,8 +123,8 @@ func Convert_v1alpha1_CrdManagementConfiguration_To_config_CrdManagementConfigur
 }
 
 func autoConvert_config_CrdManagementConfiguration_To_v1alpha1_CrdManagementConfiguration(in *config.CrdManagementConfiguration, out *CrdManagementConfiguration, s conversion.Scope) error {
-	out.DeployCustomResourceDefinitions = in.DeployCustomResourceDefinitions
-	out.ForceUpdate = in.ForceUpdate
+	out.DeployCustomResourceDefinitions = (*bool)(unsafe.Pointer(in.DeployCustomResourceDefinitions))
+	out.ForceUpdate = (*bool)(unsafe.Pointer(in.ForceUpdate))
 	return nil
 }
 
@@ -163,7 +163,9 @@ func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfigurat
 		return err
 	}
 	out.Metrics = (*config.MetricsConfiguration)(unsafe.Pointer(in.Metrics))
-	out.CrdManagement = (*config.CrdManagementConfiguration)(unsafe.Pointer(in.CrdManagement))
+	if err := Convert_v1alpha1_CrdManagementConfiguration_To_config_CrdManagementConfiguration(&in.CrdManagement, &out.CrdManagement, s); err != nil {
+		return err
+	}
 	out.DeployItemTimeouts = (*config.DeployItemTimeouts)(unsafe.Pointer(in.DeployItemTimeouts))
 	return nil
 }
@@ -179,7 +181,9 @@ func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfigurat
 		return err
 	}
 	out.Metrics = (*MetricsConfiguration)(unsafe.Pointer(in.Metrics))
-	out.CrdManagement = (*CrdManagementConfiguration)(unsafe.Pointer(in.CrdManagement))
+	if err := Convert_config_CrdManagementConfiguration_To_v1alpha1_CrdManagementConfiguration(&in.CrdManagement, &out.CrdManagement, s); err != nil {
+		return err
+	}
 	out.DeployItemTimeouts = (*DeployItemTimeouts)(unsafe.Pointer(in.DeployItemTimeouts))
 	return nil
 }
