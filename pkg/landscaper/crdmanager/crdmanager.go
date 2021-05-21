@@ -39,7 +39,7 @@ var importedCrdFS embed.FS
 
 // CRDManager contains everything required to initialize or update Landscaper CRDs
 type CRDManager struct {
-	cfg          *config.CrdManagementConfiguration
+	cfg          config.CrdManagementConfiguration
 	client       client.Client
 	log          logr.Logger
 	crdRawDataFS *embed.FS
@@ -47,7 +47,6 @@ type CRDManager struct {
 
 // NewCrdManager returns a new instance of the CRDManager
 func NewCrdManager(log logr.Logger, mgr manager.Manager, lsConfig *config.LandscaperConfiguration) (*CRDManager, error) {
-
 	apiExtensionsScheme := runtime.NewScheme()
 	apiextinstall.Install(apiExtensionsScheme)
 	kubeClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: apiExtensionsScheme})
@@ -59,15 +58,8 @@ func NewCrdManager(log logr.Logger, mgr manager.Manager, lsConfig *config.Landsc
 		return nil, fmt.Errorf("failed to read from embedded CRDS filesystem: %w", err)
 	}
 
-	cfg := lsConfig.CrdManagement
-	if cfg == nil {
-		cfg = &config.CrdManagementConfiguration{
-			DeployCustomResourceDefinitions: true,
-		}
-	}
-
 	return &CRDManager{
-		cfg:          cfg,
+		cfg:          lsConfig.CrdManagement,
 		client:       kubeClient,
 		log:          log,
 		crdRawDataFS: &importedCrdFS,
@@ -75,8 +67,8 @@ func NewCrdManager(log logr.Logger, mgr manager.Manager, lsConfig *config.Landsc
 }
 
 // EnsureCRDs installs or updates Landscaper CRDs based on Landscaper's configuration
-func (crdmgr *CRDManager) EnsureCRDs() error {
-	if !crdmgr.cfg.DeployCustomResourceDefinitions {
+func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
+	if !*crdmgr.cfg.DeployCustomResourceDefinitions {
 		crdmgr.log.V(1).Info("Registering Landscaper CRDs disabled by configuration")
 		return nil
 	}
@@ -86,11 +78,7 @@ func (crdmgr *CRDManager) EnsureCRDs() error {
 		return err
 	}
 
-	ctx := context.Background()
-	defer ctx.Done()
-
 	crdmgr.log.V(1).Info("Registering Landscaper CRDs in cluster")
-
 	for _, crd := range crdList {
 
 		existingCrd := &v1.CustomResourceDefinition{}
@@ -101,10 +89,8 @@ func (crdmgr *CRDManager) EnsureCRDs() error {
 				if err != nil {
 					return err
 				}
-
 				continue
 			}
-
 			return err
 		}
 
@@ -155,13 +141,14 @@ func (crdmgr *CRDManager) createCrd(ctx context.Context, crd *v1.CustomResourceD
 }
 
 func (crdmgr *CRDManager) updateCrd(ctx context.Context, currentCrd, updatedCrd *v1.CustomResourceDefinition) error {
-	if !crdmgr.cfg.ForceUpdate {
+	if !*crdmgr.cfg.ForceUpdate {
+		crdmgr.log.V(1).Info("Force update of Landscaper CRDs disabled by configuration")
 		return nil
 	}
 
 	updatedCrd.ResourceVersion = currentCrd.ResourceVersion
 	updatedCrd.UID = currentCrd.UID
-	return crdmgr.client.Update(ctx, updatedCrd)
+	return crdmgr.client.Patch(ctx, updatedCrd, client.MergeFrom(currentCrd))
 }
 
 func (crdmgr *CRDManager) crdsFromDir() ([]v1.CustomResourceDefinition, error) {

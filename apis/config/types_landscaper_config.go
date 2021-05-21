@@ -26,7 +26,7 @@ type LandscaperConfiguration struct {
 	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
 	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
 	// +optional
-	CrdManagement *CrdManagementConfiguration `json:"crdManagement,omitempty"`
+	CrdManagement CrdManagementConfiguration `json:"crdManagement,omitempty"`
 	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
 	// +optional
 	DeployItemTimeouts *DeployItemTimeouts `json:"deployItemTimeouts,omitempty"`
@@ -106,9 +106,9 @@ type MetricsConfiguration struct {
 // CrdManagementConfiguration contains the configuration of the CRD management
 type CrdManagementConfiguration struct {
 	// DeployCustomResourceDefinitions specifies if CRDs should be deployed
-	DeployCustomResourceDefinitions bool `json:"deployCrd"`
+	DeployCustomResourceDefinitions *bool `json:"deployCrd"`
 
 	// ForceUpdate specifies whether existing CRDs should be updated
 	// +optional
-	ForceUpdate bool `json:"forceUpdate,omitempty"`
+	ForceUpdate *bool `json:"forceUpdate,omitempty"`
 }

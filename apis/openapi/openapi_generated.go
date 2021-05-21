@@ -1030,7 +1030,6 @@ func schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref commo
 					"deployCrd": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -1125,6 +1124,7 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 					"crdManagement": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.CrdManagementConfiguration"),
 						},
 					},
@@ -1305,7 +1305,6 @@ func schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref commo
 					"deployCrd": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployCustomResourceDefinitions specifies if CRDs should be deployed",
-							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -1400,6 +1399,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					"crdManagement": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
+							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration"),
 						},
 					},
