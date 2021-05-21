@@ -69,11 +69,11 @@ var _ = Describe("Operation", func() {
 					},
 				},
 			}
-			op.Inst.Imports = map[string]interface{}{
+			imports := map[string]interface{}{
 				"my-import": targetObj,
 			}
 
-			testutils.ExpectNoError(op.CreateOrUpdateImports(ctx))
+			testutils.ExpectNoError(op.CreateOrUpdateImports(ctx, imports))
 
 			targetList := &lsv1alpha1.TargetList{}
 			testutils.ExpectNoError(kubeClient.List(ctx, targetList))
