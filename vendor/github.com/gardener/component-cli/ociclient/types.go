@@ -25,7 +25,7 @@ type Client interface {
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
 
 	// PushManifest uploads the given ocispec Descriptor to the given ref.
-	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest) error
+	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest, opts ...PushOption) error
 }
 
 // ExtendedClient defines an oci client with extended functionality that may not work with all registries.
@@ -45,6 +45,49 @@ type Resolver interface {
 	GetCredentials(hostname string) (username, password string, err error)
 }
 
+// Store describes a store that returns a io reader for a descriptor
+type Store interface {
+	Get(desc ocispecv1.Descriptor) (io.ReadCloser, error)
+}
+
+// PushOption is the interface to specify different cache options
+type PushOption interface {
+	ApplyPushOption(options *PushOptions)
+}
+
+// PushOptions contains all oci push options.
+type PushOptions struct {
+	// Store is the oci cache to be used by the client
+	Store Store
+}
+
+// ApplyOptions applies the given list options on these options,
+// and then returns itself (for convenient chaining).
+func (o *PushOptions) ApplyOptions(opts []PushOption) *PushOptions {
+	for _, opt := range opts {
+		if opt != nil {
+			opt.ApplyPushOption(o)
+		}
+	}
+	return o
+}
+
+// WithStore configures a store for the oci push.
+func WithStore(store Store) WithStoreOption {
+	return WithStoreOption{
+		Store: store,
+	}
+}
+
+// WithStoreOption configures a cache for the oci client
+type WithStoreOption struct {
+	Store
+}
+
+func (c WithStoreOption) ApplyPushOption(options *PushOptions) {
+	options.Store = c.Store
+}
+
 // Options contains all client options to configure the oci client.
 type Options struct {
 	// Paths configures local paths to search for docker configuration files
@@ -53,9 +96,9 @@ type Options struct {
 	// AllowPlainHttp allows the fallback to http if https is not supported by the registry.
 	AllowPlainHttp bool
 
-	// Resolver sets the used resolver.
-	// A default resolver will be created if not given.
-	Resolver Resolver
+	// Keyring sets the used keyring.
+	// A default keyring will be created if not given.
+	Keyring credentials.OCIKeyring
 
 	// CacheConfig contains the cache configuration.
 	// Tis configuration will automatically create a new cache based on that configuration.
@@ -88,12 +131,23 @@ func (o *Options) ApplyOptions(opts []Option) *Options {
 }
 
 // WithCache configures a cache for the oci client
-type WithCache struct {
+func WithCache(c cache.Cache) WithCacheOption {
+	return WithCacheOption{
+		Cache: c,
+	}
+}
+
+// WithCacheOption configures a cache for the oci client
+type WithCacheOption struct {
 	cache.Cache
 }
 
-func (c WithCache) ApplyOption(options *Options) {
+func (c WithCacheOption) ApplyOption(options *Options) {
 	options.Cache = c.Cache
+}
+
+func (c WithCacheOption) ApplyPushOption(options *PushOptions) {
+	options.Store = c.Cache
 }
 
 // WithKeyring return a option that configures the resolver to use the given oci keyring
@@ -109,16 +163,7 @@ type WithKeyringOption struct {
 }
 
 func (c WithKeyringOption) ApplyOption(options *Options) {
-	options.Resolver = c.OCIKeyring
-}
-
-// WithResolver configures a resolver for the oci client
-type WithResolver struct {
-	Resolver
-}
-
-func (c WithResolver) ApplyOption(options *Options) {
-	options.Resolver = c.Resolver
+	options.Keyring = c.OCIKeyring
 }
 
 // WithKnownMediaType adds a known media types to the client

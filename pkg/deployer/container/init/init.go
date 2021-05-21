@@ -211,7 +211,7 @@ func createOciClientFromDockerAuthConfig(ctx context.Context, log logr.Logger, f
 		return nil, err
 	}
 
-	ociClient, err := ociclient.NewClient(log, ociclient.WithResolver{Resolver: keyring})
+	ociClient, err := ociclient.NewClient(log, ociclient.WithKeyring(keyring))
 	if err != nil {
 		return nil, err
 	}
