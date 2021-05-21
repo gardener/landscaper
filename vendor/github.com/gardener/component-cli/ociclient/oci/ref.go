@@ -78,3 +78,20 @@ func (r RefSpec) String() string {
 	}
 	return ""
 }
+
+func (r RefSpec) DeepCopy() RefSpec {
+	refspec := RefSpec{
+		Host:       r.Host,
+		Repository: r.Repository,
+	}
+	if r.Tag != nil {
+		tag := *r.Tag
+		refspec.Tag = &tag
+	}
+	if r.Digest != nil {
+		dig := r.Digest.String()
+		d := digest.FromString(dig)
+		refspec.Digest = &d
+	}
+	return refspec
+}

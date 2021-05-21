@@ -216,8 +216,8 @@ func createOCIClient(ctx context.Context, log logr.Logger, client client.Client,
 	}
 	ociClient, err := ociclient.NewClient(log,
 		utils.WithConfiguration(config.OCI),
-		ociclient.WithResolver{Resolver: ociKeyring},
-		ociclient.WithCache{Cache: componentsRegistryMgr.SharedCache()},
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(componentsRegistryMgr.SharedCache()),
 	)
 	if err != nil {
 		return nil, err

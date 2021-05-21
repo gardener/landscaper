@@ -173,7 +173,7 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 		httpClient := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}
 		f.OCIClient, err = ociclient.NewClient(testing.NullLogger{},
 			ociclient.WithKeyring(ociKeyring),
-			ociclient.WithCache{Cache: f.OCICache},
+			ociclient.WithCache(f.OCICache),
 			ociclient.WithHTTPClient(httpClient))
 		if err != nil {
 			return nil, fmt.Errorf("unable to build oci client: %w", err)

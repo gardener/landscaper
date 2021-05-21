@@ -11,6 +11,8 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	ociclient "github.com/gardener/component-cli/ociclient"
 )
 
 // MockClient is a mock of Client interface
@@ -66,15 +68,20 @@ func (mr *MockClientMockRecorder) GetManifest(arg0, arg1 interface{}) *gomock.Ca
 }
 
 // PushManifest mocks base method
-func (m *MockClient) PushManifest(arg0 context.Context, arg1 string, arg2 *v1.Manifest) error {
+func (m *MockClient) PushManifest(arg0 context.Context, arg1 string, arg2 *v1.Manifest, arg3 ...ociclient.PushOption) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PushManifest", arg0, arg1, arg2)
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PushManifest", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PushManifest indicates an expected call of PushManifest
-func (mr *MockClientMockRecorder) PushManifest(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) PushManifest(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushManifest", reflect.TypeOf((*MockClient)(nil).PushManifest), arg0, arg1, arg2)
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushManifest", reflect.TypeOf((*MockClient)(nil).PushManifest), varargs...)
 }

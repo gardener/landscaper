@@ -14,6 +14,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mandelsoft/vfs/pkg/composefs"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
@@ -55,6 +58,9 @@ type BlobInput struct {
 	Path string `json:"path"`
 	// CompressWithGzip defines that the blob should be automatically compressed using gzip.
 	CompressWithGzip *bool `json:"compress,omitempty"`
+	// PreserveDir defines that the directory specified in the Path field should be included in the blob.
+	// Only supported for Type dir.
+	PreserveDir bool `json:"preserveDir,omitempty"`
 }
 
 // Compress returns if the blob should be compressed using gzip.
@@ -104,6 +110,24 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 		if err != nil {
 			return nil, fmt.Errorf("unable to create internal fs for %q: %w", inputPath, err)
 		}
+
+		if input.PreserveDir {
+			dir := string(filepath.Separator) + filepath.Base(inputPath)
+			fs := memoryfs.New()
+			err = fs.Mkdir(dir, os.FileMode(0777))
+			if err != nil {
+				return nil, err
+			}
+
+			composedFs := composefs.New(fs)
+			err = composedFs.Mount(dir, blobFs)
+			if err != nil {
+				return nil, err
+			}
+
+			blobFs = composedFs
+		}
+
 		var (
 			data bytes.Buffer
 		)

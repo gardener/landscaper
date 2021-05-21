@@ -5,17 +5,14 @@
 package credentials
 
 import (
-	"context"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
-	"github.com/containerd/containerd/remotes"
-	"github.com/containerd/containerd/remotes/docker"
 	dockercreds "github.com/docker/cli/cli/config/credentials"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 )
 
 // to find a suitable secret for images on Docker Hub, we need its two domains to do matching
@@ -27,10 +24,9 @@ const (
 // OCIKeyring is the interface that implements are keyring to retrieve credentials for a given
 // server.
 type OCIKeyring interface {
+	authn.Keychain
 	// Get retrieves credentials from the keyring for a given resource url.
 	Get(resourceURl string) (dockerconfigtypes.AuthConfig, bool)
-	// Resolver returns a new authenticated resolver.
-	Resolver(ctx context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
 	// GetCredentials returns the username and password for a hostname if defined.
 	GetCredentials(hostname string) (username, password string, err error)
 }
@@ -183,7 +179,7 @@ func (o *GeneralOciKeyring) AddAuthConfig(address string, auth dockerconfigtypes
 	return o.AddAuthConfigGetter(address, DefaultAuthConfigGetter(auth))
 }
 
-// AddAuthConfig adds a auth config for a address
+// AddAuthConfigGetter adds a auth config for a address
 func (o *GeneralOciKeyring) AddAuthConfigGetter(address string, getter AuthConfigGetter) error {
 	// normalize host name
 	var err error
@@ -210,30 +206,19 @@ func (o *GeneralOciKeyring) Add(store dockercreds.Store) error {
 	return nil
 }
 
-func (o *GeneralOciKeyring) Resolver(_ context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error) {
-	if ref == "" {
-		return docker.NewResolver(docker.ResolverOptions{
-			Credentials: o.GetCredentials,
-			Client:      client,
-			PlainHTTP:   plainHTTP,
-		}), nil
+// Resolve implements the google container registry auth interface.
+func (o *GeneralOciKeyring) Resolve(resource authn.Resource) (authn.Authenticator, error) {
+	authconfig, ok := o.Get(resource.String())
+	if !ok {
+		return authn.FromConfig(authn.AuthConfig{}), nil
 	}
 
-	// get specific auth for ref and only return a resolver with that authentication config
-	auth, ok := o.Get(ref)
-	if !ok {
-		return docker.NewResolver(docker.ResolverOptions{
-			Credentials: o.GetCredentials,
-			Client:      client,
-			PlainHTTP:   plainHTTP,
-		}), nil
-	}
-	return docker.NewResolver(docker.ResolverOptions{
-		Credentials: func(url string) (string, string, error) {
-			return auth.Username, auth.Password, nil
-		},
-		Client:    client,
-		PlainHTTP: plainHTTP,
+	return authn.FromConfig(authn.AuthConfig{
+		Username:      authconfig.Username,
+		Password:      authconfig.Password,
+		Auth:          authconfig.Auth,
+		IdentityToken: authconfig.IdentityToken,
+		RegistryToken: authconfig.RegistryToken,
 	}), nil
 }
 
@@ -248,7 +233,7 @@ func normalizeHost(u string) (string, error) {
 	return path.Join(host.Host, host.Path), nil
 }
 
-// Adds all authentication options from keyring 1 and 2.
+// Merge merges all authentication options from keyring 1 and 2.
 // Keyring 2 overwrites authentication from keyring 1 on clashes.
 func Merge(k1, k2 *GeneralOciKeyring) error {
 	for address, getters := range k2.store {

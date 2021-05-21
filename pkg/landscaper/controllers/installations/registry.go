@@ -52,8 +52,8 @@ func (c *controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 	}
 	ociClient, err := ociclient.NewClient(c.Log(),
 		utils.WithConfiguration(c.lsConfig.Registry.OCI),
-		ociclient.WithResolver{Resolver: ociKeyring},
-		ociclient.WithCache{Cache: c.componentsRegistryMgr.SharedCache()},
+		ociclient.WithKeyring(ociKeyring),
+		ociclient.WithCache(c.componentsRegistryMgr.SharedCache()),
 	)
 	if err != nil {
 		return err

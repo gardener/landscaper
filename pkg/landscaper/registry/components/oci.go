@@ -34,7 +34,7 @@ type ociClient struct {
 
 // NewOCIRegistry creates a new oci registry from a oci config.
 func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration, cache cache.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
-	client, err := ociclient.NewClient(log, utils.WithConfiguration(config), ociclient.WithCache{Cache: cache})
+	client, err := ociclient.NewClient(log, utils.WithConfiguration(config), ociclient.WithCache(cache))
 	if err != nil {
 		return nil, err
 	}
