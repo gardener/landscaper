@@ -19,13 +19,13 @@ import (
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/gardener/landscaper/apis/core/install"
+	"github.com/gardener/landscaper/pkg/api"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/container"
@@ -124,11 +124,7 @@ func ReadResourceFromFile(obj runtime.Object, testfile string) error {
 	if err != nil {
 		return err
 	}
-
-	landscaperScheme := runtime.NewScheme()
-	install.Install(landscaperScheme)
-	decoder := serializer.NewCodecFactory(landscaperScheme).UniversalDecoder()
-	if _, _, err := decoder.Decode(data, nil, obj); err != nil {
+	if _, _, err := api.Decoder.Decode(data, nil, obj); err != nil {
 		return err
 	}
 	return nil
@@ -140,16 +136,11 @@ func ReadBlueprintFromFile(testfile string) (*lsv1alpha1.Blueprint, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	landscaperScheme := runtime.NewScheme()
-	install.Install(landscaperScheme)
-	decoder := serializer.NewCodecFactory(landscaperScheme).UniversalDecoder()
-
-	component := &lsv1alpha1.Blueprint{}
-	if _, _, err := decoder.Decode(data, nil, component); err != nil {
+	blueprint := &lsv1alpha1.Blueprint{}
+	if _, _, err := api.Decoder.Decode(data, nil, blueprint); err != nil {
 		return nil, err
 	}
-	return component, nil
+	return blueprint, nil
 }
 
 // CreateBlueprintFromFile reads a blueprint from the given file and creates a internal blueprint object.

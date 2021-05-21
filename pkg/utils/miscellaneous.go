@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
 )
 
 // MergeMaps takes two maps <a>, <b> and merges them. If <b> defines a value with a key
@@ -103,4 +104,14 @@ func CopyFS(src, dst vfs.FileSystem, srcPath, dstPath string) error {
 		}
 		return nil
 	})
+}
+
+// YAMLReadFromFile reads a file from a filesystem and decodes it into the given obj
+// using YAMl/JSON decoder.
+func YAMLReadFromFile(fs vfs.FileSystem, path string, obj interface{}) error {
+	data, err := vfs.ReadFile(fs, path)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(data, obj)
 }

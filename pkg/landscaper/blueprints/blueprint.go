@@ -33,6 +33,20 @@ func New(blueprint *lsv1alpha1.Blueprint, content vfs.FileSystem) *Blueprint {
 	return b
 }
 
+// NewFromFs creates a new internal Blueprint from a filesystem.
+// The blueprint is automatically read from within the filesystem
+func NewFromFs(content vfs.FileSystem) (*Blueprint, error) {
+	data, err := vfs.ReadFile(content, lsv1alpha1.BlueprintFileName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read blueprint from filesystem: %w", err)
+	}
+	blueprint := &lsv1alpha1.Blueprint{}
+	if _, _, err := api.Decoder.Decode(data, nil, blueprint); err != nil {
+		return nil, fmt.Errorf("unable to decode blueprint: %w", err)
+	}
+	return New(blueprint, content), nil
+}
+
 // GetSubinstallations gets the direct subinstallation templates for a blueprint.
 func (b *Blueprint) GetSubinstallations() ([]*lsv1alpha1.InstallationTemplate, error) {
 	var (

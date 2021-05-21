@@ -266,17 +266,27 @@ func HasLabelWithValue(obj metav1.Object, lab string, value string) bool {
 // The type of the object is automatically set given the scheme.
 func ConvertToRawExtension(from runtime.Object, scheme *runtime.Scheme) (*runtime.RawExtension, error) {
 	// set the apiversion and kind
-	gvk, err := apiutil.GVKForObject(from, scheme)
-	if err != nil {
-		return nil, fmt.Errorf("unable to to get gvk for provider configuration: %w", err)
+	if err := InjectTypeInformation(from, scheme); err != nil {
+		return nil, err
 	}
-	from.GetObjectKind().SetGroupVersionKind(gvk)
 
 	ext := &runtime.RawExtension{}
 	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&from, ext, nil); err != nil {
 		return nil, err
 	}
 	return ext, nil
+}
+
+// InjectTypeInformation injects the group version kind into a runtime object.
+// This is needed as this information gets lost when a struct is decoded.
+func InjectTypeInformation(obj runtime.Object, scheme *runtime.Scheme) error {
+	// set the apiversion and kind
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return fmt.Errorf("unable to to get gvk for provider configuration: %w", err)
+	}
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+	return nil
 }
 
 // GenerateKubeconfigBytes generates a kubernetes kubeconfig config object from a rest config
