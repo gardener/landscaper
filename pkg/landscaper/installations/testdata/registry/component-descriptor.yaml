@@ -82,3 +82,10 @@ component:
     access:
       type: localFilesystemBlob
       filename: f
+  - name: root-cond
+    type: blueprint
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      filename: root-cond

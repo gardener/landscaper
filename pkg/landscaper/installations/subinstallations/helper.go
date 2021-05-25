@@ -115,19 +115,37 @@ func (o *Operation) ValidateSubinstallations(installationTmpl []*lsv1alpha1.Inst
 		coreInstTmpls[i] = coreTmpl
 	}
 
-	coreImports := make([]core.ImportDefinition, len(o.Inst.Blueprint.Info.Imports))
-	for i, importDef := range o.Inst.Blueprint.Info.Imports {
-		coreImport := core.ImportDefinition{}
-		if err := lsv1alpha1.Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition(&importDef, &coreImport, nil); err != nil {
-			return err
-		}
-		coreImports[i] = coreImport
+	coreImports, err := o.buildCoreImports(o.Inst.Blueprint.Info.Imports)
+	if err != nil {
+		return err
 	}
 
 	if allErrs := validation.ValidateInstallationTemplates(field.NewPath("subinstallations"), coreImports, coreInstTmpls); len(allErrs) != 0 {
 		return o.NewError(allErrs.ToAggregate(), "ValidateSubInstallations", allErrs.ToAggregate().Error())
 	}
 	return nil
+}
+
+// buildCoreImports converts the given list of versioned ImportDefinitions (potentially containing nested conditional imports) into a flattened list of core ImportDefinitions.
+func (o *Operation) buildCoreImports(importList lsv1alpha1.ImportDefinitionList) ([]core.ImportDefinition, error) {
+	coreImports := []core.ImportDefinition{}
+	for _, importDef := range importList {
+		coreImport := core.ImportDefinition{}
+		if err := lsv1alpha1.Convert_v1alpha1_ImportDefinition_To_core_ImportDefinition(&importDef, &coreImport, nil); err != nil {
+			return nil, err
+		}
+		coreImports = append(coreImports, coreImport)
+		// recursively check for conditional imports
+		_, ok := o.Inst.Imports[importDef.Name]
+		if ok && len(importDef.ConditionalImports) > 0 {
+			conditionalCoreImports, err := o.buildCoreImports(importDef.ConditionalImports)
+			if err != nil {
+				return nil, err
+			}
+			coreImports = append(coreImports, conditionalCoreImports...)
+		}
+	}
+	return coreImports, nil
 }
 
 // CombinedState returns the combined state of all subinstallations

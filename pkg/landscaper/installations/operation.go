@@ -452,9 +452,13 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 // CreateOrUpdateImports creates or updates the data objects that holds the imported values for every import
 func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
+	return o.createOrUpdateImports(ctx, o.Inst.Blueprint.Info.Imports)
+}
+
+func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1alpha1.ImportDefinitionList) error {
 	importedValues := o.Inst.GetImports()
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
-	for _, importDef := range o.Inst.Blueprint.Info.Imports {
+	for _, importDef := range importDefs {
 		importData, ok := importedValues[importDef.Name]
 		if !ok {
 			// todo: create test for optional imports
@@ -462,6 +466,12 @@ func (o *Operation) CreateOrUpdateImports(ctx context.Context) error {
 				continue
 			}
 			return fmt.Errorf("import %s not defined", importDef.Name)
+		}
+
+		if len(importDef.ConditionalImports) > 0 {
+			if err := o.createOrUpdateImports(ctx, importDef.ConditionalImports); err != nil {
+				return err
+			}
 		}
 
 		if len(importDef.TargetType) != 0 {
