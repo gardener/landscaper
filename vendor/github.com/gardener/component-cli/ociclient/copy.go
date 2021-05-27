@@ -35,6 +35,7 @@ func (s GenericStore) Get(desc ocispecv1.Descriptor) (io.ReadCloser, error) {
 	ctx := context.Background()
 	reader, writer := io.Pipe()
 	go func() {
+		defer writer.Close()
 		defer ctx.Done()
 		if err := s(ctx, desc, writer); err != nil {
 			_ = reader.CloseWithError(err)

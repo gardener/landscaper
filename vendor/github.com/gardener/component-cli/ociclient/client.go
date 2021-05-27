@@ -118,7 +118,7 @@ func (c *client) InjectCache(cache cache.Cache) error {
 }
 
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
-	resolver, err := c.getResolverForRef(ctx, ref, transport.PushScope)
+	resolver, err := c.getResolverForRef(ctx, ref, transport.PullScope)
 	if err != nil {
 		return nil, err
 	}
@@ -497,6 +497,9 @@ func doRequestWithPaging(ctx context.Context, u *url.URL, pFunc pagingFunc) erro
 }
 
 func createDescriptorFromManifest(cache cache.Cache, manifest *ocispecv1.Manifest) (ocispecv1.Descriptor, error) {
+	if manifest.SchemaVersion == 0 {
+		manifest.SchemaVersion = 2
+	}
 	manifestBytes, err := json.Marshal(manifest)
 	if err != nil {
 		return ocispecv1.Descriptor{}, err
