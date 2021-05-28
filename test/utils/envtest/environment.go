@@ -44,15 +44,20 @@ func New(projectRoot string) (*Environment, error) {
 		return nil, err
 	}
 	testBinPath := filepath.Join(projectRoot, "tmp", "test", "bin")
-	if err := os.Setenv("TEST_ASSET_KUBE_APISERVER", filepath.Join(testBinPath, "kube-apiserver")); err != nil {
-		return nil, err
+	// if the default Landscaper test bin does not exist we default to the kubebuilder testenv default
+	// that uses the KUBEBUILDER_ASSETS env var.
+	if _, err := os.Stat(testBinPath); err == nil {
+		if err := os.Setenv("TEST_ASSET_KUBE_APISERVER", filepath.Join(testBinPath, "kube-apiserver")); err != nil {
+			return nil, err
+		}
+		if err := os.Setenv("TEST_ASSET_ETCD", filepath.Join(testBinPath, "etcd")); err != nil {
+			return nil, err
+		}
+		if err := os.Setenv("TEST_ASSET_KUBECTL", filepath.Join(testBinPath, "kubectl")); err != nil {
+			return nil, err
+		}
 	}
-	if err := os.Setenv("TEST_ASSET_ETCD", filepath.Join(testBinPath, "etcd")); err != nil {
-		return nil, err
-	}
-	if err := os.Setenv("TEST_ASSET_KUBECTL", filepath.Join(testBinPath, "kubectl")); err != nil {
-		return nil, err
-	}
+
 	return &Environment{
 		Env: &envtest.Environment{
 			CRDDirectoryPaths: []string{filepath.Join(projectRoot, ".crd")},
