@@ -125,6 +125,12 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			// if there was an aborting timeout, no need to check for anything else
 			return reconcile.Result{}, nil
 		}
+		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
+			if err := con.c.Update(ctx, di); err != nil {
+				logger.Error(err, "unable to update deploy item")
+				return reconcile.Result{}, err
+			}
+		}
 	}
 
 	// detect progressing timeout
@@ -191,15 +197,21 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 
 func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectAbortingTimeouts")
-	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == AbortingTimeoutReason {
+	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+		di.Status.LastError != nil &&
+		di.Status.LastError.Reason == AbortingTimeoutReason {
 		// don't do anything if phase is already failed due to a recent aborting timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
 		logger.V(7).Info("deploy item already failed due to aborting timeout, nothing to do")
+		// should do nothing if the annotations are already removed.
+		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		return nil, nil
 	}
 
 	// no aborting timeout if timestamp is missing or deploy item is in a final phase
-	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) ||
+		di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded ||
+		di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 		logger.V(7).Info("deploy item doesn't have abort timestamp annotation or is in a final phase, nothing to do")
 		return nil, nil
 	}
@@ -213,8 +225,14 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 		// deploy item has not been aborted within the timeframe
 		// => aborting timeout
 		logger.V(5).Info("aborting timeout occurred")
+		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, AbortingTimeoutOperation, AbortingTimeoutReason, fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds", con.abortingTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError,
+			AbortingTimeoutOperation,
+			AbortingTimeoutReason,
+			fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds",
+				con.abortingTimeout/time.Second),
+			lsv1alpha1.ErrorTimeout)
 		return nil, nil
 	}
 
@@ -227,7 +245,9 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectProgressingTimeouts")
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
-	if di.Status.LastReconcileTime.IsZero() || di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded || di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if di.Status.LastReconcileTime.IsZero() ||
+		di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded ||
+		di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 		logger.V(7).Info("deploy item is reconciled for the first time or in a final phase, nothing to do")
 		return nil, nil
 	}

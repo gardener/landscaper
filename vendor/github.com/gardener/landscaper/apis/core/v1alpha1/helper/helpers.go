@@ -51,9 +51,21 @@ func SetTimestampAnnotationNow(obj *metav1.ObjectMeta, ta TimestampAnnotation) {
 	metav1.SetMetaDataAnnotation(obj, string(ta), time.Now().Format(time.RFC3339))
 }
 
+// SetAbortOperationAndTimestamp sets the annotations for a deploy item abort.
 func SetAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
 	SetOperation(obj, v1alpha1.AbortOperation)
 	SetTimestampAnnotationNow(obj, AbortTimestamp)
+}
+
+// RemoveAbortOperationAndTimestamp removes all abort related annotations
+func RemoveAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
+	if len(obj.Annotations) == 0 {
+		return
+	}
+	if val, ok := obj.Annotations[v1alpha1.OperationAnnotation]; ok && val == string(v1alpha1.AbortOperation) {
+		delete(obj.Annotations, v1alpha1.OperationAnnotation)
+	}
+	delete(obj.Annotations, string(AbortTimestamp))
 }
 
 // InitCondition initializes a new Condition with an Unknown status.
