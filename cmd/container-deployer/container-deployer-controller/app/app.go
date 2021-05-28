@@ -34,7 +34,10 @@ func NewContainerDeployerControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	if err := containerctlr.AddControllerToManager(o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
+	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
+		o.DeployerOptions.HostMgr,
+		o.DeployerOptions.LsMgr,
+		o.Config); err != nil {
 		return fmt.Errorf("unable to setup helm controller")
 	}
 	return o.DeployerOptions.StartManagers(ctx)

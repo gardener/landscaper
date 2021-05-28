@@ -247,7 +247,7 @@ type VersionedObjectReference struct {
 	ObservedGeneration int64 `json:"observedGeneration"`
 }
 
-// VersionedObjectReference is a named reference to a object with its last observed resource generation.
+// VersionedNamedObjectReference is a named reference to a object with its last observed resource generation.
 // This struct is used by status fields.
 type VersionedNamedObjectReference struct {
 	// Name is the unique name of the reference.
@@ -282,7 +282,7 @@ var UnknownComponentDescriptorKindKindError = errors.New("UnknownComponentDescri
 const (
 	// ComponentResourceKind is the kind of a component.
 	ComponentResourceKind ComponentDescriptorKind = "component"
-	// LocalResourceKind is the kind of a local resource.
+	// ResourceKind is the kind of a local resource.
 	ResourceKind ComponentDescriptorKind = "resource"
 )
 

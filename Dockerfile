@@ -35,6 +35,15 @@ WORKDIR /
 
 ENTRYPOINT ["/landscaper-webhooks-server"]
 
+#### Landscaper Agent ####
+FROM base as landscaper-agent
+
+COPY --from=builder /go/bin/landscaper-agent /landscaper-agent
+
+WORKDIR /
+
+ENTRYPOINT ["/landscaper-agent"]
+
 #### Container Deployer Controller ####
 FROM base as container-deployer-controller
 

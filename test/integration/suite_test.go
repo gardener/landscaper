@@ -20,7 +20,6 @@ import (
 	"github.com/gardener/landscaper/test/integration/deployers"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
-	"github.com/gardener/landscaper/test/utils"
 )
 
 var opts *framework.Options
@@ -40,13 +39,17 @@ func TestConfig(t *testing.T) {
 
 	opts.RootPath = "../../"
 	f, err := framework.New(logger, opts)
-	utils.ExpectNoError(err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	d := framework.NewDumper(f.Log(), f.Client, f.ClientSet, f.LsNamespace)
 	err = f.WaitForSystemComponents(ctx)
 	if err != nil {
-		utils.ExpectNoError(d.Dump(ctx))
+		if derr := d.Dump(ctx); derr != nil {
+			f.Log().Logf("error during dump: %s", derr.Error())
+		}
+		t.Fatal(err)
 	}
-	utils.ExpectNoError(err)
 
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)

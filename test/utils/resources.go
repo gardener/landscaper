@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/api"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -270,7 +271,7 @@ func BuildInternalKubernetesTarget(ctx context.Context, kubeClient client.Client
 		u.Host = fmt.Sprintf("%s.%s:%d", kubernetesSvcName, kubernetesSvcNamespace, svc.Spec.Ports[0].Port)
 		restConfig.Host = u.String()
 	}
-	return CreateKubernetesTarget(namespace, name, restConfig)
+	return lsutils.CreateKubernetesTarget(namespace, name, restConfig)
 }
 
 // BuildContainerDeployItem builds a new deploy item of type container.

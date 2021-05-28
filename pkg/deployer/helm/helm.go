@@ -57,9 +57,10 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
-	log           logr.Logger
-	kubeClient    client.Client
-	Configuration helmv1alpha1.Configuration
+	log            logr.Logger
+	lsKubeClient   client.Client
+	hostKubeClient client.Client
+	Configuration  helmv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -74,10 +75,12 @@ type Helm struct {
 // New creates a new internal helm item
 func New(log logr.Logger,
 	helmconfig helmv1alpha1.Configuration,
-	kubeClient client.Client,
+	lsKubeClient client.Client,
+	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
 	target *lsv1alpha1.Target,
 	componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
+
 	currOp := "InitHelmOperation"
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := api.NewDecoder(HelmScheme)
@@ -102,7 +105,8 @@ func New(log logr.Logger,
 
 	return &Helm{
 		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
-		kubeClient:            kubeClient,
+		lsKubeClient:          lsKubeClient,
+		hostKubeClient:        hostKubeClient,
 		Configuration:         helmconfig,
 		DeployItem:            item,
 		Target:                target,
@@ -125,7 +129,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := createOCIClient(ctx, h.log, h.kubeClient, h.DeployItem, h.Configuration, h.componentsRegistryMgr)
+	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.componentsRegistryMgr)
 	if err != nil {
 		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "BuildOCIClient", err.Error())
@@ -197,7 +201,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, e
 			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 
-		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.kubeClient)
+		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.lsKubeClient, h.hostKubeClient)
 		if err != nil {
 			return nil, nil, err
 		}

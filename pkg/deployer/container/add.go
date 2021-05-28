@@ -7,6 +7,7 @@ package container
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -22,8 +23,8 @@ import (
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
-func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
-	ctrlLogger := ctrl.Log.WithName("controllers")
+func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
+	ctrlLogger := logger.WithName("ContainerDeployer")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
 		Scheme: hostMgr.GetScheme(),
@@ -32,7 +33,7 @@ func AddControllerToManager(hostMgr manager.Manager, lsMgr manager.Manager, conf
 		return fmt.Errorf("unable to create direct client for the host cluster: %w", err)
 	}
 	deployer, err := NewDeployer(
-		ctrlLogger.WithName("ContainerDeployer"),
+		ctrlLogger,
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
 		directHostClient,

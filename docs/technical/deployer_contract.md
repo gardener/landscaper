@@ -1,6 +1,13 @@
+
 # Deployer Contract
 
 Deployers need to follow some rules in order to work together with the landscaper. The purpose of this documentation is to define the contract between deployers and the landscaper so that developers who want to create their own deployer know which requirements they have to fulfill.
+
+**Index**
+- [What is a Deployer](#what-is-a-deployer)
+- [Structure of a Deploy Item](#structure-of-a-deploy-item)
+- [How is a Deployer expected to act?](#how-is-a-deployer-expected-to-act)
+- [How is a Deployer installed](#)
 
 
 ## What is a Deployer?
@@ -134,3 +141,85 @@ Some deployers need to store information in the deploy item's status during or a
 
 #### 7. Final State
 If the deployer successfully finished the task described by the deploy item, it must set the phase to `Succeeded`, if it wasn't successfuly and has given up trying, the phase has to be `Failed` instead.
+
+## How is a Deployer installed
+
+A Deployer is basically a Kubernetes controller that watches DeployItems.
+By default, it's up to the administrator to install and update the deployers.
+
+As most deployer have a similar way to be installed, Landscaper offers a convenient way how to install and manage the complete lifecycle of a deployer.
+This LM (Lifecycle Management) also includes the management of different deployers across fenced environments.
+
+A deployer has to implement the DLM contract (Deployer Lifecycle Management) to be managed by the landscaper.
+For a technical overview about the DLM see [here](./deployer_lifecycle_management.md).
+
+The DLM contract describes that the Installation of a Deployer has to be defined using a `Blueprint` (Component Descriptor + Blueprint).
+By default, the agent comes with a helm deployer so that all deployers can be installed using deploy items of type `landscaper.gardener.cloud/helm`.
+If other deployitems are needed to install your deployer, another deployer registration should be created for that deployer.
+With that the deployers will install each other as long there are no cyclic dependencies between them.
+
+The DLM offers some environment specific imports for the deployer blueprint:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+- name: cluster # target to the host cluster
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: landscaperCluster # target to the cluster running the landscaper resources.
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+  required: false
+- name: releaseName
+  schema:
+    type: string
+- name: releaseNamespace
+  schema: 
+    type: string
+- name: identity
+  schema:
+    type: string
+- name: targetSelectors # defaulted to the "landscaper.gardener.cloud/environment" annotation
+  schema:
+    type: array
+    items:
+      type: object
+      properties:
+        targets:
+          type: array
+          items:
+            type: object
+        annotations:
+          type: array
+          items:
+            type: object
+        labels:
+          type: array
+          items:
+            type: object
+```
+
+Other imports can be freely used and configured using the `InstllationTemplate` in the `DeployerRegistration`.
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployerRegistration
+metadata:
+  name: my-deployer
+
+spec:
+  # describe the deploy items types the deployer iis able to reconcile
+  types: ["my-deploy-item-type"]
+  installationTemplate:
+    componentDescriptor:
+      ...
+    blueprint:
+      ...
+
+    imports:
+      data: [ ]
+      targets: [ ]
+    
+    importDataMappings: {}
+```
+

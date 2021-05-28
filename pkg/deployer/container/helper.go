@@ -48,7 +48,7 @@ func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config contai
 				return nil, fmt.Errorf("unable to get target for deploy item: %w", err)
 			}
 			if len(config.TargetSelector) != 0 {
-				matched, err := targetselector.Match(target, config.TargetSelector)
+				matched, err := targetselector.MatchOne(target, config.TargetSelector)
 				if err != nil {
 					return nil, fmt.Errorf("unable to match target selector: %w", err)
 				}

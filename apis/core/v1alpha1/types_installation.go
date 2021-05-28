@@ -247,7 +247,7 @@ type InlineBlueprint struct {
 }
 
 // ComponentDescriptorDefinition defines the component descriptor that should be used
-// for the installatoin
+// for the installation
 type ComponentDescriptorDefinition struct {
 	// ComponentDescriptorReference is the reference to a component descriptor
 	// +optional

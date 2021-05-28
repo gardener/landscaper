@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
@@ -82,6 +83,34 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f c
 	}
 
 	return controllerutil.CreateOrUpdate(ctx, c, obj, f)
+}
+
+// AddServiceAccountAuth adds the authentication information of a service account to a rest config.
+// It also waits for the secret with the token to be created.
+func AddServiceAccountAuth(ctx context.Context, kubeClient client.Client, sa *corev1.ServiceAccount, config *rest.Config) error {
+	saKey := ObjectKeyFromObject(sa)
+	// wait for k8s to generate the service account secret
+	err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (done bool, err error) {
+		if err := kubeClient.Get(ctx, saKey, sa); err != nil {
+			return false, nil
+		}
+		return len(sa.Secrets) != 0, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	secret := &corev1.Secret{}
+	if err := kubeClient.Get(ctx, ObjectKey(sa.Secrets[0].Name, sa.Namespace), secret); err != nil {
+		return fmt.Errorf("unable to get service account %q secret: %w", sa.Name, err)
+	}
+
+	if token, ok := secret.Data[corev1.ServiceAccountTokenKey]; ok {
+		config.BearerToken = string(token)
+		return nil
+
+	}
+	return fmt.Errorf("no token for authentication was present in the secret %q", secret.Name)
 }
 
 // ResolveSecrets finds and returns the secrets referenced by secretRefs
@@ -292,13 +321,21 @@ func InjectTypeInformation(obj runtime.Object, scheme *runtime.Scheme) error {
 // GenerateKubeconfigBytes generates a kubernetes kubeconfig config object from a rest config
 // and encodes it as yaml.
 func GenerateKubeconfigBytes(restConfig *rest.Config) ([]byte, error) {
-	return clientcmd.Write(GenerateKubeconfig(restConfig))
+	clientConfig, err := GenerateKubeconfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+	return clientcmd.Write(clientConfig)
 }
 
 // GenerateKubeconfigJSONBytes generates a kubernetes kubeconfig config object from a rest config
 // and encodes it as json.
 func GenerateKubeconfigJSONBytes(restConfig *rest.Config) ([]byte, error) {
-	data, err := clientcmd.Write(GenerateKubeconfig(restConfig))
+	clientConfig, err := GenerateKubeconfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+	data, err := clientcmd.Write(clientConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -306,8 +343,45 @@ func GenerateKubeconfigJSONBytes(restConfig *rest.Config) ([]byte, error) {
 }
 
 // GenerateKubeconfig generates a kubernetes kubeconfig config object from a rest config
-func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
+func GenerateKubeconfig(restConfig *rest.Config) (clientcmdapi.Config, error) {
 	const defaultID = "default"
+
+	var (
+		caData   = restConfig.TLSClientConfig.CAData
+		certData = restConfig.TLSClientConfig.CertData
+		keyData  = restConfig.TLSClientConfig.KeyData
+
+		bearerToken = restConfig.BearerToken
+	)
+	if len(restConfig.TLSClientConfig.CAFile) != 0 {
+		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.CAFile)
+		if err != nil {
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read ca from %q: %w", restConfig.TLSClientConfig.CAFile, err)
+		}
+		caData = data
+	}
+	if len(restConfig.TLSClientConfig.CertFile) != 0 {
+		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.CertFile)
+		if err != nil {
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read cert from %q: %w", restConfig.TLSClientConfig.CertFile, err)
+		}
+		certData = data
+	}
+	if len(restConfig.TLSClientConfig.KeyFile) != 0 {
+		data, err := ioutil.ReadFile(restConfig.TLSClientConfig.KeyFile)
+		if err != nil {
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read key from %q: %w", restConfig.TLSClientConfig.KeyFile, err)
+		}
+		keyData = data
+	}
+	if len(restConfig.BearerTokenFile) != 0 {
+		data, err := ioutil.ReadFile(restConfig.BearerTokenFile)
+		if err != nil {
+			return clientcmdapi.Config{}, fmt.Errorf("unable to read bearer token from %q: %w", restConfig.BearerTokenFile, err)
+		}
+		bearerToken = string(data)
+	}
+
 	cfg := clientcmdapi.Config{
 		APIVersion:     "v1",
 		Kind:           "Config",
@@ -320,24 +394,24 @@ func GenerateKubeconfig(restConfig *rest.Config) clientcmdapi.Config {
 		},
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
 			defaultID: {
-				Token: restConfig.BearerToken,
+				Token: bearerToken,
 
 				Username: restConfig.Username,
 				Password: restConfig.Password,
 
-				ClientCertificateData: restConfig.CertData,
-				ClientKeyData:         restConfig.KeyData,
+				ClientCertificateData: certData,
+				ClientKeyData:         keyData,
 			},
 		},
 		Clusters: map[string]*clientcmdapi.Cluster{
 			defaultID: {
 				Server:                   restConfig.Host + restConfig.APIPath,
-				CertificateAuthorityData: restConfig.CAData,
+				CertificateAuthorityData: caData,
 				InsecureSkipTLSVerify:    restConfig.Insecure,
 			},
 		},
 	}
-	return cfg
+	return cfg, nil
 }
 
 // ParseFiles parses a map of filename->data into unstructured yaml objects.

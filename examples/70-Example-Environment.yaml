@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Environment
+metadata:
+  name: my-env
+
+spec:
+  namespace: "ls-system" # namespace in the host cluster where the deployers are installed
+  hostTarget:
+    type: landscaper.gardener.cloud/kubernetes-cluster
+    config:
+      kubeconfig:
+        secretRef:
+          name: "my-env-cluster"
+          namespace: "ls-system"
+          key: "kubeconfig"
+  # the landscaper cluster host information.
+  # This is needed to ensure that the deployers running in a fenced environment can access the apiserver.
+  landscaperClusterConfig:
+    host: ""
+    apiPath: ""
+    caData: "" # base64 encoded server ca cert
+
+  # default target selectors that are given as import to the installed deployers.
+  # can be overwritten/configured in the agent config
+  targetSelectors:
+  - annotations:
+    - key: "landscaper.gardener.cloud/environment"
+      operator: "="
+      values: [".metadata.name"]

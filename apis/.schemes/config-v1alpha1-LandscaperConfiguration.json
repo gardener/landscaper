@@ -56,6 +56,76 @@
         }
       }
     },
+    "config-v1alpha1-DeployerManagementConfiguration": {
+      "description": "DeployerManagementConfiguration contains the configuration of the deployer management",
+      "type": "object",
+      "required": [
+        "disable",
+        "namespace",
+        "agent"
+      ],
+      "properties": {
+        "agent": {
+          "description": "Agent contains the landscaper agent configuration.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-LandscaperAgentConfiguration"
+        },
+        "disable": {
+          "description": "Disable disables the landscaper deployer management.",
+          "type": "boolean",
+          "default": false
+        },
+        "namespace": {
+          "description": "Namespace defines the system namespace where the deployer installation should be deployed to.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "config-v1alpha1-LandscaperAgentConfiguration": {
+      "description": "LandscaperAgentConfiguration is the landscaper specific agent configuration",
+      "type": "object",
+      "required": [
+        "disable",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "disable": {
+          "description": "Disable disables the default agent that is started with the landscaper. This is automatically disabled if the deployment management is disabled.",
+          "type": "boolean",
+          "default": false
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name is the name for the agent and environment. This name has to be landscaper globally unique.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace in the host cluster where the deployers should be installed. Defaults to ls-system",
+          "type": "string"
+        },
+        "oci": {
+          "description": "OCI defines a oci registry to use for definitions",
+          "$ref": "#/definitions/config-v1alpha1-OCIConfiguration"
+        },
+        "targetSelectors": {
+          "description": "TargetSelectors defines the target selector that is applied to all installed deployers",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TargetSelector"
+          }
+        }
+      }
+    },
     "config-v1alpha1-LocalRegistryConfiguration": {
       "description": "LocalRegistryConfiguration contains the configuration for a local registry",
       "type": "object",
@@ -149,6 +219,81 @@
     "core-v1alpha1-Duration": {
       "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
       "type": "string"
+    },
+    "core-v1alpha1-ObjectReference": {
+      "description": "ObjectReference is the reference to a kubernetes object.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name is the name of the kubernetes object.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace is the namespace of kubernetes object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "core-v1alpha1-Requirement": {
+      "description": "Requirement contains values, a key, and an operator that relates the key and values. The zero value of Requirement is invalid. Requirement implements both set based match and exact match Requirement should be initialized via NewRequirement constructor for creating a valid Requirement.",
+      "type": "object",
+      "required": [
+        "key",
+        "operator"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "type": "string",
+          "default": ""
+        },
+        "values": {
+          "description": "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "core-v1alpha1-TargetSelector": {
+      "description": "TargetSelector describes a selector that matches specific targets.",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations matches a target based on annotations.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-Requirement"
+          }
+        },
+        "labels": {
+          "description": "Labels matches a target based on its labels.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-Requirement"
+          }
+        },
+        "targets": {
+          "description": "Targets defines a list of specific targets (name and namespace) that should be reconciled.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-ObjectReference"
+          }
+        }
+      }
     }
   },
   "description": "LandscaperConfiguration contains all configuration for the landscaper controllers",
@@ -165,6 +310,11 @@
     "deployItemTimeouts": {
       "$ref": "#/definitions/config-v1alpha1-DeployItemTimeouts",
       "description": "DeployItemTimeouts contains configuration for multiple deploy item timeouts"
+    },
+    "deployerManagement": {
+      "$ref": "#/definitions/config-v1alpha1-DeployerManagementConfiguration",
+      "default": {},
+      "description": "DeployerManagement configures the deployer management of the landscaper."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

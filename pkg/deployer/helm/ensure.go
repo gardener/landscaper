@@ -14,7 +14,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -93,12 +92,12 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			currOp, "CleanupOrphanedResources", err.Error())
 	}
 
-	h.DeployItem.Status.ProviderStatus, err = encodeStatus(h.ProviderStatus)
+	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
 	if err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
-	if err := h.kubeClient.Status().Update(ctx, h.DeployItem); err != nil {
+	if err := h.lsKubeClient.Status().Update(ctx, h.DeployItem); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}
@@ -148,7 +147,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 		secret.Namespace = h.DeployItem.Status.ExportReference.Namespace
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, h.kubeClient, secret, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, h.lsKubeClient, secret, func() error {
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,
 		}
@@ -163,7 +162,7 @@ func (h *Helm) createOrUpdateExport(ctx context.Context, values map[string]inter
 		Namespace: secret.Namespace,
 	}
 
-	return h.kubeClient.Status().Update(ctx, h.DeployItem)
+	return h.lsKubeClient.Status().Update(ctx, h.DeployItem)
 }
 
 // DeleteFiles deletes the managed resources from the target cluster.
@@ -173,7 +172,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 
 	if h.ProviderStatus == nil || len(h.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return h.kubeClient.Update(ctx, h.DeployItem)
+		return h.lsKubeClient.Update(ctx, h.DeployItem)
 	}
 
 	_, targetClient, err := h.TargetClient(ctx)
@@ -199,7 +198,7 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 
 	// remove finalizer
 	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return h.kubeClient.Update(ctx, h.DeployItem)
+	return h.lsKubeClient.Update(ctx, h.DeployItem)
 }
 
 // ApplyObject applies a managed resource to the target cluster.
@@ -251,7 +250,7 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
 func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []lsv1alpha1.TypedObjectReference, currentObjects []*unstructured.Unstructured) error {
 	//objectList := &unstructured.UnstructuredList{}
-	//if err := kubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
+	//if err := lsKubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
 	//	return fmt.Errorf("unable to list all managed resources: %w", err)
 	//}
 	var (
@@ -379,20 +378,6 @@ func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.Export
 		return &export
 	}
 	return nil
-}
-
-func encodeStatus(status *helmv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
-	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
-		Kind:       "ProviderStatus",
-	}
-
-	raw := &runtime.RawExtension{}
-	obj := status.DeepCopyObject()
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
-		return nil, err
-	}
-	return raw, nil
 }
 
 // defaultCheckResourcesHealth implements the default health check for manifests deployed by Helm

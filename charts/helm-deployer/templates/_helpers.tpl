@@ -75,6 +75,7 @@ namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 {{- if .Values.deployer.oci }}
 oci:
   allowPlainHttp: {{ .Values.deployer.oci.allowPlainHttp }}
+  insecureSkipVerify: {{ .Values.deployer.oci.insecureSkipVerify }}
   {{- if .Values.deployer.oci.secrets }}
   configFiles:
   {{- range $key, $value := .Values.deployer.oci.secrets }}

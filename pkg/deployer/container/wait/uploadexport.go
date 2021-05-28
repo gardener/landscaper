@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
@@ -57,7 +58,7 @@ func createOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 	secret.Name = containeractuator.ExportSecretName(deployItemNamespace, deployItemName)
 	secret.Namespace = namespace
 
-	_, err := kutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
+	_, err := controllerutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
 		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerNameLabel, deployItemName)
 		secret.Data = map[string][]byte{
 			lsv1alpha1.DataObjectSecretDataKey: data,

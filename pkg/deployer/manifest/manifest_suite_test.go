@@ -68,7 +68,6 @@ var _ = Describe("Reconcile", func() {
 	})
 
 	It("should create a configured configmap", func() {
-
 		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, testenv.Client, target)).To(Succeed())
@@ -94,7 +93,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, item, target)
+		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -140,7 +139,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, item, target)
+		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())

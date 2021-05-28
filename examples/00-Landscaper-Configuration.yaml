@@ -9,3 +9,30 @@ registries:
   oci:
     configFiles:
      - "/home/some/path/docker.json"
+
+crdManagement:
+  deployCrd: true
+  forceUpdate: true
+
+deployerManagement:
+  #  disable: false
+  namespace: "ls-system"
+  agent:
+    apiVersion: config.landscaper.gardener.cloud/v1alpha1
+    kind: AgentConfiguration
+    disable: false # is automatically deactivated of the deployer management is disabled.
+    name: "default" # name of the default environment. Defaults to "default"
+    namespace: "ls-system" # name of the namespace where the deployers should be created. defaults to "ls-system"
+    targetSelectors: # custom selectors for the default deployers.
+    - annotations:
+      - key: my-ann
+        operation: "="
+        values: ["env"]
+    oci: # defaulted to the landscaper configured oci registries. Only used for the helm deployer resources.
+      configFiles:
+      - "/home/some/path/docker.json"
+
+#deployItemTimeouts:
+#  pickup: "5m"
+#  abort: "5m"
+#  progressingDefault: "5m"

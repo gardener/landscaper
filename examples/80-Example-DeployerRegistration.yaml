@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployerRegistration
+metadata:
+  name: my-deployer
+
+spec:
+  # describe the deploy items types the deployer iis able to reconcile
+  types: ["my-deploy-item-type"]
+  installationTemplate: # note that no exports are allowed here.
+    componentDescriptor:
+      ref:
+        repositoryContext:
+          type: ociRegistry
+          baseUrl: "example.myregistry.com/my-context"
+        componentName: "my-deployer"
+        version: v1.0.0
+#      inline: # inline component descriptor
+
+
+    blueprint:
+      ref:
+        resourceName: my-deployer-blueprint
+      #    filesystem:
+      #      blueprint.yaml: |
+      #        apiVersion: landscaper.gardener.cloud/v1alpha1
+      #        kind: Blueprint
+      #        ...
+
+    imports:
+      data: [ ]
+      targets: [ ]
+
+    importDataMappings: {}

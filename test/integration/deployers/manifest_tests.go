@@ -74,7 +74,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Check presence of Kubernetes Objects")
 			config := &manifestv1alpha2.ProviderConfiguration{}
-			manifestDecoder := serializer.NewCodecFactory(manifest.ManifestScheme).UniversalDecoder()
+			manifestDecoder := serializer.NewCodecFactory(manifest.Scheme).UniversalDecoder()
 			_, _, err = manifestDecoder.Decode(di.Spec.Configuration.Raw, nil, config)
 			g.Expect(err).ToNot(g.HaveOccurred())
 
@@ -134,7 +134,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 
 			ginkgo.By("Check presence of Kubernetes objects")
 			config := &manifestv1alpha1.ProviderConfiguration{}
-			manifestDecoder := serializer.NewCodecFactory(manifest.ManifestScheme).UniversalDecoder()
+			manifestDecoder := serializer.NewCodecFactory(manifest.Scheme).UniversalDecoder()
 			_, _, err = manifestDecoder.Decode(di.Spec.Configuration.Raw, nil, config)
 			g.Expect(err).ToNot(g.HaveOccurred())
 

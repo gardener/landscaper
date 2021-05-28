@@ -8,7 +8,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
-// Validators is a struct that contains everything to
+// Validator is a struct that contains everything to
 // validate if all imports of a installation are satisfied.
 type Validator struct {
 	*installations.Operation

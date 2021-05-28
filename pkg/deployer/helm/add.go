@@ -5,7 +5,7 @@
 package helm
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
@@ -15,8 +15,8 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(lsMgr, hostMgr manager.Manager, config helmv1alpha1.Configuration) error {
-	log := ctrl.Log.WithName("controllers").WithName("HelmDeployer")
+func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, config helmv1alpha1.Configuration) error {
+	log := logger.WithName("HelmDeployer")
 	d, err := NewDeployer(
 		log,
 		lsMgr.GetClient(),

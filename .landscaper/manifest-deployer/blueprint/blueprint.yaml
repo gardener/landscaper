@@ -21,6 +21,25 @@ imports:
   schema:
     description: "values for the manifest-deployer Helm Chart. See `https://github.com/gardener/landscaper/blob/master/charts/manifest-deployer/values.yaml`"
     type: object
+- name: targetSelectors
+  required: false
+  schema:
+    type: array
+    items:
+      type: object
+      properties:
+        targets:
+          type: array
+          items:
+            type: object
+        annotations:
+          type: array
+          items:
+            type: object
+        labels:
+          type: array
+          items:
+            type: object
 
 deployExecutions:
 - name: default
@@ -50,19 +69,23 @@ deployExecutions:
     {{ $imgref := dict "repository" $imgrepo "tag" $imgtag }}
 
     {{ $newvals := dict "image" $imgref }}
-    {{ $deployerVal := dict }}
 
-    {{ if .imports.landscaperCluster  }}
+    {{ $deployerConfig := dict }}
+    {{ if .imports.landscaperCluster }}
     {{ $lsClusterKubeconfig := .imports.landscaperCluster.spec.config.kubeconfig }}
     {{ $newKubeconfig := dict "kubeconfig" $lsClusterKubeconfig }}
-    {{ $_ := set $deployerVal "landscaperClusterKubeconfig" $newKubeconfig }}
+    {{ $_ := set $deployerConfig "landscaperClusterKubeconfig" $newKubeconfig }}
     {{ end }}
 
     {{ if .imports.identity  }}
-    {{ $_ := set $deployerVal "identity" .imports.identity }}
+    {{ $_ := set $deployerConfig "identity" .imports.identity }}
     {{ end }}
 
-    {{ $_ := set $newvals "deployer" $deployerVal }}
+    {{ if .imports.targetSelectors }}
+    {{ $_ := set $deployerConfig "targetSelector" .imports.targetSelectors }}
+    {{ end }}
+
+    {{ $_ := set $newvals "deployer" $deployerConfig }}
     {{ $mergevals := dict "values" $newvals }}
 
     {{ $val := mergeOverwrite $values $mergevals }}

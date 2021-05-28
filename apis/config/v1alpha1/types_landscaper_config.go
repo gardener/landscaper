@@ -27,6 +27,9 @@ type LandscaperConfiguration struct {
 	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
 	// +optional
 	CrdManagement CrdManagementConfiguration `json:"crdManagement,omitempty"`
+	// DeployerManagement configures the deployer management of the landscaper.
+	// +optional
+	DeployerManagement DeployerManagementConfiguration `json:"deployerManagement,omitempty"`
 	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
 	// +optional
 	DeployItemTimeouts *DeployItemTimeouts `json:"deployItemTimeouts,omitempty"`
@@ -111,4 +114,22 @@ type CrdManagementConfiguration struct {
 	// ForceUpdate specifies whether existing CRDs should be updated
 	// +optional
 	ForceUpdate *bool `json:"forceUpdate,omitempty"`
+}
+
+// DeployerManagementConfiguration contains the configuration of the deployer management
+type DeployerManagementConfiguration struct {
+	// Disable disables the landscaper deployer management.
+	Disable bool `json:"disable"`
+	// Namespace defines the system namespace where the deployer installation should be deployed to.
+	Namespace string `json:"namespace"`
+	// Agent contains the landscaper agent configuration.
+	Agent LandscaperAgentConfiguration `json:"agent"`
+}
+
+// LandscaperAgentConfiguration is the landscaper specific agent configuration
+type LandscaperAgentConfiguration struct {
+	// Disable disables the default agent that is started with the landscaper.
+	// This is automatically disabled if the deployment management is disabled.
+	Disable            bool `json:"disable"`
+	AgentConfiguration `json:",inline"`
 }

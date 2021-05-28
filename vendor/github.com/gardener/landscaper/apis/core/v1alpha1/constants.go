@@ -14,6 +14,12 @@ const (
 	// LandscaperFinalizer is the finalizer of the landscaper
 	LandscaperFinalizer = "finalizer.landscaper.gardener.cloud"
 
+	// LandscaperDMFinalizer is the finalizer of the landscaper deployer management.
+	LandscaperDMFinalizer = "finalizer.deployermanagement.landscaper.gardener.cloud"
+
+	// LandscaperAgentFinalizer is the finalizer of the landscaper agennt.
+	LandscaperAgentFinalizer = "finalizer.agent.landscaper.gardener.cloud"
+
 	// Annotations
 
 	// OperationAnnotation is the annotation that specifies a operation for a component
@@ -28,8 +34,23 @@ const (
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.
-	// This label should be set on landscper related components like the landcaper controller or deployers.
+	// This label should be set on landscaper related components like the landscaper controller or deployers.
 	LandscaperComponentLabelName = "landscaper.gardener.cloud/component"
+
+	// DeployerRegistrationLabelName is the name of the label that holds the reference to the deployer registration
+	// that installation originated from.
+	DeployerRegistrationLabelName = "deployers.landscaper.gardener.cloud/deployer-registration"
+
+	// DeployerEnvironmentLabelName is the name of the label that holds the reference to the deployer environment
+	// that installation originated from.
+	DeployerEnvironmentLabelName = "deployers.landscaper.gardener.cloud/environment"
+
+	// DMEnvironmentTargetAnnotationName is the name of the annotation for the deployer host targets
+	// that defines which environment is responsible for the item.
+	DMEnvironmentTargetAnnotationName = DeployerEnvironmentLabelName
+
+	// DeployerEnvironmentTargetAnnotationName is the default name for the target selector of specific environments.
+	DeployerEnvironmentTargetAnnotationName = "landscaper.gardener.cloud/environment"
 
 	// Component Descriptor
 

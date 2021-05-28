@@ -360,7 +360,7 @@
       }
     },
     "core-v1alpha1-ComponentDescriptorDefinition": {
-      "description": "ComponentDescriptorDefinition defines the component descriptor that should be used for the installatoin",
+      "description": "ComponentDescriptorDefinition defines the component descriptor that should be used for the installation",
       "type": "object",
       "properties": {
         "inline": {

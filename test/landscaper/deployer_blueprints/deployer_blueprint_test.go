@@ -59,6 +59,17 @@ var _ = Describe("Blueprint", func() {
         "allowPlainHttp": false,
         "secrets": {}
       },
+      "targetSelector": [
+        {
+          "annotations": [
+            {
+              "key": "abc",
+              "operator": "=",
+              "value": "xyz"
+            }
+          ]
+        }
+      ],
       "waitContainer": {
         "repository": "eu.gcr.io/gardener-project/landscaper/container-wait-controller",
         "tag": "v0.5.3"

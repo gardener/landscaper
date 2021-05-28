@@ -45,7 +45,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	applier := &ObjectApplier{
 		log:              m.log,
-		decoder:          serializer.NewCodecFactory(ManifestScheme).UniversalDecoder(),
+		decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
 		kubeClient:       targetClient,
 		deployItemName:   m.DeployItem.Name,
 		deleteTimeout:    *m.ProviderConfiguration.DeleteTimeout,
@@ -70,7 +70,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
-	if err := m.kubeClient.Status().Update(ctx, m.DeployItem); err != nil {
+	if err := m.lsKubeClient.Status().Update(ctx, m.DeployItem); err != nil {
 		return lsv1alpha1helper.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}
@@ -98,7 +98,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	if m.ProviderStatus == nil || len(m.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return m.kubeClient.Update(ctx, m.DeployItem)
+		return m.lsKubeClient.Update(ctx, m.DeployItem)
 	}
 
 	_, kubeClient, err := m.TargetClient(ctx)
@@ -131,7 +131,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	// remove finalizer
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return m.kubeClient.Update(ctx, m.DeployItem)
+	return m.lsKubeClient.Update(ctx, m.DeployItem)
 }
 
 func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {

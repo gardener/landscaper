@@ -8,6 +8,7 @@ import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
 	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
+	"github.com/gardener/landscaper/test/integration/deployers/management"
 )
 
 // RegisterTests registers all tests of this package
@@ -16,4 +17,5 @@ func RegisterTests(f *framework.Framework) {
 	ManifestDeployerTests(f)
 	helmcharts.RegisterTests(f)
 	blueprints.RegisterTests(f)
+	management.RegisterTests(f)
 }

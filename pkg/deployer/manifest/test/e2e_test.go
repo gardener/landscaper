@@ -83,7 +83,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifestv1alpha2.ProviderStatus{}
-		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
+		manifestDecoder := serializer.NewCodecFactory(manifestctlr.Scheme).UniversalDecoder()
 		_, _, err := manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(1))
@@ -208,7 +208,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifestv1alpha2.ProviderStatus{}
-		manifestDecoder := serializer.NewCodecFactory(manifestctlr.ManifestScheme).UniversalDecoder()
+		manifestDecoder := serializer.NewCodecFactory(manifestctlr.Scheme).UniversalDecoder()
 		_, _, err := manifestDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
 		testutil.ExpectNoError(err)
 		Expect(status.ManagedResources).To(HaveLen(0))

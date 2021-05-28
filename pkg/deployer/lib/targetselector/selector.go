@@ -12,8 +12,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-// Match checks if the given targets matches all selectors.
-func Match(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bool, error) {
+// MatchAll checks if the given targets matches all selectors.
+func MatchAll(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bool, error) {
 	for i, sel := range selectors {
 		ok, err := MatchSelector(target, sel)
 		if err != nil {
@@ -26,9 +26,29 @@ func Match(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bo
 	return true, nil
 }
 
+// MatchOne checks if one of the given targets matches.
+// Returns false if none selector matches.
+func MatchOne(target *lsv1alpha1.Target, selectors []lsv1alpha1.TargetSelector) (bool, error) {
+	for i, sel := range selectors {
+		ok, err := MatchSelector(target, sel)
+		if err != nil {
+			return false, fmt.Errorf("unable to match selector %d: %w", i, err)
+		}
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // MatchSelector checks if the given targets matches the selector.
 // It only passes if all configured selector methods match.
 func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector) (bool, error) {
+	if len(selector.Targets) != 0 {
+		if !MatchObjects(target, selector.Targets) {
+			return false, nil
+		}
+	}
 	if len(selector.Annotations) != 0 {
 		ok, err := MatchStringMap(target.GetAnnotations(), selector.Annotations)
 		if err != nil {
@@ -48,6 +68,22 @@ func MatchSelector(target *lsv1alpha1.Target, selector lsv1alpha1.TargetSelector
 		}
 	}
 	return true, nil
+}
+
+// MatchObjects matches a target to object references.
+// Returns true if one provided object matches the target.
+// The namespace is ignored if omitted in the reference.
+func MatchObjects(target *lsv1alpha1.Target, objects []lsv1alpha1.ObjectReference) bool {
+	for _, obj := range objects {
+		if obj.Name != target.Name {
+			continue
+		}
+		if len(obj.Namespace) != 0 && obj.Namespace != target.Namespace {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // MatchStringMap matches a map of string -> string for the configured requirements.

@@ -5,7 +5,8 @@
 package installations
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -15,9 +16,10 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(mgr manager.Manager, overwriter componentoverwrites.Overwriter, config *config.LandscaperConfiguration) error {
+func AddControllerToManager(logger logr.Logger, mgr manager.Manager, overwriter componentoverwrites.Overwriter, config *config.LandscaperConfiguration) error {
+	log := logger.WithName("Installations")
 	a, err := NewController(
-		ctrl.Log.WithName("controllers").WithName("Installations"),
+		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		overwriter,
@@ -27,9 +29,10 @@ func AddControllerToManager(mgr manager.Manager, overwriter componentoverwrites.
 		return err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	return builder.ControllerManagedBy(mgr).
 		For(&v1alpha1.Installation{}).
 		Owns(&v1alpha1.Execution{}).
 		Owns(&v1alpha1.Installation{}).
+		WithLogger(log).
 		Complete(a)
 }
