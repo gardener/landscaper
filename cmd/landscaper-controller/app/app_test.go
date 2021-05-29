@@ -51,10 +51,12 @@ var _ = Describe("Landscaper Controller", func() {
 
 	Context("Options", func() {
 
+		var ctx = context.Background()
+
 		It("should parse enabled deployers", func() {
 			opts := NewOptions()
 			opts.deployer.deployers = "deployer1,deployer2"
-			Expect(opts.Complete()).To(Succeed())
+			Expect(opts.Complete(ctx)).To(Succeed())
 
 			Expect(opts.deployer.EnabledDeployers).To(ConsistOf("deployer1", "deployer2"))
 		})

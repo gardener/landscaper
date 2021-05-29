@@ -55,7 +55,7 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 		Short: "Landscaper controller manages the orchestration of components",
 
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := options.Complete(); err != nil {
+			if err := options.Complete(ctx); err != nil {
 				fmt.Print(err)
 				os.Exit(1)
 			}

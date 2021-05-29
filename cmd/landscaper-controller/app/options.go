@@ -5,6 +5,7 @@
 package app
 
 import (
+	"context"
 	goflag "flag"
 	"io/ioutil"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/gardener/landscaper/pkg/version"
 
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/apis/config/v1alpha1"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerinstall "github.com/gardener/landscaper/apis/deployer/container/install"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
@@ -57,7 +59,7 @@ Available deployers are mock,helm,container.`)
 }
 
 // Complete parses all options and flags and initializes the basic functions
-func (o *options) Complete() error {
+func (o *options) Complete(ctx context.Context) error {
 	log, err := logger.New(nil)
 	if err != nil {
 		return err
@@ -66,7 +68,7 @@ func (o *options) Complete() error {
 	logger.SetLogger(log)
 	ctrl.SetLogger(log)
 
-	o.config, err = o.parseConfigurationFile()
+	o.config, err = o.parseConfigurationFile(ctx)
 	if err != nil {
 		return err
 	}
@@ -82,12 +84,17 @@ func (o *options) Complete() error {
 	return nil
 }
 
-func (o *options) parseConfigurationFile() (*config.LandscaperConfiguration, error) {
+func (o *options) parseConfigurationFile(ctx context.Context) (*config.LandscaperConfiguration, error) {
 	decoder := serializer.NewCodecFactory(api.ConfigScheme).UniversalDecoder()
 	if len(o.configPath) == 0 {
-		cfg := &config.LandscaperConfiguration{}
-		api.ConfigScheme.Default(cfg)
-		return cfg, nil
+		configv1alpha1 := &v1alpha1.LandscaperConfiguration{}
+		api.ConfigScheme.Default(configv1alpha1)
+		config := &config.LandscaperConfiguration{}
+		err := api.ConfigScheme.Convert(configv1alpha1, config, ctx)
+		if err != nil {
+			return nil, err
+		}
+		return config, nil
 	}
 	data, err := ioutil.ReadFile(o.configPath)
 	if err != nil {
