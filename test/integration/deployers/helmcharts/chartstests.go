@@ -51,8 +51,8 @@ func DeployerTests(f *framework.Framework) {
 			ctx.Done()
 		})
 
-		It("should deploy the Helm-Deployer through its Helm Chart", func() {
-			By("Creating and applying a Helm-Deployer DeployItem")
+		It("should deploy the Helm-deployer through its Helm Chart", func() {
+			By("Creating and applying a Helm-deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/helm-deployer")
 				valuesFile = filepath.Join(chartDir, "values.yaml")
@@ -64,7 +64,7 @@ func DeployerTests(f *framework.Framework) {
 			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
-		It("should deploy the Container-Deployer through its Helm Chart", func() {
+		It("should deploy the Container-deployer through its Helm Chart", func() {
 			By("Creating and applying a Container Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/container-deployer")
@@ -77,7 +77,7 @@ func DeployerTests(f *framework.Framework) {
 			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
-		It("should deploy the Manifest-Deployer through its Helm Chart", func() {
+		It("should deploy the Manifest-deployer through its Helm Chart", func() {
 			By("Creating and applying a Manifest Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/manifest-deployer")
@@ -90,7 +90,7 @@ func DeployerTests(f *framework.Framework) {
 			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
 		})
 
-		It("should deploy the Mock-Deployer through its Helm Chart", func() {
+		It("should deploy the Mock-deployer through its Helm Chart", func() {
 			By("Creating and applying a Mock Deployer DeployItem")
 			var (
 				chartDir   = filepath.Join(f.RootPath, "/charts/mock-deployer")

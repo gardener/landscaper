@@ -39,8 +39,11 @@ landscaper:
 #  - manifest
   deployersConfig: {}
 #    container:
-#      apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
-#      kind: Configuration
+#      container-helm chart values
+#      ...
+#    my-custom-deployer:
+#      apiVersion: landscaper.gardener.cloud/v1alpha1
+#      kind: DeployerRegistration
 #      ...
 
 #  deployItemTimeouts:
