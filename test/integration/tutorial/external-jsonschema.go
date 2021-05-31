@@ -46,14 +46,14 @@ func ExternalJSONSchemaTest(f *framework.Framework) {
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
-			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
+			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
-			inst.SetNamespace(state.Namespace)
 			g.Expect(utils.ReadResourceFromFile(inst, instResource)).To(g.Succeed())
+			inst.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			// wait for installation to finish

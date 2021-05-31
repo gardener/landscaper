@@ -44,15 +44,15 @@ func AggregatedBlueprint(f *framework.Framework) {
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
-			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
+			cm.SetNamespace(state.Namespace)
 			cm.Data["namespace"] = state.Namespace
 			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
 
 			ginkgo.By("Create Aggregated Installation")
 			aggInst := &lsv1alpha1.Installation{}
-			aggInst.SetNamespace(state.Namespace)
 			g.Expect(utils.ReadResourceFromFile(aggInst, nginxInstResource)).To(g.Succeed())
+			aggInst.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, aggInst))
 
 			// wait for installation to finish

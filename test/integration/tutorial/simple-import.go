@@ -54,8 +54,8 @@ func SimpleImport(f *framework.Framework) {
 
 			ginkgo.By("Create Nginx Ingress Installation")
 			nginxInst := &lsv1alpha1.Installation{}
-			nginxInst.SetNamespace(state.Namespace)
 			g.Expect(utils.ReadResourceFromFile(nginxInst, nginxInstResource)).To(g.Succeed())
+			nginxInst.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, nginxInst))
 
 			// wait for installation to finish

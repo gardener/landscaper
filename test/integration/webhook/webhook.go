@@ -53,8 +53,8 @@ func WebhookTest(f *framework.Framework) {
 
 			// load nginx installation from tutorial
 			inst := &lsv1alpha1.Installation{}
-			inst.SetNamespace(state.Namespace)
 			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
+			inst.SetNamespace(state.Namespace)
 
 			// make installation invalid by duplicating the first export
 			inst.Spec.Exports.Data = append(inst.Spec.Exports.Data, inst.Spec.Exports.Data[0])
