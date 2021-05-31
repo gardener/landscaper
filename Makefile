@@ -24,6 +24,7 @@ install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
+	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 	@$(REPO_ROOT)/hack/install-requirements.sh
 	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
@@ -42,10 +43,13 @@ check:
 	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/...
 
+.PHONY: setup-testenv
+setup-testenv:
+	@$(REPO_ROOT)/hack/setup-testenv.sh
+
 .PHONY: test
-test:
-	@go test -mod=vendor $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/framework/... $(REPO_ROOT)/test/utils/... $(REPO_ROOT)/test/landscaper/...
-	@cd $(REPO_ROOT)/apis && GO111MODULE=on go test ./...
+test: setup-testenv
+	@$(REPO_ROOT)/hack/test.sh
 
 .PHONY: integration-test
 integration-test:
