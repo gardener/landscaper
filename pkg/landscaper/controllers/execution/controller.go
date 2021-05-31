@@ -114,6 +114,19 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		}
 		log.V(7).Info("successfully updated metadata")
 	}
+
+	// also reset the phase when the force reconcile annotation is present.
+	// Otherwise we would never bbe able to leave a final phase
+	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
+			exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			log.V(7).Info("updating status")
+			if err := c.Status().Update(ctx, exec); err != nil {
+				return err
+			}
+			log.V(7).Info("successfully updated status")
+		}
+	}
 	return nil
 }
 
