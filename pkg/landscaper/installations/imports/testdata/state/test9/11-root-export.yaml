@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: {{ dataObjectName "" "root.y" }}
+  namespace: test9
+  labels:
+    data.landscaper.gardener.cloud/context: ""
+    data.landscaper.gardener.cloud/key: "root.y"
+    external-target: "false"
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: Installation
+    name: root-sib
+    uid: yyy
+spec:
+  type: landscaper.gardener.cloud/mock
+  config: val-sib-a

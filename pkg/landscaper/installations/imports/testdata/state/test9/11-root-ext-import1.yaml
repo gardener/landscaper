@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: {{ dataObjectName ""  "ext.a1" }}
+  namespace: test9
+  labels:
+    data.landscaper.gardener.cloud/context: ""
+    data.landscaper.gardener.cloud/key: "ext.a1"
+    external-target: "true"
+spec:
+  type: landscaper.gardener.cloud/mock
+  config: val-ext-a1
