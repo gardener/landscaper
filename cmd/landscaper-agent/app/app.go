@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gardener/landscaper/pkg/agent"
 
@@ -49,20 +50,26 @@ func (o *options) run(ctx context.Context) error {
 	}
 
 	o.log.Info("Starting the controllers")
-	go func() {
-		if err := o.HostMgr.Start(ctx); err != nil {
-			o.log.Error(err, "error while running manager")
-			os.Exit(1)
-		}
-	}()
-	o.log.Info("Waiting for host cluster cache to sync")
-	if !o.HostMgr.GetCache().WaitForCacheSync(ctx) {
-		return errors.New("unable to sync host cluster cache")
-	}
+	eg, ctx := errgroup.WithContext(ctx)
 
-	o.log.Info("Cache of host cluster successfully synced")
-	if err := o.LsMgr.Start(ctx); err != nil {
-		return fmt.Errorf("error while running manager: %w", err)
+	if o.LsMgr != o.HostMgr {
+		eg.Go(func() error {
+			if err := o.HostMgr.Start(ctx); err != nil {
+				return fmt.Errorf("error while running host manager: %w", err)
+			}
+			return nil
+		})
+		o.log.Info("Waiting for host cluster cache to sync")
+		if !o.HostMgr.GetCache().WaitForCacheSync(ctx) {
+			return errors.New("unable to sync host cluster cache")
+		}
+		o.log.Info("Cache of host cluster successfully synced")
 	}
-	return nil
+	eg.Go(func() error {
+		if err := o.LsMgr.Start(ctx); err != nil {
+			return fmt.Errorf("error while running landscaper manager: %w", err)
+		}
+		return nil
+	})
+	return eg.Wait()
 }

@@ -10,10 +10,10 @@ import (
 	goflag "flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -105,24 +105,28 @@ func (o *DefaultOptions) Complete() error {
 // StartManagers starts the host and landscaper managers.
 func (o *DefaultOptions) StartManagers(ctx context.Context) error {
 	o.Log.Info("Starting the controllers")
+	eg, ctx := errgroup.WithContext(ctx)
+
 	if o.LsMgr != o.HostMgr {
-		go func() {
+		eg.Go(func() error {
 			if err := o.HostMgr.Start(ctx); err != nil {
-				o.Log.Error(err, "error while running manager")
-				os.Exit(1)
+				return fmt.Errorf("error while running host manager: %w", err)
 			}
-		}()
+			return nil
+		})
 		o.Log.Info("Waiting for host cluster cache to sync")
 		if !o.HostMgr.GetCache().WaitForCacheSync(ctx) {
 			return errors.New("unable to sync host cluster cache")
 		}
-
 		o.Log.Info("Cache of host cluster successfully synced")
 	}
-	if err := o.LsMgr.Start(ctx); err != nil {
-		return fmt.Errorf("error while running manager: %w", err)
-	}
-	return nil
+	eg.Go(func() error {
+		if err := o.LsMgr.Start(ctx); err != nil {
+			return fmt.Errorf("error while running landscaper manager: %w", err)
+		}
+		return nil
+	})
+	return eg.Wait()
 }
 
 // GetConfig reads and parses the configured configuration file.
