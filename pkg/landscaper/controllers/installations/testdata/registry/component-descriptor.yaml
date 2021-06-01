@@ -25,6 +25,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root
   - name: res-a
     type: blueprint
@@ -32,6 +33,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: a
   - name: res-b
     type: blueprint
@@ -39,6 +41,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: b
   - name: res-c
     type: blueprint
@@ -46,6 +49,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: c
   - name: res-d
     type: blueprint
@@ -53,4 +57,5 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: d

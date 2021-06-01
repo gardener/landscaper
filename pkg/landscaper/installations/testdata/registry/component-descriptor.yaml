@@ -25,6 +25,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root
   - name: root-2
     type: blueprint
@@ -32,6 +33,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root-2
   - name: root-3
     type: blueprint
@@ -39,6 +41,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root-3
   - name: res-a
     type: blueprint
@@ -46,6 +49,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: a
   - name: res-b
     type: blueprint
@@ -53,6 +57,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: b
   - name: res-c
     type: blueprint
@@ -60,6 +65,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: c
   - name: res-d
     type: blueprint
@@ -67,6 +73,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: d
   - name: res-e
     type: blueprint
@@ -74,6 +81,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: e
   - name: res-f
     type: blueprint
@@ -81,6 +89,7 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: f
   - name: root-cond
     type: blueprint
@@ -88,4 +97,5 @@ component:
     relation: local
     access:
       type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root-cond

@@ -89,7 +89,7 @@ func (c *localClient) Type() string {
 	return LocalRepositoryType
 }
 
-// Get resolves a reference and returns the component descriptor.
+// Resolve resolves a reference and returns the component descriptor.
 func (c *localClient) Resolve(_ context.Context, repoCtx cdv2.RepositoryContext, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
 	if repoCtx.Type != LocalRepositoryType {
 		return nil, nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, LocalRepositoryType)
@@ -269,6 +269,9 @@ func (ca *LocalFilesystemBlobResolver) resolve(res cdv2.Resource) (*ctf.BlobInfo
 		return nil, nil, err
 	}
 	info.MediaType = res.Type
+	if len(localFSAccess.MediaType) != 0 {
+		info.MediaType = localFSAccess.MediaType
+	}
 	return info, file, nil
 }
 
@@ -277,7 +280,7 @@ type BaseFilesystemBlobResolver struct {
 	fs vfs.FileSystem
 }
 
-// ResolveFromFs
+// ResolveFromFs resolves a blob from a given path.
 func (res *BaseFilesystemBlobResolver) ResolveFromFs(blobpath string) (*ctf.BlobInfo, io.ReadCloser, error) {
 	info, err := res.fs.Stat(blobpath)
 	if err != nil {

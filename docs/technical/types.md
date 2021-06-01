@@ -21,8 +21,20 @@ Resource type refer to the type defined in a component descriptor.
     <tr>
         <td>Access</td>
         <td> 
-            localFilesystemBlob: <code>application/vnd.gardener.landscaper.blueprint.v1+tar+gzip</code> <br>
-            Standalone Artifact (ociRegistry): oci artifact with one layer of type <code>application/vnd.gardener.landscaper.blueprint.v1+tar+gzip</code>
+            localFilesystemBlob: 
+              <ul>
+                <li>DEPRECATED:<code>application/vnd.gardener.landscaper.blueprint.v1+tar+gzip</code></li>
+                <li><code>application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip</code></li>
+              </ul>
+ <br>
+            Standalone Artifact (ociRegistry): <br>
+            <i>Config</i><br>
+              <code>application/vnd.gardener.landscaper.blueprint.config.v1+yaml</code><br>
+            <i>One Layer</i> (the compression is optional)
+              <ul>
+                <li>DEPRECATED:<code>application/vnd.gardener.landscaper.blueprint.v1+tar+gzip</code></li>
+                <li><code>application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip</code></li>
+              </ul>
         </td>
     </tr>
 </table>
@@ -39,7 +51,7 @@ resources:
   access:
     type: localFilesystemBlob
     filename: my-bloc
-    mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+    mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
 ```
 
 A blueprint blob is expected to be a gzipped tar that MUST contains the `blueprint.yaml` at the root.
@@ -47,21 +59,19 @@ A blueprint blob is expected to be a gzipped tar that MUST contains the `bluepri
 **Standalone Artifact**:
 
 The OCI manifest of the Blueprint in this case would look like this:
-Whereas the config is ignored and can be anything.
-It is recommended to use empty json to comply with most oci registry implementations.
-
+Whereas the config is contains the `blueprint.yaml`.
 ```json
 {
  "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
  "schemaVersion": 2, 
  "config": { 
    "digest": "sha256:efg",
-   "mediaType": "application/json"
+   "mediaType": "application/vnd.gardener.landscaper.blueprint.config.v1+yaml"
  },
  "layers": [
    {
      "digest": "sha256:efg",
-     "mediaType": "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
+     "mediaType": "application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip"
    }
  ]
 }
@@ -86,7 +96,11 @@ resources:
     <tr>
         <td>Access</td>
         <td> 
-            localFilesystemBlob: <code>application/vnd.gardener.landscaper.jsonscheme.v1+json</code> <br>
+            localFilesystemBlob:
+              <ul>
+                <li>DEPRECATED: <code>application/vnd.gardener.landscaper.jsonscheme.v1+json</code></li>
+                <li><code>application/vnd.gardener.landscaper.jsonschema.layer.v1.json</code></li>
+              </ul>
             Standalone Artifact (ociRegistry): not yet implemented
         </td>
     </tr>
@@ -104,7 +118,7 @@ resources:
   access:
     type: localFilesystemBlob
     filename: my-bloc
-    mediaType: application/vnd.gardener.landscaper.jsonscheme.v1+json
+    mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
 ```
 
 

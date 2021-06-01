@@ -25,6 +25,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/pointer"
 
+	"github.com/gardener/landscaper/apis/mediatype"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -166,7 +168,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 	blueprintInput := input.BlobInput{
 		Type:             input.DirInputType,
 		Path:             blueprintDir,
-		MediaType:        lsv1alpha1.BlueprintArtifactsMediaType,
+		MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
 		CompressWithGzip: pointer.BoolPtr(true),
 	}
 	blob, err = blueprintInput.Read(osfs.New(), "")
@@ -179,7 +181,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 	utils.ExpectNoError(file.Close())
 	utils.ExpectNoError(blob.Reader.Close())
 
-	cd.Resources = append(cd.Resources, buildLocalFilesystemResource("my-blueprint", lsv1alpha1.BlueprintType, input.MediaTypeGZip, "bp"))
+	cd.Resources = append(cd.Resources, buildLocalFilesystemResource("my-blueprint", mediatype.BlueprintType, blueprintInput.MediaType, "bp"))
 
 	utils.ExpectNoError(cdv2.DefaultComponent(cd))
 
