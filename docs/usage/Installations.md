@@ -63,7 +63,11 @@ spec:
 #        key: ""
     targets:
     - name: "" # logical internal name
-      target: "" # reference a contextified target or a global taret with a '#' prefix.
+      target: "" # reference a contextified target or a global target with a '#' prefix.
+    - name: ""
+      targets: # reference multiple targets by name (either contextified or with a '#' prefix)
+      - "target1"
+      - "target2"
 
   # defaulted from blueprints whereas the logical internal name is mapped to the 
   # blueprints import name
@@ -310,15 +314,30 @@ Target imports are defined by a unique logical name and a reference to the actua
 
 The logical name must be unique within all imports (data and targets) and must match the import name in the blueprint.<br>
 The `target` attribute defines the reference to a real target within the same namespace.
-By default the target name is [contextified](../concepts/Context.md) but 
-a target can also be directly referenced by its name by prefixing the `target` with a `#`.
+By default the target name is [contextified](../concepts/Context.md) but a target can also be directly referenced by its name by prefixing the `target` with a `#`.
 
 ```yaml
 imports:
   targets:
   - name: my-target
-    target: ""
+    target: "target1"
 ```
+
+#### Targetlist Imports
+
+It is also possible to import multiple targets at once, if the blueprint declares a targetlist import. See [here](./Blueprints.md#targetlists) for information on targetlist import definitions.
+
+```yaml
+imports:
+  targets:
+  - name: "my-targetlist"
+    targets:
+    - "target1"
+    - "target2"
+```
+
+A list of targets can be imported by listing all targets by name. This works similarly to a single target import.
+Please note that for a targetlist import, only `targets` has to be specified and `target` may not be specified. In this context, setting `targets: []` counts as specifying the `targets` field - an empty list is a valid value - while setting it to nil (`targets: ~`) counts as not specifying it.
 
 
 ### Import Data Mappings
