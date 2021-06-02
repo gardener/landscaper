@@ -113,8 +113,9 @@ crdManagement:
     {{- end }}
 {{- end }}
 
-{{- if .Values.landscaper.deployerManagement -}}
-{{ toYaml .Values.landscaper.deployerManagement }}
+{{- if .Values.landscaper.deployerManagement }}
+deployerManagement:
+{{ toYaml .Values.landscaper.deployerManagement | indent 2 }}
 {{- end -}}
 
 {{- if .Values.landscaper.deployItemTimeouts }}
