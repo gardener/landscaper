@@ -207,7 +207,7 @@ Componenten reference has been overwritten:
 		cond = lsv1alpha1helper.UpdatedCondition(cond,
 			lsv1alpha1.ConditionFalse,
 			"No overwrite defined",
-			"component refernece has not been overwritten")
+			"component reference has not been overwritten")
 	}
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
 	return nil
