@@ -28,6 +28,7 @@ func SetObjectDefaults_AgentConfiguration(in *AgentConfiguration) {
 
 func SetObjectDefaults_LandscaperConfiguration(in *LandscaperConfiguration) {
 	SetDefaults_LandscaperConfiguration(in)
+	SetDefaults_BlueprintStore(&in.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&in.CrdManagement)
 	SetObjectDefaults_AgentConfiguration(&in.DeployerManagement.Agent.AgentConfiguration)
 }

@@ -26,9 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/pkg/utils/tar"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // State handles the backup and restore of state of container deploy item.
@@ -80,7 +81,7 @@ func (s *State) Backup(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := utils.BuildTarGzip(s.fs, s.path, tmpFile); err != nil {
+	if err := tar.BuildTarGzip(s.fs, s.path, tmpFile); err != nil {
 		tmpFile.Close()
 		return errors.Wrap(err, "unable to tar and gzip State")
 	}
@@ -184,7 +185,7 @@ func (s *State) restoreFromSecrets(secrets []*corev1.Secret) error {
 		data.Write(chunk)
 	}
 
-	return utils.ExtractTarGzip(&data, s.fs, s.path)
+	return tar.ExtractTarGzip(context.TODO(), &data, s.fs, tar.ToPath(s.path))
 }
 
 func (s *State) gcOldSecrets(ctx context.Context, secrets []*corev1.Secret) {

@@ -22,6 +22,31 @@
         }
       }
     },
+    "config-v1alpha1-BlueprintStore": {
+      "description": "BlueprintStore contains the configuration for the blueprint store.",
+      "type": "object",
+      "required": [
+        "path",
+        "disableCache",
+        "GarbageCollectionConfiguration"
+      ],
+      "properties": {
+        "GarbageCollectionConfiguration": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-GarbageCollectionConfiguration"
+        },
+        "disableCache": {
+          "description": "DisableCache disables the cache and always fetches the blob from the registry. The blueprint is still stored on the filesystem.",
+          "type": "boolean",
+          "default": false
+        },
+        "path": {
+          "description": "Path defines the root path where the blueprints are cached.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "config-v1alpha1-CrdManagementConfiguration": {
       "description": "CrdManagementConfiguration contains the configuration of the CRD management",
       "type": "object",
@@ -80,6 +105,39 @@
           "description": "Namespace defines the system namespace where the deployer installation should be deployed to.",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    "config-v1alpha1-GarbageCollectionConfiguration": {
+      "description": "GarbageCollectionConfiguration contains all options for the cache garbage collection.",
+      "type": "object",
+      "required": [
+        "gcLowThreshold"
+      ],
+      "properties": {
+        "gcHighThreshold": {
+          "description": "GCHighThreshold defines the percent of disk usage which triggers files garbage collection.",
+          "type": "number",
+          "format": "double"
+        },
+        "gcLowThreshold": {
+          "description": "GCLowThreshold defines the percent of disk usage to which files garbage collection attempts to free.",
+          "type": "number",
+          "format": "double",
+          "default": 0
+        },
+        "preservedHitsProportion": {
+          "description": "PreservedHitsProportion defines the percent of hits that should be preserved.",
+          "type": "number",
+          "format": "double"
+        },
+        "resetInterval": {
+          "description": "ResetInterval defines the interval when the hit reset should run.",
+          "$ref": "#/definitions/meta-v1-Duration"
+        },
+        "size": {
+          "description": "Size is the size of the filesystem. If the value is 0 there is no limit and no garbage collection will happen. See the kubernetes quantity docs for detailed description of the format https://github.com/kubernetes/apimachinery/blob/master/pkg/api/resource/quantity.go",
+          "type": "string"
         }
       }
     },
@@ -295,6 +353,10 @@
           }
         }
       }
+    },
+    "meta-v1-Duration": {
+      "description": "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
+      "type": "string"
     }
   },
   "description": "LandscaperConfiguration contains all configuration for the landscaper controllers",
@@ -302,6 +364,11 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "blueprintStore": {
+      "$ref": "#/definitions/config-v1alpha1-BlueprintStore",
+      "default": {},
+      "description": "BlueprintStore contains the configuration for the blueprint cache."
     },
     "crdManagement": {
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
@@ -336,7 +403,8 @@
     }
   },
   "required": [
-    "registry"
+    "registry",
+    "blueprintStore"
   ],
   "title": "config-v1alpha1-LandscaperConfiguration",
   "type": "object"

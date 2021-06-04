@@ -2,16 +2,16 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package utils
+package tar
 
 import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/gardener/component-cli/ociclient"
@@ -83,10 +83,48 @@ func BuildTar(fs vfs.FileSystem, root string, buf io.Writer) error {
 	return nil
 }
 
+// ExtractTarOptions describes optional untar options.
+type ExtractTarOptions struct {
+	Path      string
+	Overwrite bool
+}
+
+// ApplyOptions applies all tar options to the current options.
+func (opts *ExtractTarOptions) ApplyOptions(options []ExtractTarOption) {
+	for _, opt := range options {
+		opt.ApplyOption(opts)
+	}
+}
+
+// ExtractTarOption defines a interface to apply tar options.
+type ExtractTarOption interface {
+	ApplyOption(opts *ExtractTarOptions)
+}
+
+// ToPath configures the path where should be exported to.
+type ToPath string
+
+func (p ToPath) ApplyOption(opts *ExtractTarOptions) {
+	opts.Path = string(p)
+}
+
+// Overwrite configures if files/directories should be overwritten while untar.
+type Overwrite bool
+
+func (o Overwrite) ApplyOption(opts *ExtractTarOptions) {
+	opts.Overwrite = bool(o)
+}
+
 // ExtractTar extracts the content of a tar to the given filesystem with the given root base path
-func ExtractTar(tarStream io.Reader, fs vfs.FileSystem, root string) error {
+func ExtractTar(ctx context.Context, tarStream io.Reader, fs vfs.FileSystem, opts ...ExtractTarOption) error {
+	options := &ExtractTarOptions{}
+	options.ApplyOptions(opts)
+
 	tarReader := tar.NewReader(tarStream)
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		header, err := tarReader.Next()
 		if err != nil {
 			if err == io.EOF {
@@ -95,15 +133,27 @@ func ExtractTar(tarStream io.Reader, fs vfs.FileSystem, root string) error {
 			return err
 		}
 
+		path := header.Name
+		if len(options.Path) != 0 {
+			path = filepath.Join(options.Path, path)
+		}
+
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := fs.MkdirAll(path.Join(root, header.Name), os.ModePerm); err != nil {
+			if err := fs.MkdirAll(path, os.ModePerm); err != nil {
 				return err
 			}
 		case tar.TypeReg:
-			file, err := fs.Create(path.Join(root, header.Name))
+			file, err := fs.Create(path)
 			if err != nil {
-				return err
+				if !(os.IsExist(err) && options.Overwrite) {
+					return err
+				}
+				// overwrite the file
+				file, err = fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
+				if err != nil {
+					return err
+				}
 			}
 
 			if _, err := io.Copy(file, tarReader); err != nil {
@@ -121,12 +171,12 @@ func ExtractTar(tarStream io.Reader, fs vfs.FileSystem, root string) error {
 }
 
 // ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path
-func ExtractTarGzip(gzipStream io.Reader, fs vfs.FileSystem, root string) error {
+func ExtractTarGzip(ctx context.Context, gzipStream io.Reader, fs vfs.FileSystem, opts ...ExtractTarOption) error {
 	uncompStream, err := gzip.NewReader(gzipStream)
 	if err != nil {
 		return err
 	}
-	return ExtractTar(uncompStream, fs, root)
+	return ExtractTar(ctx, uncompStream, fs, opts...)
 }
 
 // BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.

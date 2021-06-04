@@ -7,6 +7,7 @@ package v1alpha1
 import (
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 
@@ -43,6 +44,7 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 		obj.DeployItemTimeouts.ProgressingDefault = &v1alpha1.Duration{Duration: 10 * time.Minute}
 	}
 
+	SetDefaults_BlueprintStore(&obj.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&obj.CrdManagement)
 
 	if obj.DeployerManagement.Disable {
@@ -73,5 +75,44 @@ func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 func SetDefaults_AgentConfiguration(obj *AgentConfiguration) {
 	if len(obj.Namespace) == 0 {
 		obj.Namespace = "ls-system"
+	}
+}
+
+// SetDefaults_BlueprintStore sets the defaults for the landscaper blueprint store configuration.
+func SetDefaults_BlueprintStore(obj *BlueprintStore) {
+	// GCHighThreshold defines the default percent of disk usage which triggers files garbage collection.
+	const GCHighThreshold float64 = 0.85
+
+	// GCLowThreshold defines the default percent of disk usage to which files garbage collection attempts to free.
+	const GCLowThreshold float64 = 0.80
+
+	// ResetInterval defines the default interval when the hit reset should run.
+	ResetInterval := metav1.Duration{Duration: 1 * time.Hour}
+
+	// PreservedHitsProportion defines the default percent of hits that should be preserved.
+	const PreservedHitsProportion = 0.5
+
+	if obj.Size == "0" {
+		// no garbage collection configured ignore all other values
+		return
+	}
+
+	if len(obj.Size) == 0 {
+		obj.Size = "250Mi"
+	}
+
+	if obj.GCHighThreshold == 0 {
+		obj.GCHighThreshold = GCHighThreshold
+	}
+	if obj.GCLowThreshold == 0 {
+		obj.GCLowThreshold = GCLowThreshold
+	}
+
+	if obj.ResetInterval == nil {
+		obj.ResetInterval = &ResetInterval
+	}
+
+	if obj.PreservedHitsProportion == 0 {
+		obj.PreservedHitsProportion = PreservedHitsProportion
 	}
 }

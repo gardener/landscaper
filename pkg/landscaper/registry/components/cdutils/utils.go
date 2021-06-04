@@ -19,9 +19,9 @@ import (
 	"github.com/opencontainers/image-spec/specs-go"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/landscaper/pkg/utils/tar"
 
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // BuildComponentDescriptorManifest creates a new manifest from a component descriptor
@@ -42,7 +42,7 @@ func BuildComponentDescriptorManifest(cache cache.Cache, cdData []byte) (ocispec
 		return ocispecv1.Manifest{}, err
 	}
 	var blob bytes.Buffer
-	if err := utils.BuildTar(memFs, "/", &blob); err != nil {
+	if err := tar.BuildTar(memFs, "/", &blob); err != nil {
 		return ocispecv1.Manifest{}, err
 	}
 
@@ -75,7 +75,7 @@ func BuildNewManifest(cache cache.Cache, data []byte) (*ocispecv1.Manifest, erro
 	}
 
 	var blob bytes.Buffer
-	if err := utils.BuildTar(memfs, "/", &blob); err != nil {
+	if err := tar.BuildTar(memfs, "/", &blob); err != nil {
 		return nil, err
 	}
 
