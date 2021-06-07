@@ -63,8 +63,8 @@ func SimpleImport(f *framework.Framework) {
 
 			ginkgo.By("Create echo server Installation")
 			inst := &lsv1alpha1.Installation{}
-			inst.SetNamespace(state.Namespace)
 			g.Expect(utils.ReadResourceFromFile(inst, echoServerInstResource)).To(g.Succeed())
+			inst.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			// wait for installation to finish
