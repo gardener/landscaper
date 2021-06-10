@@ -47,6 +47,43 @@ var _ = Describe("Blueprint", func() {
 			}))))
 		})
 
+		It("should fail if multiple ImportDefinition types are defined", func() {
+			importDefinition := core.ImportDefinition{}
+			importDefinition.Name = "myimport"
+			importDefinition.TargetType = "test"
+			importDefinition.Schema = &core.JSONSchemaDefinition{}
+
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{importDefinition})
+			Expect(allErrs).To(HaveLen(1))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeInvalid),
+				"Field": Equal("x[0][myimport]"),
+			}))))
+		})
+
+		It("should fail if the config for the specified type is empty", func() {
+			impDef1 := core.ImportDefinition{}
+			impDef1.Name = "myimport1"
+			impDef1.Type = core.ImportTypeData
+			impDef2 := core.ImportDefinition{}
+			impDef2.Name = "myimport2"
+			impDef2.Type = core.ImportTypeTarget
+
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2})
+			Expect(allErrs).To(HaveLen(2))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("x[0][myimport1]"),
+				"Detail": ContainSubstring("schema"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("x[1][myimport2]"),
+				"Detail": ContainSubstring("targetType"),
+			}))))
+
+		})
+
 		It("should fail if there are conditional imports on a required import", func() {
 			importDefinition := core.ImportDefinition{}
 			importDefinition.Name = "myimport"

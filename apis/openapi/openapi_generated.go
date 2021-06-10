@@ -3753,6 +3753,13 @@ func schema_landscaper_apis_core_v1alpha1_ExportDefinition(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type specifies which kind of object is being exported. This field should be set and will likely be mandatory in future.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
@@ -3823,6 +3830,13 @@ func schema_landscaper_apis_core_v1alpha1_ImportDefinition(ref common.ReferenceC
 					"targetType": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TargetType defines the type of the imported target.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type specifies which kind of object is being imported. This field should be set and will likely be mandatory in future.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

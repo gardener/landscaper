@@ -118,6 +118,10 @@
         "targetType": {
           "description": "TargetType defines the type of the imported target.",
           "type": "string"
+        },
+        "type": {
+          "description": "Type specifies which kind of object is being exported. This field should be set and will likely be mandatory in future.",
+          "type": "string"
         }
       }
     },
@@ -156,6 +160,10 @@
         },
         "targetType": {
           "description": "TargetType defines the type of the imported target.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Type specifies which kind of object is being imported. This field should be set and will likely be mandatory in future.",
           "type": "string"
         }
       }

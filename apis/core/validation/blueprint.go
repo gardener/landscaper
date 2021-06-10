@@ -5,6 +5,8 @@
 package validation
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -17,6 +19,15 @@ import (
 )
 
 var landscaperScheme = runtime.NewScheme()
+
+var validImportTypes = []string{
+	string(core.ImportTypeData),
+	string(core.ImportTypeTarget),
+}
+var validExportTypes = []string{
+	string(core.ImportTypeData),
+	string(core.ImportTypeTarget),
+}
 
 func init() {
 	coreinstall.Install(landscaperScheme)
@@ -62,6 +73,31 @@ func validateBlueprintImportDefinitions(fldPath *field.Path, imports []core.Impo
 			importNames.Insert(importDef.Name)
 		}
 
+		if len(importDef.Type) != 0 {
+			// type is specified, use new validation
+			switch importDef.Type {
+			case core.ImportTypeData:
+				if importDef.Schema == nil {
+					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("schema must not be empty for imports of type %s", string(importDef.Type))))
+				}
+			case core.ImportTypeTarget:
+				if len(importDef.TargetType) == 0 {
+					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("targetType must not be empty for imports of type %s", string(importDef.Type))))
+				}
+			default:
+				// invalid type
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(importDef.Type), validImportTypes))
+			}
+		} else {
+			// type is not specified, fallback to validation based on specified fields
+			if importDef.Schema == nil && len(importDef.TargetType) == 0 {
+				allErrs = append(allErrs, field.Required(defPath, "either schema or targetType must not be empty"))
+			}
+			if importDef.Schema != nil && len(importDef.TargetType) != 0 {
+				allErrs = append(allErrs, field.Invalid(defPath, importDef, "either schema or targetType must be specified, not both"))
+			}
+		}
+
 		required := true
 		if importDef.Required != nil {
 			required = *importDef.Required
@@ -96,6 +132,32 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 			allErrs = append(allErrs, field.Duplicate(defPath, "duplicated export name"))
 		}
 		exportNames.Insert(exportDef.Name)
+
+		if len(exportDef.Type) != 0 {
+			// type is specified, use new validation
+			switch exportDef.Type {
+			case core.ExportTypeData:
+				if exportDef.Schema == nil {
+					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("schema must not be empty for exports of type %s", string(exportDef.Type))))
+				}
+			case core.ExportTypeTarget:
+				if len(exportDef.TargetType) == 0 {
+					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("targetType must not be empty for exports of type %s", string(exportDef.Type))))
+				}
+			default:
+				// invalid type
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(exportDef.Type), validExportTypes))
+			}
+		} else {
+			// type is not specified, fallback to validation based on specified fields
+			if exportDef.Schema == nil && len(exportDef.TargetType) == 0 {
+				allErrs = append(allErrs, field.Required(defPath, "either schema or targetType must not be empty"))
+			}
+			if exportDef.Schema != nil && len(exportDef.TargetType) != 0 {
+				allErrs = append(allErrs, field.Invalid(defPath, exportDef, "either schema or targetType must be specified, not both"))
+			}
+		}
+
 	}
 
 	return allErrs
@@ -106,9 +168,6 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 	allErrs := field.ErrorList{}
 	if len(def.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
-	}
-	if def.Schema == nil && len(def.TargetType) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath, "schema or targetType must not be empty"))
 	}
 
 	if def.Schema != nil {

@@ -2834,8 +2834,31 @@ FieldValueDefinition
 </p>
 </td>
 </tr>
+<tr>
+<td>
+<code>type</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExportType">
+ExportType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Type specifies which kind of object is being exported.
+This field should be set and will likely be mandatory in future.</p>
+</td>
+</tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ExportType">ExportType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.FieldValueDefinition">FieldValueDefinition
 </h3>
 <p>
@@ -2921,6 +2944,21 @@ FieldValueDefinition
 <p>
 (Members of <code>FieldValueDefinition</code> are embedded into this type.)
 </p>
+</td>
+</tr>
+<tr>
+<td>
+<code>type</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportType">
+ImportType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Type specifies which kind of object is being imported.
+This field should be set and will likely be mandatory in future.</p>
 </td>
 </tr>
 <tr>
@@ -3091,6 +3129,14 @@ string
 </p>
 <p>
 <p>ImportStatusType defines the type of a import status.</p>
+</p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ImportType">ImportType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinition">ImportDefinition</a>)
+</p>
+<p>
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InlineBlueprint">InlineBlueprint
 </h3>
