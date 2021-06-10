@@ -3,25 +3,32 @@ kind: Blueprint
 
 imports:
 - name: cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 - name: landscaperCluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
   required: false
 - name: releaseName
+  type: data
   schema:
     type: string
 - name: releaseNamespace
+  type: data
   schema:
     type: string
 - name: identity
+  type: data
   required: false
   schema:
     type: string
 - name: values
+  type: data
   schema:
     description: "values for the container-deployer Helm Chart. See `https://github.com/gardener/landscaper/blob/master/charts/container-deployer/values.yaml`"
     type: object
 - name: targetSelectors
+  type: data
   required: false
   schema:
     type: array

@@ -11,11 +11,14 @@ kind: Blueprint
 
 imports:
 - name: cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 - name: ingressClass
+  type: data
   schema:
     type: string
 - name: resources
+  type: data
   schema:
     $ref: "cd://componentReferences/definitions/resources/resources-definition"
 

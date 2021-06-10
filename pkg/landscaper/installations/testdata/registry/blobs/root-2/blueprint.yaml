@@ -11,8 +11,10 @@ annotations:
 
 exports:
 - name: root.y
+  type: target
   targetType: landscaper.gardener.cloud/mock
 - name: root.z
+  type: target
   targetType: landscaper.gardener.cloud/mock
 
 exportExecutions:

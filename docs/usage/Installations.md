@@ -357,14 +357,17 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 imports:
 - name: providers
+  type: data
   schema:
     type: array
     items:
       type: string
 - name: identifier
+  type: data
   schema:
     type: string
 - name: aws-credentials
+  type: data
   schema:
     type: object
     properties:
@@ -496,9 +499,11 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 exports:
 - name: identifier
+  type: data
   schema:
     type: string
 - name: aws-credentials
+  type: data
   schema:
     type: object
     properties:
@@ -507,6 +512,7 @@ exports:
       accessKeySecret:
         type: string
 - name: gcp-credentials
+  type: data
   schema:
     type: object
     properties:

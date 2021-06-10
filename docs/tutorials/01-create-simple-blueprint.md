@@ -209,6 +209,7 @@ kind: Blueprint
 
 imports:
 - name: cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 deployExecutions:
@@ -247,6 +248,7 @@ exportExecutions:
 
 exports:
 - name: ingressClass
+  type: data
   schema: # here comes a valid jsonschema
     type: string
 ```

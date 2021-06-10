@@ -39,13 +39,16 @@ kind: Blueprint
 
 imports:
 - name: aggCluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 - name: aggNamespace
+  type: data
   schema:
     type: string
 
 exports:
 - name: aggIngressClass
+  type: data
   schema:
     type: string
 ```
@@ -161,13 +164,16 @@ kind: Blueprint
 
 imports:
 - name: aggCluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 - name: aggNamespace
+  type: data
   schema:
     type: string
 
 exports:
 - name: aggIngressClass
+  type: data
   schema:
     type: string
 

@@ -17,6 +17,7 @@ spec:
 
           exports:
           - name: providers
+            type: data
             schema:
               type: array
               $ref: ref to provider credentials

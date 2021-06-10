@@ -70,9 +70,11 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 imports:
 - name: myFirstImport
+  type: data
   schema:
     type: string
 - name: mySecondImport
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 ```
 ```

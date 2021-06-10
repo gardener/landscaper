@@ -13,25 +13,30 @@ localTypes:
 
 imports:
 - name: A
+  type: data
   schema:
     "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema
     type: string[]
   optional: false
 - name: B
+  type: data
   schema:
     $ref: "blueprint://types/gcp-credentials" # read file from blueprint content
   optional: false
 - name: C
+  type: data
   schema:
     $ref: "local://aws-credentials"
   optional: false
 - name: D
+  type: data
   schema:
     $ref: "cd:///componentReferences/etcd/resources/my-type" # path in component descriptor
   optional: false
 
 exports:
 - name: key1
+  type: data
   version: v1 # optional; defaults to "v1"
   schema:
     "$schema": "https://json-schema.org/draft/2019-09/schema" # optional, defaulted to .jsonSchema

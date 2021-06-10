@@ -18,20 +18,24 @@ localTypes:
 
 imports:
 - name: dnsClass
+  type: data
   required: false
   schema:
     type: string
 
 - name: namespace
+  type: data
   default:
     value: kube-system
   schema:
     type: string
 
 - name: cluster
+  type: target
   targetType: kubernetes-cluster
 
 - name: resources
+  type: data
   required: false
   schema:
     type: object
@@ -43,10 +47,12 @@ imports:
 
 exports:
 - name: ingressClass
+  type: data
   schema:
     type: string
 
 - name: exported-cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # List of deploy item generators

@@ -166,20 +166,26 @@ kind: Blueprint
 
 imports:
 - name: cluster # target to the host cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 - name: landscaperCluster # target to the cluster running the landscaper resources.
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
   required: false
 - name: releaseName
+  type: data
   schema:
     type: string
 - name: releaseNamespace
+  type: data
   schema: 
     type: string
 - name: identity
+  type: data
   schema:
     type: string
 - name: targetSelectors # defaulted to the "landscaper.gardener.cloud/environment" annotation
+  type: data
   schema:
     type: array
     items:

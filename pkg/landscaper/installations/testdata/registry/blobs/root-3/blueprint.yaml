@@ -11,4 +11,5 @@ annotations:
 
 imports:
 - name: root.a
+  type: target
   targetType: landscaper.gardener.cloud/mock

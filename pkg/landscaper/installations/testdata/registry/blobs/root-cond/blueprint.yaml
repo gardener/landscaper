@@ -11,11 +11,13 @@ annotations:
 
 imports:
 - name: rootcond.foo
+  type: data
   required: false
   schema:
     type: string
   imports:
   - name: rootcond.bar
+    type: data
     schema:
       type: string
 
@@ -50,14 +52,17 @@ subinstallations:
                   kind: ProviderStatus
         imports:
         - name: internalFoo
+          type: data
           required: false
           schema:
             type: string
         - name: internalBar
+          type: data
           required: false
           schema:
             type: string
         - name: internalBaz
+          type: data
           required: false
           schema:
             type: string
@@ -92,5 +97,6 @@ subinstallations:
               internalBaz: baz
         exports:
         - name: internalBaz
+          type: data
           schema:
             type: string

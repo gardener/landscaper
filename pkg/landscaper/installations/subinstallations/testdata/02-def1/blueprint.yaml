@@ -11,10 +11,12 @@ annotations:
 
 imports:
 - name: "y"
+  type: data
   schema:
     type: string
 
 exports:
 - name: z
+  type: data
   schema:
     type: string

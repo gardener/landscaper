@@ -11,12 +11,16 @@ annotations:
 
 imports:
 - name: c.a
+  type: data
   schema:
     type: string
 - name: c.b
+  type: data
   schema:
     type: string
 
 exports:
-- key: c.z
-  type: string
+- name: c.z
+  type: data
+  schema:
+    type: string

@@ -9,29 +9,35 @@ jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 
 imports:
 - name: aws-dev-account-credentials
+  type: data
   schema:
     $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/resources/schemas#definitions/provider
 
 - name: gcp-dev-account-credentials
+  type: data
   schema:
     $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # maybe cd://componentReferences/dns/componentReferences/schemas/resources/schemas#definitions/provider
 
 - name: dnsClass
+  type: data
   required: false
   schema:
     type: string
 
 - name: namespace
+  type: data
   default:
     value: kube-system
   schema:
     type: string
 
 - name: dev-cluster
+  type: target
   targetType: kubernetes-cluster
 
 exports:
 - name: exported-cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 
