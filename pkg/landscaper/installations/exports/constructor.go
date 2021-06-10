@@ -88,11 +88,12 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			continue
 		}
 
-		if def.Schema != nil {
+		switch def.Type {
+		case lsv1alpha1.ExportTypeData:
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, data); err != nil {
 				return nil, nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
 			}
-		} else if len(def.TargetType) != 0 {
+		case lsv1alpha1.ExportTypeTarget:
 			var targetType string
 			if err := jsonpath.GetValue(".type", data, &targetType); err != nil {
 				return nil, nil, fmt.Errorf("%s: exported target does not match the expected target template schema: %w", fldPath.String(), err)
@@ -100,6 +101,8 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			if def.TargetType != targetType {
 				return nil, nil, fmt.Errorf("%s: exported target type is %s but expected %s", fldPath.String(), targetType, def.TargetType)
 			}
+		default:
+			return nil, nil, fmt.Errorf("%s: unknown export type '%s'", fldPath.String(), string(def.Type))
 		}
 	}
 

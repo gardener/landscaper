@@ -474,16 +474,19 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			}
 		}
 
-		if len(importDef.TargetType) != 0 {
+		switch importDef.Type {
+		case lsv1alpha1.ImportTypeData:
+			if err := o.createOrUpdateDataImport(ctx, src, importDef, importData); err != nil {
+				return fmt.Errorf("unable to create or update data import '%s': %w", importDef.Name, err)
+			}
+		case lsv1alpha1.ImportTypeTarget:
 			if err := o.createOrUpdateTargetImport(ctx, src, importDef, importData); err != nil {
 				return fmt.Errorf("unable to create or update target import '%s': %w", importDef.Name, err)
 			}
-			continue
+		default:
+			return fmt.Errorf("unknown import type '%s' for import %s", string(importDef.Type), importDef.Name)
 		}
 
-		if err := o.createOrUpdateDataImport(ctx, src, importDef, importData); err != nil {
-			return fmt.Errorf("unable to create or update data import '%s': %w", importDef.Name, err)
-		}
 	}
 	return nil
 }

@@ -6,7 +6,6 @@ package imports
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/mandelsoft/spiff/spiffing"
@@ -70,7 +69,8 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 	for _, def := range importList {
 		var err error
 		defPath := fldPath.Child(def.Name)
-		if def.Schema != nil {
+		switch def.Type {
+		case lsv1alpha1.ImportTypeData:
 			if val, ok := templatedDataMappings[def.Name]; ok {
 				imports[def.Name] = val
 			} else if val, ok := importedDataObjects[def.Name]; ok {
@@ -96,8 +96,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 				}
 			}
 			continue
-		}
-		if len(def.TargetType) != 0 {
+		case lsv1alpha1.ImportTypeTarget:
 			if val, ok := templatedDataMappings[def.Name]; ok {
 				imports[def.Name] = val
 			} else if val, ok := importedTargets[def.Name]; ok {
@@ -122,8 +121,9 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: exported target type is %s but expected %s", defPath.String(), targetType, def.TargetType)
 			}
 			continue
+		default:
+			return nil, fmt.Errorf("%s: unknown import type '%s'", defPath.String(), string(def.Type))
 		}
-		return nil, errors.New("neither a target nor a schema is defined")
 	}
 
 	return imports, nil

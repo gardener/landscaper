@@ -67,6 +67,7 @@ var _ = Describe("Operation", func() {
 						Name:       "my-import",
 						TargetType: "test-type",
 					},
+					Type: lsv1alpha1.ImportTypeTarget,
 				},
 			}
 			op.Inst.Imports = map[string]interface{}{

@@ -276,14 +276,15 @@ func ValidateImports(bp *blueprints.Blueprint,
 			}
 			continue
 		}
-		if importDef.Schema != nil {
+		switch importDef.Type {
+		case lsv1alpha1.ImportTypeData:
 			if err := jsonschemaValidator.ValidateGoStruct(importDef.Schema.RawMessage, value); err != nil {
 				allErr = append(allErr, field.Invalid(
 					fldPath,
 					value,
 					fmt.Sprintf("invalid imported value: %s", err.Error())))
 			}
-		} else {
+		case lsv1alpha1.ImportTypeTarget:
 			// import is a target import
 			targetObj, ok := value.(map[string]interface{})
 			if !ok {
@@ -305,6 +306,8 @@ func ValidateImports(bp *blueprints.Blueprint,
 					fmt.Sprintf("expected target type to be %q but got %q", importDef.TargetType, targetType)))
 				continue
 			}
+		default:
+			allErr = append(allErr, field.Invalid(fldPath, string(importDef.Type), "unknown import type"))
 		}
 	}
 
