@@ -19,15 +19,49 @@ func SetDefaults_Blueprint(obj *Blueprint) {
 		obj.JSONSchemaVersion = "https://json-schema.org/draft/2019-09/schema"
 	}
 
-	for i := range obj.Imports {
-		SetDefaults_DefinitionImport(&(obj.Imports[i]))
-	}
+	SetDefaults_DefinitionImport(&obj.Imports)
+	SetDefaults_DefinitionExport(&obj.Exports)
 }
 
 // SetDefaults_DefinitionImport sets default values for the ImportDefinition objects
-func SetDefaults_DefinitionImport(obj *ImportDefinition) {
-	if obj.Required == nil {
-		obj.Required = pointer.BoolPtr(true)
+func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
+	if imports == nil {
+		return
+	}
+	for i := 0; i < len(*imports); i++ {
+		imp := &(*imports)[i]
+		if imp.Required == nil {
+			imp.Required = pointer.BoolPtr(true)
+		}
+		SetDefaults_DefinitionImport(&imp.ConditionalImports)
+		if len(imp.Type) != 0 {
+			// type is already set
+			continue
+		}
+		if imp.Schema != nil {
+			imp.Type = ImportTypeData
+		} else if len(imp.TargetType) != 0 {
+			imp.Type = ImportTypeTarget
+		}
+	}
+}
+
+// SetDefaults_DefinitionExport sets default values for the ImportDefinition objects
+func SetDefaults_DefinitionExport(exports *ExportDefinitionList) {
+	if exports == nil {
+		return
+	}
+	for i := 0; i < len(*exports); i++ {
+		exp := &(*exports)[i]
+		if len(exp.Type) != 0 {
+			// type is already set
+			continue
+		}
+		if exp.Schema != nil {
+			exp.Type = ExportTypeData
+		} else if len(exp.TargetType) != 0 {
+			exp.Type = ExportTypeTarget
+		}
 	}
 }
 
