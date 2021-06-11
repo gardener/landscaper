@@ -76,7 +76,10 @@ func (b *Blueprint) GetSubinstallations() ([]*lsv1alpha1.InstallationTemplate, e
 
 		coreInstTmpl := &core.InstallationTemplate{}
 		if _, _, err := api.Decoder.Decode(data, nil, coreInstTmpl); err != nil {
-			allErrs = append(allErrs, field.Invalid(instPath.Child("file"), subInstTmpl.File, fmt.Sprintf("unable to decode installation template: %s", err.Error())))
+			allErrs = append(allErrs, field.Invalid(
+				instPath.Child("file"),
+				subInstTmpl.File,
+				fmt.Sprintf("unable to decode installation template: %s", err.Error())))
 			continue
 		}
 		if valErrs := validation.ValidateInstallationTemplate(instPath, coreInstTmpl); len(valErrs) != 0 {

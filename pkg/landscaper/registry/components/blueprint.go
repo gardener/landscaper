@@ -12,9 +12,9 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
-	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/landscaper/apis/mediatype"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/component-cli/ociclient"
 )
 
 // BlueprintResolver is a blob resolver that can resolve
@@ -26,7 +26,7 @@ type BlueprintResolver struct {
 var _ ctf.TypedBlobResolver = &BlueprintResolver{}
 
 func (b BlueprintResolver) CanResolve(res cdv2.Resource) bool {
-	if res.GetType() != lsv1alpha1.BlueprintType && res.GetType() != lsv1alpha1.OldBlueprintType {
+	if res.GetType() != mediatype.BlueprintType && res.GetType() != mediatype.OldBlueprintType {
 		return false
 	}
 	return res.Access != nil && res.Access.GetType() == cdv2.OCIRegistryType

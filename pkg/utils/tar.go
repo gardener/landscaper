@@ -83,14 +83,9 @@ func BuildTar(fs vfs.FileSystem, root string, buf io.Writer) error {
 	return nil
 }
 
-// ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path
-func ExtractTarGzip(gzipStream io.Reader, fs vfs.FileSystem, root string) error {
-	uncompStream, err := gzip.NewReader(gzipStream)
-	if err != nil {
-		return err
-	}
-
-	tarReader := tar.NewReader(uncompStream)
+// ExtractTar extracts the content of a tar to the given filesystem with the given root base path
+func ExtractTar(tarStream io.Reader, fs vfs.FileSystem, root string) error {
+	tarReader := tar.NewReader(tarStream)
 	for {
 		header, err := tarReader.Next()
 		if err != nil {
@@ -123,6 +118,15 @@ func ExtractTarGzip(gzipStream io.Reader, fs vfs.FileSystem, root string) error 
 			}
 		}
 	}
+}
+
+// ExtractTarGzip extracts the content of a tar to the given filesystem with the given root base path
+func ExtractTarGzip(gzipStream io.Reader, fs vfs.FileSystem, root string) error {
+	uncompStream, err := gzip.NewReader(gzipStream)
+	if err != nil {
+		return err
+	}
+	return ExtractTar(uncompStream, fs, root)
 }
 
 // BuildTarGzipLayer tar and gzips the given path and adds the layer to the cache.

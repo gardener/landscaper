@@ -17,7 +17,7 @@ const (
 	// LandscaperDMFinalizer is the finalizer of the landscaper deployer management.
 	LandscaperDMFinalizer = "finalizer.deployermanagement.landscaper.gardener.cloud"
 
-	// LandscaperAgentFinalizer is the finalizer of the landscaper agennt.
+	// LandscaperAgentFinalizer is the finalizer of the landscaper agent.
 	LandscaperAgentFinalizer = "finalizer.agent.landscaper.gardener.cloud"
 
 	// Annotations
@@ -54,18 +54,9 @@ const (
 
 	// Component Descriptor
 
-	// BlueprintType is the name of the blueprint type in a component descriptor.
-	BlueprintType = "landscaper.gardener.cloud/blueprint"
-
-	// OldBlueprintType is the old name of the blueprint type in a component descriptor.
-	OldBlueprintType = "blueprint"
+	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors
+	InlineComponentDescriptorLabel = "landscaper.gardener.cloud/component-descriptor"
 
 	// BlueprintFileName is the filename of a component definition on a local path
 	BlueprintFileName = "blueprint.yaml"
-
-	// BlueprintArtifactsMediaType is the reserved media type for a blueprint that is stored as its own artifact.
-	BlueprintArtifactsMediaType = "application/vnd.gardener.landscaper.blueprint.v1+tar+gzip"
-
-	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors
-	InlineComponentDescriptorLabel = "landscaper.gardener.cloud/component-descriptor"
 )

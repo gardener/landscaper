@@ -20,6 +20,8 @@ import (
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
+	"github.com/gardener/landscaper/apis/mediatype"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -100,11 +102,24 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 	}
 
 	var data bytes.Buffer
-	if _, err := blobResolver.Resolve(ctx, resource, &data); err != nil {
+	// todo: do not store the blueprint in memory and rather directly decode the bytestream to the filesystem.
+	blobInfo, err := blobResolver.Resolve(ctx, resource, &data)
+	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint blob: %w", err)
 	}
-	if err := utils.ExtractTarGzip(&data, fs, "/"); err != nil {
-		return nil, fmt.Errorf("unable to extract blueprint from tar.gzip blob: %w", err)
+
+	mediaType, err := mediatype.Parse(blobInfo.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse media type: %w", err)
+	}
+	if mediaType.String() == mediatype.MediaTypeGZip || mediaType.IsCompressed(mediatype.GZipCompression) {
+		if err := utils.ExtractTarGzip(&data, fs, "/"); err != nil {
+			return nil, fmt.Errorf("unable to extract blueprint from %s blob: %w", blobInfo.MediaType, err)
+		}
+	} else {
+		if err := utils.ExtractTar(&data, fs, "/"); err != nil {
+			return nil, fmt.Errorf("unable to extract blueprint from %s blob: %w", blobInfo.MediaType, err)
+		}
 	}
 
 	blueprintBytes, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)
@@ -124,13 +139,13 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.
 func GetBlueprintResourceFromComponentDescriptor(cd *cdv2.ComponentDescriptor, blueprintName string) (cdv2.Resource, error) {
 	// get blueprint resource from component descriptor
-	resources, err := cd.GetResourcesByType(lsv1alpha1.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+	resources, err := cd.GetResourcesByType(mediatype.BlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
 	if err != nil {
 		if !errors.Is(err, cdv2.NotFound) {
 			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
 		}
 		// try to fallback to old blueprint type
-		resources, err = cd.GetResourcesByType(lsv1alpha1.OldBlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
+		resources, err = cd.GetResourcesByType(mediatype.OldBlueprintType, selector.DefaultSelector{cdv2.SystemIdentityName: blueprintName})
 		if err != nil {
 			return cdv2.Resource{}, fmt.Errorf("unable to find blueprint %s in component descriptor: %w", blueprintName, err)
 		}
