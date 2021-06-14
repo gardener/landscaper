@@ -1,3 +1,5 @@
+// +build !windows
+
 /*
  * Copyright 2020 Mandelsoft. All rights reserved.
  *  This file is licensed under the Apache Software License, v. 2 except as noted

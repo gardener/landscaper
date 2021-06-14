@@ -20,15 +20,17 @@ package osfs
 
 import (
 	"os"
+
+	"github.com/mandelsoft/vfs/pkg/vfs"
 )
 
 func mapPath(p string) string {
 	mapped := ""
-	for c := range path {
-		if os.IsPathSeparator(c) {
-			mapped = mapped + pkg.PathSeparatorChar
+	for _, c := range p {
+		if os.PathSeparator == c {
+			mapped = mapped + string(vfs.PathSeparatorChar)
 		} else {
-			mapped = mapped + c
+			mapped = mapped + string(c)
 		}
 	}
 	return mapped

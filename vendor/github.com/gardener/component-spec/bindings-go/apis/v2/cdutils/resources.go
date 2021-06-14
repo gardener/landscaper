@@ -32,13 +32,8 @@ func GetImageReferenceByName(cd *cdv2.ComponentDescriptor, name string) (string,
 	if res.Access.GetType() != cdv2.OCIRegistryType {
 		return "", fmt.Errorf("resource is expected to be of type %q but is of type %q", cdv2.OCIRegistryType, res.Access.GetType())
 	}
-
-	data, err := res.Access.GetData()
-	if err != nil {
-		return "", err
-	}
 	ociImageAccess := &cdv2.OCIRegistryAccess{}
-	if err := cdv2.NewDefaultCodec().Decode(data, ociImageAccess); err != nil {
+	if err := res.Access.DecodeInto(ociImageAccess); err != nil {
 		return "", err
 	}
 	return ociImageAccess.ImageReference, nil

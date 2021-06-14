@@ -38,7 +38,7 @@ func (c *ComponentDescriptorList) GetComponent(name, version string) (ComponentD
 	return ComponentDescriptor{}, errors.New("NotFound")
 }
 
-// GetComponent returns all components that match the given name.
+// GetComponentByName returns all components that match the given name.
 func (c *ComponentDescriptorList) GetComponentByName(name string) []ComponentDescriptor {
 	comps := make([]ComponentDescriptor, 0)
 	for _, comp := range c.Components {

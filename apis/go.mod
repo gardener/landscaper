@@ -3,8 +3,7 @@ module github.com/gardener/landscaper/apis
 go 1.16
 
 require (
-	github.com/gardener/component-spec/bindings-go v0.0.32
-	github.com/go-logr/logr v0.3.0 // indirect
+	github.com/gardener/component-spec/bindings-go v0.0.41
 	github.com/go-openapi/jsonreference v0.19.3
 	github.com/go-openapi/spec v0.19.3
 	github.com/onsi/ginkgo v1.14.2

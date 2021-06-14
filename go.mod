@@ -8,16 +8,16 @@ require (
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
-	github.com/gardener/component-cli v0.20.0
-	github.com/gardener/component-spec/bindings-go v0.0.36
+	github.com/gardener/component-cli v0.21.0
+	github.com/gardener/component-spec/bindings-go v0.0.41
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
-	github.com/go-logr/logr v0.3.0
+	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.3.0
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mandelsoft/spiff v1.5.0
-	github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
+	github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
 	github.com/opencontainers/go-digest v1.0.0

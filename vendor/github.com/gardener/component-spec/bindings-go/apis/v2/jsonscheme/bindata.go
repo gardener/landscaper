@@ -92,7 +92,7 @@ func LanguageIndependentComponentDescriptorV2SchemaYaml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "../../../../language-independent/component-descriptor-v2-schema.yaml", size: 8687, mode: os.FileMode(420), modTime: time.Unix(1610547234, 0)}
+	info := bindataFileInfo{name: "../../../../language-independent/component-descriptor-v2-schema.yaml", size: 8687, mode: os.FileMode(420), modTime: time.Unix(1610727054, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

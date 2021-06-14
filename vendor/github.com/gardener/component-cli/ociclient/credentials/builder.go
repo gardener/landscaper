@@ -15,7 +15,6 @@ import (
 	"github.com/docker/cli/cli/config/credentials"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	"github.com/go-logr/logr"
-	"github.com/go-logr/logr/testing"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	corev1 "k8s.io/api/core/v1"
@@ -149,7 +148,7 @@ func (b *KeyringBuilder) Build() (*GeneralOciKeyring, error) {
 	return store, nil
 }
 
-// DefaultAuthConfigGetter describes a default getter method for a authentication method
+// CredentialHelperAuthConfigGetter describes a default getter method for a authentication method
 func CredentialHelperAuthConfigGetter(log logr.Logger, dockerConfig *configfile.ConfigFile, address, helper string) AuthConfigGetter {
 	nativeStore := credentials.NewNativeStore(dockerConfig, helper)
 	return func(_ string) (dockerconfigtypes.AuthConfig, error) {
@@ -166,11 +165,11 @@ func CredentialHelperAuthConfigGetter(log logr.Logger, dockerConfig *configfile.
 // CreateOCIRegistryKeyringFromFilesystem creates a new OCI registry keyring from a given file system.
 // DEPRECATED: Use the Configbuilder
 func CreateOCIRegistryKeyringFromFilesystem(pullSecrets []corev1.Secret, configFiles []string, fs vfs.FileSystem) (*GeneralOciKeyring, error) {
-	return NewBuilder(testing.NullLogger{}).WithFS(fs).FromConfigFiles(configFiles...).FromPullSecrets(pullSecrets...).Build()
+	return NewBuilder(logr.Discard()).WithFS(fs).FromConfigFiles(configFiles...).FromPullSecrets(pullSecrets...).Build()
 }
 
 // CreateOCIRegistryKeyring creates a new OCI registry keyring.
 // DEPRECATED: Use the Configbuilder
 func CreateOCIRegistryKeyring(pullSecrets []corev1.Secret, configFiles []string) (*GeneralOciKeyring, error) {
-	return NewBuilder(testing.NullLogger{}).WithFS(osfs.New()).FromConfigFiles(configFiles...).FromPullSecrets(pullSecrets...).Build()
+	return NewBuilder(logr.Discard()).WithFS(osfs.New()).FromConfigFiles(configFiles...).FromPullSecrets(pullSecrets...).Build()
 }

@@ -6,7 +6,6 @@ package cdutils
 
 import (
 	"encoding/json"
-	"fmt"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 )
@@ -114,36 +113,10 @@ func SetRawLabel(labels []v2.Label, name string, val []byte) []v2.Label {
 	})
 }
 
-// SetExtraIdentity sets a extra identity field of a identity object.
+// SetExtraIdentityField sets a extra identity field of a identity object.
 func SetExtraIdentityField(o *v2.IdentityObjectMeta, key, val string) {
 	if o.ExtraIdentity == nil {
 		o.ExtraIdentity = v2.Identity{}
 	}
 	o.ExtraIdentity[key] = val
-}
-
-// ToUnstructuredTypedObject converts a typed object to a unstructured object.
-func ToUnstructuredTypedObject(codec v2.TypedObjectCodec, obj v2.TypedObjectAccessor) (*v2.UnstructuredAccessType, error) {
-	data, err := codec.Encode(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	uObj := &v2.UnstructuredAccessType{}
-	if err := uObj.Decode(data, uObj); err != nil {
-		return nil, err
-	}
-	return uObj, nil
-}
-
-// FromUnstructuredObject converts a unstructured object into a typed object.
-func FromUnstructuredObject(codec v2.TypedObjectCodec, uObj *v2.UnstructuredAccessType, obj v2.TypedObjectAccessor) error {
-	data, err := uObj.GetData()
-	if err != nil {
-		return fmt.Errorf("unable to get data from unstructured object: %w", err)
-	}
-	if err := codec.Decode(data, obj); err != nil {
-		return fmt.Errorf("unable to decode object %q into %q: %w", uObj.GetType(), obj.GetType(), err)
-	}
-	return err
 }

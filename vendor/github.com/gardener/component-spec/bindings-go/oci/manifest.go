@@ -29,7 +29,6 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 )
@@ -60,7 +59,7 @@ func (b *ManifestBuilder) StorageType(storageType string) *ManifestBuilder {
 	return b
 }
 
-// BuildNewManifest creates a ocispec Manifest from a component descriptor.
+// Build creates a ocispec Manifest from a component descriptor.
 func (b *ManifestBuilder) Build(ctx context.Context) (*ocispecv1.Manifest, error) {
 	// default storage type
 	if len(b.componentDescriptorStorageType) == 0 {
@@ -181,11 +180,11 @@ func (b *ManifestBuilder) addLocalBlobs(ctx context.Context) ([]ocispecv1.Descri
 		}
 
 		ociBlobAccess := v2.NewLocalOCIBlobAccess(desc.Digest.String())
-		unstructuredType, err := cdutils.ToUnstructuredTypedObject(v2.NewCodec(nil, nil, nil), ociBlobAccess)
+		unstructuredType, err := v2.NewUnstructured(ociBlobAccess)
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert ociBlob to untructured type: %w", err)
 		}
-		res.Access = unstructuredType
+		res.Access = &unstructuredType
 		b.archive.ComponentDescriptor.Resources[i] = res
 		blobDescriptors = append(blobDescriptors, desc)
 	}

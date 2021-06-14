@@ -18,6 +18,8 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,11 +33,12 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/go-logr/logr"
 )
 
+// Client defines a readonly oci artifact client to fetch manifests and blobs.
 type Client interface {
 	// GetManifest returns the ocispec Manifest for a reference
 	GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error)
@@ -45,7 +48,7 @@ type Client interface {
 }
 
 // OCIRef generates the oci reference from the repository context and a component name and version.
-func OCIRef(repoCtx v2.RepositoryContext, name, version string) (string, error) {
+func OCIRef(repoCtx v2.OCIRegistryRepository, name, version string) (string, error) {
 	baseUrl := repoCtx.BaseURL
 	if !strings.Contains(baseUrl, "://") {
 		// add dummy protocol to correctly parse the the url
@@ -55,49 +58,109 @@ func OCIRef(repoCtx v2.RepositoryContext, name, version string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	ref := path.Join(u.Host, u.Path, ComponentDescriptorNamespace, name)
-	return fmt.Sprintf("%s:%s", ref, version), nil
+
+	switch repoCtx.ComponentNameMapping {
+	case v2.OCIRegistryURLPathMapping, "":
+		ref := path.Join(u.Host, u.Path, ComponentDescriptorNamespace, name)
+		return fmt.Sprintf("%s:%s", ref, version), nil
+	case v2.OCIRegistryDigestMapping:
+		h := sha256.New()
+		_, _ = h.Write([]byte(name))
+		ref := path.Join(u.Host, u.Path, hex.EncodeToString(h.Sum(nil)))
+		return fmt.Sprintf("%s:%s", ref, version), nil
+	default:
+		return "", fmt.Errorf("unknown component name mapping method %s", repoCtx.ComponentNameMapping)
+	}
 }
 
-// Resolver is a generic resolve to resolve a component descriptor from a oci registry
+// Cache describes a interface to cache component descriptors.
+// The cache expects that a component descriptor identified by repoCtx, name and version is immutable.
+// Currently only the raw component descriptor can be cached.
+// The blob resolver might be added in the future.
+type Cache interface {
+	// Get reads a component descriptor from the cache.
+	Get(ctx context.Context, repoCtx v2.OCIRegistryRepository, name, version string) (*v2.ComponentDescriptor, error)
+	// Store stores a component descriptor in the cache.
+	Store(ctx context.Context, descriptor *v2.ComponentDescriptor) error
+}
+
+// Resolver is a generic resolve to resolve a component descriptor from a oci registry.
+// This resolver implements the ctf.ComponentResolver interface.
 type Resolver struct {
-	repoCtx v2.RepositoryContext
+	log logr.Logger
 	client  Client
+	cache Cache
 	decodeOpts []codec.DecodeOption
 }
 
 // NewResolver creates a new resolver.
-func NewResolver(decodeOpts ...codec.DecodeOption) *Resolver {
+func NewResolver(client Client, decodeOpts ...codec.DecodeOption) *Resolver {
 	return &Resolver{
+		log: logr.Discard(),
+		client: client,
 		decodeOpts: decodeOpts,
 	}
 }
 
-// WithRepositoryContext sets the repository context of the resolver
-func (r *Resolver) WithRepositoryContext(ctx v2.RepositoryContext) *Resolver {
-	r.repoCtx = ctx
+// WithCache sets the oci client context of the resolver
+func (r *Resolver) WithCache(cache Cache) *Resolver {
+	r.cache = cache
 	return r
 }
 
-// WithOCIClient sets the oci client context of the resolver
-func (r *Resolver) WithOCIClient(client Client) *Resolver {
-	r.client = client
+// WithLog sets the logger for the resolver.
+func (r *Resolver) WithLog(log logr.Logger) *Resolver {
+	r.log = log
 	return r
 }
 
 // Resolve resolves a component descriptor by name and version within the configured context.
-func (r *Resolver) Resolve(ctx context.Context, name, version string) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
-	if r.repoCtx.Type != v2.OCIRegistryType {
-		return nil, nil, fmt.Errorf("unsupported type %s expected %s", r.repoCtx.Type, v2.OCIRegistryType)
+func (r *Resolver) Resolve(ctx context.Context, repoCtx v2.Repository, name, version string) (*v2.ComponentDescriptor, error) {
+	cd, _, err := r.resolve(ctx, repoCtx, name, version, false)
+	return cd, err
+}
+
+// ResolveWithBlobResolver resolves a component descriptor by name and version within the configured context.
+// And it also returns a blob resolver to access the local artifacts.
+func (r *Resolver) ResolveWithBlobResolver(ctx context.Context, repoCtx v2.Repository, name, version string) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
+	return r.resolve(ctx, repoCtx, name, version, true)
+}
+
+// resolve resolves a component descriptor by name and version within the configured context.
+// If withBlobResolver is false the returned blobresolver is always nil
+func (r *Resolver) resolve(ctx context.Context, repoCtx v2.Repository, name, version string, withBlobResolver bool) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
+	log := r.log.WithValues("repoCtx", repoCtx.GetType(), "name", name, "version", version)
+
+	var repo v2.OCIRegistryRepository
+	switch r := repoCtx.(type) {
+	case *v2.UnstructuredTypedObject:
+		if err := r.DecodeInto(&repo); err != nil {
+			return nil, nil, err
+		}
+	case *v2.OCIRegistryRepository:
+		repo = *r
+	default:
+		return nil, nil, fmt.Errorf("unknown repository context type %s", repoCtx.GetType())
 	}
-	ref, err := OCIRef(r.repoCtx, name, version)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to generate oci reference: %w", err)
+	if r.cache != nil {
+		cd, err := r.cache.Get(ctx, repo, name, version)
+		if err != nil {
+			log.Error(err, "unable to get component descriptor")
+		} else {
+			if withBlobResolver {
+				manifest, ref , err := r.fetchManifest(ctx, repo, name, version)
+				if err != nil {
+					return nil, nil, err
+				}
+				return cd, NewBlobResolver(r.client, ref, manifest, cd), nil
+			}
+			return cd, nil, nil
+		}
 	}
 
-	manifest, err := r.client.GetManifest(ctx, ref)
+	manifest, ref , err := r.fetchManifest(ctx, repo, name, version)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to fetch manifest from ref %s: %w", ref, err)
+		return nil, nil, err
 	}
 
 	componentConfig, err := r.getComponentConfig(ctx, ref, manifest)
@@ -131,12 +194,43 @@ func (r *Resolver) Resolve(ctx context.Context, name, version string) (*v2.Compo
 	if err := codec.Decode(componentDescriptorBytes, cd, r.decodeOpts...); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode component descriptor: %w", err)
 	}
-	return cd, NewBlobResolver(r.client, ref, manifest, cd), nil
+	if err := v2.InjectRepositoryContext(cd, &repo); err != nil {
+		return nil, nil, err
+	}
+
+	if r.cache != nil {
+		if err := r.cache.Store(ctx, cd.DeepCopy()); err != nil {
+			log.Error(err, "unable to store component descriptor")
+		}
+	}
+
+	if withBlobResolver {
+		return cd, NewBlobResolver(r.client, ref, manifest, cd), nil
+	}
+	return cd, nil, nil
+}
+
+// fetchManifest fetches the oci manifest.
+// The manifest and the oci ref is returned.
+func (r *Resolver) fetchManifest(ctx context.Context, repoCtx v2.OCIRegistryRepository, name, version string) (*ocispecv1.Manifest, string, error) {
+	if repoCtx.Type != v2.OCIRegistryType {
+		return nil, "", fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, v2.OCIRegistryType)
+	}
+	ref, err := OCIRef(repoCtx, name, version)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to generate oci reference: %w", err)
+	}
+
+	manifest, err := r.client.GetManifest(ctx, ref)
+	if err != nil {
+		return nil, "", fmt.Errorf("unable to fetch manifest from ref %s: %w", ref, err)
+	}
+	return manifest, ref, nil
 }
 
 // ToComponentArchive creates a tar archive in the CTF (Cnudie Transport Format) from the given component descriptor.
-func (r *Resolver) ToComponentArchive(ctx context.Context, name, version string, writer io.Writer) error {
-	cd, blobresolver, err := r.Resolve(ctx, name, version)
+func (r *Resolver) ToComponentArchive(ctx context.Context, repoCtx v2.Repository, name, version string, writer io.Writer) error {
+	cd, blobresolver, err := r.ResolveWithBlobResolver(ctx, repoCtx, name, version)
 	if err != nil {
 		return err
 	}
@@ -147,7 +241,6 @@ func (r *Resolver) ToComponentArchive(ctx context.Context, name, version string,
 			return fmt.Errorf("unable to add resource %s to archive: %w", res.GetName(), err)
 		}
 	}
-
 	return ca.WriteTar(writer)
 }
 
@@ -205,7 +298,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 	switch res.Access.GetType() {
 	case v2.LocalOCIBlobType:
 		localOCIAccess := &v2.LocalOCIBlobAccess{}
-		if err := cdutils.FromUnstructuredObject(v2.NewDefaultCodec(), res.Access, localOCIAccess); err != nil {
+		if err := res.Access.DecodeInto(localOCIAccess); err != nil {
 			return nil, err
 		}
 
@@ -227,7 +320,7 @@ func (b *blobResolver) resolve(ctx context.Context, res v2.Resource, writer io.W
 		}, nil
 	case v2.OCIBlobType:
 		ociBlobAccess := &v2.OCIBlobAccess{}
-		if err := cdutils.FromUnstructuredObject(v2.NewDefaultCodec(), res.Access, ociBlobAccess); err != nil {
+		if err := res.Access.DecodeInto(ociBlobAccess); err != nil {
 			return nil, err
 		}
 
