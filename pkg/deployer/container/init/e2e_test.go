@@ -11,7 +11,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -84,7 +84,7 @@ var _ = Describe("Init e2e", func() {
 		utils.ExpectNoError(fs.MkdirAll(container.StatePath, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(testing.NullLogger{}, testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
+		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
 
 		utils.ExpectNoError(s.Backup(ctx))
 
@@ -95,7 +95,7 @@ var _ = Describe("Init e2e", func() {
 
 		opts := &options{}
 		opts.Complete(ctx)
-		Expect(run(ctx, testing.NullLogger{}, opts, testenv.Client, resFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, testenv.Client, resFs)).To(Succeed())
 
 		resData, err := vfs.ReadFile(resFs, testFilePath)
 		utils.ExpectNoError(err)

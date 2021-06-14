@@ -16,7 +16,7 @@ import (
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	logtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/yaml"
@@ -38,14 +38,14 @@ var _ = Describe("GetChart", func() {
 	It("should resolve a chart from public readable helm oci artifact", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
 		chartAccess := &helmv1alpha1.Chart{
 			Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
@@ -53,15 +53,14 @@ var _ = Describe("GetChart", func() {
 	It("should resolve a chart from a public readable component descriptor", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
 		ref := &helmv1alpha1.RemoteChartReference{}
 		ref.Reference = &lsv1alpha1.ComponentDescriptorReference{}
-		ref.Reference.RepositoryContext = &cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "eu.gcr.io/gardener-project/landscaper/tutorials/components",
-		}
+		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/landscaper/tutorials/components", ""))
+		Expect(err).ToNot(HaveOccurred())
+		ref.Reference.RepositoryContext = &repoCtx
 		ref.Reference.ComponentName = "github.com/gardener/landscaper/ingress-nginx"
 		ref.Reference.Version = "v0.2.1"
 		ref.ResourceName = "ingress-nginx-chart"
@@ -69,7 +68,7 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
@@ -77,7 +76,7 @@ var _ = Describe("GetChart", func() {
 	It("should resolve a chart from an inline component descriptor", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
 		file, err := ioutil.ReadFile("./testdata/01-component-descriptor.yaml")
@@ -95,7 +94,7 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
@@ -103,7 +102,7 @@ var _ = Describe("GetChart", func() {
 	It("should resolve a chart as base64 encoded file", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 
 		chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
@@ -115,7 +114,7 @@ var _ = Describe("GetChart", func() {
 			},
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("testchart"))
 	})
@@ -136,7 +135,7 @@ var _ = Describe("GetChart", func() {
 		It("should resolve a chart from a webserver", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			ociClient, err := ociclient.NewClient(logtesting.NullLogger{})
+			ociClient, err := ociclient.NewClient(logr.Discard())
 			Expect(err).ToNot(HaveOccurred())
 
 			chartBytes, closer := utils.ReadChartFrom("./testdata/testchart")
@@ -155,7 +154,7 @@ var _ = Describe("GetChart", func() {
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logtesting.NullLogger{}, ociClient, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})

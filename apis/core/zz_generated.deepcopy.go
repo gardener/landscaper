@@ -231,8 +231,7 @@ func (in *ComponentDescriptorReference) DeepCopyInto(out *ComponentDescriptorRef
 	*out = *in
 	if in.RepositoryContext != nil {
 		in, out := &in.RepositoryContext, &out.RepositoryContext
-		*out = new(v2.RepositoryContext)
-		**out = **in
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -292,8 +291,7 @@ func (in *ComponentOverwriteReference) DeepCopyInto(out *ComponentOverwriteRefer
 	*out = *in
 	if in.RepositoryContext != nil {
 		in, out := &in.RepositoryContext, &out.RepositoryContext
-		*out = new(v2.RepositoryContext)
-		**out = **in
+		*out = (*in).DeepCopy()
 	}
 	return
 }

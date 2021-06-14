@@ -105,7 +105,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 	)
 
 	if providerConfig.ComponentDescriptor != nil {
-		cdReference = installations.GeReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+		cdReference = installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 		if cdReference == nil {
 			return fmt.Errorf("no inline component descriptor or reference found")
 		}
@@ -115,7 +115,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 			return err
 		}
 
-		cdResolver, err = componentsregistry.NewOCIRegistryWithOCIClient(ociClient, providerConfig.ComponentDescriptor.Inline)
+		cdResolver, err = componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, providerConfig.ComponentDescriptor.Inline)
 		if err != nil {
 			return errors.Wrap(err, "unable to setup components registry")
 		}
@@ -161,15 +161,15 @@ func fetchComponentDescriptor(
 	fs vfs.FileSystem,
 	providerConfig *containerv1alpha1.ProviderConfiguration) error {
 
-	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
+	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 	if cdRef == nil || cdRef.RepositoryContext == nil {
 		return nil
 	}
 
 	log.Info("get component descriptor")
-	cd, _, err := resolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	cd, err := resolver.Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
-		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", cdRef.RepositoryContext.BaseURL, cdRef.ComponentName, cdRef.Version, err)
+		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", string(cdRef.RepositoryContext.Raw), cdRef.ComponentName, cdRef.Version, err)
 	}
 
 	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd)
@@ -188,7 +188,7 @@ func fetchComponentDescriptor(
 }
 
 // todo: add retries
-func createOciClientFromDockerAuthConfig(ctx context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
+func createOciClientFromDockerAuthConfig(_ context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
 	var secrets []string
 	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

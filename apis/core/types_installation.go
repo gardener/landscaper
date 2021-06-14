@@ -210,7 +210,7 @@ type ComponentDescriptorDefinition struct {
 type ComponentDescriptorReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +optional
-	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.
 	ComponentName string `json:"componentName"`
 	// Version defines the version of the component.

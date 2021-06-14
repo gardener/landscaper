@@ -22,7 +22,6 @@ import (
 	lscheme "github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -47,10 +46,10 @@ func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 }
 
 // CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(ctx context.Context, op lsoperation.Interface, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
+func CreateInternalInstallations(ctx context.Context, compResolver ctf.ComponentResolver, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
 	internalInstallations := make([]*Installation, len(installations))
 	for i, inst := range installations {
-		inInst, err := CreateInternalInstallation(ctx, op, inst)
+		inInst, err := CreateInternalInstallation(ctx, compResolver, inst)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +75,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 		return nil, nil, nil
 	}
 	var (
-		repoCtx cdv2.RepositoryContext
+		repoCtx *cdv2.UnstructuredTypedObject
 		ref     cdv2.ObjectMeta
 	)
 	//case inline component descriptor
@@ -86,16 +85,16 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 	}
 	// case remote reference
 	if inst.Spec.ComponentDescriptor.Reference != nil {
-		repoCtx = *inst.Spec.ComponentDescriptor.Reference.RepositoryContext
+		repoCtx = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
 		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
 	}
-	return compRepo.Resolve(ctx, repoCtx, ref.GetName(), ref.GetVersion())
+	return compRepo.ResolveWithBlobResolver(ctx, repoCtx, ref.GetName(), ref.GetVersion())
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation
-func CreateInternalInstallation(ctx context.Context, op lsoperation.Interface, inst *lsv1alpha1.Installation) (*Installation, error) {
-	cdRef := GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
+func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
+	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -158,11 +157,11 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 }
 
 // GetTargetImport fetches the target import from the cluster.
-func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName string, inst *Installation, targetName string) (*dataobjects.Target, *v1.OwnerReference, error) {
+func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetName string) (*dataobjects.Target, *v1.OwnerReference, error) {
 	// get deploy item from current context
 	raw := &lsv1alpha1.Target{}
 	targetName = helper.GenerateDataObjectName(contextName, targetName)
-	if err := op.Client().Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
 		return nil, nil, err
 	}
 
@@ -174,8 +173,8 @@ func GetTargetImport(ctx context.Context, op lsoperation.Interface, contextName 
 	return target, owner, nil
 }
 
-// GeReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
-func GeReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDescriptorDefinition) *lsv1alpha1.ComponentDescriptorReference {
+// GetReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
+func GetReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDescriptorDefinition) *lsv1alpha1.ComponentDescriptorReference {
 	if cdDef == nil {
 		return nil
 	}
@@ -183,7 +182,7 @@ func GeReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDes
 	if cdDef.Inline != nil {
 		repoCtx := cdDef.Inline.GetEffectiveRepositoryContext()
 		return &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repoCtx,
+			RepositoryContext: repoCtx,
 			ComponentName:     cdDef.Inline.Name,
 			Version:           cdDef.Inline.Version,
 		}

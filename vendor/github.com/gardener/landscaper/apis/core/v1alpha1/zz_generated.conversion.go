@@ -959,7 +959,7 @@ func Convert_core_ComponentDescriptorDefinition_To_v1alpha1_ComponentDescriptorD
 }
 
 func autoConvert_v1alpha1_ComponentDescriptorReference_To_core_ComponentDescriptorReference(in *ComponentDescriptorReference, out *core.ComponentDescriptorReference, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil
@@ -971,7 +971,7 @@ func Convert_v1alpha1_ComponentDescriptorReference_To_core_ComponentDescriptorRe
 }
 
 func autoConvert_core_ComponentDescriptorReference_To_v1alpha1_ComponentDescriptorReference(in *core.ComponentDescriptorReference, out *ComponentDescriptorReference, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil
@@ -1013,7 +1013,7 @@ func Convert_core_ComponentOverwrite_To_v1alpha1_ComponentOverwrite(in *core.Com
 }
 
 func autoConvert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteReference(in *ComponentOverwriteReference, out *core.ComponentOverwriteReference, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil
@@ -1025,7 +1025,7 @@ func Convert_v1alpha1_ComponentOverwriteReference_To_core_ComponentOverwriteRefe
 }
 
 func autoConvert_core_ComponentOverwriteReference_To_v1alpha1_ComponentOverwriteReference(in *core.ComponentOverwriteReference, out *ComponentOverwriteReference, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	out.ComponentName = in.ComponentName
 	out.Version = in.Version
 	return nil

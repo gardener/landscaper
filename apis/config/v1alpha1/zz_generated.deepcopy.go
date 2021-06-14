@@ -10,7 +10,6 @@ SPDX-License-Identifier: Apache-2.0
 package v1alpha1
 
 import (
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -150,8 +149,7 @@ func (in *LandscaperConfiguration) DeepCopyInto(out *LandscaperConfiguration) {
 	out.TypeMeta = in.TypeMeta
 	if in.RepositoryContext != nil {
 		in, out := &in.RepositoryContext, &out.RepositoryContext
-		*out = new(v2.RepositoryContext)
-		**out = **in
+		*out = (*in).DeepCopy()
 	}
 	in.Registry.DeepCopyInto(&out.Registry)
 	if in.Metrics != nil {

@@ -208,17 +208,16 @@ func DeployerManagementTests(f *framework.Framework) {
 			numOfInstallations := len(instList.Items)
 			numOfEnvironments := previousEnvironments.Len()
 
+			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+			testutil.ExpectNoError(err)
 			reg := &lsv1alpha1.DeployerRegistration{}
 			reg.Name = "test-deployer"
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{mock.Type}
 			reg.Spec.InstallationTemplate.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					RepositoryContext: &cdv2.RepositoryContext{
-						Type:    cdv2.OCIRegistryType,
-						BaseURL: "eu.gcr.io/gardener-project/development",
-					},
-					ComponentName: "github.com/gardener/landscaper/mock-deployer",
-					Version:       f.LsVersion,
+					RepositoryContext: &repoCtx,
+					ComponentName:     "github.com/gardener/landscaper/mock-deployer",
+					Version:           f.LsVersion,
 				},
 			}
 			reg.Spec.InstallationTemplate.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{

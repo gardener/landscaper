@@ -14,7 +14,6 @@ import (
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chart"
@@ -77,7 +76,7 @@ func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Char
 
 func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref string) (*chart.Chart, error) {
 	ociAccess := cdv2.NewOCIRegistryAccess(ref)
-	access, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, ociAccess)
+	access, err := cdv2.NewUnstructured(ociAccess)
 	if err != nil {
 		return nil, fmt.Errorf("unable to construct oci registry access for %q: %w", ref, err)
 	}
@@ -88,7 +87,7 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 			Type: HelmChartResourceType,
 		},
 		Relation: cdv2.ExternalRelation,
-		Access:   access,
+		Access:   &access,
 	}
 	var buf bytes.Buffer
 	if _, err := NewHelmResolver(ociClient).Resolve(ctx, res, &buf); err != nil {
@@ -105,17 +104,17 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ociclient.Client, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
 	// helm specific oci manifest structure
-	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, ref.Inline)
+	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, ref.Inline)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build component resolver: %w", err)
 	}
 
-	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
+	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(&ref.ComponentDescriptorDefinition)
 	if cdRef == nil {
 		return nil, fmt.Errorf("no component descriptor reference found for %q", ref.ResourceName)
 	}
 
-	cd, blobResolver, err := compResolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	cd, blobResolver, err := compResolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component descriptor for %q: %w", cdRef.ComponentName, err)
 	}

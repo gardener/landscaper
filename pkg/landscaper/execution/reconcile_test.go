@@ -7,7 +7,7 @@ package execution_test
 import (
 	"context"
 
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,7 +22,7 @@ import (
 var _ = Describe("Reconcile", func() {
 
 	var (
-		op operation.Interface
+		op *operation.Operation
 
 		fakeExecutions  map[string]*lsv1alpha1.Execution
 		fakeDeployItems map[string]*lsv1alpha1.DeployItem
@@ -39,12 +39,11 @@ var _ = Describe("Reconcile", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, nil)
+		op = operation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme)
 	})
 
 	It("should deploy the specified deploy items", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test1/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
@@ -63,7 +62,6 @@ var _ = Describe("Reconcile", func() {
 
 	It("should forward imagePullSecrets", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test4/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
@@ -83,7 +81,6 @@ var _ = Describe("Reconcile", func() {
 
 	It("should not deploy a deployitem when dependent ones haven't finished yet", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
@@ -102,7 +99,6 @@ var _ = Describe("Reconcile", func() {
 
 	It("should deploy the next deployitem when the previous one successfully finished", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
@@ -125,7 +121,6 @@ var _ = Describe("Reconcile", func() {
 
 	It("should set the status of the execution to failed if a execution failed", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
@@ -140,7 +135,6 @@ var _ = Describe("Reconcile", func() {
 
 	It("should not deploy new items if a execution failed", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test2/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 

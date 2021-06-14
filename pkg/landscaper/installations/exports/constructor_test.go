@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -47,18 +47,18 @@ var _ = Describe("Constructor", func() {
 
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, fakeCompRepo),
+			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).
+				SetComponentsRegistry(fakeCompRepo),
 		}
 	})
 
 	It("should construct the exported config from its execution", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 
@@ -89,8 +89,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the exported config from a child", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -132,8 +131,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should forbid the export from a child when the schema is not satisfied", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -153,7 +151,7 @@ var _ = Describe("Constructor", func() {
 	It("should construct the exported config from a siblings and the execution config", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test3/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -198,7 +196,7 @@ var _ = Describe("Constructor", func() {
 		It("should export a target from a template and a subinstallation", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
@@ -243,8 +241,7 @@ var _ = Describe("Constructor", func() {
 
 		It("should forbid export of a wrong target type", func() {
 			ctx := context.Background()
-			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())

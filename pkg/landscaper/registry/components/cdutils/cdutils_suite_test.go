@@ -67,17 +67,15 @@ var _ = Describe("mapped component descriptor", func() {
 		}
 
 		It("should map default metadata", func() {
+			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("http://example.com", ""))
+			Expect(err).ToNot(HaveOccurred())
 			cd := cdv2.ComponentDescriptor{}
 			cd.ObjectMeta = cdv2.ObjectMeta{
 				Name:    "comp",
 				Version: "1.0.0",
 			}
 			cd.Provider = cdv2.ExternalProvider
-			cd.RepositoryContexts = []cdv2.RepositoryContext{
-				{
-					BaseURL: "http://example.com",
-				},
-			}
+			cd.RepositoryContexts = []*cdv2.UnstructuredTypedObject{&repoCtx}
 
 			mcd, err := cdutils.ConvertFromComponentDescriptor(context.TODO(), cd, resolveFunc)
 			Expect(err).ToNot(HaveOccurred())

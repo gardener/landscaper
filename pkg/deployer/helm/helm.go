@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -35,7 +36,6 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -66,7 +66,7 @@ type Helm struct {
 	Target                *lsv1alpha1.Target
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
-	componentsRegistryMgr *componentsregistry.Manager
+	SharedCache           cache.Cache
 
 	TargetKubeClient client.Client
 	TargetRestConfig *rest.Config
@@ -79,7 +79,7 @@ func New(log logr.Logger,
 	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
 	target *lsv1alpha1.Target,
-	componentsRegistryMgr *componentsregistry.Manager) (*Helm, error) {
+	sharedCache cache.Cache) (*Helm, error) {
 
 	currOp := "InitHelmOperation"
 	config := &helmv1alpha1.ProviderConfiguration{}
@@ -112,7 +112,7 @@ func New(log logr.Logger,
 		Target:                target,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
-		componentsRegistryMgr: componentsRegistryMgr,
+		SharedCache:           sharedCache,
 	}, nil
 }
 
@@ -129,7 +129,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.componentsRegistryMgr)
+	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.SharedCache)
 	if err != nil {
 		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "BuildOCIClient", err.Error())
@@ -226,7 +226,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, e
 	return nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config helmv1alpha1.Configuration, componentsRegistryMgr *componentsregistry.Manager) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
 	// resolve all pull secrets
 	secrets, err := kubernetes.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
 	if err != nil {
@@ -245,7 +245,7 @@ func createOCIClient(ctx context.Context, log logr.Logger, client client.Client,
 	ociClient, err := ociclient.NewClient(log,
 		utils.WithConfiguration(config.OCI),
 		ociclient.WithKeyring(ociKeyring),
-		ociclient.WithCache(componentsRegistryMgr.SharedCache()),
+		ociclient.WithCache(sharedCache),
 	)
 	if err != nil {
 		return nil, err

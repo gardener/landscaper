@@ -114,7 +114,6 @@ github.com/ghodss/yaml
 # github.com/go-logr/logr v0.4.0
 ## explicit
 github.com/go-logr/logr
-github.com/go-logr/logr/testing
 # github.com/go-logr/zapr v0.3.0
 ## explicit
 github.com/go-logr/zapr

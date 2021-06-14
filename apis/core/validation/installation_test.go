@@ -148,14 +148,12 @@ var _ = Describe("Installation", func() {
 		})
 
 		It("should accept a ComponentDescriptor reference", func() {
+			repoCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("http://foo.invalid", ""))
 			cdDef := &core.ComponentDescriptorDefinition{
 				Reference: &core.ComponentDescriptorReference{
-					RepositoryContext: &cdv2.RepositoryContext{
-						Type:    "bar",
-						BaseURL: "http://foo.invalid",
-					},
-					ComponentName: "foo",
-					Version:       "123",
+					RepositoryContext: &repoCtx,
+					ComponentName:     "foo",
+					Version:           "123",
 				},
 				Inline: nil,
 			}
@@ -188,14 +186,12 @@ var _ = Describe("Installation", func() {
 		})
 
 		It("should reject ComponentDescriptor reference and inline definition to be given at the same time", func() {
+			repoCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("http://foo.invalid", ""))
 			cdDef := &core.ComponentDescriptorDefinition{
 				Reference: &core.ComponentDescriptorReference{
-					RepositoryContext: &cdv2.RepositoryContext{
-						Type:    "bar",
-						BaseURL: "http://foo.invalid",
-					},
-					ComponentName: "foo",
-					Version:       "123",
+					RepositoryContext: &repoCtx,
+					ComponentName:     "foo",
+					Version:           "123",
 				},
 				Inline: &cdv2.ComponentDescriptor{},
 			}

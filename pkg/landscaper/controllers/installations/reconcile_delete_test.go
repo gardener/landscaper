@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,7 +25,7 @@ import (
 var _ = Describe("Delete", func() {
 
 	var (
-		op lsoperation.Interface
+		op *lsoperation.Operation
 
 		state        *envtest.State
 		fakeCompRepo ctf.ComponentResolver
@@ -33,10 +33,10 @@ var _ = Describe("Delete", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, fakeCompRepo)
+		op = lsoperation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme).SetComponentsRegistry(fakeCompRepo)
 	})
 
 	AfterEach(func() {
@@ -50,13 +50,12 @@ var _ = Describe("Delete", func() {
 
 	It("should not delete if another installation still imports a exported value", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstA, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations[state.Namespace+"/a"])
+		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstA, nil)
@@ -73,13 +72,12 @@ var _ = Describe("Delete", func() {
 
 	It("should block deletion if there are still subinstallations", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations[state.Namespace+"/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
@@ -99,13 +97,12 @@ var _ = Describe("Delete", func() {
 
 	It("should not block deletion if there are no subinstallations left", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations[state.Namespace+"/b"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
@@ -117,13 +114,12 @@ var _ = Describe("Delete", func() {
 
 	It("should delete subinstallations if no one imports exported values", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test2")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(context.TODO(), op, state.Installations[state.Namespace+"/a"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)

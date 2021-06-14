@@ -18,7 +18,7 @@ type LandscaperConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
 	// +optional
-	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
 	Registry RegistryConfiguration `json:"registry"`
 	// Metrics allows to configure how metrics are exposed

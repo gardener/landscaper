@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -196,7 +195,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
-			imageAccess, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
 					Type: cdv2.OCIRegistryType,
 				},
@@ -210,7 +209,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []cdv2.RepositoryContext{},
+					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
 					Resources: []cdv2.Resource{
 						{
@@ -220,7 +219,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 								Type:    cdv2.OCIImageType,
 							},
 							Relation: cdv2.ExternalRelation,
-							Access:   imageAccess,
+							Access:   &imageAccess,
 						},
 					},
 				},
@@ -250,7 +249,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			blue.DeployExecutions = exec
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
-			imageAccess, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, &cdv2.OCIRegistryAccess{
+			imageAccess, err := cdv2.NewUnstructured(&cdv2.OCIRegistryAccess{
 				ObjectType: cdv2.ObjectType{
 					Type: cdv2.OCIRegistryType,
 				},
@@ -264,7 +263,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Name:    "example.com/mycomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []cdv2.RepositoryContext{},
+					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
 					ComponentReferences: []cdv2.ComponentReference{
 						{
@@ -284,7 +283,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 						Name:    "example.com/myrefcomp",
 						Version: "1.0.0",
 					},
-					RepositoryContexts: []cdv2.RepositoryContext{},
+					RepositoryContexts: []*cdv2.UnstructuredTypedObject{},
 					Provider:           cdv2.InternalProvider,
 					Resources: []cdv2.Resource{
 						{
@@ -294,7 +293,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 								Type:    cdv2.OCIImageType,
 							},
 							Relation: cdv2.ExternalRelation,
-							Access:   imageAccess,
+							Access:   &imageAccess,
 						},
 					},
 				},

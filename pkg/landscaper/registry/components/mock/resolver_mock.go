@@ -37,17 +37,32 @@ func (m *MockComponentResolver) EXPECT() *MockComponentResolverMockRecorder {
 }
 
 // Resolve mocks base method
-func (m *MockComponentResolver) Resolve(arg0 context.Context, arg1 v2.RepositoryContext, arg2, arg3 string) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
+func (m *MockComponentResolver) Resolve(arg0 context.Context, arg1 v2.Repository, arg2, arg3 string) (*v2.ComponentDescriptor, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Resolve", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*v2.ComponentDescriptor)
-	ret1, _ := ret[1].(ctf.BlobResolver)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Resolve indicates an expected call of Resolve
 func (mr *MockComponentResolverMockRecorder) Resolve(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockComponentResolver)(nil).Resolve), arg0, arg1, arg2, arg3)
+}
+
+// ResolveWithBlobResolver mocks base method
+func (m *MockComponentResolver) ResolveWithBlobResolver(arg0 context.Context, arg1 v2.Repository, arg2, arg3 string) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveWithBlobResolver", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*v2.ComponentDescriptor)
+	ret1, _ := ret[1].(ctf.BlobResolver)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ResolveWithBlobResolver indicates an expected call of ResolveWithBlobResolver
+func (mr *MockComponentResolverMockRecorder) ResolveWithBlobResolver(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveWithBlobResolver", reflect.TypeOf((*MockComponentResolver)(nil).ResolveWithBlobResolver), arg0, arg1, arg2, arg3)
 }

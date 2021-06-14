@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -51,24 +51,24 @@ var _ = Describe("ConditionalImports", func() {
 		fakeClient, _, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, fakeCompRepo),
+			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).
+				SetComponentsRegistry(fakeCompRepo),
 		}
 	})
 
 	It("should remove imports based on optional/conditional parent imports from subinstallation", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op, inst)
+		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, conInst, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
 		utils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
@@ -98,7 +98,6 @@ var _ = Describe("ConditionalImports", func() {
 
 	It("should not remove imports based on optional/conditional parent imports which are satisfied from subinstallation", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation
@@ -116,11 +115,11 @@ var _ = Describe("ConditionalImports", func() {
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op, inst)
+		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, conInst, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
 		utils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
@@ -158,7 +157,6 @@ var _ = Describe("ConditionalImports", func() {
 
 	It("should not succeed if a conditional import is not fulfilled while it's condition is fulfilled", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		inst := &lsv1alpha1.Installation{}
 		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation
@@ -170,7 +168,7 @@ var _ = Describe("ConditionalImports", func() {
 			},
 		})
 		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op, inst)
+		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
 		utils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())

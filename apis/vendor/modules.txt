@@ -25,7 +25,7 @@ github.com/go-openapi/jsonreference
 github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.5
 github.com/go-openapi/swag
-# github.com/gogo/protobuf v1.3.1
+# github.com/gogo/protobuf v1.3.2
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
 # github.com/google/gofuzz v1.1.0
@@ -128,8 +128,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d
-## explicit
+# golang.org/x/tools v0.0.0-20210106214847-113979e3529a
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/imports
 golang.org/x/tools/internal/event
@@ -149,10 +148,10 @@ gopkg.in/inf.v0
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
-# k8s.io/api v0.19.7 => k8s.io/api v0.19.7
+# k8s.io/api v0.19.11 => k8s.io/api v0.19.11
 ## explicit
 k8s.io/api/core/v1
-# k8s.io/apimachinery v0.19.7 => k8s.io/apimachinery v0.19.7
+# k8s.io/apimachinery v0.19.11 => k8s.io/apimachinery v0.19.11
 ## explicit
 k8s.io/apimachinery/pkg/api/equality
 k8s.io/apimachinery/pkg/api/meta
@@ -179,7 +178,7 @@ k8s.io/apimachinery/pkg/util/validation
 k8s.io/apimachinery/pkg/util/validation/field
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/code-generator v0.19.7 => k8s.io/code-generator v0.19.7
+# k8s.io/code-generator v0.18.2 => k8s.io/code-generator v0.19.11
 ## explicit
 k8s.io/code-generator
 k8s.io/code-generator/cmd/client-gen
@@ -238,10 +237,10 @@ k8s.io/kube-openapi/pkg/util/sets
 # k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 ## explicit
 k8s.io/utils/pointer
-# sigs.k8s.io/structured-merge-diff/v4 v4.0.2
+# sigs.k8s.io/structured-merge-diff/v4 v4.0.3
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 sigs.k8s.io/yaml
-# k8s.io/api => k8s.io/api v0.19.7
-# k8s.io/apimachinery => k8s.io/apimachinery v0.19.7
-# k8s.io/code-generator => k8s.io/code-generator v0.19.7
+# k8s.io/api => k8s.io/api v0.19.11
+# k8s.io/apimachinery => k8s.io/apimachinery v0.19.11
+# k8s.io/code-generator => k8s.io/code-generator v0.19.11

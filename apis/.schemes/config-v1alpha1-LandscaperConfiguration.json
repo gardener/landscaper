@@ -1,21 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
-    "apis-v2-RepositoryContext": {
-      "description": "RepositoryContext describes a repository context.",
+    "apis-v2-UnstructuredTypedObject": {
+      "description": "UnstructuredTypedObject describes a generic typed object.",
       "type": "object",
       "required": [
         "type",
-        "baseUrl"
+        "object"
       ],
       "properties": {
-        "baseUrl": {
-          "description": "BaseURL is the base url of the repository to resolve components.",
-          "type": "string",
-          "default": ""
+        "object": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
         },
         "type": {
-          "description": "Type defines the type of the component repository to resolve references.",
+          "description": "Type describes the type of the object.",
           "type": "string",
           "default": ""
         }
@@ -330,7 +331,7 @@
       "description": "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts."
     },
     "repositoryContext": {
-      "$ref": "#/definitions/apis-v2-RepositoryContext",
+      "$ref": "#/definitions/apis-v2-UnstructuredTypedObject",
       "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors."
     }
   },

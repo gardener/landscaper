@@ -43,18 +43,7 @@ spec:
                       description: ComponentName defines the unique of the component containing the resource.
                       type: string
                     repositoryContext:
-                      description: RepositoryContext defines the context of the component repository to resolve blueprints.
-                      properties:
-                        baseUrl:
-                          description: BaseURL is the base url of the repository to resolve components.
-                          type: string
-                        type:
-                          description: Type defines the type of the component repository to resolve references.
-                          type: string
-                      required:
-                      - baseUrl
-                      - type
-                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     version:
                       description: Version defines the version of the component.
                       type: string
@@ -66,18 +55,7 @@ spec:
                       description: ComponentName defines the unique of the component containing the resource.
                       type: string
                     repositoryContext:
-                      description: RepositoryContext defines the context of the component repository to resolve blueprints.
-                      properties:
-                        baseUrl:
-                          description: BaseURL is the base url of the repository to resolve components.
-                          type: string
-                        type:
-                          description: Type defines the type of the component repository to resolve references.
-                          type: string
-                      required:
-                      - baseUrl
-                      - type
-                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     version:
                       description: Version defines the version of the component.
                       type: string

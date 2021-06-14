@@ -19,15 +19,15 @@ import (
 
 // Operation contains all execution operations
 type Operation struct {
-	operation.Interface
+	*operation.Operation
 	exec           *lsv1alpha1.Execution
 	forceReconcile bool
 }
 
 // NewOperation creates a new execution operations
-func NewOperation(op operation.Interface, exec *lsv1alpha1.Execution, forceReconcile bool) *Operation {
+func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReconcile bool) *Operation {
 	return &Operation{
-		Interface:      op,
+		Operation:      op,
 		exec:           exec,
 		forceReconcile: forceReconcile,
 	}

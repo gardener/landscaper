@@ -68,7 +68,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) error {
 	forceReconcile := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	op := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme, nil), exec,
+	op := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme), exec,
 		forceReconcile)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {

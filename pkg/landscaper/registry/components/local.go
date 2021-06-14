@@ -33,8 +33,24 @@ const LocalRepositoryType = "local"
 // FilesystemBlobType is the access type of a blob that is located in a filesystem.
 const FilesystemBlobType = "filesystemBlob"
 
+// LocalRepository describes a local repository
+type LocalRepository struct {
+	cdv2.ObjectType
+	BaseURL string `json:"baseUrl"`
+}
+
+// NewLocalRepository creates a new local repository
+func NewLocalRepository(baseUrl string) *LocalRepository {
+	return &LocalRepository{
+		ObjectType: cdv2.ObjectType{
+			Type: LocalRepositoryType,
+		},
+		BaseURL: baseUrl,
+	}
+}
+
 // NewFilesystemBlobAccess creates a new localFilesystemBlob accessor.
-func NewFilesystemBlobAccess(path string) cdv2.TypedObjectAccessor {
+func NewFilesystemBlobAccess(path string) *FilesystemBlobAccess {
 	return &FilesystemBlobAccess{
 		ObjectType: cdv2.ObjectType{
 			Type: FilesystemBlobType,
@@ -90,9 +106,22 @@ func (c *localClient) Type() string {
 }
 
 // Resolve resolves a reference and returns the component descriptor.
-func (c *localClient) Resolve(_ context.Context, repoCtx cdv2.RepositoryContext, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
-	if repoCtx.Type != LocalRepositoryType {
-		return nil, nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.Type, LocalRepositoryType)
+func (c *localClient) Resolve(_ context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, error) {
+	if repoCtx.GetType() != LocalRepositoryType {
+		return nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.GetType(), LocalRepositoryType)
+	}
+
+	cd, _, err := c.searchInFs(name, version)
+	if err != nil {
+		return nil, err
+	}
+	return cd, nil
+}
+
+// ResolveWithBlobResolver resolves a reference and returns the component descriptor.
+func (c *localClient) ResolveWithBlobResolver(_ context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+	if repoCtx.GetType() != LocalRepositoryType {
+		return nil, nil, fmt.Errorf("unsupported type %s expected %s", repoCtx.GetType(), LocalRepositoryType)
 	}
 
 	cd, localFilesystemBlobResolver, err := c.searchInFs(name, version)

@@ -59,7 +59,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 	}
 
 	// get the parent by owner reference
-	parent, err := GetParent(ctx, o, &o.Inst.InstallationBase)
+	parent, err := GetParent(ctx, o.Operation, &o.Inst.InstallationBase)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (o *Operation) DetermineInstallationContext(ctx context.Context) (*Context,
 
 // GetParent returns the parent of a installation.
 // It returns nil if the installation has no parent
-func GetParent(ctx context.Context, op operation.Interface, inst *InstallationBase) (*Installation, error) {
+func GetParent(ctx context.Context, op *operation.Operation, inst *InstallationBase) (*Installation, error) {
 	if IsRootInstallation(inst.Info) {
 		return nil, nil
 	}
@@ -101,7 +101,7 @@ func GetParent(ctx context.Context, op operation.Interface, inst *InstallationBa
 	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
 		return nil, err
 	}
-	intParent, err := CreateInternalInstallation(ctx, op, parent)
+	intParent, err := CreateInternalInstallation(ctx, op.ComponentsRegistry(), parent)
 	if err != nil {
 		return nil, err
 	}
@@ -110,14 +110,14 @@ func GetParent(ctx context.Context, op operation.Interface, inst *InstallationBa
 
 // GetParentBase returns the parent of an installation base.
 // It returns nil if the installation has no parent
-func GetParentBase(ctx context.Context, op operation.Interface, inst *InstallationBase) (*InstallationBase, error) {
+func GetParentBase(ctx context.Context, kubeClient client.Client, inst *InstallationBase) (*InstallationBase, error) {
 	if IsRootInstallation(inst.Info) {
 		return nil, nil
 	}
 	// get the parent by owner reference
 	parentName := GetParentInstallationName(inst.Info)
 	parent := &lsv1alpha1.Installation{}
-	if err := op.Client().Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
+	if err := kubeClient.Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Info.Namespace}, parent); err != nil {
 		return nil, err
 	}
 	intParent := CreateInternalInstallationBase(parent)

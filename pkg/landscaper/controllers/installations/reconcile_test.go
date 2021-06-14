@@ -18,9 +18,21 @@ var _ = Describe("Reconcile", func() {
 
 	Context("HandleComponenReference", func() {
 		It("should default the repository context", func() {
+			type custom struct {
+				cdv2.ObjectType
+				BaseURL string `json:"baseUrl"`
+			}
+
+			repoCtx, err := cdv2.NewUnstructured(&custom{
+				ObjectType: cdv2.ObjectType{
+					Type: "mycustom",
+				},
+				BaseURL: "test",
+			})
+			Expect(err).ToNot(HaveOccurred())
 			c := &installationsctl.Controller{
 				LsConfig: &config.LandscaperConfiguration{
-					RepositoryContext: &cdv2.RepositoryContext{Type: "mycustom", BaseURL: "test"},
+					RepositoryContext: &repoCtx,
 				},
 			}
 			inst := &lsv1alpha1.Installation{}
@@ -28,8 +40,7 @@ var _ = Describe("Reconcile", func() {
 			inst.Spec.ComponentDescriptor.Reference = &lsv1alpha1.ComponentDescriptorReference{}
 
 			Expect(c.HandleComponentReference(inst)).To(Succeed())
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Type).To(Equal("mycustom"))
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.BaseURL).To(Equal("test"))
+			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object).To(Equal(repoCtx.Object))
 		})
 	})
 

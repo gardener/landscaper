@@ -75,7 +75,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 	if resolver == nil {
 		return nil, fmt.Errorf("did not get a working component descriptor resolver")
 	}
-	cd, blobResolver, err := resolver.Resolve(ctx, *cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
+	cd, blobResolver, err := resolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}

@@ -8,7 +8,7 @@ import (
 	"context"
 	"path/filepath"
 
-	logtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/selection"
@@ -80,7 +80,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{
@@ -129,7 +129,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logtesting.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{
