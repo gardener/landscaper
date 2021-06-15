@@ -505,8 +505,18 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 	}
 
 	// sync pull secrets for Component Descriptor
-	if c.ProviderConfiguration.ComponentDescriptor != nil && c.ProviderConfiguration.ComponentDescriptor.Reference != nil {
-		cdRef := c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.BaseURL
+	// sync pull secrets for oci registry repositories
+	if c.ProviderConfiguration.ComponentDescriptor != nil &&
+		c.ProviderConfiguration.ComponentDescriptor.Reference != nil &&
+		c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext != nil &&
+		c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.GetType() == cdv2.OCIRegistryType {
+
+		ociRepoCtx := &cdv2.OCIRegistryRepository{}
+		if err := c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.DecodeInto(ociRepoCtx); err != nil {
+			erro = fmt.Errorf("unable to decode oci repository context: %w", err)
+			return
+		}
+		cdRef := ociRepoCtx.BaseURL
 		componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
 		if err != nil {
 			erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
@@ -516,16 +526,16 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 
 	// sync pull secrets for BluePrint
 	if c.ProviderConfiguration.Blueprint != nil && c.ProviderConfiguration.Blueprint.Reference != nil && c.ProviderConfiguration.ComponentDescriptor != nil {
-		compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI, c.componentsRegistryMgr.SharedCache(), c.ProviderConfiguration.ComponentDescriptor.Inline)
+		compReg, err := componentsregistry.NewOCIRegistry(c.log, c.Configuration.OCI, c.sharedCache, c.ProviderConfiguration.ComponentDescriptor.Inline)
 		if err != nil {
 			erro = fmt.Errorf("unable create registry reference to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return
 		}
 
-		compRef := installationhelper.GeReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
+		compRef := installationhelper.GetReferenceFromComponentDescriptorDefinition(c.ProviderConfiguration.ComponentDescriptor)
 		blueprintName := c.ProviderConfiguration.Blueprint.Reference.ResourceName
 
-		cd, _, err := compReg.Resolve(ctx, *compRef.RepositoryContext, compRef.ComponentName, compRef.Version)
+		cd, err := compReg.Resolve(ctx, compRef.RepositoryContext, compRef.ComponentName, compRef.Version)
 		if err != nil {
 			erro = fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", c.ProviderConfiguration.Blueprint.Reference, err)
 			return

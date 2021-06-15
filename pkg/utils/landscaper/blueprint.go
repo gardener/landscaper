@@ -128,18 +128,19 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		return nil, err
 	}
 
+	sampleRepository, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/components", ""))
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse sample repository context: %w", err)
+	}
 	inst := &lsv1alpha1.Installation{}
 	inst.Spec.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
 		ResourceName: "example-blueprint",
 	}
 	inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &cdv2.RepositoryContext{
-				Type:    cdv2.OCIRegistryType,
-				BaseURL: "example.com/components",
-			},
-			ComponentName: "my-example-component",
-			Version:       "v0.0.0",
+			RepositoryContext: &sampleRepository,
+			ComponentName:     "my-example-component",
+			Version:           "v0.0.0",
 		},
 	}
 	if cd != nil {
@@ -147,7 +148,7 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		inst.Spec.ComponentDescriptor.Reference.Version = cd.GetVersion()
 		if len(cd.RepositoryContexts) != 0 {
 			repoCtx := cd.GetEffectiveRepositoryContext()
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = &repoCtx
+			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = repoCtx
 		}
 	}
 

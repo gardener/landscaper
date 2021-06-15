@@ -7,7 +7,7 @@ package execution_test
 import (
 	"context"
 
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,7 +24,7 @@ import (
 var _ = Describe("Delete", func() {
 
 	var (
-		op operation.Interface
+		op *operation.Operation
 
 		fakeExecutions  map[string]*lsv1alpha1.Execution
 		fakeDeployItems map[string]*lsv1alpha1.DeployItem
@@ -41,7 +41,7 @@ var _ = Describe("Delete", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, nil)
+		op = operation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme)
 	})
 
 	It("should block deletion if deploy items still exist", func() {

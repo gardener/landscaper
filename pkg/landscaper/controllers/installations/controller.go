@@ -10,12 +10,15 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -26,7 +29,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -40,47 +42,41 @@ func NewController(log logr.Logger,
 	scheme *runtime.Scheme,
 	overwriter componentoverwrites.Overwriter,
 	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
-	componentRegistryMgr, err := componentsregistry.SetupManagerFromConfig(log, lsConfig.Registry.OCI, cacheIdentifier)
-	if err != nil {
-		return nil, err
-	}
-	log.V(3).Info("setup components registry")
 
-	op := operation.NewOperation(log, kubeClient, scheme, componentRegistryMgr)
-	return &Controller{
-		Interface:             op,
-		LsConfig:              lsConfig,
-		ComponentsRegistryMgr: componentRegistryMgr,
-		ComponentOverwriter:   overwriter,
-	}, nil
+	ctrl := &Controller{
+		LsConfig:            lsConfig,
+		ComponentOverwriter: overwriter,
+	}
+
+	if lsConfig != nil && lsConfig.Registry.OCI != nil {
+		var err error
+		ctrl.SharedCache, err = cache.NewCache(log, utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
+		if err != nil {
+			return nil, err
+		}
+		log.V(3).Info("setup shared components registry  cache")
+	}
+
+	op := operation.NewOperation(log, kubeClient, scheme)
+	ctrl.Operation = *op
+	return ctrl, nil
 }
 
 // NewTestActuator creates a new Controller that is only meant for testing.
-func NewTestActuator(op operation.Interface, configuration *config.LandscaperConfiguration) *Controller {
+func NewTestActuator(op operation.Operation, configuration *config.LandscaperConfiguration) *Controller {
 	a := &Controller{
-		Interface:             op,
-		LsConfig:              configuration,
-		ComponentsRegistryMgr: &componentsregistry.Manager{},
+		Operation: op,
+		LsConfig:  configuration,
 	}
-	resolver := op.ComponentsRegistry().(componentsregistry.TypedRegistry)
-	err := a.ComponentsRegistryMgr.Set(resolver)
-	if err != nil {
-		return nil
-	}
-	err = operation.InjectComponentsRegistryInto(op, a.ComponentsRegistryMgr)
-	if err != nil {
-		return nil
-	}
-
 	return a
 }
 
 // Controller is the controller that reconciles a installtion resource.
 type Controller struct {
-	operation.Interface
-	LsConfig              *config.LandscaperConfiguration
-	ComponentsRegistryMgr *componentsregistry.Manager
-	ComponentOverwriter   componentoverwrites.Overwriter
+	operation.Operation
+	LsConfig            *config.LandscaperConfiguration
+	SharedCache         cache.Cache
+	ComponentOverwriter componentoverwrites.Overwriter
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -138,7 +134,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
-	if err := c.SetupRegistries(ctx, inst.Spec.RegistryPullSecrets, inst); err != nil {
+	op := c.Operation.Copy()
+	if err := c.SetupRegistries(ctx, op, inst.Spec.RegistryPullSecrets, inst); err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "SetupRegistries", err.Error())
 	}
@@ -148,9 +145,9 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, err
 	}
 
-	cdRef := installations.GeReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 
-	intBlueprint, err := blueprints.Resolve(ctx, c.Interface.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ResolveBlueprint", err.Error())
@@ -163,7 +160,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			currOp, "InitInstallation", err.Error())
 	}
 
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, c.Interface, internalInstallation, c.LsConfig.RepositoryContext)
+	instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, internalInstallation, c.LsConfig.RepositoryContext)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
 		return nil, lsv1alpha1helper.NewWrappedError(err,
@@ -197,12 +194,7 @@ func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) err
 		newRef := inst.Spec.ComponentDescriptor.Reference
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 			"FoundOverwrite",
-			fmt.Sprintf(`
-Componenten reference has been overwritten:
-%s -> %s
-%s -> %s
-%s -> %s
-`, oldRef.RepositoryContext.BaseURL, newRef.RepositoryContext.BaseURL, oldRef.ComponentName, newRef.ComponentName, oldRef.Version, newRef.Version))
+			componentoverwrites.ReferenceDiff(oldRef, newRef))
 	} else {
 		cond = lsv1alpha1helper.UpdatedCondition(cond,
 			lsv1alpha1.ConditionFalse,

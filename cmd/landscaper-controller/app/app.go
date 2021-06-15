@@ -164,14 +164,16 @@ func (o *options) deployInternalDeployers(ctx context.Context, mgr manager.Manag
 	if err != nil {
 		return fmt.Errorf("unable to create direct client: %q", err)
 	}
+
+	repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+	if err != nil {
+		return fmt.Errorf("unable to parse repository context: %w", err)
+	}
 	commonCompDescRef := &lsv1alpha1.ComponentDescriptorDefinition{
 		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &cdv2.RepositoryContext{
-				Type:    cdv2.OCIRegistryType,
-				BaseURL: "eu.gcr.io/gardener-project/development",
-			},
-			ComponentName: "",
-			Version:       o.deployer.Version,
+			RepositoryContext: &repoCtx,
+			ComponentName:     "",
+			Version:           o.deployer.Version,
 		},
 	}
 

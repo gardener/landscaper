@@ -160,6 +160,8 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 
 		// build installation
+		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository(framework.OpenSourceRepositoryContext, ""))
+		utils.ExpectNoError(err)
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = "deployer"
 		inst.Namespace = state.Namespace
@@ -168,12 +170,9 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 		inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 			Reference: &lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: &cdv2.RepositoryContext{
-					Type:    cdv2.OCIRegistryType,
-					BaseURL: framework.OpenSourceRepositoryContext,
-				},
-				ComponentName: componentDescriptorName,
-				Version:       f.LsVersion,
+				RepositoryContext: &repoCtx,
+				ComponentName:     componentDescriptorName,
+				Version:           f.LsVersion,
 			},
 		}
 		inst.Spec.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{

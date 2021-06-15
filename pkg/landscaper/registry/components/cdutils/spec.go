@@ -25,7 +25,7 @@ type ResolvedComponentDescriptor struct {
 type ResolvedComponentSpec struct {
 	cdv2.ObjectMeta `json:",inline"`
 	// RepositoryContexts defines the previous repositories of the component
-	RepositoryContexts []cdv2.RepositoryContext `json:"repositoryContexts"`
+	RepositoryContexts []*cdv2.UnstructuredTypedObject `json:"repositoryContexts"`
 	// Provider defines the provider type of a component.
 	// It can be external or internal.
 	Provider cdv2.ProviderType `json:"provider"`
@@ -35,10 +35,6 @@ type ResolvedComponentSpec struct {
 	ComponentReferences map[string]ResolvedComponentDescriptor `json:"componentReferences"`
 	// Resources defines internal and external resources that are created by the component.
 	Resources map[string]cdv2.Resource `json:"resources"`
-}
-
-func (cd ResolvedComponentDescriptor) LatestRepositoryContext() cdv2.RepositoryContext {
-	return cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
 }
 
 type ResolveComponentReferenceFunc func(ctx context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error)
@@ -54,9 +50,9 @@ func ComponentReferenceResolverFromList(list *cdv2.ComponentDescriptorList) Reso
 }
 
 // ComponentReferenceResolverFromResolver creates a component reference resolver from a ctf component resolver
-func ComponentReferenceResolverFromResolver(resolver ctf.ComponentResolver, repoCtx cdv2.RepositoryContext) ResolveComponentReferenceFunc {
+func ComponentReferenceResolverFromResolver(resolver ctf.ComponentResolver, repoCtx cdv2.Repository) ResolveComponentReferenceFunc {
 	return func(ctx context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		cd, _, err := resolver.Resolve(ctx, repoCtx, meta.ComponentName, meta.GetVersion())
+		cd, err := resolver.Resolve(ctx, repoCtx, meta.ComponentName, meta.GetVersion())
 		if err != nil {
 			return cdv2.ComponentDescriptor{}, err
 		}
@@ -106,20 +102,11 @@ func ResourceListToMap(list []cdv2.Resource) map[string]cdv2.Resource {
 	return m
 }
 
-// ResourceListToMap converts a list of resources to a map of resources with the resources name as its key.
+// SourceListToMap converts a list of sources to a map of resources with the resources name as its key.
 func SourceListToMap(list []cdv2.Source) map[string]cdv2.Source {
 	m := make(map[string]cdv2.Source, len(list))
 	for _, src := range list {
 		m[src.GetName()] = src
-	}
-	return m
-}
-
-// ObjectMetaToMap converts a list of ObjectMeta objects to a map of ObjectMeta objects with the object name as its key.
-func ObjectMetaToMap(list []cdv2.ObjectMeta) map[string]cdv2.ObjectMeta {
-	m := make(map[string]cdv2.ObjectMeta, len(list))
-	for _, res := range list {
-		m[res.GetName()] = res
 	}
 	return m
 }

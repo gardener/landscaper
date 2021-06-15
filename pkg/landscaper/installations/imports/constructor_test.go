@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -45,18 +45,18 @@ var _ = Describe("Constructor", func() {
 
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, fakeCompRepo),
+			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).
+				SetComponentsRegistry(fakeCompRepo),
 		}
 	})
 
 	It("should construct the imported config from a sibling", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/b"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -74,8 +74,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a sibling and the indirect parent import", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstC, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/c"])
+		inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstC
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -95,8 +94,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a manual created data object", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test5/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -115,8 +113,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a secret", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test6/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -134,8 +131,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a configmap", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test7/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test7/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -154,11 +150,10 @@ var _ = Describe("Constructor", func() {
 	Context("schema validation", func() {
 		It("should forbid when the import of a component does not satisfy the schema", func() {
 			ctx := context.Background()
-			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
 
-			inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
+			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -182,8 +177,7 @@ var _ = Describe("Constructor", func() {
 	Context("Targets", func() {
 		It("should construct import from a manually added target", func() {
 			ctx := context.Background()
-			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root"])
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -203,8 +197,7 @@ var _ = Describe("Constructor", func() {
 
 		It("should construct import from a parent import", func() {
 			ctx := context.Background()
-			defer ctx.Done()
-			inInstF, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/f"])
+			inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstF
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())

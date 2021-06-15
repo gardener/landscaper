@@ -14,7 +14,7 @@ import (
 )
 
 // ComponentResolverFunc describes a function that can resolve a component descriptor by its name and version
-type ComponentResolverFunc func(ctx context.Context, repoCtx cdv2.RepositoryContext, name, version string) (*cdv2.ComponentDescriptor, error)
+type ComponentResolverFunc func(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, error)
 
 // GenerateImageOverwrite parses a component descriptor and returns the defined image vector
 func GenerateImageOverwrite(cd *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) (*ImageVector, error) {
@@ -58,7 +58,7 @@ func parseImagesFromResources(resources []cdv2.Resource) ([]ImageEntry, error) {
 		}
 
 		entry := ImageEntry{
-			Name: string(name),
+			Name: name,
 		}
 
 		if err := parseResourceAccess(&entry, res); err != nil {

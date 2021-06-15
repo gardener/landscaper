@@ -9,12 +9,11 @@ import (
 	"path/filepath"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -41,21 +40,22 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeComponentRegistry, err = componentsregistry.NewLocalClient(testing.NullLogger{}, filepath.Join(projectRoot, "examples", "02-inline-cd"))
+		fakeComponentRegistry, err = componentsregistry.NewLocalClient(logr.Discard(), filepath.Join(projectRoot, "examples", "02-inline-cd"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(log.NullLogger{}, testenv.Client, api.LandscaperScheme, fakeComponentRegistry)
+		op := operation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme).
+			SetComponentsRegistry(fakeComponentRegistry)
 
-		instActuator = instctlr.NewTestActuator(op, &config.LandscaperConfiguration{
+		instActuator = instctlr.NewTestActuator(*op, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
 				Local: &config.LocalRegistryConfiguration{RootPath: filepath.Join(projectRoot, "examples", "02-inline-cd")},
 			},
 		})
 
-		execActuator, err = execctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme)
+		execActuator, err = execctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(testing.NullLogger{}, testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{})
+		mockActuator, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -70,7 +70,6 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 	It("Should successfully reconcile InlineCDTest", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-inline-cd", "cluster"))

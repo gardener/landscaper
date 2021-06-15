@@ -9,7 +9,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -51,7 +51,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(testing.NullLogger{}, testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -78,7 +78,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(testing.NullLogger{}, testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -121,14 +121,14 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(testing.NullLogger{}, testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
 
 		utils.ExpectNoError(s.Backup(ctx))
 
-		err := state.CleanupState(ctx, testing.NullLogger{}, testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		err := state.CleanupState(ctx, logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		})

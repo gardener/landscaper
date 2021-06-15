@@ -196,11 +196,10 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/gardener/component-cli v0.20.0 h1:BpW0bZMEcvKqq8kYwVJWdM9vnVsBcLtF13itCcBMOvw=
-github.com/gardener/component-cli v0.20.0/go.mod h1:eXsyXNkL67z9KnYMprrZb5F2+7SeEqETda1DLTnSw/s=
-github.com/gardener/component-spec/bindings-go v0.0.32/go.mod h1:53EIwICsuMgbY/MFCv5/lbOR5e1MQe1HY674Io+nGYE=
-github.com/gardener/component-spec/bindings-go v0.0.36 h1:1QOnP2Xe12/CUVXMPXDbsqulekdnCt+M7M4NhhnRVu4=
-github.com/gardener/component-spec/bindings-go v0.0.36/go.mod h1:53EIwICsuMgbY/MFCv5/lbOR5e1MQe1HY674Io+nGYE=
+github.com/gardener/component-cli v0.21.0 h1:K2dx8Vb7w8rLrglgWpRqtGd9WPkPa06h4B9b7MrDTaE=
+github.com/gardener/component-cli v0.21.0/go.mod h1:/42mLNFdWNKlOO/6d1JmLNFUBsdMAwndUCJyUTV5YX4=
+github.com/gardener/component-spec/bindings-go v0.0.41 h1:jWuDXCrii5yLx+5X8/Hrpw6p9LR3VrwQCLTYEl/TFCk=
+github.com/gardener/component-spec/bindings-go v0.0.41/go.mod h1:kQFMTWowNAp9tOp6aImQa/NoLzfvX29jN5Qgud9rpQU=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
@@ -217,8 +216,9 @@ github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7sIas=
 github.com/go-logr/logr v0.2.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
-github.com/go-logr/logr v0.3.0 h1:q4c+kbcR0d5rSurhBR8dIgieOaYpXtsdTYfx22Cu6rs=
 github.com/go-logr/logr v0.3.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
+github.com/go-logr/logr v0.4.0 h1:K7/B1jt6fIBQVd4Owv2MqGQClcgf0R266+7C/QjRcLc=
+github.com/go-logr/logr v0.4.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
 github.com/go-logr/zapr v0.2.0/go.mod h1:qhKdvif7YF5GI9NWEpyxTSSBdGmzkNguibrdCNVPunU=
 github.com/go-logr/zapr v0.3.0 h1:iyiCRZ29uPmbO7mWIjOEiYMXrTxZWTyK4tCatLyGpUY=
 github.com/go-logr/zapr v0.3.0/go.mod h1:qhKdvif7YF5GI9NWEpyxTSSBdGmzkNguibrdCNVPunU=
@@ -444,8 +444,8 @@ github.com/mandelsoft/filepath v0.0.0-20200909114706-3df73d378d55 h1:mFdiUG86O2i
 github.com/mandelsoft/filepath v0.0.0-20200909114706-3df73d378d55/go.mod h1:n4xEiUD2HNHnn2w5ZKF0qgjDecHVCWAl5DxZ7+pcFU8=
 github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804 h1:aAuoHiIedh1uKQ2AQh4s05fIC5uwkHJOBZXTk1Bpy7M=
 github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804/go.mod h1:ySrI0I40exZhvVthh/L0KKtYwLzwDG6jAZVypeqHmk4=
-github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1 h1:M+7aO6jQSNEAQVcWt2VwKG7JTLqqrg2d7IXs4avz6gA=
-github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1/go.mod h1:74aV7kulg9C434HiI3zNALN79QHc9IZMN+SI4UdLn14=
+github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91 h1:IW3qfn0AelV/4nLyVxFqZ5mJGTv7jGdqEWcFXiybLJs=
+github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91/go.mod h1:74aV7kulg9C434HiI3zNALN79QHc9IZMN+SI4UdLn14=
 github.com/marstr/guid v1.1.0/go.mod h1:74gB1z2wpxxInTG6yaqA7KrtM0NZ+RbrcqDvYHefzho=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.2 h1:/bC9yWikZXAL9uJdulbSfyVNIR3n3trXl+v8+1sx8mU=

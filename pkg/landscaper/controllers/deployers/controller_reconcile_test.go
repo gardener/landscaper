@@ -7,7 +7,7 @@ package deployers_test
 import (
 	"context"
 
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,13 +41,13 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 		ctx = context.Background()
 		lsConfig = &config.LandscaperConfiguration{}
 		envController = deployers.NewEnvironmentController(
-			testing.NullLogger{},
+			logr.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,
 		)
 		regController = deployers.NewDeployerRegistrationController(
-			testing.NullLogger{},
+			logr.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,

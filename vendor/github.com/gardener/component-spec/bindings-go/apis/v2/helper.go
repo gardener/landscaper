@@ -72,8 +72,25 @@ func NewNameSelector(name string) selector.Interface {
 }
 
 // GetEffectiveRepositoryContext returns the current active repository context.
-func (c ComponentDescriptor) GetEffectiveRepositoryContext() RepositoryContext {
+func (c ComponentDescriptor) GetEffectiveRepositoryContext() *UnstructuredTypedObject {
+	if len(c.RepositoryContexts) == 0 {
+		return nil
+	}
 	return c.RepositoryContexts[len(c.RepositoryContexts)-1]
+}
+
+// InjectRepositoryContext appends the given repository context to components descriptor repository history.
+// The context is not appended if the effective repository context already matches the current context.
+func InjectRepositoryContext(cd *ComponentDescriptor, repoCtx TypedObjectAccessor) error {
+	effective := cd.GetEffectiveRepositoryContext()
+	uRepoCtx, err := NewUnstructured(repoCtx)
+	if err != nil {
+		return err
+	}
+	if !UnstructuredTypesEqual(effective, &uRepoCtx) {
+		cd.RepositoryContexts = append(cd.RepositoryContexts, &uRepoCtx)
+	}
+	return nil
 }
 
 // GetComponentReferences returns all component references that matches the given selectors.
@@ -99,7 +116,7 @@ func (c ComponentDescriptor) GetComponentReferencesByName(name string) ([]Compon
 	return c.GetComponentReferences(NewNameSelector(name))
 }
 
-// GetResourceByDefaultSelector returns resources that match the given selectors.
+// GetResourceByJSONScheme returns resources that match the given selectors.
 func (c ComponentDescriptor) GetResourceByJSONScheme(src interface{}) ([]Resource, error) {
 	sel, err := selector.NewJSONSchemaSelectorFromGoStruct(src)
 	if err != nil {
@@ -223,7 +240,7 @@ func (c ComponentDescriptor) GetResourcesByType(rtype string, selectors ...Ident
 		})
 }
 
-// GetResourcesByType returns all local and external resources of a specific resource type.
+// GetResourcesByName returns all local and external resources with a name.
 func (c ComponentDescriptor) GetResourcesByName(name string, selectors ...IdentitySelector) ([]Resource, error) {
 	return c.getResourceBySelectors(
 		append(selectors, NewNameSelector(name)),

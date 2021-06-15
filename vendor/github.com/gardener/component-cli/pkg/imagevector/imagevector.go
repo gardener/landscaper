@@ -125,11 +125,11 @@ func (ip *imageParser) Parse(image ImageEntry) error {
 		ociImageAccess = cdv2.NewOCIRegistryAccess(image.Repository + ":" + *image.Tag)
 	}
 
-	uObj, err := cdutils.ToUnstructuredTypedObject(cdv2.DefaultJSONTypedObjectCodec, ociImageAccess)
+	uObj, err := cdv2.NewUnstructured(ociImageAccess)
 	if err != nil {
 		return fmt.Errorf("unable to create oci registry access for %q: %w", image.Name, err)
 	}
-	res.Access = uObj
+	res.Access = &uObj
 
 	// add resource
 	id := ip.cd.GetResourceIndex(res)
@@ -219,12 +219,8 @@ func addLabelsToInlineResource(resources []cdv2.Resource, imageEntry ImageEntry)
 			continue
 		}
 		// resource is a oci image with a registry type
-		data, err := res.Access.GetData()
-		if err != nil {
-			return fmt.Errorf("unable to get data for %q: %w", res.GetName(), err)
-		}
 		ociImageAccess := &cdv2.OCIRegistryAccess{}
-		if err := cdv2.NewDefaultCodec().Decode(data, ociImageAccess); err != nil {
+		if err := res.Access.DecodeInto(ociImageAccess); err != nil {
 			return fmt.Errorf("unable to decode resource access into oci registry access for %q: %w", res.GetName(), err)
 		}
 

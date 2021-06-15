@@ -8,7 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,21 +42,21 @@ var _ = Describe("OutdatedImports", func() {
 
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Interface: lsoperation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, fakeCompRepo),
+			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).
+				SetComponentsRegistry(fakeCompRepo),
 		}
 	})
 
 	It("should return that imports are outdated if a import from the parent is outdated", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstA, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/a"])
+		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -72,15 +72,14 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that imports are outdated if a import from another component is outdated", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instA := fakeInstallations["test1/a"]
 		instA.Status.ConfigGeneration = "outdated"
 		Expect(fakeClient.Status().Update(ctx, instA)).To(Succeed())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -96,11 +95,10 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that no imports are outdated", func() {
 		ctx := context.Background()
-		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
+		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -121,7 +119,7 @@ var _ = Describe("OutdatedImports", func() {
 
 			instRoot := fakeInstallations["test1/root"]
 			instRoot.Status.Imports[0].ConfigGeneration = "1"
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, instRoot)
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Inst = inInstRoot
@@ -138,8 +136,7 @@ var _ = Describe("OutdatedImports", func() {
 
 		It("should return that no imports are outdated", func() {
 			ctx := context.Background()
-			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Inst = inInstRoot

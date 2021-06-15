@@ -59,7 +59,7 @@ github.com/evanphx/json-patch
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
-# github.com/gardener/component-cli v0.20.0
+# github.com/gardener/component-cli v0.21.0
 ## explicit
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
@@ -69,7 +69,7 @@ github.com/gardener/component-cli/ociclient/mock
 github.com/gardener/component-cli/ociclient/oci
 github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/imagevector
-# github.com/gardener/component-spec/bindings-go v0.0.36
+# github.com/gardener/component-spec/bindings-go v0.0.41
 ## explicit
 github.com/gardener/component-spec/bindings-go/apis
 github.com/gardener/component-spec/bindings-go/apis/v2
@@ -111,10 +111,9 @@ github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
 github.com/gardener/landscaper/apis/mediatype
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
-# github.com/go-logr/logr v0.3.0
+# github.com/go-logr/logr v0.4.0
 ## explicit
 github.com/go-logr/logr
-github.com/go-logr/logr/testing
 # github.com/go-logr/zapr v0.3.0
 ## explicit
 github.com/go-logr/zapr
@@ -205,7 +204,7 @@ github.com/mandelsoft/spiff/flow
 github.com/mandelsoft/spiff/legacy/candiedyaml
 github.com/mandelsoft/spiff/spiffing
 github.com/mandelsoft/spiff/yaml
-# github.com/mandelsoft/vfs v0.0.0-20201002134249-3c471f64a4d1
+# github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
 ## explicit
 github.com/mandelsoft/vfs/pkg/composefs
 github.com/mandelsoft/vfs/pkg/memoryfs

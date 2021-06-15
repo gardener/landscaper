@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
     "apis-v2-ComponentDescriptor": {
-      "description": "Spec defines a versioned virtual component with a source and dependencies.",
+      "description": "ComponentDescriptor defines a versioned component with a source and dependencies.",
       "type": "object",
       "required": [
         "meta",
@@ -106,8 +106,7 @@
           "description": "RepositoryContexts defines the previous repositories of the component",
           "type": "array",
           "items": {
-            "default": {},
-            "$ref": "#/definitions/apis-v2-RepositoryContext"
+            "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
           }
         },
         "resources": {
@@ -167,26 +166,6 @@
         }
       }
     },
-    "apis-v2-RepositoryContext": {
-      "description": "RepositoryContext describes a repository context.",
-      "type": "object",
-      "required": [
-        "type",
-        "baseUrl"
-      ],
-      "properties": {
-        "baseUrl": {
-          "description": "BaseURL is the base url of the repository to resolve components.",
-          "type": "string",
-          "default": ""
-        },
-        "type": {
-          "description": "Type defines the type of the component repository to resolve references.",
-          "type": "string",
-          "default": ""
-        }
-      }
-    },
     "apis-v2-Resource": {
       "description": "Resource describes a resource dependency of a component.",
       "type": "object",
@@ -199,7 +178,7 @@
       "properties": {
         "access": {
           "description": "Access describes the type specific method to access the defined resource.",
-          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
         },
         "extraIdentity": {
           "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
@@ -257,7 +236,7 @@
       ],
       "properties": {
         "access": {
-          "$ref": "#/definitions/apis-v2-UnstructuredAccessType"
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
         },
         "extraIdentity": {
           "description": "ExtraIdentity is the identity of an object. An additional label with key \"name\" ist not allowed",
@@ -314,8 +293,8 @@
         }
       }
     },
-    "apis-v2-UnstructuredAccessType": {
-      "description": "UnstructuredAccessType describes a generic access type.",
+    "apis-v2-UnstructuredTypedObject": {
+      "description": "UnstructuredTypedObject describes a generic typed object.",
       "type": "object",
       "required": [
         "type",
@@ -350,7 +329,7 @@
         },
         "repositoryContext": {
           "description": "RepositoryContext defines the context of the component repository to resolve blueprints.",
-          "$ref": "#/definitions/apis-v2-RepositoryContext"
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
         },
         "version": {
           "description": "Version defines the version of the component.",

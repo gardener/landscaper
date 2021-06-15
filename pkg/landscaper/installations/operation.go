@@ -36,7 +36,7 @@ import (
 
 // Operation contains all installation operations and implements the Operation interface.
 type Operation struct {
-	lsoperation.Interface
+	*lsoperation.Operation
 
 	Inst                            *Installation
 	ComponentDescriptor             *cdv2.ComponentDescriptor
@@ -48,18 +48,18 @@ type Operation struct {
 	CurrentOperation string
 
 	// default repo context
-	DefaultRepoContext *cdv2.RepositoryContext
+	DefaultRepoContext *cdv2.UnstructuredTypedObject
 }
 
 // NewInstallationOperation creates a new installation operation
 func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, cRegistry), inst, nil)
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme).SetComponentsRegistry(cRegistry), inst, nil)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
-func NewInstallationOperationFromOperation(ctx context.Context, op lsoperation.Interface, inst *Installation, defaultRepoContext *cdv2.RepositoryContext) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, defaultRepoContext *cdv2.UnstructuredTypedObject) (*Operation, error) {
 	instOp := &Operation{
-		Interface:          op,
+		Operation:          op,
 		Inst:               inst,
 		DefaultRepoContext: defaultRepoContext,
 	}
@@ -95,7 +95,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 
 // Log returns a modified logger for the installation.
 func (o *Operation) Log() logr.Logger {
-	return o.Interface.Log().WithValues("installation", types.NamespacedName{
+	return o.Operation.Log().WithValues("installation", types.NamespacedName{
 		Namespace: o.Inst.Info.Namespace,
 		Name:      o.Inst.Info.Name,
 	})
@@ -211,7 +211,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
 	targets := map[string]*dataobjects.Target{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
-		target, _, err := GetTargetImport(ctx, o, o.Context().Name, o.Inst, def.Target)
+		target, _, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst, def.Target)
 		if err != nil {
 			return nil, err
 		}

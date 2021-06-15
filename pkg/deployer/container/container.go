@@ -5,6 +5,7 @@
 package container
 
 import (
+	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,7 +13,6 @@ import (
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -59,7 +59,7 @@ type Container struct {
 	InitContainerServiceAccountSecret types.NamespacedName
 	WaitContainerServiceAccountSecret types.NamespacedName
 
-	componentsRegistryMgr *componentsregistry.Manager
+	sharedCache cache.Cache
 }
 
 // New creates a new internal container item
@@ -69,7 +69,7 @@ func New(log logr.Logger,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
-	componentRegistryMgr *componentsregistry.Manager) (*Container, error) {
+	sharedCache cache.Cache) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := api.NewDecoder(Scheme)
 	if _, _, err := decoder.Decode(item.Spec.Configuration.Raw, nil, providerConfig); err != nil {
@@ -99,7 +99,7 @@ func New(log logr.Logger,
 		DeployItem:            item,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
-		componentsRegistryMgr: componentRegistryMgr,
+		sharedCache:           sharedCache,
 	}, nil
 }
 

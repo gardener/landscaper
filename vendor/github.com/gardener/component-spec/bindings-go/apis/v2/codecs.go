@@ -17,7 +17,6 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 // KnownTypeValidationFunc defines a function that can validate types.
@@ -99,21 +98,8 @@ var _ TypedObjectEncoder = DefaultJSONTypedObjectEncoder{}
 
 // Encode is the Encode implementation of the TypedObjectEncoder interface.
 func (e DefaultJSONTypedObjectEncoder) Encode(obj TypedObjectAccessor) ([]byte, error) {
-	obj.SetType(obj.GetType()) // hardcord the correct type if the type was not correctly constructed.
+	obj.SetType(obj.GetType()) // hardcode the correct type if the type was not correctly constructed.
 	return json.Marshal(obj)
-}
-
-// ValidateAccessType validates that a type is known or of a generic type.
-// todo: revisit; currently "x-" specifies a generic type
-func ValidateAccessType(ttype string) error {
-	if _, ok := KnownAccessTypes[ttype]; ok {
-		return nil
-	}
-
-	if !strings.HasPrefix(ttype, "x-") {
-		return fmt.Errorf("unknown non generic types %s", ttype)
-	}
-	return nil
 }
 
 type codec struct {
@@ -188,4 +174,30 @@ func (c *codec) Encode(acc TypedObjectAccessor) ([]byte, error) {
 	}
 
 	return codec.Encode(acc)
+}
+
+// ToUnstructuredTypedObject converts a typed object to a unstructured object.
+func ToUnstructuredTypedObject(codec TypedObjectCodec, obj TypedObjectAccessor) (*UnstructuredTypedObject, error) {
+	data, err := codec.Encode(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	uObj := &UnstructuredTypedObject{}
+	if err := json.Unmarshal(data, uObj); err != nil {
+		return nil, err
+	}
+	return uObj, nil
+}
+
+// FromUnstructuredObject converts a unstructured object into a typed object.
+func FromUnstructuredObject(codec TypedObjectCodec, uObj *UnstructuredTypedObject, obj TypedObjectAccessor) error {
+	data, err := uObj.GetRaw()
+	if err != nil {
+		return fmt.Errorf("unable to get data from unstructured object: %w", err)
+	}
+	if err := codec.Decode(data, obj); err != nil {
+		return fmt.Errorf("unable to decode object %q into %q: %w", uObj.GetType(), obj.GetType(), err)
+	}
+	return err
 }

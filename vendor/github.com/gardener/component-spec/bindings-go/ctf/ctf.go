@@ -44,7 +44,8 @@ var UnsupportedResolveType = errors.New("UnsupportedResolveType")
 
 // ComponentResolver describes a general interface to resolve a component descriptor
 type ComponentResolver interface {
-	Resolve(ctx context.Context, repoCtx v2.RepositoryContext, name, version string) (*v2.ComponentDescriptor, BlobResolver, error)
+	Resolve(ctx context.Context, repoCtx v2.Repository, name, version string) (*v2.ComponentDescriptor, error)
+	ResolveWithBlobResolver(ctx context.Context, repoCtx v2.Repository, name, version string) (*v2.ComponentDescriptor, BlobResolver, error)
 }
 
 // BlobResolver defines a resolver that can fetch
@@ -151,7 +152,7 @@ func (ctf *CTF) AddComponentArchive(ca *ComponentArchive, format ArchiveFormat) 
 	return ctf.AddComponentArchiveWithName(filename, ca, format)
 }
 
-// AddComponentArchive adds or updates a component archive in the ctf archive.
+// AddComponentArchiveWithName adds or updates a component archive in the ctf archive.
 // The archive is added to the ctf with the given name
 func (ctf *CTF) AddComponentArchiveWithName(filename string, ca *ComponentArchive, format ArchiveFormat) error {
 	file, err := ctf.tempFs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
@@ -294,7 +295,7 @@ func (a *AggregatedBlobResolver) getResolver(res v2.Resource) (BlobResolver, err
 	return nil, UnsupportedResolveType
 }
 
-// AggregateBlobResolvers aggregartes two resolvers to one by using aggregated blob resolver.
+// AggregateBlobResolvers aggregates two resolvers to one by using aggregated blob resolver.
 func AggregateBlobResolvers(a, b BlobResolver) (BlobResolver, error) {
 	aggregated, ok := a.(*AggregatedBlobResolver)
 	if ok {
@@ -312,6 +313,6 @@ func AggregateBlobResolvers(a, b BlobResolver) (BlobResolver, error) {
 		return aggregated, nil
 	}
 
-	// create a new aggreagted resolver if neither a nor b are aggregations
+	// create a new aggregated resolver if neither a nor b are aggregations
 	return NewAggregatedBlobResolver(a, b)
 }

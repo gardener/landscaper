@@ -1467,9 +1467,7 @@ given an optional context.</p>
 <td>
 <code>repositoryContext</code></br>
 <em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext">
-github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext
-</a>
+github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </em>
 </td>
 <td>
@@ -1572,9 +1570,7 @@ ComponentOverwriteReference
 <td>
 <code>repositoryContext</code></br>
 <em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext">
-github.com/gardener/component-spec/bindings-go/apis/v2.RepositoryContext
-</a>
+github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </em>
 </td>
 <td>

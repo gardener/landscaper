@@ -12,6 +12,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	testutils "github.com/gardener/landscaper/test/utils"
+
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	mock_componentrepository "github.com/gardener/landscaper/pkg/landscaper/registry/components/mock"
 )
@@ -21,9 +23,7 @@ var _ = Describe("Resolve", func() {
 		ctrl     *gomock.Controller
 		cdClient *mock_componentrepository.MockComponentResolver
 
-		repoCtx = []cdv2.RepositoryContext{
-			{Type: cdv2.OCIRegistryType, BaseURL: "example.com"},
-		}
+		repoCtx = []*cdv2.UnstructuredTypedObject{testutils.ExampleRepositoryContext()}
 	)
 
 	BeforeEach(func() {
@@ -37,7 +37,6 @@ var _ = Describe("Resolve", func() {
 
 	It("should resolve 2 direct transitive components", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		l11_CD := cdv2.ComponentDescriptor{}
 		l11_CD.RepositoryContexts = repoCtx
@@ -59,8 +58,8 @@ var _ = Describe("Resolve", func() {
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[1].Name, cd.ComponentReferences[1].Version).Return(&l12_CD, nil, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[1].Name, cd.ComponentReferences[1].Version).Return(&l12_CD, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())
@@ -95,8 +94,8 @@ var _ = Describe("Resolve", func() {
 			},
 		}
 
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil, nil)
-		cdClient.EXPECT().Resolve(ctx, repoCtx[0], l11_CD.ComponentReferences[0].Name, l11_CD.ComponentReferences[0].Version).Return(&l111_CD, nil, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], cd.ComponentReferences[0].Name, cd.ComponentReferences[0].Version).Return(&l11_CD, nil)
+		cdClient.EXPECT().Resolve(ctx, repoCtx[0], l11_CD.ComponentReferences[0].Name, l11_CD.ComponentReferences[0].Version).Return(&l111_CD, nil)
 
 		res, err := cdutils.ResolveEffectiveComponentDescriptor(ctx, cdClient, cd)
 		Expect(err).ToNot(HaveOccurred())

@@ -49,9 +49,6 @@ func (m *Manager) Set(registries ...TypedRegistry) error {
 		m.registries = map[string]ctf.ComponentResolver{}
 	}
 	for _, registry := range registries {
-		if err := cache.InjectCacheInto(registry, m.sharedCache); err != nil {
-			return err
-		}
 		m.registries[registry.Type()] = registry
 	}
 	return nil
@@ -63,12 +60,20 @@ func (m *Manager) SharedCache() cache.Cache {
 	return m.sharedCache
 }
 
-func (m *Manager) Resolve(ctx context.Context, repoCtx cdv2.RepositoryContext, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
-	client, ok := m.registries[repoCtx.Type]
+func (m *Manager) Resolve(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, error) {
+	client, ok := m.registries[repoCtx.GetType()]
 	if !ok {
-		return nil, nil, fmt.Errorf("unknown repository type %s", repoCtx.Type)
+		return nil, fmt.Errorf("unknown repository type %s", repoCtx.GetType())
 	}
 	return client.Resolve(ctx, repoCtx, name, version)
+}
+
+func (m *Manager) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repository, name, version string) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+	client, ok := m.registries[repoCtx.GetType()]
+	if !ok {
+		return nil, nil, fmt.Errorf("unknown repository type %s", repoCtx.GetType())
+	}
+	return client.ResolveWithBlobResolver(ctx, repoCtx, name, version)
 }
 
 // SetupManagerFromConfig returns a new Manager instance initialized with the given OCI configuration
@@ -82,5 +87,4 @@ func SetupManagerFromConfig(log logr.Logger, config *config.OCIConfiguration, ca
 		}
 	}
 	return New(sharedCache)
-
 }

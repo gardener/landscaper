@@ -21,7 +21,7 @@ func ResolveEffectiveComponentDescriptor(ctx context.Context, client ctf.Compone
 	}
 	repoCtx := cd.RepositoryContexts[len(cd.RepositoryContexts)-1]
 	return ConvertFromComponentDescriptor(ctx, cd, func(ctx context.Context, ref cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-		cd, _, err := client.Resolve(ctx, repoCtx, ref.Name, ref.Version)
+		cd, err := client.Resolve(ctx, repoCtx, ref.Name, ref.Version)
 		if err != nil {
 			return cdv2.ComponentDescriptor{}, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", ref.Name, ref.Version, err)
 		}
@@ -41,7 +41,7 @@ func ResolveToComponentDescriptorList(ctx context.Context, client ctf.ComponentR
 	cdList.Components = []cdv2.ComponentDescriptor{cd}
 
 	for _, compRef := range cd.ComponentReferences {
-		resolvedComponent, _, err := client.Resolve(ctx, repoCtx, compRef.ComponentName, compRef.Version)
+		resolvedComponent, err := client.Resolve(ctx, repoCtx, compRef.ComponentName, compRef.Version)
 		if err != nil {
 			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)
 		}

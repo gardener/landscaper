@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+
 	"github.com/gardener/landscaper/pkg/api"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
@@ -63,7 +65,7 @@ type TestInstallationConfig struct {
 
 // CreateTestInstallationResources creates a test environment with a installation, a blueprint and a operation.
 // Should only be used for root installation as other installations may be created during runtime.
-func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallationConfig) (*lsv1alpha1.Installation, *installations.Installation, *blueprints.Blueprint, *installations.Operation) {
+func CreateTestInstallationResources(op *lsoperation.Operation, cfg TestInstallationConfig) (*lsv1alpha1.Installation, *installations.Installation, *blueprints.Blueprint, *installations.Operation) {
 	// apply defaults
 	if len(cfg.BlueprintFilePath) == 0 {
 		cfg.BlueprintFilePath = filepath.Join(cfg.BlueprintContentPath, "blueprint.yaml")
@@ -98,14 +100,12 @@ func CreateTestInstallationResources(op lsoperation.Interface, cfg TestInstallat
 
 // LocalRemoteComponentDescriptorRef creates a new default local remote component descriptor reference
 func LocalRemoteComponentDescriptorRef(componentName, version, baseURL string) *lsv1alpha1.ComponentDescriptorDefinition {
+	repoCtx, _ := cdv2.NewUnstructured(componentsregistry.NewLocalRepository(baseURL))
 	return &lsv1alpha1.ComponentDescriptorDefinition{
 		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &cdv2.RepositoryContext{
-				Type:    "local",
-				BaseURL: baseURL,
-			},
-			ComponentName: componentName,
-			Version:       version,
+			RepositoryContext: &repoCtx,
+			ComponentName:     componentName,
+			Version:           version,
 		},
 	}
 }

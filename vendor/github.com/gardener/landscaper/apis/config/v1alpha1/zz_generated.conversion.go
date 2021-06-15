@@ -268,7 +268,7 @@ func Convert_config_LandscaperAgentConfiguration_To_v1alpha1_LandscaperAgentConf
 }
 
 func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(in *LandscaperConfiguration, out *config.LandscaperConfiguration, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err
 	}
@@ -289,7 +289,7 @@ func Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(
 }
 
 func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfiguration(in *config.LandscaperConfiguration, out *LandscaperConfiguration, s conversion.Scope) error {
-	out.RepositoryContext = (*v2.RepositoryContext)(unsafe.Pointer(in.RepositoryContext))
+	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err
 	}

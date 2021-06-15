@@ -47,7 +47,7 @@ type ComponentOverwrite struct {
 type ComponentOverwriteReference struct {
 	// RepositoryContext defines the context of the component repository to resolve blueprints.
 	// +optional
-	RepositoryContext *cdv2.RepositoryContext `json:"repositoryContext,omitempty"`
+	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// ComponentName defines the unique of the component containing the resource.
 	// +optional
 	ComponentName string `json:"componentName"`

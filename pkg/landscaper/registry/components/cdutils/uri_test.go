@@ -12,6 +12,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	testutils "github.com/gardener/landscaper/test/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
@@ -21,9 +23,7 @@ var _ = Describe("URI", func() {
 		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
 			return cdv2.ComponentDescriptor{}, errors.New("NotFound")
 		}
-		repoCtx = []cdv2.RepositoryContext{
-			{Type: cdv2.OCIRegistryType, BaseURL: "example.com"},
-		}
+		repoCtx       = []*cdv2.UnstructuredTypedObject{testutils.ExampleRepositoryContext()}
 		cd            *cdv2.ComponentDescriptor
 		testResources = []cdv2.Resource{
 			{

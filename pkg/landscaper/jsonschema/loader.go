@@ -181,7 +181,7 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 	// get the blob resolver for the specific component
 	ctx := context.Background()
 	defer ctx.Done()
-	_, blobResolver, err := l.ComponentResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), cd.GetName(), cd.GetVersion())
+	_, blobResolver, err := l.ComponentResolver.ResolveWithBlobResolver(ctx, cd.GetEffectiveRepositoryContext(), cd.GetName(), cd.GetVersion())
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch component descriptor %s:%s for %q: %w", cd.GetName(), cd.GetVersion(), refURL.String(), err)
 	}

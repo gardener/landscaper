@@ -8,9 +8,9 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/go-logr/logr"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +26,7 @@ import (
 var _ = Describe("Context", func() {
 
 	var (
-		op lsoperation.Interface
+		op *lsoperation.Operation
 
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
@@ -42,17 +42,16 @@ var _ = Describe("Context", func() {
 		Expect(err).ToNot(HaveOccurred())
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, fakeClient, api.LandscaperScheme, fakeCompRepo)
+		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).SetComponentsRegistry(fakeCompRepo)
 	})
 
 	It("should show no parent nor siblings for the test1 root", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
-		instRoot, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/root"])
+		instRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot, nil)
@@ -65,9 +64,8 @@ var _ = Describe("Context", func() {
 
 	It("should show no parent and one sibling for the test2/a installation", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test2/a"])
+		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/a"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
@@ -76,14 +74,13 @@ var _ = Describe("Context", func() {
 
 		Expect(lCtx.Parent).To(BeNil())
 		Expect(lCtx.Siblings).To(HaveLen(1))
-		//Expect(siblings[0].Name).To(Equal("b"))
 	})
 
 	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test1/b"])
+		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
@@ -100,12 +97,10 @@ var _ = Describe("Context", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		defaultRepoContext := cdv2.RepositoryContext{
-			Type:    "local",
-			BaseURL: "../testdata/registry",
-		}
+		defaultRepoContext, err := cdv2.NewUnstructured(componentsregistry.NewLocalRepository("../testdata/registry"))
+		Expect(err).ToNot(HaveOccurred())
 
-		inst, err := installations.CreateInternalInstallation(ctx, op, fakeInstallations["test4/root-test40"])
+		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)

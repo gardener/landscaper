@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	logtesting "github.com/go-logr/logr/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -22,10 +21,6 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
-
-	"github.com/gardener/component-cli/ociclient/cache"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 )
 
 func TestConfig(t *testing.T) {
@@ -71,18 +66,14 @@ var _ = Describe("Template", func() {
 		item := &lsv1alpha1.DeployItem{}
 		item.Spec.Configuration = providerConfig
 
-		var cacheDummy cache.Cache
-		dummyManager, err := componentsregistry.New(cacheDummy)
-		Expect(err).NotTo(HaveOccurred())
-
-		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, dummyManager)
+		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
 		files, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(files).To(HaveKey("testchart/templates/secret.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/note.txt"))
 
-		objects, err := kutil.ParseFiles(logtesting.NullLogger{}, files)
+		objects, err := kutil.ParseFiles(logr.Discard(), files)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(objects).To(HaveLen(1))
 	})

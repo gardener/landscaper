@@ -18,8 +18,12 @@
 
 package vfs
 
+import (
+	"syscall"
+)
+
 // TODO
 
 func isUnderlyingErrNotDir(err error) bool {
-	return false
+	return err == syscall.ENOTDIR
 }

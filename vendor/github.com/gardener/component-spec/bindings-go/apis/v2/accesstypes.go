@@ -14,19 +14,14 @@
 
 package v2
 
-import (
-	"encoding/json"
-
-	"github.com/ghodss/yaml"
-)
-
 // KnownAccessTypes contains all known access serializer
 var KnownAccessTypes = KnownTypes{
-	OCIRegistryType:         DefaultJSONTypedObjectCodec,
-	OCIBlobType:             DefaultJSONTypedObjectCodec,
-	GitHubAccessType:        DefaultJSONTypedObjectCodec,
-	WebType:                 DefaultJSONTypedObjectCodec,
-	LocalFilesystemBlobType: DefaultJSONTypedObjectCodec,
+	OCIRegistryType:          DefaultJSONTypedObjectCodec,
+	OCIBlobType:              DefaultJSONTypedObjectCodec,
+	RelativeOciReferenceType: DefaultJSONTypedObjectCodec,
+	GitHubAccessType:         DefaultJSONTypedObjectCodec,
+	WebType:                  DefaultJSONTypedObjectCodec,
+	LocalFilesystemBlobType:  DefaultJSONTypedObjectCodec,
 }
 
 // OCIRegistryType is the access type of a oci registry.
@@ -37,7 +32,6 @@ type OCIRegistryAccess struct {
 	ObjectType `json:",inline"`
 
 	// ImageReference is the actual reference to the oci image repository and tag.
-	// The format is expected to be "repository:tag".
 	ImageReference string `json:"imageReference"`
 }
 
@@ -51,28 +45,39 @@ func NewOCIRegistryAccess(ref string) TypedObjectAccessor {
 	}
 }
 
-func (_ *OCIRegistryAccess) GetType() string {
+func (a *OCIRegistryAccess) GetType() string {
 	return OCIRegistryType
 }
 
-func (O OCIRegistryAccess) GetData() ([]byte, error) {
-	return json.Marshal(O)
+// RelativeOciReferenceType is the access type of a relative oci reference.
+const RelativeOciReferenceType = "relativeOciReference"
+
+// RelativeOciAccess describes the access for a relative oci reference.
+type RelativeOciAccess struct {
+	ObjectType `json:",inline"`
+
+	// Reference is the relative reference to the oci image repository and tag.
+	Reference string `json:"reference"`
 }
 
-func (O *OCIRegistryAccess) SetData(bytes []byte) error {
-	var newOCIImage OCIRegistryAccess
-	if err := json.Unmarshal(bytes, &newOCIImage); err != nil {
-		return err
+// NewRelativeOciAccess creates a new RelativeOciAccess accessor
+func NewRelativeOciAccess(ref string) TypedObjectAccessor {
+	return &RelativeOciAccess{
+		ObjectType: ObjectType{
+			Type: RelativeOciReferenceType,
+		},
+		Reference: ref,
 	}
+}
 
-	O.ImageReference = newOCIImage.ImageReference
-	return nil
+func (_ *RelativeOciAccess) GetType() string {
+	return RelativeOciReferenceType
 }
 
 // OCIBlobType is the access type of a oci blob in a manifest.
 const OCIBlobType = "ociBlob"
 
-// OCIRegistryAccess describes the access for a oci registry.
+// OCIBlobAccess describes the access for a oci registry.
 type OCIBlobAccess struct {
 	ObjectType `json:",inline"`
 
@@ -106,23 +111,6 @@ func (_ *OCIBlobAccess) GetType() string {
 	return OCIBlobType
 }
 
-func (a OCIBlobAccess) GetData() ([]byte, error) {
-	return json.Marshal(a)
-}
-
-func (a *OCIBlobAccess) SetData(bytes []byte) error {
-	var newOCILayer OCIBlobAccess
-	if err := json.Unmarshal(bytes, &newOCILayer); err != nil {
-		return err
-	}
-
-	a.Reference = newOCILayer.Reference
-	a.MediaType = newOCILayer.MediaType
-	a.Digest = newOCILayer.Digest
-	a.Size = newOCILayer.Size
-	return nil
-}
-
 // LocalOCIBlobType is the access type of a oci blob in the current component descriptor manifest.
 const LocalOCIBlobType = "localOciBlob"
 
@@ -147,20 +135,7 @@ func (_ *LocalOCIBlobAccess) GetType() string {
 	return LocalOCIBlobType
 }
 
-func (a LocalOCIBlobAccess) GetData() ([]byte, error) {
-	return json.Marshal(a)
-}
-
-func (a *LocalOCIBlobAccess) SetData(bytes []byte) error {
-	var newAccess OCIBlobAccess
-	if err := json.Unmarshal(bytes, &newAccess); err != nil {
-		return err
-	}
-	a.Digest = newAccess.Digest
-	return nil
-}
-
-// LocalBlobType is the access type of a oci blob in a manifest.
+// LocalFilesystemBlobType is the access type of a blob in a local filesystem.
 const LocalFilesystemBlobType = "localFilesystemBlob"
 
 // NewLocalFilesystemBlobAccess creates a new localFilesystemBlob accessor.
@@ -188,19 +163,6 @@ func (_ *LocalFilesystemBlobAccess) GetType() string {
 	return LocalFilesystemBlobType
 }
 
-func (a LocalFilesystemBlobAccess) GetData() ([]byte, error) {
-	return json.Marshal(a)
-}
-
-func (a *LocalFilesystemBlobAccess) SetData(bytes []byte) error {
-	var newAccess LocalFilesystemBlobAccess
-	if err := json.Unmarshal(bytes, &newAccess); err != nil {
-		return err
-	}
-	a.Filename = newAccess.Filename
-	return nil
-}
-
 // WebType is the type of a web component
 const WebType = "web"
 
@@ -226,24 +188,10 @@ func (_ *Web) GetType() string {
 	return WebType
 }
 
-func (w Web) GetData() ([]byte, error) {
-	return yaml.Marshal(w)
-}
-
-func (w *Web) SetData(bytes []byte) error {
-	var newWeb Web
-	if err := json.Unmarshal(bytes, &newWeb); err != nil {
-		return err
-	}
-
-	w.URL = newWeb.URL
-	return nil
-}
-
-// WebType is the type of a web component
+// GitHubAccessType is the type of a git object.
 const GitHubAccessType = "github"
 
-// GitHubAccess describes a github respository resource access.
+// GitHubAccess describes a github repository resource access.
 type GitHubAccess struct {
 	ObjectType `json:",inline"`
 
@@ -270,19 +218,4 @@ func NewGitHubAccess(url, ref, commit string) TypedObjectAccessor {
 
 func (a GitHubAccess) GetType() string {
 	return GitHubAccessType
-}
-
-func (a GitHubAccess) GetData() ([]byte, error) {
-	return yaml.Marshal(a)
-}
-
-func (a *GitHubAccess) SetData(bytes []byte) error {
-	var newGitHubAccess GitHubAccess
-	if err := json.Unmarshal(bytes, &newGitHubAccess); err != nil {
-		return err
-	}
-
-	a.RepoURL = newGitHubAccess.RepoURL
-	a.Ref = newGitHubAccess.Ref
-	return nil
 }

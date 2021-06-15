@@ -6,11 +6,14 @@ package installations
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/pkg/landscaper/operation"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
 
@@ -20,19 +23,23 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *Controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
 		return err
 	}
 
+	compRegistry, err := componentsregistry.New(c.SharedCache)
+	if err != nil {
+		return fmt.Errorf("unable to create component registry manager: %w", err)
+	}
 	if c.LsConfig.Registry.Local != nil {
 		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.LsConfig.Registry.Local.RootPath)
 		if err != nil {
 			return err
 		}
-		if err := c.ComponentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+		if err := compRegistry.Set(componentsOCIRegistry); err != nil {
 			return err
 		}
 	}
@@ -53,7 +60,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 	ociClient, err := ociclient.NewClient(c.Log(),
 		utils.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithKeyring(ociKeyring),
-		ociclient.WithCache(c.ComponentsRegistryMgr.SharedCache()),
+		ociclient.WithCache(c.SharedCache),
 	)
 	if err != nil {
 		return err
@@ -64,14 +71,15 @@ func (c *Controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alph
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, inlineCd)
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(c.Log(), ociClient, inlineCd)
 	if err != nil {
 		return err
 	}
-	if err := c.ComponentsRegistryMgr.Set(componentsOCIRegistry); err != nil {
+	if err := compRegistry.Set(componentsOCIRegistry); err != nil {
 		return err
 	}
 
+	op.SetComponentsRegistry(compRegistry)
 	return nil
 }
 

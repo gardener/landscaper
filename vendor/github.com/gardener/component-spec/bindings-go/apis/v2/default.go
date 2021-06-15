@@ -16,6 +16,9 @@ package v2
 
 // DefaultComponent applies defaults to a component
 func DefaultComponent(component *ComponentDescriptor) error {
+	if component.RepositoryContexts == nil {
+		component.RepositoryContexts = make([]*UnstructuredTypedObject, 0)
+	}
 	if component.Sources == nil {
 		component.Sources = make([]Source, 0)
 	}
@@ -30,6 +33,7 @@ func DefaultComponent(component *ComponentDescriptor) error {
 	return nil
 }
 
+// DefaultList defaults a list of components.
 func DefaultList(list *ComponentDescriptorList) error {
 	for i, comp := range list.Components {
 		if len(comp.Metadata.Version) == 0 {

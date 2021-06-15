@@ -32,13 +32,13 @@ var _ = Describe("Operation", func() {
 
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
-		commonOp := operation.NewOperation(logr.Discard(), kubeClient, api.LandscaperScheme, nil)
+		commonOp := operation.NewOperation(logr.Discard(), kubeClient, api.LandscaperScheme)
 		op = &installations.Operation{
 			Inst: &installations.Installation{
 				InstallationBase: installations.InstallationBase{Info: &lsv1alpha1.Installation{}},
 				Blueprint:        &blueprints.Blueprint{Info: &lsv1alpha1.Blueprint{}},
 			},
-			Interface: commonOp,
+			Operation: commonOp,
 		}
 	})
 

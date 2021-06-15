@@ -7,13 +7,13 @@ package subinstallations_test
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,7 +33,7 @@ import (
 var _ = Describe("SubInstallation", func() {
 
 	var (
-		op               lsoperation.Interface
+		op               *lsoperation.Operation
 		ctrl             *gomock.Controller
 		mockClient       *k8smock.MockClient
 		mockStatusWriter *k8smock.MockStatusWriter
@@ -49,10 +49,10 @@ var _ = Describe("SubInstallation", func() {
 		mockStatusWriter = k8smock.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(testing.NullLogger{}, "./testdata")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(testing.NullLogger{}, mockClient, api.LandscaperScheme, fakeCompRepo)
+		op = lsoperation.NewOperation(logr.Discard(), mockClient, api.LandscaperScheme).SetComponentsRegistry(fakeCompRepo)
 
 		defaultTestConfig = &utils.TestInstallationConfig{
 			MockClient:                   mockClient,
@@ -98,7 +98,6 @@ var _ = Describe("SubInstallation", func() {
 
 		It("should create one installation if a subinstallation is defined", func() {
 			ctx := context.Background()
-			defer ctx.Done()
 			_, _, _, rootInstOp := utils.CreateTestInstallationResources(op, *defaultTestConfig)
 
 			var resInst *lsv1alpha1.Installation
@@ -118,15 +117,14 @@ var _ = Describe("SubInstallation", func() {
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
 			Expect(resInst.Spec.ComponentDescriptor.Reference).NotTo(BeNil())
-			Expect(resInst.Spec.ComponentDescriptor.Reference).To(Equal(&lsv1alpha1.ComponentDescriptorReference{
-				RepositoryContext: &cdv2.RepositoryContext{
-					Type:    "ociRegistry",
-					BaseURL: "./testdata",
-				},
-				ComponentName: "example.com/root",
-				Version:       "1.0.0",
-			},
-			))
+			Expect(resInst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object).To(gstruct.MatchKeys(0, gstruct.Keys{
+				"type":    Equal("ociRegistry"),
+				"baseUrl": Equal("./testdata"),
+			}))
+			Expect(resInst.Spec.ComponentDescriptor.Reference).To(gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+				"ComponentName": Equal("example.com/root"),
+				"Version":       Equal("1.0.0"),
+			})))
 
 			Expect(resInst.Spec.Blueprint.Reference).NotTo(BeNil())
 			Expect(resInst.Spec.Blueprint.Reference).To(Equal(&lsv1alpha1.RemoteBlueprintReference{

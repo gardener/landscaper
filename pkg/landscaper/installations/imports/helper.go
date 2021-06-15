@@ -20,7 +20,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	if parent == nil {
 		return true, nil
 	}
-	parentsOperation, err := installations.NewInstallationOperationFromOperation(ctx, op, parent, op.DefaultRepoContext)
+	parentsOperation, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, parent, op.DefaultRepoContext)
 	if err != nil {
 		return false, fmt.Errorf("unable to create parent operation: %w", err)
 	}
@@ -33,7 +33,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	}
 
 	// check its own parent
-	parentsParent, err := installations.GetParent(ctx, op, &parent.InstallationBase)
+	parentsParent, err := installations.GetParent(ctx, op.Operation, &parent.InstallationBase)
 	if err != nil {
 		return false, errors.Wrap(err, "unable to get parent of parent")
 	}
@@ -65,7 +65,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			continue
 		}
 
-		parent, err := installations.GetParentBase(ctx, op, inst)
+		parent, err := installations.GetParentBase(ctx, op.Client(), inst)
 		if err != nil {
 			return false, err
 		}

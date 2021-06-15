@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/go-logr/logr"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
@@ -49,10 +50,9 @@ var _ = Describe("Registry", func() {
 	})
 
 	It("should fetch and return a component descriptor when a valid tar is returned", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
-		defer ctx.Done()
 
 		ref := cdv2.ObjectMeta{
 			Name:    "example.com/my-comp",
@@ -85,12 +85,12 @@ var _ = Describe("Registry", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
+		_, err = cdClient.Resolve(ctx, cdv2.NewOCIRegistryRepository("example.com", ""), ref.Name, ref.Version)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("should fetch and return a component descriptor when it is defined as json", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -126,12 +126,12 @@ var _ = Describe("Registry", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
+		_, err = cdClient.Resolve(ctx, cdv2.NewOCIRegistryRepository("example.com", ""), ref.Name, ref.Version)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("should throw an error if the manifest has more layers", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -155,12 +155,12 @@ var _ = Describe("Registry", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1").Return(manifest, nil)
 
-		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
+		_, err = cdClient.Resolve(ctx, cdv2.NewOCIRegistryRepository("example.com", ""), ref.Name, ref.Version)
 		Expect(err).To(HaveOccurred())
 	})
 
 	It("should throw an error if the manifest has a unknown type", func() {
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient)
 		Expect(err).ToNot(HaveOccurred())
 		ctx := context.Background()
 		defer ctx.Done()
@@ -179,7 +179,7 @@ var _ = Describe("Registry", func() {
 
 		ociClient.EXPECT().GetManifest(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1").Return(manifest, nil)
 
-		_, _, err = cdClient.Resolve(ctx, cdv2.RepositoryContext{Type: cdv2.OCIRegistryType, BaseURL: "example.com"}, ref.Name, ref.Version)
+		_, err = cdClient.Resolve(ctx, cdv2.NewOCIRegistryRepository("example.com", ""), ref.Name, ref.Version)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -190,10 +190,8 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtx := cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "example.com/component-descriptors",
-		}
+		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		Expect(err).ToNot(HaveOccurred())
 
 		cd := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
@@ -202,7 +200,7 @@ var _ = Describe("Registry", func() {
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          ref,
 				Provider:            "internal",
-				RepositoryContexts:  []cdv2.RepositoryContext{repoCtx},
+				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtx},
 				ComponentReferences: []cdv2.ComponentReference{},
 				Sources:             []cdv2.Source{},
 				Resources: []cdv2.Resource{
@@ -219,13 +217,13 @@ var _ = Describe("Registry", func() {
 			},
 		}
 
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, &cd)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()
 		defer ctx.Done()
 
-		returnedCD, _, err := cdClient.Resolve(ctx, repoCtx, ref.Name, ref.Version)
+		returnedCD, err := cdClient.Resolve(ctx, &repoCtx, ref.Name, ref.Version)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(*returnedCD).To(Equal(cd))
 	})
@@ -237,10 +235,8 @@ var _ = Describe("Registry", func() {
 			Version: "0.2.3",
 		}
 
-		repoCtx := cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "example.com/nested-component-descriptor",
-		}
+		repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		Expect(err).ToNot(HaveOccurred())
 
 		labelCd := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
@@ -249,7 +245,7 @@ var _ = Describe("Registry", func() {
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          ref,
 				Provider:            "internal",
-				RepositoryContexts:  []cdv2.RepositoryContext{repoCtx},
+				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtx},
 				ComponentReferences: []cdv2.ComponentReference{},
 				Sources:             []cdv2.Source{},
 				Resources: []cdv2.Resource{
@@ -269,6 +265,8 @@ var _ = Describe("Registry", func() {
 		labelCdJson, err := codec.Encode(&labelCd)
 		Expect(err).ToNot(HaveOccurred())
 
+		nestedRepoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		Expect(err).ToNot(HaveOccurred())
 		cd := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
 				Version: cdv2.SchemaVersion,
@@ -278,14 +276,9 @@ var _ = Describe("Registry", func() {
 					Name:    "example.com/root-cd",
 					Version: "0.1.2",
 				},
-				Provider: "internal",
-				RepositoryContexts: []cdv2.RepositoryContext{
-					{
-						Type:    cdv2.OCIRegistryType,
-						BaseURL: "example.com/component-descriptors",
-					},
-				},
-				Sources: []cdv2.Source{},
+				Provider:           "internal",
+				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&nestedRepoCtx},
+				Sources:            []cdv2.Source{},
 				Resources: []cdv2.Resource{
 					{
 						IdentityObjectMeta: cdv2.IdentityObjectMeta{
@@ -316,13 +309,13 @@ var _ = Describe("Registry", func() {
 				},
 			},
 		}
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, &cd)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()
 		defer ctx.Done()
 
-		returnedCD, _, err := cdClient.Resolve(ctx, repoCtx, ref.Name, ref.Version)
+		returnedCD, err := cdClient.Resolve(ctx, &repoCtx, ref.Name, ref.Version)
 		Expect(err).ToNot(HaveOccurred())
 		err = codec.Decode(labelCdJson, &labelCd)
 		Expect(err).ToNot(HaveOccurred())
@@ -336,10 +329,8 @@ var _ = Describe("Registry", func() {
 			Version: "0.2.3",
 		}
 
-		repoCtxLvl2 := cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "example.com/nested-component-descriptor",
-		}
+		repoCtxLvl2, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		Expect(err).ToNot(HaveOccurred())
 
 		labelCdLvl2 := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
@@ -348,7 +339,7 @@ var _ = Describe("Registry", func() {
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:          refLvl2,
 				Provider:            "internal",
-				RepositoryContexts:  []cdv2.RepositoryContext{repoCtxLvl2},
+				RepositoryContexts:  []*cdv2.UnstructuredTypedObject{&repoCtxLvl2},
 				ComponentReferences: []cdv2.ComponentReference{},
 				Sources:             []cdv2.Source{},
 				Resources: []cdv2.Resource{
@@ -374,10 +365,8 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtxLvl1 := cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "example.com/nested-component-descriptor",
-		}
+		repoCtxLvl1, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/nested-component-descriptor", ""))
+		Expect(err).ToNot(HaveOccurred())
 
 		labelCdLvl1 := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
@@ -386,7 +375,7 @@ var _ = Describe("Registry", func() {
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:         refLvl1,
 				Provider:           "internal",
-				RepositoryContexts: []cdv2.RepositoryContext{repoCtxLvl1},
+				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&repoCtxLvl1},
 				Sources:            []cdv2.Source{},
 				Resources: []cdv2.Resource{
 					{
@@ -429,10 +418,8 @@ var _ = Describe("Registry", func() {
 			Version: "0.1.2",
 		}
 
-		repoCtxRootCd := cdv2.RepositoryContext{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: "example.com/component-descriptors",
-		}
+		repoCtxRootCd, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/component-descriptors", ""))
+		Expect(err).ToNot(HaveOccurred())
 
 		cd := cdv2.ComponentDescriptor{
 			Metadata: cdv2.Metadata{
@@ -441,7 +428,7 @@ var _ = Describe("Registry", func() {
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta:         refRootCd,
 				Provider:           "internal",
-				RepositoryContexts: []cdv2.RepositoryContext{repoCtxRootCd},
+				RepositoryContexts: []*cdv2.UnstructuredTypedObject{&repoCtxRootCd},
 				Sources:            []cdv2.Source{},
 				Resources: []cdv2.Resource{
 					{
@@ -475,29 +462,28 @@ var _ = Describe("Registry", func() {
 		}
 
 		// parse component descriptor
-		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(ociClient, &cd)
+		cdClient, err := componentsregistry.NewOCIRegistryWithOCIClient(logr.Discard(), ociClient, &cd)
 		Expect(err).ToNot(HaveOccurred())
 
 		ctx := context.Background()
 		defer ctx.Done()
 
 		//resolve levels
-		returnedCDLvl2, _, err := cdClient.Resolve(ctx, repoCtxLvl2, refLvl2.Name, refLvl2.Version)
+		returnedCDLvl2, err := cdClient.Resolve(ctx, &repoCtxLvl2, refLvl2.Name, refLvl2.Version)
 		Expect(err).ToNot(HaveOccurred())
 		err = codec.Decode(labelCdLvl2Json, &labelCdLvl2)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(labelCdLvl2).To(Equal(*returnedCDLvl2))
 
-		returnedCDLvl1, _, err := cdClient.Resolve(ctx, repoCtxLvl1, refLvl1.Name, refLvl1.Version)
+		returnedCDLvl1, err := cdClient.Resolve(ctx, &repoCtxLvl1, refLvl1.Name, refLvl1.Version)
 		Expect(err).ToNot(HaveOccurred())
 		err = codec.Decode(labelCdLvl1Json, &labelCdLvl1)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(labelCdLvl1).To(Equal(*returnedCDLvl1))
 
-		returnedCDRoot, _, err := cdClient.Resolve(ctx, repoCtxRootCd, refRootCd.Name, refRootCd.Version)
+		returnedCDRoot, err := cdClient.Resolve(ctx, &repoCtxRootCd, refRootCd.Name, refRootCd.Version)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(cd).To(Equal(*returnedCDRoot))
-
 	})
 
 })

@@ -161,7 +161,7 @@ func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *fiel
 
 func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) (bool, error) {
 	// get deploy item from current context
-	target, owner, err := installations.GetTargetImport(ctx, v, v.Context().Name, inst, targetImport.Target)
+	target, owner, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
 	if err != nil {
 		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), targetImport.Name, err)
 	}
@@ -222,7 +222,7 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 
 func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) error {
 	// get deploy item from current context
-	_, owner, err := installations.GetTargetImport(ctx, v, v.Context().Name, inst, targetImport.Target)
+	_, owner, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
 	if err != nil {
 		return fmt.Errorf("%s: unable to get target for '%s': %w", fldPath.String(), targetImport.Name, err)
 	}

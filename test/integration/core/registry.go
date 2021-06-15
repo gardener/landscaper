@@ -13,7 +13,6 @@ import (
 
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/apis/v2/cdutils"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -90,7 +89,7 @@ func RegistryTest(f *framework.Framework) {
 			inst.SetNamespace(state.Namespace)
 			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					RepositoryContext: &repoCtx,
+					RepositoryContext: repoCtx,
 					ComponentName:     componentName,
 					Version:           componentVersion,
 				},
@@ -140,12 +139,14 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 	cd.Name = name
 	cd.Version = version
 	cd.Provider = cdv2.InternalProvider
-	cd.RepositoryContexts = []cdv2.RepositoryContext{
-		{
-			Type:    cdv2.OCIRegistryType,
-			BaseURL: f.RegistryBasePath,
+	repoCtx := cdv2.OCIRegistryRepository{
+		ObjectType: cdv2.ObjectType{
+			Type: cdv2.OCIRegistryType,
 		},
+		BaseURL:              f.RegistryBasePath,
+		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
 	}
+	utils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
 	utils.ExpectNoError(fs.MkdirAll("blobs", os.ModePerm))
 
 	// gzip and add helm chart
@@ -189,7 +190,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 	manifest, err := cdoci.NewManifestBuilder(f.OCICache, ca).Build(ctx)
 	utils.ExpectNoError(err)
 
-	ref, err := cdoci.OCIRef(cd.GetEffectiveRepositoryContext(), cd.Name, cd.Version)
+	ref, err := cdoci.OCIRef(repoCtx, cd.Name, cd.Version)
 	utils.ExpectNoError(err)
 	utils.ExpectNoError(f.OCIClient.PushManifest(ctx, ref, manifest))
 	return cd
@@ -202,8 +203,8 @@ func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Reso
 	res.Relation = cdv2.LocalRelation
 
 	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
-	uAcc, err := cdutils.ToUnstructuredTypedObject(cdv2.NewDefaultCodec(), localFsAccess)
+	uAcc, err := cdv2.NewUnstructured(localFsAccess)
 	utils.ExpectNoError(err)
-	res.Access = uAcc
+	res.Access = &uAcc
 	return res
 }

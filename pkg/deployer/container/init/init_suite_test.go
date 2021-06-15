@@ -14,7 +14,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
-	logtesting "github.com/go-logr/logr/testing"
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -73,7 +73,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		dataBytes, err := vfs.ReadFile(memFs, container.ImportsPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -94,7 +94,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -114,7 +114,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -134,7 +134,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -156,7 +156,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		data, err := vfs.ReadFile(memFs, container.ComponentDescriptorPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -178,7 +178,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -198,7 +198,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
@@ -225,7 +225,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(memFs.MkdirAll(filepath.Dir(container.ConfigurationPath), os.ModePerm)).To(Succeed())
 		Expect(vfs.WriteFile(memFs, container.ConfigurationPath, file, os.ModePerm)).To(Succeed())
-		Expect(run(ctx, logtesting.NullLogger{}, opts, fakeClient, memFs)).To(Succeed())
+		Expect(run(ctx, logr.Discard(), opts, fakeClient, memFs)).To(Succeed())
 
 		info, err := vfs.ReadDir(memFs, container.ContentPath)
 		Expect(err).ToNot(HaveOccurred())
