@@ -86,7 +86,7 @@ The value to provide to `<docker auth>` must be a Docker auth config as plain JS
 Landscaper allocates some temporary disk space to cache OCI artefact it pulls. Optionally, artefacts can be cached in-memory as well.
 
 ### Metrics
-Landscaper is instrumented to collect the default metrics of the controller-runtimes. Additionally, it serves some custom metrics e.g. for its OCI cache. The metrics may be scraped at `/metrics` and an configurable port defaulting to `8080`.
+Landscaper is instrumented to collect the default metrics of the controller-runtimes. Additionally, it serves some custom metrics e.g. for its OCI cache. The metrics may be scraped at `/metrics` and a configurable port defaulting to `8080`.
 
 ### Internal and external deployers
 
@@ -94,4 +94,56 @@ Landscaper offloads all deployment specific logic (e.g. `helm`) to external depl
 
 For a very simple setup, internal deployers (`helm`, `manifest` and `container`) can be served by Landscaper.
 
-:warning: Using internal deployers is meant for development and debugging and **should not be used in production**.
+The default deployers are deployed using the Landscaper integrated [Deployer Lifecycle Management](../technical/deployer_lifecycle_management.md) that are configured with the opensource images and basic defaults.
+
+The default configuration can be overwritten or enhanced by supplying `deployerConfig` in the values.yaml.
+See the specific [helm chart values](../../charts) of the deployer for detailed documentation.
+```yaml
+landscaper:
+  deployers: [container, helm]
+  deployersConfig:
+    # match the deployer name
+    container: 
+      # provide any helm charts values.
+      deployer:
+        oci:
+          allowPlainHttp: false
+    helm:
+      # ...
+```
+
+Additional external deployer can be either configured by applying the `DeployerRegistration` directly or providing the Registration in the helm chart.
+
+> Note: When the registration is provided through the helm chart, all defaults of the "default" environment are automatically injected (if not overwritten in the registration).
+
+For detailed information about the DeployerRegistration and its configurations see the [documentation](../technical/deployer_lifecycle_management.md) or the [example](../../examples/80-Example-DeployerRegistration.yaml).
+
+```yaml
+landscaper:
+  deployers: [my-custom-deployer] # the external deployer name MUST be set.
+  deployersConfig:
+    # match the deployer name
+    my-custom-deployer: 
+      apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: DeployerRegistration
+      metadata:
+        name: my-deployer # defaulted to "my-custom-deployer"
+        
+      spec:
+        # describe the deploy items types the deployer is able to reconcile
+        types: ["my-deploy-item-type"]
+        installationTemplate: # note that no exports are allowed here.
+          componentDescriptor:
+            ref:
+              repositoryContext:
+                type: ociRegistry
+                baseUrl: "example.myregistry.com/my-context"
+              componentName: "my-custom-deployer"
+              version: v1.0.0
+
+          blueprint:
+            ref:
+              resourceName: my-deployer-blueprint
+      ...
+```
+

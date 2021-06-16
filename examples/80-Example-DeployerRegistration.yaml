@@ -8,7 +8,7 @@ metadata:
   name: my-deployer
 
 spec:
-  # describe the deploy items types the deployer iis able to reconcile
+  # describe the deploy items types the deployer is able to reconcile
   types: ["my-deploy-item-type"]
   installationTemplate: # note that no exports are allowed here.
     componentDescriptor:

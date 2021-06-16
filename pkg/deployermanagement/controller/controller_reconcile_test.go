@@ -17,7 +17,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployers"
+	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 

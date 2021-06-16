@@ -21,7 +21,7 @@ func TestConfig(t *testing.T) {
 
 var (
 	testenv     *envtest.Environment
-	projectRoot = filepath.Join("../../../../")
+	projectRoot = filepath.Join("../../../")
 )
 
 var _ = BeforeSuite(func() {

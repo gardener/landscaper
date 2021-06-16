@@ -18,7 +18,7 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
-	"github.com/gardener/landscaper/pkg/landscaper/controllers/deployers"
+	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"

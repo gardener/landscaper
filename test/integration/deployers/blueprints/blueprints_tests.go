@@ -27,7 +27,6 @@ import (
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
-	"github.com/gardener/landscaper/pkg/landscaper/constants"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
@@ -166,7 +165,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		inst.Name = "deployer"
 		inst.Namespace = state.Namespace
 		inst.Annotations = map[string]string{
-			constants.NotUseDefaultDeployerAnnotation: "true",
+			lsv1alpha1.NotUseDefaultDeployerAnnotation: "true",
 		}
 		inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 			Reference: &lsv1alpha1.ComponentDescriptorReference{
