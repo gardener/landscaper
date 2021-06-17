@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/gardener/landscaper/pkg/metrics"
+
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -32,7 +34,6 @@ import (
 	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
 
-	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
@@ -81,7 +82,7 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup manager: %w", err)
 	}
 
-	componentcliMetrics.RegisterCacheMetrics(controllerruntimeMetrics.Registry)
+	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
 
 	store, err := blueprints.NewStore(o.Log, osfs.New(), o.Config.BlueprintStore)
 	if err != nil {

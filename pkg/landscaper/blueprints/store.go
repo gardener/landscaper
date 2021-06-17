@@ -185,13 +185,24 @@ func (s *Store) Store(ctx context.Context, cd *cdv2.ComponentDescriptor, resourc
 		return nil, fmt.Errorf("unable to get size of blueprint directory: %w", err)
 	}
 	s.index.Add(bpID, size, time.Now())
-	s.currentSize = s.currentSize + size
-	s.usage = float64(s.currentSize) / float64(s.size)
+	s.updateUsage(size)
+	StoredItems.Inc()
 	defer func() {
 		go s.RunGarbageCollection()
 	}()
 
 	return s.buildBlueprint(bpID)
+}
+
+// CurrentSize returns the current used storage.
+func (s *Store) CurrentSize() int64 {
+	return s.currentSize
+}
+
+func (s *Store) updateUsage(size int64) {
+	s.currentSize = s.currentSize + size
+	s.usage = float64(s.currentSize) / float64(s.size)
+	DiskUsage.Set(float64(s.currentSize))
 }
 
 // Get reads the blueprint from the filesystem.
@@ -289,8 +300,8 @@ func (s *Store) RunGarbageCollection() {
 			s.log.Error(err, "unable to delete blueprint directory", "file", item.Name)
 		}
 		s.log.V(7).Info("garbage collected", "item", item.Name)
-		s.currentSize = s.currentSize - item.Size
-		s.usage = float64(s.currentSize) / float64(s.size)
+		s.updateUsage(-item.Size)
+		StoredItems.Dec()
 		// remove currently garbage collected item
 		items = items[1:]
 	}

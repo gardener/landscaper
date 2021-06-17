@@ -63,4 +63,7 @@ const (
 
 	// BlueprintFileName is the filename of a component definition on a local path
 	BlueprintFileName = "blueprint.yaml"
+
+	// LandscaperMetricsNamespaceName describes the prometheus metrics namespace for the landscaper component
+	LandscaperMetricsNamespaceName = "ociclient"
 )
