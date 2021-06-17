@@ -47,7 +47,7 @@ var _ = Describe("Blueprint", func() {
 			}))))
 		})
 
-		It("should fail if multiple ImportDefinition types are defined", func() {
+		It("should fail if multiple ImportDefinition types are defined (legacy format)", func() {
 			importDefinition := core.ImportDefinition{}
 			importDefinition.Name = "myimport"
 			importDefinition.TargetType = "test"
@@ -74,14 +74,45 @@ var _ = Describe("Blueprint", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeRequired),
 				"Field":  Equal("x[0][myimport1]"),
-				"Detail": ContainSubstring("schema"),
+				"Detail": ContainSubstring("Schema"),
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeRequired),
 				"Field":  Equal("x[1][myimport2]"),
-				"Detail": ContainSubstring("targetType"),
+				"Detail": ContainSubstring("TargetType"),
 			}))))
+		})
 
+		It("should fail a wrong config for the specified type is given", func() {
+			impDef1 := core.ImportDefinition{
+				FieldValueDefinition: core.FieldValueDefinition{
+					Name:       "myimport1",
+					Schema:     &core.JSONSchemaDefinition{},
+					TargetType: "test",
+				},
+				Type: core.ImportTypeData,
+			}
+			impDef2 := core.ImportDefinition{
+				FieldValueDefinition: core.FieldValueDefinition{
+					Name:       "myimport2",
+					Schema:     &core.JSONSchemaDefinition{},
+					TargetType: "test",
+				},
+				Type: core.ImportTypeTarget,
+			}
+
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2})
+			Expect(allErrs).To(HaveLen(2))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("x[0][myimport1]"),
+				"Detail": ContainSubstring("TargetType"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("x[1][myimport2]"),
+				"Detail": ContainSubstring("Schema"),
+			}))))
 		})
 
 		It("should fail if there are conditional imports on a required import", func() {

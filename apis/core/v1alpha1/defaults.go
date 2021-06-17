@@ -38,6 +38,10 @@ func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
 			// type is already set
 			continue
 		}
+		if imp.Schema != nil && len(imp.TargetType) != 0 {
+			// definition is invalid
+			continue
+		}
 		if imp.Schema != nil {
 			imp.Type = ImportTypeData
 		} else if len(imp.TargetType) != 0 {
@@ -55,6 +59,10 @@ func SetDefaults_DefinitionExport(exports *ExportDefinitionList) {
 		exp := &(*exports)[i]
 		if len(exp.Type) != 0 {
 			// type is already set
+			continue
+		}
+		if exp.Schema != nil && len(exp.TargetType) != 0 {
+			// definition is invalid
 			continue
 		}
 		if exp.Schema != nil {

@@ -6,6 +6,8 @@ package validation
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -20,13 +22,45 @@ import (
 
 var landscaperScheme = runtime.NewScheme()
 
-var validImportTypes = []string{
-	string(core.ImportTypeData),
-	string(core.ImportTypeTarget),
+var importTypesWithExpectedConfig = map[string][]string{
+	string(core.ImportTypeData):   {"Schema"},
+	string(core.ImportTypeTarget): {"TargetType"},
 }
-var validExportTypes = []string{
-	string(core.ImportTypeData),
-	string(core.ImportTypeTarget),
+var exportTypesWithExpectedConfig = map[string][]string{
+	string(core.ExportTypeData):   {"Schema"},
+	string(core.ExportTypeTarget): {"TargetType"},
+}
+
+// isFieldValueDefinition lists the fields which are not directly part of an Import/ExportDefinition, but of the FieldValueDefinition
+// (usually the fields which are present in both import and export definitions)
+// This is required for the reflection used below
+// a map is used for easier 'contains' queries, the values are ignored
+var isFieldValueDefinition = map[string]bool{
+	"Schema":     true,
+	"TargetType": true,
+}
+
+func keys(m map[string][]string) []string {
+	res := make([]string, len(m))
+	for k := range m {
+		res = append(res, string(k))
+	}
+	return res
+}
+
+func relevantConfigFields() map[string]bool {
+	res := map[string]bool{}
+	for _, v := range importTypesWithExpectedConfig {
+		for _, e := range v {
+			res[e] = true
+		}
+	}
+	for _, v := range exportTypesWithExpectedConfig {
+		for _, e := range v {
+			res[e] = true
+		}
+	}
+	return res
 }
 
 func init() {
@@ -75,18 +109,13 @@ func validateBlueprintImportDefinitions(fldPath *field.Path, imports []core.Impo
 
 		if len(importDef.Type) != 0 {
 			// type is specified, use new validation
-			switch importDef.Type {
-			case core.ImportTypeData:
-				if importDef.Schema == nil {
-					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("schema must not be empty for imports of type %s", string(importDef.Type))))
-				}
-			case core.ImportTypeTarget:
-				if len(importDef.TargetType) == 0 {
-					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("targetType must not be empty for imports of type %s", string(importDef.Type))))
-				}
-			default:
-				// invalid type
-				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(importDef.Type), validImportTypes))
+			expectedConfigs, ok := importTypesWithExpectedConfig[string(importDef.Type)]
+			if ok {
+				// valid type, check that the required config is given
+				allErrs = append(allErrs, validateMutuallyExclusiveConfig(defPath, importDef, expectedConfigs, string(importDef.Type))...)
+			} else {
+				// specified type is not among the valid types
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(importDef.Type), keys(importTypesWithExpectedConfig)))
 			}
 		} else {
 			// type is not specified, fallback to validation based on specified fields
@@ -135,18 +164,13 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 
 		if len(exportDef.Type) != 0 {
 			// type is specified, use new validation
-			switch exportDef.Type {
-			case core.ExportTypeData:
-				if exportDef.Schema == nil {
-					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("schema must not be empty for exports of type %s", string(exportDef.Type))))
-				}
-			case core.ExportTypeTarget:
-				if len(exportDef.TargetType) == 0 {
-					allErrs = append(allErrs, field.Required(defPath, fmt.Sprintf("targetType must not be empty for exports of type %s", string(exportDef.Type))))
-				}
-			default:
-				// invalid type
-				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(exportDef.Type), validExportTypes))
+			expectedConfigs, ok := exportTypesWithExpectedConfig[string(exportDef.Type)]
+			if ok {
+				// valid type, check that the required config is given
+				allErrs = append(allErrs, validateMutuallyExclusiveConfig(defPath, exportDef, expectedConfigs, string(exportDef.Type))...)
+			} else {
+				// specified type is not among the valid types
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(exportDef.Type), keys(importTypesWithExpectedConfig)))
 			}
 		} else {
 			// type is not specified, fallback to validation based on specified fields
@@ -160,6 +184,50 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 
 	}
 
+	return allErrs
+}
+
+// validateMutuallyExclusiveConfig validates that the expected configs for the import/export definition are set and that no other config is set
+// In this context, a 'config is set' if it
+//   - can be nil but is not
+//   - is not the zero value if it cannot be nil
+func validateMutuallyExclusiveConfig(fldPath *field.Path, def interface{}, expectedConfigs []string, defType string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	val := reflect.ValueOf(def)
+	rcf := relevantConfigFields()
+	for key := range rcf {
+		var f reflect.Value
+		if _, ok := isFieldValueDefinition[key]; ok {
+			f = val.FieldByName("FieldValueDefinition")
+		} else {
+			f = val
+		}
+		f = f.FieldByName(key)
+		if !f.IsValid() {
+			// definition doesn't have this field
+			// this can happen because import and export definitions support different fields
+			continue
+		}
+		kind := f.Kind()
+		expected := false
+		for _, exp := range expectedConfigs {
+			if key == exp {
+				expected = true
+				break
+			}
+		}
+		if expected {
+			if ((kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Interface) && f.IsNil()) || f.IsZero() {
+				// field should be set but is empty
+				allErrs = append(allErrs, field.Required(fldPath, fmt.Sprintf("%s must not be empty for type %s", key, defType)))
+			}
+		} else {
+			if ((kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Interface) && !f.IsNil()) || !f.IsZero() {
+				// field should not be set but it is
+				allErrs = append(allErrs, field.Invalid(fldPath, def, fmt.Sprintf("unexpected config '%s', only [%s] should be set", key, strings.Join(expectedConfigs, ", "))))
+			}
+		}
+	}
 	return allErrs
 }
 
