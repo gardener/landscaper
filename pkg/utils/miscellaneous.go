@@ -7,6 +7,7 @@ package utils
 import (
 	"encoding/json"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -71,6 +72,25 @@ func StringIsOneOf(in string, s ...string) bool {
 		}
 	}
 	return false
+}
+
+// GetSizeOfDirectory returns the size of all files in a root directory.
+func GetSizeOfDirectory(filesystem vfs.FileSystem, root string) (int64, error) {
+	var size int64
+	err := vfs.Walk(filesystem, root, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		size = size + info.Size()
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return size, nil
 }
 
 // CopyFS copies all files and directories of a filesystem to another.

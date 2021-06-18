@@ -14,6 +14,7 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/pkg/errors"
@@ -22,6 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -127,13 +130,23 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 
 	if providerConfig.Blueprint != nil {
 		log.Info("get blueprint content")
+		// setup a temporary blueprint store
+		store, err := blueprints.DefaultStore(memoryfs.New())
+		if err != nil {
+			return fmt.Errorf("unablke to setup default blueprint store: %w", err)
+		}
+		blueprints.SetStore(store)
 		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
 		if err != nil {
-			return errors.Wrapf(err, "unable to create projection filesystem for path %s", opts.ContentDirPath)
+			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)
 		}
 
-		if _, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint, contentFS); err != nil {
-			return fmt.Errorf("unable to resolve blueprint and component descriptor")
+		bp, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint)
+		if err != nil {
+			return fmt.Errorf("unable to resolve blueprint and component descriptor: %w", err)
+		}
+		if err := utils.CopyFS(bp.Fs, contentFS, "/", "/"); err != nil {
+			return fmt.Errorf("unable to copy blueprint to content dir path: %w", err)
 		}
 	}
 

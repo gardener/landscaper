@@ -147,7 +147,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 
 	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 
-	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint, nil)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lsv1alpha1helper.NewWrappedError(err,
 			currOp, "ResolveBlueprint", err.Error())

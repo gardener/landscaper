@@ -9,11 +9,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/selection"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/gardener/landscaper/pkg/metrics"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
@@ -29,7 +34,6 @@ import (
 	installationsctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/installations"
 	"github.com/gardener/landscaper/pkg/version"
 
-	componentcliMetrics "github.com/gardener/component-cli/ociclient/metrics"
 	controllerruntimeMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	"github.com/gardener/landscaper/pkg/landscaper/crdmanager"
@@ -78,7 +82,13 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup manager: %w", err)
 	}
 
-	componentcliMetrics.RegisterCacheMetrics(controllerruntimeMetrics.Registry)
+	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
+
+	store, err := blueprints.NewStore(o.Log, osfs.New(), o.Config.BlueprintStore)
+	if err != nil {
+		return fmt.Errorf("unable to setup blueprint store: %w", err)
+	}
+	blueprints.SetStore(store)
 
 	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), mgr, o.Config)
 	if err != nil {

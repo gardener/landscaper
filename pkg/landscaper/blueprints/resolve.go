@@ -5,20 +5,22 @@
 package blueprints
 
 import (
-	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/gardener/landscaper/apis/mediatype"
 
@@ -29,24 +31,15 @@ import (
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
-func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition, fs vfs.FileSystem) (*Blueprint, error) {
+func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
 	if bpDef.Reference == nil && bpDef.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
 	}
 
-	if fs == nil {
-		osFs := osfs.New()
-		tmpDir, err := vfs.TempDir(osFs, osFs.FSTempDir(), "blueprint-")
-		if err != nil {
-			return nil, fmt.Errorf("unable to create temporary directory: %w", err)
-		}
-		fs, err = projectionfs.New(osFs, tmpDir)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create virtual filesystem with base path %s for content: %w", tmpDir, err)
-		}
-	}
-
 	if bpDef.Inline != nil {
+		// todo: check if it is necessary to write it to disk.
+		// although it is already in memory though the installation.
+		fs := memoryfs.New()
 		inlineFs, err := yamlfs.New(bpDef.Inline.Filesystem.RawMessage)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create yamlfs for inline blueprint: %w", err)
@@ -80,20 +73,16 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
 
-	blueprint, err := ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, fs, bpDef.Reference.ResourceName)
-	if err != nil {
-		return nil, err
-	}
-	return New(blueprint, readonlyfs.New(fs)), nil
+	return ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, bpDef.Reference.ResourceName)
 }
 
 // ResolveBlueprintFromBlobResolver resolves a blueprint defined by a component descriptor with
 // a blob resolver.
-func ResolveBlueprintFromBlobResolver(ctx context.Context,
+func ResolveBlueprintFromBlobResolver(
+	ctx context.Context,
 	cd *cdv2.ComponentDescriptor,
 	blobResolver ctf.BlobResolver,
-	fs vfs.FileSystem,
-	blueprintName string) (*lsv1alpha1.Blueprint, error) {
+	blueprintName string) (*Blueprint, error) {
 
 	// get blueprint resource from component descriptor
 	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
@@ -101,39 +90,58 @@ func ResolveBlueprintFromBlobResolver(ctx context.Context,
 		return nil, err
 	}
 
-	var data bytes.Buffer
-	// todo: do not store the blueprint in memory and rather directly decode the bytestream to the filesystem.
-	blobInfo, err := blobResolver.Resolve(ctx, resource, &data)
+	if blueprint, err := GetStore().Get(ctx, cd, resource); err == nil {
+		return blueprint, nil
+	}
+	// blueprint was not cached so we need to fetch the blueprint blob and store it in the cache
+
+	blobInfo, err := blobResolver.Info(ctx, resource)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve blueprint blob: %w", err)
+		return nil, fmt.Errorf("unable to get blob info: %w", err)
 	}
 
+	pr, pw := io.Pipe()
 	mediaType, err := mediatype.Parse(blobInfo.MediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse media type: %w", err)
 	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		_, err := blobResolver.Resolve(ctx, resource, pw)
+		if err != nil {
+			if err2 := pw.Close(); err2 != nil {
+				return errorsutil.NewAggregate([]error{err, err2})
+			}
+			return fmt.Errorf("unable to resolve blueprint blob: %w", err)
+		}
+		return pw.Close()
+	})
+
+	var blobReader io.Reader = pr
 	if mediaType.String() == mediatype.MediaTypeGZip || mediaType.IsCompressed(mediatype.GZipCompression) {
-		if err := utils.ExtractTarGzip(&data, fs, "/"); err != nil {
-			return nil, fmt.Errorf("unable to extract blueprint from %s blob: %w", blobInfo.MediaType, err)
-		}
-	} else {
-		if err := utils.ExtractTar(&data, fs, "/"); err != nil {
-			return nil, fmt.Errorf("unable to extract blueprint from %s blob: %w", blobInfo.MediaType, err)
+		blobReader, err = gzip.NewReader(pr)
+		if err != nil {
+			if err == gzip.ErrHeader {
+				return nil, errors.New("expected a gzip compressed tar")
+			}
+			return nil, err
 		}
 	}
-
-	blueprintBytes, err := vfs.ReadFile(fs, lsv1alpha1.BlueprintFileName)
+	blueprint, err := GetStore().Store(ctx, cd, resource, blobReader)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
+		if err2 := eg.Wait(); err2 != nil {
+			return nil, errorsutil.NewAggregate([]error{err, err2})
+		}
+		return nil, err
 	}
-	blueprint := &lsv1alpha1.Blueprint{}
-	if _, _, err := serializer.NewCodecFactory(api.LandscaperScheme).
-		UniversalDecoder().
-		Decode(blueprintBytes, nil, blueprint); err != nil {
-		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)
+	if err := eg.Wait(); err != nil {
+		return nil, err
 	}
 
-	return blueprint, err
+	return blueprint, nil
 }
 
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.

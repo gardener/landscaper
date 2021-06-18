@@ -16,18 +16,18 @@ import (
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 
+	"github.com/gardener/landscaper/pkg/utils/tar"
+
 	"github.com/gardener/landscaper/apis/mediatype"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 )
 
 // BuildNewBlueprint creates a ocispec Manifest from a component definition.
 func BuildNewBlueprint(cache cache.Cache, fs vfs.FileSystem, path string) (*ocispecv1.Manifest, error) {
-
 	config, err := BuildNewBlueprintConfig(cache, fs, path)
 	if err != nil {
 		return nil, err
@@ -81,5 +81,5 @@ func BuildNewBlueprintConfig(cache cache.Cache, fs vfs.FileSystem, path string) 
 
 // BuildNewContentBlob creates a ocispec Manifest from a component definition.
 func BuildNewContentBlob(cache cache.Cache, fs vfs.FileSystem, path string) (ocispecv1.Descriptor, error) {
-	return utils.BuildTarGzipLayer(cache, fs, path, nil)
+	return tar.BuildTarGzipLayer(cache, fs, path, nil)
 }

@@ -94,7 +94,7 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 // CreateInternalInstallation creates an internal installation for an Installation
 func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint, nil)
+	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

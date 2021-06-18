@@ -32,9 +32,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/component-spec/bindings-go/apis/v2.SourceRef":                          schema_component_spec_bindings_go_apis_v2_SourceRef(ref),
 		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject":            schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref),
 		"github.com/gardener/landscaper/apis/config.AgentConfiguration":                             schema_gardener_landscaper_apis_config_AgentConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                 schema_gardener_landscaper_apis_config_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config.CrdManagementConfiguration":                     schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.DeployItemTimeouts":                             schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref),
 		"github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration":                schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.GarbageCollectionConfiguration":                 schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration":                   schema_gardener_landscaper_apis_config_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                        schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration":                     schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref),
@@ -43,9 +45,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.OCIConfiguration":                               schema_gardener_landscaper_apis_config_OCIConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.RegistryConfiguration":                          schema_gardener_landscaper_apis_config_RegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.AgentConfiguration":                    schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore":                        schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration":            schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts":                    schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration":       schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.GarbageCollectionConfiguration":        schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration":          schema_landscaper_apis_config_v1alpha1_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":               schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LocalRegistryConfiguration":            schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref),
@@ -1068,6 +1072,44 @@ func schema_gardener_landscaper_apis_config_AgentConfiguration(ref common.Refere
 	}
 }
 
+func schema_gardener_landscaper_apis_config_BlueprintStore(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BlueprintStore contains the configuration for the blueprint store.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Path defines the root path where the blueprints are cached.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"disableCache": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableCache disables the cache and always fetches the blob from the registry. The blueprint is still stored on the filesystem.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"GarbageCollectionConfiguration": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.GarbageCollectionConfiguration"),
+						},
+					},
+				},
+				Required: []string{"path", "disableCache", "GarbageCollectionConfiguration"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.GarbageCollectionConfiguration"},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1165,6 +1207,61 @@ func schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GarbageCollectionConfiguration contains all options for the cache garbage collection.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size is the size of the filesystem. If the value is 0 there is no limit and no garbage collection will happen. See the kubernetes quantity docs for detailed description of the format https://github.com/kubernetes/apimachinery/blob/master/pkg/api/resource/quantity.go",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"GCHighThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCHighThreshold defines the percent of disk usage which triggers files garbage collection.",
+							Default:     0,
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+					"GCLowThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCLowThreshold defines the percent of disk usage to which files garbage collection attempts to free.",
+							Default:     0,
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+					"ResetInterval": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResetInterval defines the interval when the hit reset should run.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"PreservedHitsProportion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreservedHitsProportion defines the percent of hits that should be preserved.",
+							Default:     0,
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+				},
+				Required: []string{"Size", "GCHighThreshold", "GCLowThreshold", "ResetInterval", "PreservedHitsProportion"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1275,6 +1372,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.RegistryConfiguration"),
 						},
 					},
+					"blueprintStore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BlueprintStore contains the configuration for the blueprint cache.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.BlueprintStore"),
+						},
+					},
 					"metrics": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metrics allows to configure how metrics are exposed",
@@ -1302,11 +1406,11 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 						},
 					},
 				},
-				Required: []string{"registry"},
+				Required: []string{"registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
 	}
 }
 
@@ -1527,6 +1631,44 @@ func schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref common.Refere
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BlueprintStore contains the configuration for the blueprint store.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Path defines the root path where the blueprints are cached.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"disableCache": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableCache disables the cache and always fetches the blob from the registry. The blueprint is still stored on the filesystem.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"GarbageCollectionConfiguration": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.GarbageCollectionConfiguration"),
+						},
+					},
+				},
+				Required: []string{"path", "disableCache", "GarbageCollectionConfiguration"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.GarbageCollectionConfiguration"},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1624,6 +1766,57 @@ func schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GarbageCollectionConfiguration contains all options for the cache garbage collection.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size is the size of the filesystem. If the value is 0 there is no limit and no garbage collection will happen. See the kubernetes quantity docs for detailed description of the format https://github.com/kubernetes/apimachinery/blob/master/pkg/api/resource/quantity.go",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"gcHighThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCHighThreshold defines the percent of disk usage which triggers files garbage collection.",
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+					"gcLowThreshold": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GCLowThreshold defines the percent of disk usage to which files garbage collection attempts to free.",
+							Default:     0,
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+					"resetInterval": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResetInterval defines the interval when the hit reset should run.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"preservedHitsProportion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreservedHitsProportion defines the percent of hits that should be preserved.",
+							Type:        []string{"number"},
+							Format:      "double",
+						},
+					},
+				},
+				Required: []string{"gcLowThreshold"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1734,6 +1927,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"),
 						},
 					},
+					"blueprintStore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BlueprintStore contains the configuration for the blueprint cache.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore"),
+						},
+					},
 					"metrics": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metrics allows to configure how metrics are exposed",
@@ -1761,11 +1961,11 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						},
 					},
 				},
-				Required: []string{"registry"},
+				Required: []string{"registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 

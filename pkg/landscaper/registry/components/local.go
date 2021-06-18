@@ -24,7 +24,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
 // LocalRepositoryType defines the local repository context type.
@@ -171,9 +171,7 @@ func (c *localClient) searchInFs(name, version string) (*cdv2.ComponentDescripto
 			if err != nil {
 				return err
 			}
-			resolver = &LocalFilesystemBlobResolver{
-				BaseFilesystemBlobResolver: BaseFilesystemBlobResolver{fs: fs},
-			}
+			resolver = NewLocalFilesystemBlobResolver(fs)
 			return foundErr
 		}
 		return nil
@@ -251,6 +249,13 @@ type LocalFilesystemBlobResolver struct {
 	BaseFilesystemBlobResolver
 }
 
+// NewLocalFilesystemBlobResolver creates a new local filesystem blob resolver.
+func NewLocalFilesystemBlobResolver(fs vfs.FileSystem) *LocalFilesystemBlobResolver {
+	return &LocalFilesystemBlobResolver{
+		BaseFilesystemBlobResolver: BaseFilesystemBlobResolver{fs: fs},
+	}
+}
+
 func (ca *LocalFilesystemBlobResolver) CanResolve(resource cdv2.Resource) bool {
 	return resource.Access != nil && resource.Access.GetType() == cdv2.LocalFilesystemBlobType
 }
@@ -317,7 +322,7 @@ func (res *BaseFilesystemBlobResolver) ResolveFromFs(blobpath string) (*ctf.Blob
 	}
 	if info.IsDir() {
 		var data bytes.Buffer
-		if err := utils.BuildTarGzip(res.fs, blobpath, &data); err != nil {
+		if err := tar.BuildTarGzip(res.fs, blobpath, &data); err != nil {
 			return nil, nil, fmt.Errorf("unable to build tar gz: %w", err)
 		}
 		return &ctf.BlobInfo{

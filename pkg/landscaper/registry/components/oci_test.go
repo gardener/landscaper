@@ -14,6 +14,8 @@ import (
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/go-logr/logr"
 
+	"github.com/gardener/landscaper/pkg/utils/tar"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	"github.com/golang/mock/gomock"
@@ -25,7 +27,6 @@ import (
 	mock_oci "github.com/gardener/component-cli/ociclient/mock"
 
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 func TestConfig(t *testing.T) {
@@ -80,7 +81,7 @@ var _ = Describe("Registry", func() {
 		})
 		ociClient.EXPECT().Fetch(ctx, "example.com/component-descriptors/example.com/my-comp:0.0.1", cdLayerDesc, gomock.Any()).Return(nil).Do(func(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) {
 			var buf bytes.Buffer
-			Expect(utils.BuildTar(osfs.New(), "./testdata/comp1", &buf)).To(Succeed())
+			Expect(tar.BuildTar(osfs.New(), "./testdata/comp1", &buf)).To(Succeed())
 			_, err = io.Copy(writer, &buf)
 			Expect(err).ToNot(HaveOccurred())
 		})

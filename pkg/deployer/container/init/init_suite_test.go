@@ -82,7 +82,7 @@ var _ = Describe("Constructor", func() {
 		Expect(data).To(HaveKeyWithValue("key", "val1"))
 	})
 
-	It("should fetch blueprint from DeployItem's configuration and write them to the content path", func() {
+	It("should fetch a blueprint from a DeployItem's configuration and write them to the content path", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		fakeClient.EXPECT().List(ctx, gomock.Any(), gomock.Any()).Return(apierrors.NewNotFound(schema.GroupResource{}, ""))
