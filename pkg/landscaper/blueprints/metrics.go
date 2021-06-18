@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	// DiskUsage discloses disk used by teh blueprint store
+	// DiskUsage discloses disk used by the blueprint store
 	DiskUsage = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: lsv1alpha1.LandscaperMetricsNamespaceName,
