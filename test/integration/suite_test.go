@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gardener/landscaper/test/integration/deployitems"
+	"github.com/gardener/landscaper/test/integration/installations"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -56,6 +57,7 @@ func TestConfig(t *testing.T) {
 	core.RegisterTests(f)
 	deployers.RegisterTests(f)
 	deployitems.RegisterTests(f)
+	installations.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()

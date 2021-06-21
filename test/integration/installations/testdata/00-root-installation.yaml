@@ -1,0 +1,164 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+spec:
+
+  componentDescriptor:
+    inline:
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: mock-installation
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+          - type: ociRegistry
+            baseUrl: "example.com/test"
+
+        sources: []
+        componentReferences: []
+
+        resources: []
+
+  imports:
+    data:
+    - name: dataImp
+      secretRef:
+        key: value
+        name: "my-secret"
+    targets:
+    - name: targetImp
+      target: "#my-target"
+    - name: targetListImp
+      targets:
+      - "#my-target"
+      - "#my-target"
+      - "#my-target"
+    - name: emptyTargetListImp
+      targets: []
+  
+  exports:
+    data:
+    - name: dataExp
+      dataRef: dataExp
+    targets:
+    - name: targetExp
+      target: targetExp
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+
+          annotations:
+            local/name: root
+            local/version: 1.0.0
+
+          imports:
+          - name: dataImp
+            type: data
+            schema:
+              type: string
+          - name: targetImp
+            type: target
+            targetType: landscaper.gardener.cloud/mock
+          - name: targetListImp
+            type: targetList
+            targetType: landscaper.gardener.cloud/mock
+          - name: emptyTargetListImp
+            type: targetList
+            targetType: landscaper.gardener.cloud/mock
+
+          exports:
+          - name: dataExp
+            type: data
+            schema:
+              type: string
+          - name: targetExp
+            type: target
+            targetType: landscaper.gardener.cloud/mock
+          
+          exportExecutions:
+          - type: GoTemplate
+            template: |
+              exports:
+                dataExp: {{ .values.dataobjects.subDataExp }}
+                targetExp: {{ toJson .values.targets.subTargetExp.spec }}
+
+          subinstallations:
+          - apiVersion: landscaper.gardener.cloud/v1alpha1
+            kind: InstallationTemplate
+            name: subinst
+            imports:
+              data:
+              - name: subDataImp
+                dataRef: dataImp
+              targets:
+              - name: subTargetImp
+                target: targetImp
+              - name: subTargetListImp
+                targetListRef: targetListImp
+              - name: subEmptyTargetListImp
+                targetListRef: emptyTargetListImp
+            exports:
+              data:
+              - name: subDataExp
+                dataRef: subDataExp
+              targets:
+              - name: subTargetExp
+                target: subTargetExp
+            blueprint:
+              filesystem:
+                blueprint.yaml: |
+                  apiVersion: landscaper.gardener.cloud/v1alpha1
+                  kind: Blueprint
+                  deployExecutions:
+                  - type: GoTemplate
+                    template: |
+                      deployItems:
+                      - name: submain-import
+                        type: landscaper.gardener.cloud/mock
+                        config:
+                          apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                          kind: ProviderConfiguration
+                          providerStatus:
+                            apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                            kind: ProviderStatus
+                  imports:
+                  - name: subDataImp
+                    type: data
+                    schema:
+                      type: string
+                  - name: subTargetImp
+                    type: target
+                    targetType: landscaper.gardener.cloud/mock
+                  - name: subTargetListImp
+                    type: targetList
+                    targetType: landscaper.gardener.cloud/mock
+                  - name: subEmptyTargetListImp
+                    type: targetList
+                    targetType: landscaper.gardener.cloud/mock
+                  exports:
+                  - name: subDataExp
+                    type: data
+                    schema:
+                      type: string
+                  - name: subTargetExp
+                    type: target
+                    targetType: landscaper.gardener.cloud/mock
+                  exportExecutions:
+                  - type: Spiff
+                    template:
+                      exports:
+                        subDataExp: (( values.dataobjects.subDataImp ))
+                        subTargetExp: (( values.targets.subTargetImp.spec ))
