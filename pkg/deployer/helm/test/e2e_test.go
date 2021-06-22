@@ -20,10 +20,10 @@ import (
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/healthchecks"
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
+	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"

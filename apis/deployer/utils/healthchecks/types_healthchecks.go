@@ -22,9 +22,10 @@ type HealthChecksConfiguration struct {
 	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 	// CustomHealthChecks is a set of custom health check configurations
 	// +optional
-	CustomHealthChecks []CustomHealthCheckConfiguration `json:"customHealthChecks,omitempty"`
+	CustomHealthChecks []CustomHealthCheckConfiguration `json:"custom,omitempty"`
 }
 
+// CustomHealthCheckConfiguration contains the configuration for a custom health check
 type CustomHealthCheckConfiguration struct {
 	// Name is the name of the HealthCheck
 	Name string `json:"name"`
@@ -43,6 +44,7 @@ type CustomHealthCheckConfiguration struct {
 	Requirements []RequirementSpec `json:"requirements"`
 }
 
+// LabelSelectorSpec contains paramters used to select objects by their labels
 type LabelSelectorSpec struct {
 	// APIVersion is the API version of the object to be selected by labels
 	APIVersion string `json:"apiVersion"`
@@ -52,6 +54,7 @@ type LabelSelectorSpec struct {
 	Labels map[string]string `json:"matchLabels"`
 }
 
+// RequirementSpec contains the requirements an object must meet to pass the custom health check
 type RequirementSpec struct {
 	JsonPath string             `json:"jsonPath"`
 	Operator selection.Operator `json:"operator"`

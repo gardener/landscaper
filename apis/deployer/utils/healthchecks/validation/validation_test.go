@@ -15,8 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/apis/deployer/healthchecks"
-	"github.com/gardener/landscaper/apis/deployer/healthchecks/validation"
+	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )

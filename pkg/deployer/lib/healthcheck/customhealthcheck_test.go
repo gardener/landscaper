@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/healthchecks"
+	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
 	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 

@@ -92,8 +92,6 @@ github.com/gardener/landscaper/apis/deployer/container
 github.com/gardener/landscaper/apis/deployer/container/install
 github.com/gardener/landscaper/apis/deployer/container/v1alpha1
 github.com/gardener/landscaper/apis/deployer/container/v1alpha1/validation
-github.com/gardener/landscaper/apis/deployer/healthchecks
-github.com/gardener/landscaper/apis/deployer/healthchecks/validation
 github.com/gardener/landscaper/apis/deployer/helm
 github.com/gardener/landscaper/apis/deployer/helm/install
 github.com/gardener/landscaper/apis/deployer/helm/v1alpha1
@@ -108,6 +106,8 @@ github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
 github.com/gardener/landscaper/apis/errors
+github.com/gardener/landscaper/apis/deployer/utils/healthchecks
+github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation
 github.com/gardener/landscaper/apis/mediatype
 github.com/gardener/landscaper/apis/schema
 # github.com/ghodss/yaml v1.0.0

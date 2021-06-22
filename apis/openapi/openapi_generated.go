@@ -6054,198 +6054,6 @@ func schema_apis_deployer_container_v1alpha1_ProviderStatus(ref common.Reference
 	}
 }
 
-func schema_landscaper_apis_deployer_healthchecks_CustomHealthCheckConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is the name of the HealthCheck",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"timeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the value after which a HealthCheck should time out",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
-					"disabled": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Disabled deactivates this custom resource health check",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"resourceSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
-						},
-					},
-					"labelSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/healthchecks.LabelSelectorSpec"),
-						},
-					},
-					"requirements": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Requirements is the actual health-check which compares an object's property to a value",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/deployer/healthchecks.RequirementSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"name", "requirements"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/healthchecks.LabelSelectorSpec", "github.com/gardener/landscaper/apis/deployer/healthchecks.RequirementSpec"},
-	}
-}
-
-func schema_landscaper_apis_deployer_healthchecks_HealthChecksConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "HealthChecksConfiguration contains the configuration for health checks.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"disableDefault": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DisableDefault allows to disable the default health checks.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"timeout": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
-						},
-					},
-					"customHealthChecks": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CustomHealthChecks is a set of custom health check configurations",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/deployer/healthchecks.CustomHealthCheckConfiguration"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/healthchecks.CustomHealthCheckConfiguration"},
-	}
-}
-
-func schema_landscaper_apis_deployer_healthchecks_LabelSelectorSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion is the API version of the object to be selected by labels",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is the Kind of the object to be selected by labels",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"matchLabels": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Labels are the labels used to identify multiple resources of the given kind",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"apiVersion", "kind", "matchLabels"},
-			},
-		},
-	}
-}
-
-func schema_landscaper_apis_deployer_healthchecks_RequirementSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"jsonPath": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"operator": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"values": {
-						SchemaProps: spec.SchemaProps{
-							Description: "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"jsonPath", "operator"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/runtime.RawExtension"},
-	}
-}
-
 func schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6442,7 +6250,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 						SchemaProps: spec.SchemaProps{
 							Description: "HealthChecks configures the health checks.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration"),
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration"),
 						},
 					},
 					"deleteTimeout": {
@@ -6500,7 +6308,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportFromManifestItem", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration"},
 	}
 }
 
@@ -6693,7 +6501,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 						SchemaProps: spec.SchemaProps{
 							Description: "HealthChecks configures the health checks.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration"),
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration"),
 						},
 					},
 					"deleteTimeout": {
@@ -6719,7 +6527,7 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -6914,7 +6722,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 						SchemaProps: spec.SchemaProps{
 							Description: "HealthChecks configures the health checks.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration"),
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration"),
 						},
 					},
 					"deleteTimeout": {
@@ -6941,7 +6749,7 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/healthchecks.HealthChecksConfiguration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.HealthChecksConfiguration"},
 	}
 }
 
@@ -7087,6 +6895,201 @@ func schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref common.Referen
 						},
 					},
 				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/runtime.RawExtension"},
+	}
+}
+
+func schema_apis_deployer_utils_healthchecks_CustomHealthCheckConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CustomHealthCheckConfiguration contains the configuration for a custom health check",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the HealthCheck",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the value after which a HealthCheck should time out",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+					"disabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disabled deactivates this custom resource health check",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"resourceSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
+						},
+					},
+					"labelSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.LabelSelectorSpec"),
+						},
+					},
+					"requirements": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Requirements is the actual health-check which compares an object's property to a value",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.RequirementSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "requirements"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.LabelSelectorSpec", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.RequirementSpec"},
+	}
+}
+
+func schema_apis_deployer_utils_healthchecks_HealthChecksConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HealthChecksConfiguration contains the configuration for health checks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disableDefault": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DisableDefault allows to disable the default health checks.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the time to wait before giving up on a resource to be healthy. Defaults to 180s.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+					"custom": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CustomHealthChecks is a set of custom health check configurations",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/healthchecks.CustomHealthCheckConfiguration"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/healthchecks.CustomHealthCheckConfiguration"},
+	}
+}
+
+func schema_apis_deployer_utils_healthchecks_LabelSelectorSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LabelSelectorSpec contains paramters used to select objects by their labels",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion is the API version of the object to be selected by labels",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is the Kind of the object to be selected by labels",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"matchLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Labels are the labels used to identify multiple resources of the given kind",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"apiVersion", "kind", "matchLabels"},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_utils_healthchecks_RequirementSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RequirementSpec contains the requirements an object must meet to pass the custom health check",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"jsonPath": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"operator": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"values": {
+						SchemaProps: spec.SchemaProps{
+							Description: "In huge majority of cases we have at most one value here. It is generally faster to operate on a single-element slice than on a single-element map, so we have a slice here.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/apimachinery/pkg/runtime.RawExtension"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"jsonPath", "operator"},
 			},
 		},
 		Dependencies: []string{

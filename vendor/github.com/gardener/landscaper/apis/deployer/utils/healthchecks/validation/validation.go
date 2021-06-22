@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
 
-	"github.com/gardener/landscaper/apis/deployer/healthchecks"
+	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
 )
 
 // ValidateHealthCheckConfiguration validates a healthcheck configuration

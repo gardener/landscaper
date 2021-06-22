@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	healthchecks "github.com/gardener/landscaper/apis/deployer/healthchecks/validation"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	healthchecks "github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation"
 )
 
 // ValidateProviderConfiguration validates a manifest provider configuration.

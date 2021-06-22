@@ -36,7 +36,26 @@
         }
       }
     },
-    "deployer-healthchecks-CustomHealthCheckConfiguration": {
+    "manifest-v1alpha2-Manifest": {
+      "description": "Manifest defines a manifest that is managed by the deployer.",
+      "type": "object",
+      "properties": {
+        "manifest": {
+          "description": "Manifest defines the raw k8s manifest.",
+          "$ref": "#/definitions/pkg-runtime-RawExtension"
+        },
+        "policy": {
+          "description": "Policy defines the manage policy for that resource.",
+          "type": "string"
+        }
+      }
+    },
+    "pkg-runtime-RawExtension": {
+      "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.Object `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// External package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// On the wire, the JSON will look something like this: {\n\t\"kind\":\"MyAPIObject\",\n\t\"apiVersion\":\"v1\",\n\t\"myPlugin\": {\n\t\t\"kind\":\"PluginA\",\n\t\t\"aOption\":\"foo\",\n\t},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
+      "type": "object"
+    },
+    "utils-healthchecks-CustomHealthCheckConfiguration": {
+      "description": "CustomHealthCheckConfiguration contains the configuration for a custom health check",
       "type": "object",
       "required": [
         "name",
@@ -49,7 +68,7 @@
         },
         "labelSelector": {
           "description": "Labels are the labels used to identify multiple resources that can be identified by a unique set of labels",
-          "$ref": "#/definitions/deployer-healthchecks-LabelSelectorSpec"
+          "$ref": "#/definitions/utils-healthchecks-LabelSelectorSpec"
         },
         "name": {
           "description": "Name is the name of the HealthCheck",
@@ -61,7 +80,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/deployer-healthchecks-RequirementSpec"
+            "$ref": "#/definitions/utils-healthchecks-RequirementSpec"
           }
         },
         "resourceSelector": {
@@ -74,16 +93,16 @@
         }
       }
     },
-    "deployer-healthchecks-HealthChecksConfiguration": {
+    "utils-healthchecks-HealthChecksConfiguration": {
       "description": "HealthChecksConfiguration contains the configuration for health checks.",
       "type": "object",
       "properties": {
-        "customHealthChecks": {
+        "custom": {
           "description": "CustomHealthChecks is a set of custom health check configurations",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/deployer-healthchecks-CustomHealthCheckConfiguration"
+            "$ref": "#/definitions/utils-healthchecks-CustomHealthCheckConfiguration"
           }
         },
         "disableDefault": {
@@ -96,7 +115,8 @@
         }
       }
     },
-    "deployer-healthchecks-LabelSelectorSpec": {
+    "utils-healthchecks-LabelSelectorSpec": {
+      "description": "LabelSelectorSpec contains paramters used to select objects by their labels",
       "type": "object",
       "required": [
         "apiVersion",
@@ -124,7 +144,8 @@
         }
       }
     },
-    "deployer-healthchecks-RequirementSpec": {
+    "utils-healthchecks-RequirementSpec": {
+      "description": "RequirementSpec contains the requirements an object must meet to pass the custom health check",
       "type": "object",
       "required": [
         "jsonPath",
@@ -148,24 +169,6 @@
           }
         }
       }
-    },
-    "manifest-v1alpha2-Manifest": {
-      "description": "Manifest defines a manifest that is managed by the deployer.",
-      "type": "object",
-      "properties": {
-        "manifest": {
-          "description": "Manifest defines the raw k8s manifest.",
-          "$ref": "#/definitions/pkg-runtime-RawExtension"
-        },
-        "policy": {
-          "description": "Policy defines the manage policy for that resource.",
-          "type": "string"
-        }
-      }
-    },
-    "pkg-runtime-RawExtension": {
-      "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.Object `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// External package: type MyAPIObject struct {\n\truntime.TypeMeta `json:\",inline\"`\n\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n} type PluginA struct {\n\tAOption string `json:\"aOption\"`\n}\n\n// On the wire, the JSON will look something like this: {\n\t\"kind\":\"MyAPIObject\",\n\t\"apiVersion\":\"v1\",\n\t\"myPlugin\": {\n\t\t\"kind\":\"PluginA\",\n\t\t\"aOption\":\"foo\",\n\t},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
-      "type": "object"
     }
   },
   "description": "ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem",
@@ -179,7 +182,7 @@
       "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "healthChecks": {
-      "$ref": "#/definitions/deployer-healthchecks-HealthChecksConfiguration",
+      "$ref": "#/definitions/utils-healthchecks-HealthChecksConfiguration",
       "default": {},
       "description": "HealthChecks configures the health checks."
     },

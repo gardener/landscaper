@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	healthchecks "github.com/gardener/landscaper/apis/deployer/healthchecks/validation"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	healthchecks "github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation"
 )
 
 // ValidateProviderConfiguration validates a helm deployer configuration
