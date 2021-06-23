@@ -11,12 +11,22 @@ import (
 // BlueprintResourceType is the name of the blueprint resource defined in component descriptors.
 const BlueprintResourceType = "blueprint"
 
+// ImportType is a string alias
 type ImportType string
+
+// ExportType is a string alias
 type ExportType string
 
+// ImportTypeData is the import type for data imports
 const ImportTypeData = ImportType("data")
+
+// ImportTypeTarget is the import type for target imports
 const ImportTypeTarget = ImportType("target")
+
+// ExportTypeData is the export type for data exports
 const ExportTypeData = ExportType(ImportTypeData)
+
+// ExportTypeTarget is the export type for target exports
 const ExportTypeTarget = ExportType(ImportTypeTarget)
 
 // +genclient

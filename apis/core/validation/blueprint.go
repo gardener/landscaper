@@ -22,47 +22,6 @@ import (
 
 var landscaperScheme = runtime.NewScheme()
 
-var importTypesWithExpectedConfig = map[string][]string{
-	string(core.ImportTypeData):   {"Schema"},
-	string(core.ImportTypeTarget): {"TargetType"},
-}
-var exportTypesWithExpectedConfig = map[string][]string{
-	string(core.ExportTypeData):   {"Schema"},
-	string(core.ExportTypeTarget): {"TargetType"},
-}
-
-// isFieldValueDefinition lists the fields which are not directly part of an Import/ExportDefinition, but of the FieldValueDefinition
-// (usually the fields which are present in both import and export definitions)
-// This is required for the reflection used below
-// a map is used for easier 'contains' queries, the values are ignored
-var isFieldValueDefinition = map[string]bool{
-	"Schema":     true,
-	"TargetType": true,
-}
-
-func keys(m map[string][]string) []string {
-	res := make([]string, len(m))
-	for k := range m {
-		res = append(res, string(k))
-	}
-	return res
-}
-
-func relevantConfigFields() map[string]bool {
-	res := map[string]bool{}
-	for _, v := range importTypesWithExpectedConfig {
-		for _, e := range v {
-			res[e] = true
-		}
-	}
-	for _, v := range exportTypesWithExpectedConfig {
-		for _, e := range v {
-			res[e] = true
-		}
-	}
-	return res
-}
-
 func init() {
 	coreinstall.Install(landscaperScheme)
 }

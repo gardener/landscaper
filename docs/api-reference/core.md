@@ -2858,6 +2858,7 @@ This field should be set and will likely be mandatory in future.</p>
 <a href="#landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition</a>)
 </p>
 <p>
+<p>ExportType is a string alias</p>
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.FieldValueDefinition">FieldValueDefinition
 </h3>
@@ -3137,6 +3138,7 @@ string
 <a href="#landscaper.gardener.cloud/v1alpha1.ImportDefinition">ImportDefinition</a>)
 </p>
 <p>
+<p>ImportType is a string alias</p>
 </p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InlineBlueprint">InlineBlueprint
 </h3>
