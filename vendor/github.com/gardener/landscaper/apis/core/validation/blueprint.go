@@ -24,6 +24,7 @@ var landscaperScheme = runtime.NewScheme()
 
 func init() {
 	coreinstall.Install(landscaperScheme)
+	relevantConfigFields = computeRelevantConfigFields()
 }
 
 // ValidateBlueprint validates a Blueprint
@@ -153,8 +154,7 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 func validateMutuallyExclusiveConfig(fldPath *field.Path, def interface{}, expectedConfigs []string, defType string) field.ErrorList {
 	allErrs := field.ErrorList{}
 	val := reflect.ValueOf(def)
-	rcf := relevantConfigFields()
-	for key := range rcf {
+	for key := range relevantConfigFields {
 		var f reflect.Value
 		if _, ok := isFieldValueDefinition[key]; ok {
 			f = val.FieldByName("FieldValueDefinition")

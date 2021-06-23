@@ -15,6 +15,8 @@ var exportTypesWithExpectedConfig = map[string][]string{
 	string(core.ExportTypeTarget): {"TargetType"},
 }
 
+var relevantConfigFields map[string]bool
+
 // isFieldValueDefinition lists the fields which are not directly part of an Import/ExportDefinition, but of the FieldValueDefinition
 // (usually the fields which are present in both import and export definitions)
 // This is required for the reflection used below
@@ -33,9 +35,10 @@ func keys(m map[string][]string) []string {
 	return res
 }
 
-// relevantConfigFields returns the union of the values of importTypesWithExpectedConfig and exportTypesWithExpectedConfig
+// computeRelevantConfigFields returns the union of the values of importTypesWithExpectedConfig and exportTypesWithExpectedConfig
+// as a map[string]bool for easier 'contains' queries. The value will always be set to 'true'.
 // This is used to detect if a config field is set which should not be set for the specified type.
-func relevantConfigFields() map[string]bool {
+func computeRelevantConfigFields() map[string]bool {
 	res := map[string]bool{}
 	for _, v := range importTypesWithExpectedConfig {
 		for _, e := range v {
