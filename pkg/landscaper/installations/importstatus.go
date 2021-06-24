@@ -20,7 +20,7 @@ func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
 	if status.Type == lsv1alpha1.DataImportStatusType {
 		s.Data[status.Name] = &status
 	}
-	if status.Type == lsv1alpha1.TargetImportStatusType {
+	if status.Type == lsv1alpha1.TargetImportStatusType || status.Type == lsv1alpha1.TargetListImportStatusType {
 		s.Target[status.Name] = &status
 	}
 }

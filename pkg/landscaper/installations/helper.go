@@ -157,22 +157,76 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 }
 
 // GetTargetImport fetches the target import from the cluster.
-func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetName string) (*dataobjects.Target, *v1.OwnerReference, error) {
+func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetName string) (*dataobjects.Target, error) {
 	// get deploy item from current context
 	raw := &lsv1alpha1.Target{}
 	targetName = helper.GenerateDataObjectName(contextName, targetName)
 	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	owner := kubernetes.GetOwner(raw.ObjectMeta)
 	target, err := dataobjects.NewFromTarget(raw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
+		return nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
 	}
-	return target, owner, nil
+	return target, nil
 }
 
+// GetTargetListImportByNames fetches the target imports from the cluster, based on a list of target names.
+func GetTargetListImportByNames(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetNames []string) (*dataobjects.TargetList, error) {
+	targets := make([]lsv1alpha1.Target, len(targetNames))
+	for i, targetName := range targetNames {
+		// get deploy item from current context
+		raw := &lsv1alpha1.Target{}
+		targetName = helper.GenerateDataObjectName(contextName, targetName)
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+			return nil, err
+		}
+		targets[i] = *raw
+	}
+	targetList, err := dataobjects.NewFromTargetList(targets)
+	if err != nil {
+		return nil, err
+	}
+
+	return targetList, nil
+}
+
+// GetTargetListImportBySelector fetches the target imports from the cluster, based on a label selector.
+func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, selector map[string]string) (*dataobjects.TargetList, error) {
+	targets := &lsv1alpha1.TargetList{}
+	// add context to selector
+	selectorWithContext := map[string]string{}
+	for k, v := range selector {
+		selectorWithContext[k] = v
+	}
+	if len(contextName) != 0 {
+		// top-level targets probably don't have an empty context set, so only add the selector if there actually is a context
+		selectorWithContext[lsv1alpha1.DataObjectContextLabel] = contextName
+	}
+	if err := kubeClient.List(ctx, targets, client.MatchingLabels(selectorWithContext), client.InNamespace(inst.Info.Namespace)); err != nil {
+		return nil, err
+	}
+	if len(contextName) == 0 {
+		// if we didn't add the context label selector, we now need to sort out all targets which have a non-empty context label
+		newTargets := &lsv1alpha1.TargetList{}
+		newTargets.Items = []lsv1alpha1.Target{}
+		for _, t := range targets.Items {
+			cls, ok := t.Labels[lsv1alpha1.DataObjectContextLabel]
+			if !ok || len(cls) == 0 {
+				newTargets.Items = append(newTargets.Items, t)
+			}
+		}
+		targets = newTargets
+	}
+	targetList, err := dataobjects.NewFromTargetList(targets.Items)
+	if err != nil {
+		return nil, err
+	}
+	return targetList, nil
+}
+
+// GeReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
 // GetReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
 func GetReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDescriptorDefinition) *lsv1alpha1.ComponentDescriptorReference {
 	if cdDef == nil {

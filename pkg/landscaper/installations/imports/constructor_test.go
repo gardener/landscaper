@@ -23,6 +23,7 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -214,6 +215,43 @@ var _ = Describe("Constructor", func() {
 					"config": Equal("val-e"),
 				}),
 			})))
+		})
+	})
+
+	Context("TargetLists", func() {
+		It("should construct a targetlist import from target names", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test9/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			utils.ExpectNoError(op.ResolveComponentDescriptors(ctx))
+			utils.ExpectNoError(op.SetInstallationContext(ctx))
+
+			c := imports.NewConstructor(op)
+			utils.ExpectNoError(c.Construct(ctx, inInstRoot))
+			Expect(inInstRoot.GetImports()).ToNot(BeNil())
+
+			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("root.a", ConsistOf(
+				MatchKeys(IgnoreExtras, Keys{
+					"spec": MatchKeys(IgnoreExtras, Keys{
+						"type":   Equal("landscaper.gardener.cloud/mock"),
+						"config": Equal("val-ext-a1"),
+					}),
+				}),
+				MatchKeys(IgnoreExtras, Keys{
+					"spec": MatchKeys(IgnoreExtras, Keys{
+						"type":   Equal("landscaper.gardener.cloud/mock"),
+						"config": Equal("val-ext-a2"),
+					}),
+				}),
+				MatchKeys(IgnoreExtras, Keys{
+					"spec": MatchKeys(IgnoreExtras, Keys{
+						"type":   Equal("landscaper.gardener.cloud/mock"),
+						"config": Equal("val-sib-a"),
+					}),
+				}),
+			)))
 		})
 	})
 
