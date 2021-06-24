@@ -177,7 +177,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		inst.Spec.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
 			ResourceName: blueprintResourceName,
 		}
-		inst.Spec.Imports.Targets = []lsv1alpha1.TargetImportExport{
+		inst.Spec.Imports.Targets = []lsv1alpha1.TargetImport{
 			{
 				Name:   "cluster",
 				Target: "#" + target.Name,

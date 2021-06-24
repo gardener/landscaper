@@ -115,6 +115,13 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 			defPath = defPath.Key(exportDef.Name)
 		}
 
+		if exportDef.Schema == nil && len(exportDef.TargetType) == 0 {
+			allErrs = append(allErrs, field.Required(defPath, "neither schema nor targetType is defined"))
+		}
+		if exportDef.Schema != nil && len(exportDef.TargetType) != 0 {
+			allErrs = append(allErrs, field.Invalid(defPath, exportDef, "either schema or targetType may be specified, not both"))
+		}
+
 		allErrs = append(allErrs, ValidateFieldValueDefinition(defPath, exportDef.FieldValueDefinition)...)
 
 		if len(exportDef.Name) != 0 && exportNames.Has(exportDef.Name) {
@@ -196,7 +203,6 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 	if len(def.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
 	}
-
 	if def.Schema != nil {
 		allErrs = append(allErrs, ValidateJsonSchema(fldPath, def.Schema)...)
 	}
@@ -333,10 +339,27 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 			exportedTargets.Insert(target.Target)
 		}
 		for i, target := range instTmpl.Imports.Targets {
-			importedTargets = append(importedTargets, Import{
-				Name: target.Target,
-				Path: instPath.Child("imports").Child("targets").Index(i).Key(target.Name),
-			})
+			impPath := instPath.Child("imports").Child("targets").Index(i).Key(target.Name)
+			if len(target.Target) != 0 {
+				importedTargets = append(importedTargets, Import{
+					Name: target.Target,
+					Path: impPath,
+				})
+			} else if target.Targets != nil {
+				for i2, t2 := range target.Targets {
+					importedTargets = append(importedTargets, Import{
+						Name: t2,
+						Path: impPath.Index(i2),
+					})
+				}
+			} else if len(target.TargetListReference) != 0 {
+				importedTargets = append(importedTargets, Import{
+					Name: target.TargetListReference,
+					Path: impPath,
+				})
+			} else {
+				allErrs = append(allErrs, field.Invalid(impPath, target, "invalid target import: one of target, targets, and targetListRef has to be specified"))
+			}
 		}
 
 		allErrs = append(allErrs, ValidateInstallationTemplate(instPath, instTmpl)...)

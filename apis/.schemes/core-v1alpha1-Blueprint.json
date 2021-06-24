@@ -185,7 +185,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/core-v1alpha1-TargetImportExport"
+            "$ref": "#/definitions/core-v1alpha1-TargetExport"
           }
         }
       }
@@ -207,7 +207,7 @@
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/core-v1alpha1-TargetImportExport"
+            "$ref": "#/definitions/core-v1alpha1-TargetImport"
           }
         }
       }
@@ -314,12 +314,11 @@
         }
       }
     },
-    "core-v1alpha1-TargetImportExport": {
-      "description": "TargetImportExport is a target import/export.",
+    "core-v1alpha1-TargetExport": {
+      "description": "TargetExport is a single target export.",
       "type": "object",
       "required": [
-        "name",
-        "target"
+        "name"
       ],
       "properties": {
         "name": {
@@ -329,8 +328,37 @@
         },
         "target": {
           "description": "Target is the name of the in-cluster target object.",
+          "type": "string"
+        }
+      }
+    },
+    "core-v1alpha1-TargetImport": {
+      "description": "TargetImport is either a single target or a target list import.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "description": "Name the internal name of the imported/exported target.",
           "type": "string",
           "default": ""
+        },
+        "target": {
+          "description": "Target is the name of the in-cluster target object. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+          "type": "string"
+        },
+        "targetListRef": {
+          "description": "TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+          "type": "string"
+        },
+        "targets": {
+          "description": "Targets is a list of in-cluster target objects. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
         }
       }
     },

@@ -159,7 +159,7 @@ func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *fiel
 	return false, nil
 }
 
-func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) (bool, error) {
+func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImport) (bool, error) {
 	// get deploy item from current context
 	target, owner, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
 	if err != nil {
@@ -220,7 +220,7 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 	return v.checkStateForSiblingDataExport(ctx, fldPath, ref, dataImport.DataRef)
 }
 
-func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImportExport) error {
+func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImport) error {
 	// get deploy item from current context
 	_, owner, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
 	if err != nil {

@@ -233,10 +233,28 @@ var _ = Describe("Installation", func() {
 						},
 					},
 				},
-				Targets: []core.TargetImportExport{{
-					Name:   "foo",
-					Target: "fooTarget",
-				}},
+				Targets: []core.TargetImport{
+					{
+						Name:   "foo",
+						Target: "fooTarget",
+					},
+					{
+						Name:                "bar",
+						TargetListReference: "foobaz",
+					},
+					{
+						Name: "baz",
+						Targets: []string{
+							"t1",
+							"t2",
+							"t3",
+						},
+					},
+					{
+						Name:    "fb",
+						Targets: []string{},
+					},
+				},
 			}
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
@@ -255,7 +273,7 @@ var _ = Describe("Installation", func() {
 						DataRef: "bar",
 					},
 				},
-				Targets: []core.TargetImportExport{
+				Targets: []core.TargetImport{
 					{
 						Name:   "bar",
 						Target: "barTarget",
@@ -286,10 +304,16 @@ var _ = Describe("Installation", func() {
 						DataRef: "",
 					},
 				},
-				Targets: []core.TargetImportExport{
+				Targets: []core.TargetImport{
 					{
 						Name:   "",
 						Target: "",
+					},
+					{
+						Name: "foo",
+						Targets: []string{
+							"",
+						},
 					},
 				},
 			}
@@ -309,8 +333,45 @@ var _ = Describe("Installation", func() {
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.targets[0].target"),
+				"Field": Equal("imports.targets[0].target|targets|targetListRef"),
 			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.targets[1].targets[0]"),
+			}))))
+		})
+
+		It("should fail if multiple of target, targets, and targetListReference are specified", func() {
+			imp := core.InstallationImports{
+				Targets: []core.TargetImport{
+					{
+						Name:   "foo",
+						Target: "foobar",
+						Targets: []string{
+							"bar",
+						},
+					},
+					{
+						Name:                "bar",
+						Target:              "foobar",
+						TargetListReference: "foobaz",
+					},
+					{
+						Name:                "baz",
+						Targets:             []string{},
+						TargetListReference: "foobaz",
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(HaveLen(3))
+			for _, elem := range allErrs {
+				Expect(elem).To(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":   Equal(field.ErrorTypeInvalid),
+					"Detail": Equal("only one of target, targets, and targetListRef may be specified"),
+				})))
+			}
 		})
 
 		It("should fail if secret imports contain empty values", func() {

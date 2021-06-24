@@ -144,24 +144,51 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 }
 
 // ValidateInstallationTargetImports validates the target imports of an Installation
-func ValidateInstallationTargetImports(imports []core.TargetImportExport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	importNames := map[string]bool{}
 	for idx, imp := range imports {
-		if imp.Target == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("target"), "target must not be empty"))
-		}
+		fldPathIdx := fldPath.Index(idx)
 		if imp.Name == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("name"), "name must not be empty"))
+			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
+		}
+		impFields := specifiedTargetImportConfigFields(imp)
+		if len(impFields) == 0 {
+			allErrs = append(allErrs, field.Required(fldPathIdx.Child("target|targets|targetListRef"), "either target, targets, or targetListRef must be specified"))
+		}
+		if len(impFields) > 1 {
+			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("target|targets|targetListRef"), imp, "only one of target, targets, and targetListRef may be specified"))
+		}
+		if len(imp.Targets) > 0 {
+			for idx2, tg := range imp.Targets {
+				if len(tg) == 0 {
+					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targets").Index(idx2), "target must not be empty"))
+				}
+			}
 		}
 		if importNames[imp.Name] {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
+			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
 		}
 		importNames[imp.Name] = true
 	}
 
 	return allErrs
+}
+
+// specifiedTargetImportConfigFields is a helper function that returns which config fields for a target import are set
+func specifiedTargetImportConfigFields(imp core.TargetImport) map[string]bool {
+	res := map[string]bool{}
+	if len(imp.Target) != 0 {
+		res["target"] = true
+	}
+	if imp.Targets != nil {
+		res["targets"] = true
+	}
+	if len(imp.TargetListReference) != 0 {
+		res["targetListRef"] = true
+	}
+	return res
 }
 
 // ValidateInstallationExports validates the exports of an Installation
@@ -197,7 +224,7 @@ func ValidateInstallationDataExports(exports []core.DataExport, fldPath *field.P
 }
 
 // ValidateInstallationTargetExports validates the target exports of an Installation
-func ValidateInstallationTargetExports(exports []core.TargetImportExport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTargetExports(exports []core.TargetExport, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	importNames := map[string]bool{}

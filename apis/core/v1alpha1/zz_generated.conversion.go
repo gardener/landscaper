@@ -661,13 +661,33 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*TargetImportExport)(nil), (*core.TargetImportExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TargetImportExport_To_core_TargetImportExport(a.(*TargetImportExport), b.(*core.TargetImportExport), scope)
+	if err := s.AddGeneratedConversionFunc((*TargetExport)(nil), (*core.TargetExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TargetExport_To_core_TargetExport(a.(*TargetExport), b.(*core.TargetExport), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*core.TargetImportExport)(nil), (*TargetImportExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_core_TargetImportExport_To_v1alpha1_TargetImportExport(a.(*core.TargetImportExport), b.(*TargetImportExport), scope)
+	if err := s.AddGeneratedConversionFunc((*core.TargetExport)(nil), (*TargetExport)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_TargetExport_To_v1alpha1_TargetExport(a.(*core.TargetExport), b.(*TargetExport), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*TargetImport)(nil), (*core.TargetImport)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TargetImport_To_core_TargetImport(a.(*TargetImport), b.(*core.TargetImport), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.TargetImport)(nil), (*TargetImport)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_TargetImport_To_v1alpha1_TargetImport(a.(*core.TargetImport), b.(*TargetImport), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*TargetImportStatus)(nil), (*core.TargetImportStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TargetImportStatus_To_core_TargetImportStatus(a.(*TargetImportStatus), b.(*core.TargetImportStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.TargetImportStatus)(nil), (*TargetImportStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_TargetImportStatus_To_v1alpha1_TargetImportStatus(a.(*core.TargetImportStatus), b.(*TargetImportStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -1880,6 +1900,7 @@ func autoConvert_v1alpha1_ImportStatus_To_core_ImportStatus(in *ImportStatus, ou
 	out.Name = in.Name
 	out.Type = core.ImportStatusType(in.Type)
 	out.Target = in.Target
+	out.Targets = *(*[]core.TargetImportStatus)(unsafe.Pointer(&in.Targets))
 	out.DataRef = in.DataRef
 	out.SecretRef = in.SecretRef
 	out.ConfigMapRef = in.ConfigMapRef
@@ -1897,6 +1918,7 @@ func autoConvert_core_ImportStatus_To_v1alpha1_ImportStatus(in *core.ImportStatu
 	out.Name = in.Name
 	out.Type = ImportStatusType(in.Type)
 	out.Target = in.Target
+	out.Targets = *(*[]TargetImportStatus)(unsafe.Pointer(&in.Targets))
 	out.DataRef = in.DataRef
 	out.SecretRef = in.SecretRef
 	out.ConfigMapRef = in.ConfigMapRef
@@ -1968,7 +1990,7 @@ func Convert_core_Installation_To_v1alpha1_Installation(in *core.Installation, o
 
 func autoConvert_v1alpha1_InstallationExports_To_core_InstallationExports(in *InstallationExports, out *core.InstallationExports, s conversion.Scope) error {
 	out.Data = *(*[]core.DataExport)(unsafe.Pointer(&in.Data))
-	out.Targets = *(*[]core.TargetImportExport)(unsafe.Pointer(&in.Targets))
+	out.Targets = *(*[]core.TargetExport)(unsafe.Pointer(&in.Targets))
 	return nil
 }
 
@@ -1979,7 +2001,7 @@ func Convert_v1alpha1_InstallationExports_To_core_InstallationExports(in *Instal
 
 func autoConvert_core_InstallationExports_To_v1alpha1_InstallationExports(in *core.InstallationExports, out *InstallationExports, s conversion.Scope) error {
 	out.Data = *(*[]DataExport)(unsafe.Pointer(&in.Data))
-	out.Targets = *(*[]TargetImportExport)(unsafe.Pointer(&in.Targets))
+	out.Targets = *(*[]TargetExport)(unsafe.Pointer(&in.Targets))
 	return nil
 }
 
@@ -1990,7 +2012,7 @@ func Convert_core_InstallationExports_To_v1alpha1_InstallationExports(in *core.I
 
 func autoConvert_v1alpha1_InstallationImports_To_core_InstallationImports(in *InstallationImports, out *core.InstallationImports, s conversion.Scope) error {
 	out.Data = *(*[]core.DataImport)(unsafe.Pointer(&in.Data))
-	out.Targets = *(*[]core.TargetImportExport)(unsafe.Pointer(&in.Targets))
+	out.Targets = *(*[]core.TargetImport)(unsafe.Pointer(&in.Targets))
 	return nil
 }
 
@@ -2001,7 +2023,7 @@ func Convert_v1alpha1_InstallationImports_To_core_InstallationImports(in *Instal
 
 func autoConvert_core_InstallationImports_To_v1alpha1_InstallationImports(in *core.InstallationImports, out *InstallationImports, s conversion.Scope) error {
 	out.Data = *(*[]DataImport)(unsafe.Pointer(&in.Data))
-	out.Targets = *(*[]TargetImportExport)(unsafe.Pointer(&in.Targets))
+	out.Targets = *(*[]TargetImport)(unsafe.Pointer(&in.Targets))
 	return nil
 }
 
@@ -2482,26 +2504,76 @@ func Convert_core_Target_To_v1alpha1_Target(in *core.Target, out *Target, s conv
 	return autoConvert_core_Target_To_v1alpha1_Target(in, out, s)
 }
 
-func autoConvert_v1alpha1_TargetImportExport_To_core_TargetImportExport(in *TargetImportExport, out *core.TargetImportExport, s conversion.Scope) error {
+func autoConvert_v1alpha1_TargetExport_To_core_TargetExport(in *TargetExport, out *core.TargetExport, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Target = in.Target
 	return nil
 }
 
-// Convert_v1alpha1_TargetImportExport_To_core_TargetImportExport is an autogenerated conversion function.
-func Convert_v1alpha1_TargetImportExport_To_core_TargetImportExport(in *TargetImportExport, out *core.TargetImportExport, s conversion.Scope) error {
-	return autoConvert_v1alpha1_TargetImportExport_To_core_TargetImportExport(in, out, s)
+// Convert_v1alpha1_TargetExport_To_core_TargetExport is an autogenerated conversion function.
+func Convert_v1alpha1_TargetExport_To_core_TargetExport(in *TargetExport, out *core.TargetExport, s conversion.Scope) error {
+	return autoConvert_v1alpha1_TargetExport_To_core_TargetExport(in, out, s)
 }
 
-func autoConvert_core_TargetImportExport_To_v1alpha1_TargetImportExport(in *core.TargetImportExport, out *TargetImportExport, s conversion.Scope) error {
+func autoConvert_core_TargetExport_To_v1alpha1_TargetExport(in *core.TargetExport, out *TargetExport, s conversion.Scope) error {
 	out.Name = in.Name
 	out.Target = in.Target
 	return nil
 }
 
-// Convert_core_TargetImportExport_To_v1alpha1_TargetImportExport is an autogenerated conversion function.
-func Convert_core_TargetImportExport_To_v1alpha1_TargetImportExport(in *core.TargetImportExport, out *TargetImportExport, s conversion.Scope) error {
-	return autoConvert_core_TargetImportExport_To_v1alpha1_TargetImportExport(in, out, s)
+// Convert_core_TargetExport_To_v1alpha1_TargetExport is an autogenerated conversion function.
+func Convert_core_TargetExport_To_v1alpha1_TargetExport(in *core.TargetExport, out *TargetExport, s conversion.Scope) error {
+	return autoConvert_core_TargetExport_To_v1alpha1_TargetExport(in, out, s)
+}
+
+func autoConvert_v1alpha1_TargetImport_To_core_TargetImport(in *TargetImport, out *core.TargetImport, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Target = in.Target
+	out.Targets = *(*[]string)(unsafe.Pointer(&in.Targets))
+	out.TargetListReference = in.TargetListReference
+	return nil
+}
+
+// Convert_v1alpha1_TargetImport_To_core_TargetImport is an autogenerated conversion function.
+func Convert_v1alpha1_TargetImport_To_core_TargetImport(in *TargetImport, out *core.TargetImport, s conversion.Scope) error {
+	return autoConvert_v1alpha1_TargetImport_To_core_TargetImport(in, out, s)
+}
+
+func autoConvert_core_TargetImport_To_v1alpha1_TargetImport(in *core.TargetImport, out *TargetImport, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Target = in.Target
+	out.Targets = *(*[]string)(unsafe.Pointer(&in.Targets))
+	out.TargetListReference = in.TargetListReference
+	return nil
+}
+
+// Convert_core_TargetImport_To_v1alpha1_TargetImport is an autogenerated conversion function.
+func Convert_core_TargetImport_To_v1alpha1_TargetImport(in *core.TargetImport, out *TargetImport, s conversion.Scope) error {
+	return autoConvert_core_TargetImport_To_v1alpha1_TargetImport(in, out, s)
+}
+
+func autoConvert_v1alpha1_TargetImportStatus_To_core_TargetImportStatus(in *TargetImportStatus, out *core.TargetImportStatus, s conversion.Scope) error {
+	out.Target = in.Target
+	out.SourceRef = (*core.ObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.ConfigGeneration = in.ConfigGeneration
+	return nil
+}
+
+// Convert_v1alpha1_TargetImportStatus_To_core_TargetImportStatus is an autogenerated conversion function.
+func Convert_v1alpha1_TargetImportStatus_To_core_TargetImportStatus(in *TargetImportStatus, out *core.TargetImportStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha1_TargetImportStatus_To_core_TargetImportStatus(in, out, s)
+}
+
+func autoConvert_core_TargetImportStatus_To_v1alpha1_TargetImportStatus(in *core.TargetImportStatus, out *TargetImportStatus, s conversion.Scope) error {
+	out.Target = in.Target
+	out.SourceRef = (*ObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.ConfigGeneration = in.ConfigGeneration
+	return nil
+}
+
+// Convert_core_TargetImportStatus_To_v1alpha1_TargetImportStatus is an autogenerated conversion function.
+func Convert_core_TargetImportStatus_To_v1alpha1_TargetImportStatus(in *core.TargetImportStatus, out *TargetImportStatus, s conversion.Scope) error {
+	return autoConvert_core_TargetImportStatus_To_v1alpha1_TargetImportStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_TargetList_To_core_TargetList(in *TargetList, out *core.TargetList, s conversion.Scope) error {

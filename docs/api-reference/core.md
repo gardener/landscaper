@@ -3052,7 +3052,7 @@ ImportStatusType
 </td>
 <td>
 <p>Type defines the kind of import.
-Can be either DataObject or Target</p>
+Can be either DataObject, Target, or TargetList</p>
 </td>
 </tr>
 <tr>
@@ -3065,6 +3065,20 @@ string
 <td>
 <em>(Optional)</em>
 <p>Target is the name of the in-cluster target object.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetList</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportStatus">
+[]TargetImportStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TargetList is a list of import statuses for in-cluster target objects.</p>
 </td>
 </tr>
 <tr>
@@ -3113,7 +3127,8 @@ ObjectReference
 </em>
 </td>
 <td>
-<p>SourceRef is the reference to the installation where the value is imported</p>
+<em>(Optional)</em>
+<p>SourceRef is the reference to the installation from where the value is imported</p>
 </td>
 </tr>
 <tr>
@@ -3124,6 +3139,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ConfigGeneration is the generation of the imported value.</p>
 </td>
 </tr>
@@ -3216,8 +3232,8 @@ AnyJSON
 <td>
 <code>targets</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportExport">
-[]TargetImportExport
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetExport">
+[]TargetExport
 </a>
 </em>
 </td>
@@ -3265,8 +3281,8 @@ AnyJSON
 <td>
 <code>targets</code></br>
 <em>
-<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportExport">
-[]TargetImportExport
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetImport">
+[]TargetImport
 </a>
 </em>
 </td>
@@ -3692,6 +3708,7 @@ ObjectReference
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">SecretReference</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.TargetImportStatus">TargetImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TargetSelector">TargetSelector</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.TypedObjectReference">TypedObjectReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.VersionedObjectReference">VersionedObjectReference</a>)
@@ -4161,15 +4178,14 @@ To use only http/1.1, set to [&ldquo;http/1.1&rdquo;].</p>
 </tr>
 </tbody>
 </table>
-<h3 id="landscaper.gardener.cloud/v1alpha1.TargetImportExport">TargetImportExport
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetExport">TargetExport
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationExports">InstallationExports</a>, 
-<a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">InstallationImports</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationExports">InstallationExports</a>)
 </p>
 <p>
-<p>TargetImportExport is a target import/export.</p>
+<p>TargetExport is a single target export.</p>
 </p>
 <table>
 <thead>
@@ -4198,7 +4214,131 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Target is the name of the in-cluster target object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetImport">TargetImport
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">InstallationImports</a>)
+</p>
+<p>
+<p>TargetImport is either a single target or a target list import.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name the internal name of the imported/exported target.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Target is the name of the in-cluster target object.
+Exactly one of Target, Targets, and TargetListReference has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targets</code></br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Targets is a list of in-cluster target objects.
+Exactly one of Target, Targets, and TargetListReference has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>targetListRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation.
+Exactly one of Target, Targets, and TargetListReference has to be specified.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.TargetImportStatus">TargetImportStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
+</p>
+<p>
+<p>TargetImportStatus</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>target</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Target is the name of the in-cluster target object.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sourceRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
+ObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>SourceRef is the reference to the installation from where the value is imported</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configGeneration</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ConfigGeneration is the generation of the imported value.</p>
 </td>
 </tr>
 </tbody>

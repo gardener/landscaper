@@ -18,11 +18,20 @@ var _ = Describe("Blueprint", func() {
 
 	Context("ImportDefinitions", func() {
 		It("should pass if a ImportDefinition is valid", func() {
-			importDefinition := core.ImportDefinition{}
-			importDefinition.Name = "my-import"
-			importDefinition.TargetType = "test"
+			impDef1 := core.ImportDefinition{}
+			impDef1.Name = "my-import1"
+			impDef1.Type = core.ImportTypeTarget
+			impDef1.TargetType = "test"
+			impDef2 := core.ImportDefinition{}
+			impDef2.Name = "my-import2"
+			impDef2.Type = core.ImportTypeTargetList
+			impDef2.TargetType = "test"
+			impDef3 := core.ImportDefinition{}
+			impDef3.Name = "my-import3"
+			impDef3.Type = core.ImportTypeData
+			impDef3.Schema = &core.JSONSchemaDefinition{}
 
-			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath(""), []core.ImportDefinition{importDefinition})
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath(""), []core.ImportDefinition{impDef1, impDef2, impDef3})
 			Expect(allErrs).To(HaveLen(0))
 		})
 
@@ -68,9 +77,12 @@ var _ = Describe("Blueprint", func() {
 			impDef2 := core.ImportDefinition{}
 			impDef2.Name = "myimport2"
 			impDef2.Type = core.ImportTypeTarget
+			impDef3 := core.ImportDefinition{}
+			impDef3.Name = "myimport3"
+			impDef3.Type = core.ImportTypeTargetList
 
-			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2})
-			Expect(allErrs).To(HaveLen(2))
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2, impDef3})
+			Expect(allErrs).To(HaveLen(3))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeRequired),
 				"Field":  Equal("x[0][myimport1]"),
@@ -79,6 +91,11 @@ var _ = Describe("Blueprint", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeRequired),
 				"Field":  Equal("x[1][myimport2]"),
+				"Detail": ContainSubstring("TargetType"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("x[2][myimport3]"),
 				"Detail": ContainSubstring("TargetType"),
 			}))))
 		})
@@ -100,9 +117,17 @@ var _ = Describe("Blueprint", func() {
 				},
 				Type: core.ImportTypeTarget,
 			}
+			impDef3 := core.ImportDefinition{
+				FieldValueDefinition: core.FieldValueDefinition{
+					Name:       "myimport3",
+					Schema:     &core.JSONSchemaDefinition{},
+					TargetType: "test",
+				},
+				Type: core.ImportTypeTargetList,
+			}
 
-			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2})
-			Expect(allErrs).To(HaveLen(2))
+			allErrs := validation.ValidateBlueprintImportDefinitions(field.NewPath("x"), []core.ImportDefinition{impDef1, impDef2, impDef3})
+			Expect(allErrs).To(HaveLen(3))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeInvalid),
 				"Field":  Equal("x[0][myimport1]"),
@@ -111,6 +136,11 @@ var _ = Describe("Blueprint", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeInvalid),
 				"Field":  Equal("x[1][myimport2]"),
+				"Detail": ContainSubstring("Schema"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeInvalid),
+				"Field":  Equal("x[2][myimport3]"),
 				"Detail": ContainSubstring("Schema"),
 			}))))
 		})
@@ -137,11 +167,16 @@ var _ = Describe("Blueprint", func() {
 
 	Context("ExportDefinitions", func() {
 		It("should pass if a ExportDefinitions is valid", func() {
-			exportDefinition := core.ExportDefinition{}
-			exportDefinition.Name = "my-import"
-			exportDefinition.TargetType = "test"
+			expDef1 := core.ExportDefinition{}
+			expDef1.Name = "my-export1"
+			expDef1.Type = core.ExportTypeTarget
+			expDef1.TargetType = "test"
+			expDef2 := core.ExportDefinition{}
+			expDef2.Name = "my-export3"
+			expDef2.Type = core.ExportTypeData
+			expDef2.Schema = &core.JSONSchemaDefinition{}
 
-			allErrs := validation.ValidateBlueprintExportDefinitions(field.NewPath(""), []core.ExportDefinition{exportDefinition})
+			allErrs := validation.ValidateBlueprintExportDefinitions(field.NewPath(""), []core.ExportDefinition{expDef1, expDef2})
 			Expect(allErrs).To(HaveLen(0))
 		})
 
@@ -330,7 +365,7 @@ var _ = Describe("Blueprint", func() {
 				tmpl := &core.InstallationTemplate{}
 				tmpl.Name = "my-inst"
 				tmpl.Blueprint.Ref = "myref"
-				tmpl.Imports.Targets = []core.TargetImportExport{
+				tmpl.Imports.Targets = []core.TargetImport{
 					{
 						Name:   "myimport",
 						Target: "myimportref",
@@ -361,7 +396,7 @@ var _ = Describe("Blueprint", func() {
 			It("should fail if a target import of a subinstallation is not satisfied", func() {
 				tmpl := &core.InstallationTemplate{}
 				tmpl.Blueprint.Ref = "myref"
-				tmpl.Imports.Targets = []core.TargetImportExport{
+				tmpl.Imports.Targets = []core.TargetImport{
 					{
 						Name:   "myimport",
 						Target: "myimportref",
@@ -431,7 +466,7 @@ var _ = Describe("Blueprint", func() {
 				}
 				tmpl1 := &core.InstallationTemplate{}
 				tmpl1.Blueprint.Ref = "myref"
-				tmpl1.Exports.Targets = []core.TargetImportExport{
+				tmpl1.Exports.Targets = []core.TargetExport{
 					{
 						Name:   "myimport",
 						Target: "myimportref",
@@ -444,7 +479,7 @@ var _ = Describe("Blueprint", func() {
 
 				tmpl2 := &core.InstallationTemplate{}
 				tmpl2.Blueprint.Ref = "myref"
-				tmpl2.Exports.Targets = []core.TargetImportExport{
+				tmpl2.Exports.Targets = []core.TargetExport{
 					{
 						Name:   "mysecondexport",
 						Target: "mysecondexportref",

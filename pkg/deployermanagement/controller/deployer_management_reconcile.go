@@ -69,11 +69,11 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		inst.Spec.ImportDataMappings = registration.Spec.InstallationTemplate.ImportDataMappings
 
 		inst.Spec.Imports.Targets = append(inst.Spec.Imports.Targets,
-			lsv1alpha1.TargetImportExport{
+			lsv1alpha1.TargetImport{
 				Name:   "cluster",
 				Target: "#" + env.Name,
 			},
-			lsv1alpha1.TargetImportExport{
+			lsv1alpha1.TargetImport{
 				Name:   "landscaperCluster",
 				Target: "#" + FQName(registration, env),
 			},
