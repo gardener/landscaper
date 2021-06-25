@@ -1794,6 +1794,7 @@ func autoConvert_v1alpha1_ExportDefinition_To_core_ExportDefinition(in *ExportDe
 	if err := Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
+	out.Type = core.ExportType(in.Type)
 	return nil
 }
 
@@ -1806,6 +1807,7 @@ func autoConvert_core_ExportDefinition_To_v1alpha1_ExportDefinition(in *core.Exp
 	if err := Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
+	out.Type = ExportType(in.Type)
 	return nil
 }
 
@@ -1842,6 +1844,7 @@ func autoConvert_v1alpha1_ImportDefinition_To_core_ImportDefinition(in *ImportDe
 	if err := Convert_v1alpha1_FieldValueDefinition_To_core_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
+	out.Type = core.ImportType(in.Type)
 	out.Required = (*bool)(unsafe.Pointer(in.Required))
 	if err := Convert_v1alpha1_Default_To_core_Default(&in.Default, &out.Default, s); err != nil {
 		return err
@@ -1859,6 +1862,7 @@ func autoConvert_core_ImportDefinition_To_v1alpha1_ImportDefinition(in *core.Imp
 	if err := Convert_core_FieldValueDefinition_To_v1alpha1_FieldValueDefinition(&in.FieldValueDefinition, &out.FieldValueDefinition, s); err != nil {
 		return err
 	}
+	out.Type = ImportType(in.Type)
 	out.Required = (*bool)(unsafe.Pointer(in.Required))
 	if err := Convert_core_Default_To_v1alpha1_Default(&in.Default, &out.Default, s); err != nil {
 		return err

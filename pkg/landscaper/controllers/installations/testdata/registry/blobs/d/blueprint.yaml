@@ -11,13 +11,16 @@ annotations:
 
 imports:
 - name: d.a
+  type: data
   schema:
     type: string
 - name: d.b
+  type: data
   schema:
     type: string
 
 exports:
 - name: d.z
+  type: data
   schema:
     type: string

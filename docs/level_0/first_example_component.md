@@ -68,6 +68,7 @@ kind: Blueprint
 
 imports:                                                   # (1)
 - name: target-cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster 
 
 deployExecutions:                                          # (2)

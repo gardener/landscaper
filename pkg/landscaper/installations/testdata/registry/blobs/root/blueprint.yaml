@@ -11,14 +11,17 @@ annotations:
 
 imports:
 - name: root.a
+  type: data
   schema:
     type: string
 
 exports:
 - name: root.y
+  type: data
   schema:
     type: string
 - name: root.z
+  type: data
   schema:
     type: string
 

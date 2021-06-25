@@ -9,6 +9,7 @@ jsonSchema: "https://json-schema.org/draft/2019-09/schema" # required
 
 imports:
 - name: providers
+  type: data
   required: false
   schema:
     type: array
@@ -16,23 +17,27 @@ imports:
       $ref: cd://componentReferences/schemas/resources/schemas#definitions/provider # cd://componentReferences/github.com/gardener/external-dns-management-schemas/resources/schemas#definitions/provider
 
 - name: dnsClass
+  type: data
   required: false
   schema:
     type: string
 
 - name: identifier
+  type: data
   required: false
   example: ... # optional
   schema:
     description: ""
     type: string
 - name: namespace
+  type: data
   default:
     value: kube-system
   schema:
     type: string
 
 - name: cluster
+  type: target
   targetType: landscaper.cloud/kubernetes-cluster # schema definition
   subTypes:
     - gardener
@@ -40,10 +45,12 @@ imports:
 
 exports:
 - name: dnsClass
+  type: data
   schema:
     type: string
 
 - name: myTarget
+  type: target
   targetType: landscaper.cloud/kubernetes-cluster
 
 # List of deploy item generators

@@ -11,11 +11,13 @@ annotations:
 
 imports:
 - name: imp-a
+  type: data
   schema:
     type: string
 
 exports:
 - name: exp-a
+  type: data
   schema:
     type: string
 

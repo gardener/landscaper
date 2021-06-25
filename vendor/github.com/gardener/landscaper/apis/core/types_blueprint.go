@@ -11,6 +11,24 @@ import (
 // BlueprintResourceType is the name of the blueprint resource defined in component descriptors.
 const BlueprintResourceType = "blueprint"
 
+// ImportType is a string alias
+type ImportType string
+
+// ExportType is a string alias
+type ExportType string
+
+// ImportTypeData is the import type for data imports
+const ImportTypeData = ImportType("data")
+
+// ImportTypeTarget is the import type for target imports
+const ImportTypeTarget = ImportType("target")
+
+// ExportTypeData is the export type for data exports
+const ExportTypeData = ExportType(ImportTypeData)
+
+// ExportTypeTarget is the export type for target exports
+const ExportTypeTarget = ExportType(ImportTypeTarget)
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -67,6 +85,11 @@ type ImportDefinitionList []ImportDefinition
 type ImportDefinition struct {
 	FieldValueDefinition `json:",inline"`
 
+	// Type specifies which kind of object is being imported.
+	// This field should be set and will likely be mandatory in future.
+	// +optional
+	Type ImportType `json:"type,omitempty"`
+
 	// Required specifies whether the import is required for the component to run.
 	// Defaults to true.
 	// +optional
@@ -89,6 +112,11 @@ type ExportDefinitionList []ExportDefinition
 // ExportDefinition defines a exported value
 type ExportDefinition struct {
 	FieldValueDefinition `json:",inline"`
+
+	// Type specifies which kind of object is being exported.
+	// This field should be set and will likely be mandatory in future.
+	// +optional
+	Type ExportType `json:"type,omitempty"`
 }
 
 // FieldValueDefinition defines a im- or exported field.

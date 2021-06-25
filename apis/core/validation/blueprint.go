@@ -5,6 +5,10 @@
 package validation
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 
@@ -20,6 +24,7 @@ var landscaperScheme = runtime.NewScheme()
 
 func init() {
 	coreinstall.Install(landscaperScheme)
+	relevantConfigFields = computeRelevantConfigFields()
 }
 
 // ValidateBlueprint validates a Blueprint
@@ -62,6 +67,26 @@ func validateBlueprintImportDefinitions(fldPath *field.Path, imports []core.Impo
 			importNames.Insert(importDef.Name)
 		}
 
+		if len(importDef.Type) != 0 {
+			// type is specified, use new validation
+			expectedConfigs, ok := importTypesWithExpectedConfig[string(importDef.Type)]
+			if ok {
+				// valid type, check that the required config is given
+				allErrs = append(allErrs, validateMutuallyExclusiveConfig(defPath, importDef, expectedConfigs, string(importDef.Type))...)
+			} else {
+				// specified type is not among the valid types
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(importDef.Type), keys(importTypesWithExpectedConfig)))
+			}
+		} else {
+			// type is not specified, fallback to validation based on specified fields
+			if importDef.Schema == nil && len(importDef.TargetType) == 0 {
+				allErrs = append(allErrs, field.Required(defPath, "either schema or targetType must not be empty"))
+			}
+			if importDef.Schema != nil && len(importDef.TargetType) != 0 {
+				allErrs = append(allErrs, field.Invalid(defPath, importDef, "either schema or targetType must be specified, not both"))
+			}
+		}
+
 		required := true
 		if importDef.Required != nil {
 			required = *importDef.Required
@@ -96,8 +121,72 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 			allErrs = append(allErrs, field.Duplicate(defPath, "duplicated export name"))
 		}
 		exportNames.Insert(exportDef.Name)
+
+		if len(exportDef.Type) != 0 {
+			// type is specified, use new validation
+			expectedConfigs, ok := exportTypesWithExpectedConfig[string(exportDef.Type)]
+			if ok {
+				// valid type, check that the required config is given
+				allErrs = append(allErrs, validateMutuallyExclusiveConfig(defPath, exportDef, expectedConfigs, string(exportDef.Type))...)
+			} else {
+				// specified type is not among the valid types
+				allErrs = append(allErrs, field.NotSupported(defPath.Child("type"), string(exportDef.Type), keys(importTypesWithExpectedConfig)))
+			}
+		} else {
+			// type is not specified, fallback to validation based on specified fields
+			if exportDef.Schema == nil && len(exportDef.TargetType) == 0 {
+				allErrs = append(allErrs, field.Required(defPath, "either schema or targetType must not be empty"))
+			}
+			if exportDef.Schema != nil && len(exportDef.TargetType) != 0 {
+				allErrs = append(allErrs, field.Invalid(defPath, exportDef, "either schema or targetType must be specified, not both"))
+			}
+		}
+
 	}
 
+	return allErrs
+}
+
+// validateMutuallyExclusiveConfig validates that the expected configs for the import/export definition are set and that no other config is set
+// In this context, a 'config is set' if it
+//   - can be nil but is not
+//   - is not the zero value if it cannot be nil
+func validateMutuallyExclusiveConfig(fldPath *field.Path, def interface{}, expectedConfigs []string, defType string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	val := reflect.ValueOf(def)
+	for key := range relevantConfigFields {
+		var f reflect.Value
+		if _, ok := isFieldValueDefinition[key]; ok {
+			f = val.FieldByName("FieldValueDefinition")
+		} else {
+			f = val
+		}
+		f = f.FieldByName(key)
+		if !f.IsValid() {
+			// definition doesn't have this field
+			// this can happen because import and export definitions support different fields
+			continue
+		}
+		kind := f.Kind()
+		expected := false
+		for _, exp := range expectedConfigs {
+			if key == exp {
+				expected = true
+				break
+			}
+		}
+		if expected {
+			if ((kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Interface) && f.IsNil()) || f.IsZero() {
+				// field should be set but is empty
+				allErrs = append(allErrs, field.Required(fldPath, fmt.Sprintf("%s must not be empty for type %s", key, defType)))
+			}
+		} else {
+			if ((kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Interface) && !f.IsNil()) || !f.IsZero() {
+				// field should not be set but it is
+				allErrs = append(allErrs, field.Invalid(fldPath, def, fmt.Sprintf("unexpected config '%s', only [%s] should be set", key, strings.Join(expectedConfigs, ", "))))
+			}
+		}
+	}
 	return allErrs
 }
 
@@ -106,9 +195,6 @@ func ValidateFieldValueDefinition(fldPath *field.Path, def core.FieldValueDefini
 	allErrs := field.ErrorList{}
 	if len(def.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "name must not be empty"))
-	}
-	if def.Schema == nil && len(def.TargetType) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath, "schema or targetType must not be empty"))
 	}
 
 	if def.Schema != nil {

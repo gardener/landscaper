@@ -32,9 +32,11 @@ localTypes:
     
 imports:
 - name: my-import
+  type: data
   schema:
     $ref: "local://myType"
 - name: my-other-import
+  type: data
   schema:
     type: object
     properties:
@@ -77,6 +79,7 @@ kind: Blueprint
     
 imports:
 - name: my-import
+  type: data
   schema:
     $ref: "blueprint://definitions/my-type.json"
 ```

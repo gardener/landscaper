@@ -59,11 +59,13 @@ imports:
 # as jsonschema.
 - name: my-import-key
   required: true # required, defaults to true
+  type: data # this is a data import
   schema: # expects a jsonschema
     type: string
 # Import a target by specifying the targetType
 - name: my-target-import-key
   required: true # required, defaults to true
+  type: target # this is a target import
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # exports defines all values that are produced by the blueprint
@@ -74,10 +76,12 @@ exports:
 # Export a data object by specifying the expected structure of data
 # as jsonschema.
 - name: my-export-key
+  type: data # this is a data export
   schema: # expects a jsonschema
     type: string
 # Export a target by specifying the targetType
 - name: my-target-export-key
+  type: target # this is a target export
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 # deployExecutions are a templating mechanism to 
@@ -137,12 +141,15 @@ The interface of a blueprint can be described using imports and exports.<br>
 The import definitions describe the data that needed by the blueprint.<br>
 The export definitions describe the data that is produced by the blueprint.<br>
 
-Imports and Exports always consists of a name (_MUST_ be unique for the blueprint) and can be generally described as _Target_-Im/Exports or _Data_-Im/Exports.
+Imports and Exports always consists of a name (_MUST_ be unique for the blueprint) and can be generally described as _Target_-Im/Exports or _Data_-Im/Exports. The `type` field specifies which one it is.
+
+> The `type` field is currently optional to ensure backward compatibility. This is likely to change in the future and it is strongly recommended to specify a type for each im-/export.
 
 ```yaml
 imports:
 - name: <string> # some unique name
   required: <boolean> # defaults to true
+  type: <data|target> # type of the imported object
 ```
 
 :warning: in the following data import and target import is used as synonym for import and export. The specification applies to both.
@@ -159,11 +166,14 @@ It is recommended to provide a description and an example for the structure, so 
 ```yaml
 imports:
 - name: my-import
+  type: data
   schema:
     <jsonschema>
 ```
 
 For detailed information about the jsonschema and landscaper specifics see [JSONSchema Docs](./JSONSchema.md)
+
+Data im-/exports have the type `data`.
 
 #### Targets
 
@@ -176,8 +186,11 @@ The configuration structure of targets is defined by their type (currently the t
 ```yaml
 imports:
 - name: my-import
+  type: target
   targetType: <string> # name of the target type
 ```
+
+Target im-/exports have the type `target`.
 
 ### DeployExecutions
 

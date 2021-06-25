@@ -7,9 +7,11 @@ kind: Blueprint
 
 imports:
 - name: cluster
+  type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 
 - name: namespace
+  type: data
   schema:
     type: string
 
@@ -50,5 +52,6 @@ exportExecutions:
 
 exports:
 - name: ingressClass
+  type: data
   schema:
     type: string

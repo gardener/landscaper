@@ -11,4 +11,5 @@ annotations:
 
 exports:
 - name: e.z
+  type: target
   targetType: landscaper.gardener.cloud/mock

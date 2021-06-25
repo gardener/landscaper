@@ -9,23 +9,27 @@ jsonSchemaVersion: ""
 
 imports:
 - name: dnsControllerClass | common.dnsControllerClass
+  type: data
   schema:
     type: string
   default:
     value: ""
 #      ref: common.dnsControllerClass # tbd
 - name: abc
+  type: data
   schema:
     type: number
 
 exports:
 - name: a.b
+  type: data
   schema:
     type: object
     properties:
       mykey:
         type: string
-- key: ijk
+- name: ijk
+  type: data
   schema:
     type: number
 
