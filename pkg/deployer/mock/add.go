@@ -7,6 +7,7 @@ package mock
 import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -41,7 +42,7 @@ func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, co
 
 // NewController creates a new simple controller.
 // This method should only be used for testing.
-func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, config mockv1alpha1.Configuration) (reconcile.Reconciler, error) {
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder, config mockv1alpha1.Configuration) (reconcile.Reconciler, error) {
 	d, err := NewDeployer(
 		log,
 		kubeClient,
@@ -53,7 +54,7 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 	}
 
 	return deployerlib.NewController(log,
-		kubeClient, scheme,
+		kubeClient, scheme, eventRecorder,
 		kubeClient, scheme,
 		deployerlib.DeployerArgs{
 			Type:            Type,

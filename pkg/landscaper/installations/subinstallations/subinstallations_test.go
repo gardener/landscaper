@@ -17,6 +17,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -52,7 +53,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(logr.Discard(), mockClient, api.LandscaperScheme).SetComponentsRegistry(fakeCompRepo)
+		op = lsoperation.NewOperation(logr.Discard(), mockClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
 		defaultTestConfig = &utils.TestInstallationConfig{
 			MockClient:                   mockClient,

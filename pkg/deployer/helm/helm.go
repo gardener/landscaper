@@ -25,7 +25,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
@@ -33,6 +32,7 @@ import (
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	helmv1alpha1validation "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/validation"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -85,12 +85,12 @@ func New(log logr.Logger,
 	config := &helmv1alpha1.ProviderConfiguration{}
 	helmdecoder := api.NewDecoder(HelmScheme)
 	if _, _, err := helmdecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	if err := helmv1alpha1validation.ValidateProviderConfiguration(config); err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
@@ -98,7 +98,7 @@ func New(log logr.Logger,
 	if item.Status.ProviderStatus != nil {
 		status = &helmv1alpha1.ProviderStatus{}
 		if _, _, err := helmdecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
-			return nil, lsv1alpha1helper.NewWrappedError(err,
+			return nil, lserrors.NewWrappedError(err,
 				currOp, "ParseProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
 	}
@@ -123,7 +123,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	restConfig, _, err := h.TargetClient(ctx)
 	if err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "GetTargetClient", err.Error())
 	}
 
@@ -131,12 +131,12 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 	// todo: do caching of charts
 	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.SharedCache)
 	if err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "BuildOCIClient", err.Error())
 	}
 	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, &h.ProviderConfiguration.Chart)
 	if err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "GetHelmChart", err.Error())
 	}
 
@@ -150,18 +150,18 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	values := make(map[string]interface{})
 	if err := yaml.Unmarshal(h.ProviderConfiguration.Values, &values); err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	files, err := engine.RenderWithClient(ch, values, restConfig)
 	if err != nil {
-		return nil, nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 

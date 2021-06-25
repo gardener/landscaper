@@ -11,10 +11,11 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 )
@@ -69,7 +70,7 @@ func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, tar
 
 	exports, err := helm.constructExportsFromValues(values)
 	if err != nil {
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError,
+		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
 			"ConstructExportFromValues", "", err.Error())
 		return err
 	}

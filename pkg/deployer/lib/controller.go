@@ -13,6 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,6 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 )
 
@@ -82,7 +84,13 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 	if err := args.Validate(); err != nil {
 		return err
 	}
-	con := NewController(log, lsMgr.GetClient(), lsMgr.GetScheme(), hostMgr.GetClient(), hostMgr.GetScheme(), args)
+	con := NewController(log,
+		lsMgr.GetClient(),
+		lsMgr.GetScheme(),
+		lsMgr.GetEventRecorderFor(args.Name),
+		hostMgr.GetClient(),
+		hostMgr.GetScheme(),
+		args)
 
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
@@ -99,16 +107,18 @@ type controller struct {
 	deployerType    lsv1alpha1.DeployItemType
 	targetSelectors []lsv1alpha1.TargetSelector
 
-	lsClient   client.Client
-	lsScheme   *runtime.Scheme
-	hostClient client.Client
-	hostScheme *runtime.Scheme
+	lsClient        client.Client
+	lsScheme        *runtime.Scheme
+	lsEventRecorder record.EventRecorder
+	hostClient      client.Client
+	hostScheme      *runtime.Scheme
 }
 
 // NewController creates a new generic deployitem controller.
 func NewController(log logr.Logger,
 	lsClient client.Client,
 	lsScheme *runtime.Scheme,
+	lsEventRecorder record.EventRecorder,
 	hostClient client.Client,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs) *controller {
@@ -124,6 +134,7 @@ func NewController(log logr.Logger,
 		targetSelectors: args.TargetSelectors,
 		lsClient:        lsClient,
 		lsScheme:        lsScheme,
+		lsEventRecorder: lsEventRecorder,
 		hostClient:      hostClient,
 		hostScheme:      hostScheme,
 	}
@@ -174,7 +185,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 	logger.Info("reconcile deploy item")
 
-	errHdl := HandleErrorFunc(logger, c.lsClient, deployItem)
+	errHdl := HandleErrorFunc(logger, c.lsClient, c.lsEventRecorder, deployItem)
 
 	switch lsv1alpha1.Operation(lsv1alpha1helper.GetOperation(deployItem.ObjectMeta)) {
 	case lsv1alpha1.AbortOperation:
@@ -205,7 +216,7 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.lsClient.Update(ctx, deployItem); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				"Reconcile", "AddFinalizer", err.Error())
 		}
 	}
@@ -220,7 +231,7 @@ func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployIt
 	if controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.lsClient.Update(ctx, deployItem); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				"Reconcile", "RemoveFinalizer", err.Error())
 		}
 	}

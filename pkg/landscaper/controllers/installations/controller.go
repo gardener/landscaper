@@ -12,11 +12,15 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -40,6 +44,7 @@ const (
 func NewController(log logr.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
+	eventRecorder record.EventRecorder,
 	overwriter componentoverwrites.Overwriter,
 	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 
@@ -57,7 +62,7 @@ func NewController(log logr.Logger,
 		log.V(3).Info("setup shared components registry  cache")
 	}
 
-	op := operation.NewOperation(log, kubeClient, scheme)
+	op := operation.NewOperation(log, kubeClient, scheme, eventRecorder)
 	ctrl.Operation = *op
 	return ctrl, nil
 }
@@ -71,7 +76,7 @@ func NewTestActuator(op operation.Operation, configuration *config.LandscaperCon
 	return a
 }
 
-// Controller is the controller that reconciles a installtion resource.
+// Controller is the controller that reconciles a installation resource.
 type Controller struct {
 	operation.Operation
 	LsConfig            *config.LandscaperConfiguration
@@ -93,7 +98,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
-	errHdl := HandleErrorFunc(logger, c.Client(), inst)
+	errHdl := HandleErrorFunc(logger, c.Client(), c.EventRecorder(), inst)
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -136,7 +141,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 	if err := c.SetupRegistries(ctx, op, inst.Spec.RegistryPullSecrets, inst); err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "SetupRegistries", err.Error())
 	}
 
@@ -149,21 +154,21 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint)
 	if err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "ResolveBlueprint", err.Error())
 	}
 
 	internalInstallation, err := installations.New(inst, intBlueprint)
 	if err != nil {
 		err = fmt.Errorf("unable to create internal representation of installation: %w", err)
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallation", err.Error())
 	}
 
 	instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, internalInstallation, c.LsConfig.RepositoryContext)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
 	return instOp, nil
@@ -187,7 +192,7 @@ func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) err
 	oldRef := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
 	overwritten, err := c.ComponentOverwriter.Replace(inst.Spec.ComponentDescriptor.Reference)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"HandleComponentReference", "OverwriteComponentReference", err.Error())
 	}
 	if overwritten {
@@ -207,14 +212,20 @@ func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) err
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, inst *lsv1alpha1.Installation) func(ctx context.Context, err error) error {
+func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, inst *lsv1alpha1.Installation) func(ctx context.Context, err error) error {
 	old := inst.DeepCopy()
 	return func(ctx context.Context, err error) error {
-		inst.Status.LastError = lsv1alpha1helper.TryUpdateError(inst.Status.LastError, err)
-		inst.Status.Phase = lsv1alpha1helper.GetPhaseForLastError(
+		inst.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
+		inst.Status.Phase = lserrors.GetPhaseForLastError(
 			inst.Status.Phase,
 			inst.Status.LastError,
 			5*time.Minute)
+
+		if inst.Status.LastError != nil {
+			lastErr := inst.Status.LastError
+			eventRecorder.Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+		}
+
 		if !reflect.DeepEqual(old.Status, inst.Status) {
 			if err2 := client.Status().Update(ctx, inst); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging

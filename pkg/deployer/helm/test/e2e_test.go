@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -60,6 +61,7 @@ var _ = Describe("Helm Deployer", func() {
 			logr.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
+			record.NewFakeRecorder(1024),
 			testenv.Client,
 			api.LandscaperScheme,
 			deployerlib.DeployerArgs{

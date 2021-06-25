@@ -8,6 +8,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,15 +24,17 @@ type Operation struct {
 	client            client.Client
 	directReader      client.Reader
 	scheme            *runtime.Scheme
+	eventRecorder     record.EventRecorder
 	componentRegistry ctf.ComponentResolver
 }
 
 // NewOperation creates a new internal installation Operation object.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme) *Operation {
+func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
 	return &Operation{
-		log:    log,
-		client: c,
-		scheme: scheme,
+		log:           log,
+		client:        c,
+		scheme:        scheme,
+		eventRecorder: recorder,
 	}
 }
 
@@ -67,6 +70,11 @@ func (o *Operation) DirectReader() client.Reader {
 // Scheme returns a kubernetes scheme
 func (o *Operation) Scheme() *runtime.Scheme {
 	return o.scheme
+}
+
+// EventRecorder returns an event recorder to create events.
+func (o *Operation) EventRecorder() record.EventRecorder {
+	return o.eventRecorder
 }
 
 // ComponentsRegistry returns a component blueprintsRegistry instance

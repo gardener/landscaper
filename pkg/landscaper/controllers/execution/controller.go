@@ -11,11 +11,15 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -25,18 +29,20 @@ import (
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
-func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme) (reconcile.Reconciler, error) {
+func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) (reconcile.Reconciler, error) {
 	return &controller{
-		log:    log,
-		client: kubeClient,
-		scheme: scheme,
+		log:           log,
+		client:        kubeClient,
+		scheme:        scheme,
+		eventRecorder: eventRecorder,
 	}, nil
 }
 
 type controller struct {
-	log    logr.Logger
-	client client.Client
-	scheme *runtime.Scheme
+	log           logr.Logger
+	client        client.Client
+	eventRecorder record.EventRecorder
+	scheme        *runtime.Scheme
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -52,7 +58,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	errHdl := HandleErrorFunc(logger, c.client, exec)
+	errHdl := HandleErrorFunc(logger, c.client, c.eventRecorder, exec)
 
 	if err := HandleAnnotationsAndGeneration(ctx, logger, c.client, exec); err != nil {
 		return reconcile.Result{}, errHdl(ctx, err)
@@ -68,12 +74,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) error {
 	forceReconcile := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-	op := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme), exec,
+	op := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme, c.eventRecorder), exec,
 		forceReconcile)
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		return lsv1alpha1helper.NewErrorOrNil(c.client.Update(ctx, exec), "Reconcile", "RemoveFinalizer")
+		return lserrors.NewErrorOrNil(c.client.Update(ctx, exec), "Reconcile", "RemoveFinalizer")
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {
@@ -132,14 +138,19 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
+func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
 	old := exec.DeepCopy()
 	return func(ctx context.Context, err error) error {
-		exec.Status.LastError = lsv1alpha1helper.TryUpdateError(exec.Status.LastError, err)
-		exec.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+		exec.Status.LastError = lserrors.TryUpdateError(exec.Status.LastError, err)
+		exec.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(
 			lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase),
 			exec.Status.LastError,
 			5*time.Minute))
+		if exec.Status.LastError != nil {
+			lastErr := exec.Status.LastError
+			eventRecorder.Event(exec, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+		}
+
 		if !reflect.DeepEqual(old.Status, exec.Status) {
 			if err2 := client.Status().Update(ctx, exec); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging

@@ -10,6 +10,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
@@ -142,7 +143,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	currOp := "Validate"
 	inst := op.Inst
 	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ImportsSatisfied", err.Error())
 	}
 
@@ -151,16 +152,16 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	// and then start the executions
 	constructor := imports.NewConstructor(op)
 	if err := constructor.Construct(ctx, inst); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ConstructImports", err.Error())
 	}
 
 	if err := op.CreateOrUpdateImports(ctx); err != nil {
-		inst.Info.Status.LastError = lsv1alpha1helper.UpdatedError(inst.Info.Status.LastError,
+		inst.Info.Status.LastError = lserrors.UpdatedError(inst.Info.Status.LastError,
 			"CreateImports",
 			"unable to update import objects",
 			err.Error())
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "CreateOrUpdateImports", err.Error())
 	}
 
@@ -174,13 +175,13 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	// todo: check if this can be moved to ensure
 	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
 		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ReconcileSubinstallations", err.Error())
 	}
 
 	exec := executions.New(op)
 	if err := exec.Ensure(ctx, inst); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ReconcileExecution", err.Error())
 	}
 

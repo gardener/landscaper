@@ -18,6 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	dockerconfig "github.com/docker/cli/cli/config"
 	dockerconfigfile "github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
@@ -42,7 +44,7 @@ import (
 func (c *Container) Reconcile(ctx context.Context, operation container.OperationType) error {
 	pod, err := c.getPod(ctx)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"Reconcile", "FetchRunningPod", err.Error())
 	}
 
@@ -50,7 +52,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
 			if err := c.collectAndSetPodStatus(pod); err != nil {
-				return lsv1alpha1helper.NewWrappedError(err,
+				return lserrors.NewWrappedError(err,
 					"Reconcile", "UpdatePodStatus", err.Error())
 			}
 			// check if pod is in error state
@@ -78,23 +80,23 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		// before we start syncing lets read the current deploy item from the server
 		oldDeployItem := &lsv1alpha1.DeployItem{}
 		if err := c.lsClient.Get(ctx, kutil.ObjectKey(c.DeployItem.GetName(), c.DeployItem.GetNamespace()), oldDeployItem); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "FetchDeployItem", err.Error())
 		}
 
 		if err := c.SyncConfiguration(ctx); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "SyncConfiguration", err.Error())
 		}
 
 		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "ParseAndSyncSecrets", err.Error())
 		}
 		// ensure new pod
 		if err := c.ensureServiceAccounts(ctx); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "EnsurePodRBAC", err.Error())
 		}
 		c.ProviderStatus = &containerv1alpha1.ProviderStatus{}
@@ -121,19 +123,19 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 		pod, err := generatePod(podOpts)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "PodGeneration", err.Error())
 		}
 
 		if err := c.hostClient.Create(ctx, pod); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "CreatePod", err.Error())
 		}
 
 		// update status
 		c.ProviderStatus.LastOperation = string(operation)
 		if err := c.collectAndSetPodStatus(pod); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "UpdatePodStatus", err.Error())
 		}
 
@@ -144,14 +146,14 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// we have to persist the observed changes so lets do a patch
 		if err := c.lsClient.Status().Patch(ctx, c.DeployItem, client.MergeFrom(oldDeployItem)); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "UpdateDeployItemStatus", err.Error())
 		}
 
 		if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			delete(c.DeployItem.Annotations, lsv1alpha1.OperationAnnotation)
 			if err := c.lsClient.Update(ctx, c.DeployItem); err != nil {
-				return lsv1alpha1helper.NewWrappedError(err,
+				return lserrors.NewWrappedError(err,
 					operationName, "RemoveReconcileAnnotation", err.Error())
 			}
 		}
@@ -165,7 +167,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 	if pod.Status.Phase == corev1.PodSucceeded {
 		if err := c.SyncExport(ctx); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				operationName, "SyncExport", err.Error())
 		}
 		c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
@@ -176,12 +178,12 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 	c.ProviderStatus.LastOperation = string(operation)
 	if err := c.collectAndSetPodStatus(pod); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"Reconcile", "UpdatePodStatus", err.Error())
 	}
 
 	if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
 	}
 
@@ -348,7 +350,7 @@ func podIsInErrorState(pod *corev1.Pod) error {
 				kutil.ErrRegistryUnavailable,
 				kutil.ErrImageNeverPull,
 				kutil.ErrImagePullBackOff) {
-				return lsv1alpha1helper.NewError("RunInitContainer", initStatus.State.Waiting.Reason, initStatus.State.Waiting.Message)
+				return lserrors.NewError("RunInitContainer", initStatus.State.Waiting.Reason, initStatus.State.Waiting.Message)
 			}
 		}
 	}
@@ -362,7 +364,7 @@ func podIsInErrorState(pod *corev1.Pod) error {
 				kutil.ErrRegistryUnavailable,
 				kutil.ErrImageNeverPull,
 				kutil.ErrImagePullBackOff) {
-				return lsv1alpha1helper.NewError("RunWaitContainer", waitStatus.State.Waiting.Reason, waitStatus.State.Waiting.Message)
+				return lserrors.NewError("RunWaitContainer", waitStatus.State.Waiting.Reason, waitStatus.State.Waiting.Message)
 			}
 		}
 	}
@@ -376,7 +378,7 @@ func podIsInErrorState(pod *corev1.Pod) error {
 				kutil.ErrRegistryUnavailable,
 				kutil.ErrImageNeverPull,
 				kutil.ErrImagePullBackOff) {
-				return lsv1alpha1helper.NewError("RunMainContainer", mainStatus.State.Waiting.Reason, mainStatus.State.Waiting.Message)
+				return lserrors.NewError("RunMainContainer", mainStatus.State.Waiting.Reason, mainStatus.State.Waiting.Message)
 			}
 		}
 	}
@@ -624,7 +626,7 @@ func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
 	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
 	if err := c.hostClient.Update(ctx, pod); err != nil {
 		err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"CleanupPod", "RemoveFinalizer", err.Error())
 	}
 	if c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod {
@@ -632,7 +634,7 @@ func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
 	}
 	if err := c.hostClient.Delete(ctx, pod); err != nil {
 		err = fmt.Errorf("unable to delete pod: %w", err)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"CleanupPod", "DeletePod", err.Error())
 	}
 	return nil

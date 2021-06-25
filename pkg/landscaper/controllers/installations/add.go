@@ -22,6 +22,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, overwriter 
 		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("Landscaper"),
 		overwriter,
 		config,
 	)

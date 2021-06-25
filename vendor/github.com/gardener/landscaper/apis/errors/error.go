@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package helper
+package errors
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 )
 
 // Error is a wrapper around the landscaper crd error
-// that implements the go error interface
+// that implements the go error interface.
 type Error struct {
 	lsErr lsv1alpha1.Error
 	err   error
@@ -88,8 +88,8 @@ func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.Erro
 	}
 }
 
-// IsError returns the landscaper if the given error is one.
-// If the err does not contain a landsacper error nil is returned.
+// IsError returns the landscaper error if the given error is one.
+// If the err does not contain a landscaper error nil is returned.
 func IsError(err error) (*Error, bool) {
 	if err == nil {
 		return nil, false

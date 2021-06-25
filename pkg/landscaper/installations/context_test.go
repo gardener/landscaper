@@ -9,6 +9,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
@@ -45,7 +46,7 @@ var _ = Describe("Context", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).SetComponentsRegistry(fakeCompRepo)
+		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 	})
 
 	It("should show no parent nor siblings for the test1 root", func() {

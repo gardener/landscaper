@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -41,7 +42,7 @@ var _ = Describe("Delete", func() {
 
 		fakeExecutions = state.Executions
 		fakeDeployItems = state.DeployItems
-		op = operation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme)
+		op = operation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 	})
 
 	It("should block deletion if deploy items still exist", func() {

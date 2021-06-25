@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -41,7 +42,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		deployItemController, err = dictrl.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testAbortingTimeoutDuration, &testProgressingTimeoutDuration)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockController, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{})
+		mockController, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

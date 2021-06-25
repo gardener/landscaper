@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -53,6 +54,7 @@ var _ = Describe("Manifest Deployer", func() {
 			logr.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
+			record.NewFakeRecorder(1024),
 			testenv.Client,
 			api.LandscaperScheme,
 			deployerlib.DeployerArgs{

@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -51,7 +52,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{
-			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme).
+			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
 				SetComponentsRegistry(fakeCompRepo),
 		}
 	})

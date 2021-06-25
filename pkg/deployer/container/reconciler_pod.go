@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -25,20 +26,28 @@ import (
 // pod events as described by the PodEventHandler.
 // The reconciler basically calls the container reconcile.
 type PodReconciler struct {
-	log        logr.Logger
-	lsClient   client.Client
-	hostClient client.Client
-	config     containerv1alpha1.Configuration
-	diRec      deployerlib.Deployer
+	log             logr.Logger
+	lsClient        client.Client
+	lsEventRecorder record.EventRecorder
+	hostClient      client.Client
+	config          containerv1alpha1.Configuration
+	diRec           deployerlib.Deployer
 }
 
-func NewPodReconciler(log logr.Logger, lsClient, hostClient client.Client, config containerv1alpha1.Configuration, deployer deployerlib.Deployer) *PodReconciler {
+func NewPodReconciler(
+	log logr.Logger,
+	lsClient,
+	hostClient client.Client,
+	lsEventRecorder record.EventRecorder,
+	config containerv1alpha1.Configuration,
+	deployer deployerlib.Deployer) *PodReconciler {
 	return &PodReconciler{
-		log:        log,
-		config:     config,
-		lsClient:   lsClient,
-		hostClient: hostClient,
-		diRec:      deployer,
+		log:             log,
+		config:          config,
+		lsClient:        lsClient,
+		lsEventRecorder: lsEventRecorder,
+		hostClient:      hostClient,
+		diRec:           deployer,
 	}
 }
 
@@ -50,7 +59,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	if deployItem == nil {
 		return reconcile.Result{}, nil
 	}
-	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, deployItem)
+	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, r.lsEventRecorder, deployItem)
 	if err := errHdl(ctx, r.diRec.Reconcile(ctx, deployItem, nil)); err != nil {
 		return reconcile.Result{}, err
 	}

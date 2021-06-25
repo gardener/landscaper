@@ -108,6 +108,7 @@ github.com/gardener/landscaper/apis/deployer/manifest/validation
 github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
+github.com/gardener/landscaper/apis/errors
 github.com/gardener/landscaper/apis/mediatype
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
