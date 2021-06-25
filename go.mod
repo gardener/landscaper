@@ -9,7 +9,7 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
 	github.com/gardener/component-cli v0.21.0
-	github.com/gardener/component-spec/bindings-go v0.0.41
+	github.com/gardener/component-spec/bindings-go v0.0.51
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0

@@ -160,7 +160,6 @@ func (b *ManifestBuilder) addLocalBlobs(ctx context.Context) ([]ocispecv1.Descri
 	blobDescriptors := make([]ocispecv1.Descriptor, 0)
 
 	for i, res := range b.archive.ComponentDescriptor.Resources {
-
 		var blob bytes.Buffer
 		info, err := b.archive.Resolve(ctx, res, &blob)
 		if err != nil {

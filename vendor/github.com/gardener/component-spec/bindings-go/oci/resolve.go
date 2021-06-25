@@ -73,12 +73,16 @@ func OCIRef(repoCtx v2.OCIRegistryRepository, name, version string) (string, err
 	}
 }
 
+// ItemNotCached defines an error that defines that an item was not cached.
+var ItemNotCached = errors.New("ITEM_NOT_CACHED")
+
 // Cache describes a interface to cache component descriptors.
 // The cache expects that a component descriptor identified by repoCtx, name and version is immutable.
 // Currently only the raw component descriptor can be cached.
 // The blob resolver might be added in the future.
 type Cache interface {
 	// Get reads a component descriptor from the cache.
+	// Use the ItemNotCached error to identicate that an error does not have occurred.
 	Get(ctx context.Context, repoCtx v2.OCIRegistryRepository, name, version string) (*v2.ComponentDescriptor, error)
 	// Store stores a component descriptor in the cache.
 	Store(ctx context.Context, descriptor *v2.ComponentDescriptor) error
@@ -110,7 +114,7 @@ func (r *Resolver) WithCache(cache Cache) *Resolver {
 
 // WithLog sets the logger for the resolver.
 func (r *Resolver) WithLog(log logr.Logger) *Resolver {
-	r.log = log
+	r.log = log.WithName("componentResolver")
 	return r
 }
 
@@ -129,8 +133,6 @@ func (r *Resolver) ResolveWithBlobResolver(ctx context.Context, repoCtx v2.Repos
 // resolve resolves a component descriptor by name and version within the configured context.
 // If withBlobResolver is false the returned blobresolver is always nil
 func (r *Resolver) resolve(ctx context.Context, repoCtx v2.Repository, name, version string, withBlobResolver bool) (*v2.ComponentDescriptor, ctf.BlobResolver, error) {
-	log := r.log.WithValues("repoCtx", repoCtx.GetType(), "name", name, "version", version)
-
 	var repo v2.OCIRegistryRepository
 	switch r := repoCtx.(type) {
 	case *v2.UnstructuredTypedObject:
@@ -142,10 +144,22 @@ func (r *Resolver) resolve(ctx context.Context, repoCtx v2.Repository, name, ver
 	default:
 		return nil, nil, fmt.Errorf("unknown repository context type %s", repoCtx.GetType())
 	}
+
+	// setup logger
+	log := logr.FromContext(ctx)
+	if log == nil {
+		log = r.log
+	}
+	log = log.WithValues("repoCtxType", repoCtx.GetType(), "baseUrl", repo.BaseURL, "name", name, "version", version)
+
 	if r.cache != nil {
 		cd, err := r.cache.Get(ctx, repo, name, version)
 		if err != nil {
-			log.Error(err, "unable to get component descriptor")
+			if errors.Is(err, ctf.NotFoundError) {
+				log.V(5).Info(err.Error())
+			} else {
+				log.Error(err, "unable to get component descriptor")
+			}
 		} else {
 			if withBlobResolver {
 				manifest, ref , err := r.fetchManifest(ctx, repo, name, version)

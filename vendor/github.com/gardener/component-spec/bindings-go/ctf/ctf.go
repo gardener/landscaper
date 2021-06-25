@@ -42,6 +42,10 @@ const BlobsDirectoryName = "blobs"
 
 var UnsupportedResolveType = errors.New("UnsupportedResolveType")
 
+var NotFoundError = errors.New("ComponentDescriptorNotFound")
+
+var BlobResolverNotDefinedError = errors.New("BlobResolverNotDefined")
+
 // ComponentResolver describes a general interface to resolve a component descriptor
 type ComponentResolver interface {
 	Resolve(ctx context.Context, repoCtx v2.Repository, name, version string) (*v2.ComponentDescriptor, error)

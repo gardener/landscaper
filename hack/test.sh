@@ -13,7 +13,7 @@ PROJECT_ROOT="${CURRENT_DIR}"/..
 # between port allocation of envtest suites when go test
 # runs all the tests in parallel without any limits (spins up around 10+ environments).
 #
-# To avoid flakes, set we're setting the go-test parallel flag to
+# To avoid flakes, set we're setting the go-test parallel flag
 # to limit the number of parallel executions.
 #
 # TODO: check the controller-runtime for root-cause and real mitigation
