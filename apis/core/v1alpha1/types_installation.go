@@ -5,6 +5,8 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -411,4 +413,31 @@ type ImportStatus struct {
 	// ConfigGeneration is the generation of the imported value.
 	// +optional
 	ConfigGeneration string `json:"configGeneration,omitempty"`
+}
+
+// MarshalJSON implements the json marshaling for a TargetImport
+// Why this is needed:
+//   We need Targets to not have the 'omitempty' annotation,
+//   because the code distinguishes between nil and an empty list.
+//   Not having the annotation causes the default json marshal to write
+//   'null' in case of nil, which causes problems.
+func (ti TargetImport) MarshalJSON() ([]byte, error) {
+
+	type TargetImportWithTargets struct {
+		Name                string   `json:"name"`
+		Target              string   `json:"target,omitempty"`
+		Targets             []string `json:"targets"`
+		TargetListReference string   `json:"targetListRef,omitempty"`
+	}
+	type TargetImportWithoutTargets struct {
+		Name                string   `json:"name"`
+		Target              string   `json:"target,omitempty"`
+		Targets             []string `json:"targets,omitempty"`
+		TargetListReference string   `json:"targetListRef,omitempty"`
+	}
+
+	if ti.Targets == nil {
+		return json.Marshal(TargetImportWithoutTargets(ti))
+	}
+	return json.Marshal(TargetImportWithTargets(ti))
 }
