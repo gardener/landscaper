@@ -81,7 +81,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 			"Phase": Equal(lsv1alpha1.ExecutionPhaseFailed),
 			"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-				"Reason": Equal(dictrl.PickupTimeoutReason),
+				"Reason": Equal(lsv1alpha1.PickupTimeoutReason),
 			})),
 		}))
 	})
@@ -241,7 +241,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 			"Phase": Equal(lsv1alpha1.ExecutionPhaseFailed),
 			"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 				"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-				"Reason": Equal(dictrl.AbortingTimeoutReason),
+				"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
 			})),
 		}))
 	})

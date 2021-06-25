@@ -30,13 +30,7 @@ type executionItem struct {
 func (o *Operation) Reconcile(ctx context.Context) error {
 	op := "Reconcile"
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
-	if o.exec.Status.ObservedGeneration != o.exec.Generation || o.exec.Status.Phase != lsv1alpha1.ExecutionPhaseProgressing {
-		o.exec.Status.ObservedGeneration = o.exec.Generation
-		o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-		if err := o.Client().Update(ctx, o.exec); err != nil {
-			return fmt.Errorf("unable to update status: %w", err)
-		}
-	}
+	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
@@ -53,7 +47,28 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
 			deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
 
+			// we need to check if the deployitem is failed due to that its not picked up by a deployer.
+			// This is a error scenario that needs special handling as other detections in this code will not work.
+			// Mostly due to outdated observed generation
+			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+				(item.DeployItem.Status.LastError != nil && item.DeployItem.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason) {
+				o.exec.Status.ObservedGeneration = o.exec.Generation
+				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name)))
+				return lserrors.NewError(
+					"DeployItemReconcile",
+					"DeployItemFailed",
+					fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name),
+				)
+			}
+
 			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
+				o.EventRecorder().Eventf(o.exec, corev1.EventTypeNormal,
+					"DeployItemCompleted",
+					"deploy item %s not triggered because it already exists and is not completed", item.Info.Name,
+				)
 				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
 				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 				phase = lsv1alpha1.ExecutionPhaseProgressing
@@ -88,7 +103,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				"CheckReconcilable",
-				fmt.Sprintf("check if deploy item %q is able to bbe reconciled", item.DeployItem.Name),
+				fmt.Sprintf("check if deploy item %q is able to be reconciled", item.DeployItem.Name),
 				err.Error(),
 			)
 		}
@@ -106,13 +121,12 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
 	}
 
-	o.exec.Status.ObservedGeneration = o.exec.Generation
-
 	// remove force annotation
 	if o.forceReconcile {
 		old := o.exec.DeepCopy()
 		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := o.Client().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
+			o.EventRecorder().Event(o.exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
 			return lserrors.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
 		}
 	}

@@ -25,13 +25,6 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 )
 
-const (
-	PickupTimeoutReason      = "PickupTimeout"    // for error messages
-	PickupTimeoutOperation   = "WaitingForPickup" // for error messages
-	AbortingTimeoutReason    = "AbortingTimeout"  // for error messages
-	AbortingTimeoutOperation = "WaitingForAbort"  // for error messages
-)
-
 // NewController creates a new deploy item controller that handles timeouts
 // To detect pickup timeouts (when a DeployItem resource is not reconciled by any deployer within a specified timeframe), the controller checks for a timestamp annotation.
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
@@ -165,7 +158,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 
 func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectPickupTimeouts")
-	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == PickupTimeoutReason {
+	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason {
 		// don't do anything if phase is already failed due to a recent pickup timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
 		logger.V(7).Info("deploy item already failed due to pickup timeout, nothing to do")
@@ -187,7 +180,12 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 		// => pickup timeout
 		logger.V(5).Info("pickup timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
+			lsv1alpha1.PickupTimeoutOperation,
+			lsv1alpha1.PickupTimeoutReason,
+			fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second),
+			lsv1alpha1.ErrorTimeout,
+		)
 		return nil, nil
 	}
 
@@ -201,7 +199,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 	logger := log.WithValues("operation", "DetectAbortingTimeouts")
 	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
 		di.Status.LastError != nil &&
-		di.Status.LastError.Reason == AbortingTimeoutReason {
+		di.Status.LastError.Reason == lsv1alpha1.AbortingTimeoutReason {
 		// don't do anything if phase is already failed due to a recent aborting timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
 		logger.V(7).Info("deploy item already failed due to aborting timeout, nothing to do")
@@ -230,8 +228,8 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
-			AbortingTimeoutOperation,
-			AbortingTimeoutReason,
+			lsv1alpha1.AbortingTimeoutOperation,
+			lsv1alpha1.AbortingTimeoutReason,
 			fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds",
 				con.abortingTimeout/time.Second),
 			lsv1alpha1.ErrorTimeout)

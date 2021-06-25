@@ -67,3 +67,11 @@ const (
 	// LandscaperMetricsNamespaceName describes the prometheus metrics namespace for the landscaper component
 	LandscaperMetricsNamespaceName = "ociclient"
 )
+
+// DeployItem care controller constants
+const (
+	PickupTimeoutReason      = "PickupTimeout"    // for error messages
+	PickupTimeoutOperation   = "WaitingForPickup" // for error messages
+	AbortingTimeoutReason    = "AbortingTimeout"  // for error messages
+	AbortingTimeoutOperation = "WaitingForAbort"  // for error messages
+)
