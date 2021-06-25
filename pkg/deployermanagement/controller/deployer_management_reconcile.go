@@ -91,6 +91,9 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
 	if err := dm.createDeployerTarget(ctx, inst, registration, env); err != nil {
 		return err

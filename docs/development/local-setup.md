@@ -110,10 +110,11 @@ cd landscaper
 #### Run the Landscaper
 
 When the Kubernetes cluster is running, start the Landscaper controller with the cluster's kubeconfig.
-The controller must be started without any webhooks as they can only be used inside the cluster.
+The webhooks for validation, mutation and conversion are not included in the Landscaper binary for scalability and availability reasons.
+See [Run Webhook Server](#run-the-landscaper-webhook-server) to see how webhooks can be tested.
 
 ```bash
-go run ./cmd/landscaper-controller --disable-webhooks=all --kubeconfig=$KUBECONFIG
+go run ./cmd/landscaper-controller --kubeconfig=$KUBECONFIG
 ```
 
 (Optional) Configure the landscaper controller
@@ -136,3 +137,17 @@ crdManagement:
   deployCrd: true
   forceUpdate: true
 ```
+
+#### Run the Landscaper Webhook Server
+
+The webhooks for validation, mutation and conversion are served by a specific webhook server that can be found in [cmd/landscaper-webhooks-server](../../cmd/landscaper-webhooks-server).
+
+It can be simply started with 
+```bash
+go run ./cmd/landscaper-webhooks-server --kubeconfig=$KUBECONFIG --port=9443
+```
+
+> Note: The webhook server automatically registers the needed webhooks in the k8s cluster using the flags `--webhook-service` `--webhook-service-port` which should point to a service that is backed by the webhook server.
+
+Specific webhooks for resources can be disabled using the flag `--disable-webhooks=installations,deployitems,...`
+

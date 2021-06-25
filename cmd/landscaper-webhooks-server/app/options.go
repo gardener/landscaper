@@ -68,8 +68,8 @@ func NewOptions() *options {
 
 func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.IntVar(&o.port, "port", 9443, "Specify the port of the webhook server")
-	fs.StringVar(&o.webhookServiceNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.StringVar(&o.disabledWebhooks, "disable-webhooks", "", "Specify validation webhooks that should be disabled ('all' to disable validation completely)")
+	fs.StringVar(&o.webhookServiceNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.Int32Var(&o.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
 	logger.InitFlags(fs)
 
