@@ -29,13 +29,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Execution contains the configuration of a execution and deploy item
+        description: Execution contains the configuration of a execution and deploy
+          item
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -43,30 +48,36 @@ spec:
             description: Spec defines a execution and its items
             properties:
               deployItems:
-                description: DeployItems defines all execution items that need to be scheduled.
+                description: DeployItems defines all execution items that need to
+                  be scheduled.
                 items:
-                  description: DeployItemTemplate defines a execution element that is translated into a deploy item.
+                  description: DeployItemTemplate defines a execution element that
+                    is translated into a deploy item.
                   properties:
                     config:
-                      description: ProviderConfiguration contains the type specific configuration for the execution.
+                      description: ProviderConfiguration contains the type specific
+                        configuration for the execution.
                       type: object
                       x-kubernetes-embedded-resource: true
                       x-kubernetes-preserve-unknown-fields: true
                     dependsOn:
-                      description: DependsOn lists deploy items that need to be executed before this one
+                      description: DependsOn lists deploy items that need to be executed
+                        before this one
                       items:
                         type: string
                       type: array
                     labels:
                       additionalProperties:
                         type: string
-                      description: Labels is the map of labels to be added to the deploy item.
+                      description: Labels is the map of labels to be added to the
+                        deploy item.
                       type: object
                     name:
                       description: Name is the unique name of the execution.
                       type: string
                     target:
-                      description: Target is the object reference to the target that the deploy item should deploy to.
+                      description: Target is the object reference to the target that
+                        the deploy item should deploy to.
                       properties:
                         name:
                           description: Name is the name of the kubernetes object.
@@ -87,7 +98,11 @@ spec:
                   type: object
                 type: array
               registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
+                description: 'RegistryPullSecrets defines a list of registry credentials
+                  that are used to pull blueprints, component descriptors and jsonschemas
+                  from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+                  Note that the type information is used to determine the secret key
+                  and the type of the secret.'
                 items:
                   description: ObjectReference is the reference to a kubernetes object.
                   properties:
@@ -108,16 +123,19 @@ spec:
               conditions:
                 description: Conditions contains the actual condition of a execution
                 items:
-                  description: Condition holds the information about the state of a resource.
+                  description: Condition holds the information about the state of
+                    a resource.
                   properties:
                     codes:
-                      description: Well-defined error codes in case the condition reports a problem.
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
                       items:
                         description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status to another.
+                      description: Last time the condition transitioned from one status
+                        to another.
                       format: date-time
                       type: string
                     lastUpdateTime:
@@ -125,7 +143,8 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about the transition.
+                      description: A human readable message indicating details about
+                        the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -146,9 +165,13 @@ spec:
                   type: object
                 type: array
               deployItemRefs:
-                description: DeployItemReferences contain the state of all deploy items. The observed generation is here the generation of the Execution not the DeployItem.
+                description: DeployItemReferences contain the state of all deploy
+                  items. The observed generation is here the generation of the Execution
+                  not the DeployItem.
                 items:
-                  description: VersionedNamedObjectReference is a named reference to a object with its last observed resource generation. This struct is used by status fields.
+                  description: VersionedNamedObjectReference is a named reference
+                    to a object with its last observed resource generation. This struct
+                    is used by status fields.
                   properties:
                     name:
                       description: Name is the unique name of the reference.
@@ -163,7 +186,8 @@ spec:
                           description: Namespace is the namespace of kubernetes object.
                           type: string
                         observedGeneration:
-                          description: ObservedGeneration defines the last observed generation of the referenced resource.
+                          description: ObservedGeneration defines the last observed
+                            generation of the referenced resource.
                           format: int64
                           type: integer
                       required:
@@ -176,7 +200,8 @@ spec:
                   type: object
                 type: array
               exportRef:
-                description: ExportReference references the object that contains the exported values. only used for operation purpose.
+                description: ExportReference references the object that contains the
+                  exported values. only used for operation purpose.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -191,13 +216,15 @@ spec:
                 description: LastError describes the last error that occurred.
                 properties:
                   codes:
-                    description: Well-defined error codes in case the condition reports a problem.
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
                     items:
                       description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
-                    description: Last time the condition transitioned from one status to another.
+                    description: Last time the condition transitioned from one status
+                      to another.
                     format: date-time
                     type: string
                   lastUpdateTime:
@@ -205,10 +232,12 @@ spec:
                     format: date-time
                     type: string
                   message:
-                    description: A human readable message indicating details about the transition.
+                    description: A human readable message indicating details about
+                      the transition.
                     type: string
                   operation:
-                    description: Operation describes the operator where the error occurred.
+                    description: Operation describes the operator where the error
+                      occurred.
                     type: string
                   reason:
                     description: The reason for the condition's last transition.
@@ -221,7 +250,9 @@ spec:
                 - reason
                 type: object
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed for this Execution. It corresponds to the Execution generation, which is updated on mutation by the landscaper.
+                description: ObservedGeneration is the most recent generation observed
+                  for this Execution. It corresponds to the Execution generation,
+                  which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

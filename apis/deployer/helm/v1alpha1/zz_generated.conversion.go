@@ -323,10 +323,7 @@ func Convert_helm_RemoteArchiveAccess_To_v1alpha1_RemoteArchiveAccess(in *helm.R
 }
 
 func autoConvert_v1alpha1_RemoteChartReference_To_helm_RemoteChartReference(in *RemoteChartReference, out *helm.RemoteChartReference, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ComponentDescriptorDefinition, &out.ComponentDescriptorDefinition, 0); err != nil {
-		return err
-	}
+	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
 	out.ResourceName = in.ResourceName
 	return nil
 }
@@ -337,10 +334,7 @@ func Convert_v1alpha1_RemoteChartReference_To_helm_RemoteChartReference(in *Remo
 }
 
 func autoConvert_helm_RemoteChartReference_To_v1alpha1_RemoteChartReference(in *helm.RemoteChartReference, out *RemoteChartReference, s conversion.Scope) error {
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.ComponentDescriptorDefinition, &out.ComponentDescriptorDefinition, 0); err != nil {
-		return err
-	}
+	out.ComponentDescriptorDefinition = in.ComponentDescriptorDefinition
 	out.ResourceName = in.ResourceName
 	return nil
 }

@@ -6,7 +6,7 @@
 
 set -e
 
-K8S_VERSION="1.19.x"
+K8S_VERSION="1.21.x"
 
 echo "> Setup Test Environment for K8s Version ${K8S_VERSION}"
 

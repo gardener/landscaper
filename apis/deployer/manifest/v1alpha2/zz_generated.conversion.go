@@ -114,7 +114,7 @@ func Convert_manifest_Configuration_To_v1alpha2_Configuration(in *manifest.Confi
 
 func autoConvert_v1alpha2_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
 	out.DisableDefault = in.DisableDefault
-	out.Timeout = (*core.Duration)(unsafe.Pointer(in.Timeout))
+	out.Timeout = (*v1alpha1.Duration)(unsafe.Pointer(in.Timeout))
 	return nil
 }
 
@@ -136,10 +136,7 @@ func Convert_manifest_HealthChecksConfiguration_To_v1alpha2_HealthChecksConfigur
 
 func autoConvert_v1alpha2_ManagedResourceStatus_To_manifest_ManagedResourceStatus(in *ManagedResourceStatus, out *manifest.ManagedResourceStatus, s conversion.Scope) error {
 	out.Policy = manifest.ManifestPolicy(in.Policy)
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.Resource, &out.Resource, 0); err != nil {
-		return err
-	}
+	out.Resource = in.Resource
 	return nil
 }
 
@@ -150,10 +147,7 @@ func Convert_v1alpha2_ManagedResourceStatus_To_manifest_ManagedResourceStatus(in
 
 func autoConvert_manifest_ManagedResourceStatus_To_v1alpha2_ManagedResourceStatus(in *manifest.ManagedResourceStatus, out *ManagedResourceStatus, s conversion.Scope) error {
 	out.Policy = ManifestPolicy(in.Policy)
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.Resource, &out.Resource, 0); err != nil {
-		return err
-	}
+	out.Resource = in.Resource
 	return nil
 }
 
@@ -191,7 +185,7 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 		return err
 	}
 	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
-	out.Manifests = *(*[]manifest.Manifest)(unsafe.Pointer(&in.Manifests))
+	out.Manifests = *(*manifest.Manifests)(unsafe.Pointer(&in.Manifests))
 	return nil
 }
 

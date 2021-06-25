@@ -13,6 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
@@ -101,13 +102,13 @@ var _ = Describe("Delete", func() {
 
 	It("should wait until a deploy item is deleted", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemB := fakeDeployItems["test3/di-b"]
 		delTime := metav1.Now()
 		deployItemB.DeletionTimestamp = &delTime
+		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
 		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
 
 		err := eOp.Delete(ctx)
@@ -133,6 +134,7 @@ var _ = Describe("Delete", func() {
 		delTime := metav1.Now()
 		deployItemB.DeletionTimestamp = &delTime
 		deployItemB.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
 		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
 
 		err := eOp.Delete(ctx)
