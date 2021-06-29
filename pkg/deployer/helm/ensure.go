@@ -133,7 +133,6 @@ func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) e
 			return err
 		}
 	} else if h.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
-		//TODO: thread this
 		for _, customHealthCheckConfig := range h.ProviderConfiguration.HealthChecks.CustomHealthChecks {
 			customHealthCheck := healthcheck.CustomHealthCheck{
 				Context:          ctx,

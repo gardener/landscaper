@@ -101,7 +101,6 @@ func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Clien
 			return err
 		}
 	} else if m.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
-		//TODO: thread this
 		for _, customHealthCheckConfig := range m.ProviderConfiguration.HealthChecks.CustomHealthChecks {
 			customHealthCheck := healthcheck.CustomHealthCheck{
 				Context:          ctx,
