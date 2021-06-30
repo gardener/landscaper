@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/tools/record"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
@@ -80,7 +81,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{
@@ -129,7 +130,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
 
-		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{

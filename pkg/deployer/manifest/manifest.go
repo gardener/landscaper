@@ -17,12 +17,13 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestinstall "github.com/gardener/landscaper/apis/deployer/manifest/install"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
@@ -73,12 +74,12 @@ func New(log logr.Logger,
 	currOp := "InitManifestOperation"
 	manifestDecoder := api.NewDecoder(Scheme)
 	if _, _, err := manifestDecoder.Decode(item.Spec.Configuration.Raw, nil, config); err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "ParseProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	if err := manifestvalidation.ValidateProviderConfiguration(config); err != nil {
-		return nil, lsv1alpha1helper.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "ValidateProviderConfiguration", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
@@ -86,7 +87,7 @@ func New(log logr.Logger,
 	if item.Status.ProviderStatus != nil {
 		status = &manifestv1alpha2.ProviderStatus{}
 		if _, _, err := manifestDecoder.Decode(item.Status.ProviderStatus.Raw, nil, status); err != nil {
-			return nil, lsv1alpha1helper.NewWrappedError(err,
+			return nil, lserrors.NewWrappedError(err,
 				currOp, "ParseProviderStatus", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 		}
 	}

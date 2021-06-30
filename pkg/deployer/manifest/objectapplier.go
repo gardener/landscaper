@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -62,14 +62,14 @@ func (a *ObjectApplier) Apply(ctx context.Context) error {
 	wg.Wait()
 	if len(allErrs) != 0 {
 		aggErr := apimacherrors.NewAggregate(allErrs)
-		return lsv1alpha1helper.NewWrappedError(apimacherrors.NewAggregate(allErrs),
+		return lserrors.NewWrappedError(apimacherrors.NewAggregate(allErrs),
 			"ApplyObjects", "ApplyNewObject", aggErr.Error())
 	}
 
 	// remove old objects
 	if err := a.cleanupOrphanedResources(ctx, oldManagedResources); err != nil {
 		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"ApplyObjects", "CleanupOrphanedObects", err.Error())
 	}
 	return nil

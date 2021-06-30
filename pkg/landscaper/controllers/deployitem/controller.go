@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lscore "github.com/gardener/landscaper/apis/core"
@@ -185,7 +187,7 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 		// => pickup timeout
 		logger.V(5).Info("pickup timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
+		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError, PickupTimeoutOperation, PickupTimeoutReason, fmt.Sprintf("no deployer has reconciled this deployitem within %d seconds", con.pickupTimeout/time.Second), lsv1alpha1.ErrorTimeout)
 		return nil, nil
 	}
 
@@ -227,7 +229,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 		logger.V(5).Info("aborting timeout occurred")
 		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-		di.Status.LastError = lsv1alpha1helper.UpdatedError(di.Status.LastError,
+		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
 			AbortingTimeoutOperation,
 			AbortingTimeoutReason,
 			fmt.Sprintf("deployer has not aborted progressing this deploy item within %d seconds",

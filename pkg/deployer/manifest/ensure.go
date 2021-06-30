@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
@@ -29,7 +29,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	_, targetClient, err := m.TargetClient(ctx)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
 	}
 
@@ -67,11 +67,11 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 	m.DeployItem.Status.ProviderStatus, err = encodeStatus(m.ProviderStatus)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
 	if err := m.lsKubeClient.Status().Update(ctx, m.DeployItem); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}
 
@@ -103,7 +103,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	_, kubeClient, err := m.TargetClient(ctx)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
 	}
 
@@ -118,7 +118,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "DeleteManifest", err.Error())
 		}
 		completed = false
@@ -188,7 +188,7 @@ func (m *Manifest) defaultCheckResourcesHealth(ctx context.Context, client clien
 
 	timeout := m.ProviderConfiguration.HealthChecks.Timeout.Duration
 	if err := health.WaitForObjectsHealthy(ctx, timeout, m.log, client, objects); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "CheckResourcesHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
 	}
 

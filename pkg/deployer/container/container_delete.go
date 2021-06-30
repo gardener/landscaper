@@ -12,6 +12,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/container"
@@ -29,11 +31,11 @@ func (c *Container) Delete(ctx context.Context) error {
 	}
 
 	if err := c.cleanupRBAC(ctx); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"Delete", "CleanupRBAC", err.Error())
 	}
 	if err := c.cleanupDeployItem(ctx); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			"Delete", "CleanupDeployItem", err.Error())
 	}
 	return nil

@@ -19,8 +19,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
@@ -34,13 +35,13 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	currOp := "ApplyFile"
 	_, targetClient, err := h.TargetClient(ctx)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
 	}
 
 	objects, err := kutil.ParseFiles(h.log, files)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
 
@@ -57,7 +58,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	for _, obj := range objects {
 		exports, err = h.addExport(exports, obj)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "ReadExportValues", err.Error())
 		}
 		h.injectLabels(obj)
@@ -88,17 +89,17 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 
 	if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
 		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "CleanupOrphanedResources", err.Error())
 	}
 
 	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
 	if err := h.lsKubeClient.Status().Update(ctx, h.DeployItem); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}
 
@@ -108,7 +109,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	}
 
 	if err := h.createOrUpdateExport(ctx, exports); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "CreateExport", err.Error())
 	}
 
@@ -209,12 +210,12 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, &currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "GetObject", err.Error())
 		}
 		if err := kubeClient.Create(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to create resource %s: %w", key.String(), err)
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "CreateObject", err.Error())
 		}
 		return nil
@@ -230,18 +231,18 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 	case helmv1alpha1.UpdateStrategyUpdate:
 		if err := kubeClient.Update(ctx, obj); err != nil {
 			err = fmt.Errorf("unable to update resource %s: %w", key.String(), err)
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "ApplyObject", err.Error())
 		}
 	case helmv1alpha1.UpdateStrategyPatch:
 		if err := kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				currOp, "ApplyObject", err.Error())
 		}
 	default:
 		err := fmt.Errorf("%s is not a valid update strategy", h.ProviderConfiguration.UpdateStrategy)
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "ApplyObject", err.Error())
 	}
 	return nil
@@ -396,7 +397,7 @@ func (h *Helm) defaultCheckResourcesHealth(ctx context.Context, client client.Cl
 
 	timeout := h.ProviderConfiguration.HealthChecks.Timeout.Duration
 	if err := health.WaitForObjectsHealthy(ctx, timeout, h.log, client, objects); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserrors.NewWrappedError(err,
 			currOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
 	}
 

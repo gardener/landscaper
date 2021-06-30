@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -43,7 +44,7 @@ var _ = Describe("Simple", func() {
 		fakeComponentRegistry, err = componentsregistry.NewLocalClient(logr.Discard(), filepath.Join(projectRoot, "examples", "01-simple"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme).SetComponentsRegistry(fakeComponentRegistry)
+		op := operation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeComponentRegistry)
 
 		instActuator = instctlr.NewTestActuator(*op, &config.LandscaperConfiguration{
 			Registry: config.RegistryConfiguration{
@@ -51,10 +52,10 @@ var _ = Describe("Simple", func() {
 			},
 		})
 
-		execActuator, err = execctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme)
+		execActuator, err = execctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mockv1alpha1.Configuration{})
+		mockActuator, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

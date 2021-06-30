@@ -19,6 +19,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager) error {
 		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
+		mgr.GetEventRecorderFor("Landscaper"),
 	)
 	if err != nil {
 		return err

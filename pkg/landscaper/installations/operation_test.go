@@ -11,6 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -32,7 +33,7 @@ var _ = Describe("Operation", func() {
 
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
-		commonOp := operation.NewOperation(logr.Discard(), kubeClient, api.LandscaperScheme)
+		commonOp := operation.NewOperation(logr.Discard(), kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		op = &installations.Operation{
 			Inst: &installations.Installation{
 				InstallationBase: installations.InstallationBase{Info: &lsv1alpha1.Installation{}},

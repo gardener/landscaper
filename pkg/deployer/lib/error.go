@@ -11,23 +11,30 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 )
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, deployItem *lsv1alpha1.DeployItem) func(ctx context.Context, err error) error {
+func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, deployItem *lsv1alpha1.DeployItem) func(ctx context.Context, err error) error {
 	old := deployItem.DeepCopy()
 	return func(ctx context.Context, err error) error {
-		deployItem.Status.LastError = lsv1alpha1helper.TryUpdateError(deployItem.Status.LastError, err)
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lsv1alpha1helper.GetPhaseForLastError(
+		deployItem.Status.LastError = lserrors.TryUpdateError(deployItem.Status.LastError, err)
+		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(
 			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
 			deployItem.Status.LastError,
 			5*time.Minute))
+		if deployItem.Status.LastError != nil {
+			lastErr := deployItem.Status.LastError
+			eventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+		}
+
 		if !reflect.DeepEqual(old.Status, deployItem.Status) {
 			if err2 := client.Status().Update(ctx, deployItem); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging

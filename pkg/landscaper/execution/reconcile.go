@@ -13,6 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -38,11 +40,11 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
-		return lsv1alpha1helper.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
+		return lserrors.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
 	}
 	executionItems, orphaned := o.getExecutionItems(managedItems)
 	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
+		return lserrors.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
 	}
 
 	var phase lsv1alpha1.ExecutionPhase
@@ -71,7 +73,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
 					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
-				return lsv1alpha1helper.NewError(
+				return lserrors.NewError(
 					"DeployItemReconcile",
 					"DeployItemFailed",
 					fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
@@ -84,7 +86,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		}
 		runnable, err := o.checkRunnable(ctx, item, executionItems)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err,
+			return lserrors.NewWrappedError(err,
 				"CheckReconcilable",
 				fmt.Sprintf("check if deploy item %q is able to bbe reconciled", item.DeployItem.Name),
 				err.Error(),
@@ -99,7 +101,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			if item.DeployItem != nil {
 				msg = fmt.Sprintf("error while triggering deployitem %s", item.DeployItem.Name)
 			}
-			return lsv1alpha1helper.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
+			return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
 		}
 		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
 	}
@@ -111,7 +113,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		old := o.exec.DeepCopy()
 		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := o.Client().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
-			return lsv1alpha1helper.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
+			return lserrors.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
 		}
 	}
 
@@ -120,7 +122,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	}
 
 	if err := o.collectAndUpdateExports(ctx, executionItems); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err, op, "CollectAndUpdateExports", err.Error())
+		return lserrors.NewWrappedError(err, op, "CollectAndUpdateExports", err.Error())
 	}
 
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
