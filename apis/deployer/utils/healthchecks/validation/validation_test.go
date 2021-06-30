@@ -5,7 +5,6 @@
 package validation_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -29,7 +28,6 @@ func TestConfig(t *testing.T) {
 var _ = Describe("Validation", func() {
 
 	var (
-		ctx context.Context
 		fld *field.Path
 
 		hc healthchecks.HealthChecksConfiguration
@@ -38,7 +36,6 @@ var _ = Describe("Validation", func() {
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
 		fld = field.NewPath("healthcheck")
 
 		rc = healthchecks.RequirementSpec{
@@ -81,20 +78,16 @@ var _ = Describe("Validation", func() {
 
 	})
 
-	AfterEach(func() {
-		defer ctx.Done()
-	})
-
 	It("should accept a health check configuration with default health check disabled and custom healthchecks present", func() {
 		allErrs := validation.ValidateHealthCheckConfiguration(fld, &hc)
 		Expect(allErrs).To(HaveLen(0))
 	})
 
-	It("should reject a health check configuration with default health check enabled and custom healthchecks present", func() {
+	It("should accept a health check configuration with default health check enabled and custom healthchecks present", func() {
 		hc.DisableDefault = false
 
 		allErrs := validation.ValidateHealthCheckConfiguration(fld, &hc)
-		Expect(allErrs).To(HaveLen(1))
+		Expect(allErrs).To(HaveLen(0))
 	})
 
 	It("should accept a provider configuration with default Health checks enabled and no custom healthchecks present", func() {

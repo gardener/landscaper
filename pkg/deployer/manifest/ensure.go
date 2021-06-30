@@ -100,7 +100,9 @@ func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Clien
 		if err != nil {
 			return err
 		}
-	} else if m.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
+	}
+
+	if m.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
 		for _, customHealthCheckConfig := range m.ProviderConfiguration.HealthChecks.CustomHealthChecks {
 			customHealthCheck := healthcheck.CustomHealthCheck{
 				Context:          ctx,

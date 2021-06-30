@@ -19,12 +19,7 @@ func ValidateHealthCheckConfiguration(fldPath *field.Path, config *healthchecks.
 	var allErrs field.ErrorList
 
 	// if we have a custom healthcheck configuration, the default should be disabled
-	disableDefault := config.DisableDefault
 	customHealthChecks := config.CustomHealthChecks
-	if !disableDefault && customHealthChecks != nil && len(customHealthChecks) > 0 {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("customHealthChecks"), disableDefault, "custom health checks require disabling the default health check"))
-	}
-
 	for _, c := range customHealthChecks {
 		allErrs = append(allErrs, ValidateCustomHealthCheckConfiguration(fldPath.Child("customHealthCheckConfiguration"), &c)...)
 	}

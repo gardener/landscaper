@@ -132,7 +132,9 @@ func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) e
 		if err != nil {
 			return err
 		}
-	} else if h.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
+	}
+
+	if h.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
 		for _, customHealthCheckConfig := range h.ProviderConfiguration.HealthChecks.CustomHealthChecks {
 			customHealthCheck := healthcheck.CustomHealthCheck{
 				Context:          ctx,

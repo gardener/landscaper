@@ -28,6 +28,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
+// CustomHealthCheck contains all the data and methods required to kick off a CustomHealthCheck
 type CustomHealthCheck struct {
 	Context          context.Context
 	Client           client.Client
@@ -38,6 +39,7 @@ type CustomHealthCheck struct {
 	Configuration    healthchecks.CustomHealthCheckConfiguration
 }
 
+// CheckResourcesHealth starts a CustomHealthCheck by checking the health of the submitted resources
 func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	if c.Configuration.Disabled || len(c.ManagedResources) == 0 {
 		// nothing to do
@@ -67,6 +69,7 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	return nil
 }
 
+// CheckObject checks the health of an object and returns an error if the object is considered unhealthy
 func (c *CustomHealthCheck) CheckObject(u *unstructured.Unstructured) error {
 	for _, requirement := range c.Configuration.Requirements {
 		fields, err := GetFieldsByJSONPath(u.Object, requirement.JsonPath)
@@ -146,6 +149,7 @@ func matchResourceConditions(object interface{}, values []interface{}, operator 
 	return success, nil
 }
 
+// GetObjectsByTypedReference returns an object from a list of TypedObjectReferences identified by a given TypedObjectReference as unstructured.Unstructured
 func GetObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
 	var results []*unstructured.Unstructured
 
@@ -159,6 +163,7 @@ func GetObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key l
 	return results
 }
 
+// GetObjectsByLabels returns all objects from a list of TypedObjectReferences that match a certain label selector as a slice of unstructured.Unstructured
 func GetObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *healthchecks.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
 	var results []*unstructured.Unstructured
 
@@ -200,6 +205,7 @@ func GetObjectsByLabels(ctx context.Context, client client.Client, objects []lsv
 	return results, nil
 }
 
+// GetFieldsByJSONPath returns a field from an object identified by its JSON path
 func GetFieldsByJSONPath(obj map[string]interface{}, fieldPath string) ([][]reflect.Value, error) {
 	p := jsonpath.New("fieldPath").AllowMissingKeys(true)
 	err := p.Parse(fieldPath)
