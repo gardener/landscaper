@@ -32,13 +32,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: DeployItem defines a resource that should be processed by a external deployer
+        description: DeployItem defines a resource that should be processed by a external
+          deployer
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -51,7 +56,11 @@ spec:
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
               registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
+                description: 'RegistryPullSecrets defines a list of registry credentials
+                  that are used to pull blueprints, component descriptors and jsonschemas
+                  from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+                  Note that the type information is used to determine the secret key
+                  and the type of the secret.'
                 items:
                   description: ObjectReference is the reference to a kubernetes object.
                   properties:
@@ -66,7 +75,9 @@ spec:
                   type: object
                 type: array
               target:
-                description: Target specifies an optional target of the deploy item. In most cases it contains the secrets to access a evironment. It is also used by the deployers to determine the ownernship.
+                description: Target specifies an optional target of the deploy item.
+                  In most cases it contains the secrets to access a evironment. It
+                  is also used by the deployers to determine the ownernship.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -80,27 +91,33 @@ spec:
               timeout:
                 x-kubernetes-preserve-unknown-fields: true
               type:
-                description: Type is the type of the deployer that should handle the item.
+                description: Type is the type of the deployer that should handle the
+                  item.
                 type: string
             required:
             - type
             type: object
           status:
-            description: 'DeployItemStatus contains the status of a deploy item. todo: add operation'
+            description: 'DeployItemStatus contains the status of a deploy item. todo:
+              add operation'
             properties:
               conditions:
-                description: Conditions contains the actual condition of a deploy item
+                description: Conditions contains the actual condition of a deploy
+                  item
                 items:
-                  description: Condition holds the information about the state of a resource.
+                  description: Condition holds the information about the state of
+                    a resource.
                   properties:
                     codes:
-                      description: Well-defined error codes in case the condition reports a problem.
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
                       items:
                         description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status to another.
+                      description: Last time the condition transitioned from one status
+                        to another.
                       format: date-time
                       type: string
                     lastUpdateTime:
@@ -108,7 +125,8 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about the transition.
+                      description: A human readable message indicating details about
+                        the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -129,7 +147,8 @@ spec:
                   type: object
                 type: array
               deployer:
-                description: Deployer describes the deployer that has reconciled the deploy item.
+                description: Deployer describes the deployer that has reconciled the
+                  deploy item.
                 properties:
                   identity:
                     description: Identity describes the unique identity of the deployer.
@@ -146,7 +165,8 @@ spec:
                 - version
                 type: object
               exportRef:
-                description: ExportReference is the reference to the object that contains the exported values.
+                description: ExportReference is the reference to the object that contains
+                  the exported values.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -161,13 +181,15 @@ spec:
                 description: LastError describes the last error that occurred.
                 properties:
                   codes:
-                    description: Well-defined error codes in case the condition reports a problem.
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
                     items:
                       description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
-                    description: Last time the condition transitioned from one status to another.
+                    description: Last time the condition transitioned from one status
+                      to another.
                     format: date-time
                     type: string
                   lastUpdateTime:
@@ -175,10 +197,12 @@ spec:
                     format: date-time
                     type: string
                   message:
-                    description: A human readable message indicating details about the transition.
+                    description: A human readable message indicating details about
+                      the transition.
                     type: string
                   operation:
-                    description: Operation describes the operator where the error occurred.
+                    description: Operation describes the operator where the error
+                      occurred.
                     type: string
                   reason:
                     description: The reason for the condition's last transition.
@@ -191,11 +215,14 @@ spec:
                 - reason
                 type: object
               lastReconcileTime:
-                description: LastReconcileTime indicates when the reconciliation of the last change to the deploy item has started
+                description: LastReconcileTime indicates when the reconciliation of
+                  the last change to the deploy item has started
                 format: date-time
                 type: string
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed for this DeployItem. It corresponds to the DeployItem generation, which is updated on mutation by the landscaper.
+                description: ObservedGeneration is the most recent generation observed
+                  for this DeployItem. It corresponds to the DeployItem generation,
+                  which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

@@ -35,10 +35,14 @@ spec:
         description: Blueprint contains the configuration of a component
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -60,41 +64,52 @@ spec:
                     description: Reference defines a remote reference to a blueprint
                     properties:
                       resourceName:
-                        description: ResourceName is the name of the blueprint as defined by a component descriptor.
+                        description: ResourceName is the name of the blueprint as
+                          defined by a component descriptor.
                         type: string
                     required:
                     - resourceName
                     type: object
                 type: object
               componentDescriptor:
-                description: ComponentDescriptor is a reference to the installation's component descriptor
+                description: ComponentDescriptor is a reference to the installation's
+                  component descriptor
                 properties:
                   inline:
-                    description: InlineDescriptorReference defines an inline component descriptor
+                    description: InlineDescriptorReference defines an inline component
+                      descriptor
                     properties:
                       component:
                         description: Spec contains the specification of the component.
                         properties:
                           componentReferences:
-                            description: ComponentReferences references component dependencies that can be resolved in the current context.
+                            description: ComponentReferences references component
+                              dependencies that can be resolved in the current context.
                             items:
-                              description: ComponentReference describes the reference to another component in the registry.
+                              description: ComponentReference describes the reference
+                                to another component in the registry.
                               properties:
                                 componentName:
-                                  description: ComponentName describes the remote name of the referenced object
+                                  description: ComponentName describes the remote
+                                    name of the referenced object
                                   type: string
                                 extraIdentity:
                                   additionalProperties:
                                     type: string
-                                  description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                  description: ExtraIdentity is the identity of an
+                                    object. An additional label with key "name" ist
+                                    not allowed
                                   type: object
                                 labels:
-                                  description: Labels defines an optional set of additional labels describing the object.
+                                  description: Labels defines an optional set of additional
+                                    labels describing the object.
                                   items:
-                                    description: Label is a label that can be set on objects.
+                                    description: Label is a label that can be set
+                                      on objects.
                                     properties:
                                       name:
-                                        description: Name is the unique name of the label.
+                                        description: Name is the unique name of the
+                                          label.
                                         type: string
                                       value:
                                         x-kubernetes-preserve-unknown-fields: true
@@ -104,10 +119,12 @@ spec:
                                     type: object
                                   type: array
                                 name:
-                                  description: Name is the context unique name of the object.
+                                  description: Name is the context unique name of
+                                    the object.
                                   type: string
                                 version:
-                                  description: Version is the semver version of the object.
+                                  description: Version is the semver version of the
+                                    object.
                                   type: string
                               required:
                               - componentName
@@ -116,7 +133,8 @@ spec:
                               type: object
                             type: array
                           labels:
-                            description: Labels defines an optional set of additional labels describing the object.
+                            description: Labels defines an optional set of additional
+                              labels describing the object.
                             items:
                               description: Label is a label that can be set on objects.
                               properties:
@@ -134,32 +152,41 @@ spec:
                             description: Name is the context unique name of the object.
                             type: string
                           provider:
-                            description: Provider defines the provider type of a component. It can be external or internal.
+                            description: Provider defines the provider type of a component.
+                              It can be external or internal.
                             type: string
                           repositoryContexts:
-                            description: RepositoryContexts defines the previous repositories of the component
+                            description: RepositoryContexts defines the previous repositories
+                              of the component
                             items:
                               x-kubernetes-preserve-unknown-fields: true
                             type: array
                           resources:
-                            description: Resources defines all resources that are created by the component and by a third party.
+                            description: Resources defines all resources that are
+                              created by the component and by a third party.
                             items:
-                              description: Resource describes a resource dependency of a component.
+                              description: Resource describes a resource dependency
+                                of a component.
                               properties:
                                 access:
                                   x-kubernetes-preserve-unknown-fields: true
                                 extraIdentity:
                                   additionalProperties:
                                     type: string
-                                  description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                  description: ExtraIdentity is the identity of an
+                                    object. An additional label with key "name" ist
+                                    not allowed
                                   type: object
                                 labels:
-                                  description: Labels defines an optional set of additional labels describing the object.
+                                  description: Labels defines an optional set of additional
+                                    labels describing the object.
                                   items:
-                                    description: Label is a label that can be set on objects.
+                                    description: Label is a label that can be set
+                                      on objects.
                                     properties:
                                       name:
-                                        description: Name is the unique name of the label.
+                                        description: Name is the unique name of the
+                                          label.
                                         type: string
                                       value:
                                         x-kubernetes-preserve-unknown-fields: true
@@ -169,28 +196,38 @@ spec:
                                     type: object
                                   type: array
                                 name:
-                                  description: Name is the context unique name of the object.
+                                  description: Name is the context unique name of
+                                    the object.
                                   type: string
                                 relation:
-                                  description: Relation describes the relation of the resource to the component. Can be a local or external resource
+                                  description: Relation describes the relation of
+                                    the resource to the component. Can be a local
+                                    or external resource
                                   type: string
                                 srcRef:
-                                  description: SourceRef defines a list of source names. These names reference the sources defines in `component.sources`.
+                                  description: SourceRef defines a list of source
+                                    names. These names reference the sources defines
+                                    in `component.sources`.
                                   items:
-                                    description: SourceRef defines a reference to a source
+                                    description: SourceRef defines a reference to
+                                      a source
                                     properties:
                                       identitySelector:
                                         additionalProperties:
                                           type: string
-                                        description: IdentitySelector defines the identity that is used to match a source.
+                                        description: IdentitySelector defines the
+                                          identity that is used to match a source.
                                         type: object
                                       labels:
-                                        description: Labels defines an optional set of additional labels describing the object.
+                                        description: Labels defines an optional set
+                                          of additional labels describing the object.
                                         items:
-                                          description: Label is a label that can be set on objects.
+                                          description: Label is a label that can be
+                                            set on objects.
                                           properties:
                                             name:
-                                              description: Name is the unique name of the label.
+                                              description: Name is the unique name
+                                                of the label.
                                               type: string
                                             value:
                                               x-kubernetes-preserve-unknown-fields: true
@@ -205,7 +242,8 @@ spec:
                                   description: Type describes the type of the object.
                                   type: string
                                 version:
-                                  description: Version is the semver version of the object.
+                                  description: Version is the semver version of the
+                                    object.
                                   type: string
                               required:
                               - access
@@ -215,24 +253,31 @@ spec:
                               type: object
                             type: array
                           sources:
-                            description: Sources defines sources that produced the component
+                            description: Sources defines sources that produced the
+                              component
                             items:
-                              description: Source is the definition of a component's source.
+                              description: Source is the definition of a component's
+                                source.
                               properties:
                                 access:
                                   x-kubernetes-preserve-unknown-fields: true
                                 extraIdentity:
                                   additionalProperties:
                                     type: string
-                                  description: ExtraIdentity is the identity of an object. An additional label with key "name" ist not allowed
+                                  description: ExtraIdentity is the identity of an
+                                    object. An additional label with key "name" ist
+                                    not allowed
                                   type: object
                                 labels:
-                                  description: Labels defines an optional set of additional labels describing the object.
+                                  description: Labels defines an optional set of additional
+                                    labels describing the object.
                                   items:
-                                    description: Label is a label that can be set on objects.
+                                    description: Label is a label that can be set
+                                      on objects.
                                     properties:
                                       name:
-                                        description: Name is the unique name of the label.
+                                        description: Name is the unique name of the
+                                          label.
                                         type: string
                                       value:
                                         x-kubernetes-preserve-unknown-fields: true
@@ -242,13 +287,15 @@ spec:
                                     type: object
                                   type: array
                                 name:
-                                  description: Name is the context unique name of the object.
+                                  description: Name is the context unique name of
+                                    the object.
                                   type: string
                                 type:
                                   description: Type describes the type of the object.
                                   type: string
                                 version:
-                                  description: Version is the semver version of the object.
+                                  description: Version is the semver version of the
+                                    object.
                                   type: string
                               required:
                               - access
@@ -270,10 +317,12 @@ spec:
                         - version
                         type: object
                       meta:
-                        description: Metadata specifies the schema version of the component.
+                        description: Metadata specifies the schema version of the
+                          component.
                         properties:
                           schemaVersion:
-                            description: Version is the schema version of the component descriptor.
+                            description: Version is the schema version of the component
+                              descriptor.
                             type: string
                         required:
                         - schemaVersion
@@ -283,10 +332,12 @@ spec:
                     - meta
                     type: object
                   ref:
-                    description: ComponentDescriptorReference is the reference to a component descriptor
+                    description: ComponentDescriptorReference is the reference to
+                      a component descriptor
                     properties:
                       componentName:
-                        description: ComponentName defines the unique of the component containing the resource.
+                        description: ComponentName defines the unique of the component
+                          containing the resource.
                         type: string
                       repositoryContext:
                         x-kubernetes-preserve-unknown-fields: true
@@ -301,7 +352,11 @@ spec:
               exportDataMappings:
                 additionalProperties:
                   x-kubernetes-preserve-unknown-fields: true
-                description: 'ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace ))'
+                description: 'ExportDataMappings contains a template for restructuring
+                  exports. It is expected to contain a key for every blueprint-defined
+                  data export. Missing keys will be defaulted to their respective
+                  data export. Example: namespace: (( blueprint.exports.namespace
+                  ))'
                 type: object
               exports:
                 description: Exports define the exported data objects and targets.
@@ -312,10 +367,12 @@ spec:
                       description: DataImportExport is a data object export.
                       properties:
                         dataRef:
-                          description: DataRef is the name of the in-cluster data object.
+                          description: DataRef is the name of the in-cluster data
+                            object.
                           type: string
                         name:
-                          description: Name the internal name of the imported/exported data.
+                          description: Name the internal name of the imported/exported
+                            data.
                           type: string
                       required:
                       - dataRef
@@ -328,10 +385,12 @@ spec:
                       description: TargetImportExport is a target import/export.
                       properties:
                         name:
-                          description: Name the internal name of the imported/exported target.
+                          description: Name the internal name of the imported/exported
+                            target.
                           type: string
                         target:
-                          description: Target is the name of the in-cluster target object.
+                          description: Target is the name of the in-cluster target
+                            object.
                           type: string
                       required:
                       - name
@@ -342,7 +401,11 @@ spec:
               importDataMappings:
                 additionalProperties:
                   x-kubernetes-preserve-unknown-fields: true
-                description: 'ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace ))'
+                description: 'ImportDataMappings contains a template for restructuring
+                  imports. It is expected to contain a key for every blueprint-defined
+                  data import. Missing keys will be defaulted to their respective
+                  data import. Example: namespace: (( installation.imports.namespace
+                  ))'
                 type: object
               imports:
                 description: Imports define the imported data objects and targets.
@@ -353,45 +416,56 @@ spec:
                       description: DataImport is a data object import.
                       properties:
                         configMapRef:
-                          description: ConfigMapRef defines a data reference from a configmap. This method is not allowed in installation templates.
+                          description: ConfigMapRef defines a data reference from
+                            a configmap. This method is not allowed in installation
+                            templates.
                           properties:
                             key:
-                              description: Key is the name of the key in the configmap that holds the data.
+                              description: Key is the name of the key in the configmap
+                                that holds the data.
                               type: string
                             name:
                               description: Name is the name of the kubernetes object.
                               type: string
                             namespace:
-                              description: Namespace is the namespace of kubernetes object.
+                              description: Namespace is the namespace of kubernetes
+                                object.
                               type: string
                           required:
                           - key
                           - name
                           type: object
                         dataRef:
-                          description: DataRef is the name of the in-cluster data object. The reference can also be a namespaces name. E.g. "default/mydataref"
+                          description: DataRef is the name of the in-cluster data
+                            object. The reference can also be a namespaces name. E.g.
+                            "default/mydataref"
                           type: string
                         name:
-                          description: Name the internal name of the imported/exported data.
+                          description: Name the internal name of the imported/exported
+                            data.
                           type: string
                         secretRef:
-                          description: SecretRef defines a data reference from a secret. This method is not allowed in installation templates.
+                          description: SecretRef defines a data reference from a secret.
+                            This method is not allowed in installation templates.
                           properties:
                             key:
-                              description: Key is the name of the key in the secret that holds the data.
+                              description: Key is the name of the key in the secret
+                                that holds the data.
                               type: string
                             name:
                               description: Name is the name of the kubernetes object.
                               type: string
                             namespace:
-                              description: Namespace is the namespace of kubernetes object.
+                              description: Namespace is the namespace of kubernetes
+                                object.
                               type: string
                           required:
                           - key
                           - name
                           type: object
                         version:
-                          description: Version specifies the imported data version. defaults to "v1"
+                          description: Version specifies the imported data version.
+                            defaults to "v1"
                           type: string
                       required:
                       - name
@@ -403,10 +477,12 @@ spec:
                       description: TargetImportExport is a target import/export.
                       properties:
                         name:
-                          description: Name the internal name of the imported/exported target.
+                          description: Name the internal name of the imported/exported
+                            target.
                           type: string
                         target:
-                          description: Target is the name of the in-cluster target object.
+                          description: Target is the name of the in-cluster target
+                            object.
                           type: string
                       required:
                       - name
@@ -415,7 +491,11 @@ spec:
                     type: array
                 type: object
               registryPullSecrets:
-                description: 'RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.'
+                description: 'RegistryPullSecrets defines a list of registry credentials
+                  that are used to pull blueprints, component descriptors and jsonschemas
+                  from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+                  Note that the type information is used to determine the secret key
+                  and the type of the secret.'
                 items:
                   description: ObjectReference is the reference to a kubernetes object.
                   properties:
@@ -438,16 +518,19 @@ spec:
               conditions:
                 description: Conditions contains the actual condition of a installation
                 items:
-                  description: Condition holds the information about the state of a resource.
+                  description: Condition holds the information about the state of
+                    a resource.
                   properties:
                     codes:
-                      description: Well-defined error codes in case the condition reports a problem.
+                      description: Well-defined error codes in case the condition
+                        reports a problem.
                       items:
                         description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
-                      description: Last time the condition transitioned from one status to another.
+                      description: Last time the condition transitioned from one status
+                        to another.
                       format: date-time
                       type: string
                     lastUpdateTime:
@@ -455,7 +538,8 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: A human readable message indicating details about the transition.
+                      description: A human readable message indicating details about
+                        the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -479,7 +563,8 @@ spec:
                 description: ConfigGeneration is the generation of the exported values.
                 type: string
               executionRef:
-                description: ExecutionReference is the reference to the execution that schedules the templated execution items.
+                description: ExecutionReference is the reference to the execution
+                  that schedules the templated execution items.
                 properties:
                   name:
                     description: Name is the name of the kubernetes object.
@@ -496,7 +581,8 @@ spec:
                   description: ImportStatus hold the state of a import.
                   properties:
                     configGeneration:
-                      description: ConfigGeneration is the generation of the imported value.
+                      description: ConfigGeneration is the generation of the imported
+                        value.
                       type: string
                     configMapRef:
                       description: ConfigMapRef is the name of the imported configmap.
@@ -505,13 +591,15 @@ spec:
                       description: DataRef is the name of the in-cluster data object.
                       type: string
                     name:
-                      description: Name is the distinct identifier of the import. Can be either from data or target imports
+                      description: Name is the distinct identifier of the import.
+                        Can be either from data or target imports
                       type: string
                     secretRef:
                       description: SecretRef is the name of the secret.
                       type: string
                     sourceRef:
-                      description: SourceRef is the reference to the installation where the value is imported
+                      description: SourceRef is the reference to the installation
+                        where the value is imported
                       properties:
                         name:
                           description: Name is the name of the kubernetes object.
@@ -526,7 +614,8 @@ spec:
                       description: Target is the name of the in-cluster target object.
                       type: string
                     type:
-                      description: Type defines the kind of import. Can be either DataObject or Target
+                      description: Type defines the kind of import. Can be either
+                        DataObject or Target
                       type: string
                   required:
                   - configGeneration
@@ -535,9 +624,11 @@ spec:
                   type: object
                 type: array
               installationRefs:
-                description: InstallationReferences contain all references to sub-components that are created based on the component definition.
+                description: InstallationReferences contain all references to sub-components
+                  that are created based on the component definition.
                 items:
-                  description: NamedObjectReference is a named reference to a specific resource.
+                  description: NamedObjectReference is a named reference to a specific
+                    resource.
                   properties:
                     name:
                       description: Name is the unique name of the reference.
@@ -563,13 +654,15 @@ spec:
                 description: LastError describes the last error that occurred.
                 properties:
                   codes:
-                    description: Well-defined error codes in case the condition reports a problem.
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
                     items:
                       description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
-                    description: Last time the condition transitioned from one status to another.
+                    description: Last time the condition transitioned from one status
+                      to another.
                     format: date-time
                     type: string
                   lastUpdateTime:
@@ -577,10 +670,12 @@ spec:
                     format: date-time
                     type: string
                   message:
-                    description: A human readable message indicating details about the transition.
+                    description: A human readable message indicating details about
+                      the transition.
                     type: string
                   operation:
-                    description: Operation describes the operator where the error occurred.
+                    description: Operation describes the operator where the error
+                      occurred.
                     type: string
                   reason:
                     description: The reason for the condition's last transition.
@@ -593,7 +688,9 @@ spec:
                 - reason
                 type: object
               observedGeneration:
-                description: ObservedGeneration is the most recent generation observed for this ControllerInstallations. It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
+                description: ObservedGeneration is the most recent generation observed
+                  for this ControllerInstallations. It corresponds to the ControllerInstallations
+                  generation, which is updated on mutation by the landscaper.
                 format: int64
                 type: integer
               phase:

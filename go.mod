@@ -9,38 +9,37 @@ require (
 	github.com/containerd/containerd v1.4.2
 	github.com/docker/cli v20.10.0-rc1+incompatible
 	github.com/gardener/component-cli v0.21.0
-	github.com/gardener/component-spec/bindings-go v0.0.41
+	github.com/gardener/component-spec/bindings-go v0.0.51
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
-	github.com/go-logr/zapr v0.3.0
+	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mandelsoft/spiff v1.5.0
 	github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
-	github.com/onsi/ginkgo v1.14.2
-	github.com/onsi/gomega v1.10.4
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.13.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
-	github.com/spf13/cobra v1.1.1
+	github.com/prometheus/client_golang v1.11.0
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	go.uber.org/zap v1.17.0
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	helm.sh/helm/v3 v3.2.4
-	k8s.io/api v0.20.2
-	k8s.io/apiextensions-apiserver v0.20.1
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
-	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
-	sigs.k8s.io/controller-runtime v0.8.1
-	sigs.k8s.io/controller-tools v0.3.1-0.20200517180335-820a4a27ea84 // including a fix from master
+	k8s.io/api v0.21.2
+	k8s.io/apiextensions-apiserver v0.21.2
+	k8s.io/apimachinery v0.21.2
+	k8s.io/client-go v0.21.2
+	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
+	sigs.k8s.io/controller-runtime v0.9.2
+	sigs.k8s.io/controller-tools v0.6.1
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -50,7 +49,4 @@ replace (
 	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega => github.com/onsi/gomega v1.5.0
-	k8s.io/api => k8s.io/api v0.19.7
-	k8s.io/apimachinery => k8s.io/apimachinery v0.19.7
-	k8s.io/client-go => k8s.io/client-go v0.19.7
 )

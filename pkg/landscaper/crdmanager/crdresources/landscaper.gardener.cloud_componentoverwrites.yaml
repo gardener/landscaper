@@ -21,26 +21,34 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ComponentOverwrites are resources that can hold any kind json or yaml data.
+        description: ComponentOverwrites are resources that can hold any kind json
+          or yaml data.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           overwrites:
             description: Overwrites defines a list of component overwrites
             items:
-              description: ComponentOverwrite defines an overwrite for a specific component and/or version of a component.
+              description: ComponentOverwrite defines an overwrite for a specific
+                component and/or version of a component.
               properties:
                 component:
-                  description: Component defines the component that should be replaced. The version is optional and will default to all found versions
+                  description: Component defines the component that should be replaced.
+                    The version is optional and will default to all found versions
                   properties:
                     componentName:
-                      description: ComponentName defines the unique of the component containing the resource.
+                      description: ComponentName defines the unique of the component
+                        containing the resource.
                       type: string
                     repositoryContext:
                       x-kubernetes-preserve-unknown-fields: true
@@ -49,10 +57,12 @@ spec:
                       type: string
                   type: object
                 target:
-                  description: Target defines the replacement target for the component or version.
+                  description: Target defines the replacement target for the component
+                    or version.
                   properties:
                     componentName:
-                      description: ComponentName defines the unique of the component containing the resource.
+                      description: ComponentName defines the unique of the component
+                        containing the resource.
                       type: string
                     repositoryContext:
                       x-kubernetes-preserve-unknown-fields: true

@@ -27,7 +27,7 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs, addConversionFuncs)
+	SchemeBuilder      = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs)
 	localSchemeBuilder = &SchemeBuilder
 	AddToScheme        = SchemeBuilder.AddToScheme
 )

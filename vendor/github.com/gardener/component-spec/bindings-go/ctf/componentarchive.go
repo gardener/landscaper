@@ -278,7 +278,7 @@ func (ca *ComponentArchive) ensureBlobsPath() error {
 	return nil
 }
 
-// WriteTar tars the current components descriptor and its artifacts.
+// WriteTarGzip tars the current components descriptor and its artifacts.
 func (ca *ComponentArchive) WriteTarGzip(writer io.Writer) error {
 	gw := gzip.NewWriter(writer)
 	if err := ca.WriteTar(gw); err != nil {
@@ -458,7 +458,7 @@ func (ca *ComponentArchiveBlobResolver) resolve(_ context.Context, res v2.Resour
 		return nil, nil, UnsupportedResolveType
 	}
 	localFSAccess := &v2.LocalFilesystemBlobAccess{}
-	if err := v2.NewCodec(nil, nil, nil).Decode(res.Access.Raw, localFSAccess); err != nil {
+	if err := res.Access.DecodeInto(localFSAccess); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
 	blobpath := BlobPath(localFSAccess.Filename)

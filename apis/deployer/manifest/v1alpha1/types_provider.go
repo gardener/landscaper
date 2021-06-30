@@ -14,6 +14,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderConfiguration is the manifest deployer configuration that is expected in a DeployItem
+// +k8s:conversion-gen=false
 type ProviderConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 	// Kubeconfig is the base64 encoded kubeconfig file.
@@ -57,6 +58,7 @@ type HealthChecksConfiguration struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderStatus is the manifest provider specific status
+// +k8s:conversion-gen=false
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the manifest deployer.

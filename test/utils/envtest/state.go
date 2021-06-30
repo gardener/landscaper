@@ -251,7 +251,7 @@ func removeFinalizer(ctx context.Context, c client.Client, obj client.Object) er
 	if err := c.Get(ctx, kutil.ObjectKey(obj.GetName(), obj.GetNamespace()), obj); err != nil {
 		return err
 	}
-	currObj := obj.DeepCopyObject()
+	currObj := obj.DeepCopyObject().(client.Object)
 
 	obj.SetFinalizers([]string{})
 	patch := client.MergeFrom(currObj)

@@ -36,7 +36,7 @@ type OCIRegistryAccess struct {
 }
 
 // NewOCIRegistryAccess creates a new OCIRegistryAccess accessor
-func NewOCIRegistryAccess(ref string) TypedObjectAccessor {
+func NewOCIRegistryAccess(ref string) *OCIRegistryAccess {
 	return &OCIRegistryAccess{
 		ObjectType: ObjectType{
 			Type: OCIRegistryType,
@@ -61,7 +61,7 @@ type RelativeOciAccess struct {
 }
 
 // NewRelativeOciAccess creates a new RelativeOciAccess accessor
-func NewRelativeOciAccess(ref string) TypedObjectAccessor {
+func NewRelativeOciAccess(ref string) *RelativeOciAccess {
 	return &RelativeOciAccess{
 		ObjectType: ObjectType{
 			Type: RelativeOciReferenceType,
@@ -95,7 +95,7 @@ type OCIBlobAccess struct {
 }
 
 // NewOCIBlobAccess creates a new OCIBlob accessor
-func NewOCIBlobAccess(ref, mediaType, digest string, size int64) TypedObjectAccessor {
+func NewOCIBlobAccess(ref, mediaType, digest string, size int64) *OCIBlobAccess {
 	return &OCIBlobAccess{
 		ObjectType: ObjectType{
 			Type: OCIBlobType,
@@ -115,7 +115,7 @@ func (_ *OCIBlobAccess) GetType() string {
 const LocalOCIBlobType = "localOciBlob"
 
 // NewLocalOCIBlobAccess creates a new LocalOCIBlob accessor
-func NewLocalOCIBlobAccess(digest string) TypedObjectAccessor {
+func NewLocalOCIBlobAccess(digest string) *LocalOCIBlobAccess {
 	return &LocalOCIBlobAccess{
 		ObjectType: ObjectType{
 			Type: LocalOCIBlobType,
@@ -139,7 +139,7 @@ func (_ *LocalOCIBlobAccess) GetType() string {
 const LocalFilesystemBlobType = "localFilesystemBlob"
 
 // NewLocalFilesystemBlobAccess creates a new localFilesystemBlob accessor.
-func NewLocalFilesystemBlobAccess(path string, mediaType string) TypedObjectAccessor {
+func NewLocalFilesystemBlobAccess(path string, mediaType string) *LocalFilesystemBlobAccess {
 	return &LocalFilesystemBlobAccess{
 		ObjectType: ObjectType{
 			Type: LocalFilesystemBlobType,
@@ -175,7 +175,7 @@ type Web struct {
 }
 
 // NewWebAccess creates a new Web accessor
-func NewWebAccess(url string) TypedObjectAccessor {
+func NewWebAccess(url string) *Web {
 	return &Web{
 		ObjectType: ObjectType{
 			Type: OCIBlobType,
@@ -205,7 +205,7 @@ type GitHubAccess struct {
 }
 
 // NewGitHubAccess creates a new Web accessor
-func NewGitHubAccess(url, ref, commit string) TypedObjectAccessor {
+func NewGitHubAccess(url, ref, commit string) *GitHubAccess {
 	return &GitHubAccess{
 		ObjectType: ObjectType{
 			Type: GitHubAccessType,

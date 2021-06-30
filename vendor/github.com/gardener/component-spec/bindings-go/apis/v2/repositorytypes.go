@@ -34,7 +34,7 @@ type OCIRegistryRepository struct {
 }
 
 // NewOCIRegistryRepository creates a new OCIRegistryRepository accessor
-func NewOCIRegistryRepository(baseURL string, mapping ComponentNameMapping) Repository {
+func NewOCIRegistryRepository(baseURL string, mapping ComponentNameMapping) *OCIRegistryRepository {
 	if len(mapping) == 0 {
 		mapping = OCIRegistryURLPathMapping
 	}
