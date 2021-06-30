@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
@@ -55,14 +55,14 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	if c.Configuration.LabelSelector != nil {
 		o, err := GetObjectsByLabels(c.Context, c.Client, c.ManagedResources, c.Configuration.LabelSelector)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err, c.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
+			return lserror.NewWrappedError(err, c.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
 		}
 		objects = append(objects, o...)
 	}
 
 	timeout := c.Timeout.Duration
 	if err := WaitForObjectsHealthy(c.Context, timeout, c.Log, c.Client, objects, c.CheckObject); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserror.NewWrappedError(err,
 			c.CurrentOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
 	}
 
@@ -74,14 +74,14 @@ func (c *CustomHealthCheck) CheckObject(u *unstructured.Unstructured) error {
 	for _, requirement := range c.Configuration.Requirements {
 		fields, err := GetFieldsByJSONPath(u.Object, requirement.JsonPath)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err, c.CurrentOp, "parsing JSON path", err.Error())
+			return lserror.NewWrappedError(err, c.CurrentOp, "parsing JSON path", err.Error())
 		}
 
 		if fieldDoesNotExist(fields) {
 			if requirement.Operator == selection.DoesNotExist {
 				return nil
 			}
-			return lsv1alpha1helper.NewError(c.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath))
+			return lserror.NewError(c.CurrentOp, "object check", fmt.Sprintf("field with JSON path %s does not exist", requirement.JsonPath))
 		}
 
 		if requirement.Operator == selection.Exists {
@@ -91,18 +91,18 @@ func (c *CustomHealthCheck) CheckObject(u *unstructured.Unstructured) error {
 
 		requirementValues, err := parseRequirementValues(requirement.Value)
 		if err != nil {
-			return lsv1alpha1helper.NewWrappedError(err, c.CurrentOp, "parse requirement values", err.Error())
+			return lserror.NewWrappedError(err, c.CurrentOp, "parse requirement values", err.Error())
 		}
 
 		for _, field := range fields {
 			for _, value := range field {
 				ok, err := matchResourceConditions(value.Interface(), requirementValues, requirement.Operator)
 				if err != nil {
-					return lsv1alpha1helper.NewWrappedError(err, c.CurrentOp, "check resource requirements", err.Error())
+					return lserror.NewWrappedError(err, c.CurrentOp, "check resource requirements", err.Error())
 				}
 
 				if !ok {
-					return lsv1alpha1helper.NewError(c.CurrentOp, "check object values",
+					return lserror.NewError(c.CurrentOp, "check object values",
 						fmt.Sprintf("resource %s %s/%s does not fulfil resource condition field %s", u.GroupVersionKind().String(),
 							u.GetName(),
 							u.GetNamespace(),

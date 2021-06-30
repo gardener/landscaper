@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -45,7 +45,7 @@ func (d *DefaultHealthCheck) CheckResourcesHealth() error {
 
 	timeout := d.Timeout.Duration
 	if err := WaitForObjectsHealthy(d.Context, timeout, d.Log, d.Client, objects, d.CheckObject); err != nil {
-		return lsv1alpha1helper.NewWrappedError(err,
+		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
 	}
 

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -18,6 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
