@@ -6,7 +6,8 @@ package blueprints
 
 import (
 	"context"
-	"encoding/base32"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -307,9 +308,12 @@ func (s *Store) RunGarbageCollection() {
 	}
 }
 
+// blueprintID generates a unique blueprint id that can be used a a file/directory name.
+// The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
 func blueprintID(cd *cdv2.ComponentDescriptor, resource cdv2.Resource) string {
-	// the value is b32 encoded to be a compliant filesystem directory name
-	return base32.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s-%s-%s-%s", cd.Name, cd.Version, resource.Name, resource.Version)))
+	h := sha256.New()
+	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s", cd.Name, cd.Version, resource.Name, resource.Version)))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func blueprintPath(bpID string) string {
