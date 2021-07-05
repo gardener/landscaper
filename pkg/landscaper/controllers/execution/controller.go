@@ -79,7 +79,9 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		return lserrors.NewErrorOrNil(c.client.Update(ctx, exec), "Reconcile", "RemoveFinalizer")
+		if err := c.client.Update(ctx, exec); err != nil {
+			return lserrors.NewError("Reconcile", "AddFinalizer", err.Error())
+		}
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {

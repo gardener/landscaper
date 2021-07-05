@@ -18,7 +18,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	dictrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
@@ -168,7 +167,7 @@ func TimeoutTests(f *framework.Framework) {
 				"Phase": Equal(lsv1alpha1.ExecutionPhaseFailed),
 				"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 					"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-					"Reason": Equal(dictrl.PickupTimeoutReason),
+					"Reason": Equal(lsv1alpha1.PickupTimeoutReason),
 				})),
 			}), "deploy item of the dummy installation should have had a pickup timeout")
 			Eventually(func() lsv1alpha1.DeployItem {
@@ -198,7 +197,7 @@ func TimeoutTests(f *framework.Framework) {
 				"Phase": Equal(lsv1alpha1.ExecutionPhaseFailed),
 				"LastError": PointTo(MatchFields(IgnoreExtras, Fields{
 					"Codes":  ContainElement(lsv1alpha1.ErrorTimeout),
-					"Reason": Equal(dictrl.AbortingTimeoutReason),
+					"Reason": Equal(lsv1alpha1.AbortingTimeoutReason),
 				})),
 			}))
 
