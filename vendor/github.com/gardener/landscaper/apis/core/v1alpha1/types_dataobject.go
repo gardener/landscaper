@@ -6,6 +6,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // DataObjectSourceType defines the context of a data object.
@@ -40,6 +42,34 @@ type DataObjectList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DataObject `json:"items"`
+}
+
+// DataObjectDefinition defines the DataObject resource CRD.
+var DataObjectDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "dataobjects",
+		Singular: "dataobject",
+		ShortNames: []string{
+			"do",
+			"dobj",
+		},
+		Kind: "DataObject",
+	},
+	Scope:   lsschema.NamespaceScoped,
+	Storage: true,
+	Served:  true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Context",
+			Type:     "string",
+			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/context']",
+		},
+		{
+			Name:     "Key",
+			Type:     "string",
+			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
+		},
+	},
 }
 
 // +genclient

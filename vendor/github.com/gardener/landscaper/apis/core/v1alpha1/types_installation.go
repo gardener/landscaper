@@ -8,6 +8,8 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // EncompassedByLabel is the label that contains the name of the parent installation
@@ -67,16 +69,43 @@ type InstallationList struct {
 	Items           []Installation `json:"items"`
 }
 
+// InstallationDefinition defines the Installation resource CRD.
+var InstallationDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "installations",
+		Singular: "installation",
+		ShortNames: []string{
+			"inst",
+		},
+		Kind: "Installation",
+	},
+	Scope:             lsschema.NamespaceScoped,
+	Storage:           true,
+	Served:            true,
+	SubresourceStatus: true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "phase",
+			Type:     "string",
+			JSONPath: ".status.phase",
+		},
+		{
+			Name:     "Execution",
+			Type:     "string",
+			JSONPath: ".status.executionRef.name",
+		},
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Blueprint contains the configuration of a component
-// +kubebuilder:resource:path="installations",scope="Namespaced",shortName="inst",singular="installation"
-// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.configGeneration",name=ConfigGen,type=integer
-// +kubebuilder:printcolumn:JSONPath=".status.executionRef.name",name=Execution,type=string
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
-// +kubebuilder:subresource:status
+// Installation contains the configuration of a component
 type Installation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -205,7 +234,7 @@ type DataImport struct {
 	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
 }
 
-// DataImportExport is a data object export.
+// DataExport is a data object export.
 type DataExport struct {
 	// Name the internal name of the imported/exported data.
 	Name string `json:"name"`

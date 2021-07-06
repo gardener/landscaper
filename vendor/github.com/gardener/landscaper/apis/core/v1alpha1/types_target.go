@@ -9,6 +9,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	lsschema "github.com/gardener/landscaper/apis/schema"
+
 	"github.com/gardener/landscaper/apis/core"
 )
 
@@ -24,16 +26,50 @@ type TargetList struct {
 	Items           []Target `json:"items"`
 }
 
+// TargetDefinition defines the Target resource CRD.
+var TargetDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "targets",
+		Singular: "target",
+		ShortNames: []string{
+			"tgt",
+			"tg",
+		},
+		Kind: "Target",
+	},
+	Scope:             lsschema.NamespaceScoped,
+	Storage:           true,
+	Served:            true,
+	SubresourceStatus: false,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Type",
+			Type:     "string",
+			JSONPath: ".spec.type",
+		},
+		{
+			Name:     "Context",
+			Type:     "string",
+			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/context']",
+		},
+		{
+			Name:     "Key",
+			Type:     "string",
+			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
+		},
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Target defines a specific data object that defines target environment.
 // Every deploy item can have a target which is used by the deployer to install the specific application.
-// +kubebuilder:resource:path="targets",scope="Namespaced",shortName={"tg","tgt"},singular="target"
-// +kubebuilder:printcolumn:JSONPath=".spec.type",name=Type,type=string
-// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`,name=Context,type=string
-// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`,name=Key,type=string
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 type Target struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -48,7 +84,6 @@ type TargetSpec struct {
 	Type TargetType `json:"type"`
 	// Configuration contains the target type specific configuration.
 	// +optional
-	// +kubebuilder:validation:XPreserveUnknownFields
 	Configuration AnyJSON `json:"config,omitempty"`
 }
 

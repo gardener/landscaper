@@ -14,6 +14,7 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.4.4
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mandelsoft/spiff v1.5.0
@@ -32,6 +33,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/tools v0.1.3 // indirect
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver v0.21.2
@@ -39,7 +41,6 @@ require (
 	k8s.io/client-go v0.21.2
 	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
 	sigs.k8s.io/controller-runtime v0.9.2
-	sigs.k8s.io/controller-tools v0.6.1
 	sigs.k8s.io/yaml v1.2.0
 )
 

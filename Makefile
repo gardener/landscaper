@@ -21,7 +21,6 @@ DISABLE_CLEANUP := false
 
 .PHONY: install-requirements
 install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest

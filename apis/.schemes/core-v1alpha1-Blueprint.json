@@ -37,7 +37,7 @@
       }
     },
     "core-v1alpha1-DataExport": {
-      "description": "DataImportExport is a data object export.",
+      "description": "DataExport is a data object export.",
       "type": "object",
       "required": [
         "name",
