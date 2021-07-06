@@ -1,15 +1,12 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: componentoverwrites.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
     kind: ComponentOverwrites
-    listKind: ComponentOverwritesList
     plural: componentoverwrites
     shortNames:
     - compoverwrite
@@ -34,8 +31,6 @@ spec:
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
-          metadata:
-            type: object
           overwrites:
             description: Overwrites defines a list of component overwrites
             items:
@@ -51,7 +46,20 @@ spec:
                         containing the resource.
                       type: string
                     repositoryContext:
-                      x-kubernetes-preserve-unknown-fields: true
+                      description: RepositoryContext defines the context of the component
+                        repository to resolve blueprints.
+                      properties:
+                        object:
+                          additionalProperties:
+                            type: object
+                          type: object
+                        type:
+                          description: Type describes the type of the object.
+                          type: string
+                      required:
+                      - type
+                      - object
+                      type: object
                     version:
                       description: Version defines the version of the component.
                       type: string
@@ -65,7 +73,20 @@ spec:
                         containing the resource.
                       type: string
                     repositoryContext:
-                      x-kubernetes-preserve-unknown-fields: true
+                      description: RepositoryContext defines the context of the component
+                        repository to resolve blueprints.
+                      properties:
+                        object:
+                          additionalProperties:
+                            type: object
+                          type: object
+                        type:
+                          description: Type describes the type of the object.
+                          type: string
+                      required:
+                      - type
+                      - object
+                      type: object
                     version:
                       description: Version defines the version of the component.
                       type: string
@@ -78,3 +99,9 @@ spec:
         type: object
     served: true
     storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

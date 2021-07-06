@@ -8,6 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // DeployItemValidationCondition is the Conditions type to indicate the deploy items configuration validation status.
@@ -25,16 +27,48 @@ type DeployItemList struct {
 	Items           []DeployItem `json:"items"`
 }
 
+// DeployItemDefinition defines the DeployItem resource CRD.
+var DeployItemDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "deployitems",
+		Singular: "deployitem",
+		ShortNames: []string{
+			"di",
+		},
+		Kind: "DeployItem",
+	},
+	Scope:             lsschema.NamespaceScoped,
+	Storage:           true,
+	Served:            true,
+	SubresourceStatus: true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Type",
+			Type:     "string",
+			JSONPath: ".spec.type",
+		},
+		{
+			Name:     "Phase",
+			Type:     "string",
+			JSONPath: ".status.phase",
+		},
+		{
+			Name:     "ExportRef",
+			Type:     "string",
+			JSONPath: ".status.exportRef.name",
+		},
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItem defines a resource that should be processed by a external deployer
-// +kubebuilder:resource:path="deployitems",scope="Namespaced",shortName="di",singular="deployitem"
-// +kubebuilder:printcolumn:JSONPath=".spec.type",name=Type,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.phase",name=Phase,type=string
-// +kubebuilder:printcolumn:JSONPath=".status.exportRef.name",name=ExportRef,type=string
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
-// +kubebuilder:subresource:status
 type DeployItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -55,8 +89,6 @@ type DeployItemSpec struct {
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
 	// Configuration contains the deployer type specific configuration.
-	// +kubebuilder:validation:XEmbeddedResource
-	// +kubebuilder:validation:XPreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"config,omitempty"`
 	// RegistryPullSecrets defines a list of registry credentials that are used to
 	// pull blueprints, component descriptors and jsonschemas from the respective registry.
@@ -100,8 +132,6 @@ type DeployItemStatus struct {
 
 	// ProviderStatus contains the provider specific status
 	// +optional
-	// +kubebuilder:validation:XEmbeddedResource
-	// +kubebuilder:validation:XPreserveUnknownFields
 	ProviderStatus *runtime.RawExtension `json:"providerStatus,omitempty"`
 
 	// ExportReference is the reference to the object that contains the exported values.

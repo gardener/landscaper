@@ -1,15 +1,12 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: deployitems.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
     kind: DeployItem
-    listKind: DeployItemList
     plural: deployitems
     shortNames:
     - di
@@ -45,8 +42,6 @@ spec:
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
-          metadata:
-            type: object
           spec:
             description: DeployItemSpec contains the definition of a deploy item.
             properties:
@@ -89,7 +84,13 @@ spec:
                 - name
                 type: object
               timeout:
-                x-kubernetes-preserve-unknown-fields: true
+                description: Timeout specifies how long the deployer may take to apply
+                  the deploy item. When the time is exceeded, the landscaper will
+                  add the abort annotation to the deploy item and later put it in
+                  'Failed' if the deployer doesn't handle the abort properly. Value
+                  has to be parsable by time.ParseDuration (or 'none' to deactivate
+                  the timeout). Defaults to ten minutes if not specified.
+                type: string
               type:
                 description: Type is the type of the deployer that should handle the
                   item.
@@ -112,7 +113,6 @@ spec:
                       description: Well-defined error codes in case the condition
                         reports a problem.
                       items:
-                        description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
@@ -138,12 +138,12 @@ spec:
                       description: DataType of the Shoot condition.
                       type: string
                   required:
+                  - type
+                  - status
                   - lastTransitionTime
                   - lastUpdateTime
-                  - message
                   - reason
-                  - status
-                  - type
+                  - message
                   type: object
                 type: array
               deployer:
@@ -184,7 +184,6 @@ spec:
                     description: Well-defined error codes in case the condition reports
                       a problem.
                     items:
-                      description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
@@ -208,11 +207,11 @@ spec:
                     description: The reason for the condition's last transition.
                     type: string
                 required:
+                - operation
                 - lastTransitionTime
                 - lastUpdateTime
-                - message
-                - operation
                 - reason
+                - message
                 type: object
               lastReconcileTime:
                 description: LastReconcileTime indicates when the reconciliation of
@@ -243,3 +242,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

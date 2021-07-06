@@ -41,7 +41,7 @@ func (_ JSONSchemaDefinition) OpenAPISchemaFormat() string { return "" }
 
 // Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.
 type Duration struct {
-	time.Duration
+	time.Duration `json:",inline"`
 }
 
 // MarshalJSON implements the json marshaling for a Duration
