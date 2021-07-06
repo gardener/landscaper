@@ -1,6 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "apis-v2-UnstructuredTypedObject": {
+      "description": "UnstructuredTypedObject describes a generic typed object.",
+      "type": "object",
+      "required": [
+        "type",
+        "object"
+      ],
+      "properties": {
+        "object": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "type": {
+          "description": "Type describes the type of the object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "core-v1alpha1-AnyJSON": {
       "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
       "type": [
@@ -10,6 +31,88 @@
         "array",
         "boolean"
       ]
+    },
+    "core-v1alpha1-ComponentDescriptorImport": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "cdList": {
+          "description": "CDList represents a list of component descriptor imports. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorImportData"
+          }
+        },
+        "cdRef": {
+          "description": "CDRef is a reference to a component descriptor in a registry. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorReference"
+        },
+        "configMapRef": {
+          "description": "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-ConfigMapReference"
+        },
+        "dataRef": {
+          "description": "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, instead of one of the other fields.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name the internal name of the imported/exported component descriptor.",
+          "type": "string",
+          "default": ""
+        },
+        "secretRef": {
+          "description": "SecretRef is a reference to a key in a secret in the cluster. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-SecretReference"
+        }
+      }
+    },
+    "core-v1alpha1-ComponentDescriptorImportData": {
+      "type": "object",
+      "properties": {
+        "cdRef": {
+          "description": "CDRef is a reference to a component descriptor in a registry. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorReference"
+        },
+        "configMapRef": {
+          "description": "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-ConfigMapReference"
+        },
+        "dataRef": {
+          "description": "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, instead of one of the other fields.",
+          "type": "string"
+        },
+        "secretRef": {
+          "description": "SecretRef is a reference to a key in a secret in the cluster. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-SecretReference"
+        }
+      }
+    },
+    "core-v1alpha1-ComponentDescriptorReference": {
+      "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
+      "type": "object",
+      "required": [
+        "componentName",
+        "version"
+      ],
+      "properties": {
+        "componentName": {
+          "description": "ComponentName defines the unique of the component containing the resource.",
+          "type": "string",
+          "default": ""
+        },
+        "repositoryContext": {
+          "description": "RepositoryContext defines the context of the component repository to resolve blueprints.",
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        },
+        "version": {
+          "description": "Version defines the version of the component.",
+          "type": "string",
+          "default": ""
+        }
+      }
     },
     "core-v1alpha1-ConfigMapReference": {
       "description": "ConfigMapReference is reference to data in a configmap. The configmap can also be in a different namespace.",
@@ -193,6 +296,14 @@
       "description": "InstallationImports defines import of data objects and targets.",
       "type": "object",
       "properties": {
+        "componentDescriptors": {
+          "description": "ComponentDescriptors defines all component descriptor imports.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorImport"
+          }
+        },
         "data": {
           "description": "Data defines all data object imports.",
           "type": "array",

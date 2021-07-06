@@ -1330,6 +1330,87 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
+</p>
+<p>
+<p>CDImportStatus is the import status of a component descriptor</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>componentDescriptorRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
+ComponentDescriptorReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptorRef is a reference to a component descriptor</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretRef is the name of the secret.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configMapRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigMapRef is the name of the imported configmap.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sourceRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ObjectReference">
+ObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>SourceRef is the reference to the installation from where the value is imported</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configGeneration</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ConfigGeneration is the generation of the imported value.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">ClusterRestConfig
 </h3>
 <p>
@@ -1439,6 +1520,184 @@ github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationImports">InstallationImports</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name the internal name of the imported/exported component descriptor.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cdRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
+ComponentDescriptorReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CDRef is a reference to a component descriptor in a registry.
+Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretRef is a reference to a key in a secret in the cluster.
+Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configMapRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">
+ConfigMapReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigMapRef is a reference to a key in a config map in the cluster.
+Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cdList</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">
+[]ComponentDescriptorImportData
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CDList represents a list of component descriptor imports.
+Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRef can be used to reference component descriptors imported by the parent installation.
+This field is used in subinstallation templates only, instead of one of the other fields.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>cdRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
+ComponentDescriptorReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CDRef is a reference to a component descriptor in a registry.
+Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.SecretReference">
+SecretReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SecretRef is a reference to a key in a secret in the cluster.
+Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configMapRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">
+ConfigMapReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ConfigMapRef is a reference to a key in a config map in the cluster.
+Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataRef</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DataRef can be used to reference component descriptors imported by the parent installation.
+This field is used in subinstallation templates only, instead of one of the other fields.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ComponentDescriptorKind">ComponentDescriptorKind
 (<code>string</code> alias)</p></h3>
 <p>
@@ -1449,7 +1708,11 @@ It can be a component or a resource.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition</a>)
+<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorDefinition">ComponentDescriptorDefinition</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ImportStatus">ImportStatus</a>)
 </p>
 <p>
 <p>ComponentDescriptorReference is the reference to a component descriptor.
@@ -1739,6 +2002,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>)
 </p>
 <p>
@@ -3084,6 +3349,34 @@ string
 </tr>
 <tr>
 <td>
+<code>componentDescriptorRef</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
+ComponentDescriptorReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptorRef is a reference to a component descriptor</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentDescriptorList</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">
+[]CDImportStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptors is a list of import statuses for component descriptors</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>dataRef</code></br>
 <em>
 string
@@ -3290,6 +3583,20 @@ AnyJSON
 <td>
 <em>(Optional)</em>
 <p>Targets defines all target imports.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>componentDescriptors</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">
+[]ComponentDescriptorImport
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ComponentDescriptors defines all component descriptor imports.</p>
 </td>
 </tr>
 </tbody>
@@ -3698,6 +4005,7 @@ ObjectReference
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.CDImportStatus">CDImportStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ConfigMapReference">ConfigMapReference</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
@@ -3928,6 +4236,8 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImport">ComponentDescriptorImport</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">ComponentDescriptorImportData</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataImport">DataImport</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ValueRef">ValueRef</a>)
 </p>

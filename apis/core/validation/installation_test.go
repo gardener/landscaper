@@ -255,6 +255,36 @@ var _ = Describe("Installation", func() {
 						Targets: []string{},
 					},
 				},
+				ComponentDescriptors: []core.ComponentDescriptorImport{
+					{
+						Name: "cdfoo",
+						SecretRef: &core.SecretReference{
+							ObjectReference: core.ObjectReference{
+								Name:      "foo",
+								Namespace: "foo",
+							},
+							Key: "foo",
+						},
+					},
+					{
+						Name: "cdbar",
+						ConfigMapRef: &core.ConfigMapReference{
+							ObjectReference: core.ObjectReference{
+								Name:      "bar",
+								Namespace: "bar",
+							},
+							Key: "bar",
+						},
+					},
+					{
+						Name:  "cdbaz",
+						CDRef: &core.ComponentDescriptorReference{},
+					},
+					{
+						Name:   "cdfoobar",
+						CDList: []core.ComponentDescriptorImportData{},
+					},
+				},
 			}
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
@@ -287,10 +317,24 @@ var _ = Describe("Installation", func() {
 						Target: "foo",
 					},
 				},
+				ComponentDescriptors: []core.ComponentDescriptorImport{
+					{
+						Name:  "baz",
+						CDRef: &core.ComponentDescriptorReference{},
+					},
+					{
+						Name:  "baz",
+						CDRef: &core.ComponentDescriptorReference{},
+					},
+					{
+						Name:  "foo",
+						CDRef: &core.ComponentDescriptorReference{},
+					},
+				},
 			}
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
-			Expect(allErrs).To(HaveLen(3))
+			Expect(allErrs).To(HaveLen(5))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeDuplicate),
 				"Field": Equal("imports.data[1]"),
@@ -302,6 +346,14 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeDuplicate),
 				"Field": Equal("imports.targets[2]"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeDuplicate),
+				"Field": Equal("imports.componentDescriptors[1]"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeDuplicate),
+				"Field": Equal("imports.componentDescriptors[2]"),
 			}))))
 		})
 
@@ -325,6 +377,12 @@ var _ = Describe("Installation", func() {
 						},
 					},
 				},
+				ComponentDescriptors: []core.ComponentDescriptorImport{
+					{
+						Name:  "",
+						CDRef: &core.ComponentDescriptorReference{},
+					},
+				},
 			}
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
@@ -341,12 +399,54 @@ var _ = Describe("Installation", func() {
 				"Field": Equal("imports.targets[0].name"),
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.targets[0].target|targets|targetListRef"),
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Detail": And(ContainSubstring("Target"), ContainSubstring("Targets"), ContainSubstring("TargetListReference")),
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.targets[1].targets[0]"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeRequired),
+				"Field": Equal("imports.componentDescriptors[0].name"),
+			}))))
+		})
+
+		It("should fail if imports are lacking configuration fields", func() {
+			imp := core.InstallationImports{
+				Data: []core.DataImport{
+					{
+						Name: "foo",
+					},
+				},
+				Targets: []core.TargetImport{
+					{
+						Name: "bar",
+					},
+				},
+				ComponentDescriptors: []core.ComponentDescriptorImport{
+					{
+						Name: "baz",
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(HaveLen(3))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("imports.data[0]"),
+				"Detail": And(ContainSubstring("DataRef"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef")),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("imports.targets[0]"),
+				"Detail": And(ContainSubstring("Target"), ContainSubstring("Targets"), ContainSubstring("TargetListReference")),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":   Equal(field.ErrorTypeRequired),
+				"Field":  Equal("imports.componentDescriptors[0]"),
+				"Detail": And(ContainSubstring("CDRef"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef"), ContainSubstring("CDList")),
 			}))))
 		})
 
@@ -378,7 +478,101 @@ var _ = Describe("Installation", func() {
 			for _, elem := range allErrs {
 				Expect(elem).To(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":   Equal(field.ErrorTypeInvalid),
-					"Detail": Equal("only one of target, targets, and targetListRef may be specified"),
+					"Detail": And(ContainSubstring("Target"), ContainSubstring("Targets"), ContainSubstring("TargetListReference")),
+				})))
+			}
+		})
+
+		It("should fail if multiple of cdRef, secretRef, configMapRef, and cdList are specified", func() {
+			imp := core.InstallationImports{
+				ComponentDescriptors: []core.ComponentDescriptorImport{
+					{
+						Name:  "foo",
+						CDRef: &core.ComponentDescriptorReference{},
+						SecretRef: &core.SecretReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+					},
+					{
+						Name:  "bar",
+						CDRef: &core.ComponentDescriptorReference{},
+						ConfigMapRef: &core.ConfigMapReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+					},
+					{
+						Name: "baz",
+						SecretRef: &core.SecretReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+						ConfigMapRef: &core.ConfigMapReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+					},
+					{
+						Name:   "foobar",
+						CDRef:  &core.ComponentDescriptorReference{},
+						CDList: []core.ComponentDescriptorImportData{},
+					},
+					{
+						Name: "foobaz",
+						SecretRef: &core.SecretReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+						CDList: []core.ComponentDescriptorImportData{},
+					},
+					{
+						Name: "foofoo",
+						ConfigMapRef: &core.ConfigMapReference{
+							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+							Key:             "dummy",
+						},
+						CDList: []core.ComponentDescriptorImportData{},
+					},
+					{
+						Name: "fooo",
+						// valid top-level definition, but invalid CDList elements
+						CDList: []core.ComponentDescriptorImportData{
+							{
+								CDRef: &core.ComponentDescriptorReference{},
+								SecretRef: &core.SecretReference{
+									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+									Key:             "dummy",
+								},
+							},
+							{
+								CDRef: &core.ComponentDescriptorReference{},
+								ConfigMapRef: &core.ConfigMapReference{
+									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+									Key:             "dummy",
+								},
+							},
+							{
+								SecretRef: &core.SecretReference{
+									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+									Key:             "dummy",
+								},
+								ConfigMapRef: &core.ConfigMapReference{
+									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
+									Key:             "dummy",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(HaveLen(9))
+			for _, elem := range allErrs {
+				Expect(elem).To(PointTo(MatchFields(IgnoreExtras, Fields{
+					"Type":   Equal(field.ErrorTypeInvalid),
+					"Detail": And(ContainSubstring("CDRef"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef")),
 				})))
 			}
 		})
@@ -438,12 +632,8 @@ var _ = Describe("Installation", func() {
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeForbidden),
-				"Field": Equal("imports.data[0].secretRef"),
-			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeForbidden),
-				"Field": Equal("imports.data[0].configMapRef"),
+				"Type":  Equal(field.ErrorTypeInvalid),
+				"Field": Equal("imports.data[0]"),
 			}))))
 		})
 	})

@@ -4,12 +4,22 @@
 
 package validation
 
-import "github.com/gardener/landscaper/apis/core"
+import (
+	"fmt"
+	"reflect"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/landscaper/apis/core"
+)
 
 var importTypesWithExpectedConfig = map[string][]string{
-	string(core.ImportTypeData):       {"Schema"},
-	string(core.ImportTypeTarget):     {"TargetType"},
-	string(core.ImportTypeTargetList): {"TargetType"},
+	string(core.ImportTypeData):                    {"Schema"},
+	string(core.ImportTypeTarget):                  {"TargetType"},
+	string(core.ImportTypeTargetList):              {"TargetType"},
+	string(core.ImportTypeComponentDescriptor):     {},
+	string(core.ImportTypeComponentDescriptorList): {},
 }
 var exportTypesWithExpectedConfig = map[string][]string{
 	string(core.ExportTypeData):   {"Schema"},
@@ -52,4 +62,42 @@ func computeRelevantConfigFields() map[string]bool {
 		}
 	}
 	return res
+}
+
+// stringContains is a small helper function that checks whether a string is contained in a string slice
+func stringContains(data []string, value string) bool {
+	for _, elem := range data {
+		if elem == value {
+			return true
+		}
+	}
+	return false
+}
+
+// validateExactlyOneOf is a helper function that takes a struct and a list of field names and validates that exactly one of
+// the specified fields has a non-nil, non-zero value.
+func validateExactlyOneOf(fldPath *field.Path, input interface{}, configs ...string) field.ErrorList {
+	setFields := []string{}
+	val := reflect.ValueOf(input)
+	for i := 0; i < val.NumField(); i++ {
+		f := val.Field(i)
+		fieldName := val.Type().Field(i).Name
+		kind := f.Kind()
+		if !stringContains(configs, fieldName) {
+			// field is not relevant
+			continue
+		}
+		// check if field is set
+		if ((kind == reflect.Ptr || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Interface) && !f.IsNil()) || !f.IsZero() {
+			// field is set
+			setFields = append(setFields, fieldName)
+		}
+	}
+
+	if len(setFields) > 1 {
+		return field.ErrorList{field.Invalid(fldPath, input, fmt.Sprintf("exactly one of [%s] must be set (currently set: [%s])", strings.Join(configs, ", "), strings.Join(setFields, ", ")))}
+	} else if len(setFields) == 0 {
+		return field.ErrorList{field.Required(fldPath, fmt.Sprintf("exactly one of [%s] must be set (currently set: none)", strings.Join(configs, ", ")))}
+	}
+	return field.ErrorList{}
 }
