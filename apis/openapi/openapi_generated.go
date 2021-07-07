@@ -2777,7 +2777,7 @@ func schema_landscaper_apis_core_v1alpha1_DataExport(ref common.ReferenceCallbac
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "DataImportExport is a data object export.",
+				Description: "DataExport is a data object export.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
@@ -4180,7 +4180,7 @@ func schema_landscaper_apis_core_v1alpha1_Installation(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Blueprint contains the configuration of a component",
+				Description: "Installation contains the configuration of a component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {

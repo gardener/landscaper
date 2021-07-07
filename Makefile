@@ -21,7 +21,6 @@ DISABLE_CLEANUP := false
 
 .PHONY: install-requirements
 install-requirements:
-	@go install -mod=vendor $(REPO_ROOT)/vendor/sigs.k8s.io/controller-tools/cmd/controller-gen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
@@ -66,7 +65,6 @@ verify: check
 .PHONY: generate-code
 generate-code:
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/generate.sh ./... && cd $(REPO_ROOT)
-	@go run -mod=vendor $(REPO_ROOT)/hack/post-crd-generate $(REPO_ROOT)/pkg/landscaper/crdmanager/crdresources/
 	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
 
 .PHONY: generate

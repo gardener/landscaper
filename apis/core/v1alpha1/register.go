@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	lsschema "github.com/gardener/landscaper/apis/schema"
+
 	"github.com/gardener/landscaper/apis/core"
 )
 
@@ -62,3 +64,22 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
+
+// ResourceDefinition defines the custom resources of this version.
+var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
+	return lsschema.CustomResourceDefinitions{
+		Group:   SchemeGroupVersion.Group,
+		Version: SchemeGroupVersion.Version,
+
+		Definitions: []lsschema.CustomResourceDefinition{
+			InstallationDefinition,
+			ExecutionDefinition,
+			DeployItemDefinition,
+			DataObjectDefinition,
+			TargetDefinition,
+			DeployerRegistrationDefinition,
+			EnvironmentDefinition,
+			ComponentOverwritesDefinition,
+		},
+	}
+}()

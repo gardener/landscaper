@@ -7,6 +7,8 @@ package v1alpha1
 import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -18,12 +20,28 @@ type ComponentOverwritesList struct {
 	Items           []ComponentOverwrites `json:"items"`
 }
 
+// ComponentOverwritesDefinition defines the ComponentOverwrites resource CRD.
+var ComponentOverwritesDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "componentoverwrites",
+		Singular: "componentoverwrites",
+		ShortNames: []string{
+			"compoverwrite",
+			"co",
+			"overwrite",
+		},
+		Kind: "ComponentOverwrites",
+	},
+	Scope:   lsschema.ClusterScoped,
+	Storage: true,
+	Served:  true,
+}
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ComponentOverwrites are resources that can hold any kind json or yaml data.
-// +kubebuilder:resource:path="componentoverwrites",scope="Cluster",shortName={"compoverwrite","co","overwrite"},singular="componentoverwrites"
 type ComponentOverwrites struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

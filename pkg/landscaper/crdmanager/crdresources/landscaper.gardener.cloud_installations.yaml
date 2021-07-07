@@ -1,15 +1,12 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.3.1-0.20200517180335-820a4a27ea84
   creationTimestamp: null
   name: installations.landscaper.gardener.cloud
 spec:
   group: landscaper.gardener.cloud
   names:
     kind: Installation
-    listKind: InstallationList
     plural: installations
     shortNames:
     - inst
@@ -18,11 +15,8 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.phase
-      name: Phase
+      name: phase
       type: string
-    - jsonPath: .status.configGeneration
-      name: ConfigGen
-      type: integer
     - jsonPath: .status.executionRef.name
       name: Execution
       type: string
@@ -32,20 +26,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Blueprint contains the configuration of a component
+        description: Installation contains the configuration of a component
         properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
           spec:
             description: Spec contains the specification for a installation.
             properties:
@@ -56,6 +38,8 @@ spec:
                     description: Inline defines a inline yaml filesystem with a blueprint.
                     properties:
                       filesystem:
+                        description: Filesystem defines a inline yaml filesystem with
+                          a blueprint.
                         x-kubernetes-preserve-unknown-fields: true
                     required:
                     - filesystem
@@ -112,7 +96,10 @@ spec:
                                           label.
                                         type: string
                                       value:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        description: Value is the json/yaml data of
+                                          the label
+                                        format: byte
+                                        type: string
                                     required:
                                     - name
                                     - value
@@ -127,8 +114,8 @@ spec:
                                     object.
                                   type: string
                               required:
-                              - componentName
                               - name
+                              - componentName
                               - version
                               type: object
                             type: array
@@ -142,7 +129,10 @@ spec:
                                   description: Name is the unique name of the label.
                                   type: string
                                 value:
-                                  x-kubernetes-preserve-unknown-fields: true
+                                  description: Value is the json/yaml data of the
+                                    label
+                                  format: byte
+                                  type: string
                               required:
                               - name
                               - value
@@ -159,6 +149,9 @@ spec:
                             description: RepositoryContexts defines the previous repositories
                               of the component
                             items:
+                              description: UnstructuredTypedObject describes a generic
+                                typed object.
+                              type: object
                               x-kubernetes-preserve-unknown-fields: true
                             type: array
                           resources:
@@ -169,6 +162,9 @@ spec:
                                 of a component.
                               properties:
                                 access:
+                                  description: Access describes the type specific
+                                    method to access the defined resource.
+                                  type: object
                                   x-kubernetes-preserve-unknown-fields: true
                                 extraIdentity:
                                   additionalProperties:
@@ -189,7 +185,10 @@ spec:
                                           label.
                                         type: string
                                       value:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        description: Value is the json/yaml data of
+                                          the label
+                                        format: byte
+                                        type: string
                                     required:
                                     - name
                                     - value
@@ -230,7 +229,10 @@ spec:
                                                 of the label.
                                               type: string
                                             value:
-                                              x-kubernetes-preserve-unknown-fields: true
+                                              description: Value is the json/yaml
+                                                data of the label
+                                              format: byte
+                                              type: string
                                           required:
                                           - name
                                           - value
@@ -246,10 +248,10 @@ spec:
                                     object.
                                   type: string
                               required:
-                              - access
                               - name
-                              - type
                               - version
+                              - type
+                              - access
                               type: object
                             type: array
                           sources:
@@ -260,6 +262,9 @@ spec:
                                 source.
                               properties:
                                 access:
+                                  description: UnstructuredTypedObject describes a
+                                    generic typed object.
+                                  type: object
                                   x-kubernetes-preserve-unknown-fields: true
                                 extraIdentity:
                                   additionalProperties:
@@ -280,7 +285,10 @@ spec:
                                           label.
                                         type: string
                                       value:
-                                        x-kubernetes-preserve-unknown-fields: true
+                                        description: Value is the json/yaml data of
+                                          the label
+                                        format: byte
+                                        type: string
                                     required:
                                     - name
                                     - value
@@ -298,23 +306,23 @@ spec:
                                     object.
                                   type: string
                               required:
-                              - access
                               - name
-                              - type
                               - version
+                              - type
+                              - access
                               type: object
                             type: array
                           version:
                             description: Version is the semver version of the object.
                             type: string
                         required:
-                        - componentReferences
                         - name
-                        - provider
-                        - repositoryContexts
-                        - resources
-                        - sources
                         - version
+                        - repositoryContexts
+                        - provider
+                        - sources
+                        - componentReferences
+                        - resources
                         type: object
                       meta:
                         description: Metadata specifies the schema version of the
@@ -328,8 +336,8 @@ spec:
                         - schemaVersion
                         type: object
                     required:
-                    - component
                     - meta
+                    - component
                     type: object
                   ref:
                     description: ComponentDescriptorReference is the reference to
@@ -340,6 +348,9 @@ spec:
                           containing the resource.
                         type: string
                       repositoryContext:
+                        description: RepositoryContext defines the context of the
+                          component repository to resolve blueprints.
+                        type: object
                         x-kubernetes-preserve-unknown-fields: true
                       version:
                         description: Version defines the version of the component.
@@ -351,6 +362,8 @@ spec:
                 type: object
               exportDataMappings:
                 additionalProperties:
+                  description: AnyJSON enhances the json.RawMessages with a dedicated
+                    openapi definition so that all it is correctly generated
                   x-kubernetes-preserve-unknown-fields: true
                 description: 'ExportDataMappings contains a template for restructuring
                   exports. It is expected to contain a key for every blueprint-defined
@@ -364,7 +377,7 @@ spec:
                   data:
                     description: Data defines all data object exports.
                     items:
-                      description: DataImportExport is a data object export.
+                      description: DataExport is a data object export.
                       properties:
                         dataRef:
                           description: DataRef is the name of the in-cluster data
@@ -375,8 +388,8 @@ spec:
                             data.
                           type: string
                       required:
-                      - dataRef
                       - name
+                      - dataRef
                       type: object
                     type: array
                   targets:
@@ -400,6 +413,8 @@ spec:
                 type: object
               importDataMappings:
                 additionalProperties:
+                  description: AnyJSON enhances the json.RawMessages with a dedicated
+                    openapi definition so that all it is correctly generated
                   x-kubernetes-preserve-unknown-fields: true
                 description: 'ImportDataMappings contains a template for restructuring
                   imports. It is expected to contain a key for every blueprint-defined
@@ -432,8 +447,8 @@ spec:
                                 object.
                               type: string
                           required:
-                          - key
                           - name
+                          - key
                           type: object
                         dataRef:
                           description: DataRef is the name of the in-cluster data
@@ -460,8 +475,8 @@ spec:
                                 object.
                               type: string
                           required:
-                          - key
                           - name
+                          - key
                           type: object
                         version:
                           description: Version specifies the imported data version.
@@ -525,7 +540,6 @@ spec:
                       description: Well-defined error codes in case the condition
                         reports a problem.
                       items:
-                        description: ErrorCode is a string alias.
                         type: string
                       type: array
                     lastTransitionTime:
@@ -551,12 +565,12 @@ spec:
                       description: DataType of the Shoot condition.
                       type: string
                   required:
+                  - type
+                  - status
                   - lastTransitionTime
                   - lastUpdateTime
-                  - message
                   - reason
-                  - status
-                  - type
+                  - message
                   type: object
                 type: array
               configGeneration:
@@ -618,9 +632,9 @@ spec:
                         DataObject or Target
                       type: string
                   required:
-                  - configGeneration
                   - name
                   - type
+                  - configGeneration
                   type: object
                 type: array
               installationRefs:
@@ -657,7 +671,6 @@ spec:
                     description: Well-defined error codes in case the condition reports
                       a problem.
                     items:
-                      description: ErrorCode is a string alias.
                       type: string
                     type: array
                   lastTransitionTime:
@@ -681,11 +694,11 @@ spec:
                     description: The reason for the condition's last transition.
                     type: string
                 required:
+                - operation
                 - lastTransitionTime
                 - lastUpdateTime
-                - message
-                - operation
                 - reason
+                - message
                 type: object
               observedGeneration:
                 description: ObservedGeneration is the most recent generation observed
@@ -697,8 +710,8 @@ spec:
                 description: Phase is the current phase of the installation.
                 type: string
             required:
-            - configGeneration
             - observedGeneration
+            - configGeneration
             type: object
         required:
         - spec
@@ -707,3 +720,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

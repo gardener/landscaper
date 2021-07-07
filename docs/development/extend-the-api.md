@@ -24,6 +24,41 @@ As a dependency, the module is vendored in `vendor/github.com/gardener/landscape
 
 1. Modify the field(s) in the respective Golang files of all external and the internal version.
     1. Make sure new fields are being added as "optional" fields, i.e., they are of pointer types, they have the `// +optional` comment, and they have the `omitempty` JSON tag.
+    2. The Landscaper automatically generates the CRD's using CustomResource Definitions for each resource. So if your new type is custom resource, add the corresponding CR definition for the type and add it to the list of crds `ResourceDefinition` in [apis/core/{v1alpha1}/register.go](../../apis/core/v1alpha1/register.go#L69)
+   ```go
+   // InstallationDefinition defines the Installation resource CRD.
+   var InstallationDefinition = lsschema.CustomResourceDefinition{
+       Names: lsschema.CustomResourceDefinitionNames{
+           Plural:   "installations",
+           Singular: "installation",
+           ShortNames: []string{
+               "inst",
+           },
+           Kind: "Installation",
+       },
+       Scope:             lsschema.NamespaceScoped,
+       Storage:           true,
+       Served:            true,
+       SubresourceStatus: true,
+       AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+           {
+               Name:     "phase",
+               Type:     "string",
+               JSONPath: ".status.phase",
+           },
+           {
+               Name:     "Execution",
+               Type:     "string",
+               JSONPath: ".status.executionRef.name",
+           },
+           {
+               Name:     "Age",
+               Type:     "date",
+               JSONPath: ".metadata.creationTimestamp",
+           },
+       },
+   }
+   ```
 1. If necessary then implement/adapt the conversion logic defined in the versioned APIs (e.g., `apis/core/v1alpha1/conversions.go`).
 1. If necessary then implement/adapt defaulting logic defined in the versioned APIs (e.g., `apis/core/v1alpha1/defaults.go`).
 1. Run the code generation: `make install-requirements generate`

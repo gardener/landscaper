@@ -774,7 +774,7 @@ ExecutionStatus
 <h3 id="landscaper.gardener.cloud/v1alpha1.Installation">Installation
 </h3>
 <p>
-<p>Blueprint contains the configuration of a component</p>
+<p>Installation contains the configuration of a component</p>
 </p>
 <table>
 <thead>
@@ -1467,7 +1467,9 @@ given an optional context.</p>
 <td>
 <code>repositoryContext</code></br>
 <em>
+<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
 github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
+</a>
 </em>
 </td>
 <td>
@@ -1570,7 +1572,9 @@ ComponentOverwriteReference
 <td>
 <code>repositoryContext</code></br>
 <em>
+<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
 github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
+</a>
 </em>
 </td>
 <td>
@@ -1784,7 +1788,7 @@ string
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationExports">InstallationExports</a>)
 </p>
 <p>
-<p>DataImportExport is a data object export.</p>
+<p>DataExport is a data object export.</p>
 </p>
 <table>
 <thead>
@@ -2465,6 +2469,9 @@ time.Duration
 </em>
 </td>
 <td>
+<p>
+(Members of <code>Duration</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 </tbody>

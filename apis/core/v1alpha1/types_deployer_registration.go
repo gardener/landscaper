@@ -6,6 +6,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -17,14 +19,35 @@ type DeployerRegistrationList struct {
 	Items           []DeployerRegistration `json:"items"`
 }
 
+// DeployerRegistrationDefinition defines the DeployerRegistration resource CRD.
+var DeployerRegistrationDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "deployerregistrations",
+		Singular: "deployerregistration",
+		ShortNames: []string{
+			"deployreg",
+			"deployerreg",
+			"dreg",
+		},
+		Kind: "DeployerRegistration",
+	},
+	Scope:   lsschema.ClusterScoped,
+	Storage: true,
+	Served:  true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
+}
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployerRegistration defines a installation template for a deployer.
-// +kubebuilder:resource:path="deployerregistrations",scope="Cluster",shortName={"deployreg","deployerreg","dreg"},singular="deployerregistration"
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
-// +kubebuilder:subresource:status
 type DeployerRegistration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

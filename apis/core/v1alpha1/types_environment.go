@@ -6,6 +6,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -17,13 +19,33 @@ type EnvironmentList struct {
 	Items           []Environment `json:"items"`
 }
 
+// EnvironmentDefinition defines the Environment resource CRD.
+var EnvironmentDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "environments",
+		Singular: "environment",
+		ShortNames: []string{
+			"env",
+		},
+		Kind: "Environment",
+	},
+	Scope:   lsschema.ClusterScoped,
+	Storage: true,
+	Served:  true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
+}
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Environment defines a environment that is created by a agent.
-// +kubebuilder:resource:path="environments",scope="Cluster",shortName="env",singular="environment"
-// +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name=Age,type=date
 type Environment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

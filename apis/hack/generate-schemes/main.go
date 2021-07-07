@@ -6,14 +6,19 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
+	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/go-openapi/spec"
-	"k8s.io/kube-openapi/pkg/common"
+	"sigs.k8s.io/yaml"
 
 	"github.com/go-openapi/jsonreference"
 
@@ -28,51 +33,104 @@ var Exports = []string{
 	"v1alpha1.Configuration",
 }
 
+var CRDs = []lsschema.CustomResourceDefinitions{
+	lsv1alpha1.ResourceDefinition,
+}
+
+var (
+	schemaDir string
+	crdDir string
+)
+
+func init() {
+	flag.StringVar(&schemaDir, "schema-dir", "", "output directory for jsonschemas")
+	flag.StringVar(&crdDir, "crd-dir", "", "output directory for crds")
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("expected one argument")
-		os.Exit(1)
+	flag.Parse()
+	if len(schemaDir) == 0 {
+		log.Fatalln("expected --schema-dir to be set")
 	}
-	if err := run(os.Args[1]); err != nil {
+	if err := run(schemaDir, crdDir); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
 
-func run(exportDir string) error {
-	if err := prepareExportDir(exportDir); err != nil {
+func run(schemaDir, crdDir string) error {
+	if err := prepareExportDir(schemaDir); err != nil {
+		return err
+	}
+	if err := prepareExportDir(crdDir); err != nil {
 		return err
 	}
 
-	var definitions map[string]common.OpenAPIDefinition
 	refCallback := func(path string) spec.Ref {
-		ref, _ := jsonreference.New(definitionsRef(path))
+		ref, _ := jsonreference.New(generators.DefinitionsRef(path))
 		return spec.Ref{Ref: ref}
 	}
-	definitions = openapi.GetOpenAPIDefinitions(refCallback)
-
-	for defName, apiDefinition := range definitions {
+	jsonGen := &generators.JSONSchemaGenerator{
+		Definitions: openapi.GetOpenAPIDefinitions(refCallback),
+	}
+	for defName, apiDefinition := range jsonGen.Definitions {
 		if !ShouldCreateDefinition(Exports, defName) {
 			continue
 		}
-		data, err := generateJsonSchema(defName, apiDefinition, definitions)
+		data, err := jsonGen.Generate(defName, apiDefinition)
 		if err != nil {
 			return fmt.Errorf("unable to generate jsonschema for %s: %w", defName, err)
 		}
 
 		// write file
-		file := filepath.Join(exportDir, PackageVersionName(defName) + ".json")
+		file := filepath.Join(schemaDir, generators.ParsePackageVersionName(defName).String() + ".json")
 		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
-			return fmt.Errorf("unable to write jsonschema for %q to %q: %w", file, PackageVersionName(defName), err)
+			return fmt.Errorf("unable to write jsonschema for %q to %q: %w", file, generators.ParsePackageVersionName(defName).String(), err)
 		}
 
-		fmt.Printf("Generated jsonschema for %q...\n", PackageVersionName(defName))
+		fmt.Printf("Generated jsonschema for %q...\n", generators.ParsePackageVersionName(defName).String())
+	}
+
+	if len(crdDir) == 0 {
+		log.Println("Skip crd generation")
+		return nil
+	}
+	crdGen := generators.NewCRDGenerator(openapi.GetOpenAPIDefinitions)
+	for _, crdVersion := range CRDs {
+		for _, crdDef := range crdVersion.Definitions {
+			if err := crdGen.Generate(crdVersion.Group, crdVersion.Version, crdDef); err != nil {
+				return fmt.Errorf("unable to generate crd for %s %s %s: %w", crdVersion.Group, crdVersion.Version, crdDef.Names.Kind, err)
+			}
+		}
+	}
+
+	crds, err := crdGen.CRDs()
+	if err != nil {
+		return err
+	}
+	for _, crd := range crds {
+		jsonBytes, err := json.Marshal(crd)
+		if err != nil {
+			return fmt.Errorf("unable to marshal CRD %s: %w", crd.Name, err)
+		}
+		data, err := yaml.JSONToYAML(jsonBytes)
+		if err != nil {
+			return fmt.Errorf("unable to convert json of CRD %s to yaml: %w", crd.Name, err)
+		}
+
+		// write file
+		file := filepath.Join(crdDir, fmt.Sprintf("%s_%s.yaml", crd.Spec.Group, crd.Spec.Names.Plural))
+		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
+			return fmt.Errorf("unable to write crd for %q to %q: %w", file, crd.Name, err)
+		}
+
+		fmt.Printf("Generated crd for %q...\n", crd.Name)
 	}
 
 	return nil
 }
 
-// objectMatches checks whether the definition should be exported
+// ShouldCreateDefinition checks whether the definition should be exported
 func ShouldCreateDefinition(exportNames []string, defName string) bool {
 	for _, exportName := range exportNames {
 		if strings.HasSuffix(defName, exportName) {
@@ -82,78 +140,11 @@ func ShouldCreateDefinition(exportNames []string, defName string) bool {
 	return false
 }
 
-// DefinitionsPropName is the name of property where the definition is located
-const DefinitionsPropName = "definitions"
-
-func generateJsonSchema(objName string, def common.OpenAPIDefinition, definitions map[string]common.OpenAPIDefinition) ([]byte, error) {
-	pvn := PackageVersionName(objName)
-	// parse schema into map and add schema metadata information as well as references
-	jsonSchema := make(map[string]interface{})
-	data, err := json.Marshal(def.Schema)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal jsonschema: %w", err)
-	}
-	if err := json.Unmarshal(data, &jsonSchema); err != nil {
-		return nil, fmt.Errorf("unable to decode jsonschema: %w", err)
-	}
-
-	jsonSchema["$schema"] = "https://json-schema.org/draft-07/schema#"
-	jsonSchema["title"] = pvn
-
-	dependencyDefinitions := make(map[string]spec.Schema, 0)
-	if err := addDependencies(dependencyDefinitions, objName, definitions); err != nil {
-		return nil, fmt.Errorf("unable to add dependencies: %w", err)
-	}
-	jsonSchema[DefinitionsPropName] = dependencyDefinitions
-	return json.MarshalIndent(jsonSchema, "", "  ")
-}
-
-// addDependencies adds all dependencies of the given definition to the map of schemas
-func addDependencies(schemas map[string]spec.Schema, defName string, definitions map[string]common.OpenAPIDefinition) error {
-	def, ok := definitions[defName]
-	if !ok {
-		return fmt.Errorf("definition %q is not defined", defName)
-	}
-	for _, depName := range def.Dependencies {
-		if _, ok :=schemas[PackageVersionName(depName)]; ok {
-			continue
-		}
-		def, ok := definitions[depName]
-		if !ok {
-			return fmt.Errorf("dependency %q of %q cannot be found in definitions", depName, defName)
-		}
-		schemas[PackageVersionName(depName)] = def.Schema
-		// add dependencies for that component if not already defined
-		if err := addDependencies(schemas, depName, definitions); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// PackageVersionName parses the name from the openapi definition.
-// name is expected to be some/path/<package>/<version>.<name>
-func PackageVersionName(name string) string {
-	splitName := strings.Split(name, "/")
-	if len(splitName) < 2 {
-		panic(fmt.Errorf("a component name must consits of at least a package identifier and a name.version"))
-	}
-	verioneName := splitName[len(splitName) - 1]
-	packageName := splitName[len(splitName) - 2]
-	return fmt.Sprintf("%s-%s", packageName, strings.Replace(verioneName, ".", "-", 1))
-}
-
-// definitionsRef returns the reference to the resource of a specific object name
-func definitionsRef(name string) string {
-	pvn := PackageVersionName(name)
-	return fmt.Sprintf("#/%s/%s", DefinitionsPropName, pvn)
-}
-
 func prepareExportDir(exportDir string) error {
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to to create export directory %q: %w", exportDir, err)
 	}
-	// cleanup previoud files
+	// cleanup previous files
 	files, err := ioutil.ReadDir(exportDir)
 	if err != nil {
 		return fmt.Errorf("unable to read files from export directory: %w", err)
@@ -169,4 +160,3 @@ func prepareExportDir(exportDir string) error {
 	}
 	return nil
 }
-

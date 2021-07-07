@@ -7,6 +7,8 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
 // ExecutionManagedByLabel is the label of a deploy item that contains the name of the managed execution.
@@ -45,6 +47,39 @@ type ExecutionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Execution `json:"items"`
+}
+
+// ExecutionDefinition defines the Execution resource CRD.
+var ExecutionDefinition = lsschema.CustomResourceDefinition{
+	Names: lsschema.CustomResourceDefinitionNames{
+		Plural:   "executions",
+		Singular: "execution",
+		ShortNames: []string{
+			"exec",
+		},
+		Kind: "Execution",
+	},
+	Scope:             lsschema.NamespaceScoped,
+	Storage:           true,
+	Served:            true,
+	SubresourceStatus: true,
+	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "Phase",
+			Type:     "string",
+			JSONPath: ".status.phase",
+		},
+		{
+			Name:     "ExportRef",
+			Type:     "string",
+			JSONPath: ".status.exportRef.name",
+		},
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
+	},
 }
 
 // +genclient
@@ -129,8 +164,6 @@ type DeployItemTemplate struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// ProviderConfiguration contains the type specific configuration for the execution.
-	// +kubebuilder:validation:XEmbeddedResource
-	// +kubebuilder:validation:XPreserveUnknownFields
 	Configuration *runtime.RawExtension `json:"config"`
 
 	// DependsOn lists deploy items that need to be executed before this one
