@@ -51,7 +51,7 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	var objects []*unstructured.Unstructured
 
 	if c.Configuration.Resource != nil {
-		objects = getObjectsByTypedReference(c.ManagedResources, *c.Configuration.Resource)
+		objects = getObjectsByTypedReference(c.ManagedResources, c.Configuration.Resource)
 	}
 
 	if c.Configuration.LabelSelector != nil {
@@ -152,13 +152,15 @@ func matchResourceConditions(object interface{}, values []interface{}, operator 
 }
 
 // getObjectsByTypedReference returns an object from a list of TypedObjectReferences identified by a given TypedObjectReference as unstructured.Unstructured
-func getObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
+func getObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key []lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
 	var results []*unstructured.Unstructured
 
 	for _, o := range objects {
-		if o == key {
-			obj := kutil.ObjectFromTypedObjectReference(&o)
-			results = append(results, obj)
+		for _, k := range key {
+			if o == k {
+				obj := kutil.ObjectFromTypedObjectReference(&o)
+				results = append(results, obj)
+			}
 		}
 	}
 

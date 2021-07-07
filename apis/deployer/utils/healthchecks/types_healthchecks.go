@@ -36,7 +36,7 @@ type CustomHealthCheckConfiguration struct {
 	Disabled bool `json:"disabled,omitempty"`
 	// Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name
 	// +optional
-	Resource *lsv1alpha1.TypedObjectReference `json:"resourceSelector,omitempty"`
+	Resource []lsv1alpha1.TypedObjectReference `json:"resourceSelector,omitempty"`
 	// Labels are the labels used to identify multiple resources that can be identified by a unique set of labels
 	// +optional
 	LabelSelector *LabelSelectorSpec `json:"labelSelector,omitempty"`

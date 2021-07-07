@@ -6933,7 +6933,15 @@ func schema_apis_deployer_utils_healthchecks_CustomHealthCheckConfiguration(ref 
 					"resourceSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name",
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
+									},
+								},
+							},
 						},
 					},
 					"labelSelector": {

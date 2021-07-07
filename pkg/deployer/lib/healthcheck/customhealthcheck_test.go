@@ -51,7 +51,7 @@ var _ = Describe("Custom health checks", func() {
 
 		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
 			Name:     "check " + ref.Kind,
-			Resource: &ref,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
 				{
 					JsonPath: ".status.readyReplicas",
@@ -76,7 +76,7 @@ var _ = Describe("Custom health checks", func() {
 
 		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
 			Name:     "check " + ref.Kind,
-			Resource: &ref,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
 				{
 					JsonPath: ".status.readyReplicas",
@@ -122,7 +122,7 @@ var _ = Describe("Custom health checks", func() {
 
 		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
 			Name:     "check " + ref.Kind,
-			Resource: &ref,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
 				{
 					JsonPath: ".status.additionalTestFields",
@@ -146,7 +146,7 @@ var _ = Describe("Custom health checks", func() {
 
 		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
 			Name:     "check " + ref.Kind,
-			Resource: &ref,
+			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
 				{
 					JsonPath: ".status.fieldNameThatWillNotExist",
@@ -174,20 +174,45 @@ var _ = Describe("Custom health checks", func() {
 		Expect(obj).To(HaveLen(2))
 	})
 
-	It("should select the object with the given GVK + namespacedname", func() {
-		selector := &lsv1alpha1.TypedObjectReference{
-			APIVersion: "apps/v1",
-			Kind:       "Deployment",
-			ObjectReference: lsv1alpha1.ObjectReference{
-				Namespace: state.Namespace,
-				Name:      "simple-deployment",
+	It("should select ONE object with the given GVK + namespacedname", func() {
+		selector := []lsv1alpha1.TypedObjectReference{
+			{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Namespace: state.Namespace,
+					Name:      "simple-deployment",
+				},
 			},
 		}
 
-		obj := getObjectsByTypedReference(objectRefs, *selector)
+		obj := getObjectsByTypedReference(objectRefs, selector)
 		Expect(obj).To(HaveLen(1))
 	})
 
+	It("should select MULTIPLE objects with the given GVK + namespacedname", func() {
+		selector := []lsv1alpha1.TypedObjectReference{
+			{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Namespace: state.Namespace,
+					Name:      "simple-deployment",
+				},
+			},
+			{
+				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Namespace: state.Namespace,
+					Name:      "deployment-with-labels",
+				},
+			},
+		}
+
+		obj := getObjectsByTypedReference(objectRefs, selector)
+		Expect(obj).To(HaveLen(2))
+	})
 })
 
 func loadSingleObjectFromFile(fileName string) ([]*unstructured.Unstructured, []lsv1alpha1.TypedObjectReference) {

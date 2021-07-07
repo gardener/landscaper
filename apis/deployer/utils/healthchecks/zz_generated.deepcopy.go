@@ -25,8 +25,8 @@ func (in *CustomHealthCheckConfiguration) DeepCopyInto(out *CustomHealthCheckCon
 	}
 	if in.Resource != nil {
 		in, out := &in.Resource, &out.Resource
-		*out = new(v1alpha1.TypedObjectReference)
-		**out = **in
+		*out = make([]v1alpha1.TypedObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.LabelSelector != nil {
 		in, out := &in.LabelSelector, &out.LabelSelector

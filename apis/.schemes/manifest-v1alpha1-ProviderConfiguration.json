@@ -71,7 +71,11 @@
         },
         "resourceSelector": {
           "description": "Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name",
-          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+          }
         },
         "timeout": {
           "description": "Timeout is the value after which a HealthCheck should time out",

@@ -52,12 +52,14 @@ var _ = Describe("Validation", func() {
 			Name:     "customHealthCheck",
 			Timeout:  nil,
 			Disabled: false,
-			Resource: &lsv1alpha1.TypedObjectReference{
-				APIVersion: "v1",
-				Kind:       "Service",
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      "foo",
-					Namespace: "bar",
+			Resource: []lsv1alpha1.TypedObjectReference{
+				{
+					APIVersion: "v1",
+					Kind:       "Service",
+					ObjectReference: lsv1alpha1.ObjectReference{
+						Name:      "foo",
+						Namespace: "bar",
+					},
 				},
 			},
 			LabelSelector: &healthchecks.LabelSelectorSpec{
