@@ -34,7 +34,7 @@ func ValidateCustomHealthCheckConfiguration(fldPath *field.Path, config *healthc
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "must not be empty"))
 	}
 
-	if config.Resource == nil && config.LabelSelector == nil {
+	if len(config.Resource) == 0 && config.LabelSelector == nil {
 		allErrs = append(allErrs, field.Required(fldPath.Child("resourceSelector/labelSelector"), "must have either a resource or a set of labels"))
 	}
 
