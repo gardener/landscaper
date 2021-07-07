@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
+
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -49,11 +51,11 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	var objects []*unstructured.Unstructured
 
 	if c.Configuration.Resource != nil {
-		objects = GetObjectsByTypedReference(c.ManagedResources, *c.Configuration.Resource)
+		objects = getObjectsByTypedReference(c.ManagedResources, *c.Configuration.Resource)
 	}
 
 	if c.Configuration.LabelSelector != nil {
-		o, err := GetObjectsByLabels(c.Context, c.Client, c.ManagedResources, c.Configuration.LabelSelector)
+		o, err := getObjectsByLabels(c.Context, c.Client, c.ManagedResources, c.Configuration.LabelSelector)
 		if err != nil {
 			return lserror.NewWrappedError(err, c.CurrentOp, "get objects by LabelSelector", err.Error(), lsv1alpha1.ErrorInternalProblem)
 		}
@@ -72,7 +74,7 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 // CheckObject checks the health of an object and returns an error if the object is considered unhealthy
 func (c *CustomHealthCheck) CheckObject(u *unstructured.Unstructured) error {
 	for _, requirement := range c.Configuration.Requirements {
-		fields, err := GetFieldsByJSONPath(u.Object, requirement.JsonPath)
+		fields, err := getFieldsByJSONPath(u.Object, requirement.JsonPath)
 		if err != nil {
 			return lserror.NewWrappedError(err, c.CurrentOp, "parsing JSON path", err.Error())
 		}
@@ -149,8 +151,8 @@ func matchResourceConditions(object interface{}, values []interface{}, operator 
 	return success, nil
 }
 
-// GetObjectsByTypedReference returns an object from a list of TypedObjectReferences identified by a given TypedObjectReference as unstructured.Unstructured
-func GetObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
+// getObjectsByTypedReference returns an object from a list of TypedObjectReferences identified by a given TypedObjectReference as unstructured.Unstructured
+func getObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key lsv1alpha1.TypedObjectReference) []*unstructured.Unstructured {
 	var results []*unstructured.Unstructured
 
 	for _, o := range objects {
@@ -163,8 +165,8 @@ func GetObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key l
 	return results
 }
 
-// GetObjectsByLabels returns all objects from a list of TypedObjectReferences that match a certain label selector as a slice of unstructured.Unstructured
-func GetObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *healthchecks.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
+// getObjectsByLabels returns all objects from a list of TypedObjectReferences that match a certain label selector as a slice of unstructured.Unstructured
+func getObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *healthchecks.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
 	var results []*unstructured.Unstructured
 
 	selectorGv, err := schema.ParseGroupVersion(selector.APIVersion)
@@ -205,12 +207,14 @@ func GetObjectsByLabels(ctx context.Context, client client.Client, objects []lsv
 	return results, nil
 }
 
-// GetFieldsByJSONPath returns a field from an object identified by its JSON path
-func GetFieldsByJSONPath(obj map[string]interface{}, fieldPath string) ([][]reflect.Value, error) {
-	p := jsonpath.New("fieldPath").AllowMissingKeys(true)
-	err := p.Parse(fieldPath)
+// getFieldsByJSONPath returns a field from an object identified by its JSON path
+func getFieldsByJSONPath(obj map[string]interface{}, fieldPath string) ([][]reflect.Value, error) {
+	if !strings.HasPrefix(fieldPath, ".") {
+		fieldPath = "." + fieldPath
+	}
 
-	if err != nil {
+	p := jsonpath.New("fieldPath").AllowMissingKeys(true)
+	if err := p.Parse(fmt.Sprintf("{%s}", fieldPath)); err != nil {
 		return nil, errors.Wrapf(err, "cannot parse fieldPath %s", fieldPath)
 	}
 
@@ -236,8 +240,7 @@ func parseRequirementValues(values []runtime.RawExtension) ([]interface{}, error
 	parsedValues := []interface{}{}
 	for i, successValue := range values {
 		var tmp map[string]interface{}
-		err := json.Unmarshal(successValue.Raw, &tmp)
-		if err != nil {
+		if err := json.Unmarshal(successValue.Raw, &tmp); err != nil {
 			return nil, errors.Wrapf(err, "cannot unmarshal object at index %d", i)
 		}
 

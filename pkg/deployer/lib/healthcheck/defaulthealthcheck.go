@@ -21,6 +21,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
+// DefaultHealthCheck contains all the data and methods required to kick off a DefaultHealthCheck
 type DefaultHealthCheck struct {
 	Context          context.Context
 	Client           client.Client

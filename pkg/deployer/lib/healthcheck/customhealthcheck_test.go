@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthcheck_test
+package healthcheck
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
-	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
+
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,11 +27,11 @@ import (
 var _ = Describe("Custom health checks", func() {
 
 	var (
-		customHealthCheck healthcheck.CustomHealthCheck
+		customHealthCheck CustomHealthCheck
 	)
 
 	BeforeEach(func() {
-		customHealthCheck = healthcheck.CustomHealthCheck{
+		customHealthCheck = CustomHealthCheck{
 			Context:   ctx,
 			Client:    testenv.Client,
 			Log:       logr.Discard(),
@@ -54,7 +54,7 @@ var _ = Describe("Custom health checks", func() {
 			Resource: &ref,
 			Requirements: []health.RequirementSpec{
 				{
-					JsonPath: "{ .status.readyReplicas }",
+					JsonPath: ".status.readyReplicas",
 					Operator: selection.Equals,
 					Value:    getRawValues(successValue),
 				},
@@ -79,7 +79,7 @@ var _ = Describe("Custom health checks", func() {
 			Resource: &ref,
 			Requirements: []health.RequirementSpec{
 				{
-					JsonPath: "{ .status.readyReplicas }",
+					JsonPath: ".status.readyReplicas",
 					Operator: selection.Equals,
 					Value:    getRawValues(failValue),
 				},
@@ -125,7 +125,7 @@ var _ = Describe("Custom health checks", func() {
 			Resource: &ref,
 			Requirements: []health.RequirementSpec{
 				{
-					JsonPath: "{ .status.additionalTestFields }",
+					JsonPath: ".status.additionalTestFields",
 					Operator: selection.Equals,
 					Value:    getRawValues(successValue),
 				},
@@ -149,7 +149,7 @@ var _ = Describe("Custom health checks", func() {
 			Resource: &ref,
 			Requirements: []health.RequirementSpec{
 				{
-					JsonPath: "{ .status.fieldNameThatWillNotExist }",
+					JsonPath: ".status.fieldNameThatWillNotExist",
 					Operator: selection.DoesNotExist,
 				},
 			},
@@ -169,7 +169,7 @@ var _ = Describe("Custom health checks", func() {
 			},
 		}
 
-		obj, err := healthcheck.GetObjectsByLabels(ctx, testenv.Client, objectRefs, selector)
+		obj, err := getObjectsByLabels(ctx, testenv.Client, objectRefs, selector)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(obj).To(HaveLen(2))
 	})
@@ -184,7 +184,7 @@ var _ = Describe("Custom health checks", func() {
 			},
 		}
 
-		obj := healthcheck.GetObjectsByTypedReference(objectRefs, *selector)
+		obj := getObjectsByTypedReference(objectRefs, *selector)
 		Expect(obj).To(HaveLen(1))
 	})
 
