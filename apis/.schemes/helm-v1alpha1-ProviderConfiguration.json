@@ -568,10 +568,12 @@
       ],
       "properties": {
         "jsonPath": {
+          "description": "JsonPath is the path of the field of the Kubernetes object to be checked (without braces)",
           "type": "string",
           "default": ""
         },
         "operator": {
+          "description": "Operator is the operator that should be used for the check can be any of these Kubernetes selection operators: DoesNotExist, Exists, Equals, DoubleEquals, NotEquals, In, NotIn",
           "type": "string",
           "default": ""
         },

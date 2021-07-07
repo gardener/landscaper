@@ -56,7 +56,11 @@ type LabelSelectorSpec struct {
 
 // RequirementSpec contains the requirements an object must meet to pass the custom health check
 type RequirementSpec struct {
-	JsonPath string             `json:"jsonPath"`
+	// JsonPath is the path of the field of the Kubernetes object to be checked (without braces)
+	JsonPath string `json:"jsonPath"`
+	// Operator is the operator that should be used for the check
+	// can be any of these Kubernetes selection operators:
+	// DoesNotExist, Exists, Equals, DoubleEquals, NotEquals, In, NotIn
 	Operator selection.Operator `json:"operator"`
 	// In huge majority of cases we have at most one value here.
 	// It is generally faster to operate on a single-element slice

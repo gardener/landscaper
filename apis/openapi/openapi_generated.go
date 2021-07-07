@@ -7070,16 +7070,18 @@ func schema_apis_deployer_utils_healthchecks_RequirementSpec(ref common.Referenc
 				Properties: map[string]spec.Schema{
 					"jsonPath": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "JsonPath is the path of the field of the Kubernetes object to be checked (without braces)",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"operator": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Description: "Operator is the operator that should be used for the check can be any of these Kubernetes selection operators: DoesNotExist, Exists, Equals, DoubleEquals, NotEquals, In, NotIn",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"values": {
