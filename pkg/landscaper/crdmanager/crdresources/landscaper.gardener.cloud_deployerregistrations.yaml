@@ -24,16 +24,6 @@ spec:
       openAPIV3Schema:
         description: DeployerRegistration defines a installation template for a deployer.
         properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
           spec:
             description: Spec defines the deployer registration configuration.
             properties:
@@ -166,19 +156,8 @@ spec:
                                 items:
                                   description: UnstructuredTypedObject describes a
                                     generic typed object.
-                                  properties:
-                                    object:
-                                      additionalProperties:
-                                        type: object
-                                      type: object
-                                    type:
-                                      description: Type describes the type of the
-                                        object.
-                                      type: string
-                                  required:
-                                  - type
-                                  - object
                                   type: object
+                                  x-kubernetes-preserve-unknown-fields: true
                                 type: array
                               resources:
                                 description: Resources defines all resources that
@@ -190,19 +169,8 @@ spec:
                                     access:
                                       description: Access describes the type specific
                                         method to access the defined resource.
-                                      properties:
-                                        object:
-                                          additionalProperties:
-                                            type: object
-                                          type: object
-                                        type:
-                                          description: Type describes the type of
-                                            the object.
-                                          type: string
-                                      required:
-                                      - type
-                                      - object
                                       type: object
+                                      x-kubernetes-preserve-unknown-fields: true
                                     extraIdentity:
                                       additionalProperties:
                                         type: string
@@ -304,19 +272,8 @@ spec:
                                     access:
                                       description: UnstructuredTypedObject describes
                                         a generic typed object.
-                                      properties:
-                                        object:
-                                          additionalProperties:
-                                            type: object
-                                          type: object
-                                        type:
-                                          description: Type describes the type of
-                                            the object.
-                                          type: string
-                                      required:
-                                      - type
-                                      - object
                                       type: object
+                                      x-kubernetes-preserve-unknown-fields: true
                                     extraIdentity:
                                       additionalProperties:
                                         type: string
@@ -403,18 +360,8 @@ spec:
                           repositoryContext:
                             description: RepositoryContext defines the context of
                               the component repository to resolve blueprints.
-                            properties:
-                              object:
-                                additionalProperties:
-                                  type: object
-                                type: object
-                              type:
-                                description: Type describes the type of the object.
-                                type: string
-                            required:
-                            - type
-                            - object
                             type: object
+                            x-kubernetes-preserve-unknown-fields: true
                           version:
                             description: Version defines the version of the component.
                             type: string
@@ -542,5 +489,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: null
-  storedVersions: null
+  conditions: []
+  storedVersions: []

@@ -65,7 +65,6 @@ verify: check
 .PHONY: generate-code
 generate-code:
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/generate.sh ./... && cd $(REPO_ROOT)
-	@go run -mod=vendor $(REPO_ROOT)/hack/post-crd-generate $(REPO_ROOT)/pkg/landscaper/crdmanager/crdresources/
 	@$(REPO_ROOT)/hack/generate.sh $(REPO_ROOT)/pkg... $(REPO_ROOT)/test... $(REPO_ROOT)/cmd...
 
 .PHONY: generate

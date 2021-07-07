@@ -76,6 +76,7 @@ var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 			ExecutionDefinition,
 			DeployItemDefinition,
 			DataObjectDefinition,
+			TargetDefinition,
 			DeployerRegistrationDefinition,
 			EnvironmentDefinition,
 			ComponentOverwritesDefinition,
