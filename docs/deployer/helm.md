@@ -2,7 +2,7 @@
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. It renders a given helm chart and deploys the resulting manifest into a cluster.
 
-It also checks by default the healthiness of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
+It also checks by default the health of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
 
 **Index**:
 - [Provider Configuration](#provider-configuration)
@@ -50,30 +50,30 @@ spec:
 
     updateStrategy: update | patch # optional; defaults to update
 
-    # Configuration of the health checks for the resources.
+    # Configuration of the readiness checks for the resources.
     # optional
-    healthChecks:
-      # Allows to disable the default health checks.
+    readinessChecks:
+      # Allows to disable the default readiness checks.
       # optional; set to false by default.
       disableDefault: true
       # Defines the time to wait before giving up on a resource
-      # to be healthy. Should be changed with long startup time pods.
+      # to be ready. Should be changed with long startup time pods.
       # optional; default to 180 seconds/3 minutes.
       timeout: 3m
-      # Configuration of custom health/readiness checks which are used
+      # Configuration of custom readiness checks which are used
       # to check on custom fields and their values
       # especially useful for resources that came in through CRDs
       # optional
       custom:
-      # the name of the custom health check, required
-      - name: myCustomHealthcheck
-        # timeout of the custom health check
+      # the name of the custom readiness check, required
+      - name: myCustomReadinessCheck
+        # timeout of the custom readiness check
         # optional, defaults to the timeout stated above
         timeout: 2m
-        # temporarily disable this custom health check, useful for test setups
+        # temporarily disable this custom readiness check, useful for test setups
         # optional, defaults to false
         disabled: false
-        # a specific resource should be selected for this health check to be performed on
+        # a specific resource should be selected for this readiness check to be performed on
         # a resource is uniquely defined by its GVK, namespace and name
         # required if no labelSelector is specified, can be combined with a labelSelector which is potentially harmful
         resourceSelector:
@@ -81,7 +81,7 @@ spec:
           kind: Deployment
           name: myDeployment
           namespace: myNamespace
-        # multiple resources for the health check to be performed on can be selected through labels
+        # multiple resources for the readiness check to be performed on can be selected through labels
         # they are identified by their GVK and a set of labels that all need to match
         # required if no resourceSelector is specified, can be combined with a resourceSelector which is potentially harmful
         labelSelector:
@@ -90,7 +90,7 @@ spec:
           matchLabels:
             app: myApp
             component: backendService
-        # requirements specifies what condition must hold true for the given objects to pass the health check
+        # requirements specifies what condition must hold true for the given objects to pass the readiness check
         # multiple requirements can be given and they all need to successfully evaluate
         requirements:
         # jsonPath denotes the path of the field of the selected object to be checked and compared

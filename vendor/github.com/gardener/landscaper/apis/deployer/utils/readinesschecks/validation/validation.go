@@ -11,24 +11,24 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
 
-	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	"github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
-// ValidateHealthCheckConfiguration validates a healthcheck configuration
-func ValidateHealthCheckConfiguration(fldPath *field.Path, config *healthchecks.HealthChecksConfiguration) field.ErrorList {
+// ValidateReadinessCheckConfiguration validates a readiness check configuration
+func ValidateReadinessCheckConfiguration(fldPath *field.Path, config *readinesschecks.ReadinessCheckConfiguration) field.ErrorList {
 	var allErrs field.ErrorList
 
-	// if we have a custom healthcheck configuration, the default should be disabled
-	customHealthChecks := config.CustomHealthChecks
-	for _, c := range customHealthChecks {
-		allErrs = append(allErrs, ValidateCustomHealthCheckConfiguration(fldPath.Child("customHealthCheckConfiguration"), &c)...)
+	// if we have a custom readiness check configuration, the default should be disabled
+	customReadinessChecks := config.CustomReadinessChecks
+	for _, c := range customReadinessChecks {
+		allErrs = append(allErrs, ValidateCustomReadinessCheckConfiguration(fldPath.Child("customHealthCheckConfiguration"), &c)...)
 	}
 
 	return allErrs
 }
 
-// ValidateCustomHealthCheckConfiguration validates a custom healthcheck configuration
-func ValidateCustomHealthCheckConfiguration(fldPath *field.Path, config *healthchecks.CustomHealthCheckConfiguration) field.ErrorList {
+// ValidateCustomReadinessCheckConfiguration validates a custom readiness check configuration
+func ValidateCustomReadinessCheckConfiguration(fldPath *field.Path, config *readinesschecks.CustomReadinessCheckConfiguration) field.ErrorList {
 	var allErrs field.ErrorList
 	if len(config.Name) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("name"), "must not be empty"))
@@ -54,8 +54,8 @@ func ValidateCustomHealthCheckConfiguration(fldPath *field.Path, config *healthc
 	return allErrs
 }
 
-// ValidateRequirementSpec validates a requirement specification for a custom healthcheck configuration
-func ValidateRequirementSpec(fldPath *field.Path, spec *healthchecks.RequirementSpec) field.ErrorList {
+// ValidateRequirementSpec validates a requirement specification for a custom readiness check configuration
+func ValidateRequirementSpec(fldPath *field.Path, spec *readinesschecks.RequirementSpec) field.ErrorList {
 	var allErrs field.ErrorList
 
 	if len(spec.JsonPath) == 0 {
@@ -85,8 +85,8 @@ func ValidateRequirementSpec(fldPath *field.Path, spec *healthchecks.Requirement
 	return allErrs
 }
 
-// ValidateLabelSelectorSpec validates a LabelSelector specification for a custom healthcheck configuration
-func ValidateLabelSelectorSpec(fldPath *field.Path, spec *healthchecks.LabelSelectorSpec) field.ErrorList {
+// ValidateLabelSelectorSpec validates a LabelSelector specification for a custom readiness check configuration
+func ValidateLabelSelectorSpec(fldPath *field.Path, spec *readinesschecks.LabelSelectorSpec) field.ErrorList {
 	var allErrs field.ErrorList
 
 	if len(spec.Labels) == 0 {

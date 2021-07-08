@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -25,9 +25,9 @@ type ProviderConfiguration struct {
 	// Defaults to "update".
 	// +optional
 	UpdateStrategy UpdateStrategy `json:"updateStrategy,omitempty"`
-	// HealthChecks configures the health checks.
+	// ReadinessChecks configures the readiness checks.
 	// +optional
-	HealthChecks health.HealthChecksConfiguration `json:"healthChecks,omitempty"`
+	ReadinessChecks health.ReadinessCheckConfiguration `json:"readinessChecks,omitempty"`
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
 	// +optional

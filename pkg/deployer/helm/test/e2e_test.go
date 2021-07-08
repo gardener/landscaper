@@ -23,7 +23,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
-	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -103,7 +103,7 @@ var _ = Describe("Helm Deployer", func() {
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace
-		providerConfig.HealthChecks = health.HealthChecksConfiguration{
+		providerConfig.ReadinessChecks = health.ReadinessCheckConfiguration{
 			Timeout: &lsv1alpha1.Duration{Duration: 1 * time.Second},
 		}
 

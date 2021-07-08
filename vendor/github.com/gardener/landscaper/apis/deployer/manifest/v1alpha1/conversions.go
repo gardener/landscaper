@@ -17,7 +17,7 @@ import (
 func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
-	out.HealthChecks = in.HealthChecks
+	out.ReadinessChecks = in.ReadinessChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
@@ -45,7 +45,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
-	out.HealthChecks = in.HealthChecks
+	out.ReadinessChecks = in.ReadinessChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {

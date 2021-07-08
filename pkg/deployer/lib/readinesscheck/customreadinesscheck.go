@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthcheck
+package readinesscheck
 
 import (
 	"context"
@@ -24,25 +24,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// CustomHealthCheck contains all the data and methods required to kick off a CustomHealthCheck
-type CustomHealthCheck struct {
+// CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check
+type CustomReadinessCheck struct {
 	Context          context.Context
 	Client           client.Client
 	Log              logr.Logger
 	CurrentOp        string
 	Timeout          *lsv1alpha1.Duration
 	ManagedResources []lsv1alpha1.TypedObjectReference
-	Configuration    healthchecks.CustomHealthCheckConfiguration
+	Configuration    health.CustomReadinessCheckConfiguration
 }
 
-// CheckResourcesHealth starts a CustomHealthCheck by checking the health of the submitted resources
-func (c *CustomHealthCheck) CheckResourcesHealth() error {
+// CheckResourcesReady starts a custom readiness check by checking the readiness of the submitted resources
+func (c *CustomReadinessCheck) CheckResourcesReady() error {
 	if c.Configuration.Disabled || len(c.ManagedResources) == 0 {
 		// nothing to do
 		return nil
@@ -63,16 +63,16 @@ func (c *CustomHealthCheck) CheckResourcesHealth() error {
 	}
 
 	timeout := c.Timeout.Duration
-	if err := WaitForObjectsHealthy(c.Context, timeout, c.Log, c.Client, objects, c.CheckObject); err != nil {
+	if err := WaitForObjectsReady(c.Context, timeout, c.Log, c.Client, objects, c.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
-			c.CurrentOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
+			c.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
 
 	return nil
 }
 
-// CheckObject checks the health of an object and returns an error if the object is considered unhealthy
-func (c *CustomHealthCheck) CheckObject(u *unstructured.Unstructured) error {
+// CheckObject checks the readiness of an object and returns an error if the object is considered unready
+func (c *CustomReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 	for _, requirement := range c.Configuration.Requirements {
 		fields, err := getFieldsByJSONPath(u.Object, requirement.JsonPath)
 		if err != nil {
@@ -168,7 +168,7 @@ func getObjectsByTypedReference(objects []lsv1alpha1.TypedObjectReference, key [
 }
 
 // getObjectsByLabels returns all objects from a list of TypedObjectReferences that match a certain label selector as a slice of unstructured.Unstructured
-func getObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *healthchecks.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
+func getObjectsByLabels(ctx context.Context, client client.Client, objects []lsv1alpha1.TypedObjectReference, selector *health.LabelSelectorSpec) ([]*unstructured.Unstructured, error) {
 	var results []*unstructured.Unstructured
 
 	selectorGv, err := schema.ParseGroupVersion(selector.APIVersion)

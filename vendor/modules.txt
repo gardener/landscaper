@@ -103,8 +103,8 @@ github.com/gardener/landscaper/apis/deployer/manifest/validation
 github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
-github.com/gardener/landscaper/apis/deployer/utils/healthchecks
-github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation
+github.com/gardener/landscaper/apis/deployer/utils/readinesschecks
+github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation
 github.com/gardener/landscaper/apis/errors
 github.com/gardener/landscaper/apis/mediatype
 github.com/gardener/landscaper/apis/schema

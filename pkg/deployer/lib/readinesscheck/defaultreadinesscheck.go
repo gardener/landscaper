@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthcheck
+package readinesscheck
 
 import (
 	"context"
@@ -21,8 +21,8 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// DefaultHealthCheck contains all the data and methods required to kick off a DefaultHealthCheck
-type DefaultHealthCheck struct {
+// DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
+type DefaultReadinessCheck struct {
 	Context          context.Context
 	Client           client.Client
 	Log              logr.Logger
@@ -31,8 +31,8 @@ type DefaultHealthCheck struct {
 	ManagedResources []lsv1alpha1.TypedObjectReference
 }
 
-// CheckResourcesHealth implements the default health check for Kubernetes manifests
-func (d *DefaultHealthCheck) CheckResourcesHealth() error {
+// CheckResourcesReady implements the default readiness check for Kubernetes manifests
+func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 
 	if len(d.ManagedResources) == 0 {
 		return nil
@@ -45,17 +45,17 @@ func (d *DefaultHealthCheck) CheckResourcesHealth() error {
 	}
 
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsHealthy(d.Context, timeout, d.Log, d.Client, objects, d.CheckObject); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Log, d.Client, objects, d.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
-			d.CurrentOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
+			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}
 
 	return nil
 }
 
-// DefaultCheckObject checks if the object is healthy and returns an error otherwise.
+// DefaultCheckObject checks if the object is ready and returns an error otherwise.
 // A non-managed object returns nil.
-func (d *DefaultHealthCheck) CheckObject(u *unstructured.Unstructured) error {
+func (d *DefaultReadinessCheck) CheckObject(u *unstructured.Unstructured) error {
 	gk := u.GroupVersionKind().GroupKind()
 	switch gk.String() {
 	case "Pod":
@@ -138,8 +138,8 @@ func getPodCondition(conditions []corev1.PodCondition, conditionType corev1.PodC
 	return nil
 }
 
-// CheckPod checks whether the given Pod is healthy.
-// A Pod is considered healthy if it successfully completed
+// CheckPod checks whether the given Pod is ready.
+// A Pod is considered ready if it successfully completed
 // or if it has the the PodReady condition set to true.
 func CheckPod(pod *corev1.Pod) error {
 	for _, trueConditionType := range truePodConditionTypes {
@@ -182,8 +182,8 @@ func getDeploymentCondition(conditions []appsv1.DeploymentCondition, conditionTy
 	return nil
 }
 
-// CheckDeployment checks whether the given Deployment is healthy.
-// A Deployment is considered healthy if the controller observed its current revision and
+// CheckDeployment checks whether the given Deployment is ready.
+// A Deployment is considered ready if the controller observed its current revision and
 // if the number of updated replicas is equal to the number of replicas.
 func CheckDeployment(dp *appsv1.Deployment) error {
 	if dp.Status.ObservedGeneration < dp.Generation {
@@ -226,8 +226,8 @@ func CheckDeployment(dp *appsv1.Deployment) error {
 	return nil
 }
 
-// CheckStatefulSet checks whether the given StatefulSet is healthy.
-// A StatefulSet is considered healthy if its controller observed its current revision,
+// CheckStatefulSet checks whether the given StatefulSet is ready.
+// A StatefulSet is considered ready if its controller observed its current revision,
 // it is not in an update (i.e. UpdateRevision is empty) and if its current replicas are equal to
 // its desired replicas.
 func CheckStatefulSet(sts *appsv1.StatefulSet) error {
@@ -264,8 +264,8 @@ func daemonSetMaxUnavailable(ds *appsv1.DaemonSet) int32 {
 	return int32(maxUnavailable)
 }
 
-// CheckDaemonSet checks whether the given DaemonSet is healthy.
-// A DaemonSet is considered healthy if its controller observed its current revision and if
+// CheckDaemonSet checks whether the given DaemonSet is ready.
+// A DaemonSet is considered ready if its controller observed its current revision and if
 // its desired number of scheduled pods is equal to its updated number of scheduled pods.
 func CheckDaemonSet(ds *appsv1.DaemonSet) error {
 	if ds.Status.ObservedGeneration < ds.Generation {
@@ -280,8 +280,8 @@ func CheckDaemonSet(ds *appsv1.DaemonSet) error {
 	return nil
 }
 
-// CheckReplicaSet checks whether the given ReplicaSet is healthy.
-// A ReplicaSet is considered healthy if its controller observed its current revision and
+// CheckReplicaSet checks whether the given ReplicaSet is ready.
+// A ReplicaSet is considered ready if its controller observed its current revision and
 // if the number of updated replicas is equal to the number of replicas.
 func CheckReplicaSet(rs *appsv1.ReplicaSet) error {
 	if rs.Status.ObservedGeneration < rs.Generation {
@@ -309,8 +309,8 @@ func CheckReplicaSet(rs *appsv1.ReplicaSet) error {
 	return nil
 }
 
-// CheckReplicationController checks whether the given ReplicationController is healthy.
-// A ReplicationController is considered healthy if its controller observed its current revision and
+// CheckReplicationController checks whether the given ReplicationController is ready.
+// A ReplicationController is considered ready if its controller observed its current revision and
 // if the number of updated replicas is equal to the number of replicas.
 func CheckReplicationController(rc *corev1.ReplicationController) error {
 	if rc.Status.ObservedGeneration < rc.Generation {
