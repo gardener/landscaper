@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -24,10 +24,10 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
 )
 
 // ApplyFiles applies the helm templated files to the target cluster.
@@ -120,9 +120,35 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) error {
 
 	if !h.ProviderConfiguration.HealthChecks.DisableDefault {
-		err := h.defaultCheckResourcesHealth(ctx, client)
+		defaultHealthCheck := healthcheck.DefaultHealthCheck{
+			Context:          ctx,
+			Client:           client,
+			CurrentOp:        "DefaultCheckResourcesHealthHelm",
+			Log:              h.log,
+			Timeout:          h.ProviderConfiguration.HealthChecks.Timeout,
+			ManagedResources: h.ProviderStatus.ManagedResources,
+		}
+		err := defaultHealthCheck.CheckResourcesHealth()
 		if err != nil {
 			return err
+		}
+	}
+
+	if h.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
+		for _, customHealthCheckConfig := range h.ProviderConfiguration.HealthChecks.CustomHealthChecks {
+			customHealthCheck := healthcheck.CustomHealthCheck{
+				Context:          ctx,
+				Client:           client,
+				Log:              h.log,
+				CurrentOp:        "CustomCheckResourcesHealthHelm",
+				Timeout:          h.ProviderConfiguration.HealthChecks.Timeout,
+				ManagedResources: h.ProviderStatus.ManagedResources,
+				Configuration:    customHealthCheckConfig,
+			}
+			err := customHealthCheck.CheckResourcesHealth()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -378,28 +404,5 @@ func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.Export
 		}
 		return &export
 	}
-	return nil
-}
-
-// defaultCheckResourcesHealth implements the default health check for manifests deployed by Helm
-func (h *Helm) defaultCheckResourcesHealth(ctx context.Context, client client.Client) error {
-	currOp := "DefaultCheckResourcesHealthHelm"
-
-	if len(h.ProviderStatus.ManagedResources) == 0 {
-		return nil
-	}
-
-	objects := make([]*unstructured.Unstructured, len(h.ProviderStatus.ManagedResources))
-	for i, ref := range h.ProviderStatus.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		objects[i] = obj
-	}
-
-	timeout := h.ProviderConfiguration.HealthChecks.Timeout.Duration
-	if err := health.WaitForObjectsHealthy(ctx, timeout, h.log, client, objects); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "CheckResourceHealth", err.Error(), lsv1alpha1.ErrorHealthCheckTimeout)
-	}
-
 	return nil
 }

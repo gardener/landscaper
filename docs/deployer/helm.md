@@ -2,22 +2,7 @@
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. It renders a given helm chart and deploys the resulting manifest into a cluster.
 
-It also checks by default the healthiness of the following resources:
-* `Pod`: It is considered healthy if it successfully completed
-or if it has the the PodReady condition set to true.
-* `Deployment`: It is considered healthy if the controller observed
-its current revision and if the number of updated replicas is equal
-to the number of replicas.
-* `ReplicaSet`: It is considered healthy if its controller observed
-its current revision and if the number of updated replicas is equal to the number of replicas.
-* `StatefulSet`: It is considered healthy if its controller observed
-its current revision, it is not in an update (i.e. UpdateRevision is empty)
-and if its current replicas are equal to its desired replicas.
-* `DaemonSet`: It is considered healthy if its controller observed
-its current revision and if its desired number of scheduled pods is equal
-to its updated number of scheduled pods.
-* `ReplicationController`: It is considered healthy if its controller observed
-its current revision and if the number of updated replicas is equal to the number of replicas.
+It also checks by default the healthiness of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
 
 **Index**:
 - [Provider Configuration](#provider-configuration)
@@ -75,6 +60,49 @@ spec:
       # to be healthy. Should be changed with long startup time pods.
       # optional; default to 180 seconds/3 minutes.
       timeout: 3m
+      # Configuration of custom health/readiness checks which are used
+      # to check on custom fields and their values
+      # especially useful for resources that came in through CRDs
+      # optional
+      custom:
+      # the name of the custom health check, required
+      - name: myCustomHealthcheck
+        # timeout of the custom health check
+        # optional, defaults to the timeout stated above
+        timeout: 2m
+        # temporarily disable this custom health check, useful for test setups
+        # optional, defaults to false
+        disabled: false
+        # a specific resource should be selected for this health check to be performed on
+        # a resource is uniquely defined by its GVK, namespace and name
+        # required if no labelSelector is specified, can be combined with a labelSelector which is potentially harmful
+        resourceSelector:
+          apiVersion: apps/v1
+          kind: Deployment
+          name: myDeployment
+          namespace: myNamespace
+        # multiple resources for the health check to be performed on can be selected through labels
+        # they are identified by their GVK and a set of labels that all need to match
+        # required if no resourceSelector is specified, can be combined with a resourceSelector which is potentially harmful
+        labelSelector:
+          apiVersion: apps/v1
+          kind: Deployment
+          matchLabels:
+            app: myApp
+            component: backendService
+        # requirements specifies what condition must hold true for the given objects to pass the health check
+        # multiple requirements can be given and they all need to successfully evaluate
+        requirements:
+        # jsonPath denotes the path of the field of the selected object to be checked and compared
+        - jsonPath: .status.readyReplicas
+          # operator specifies how the contents of the given field should be compared to the desired value
+          # allowed operators are: DoesNotExist(!), Exists(exists), Equals(=, ==), NotEquals(!=), In(in), NotIn(notIn)
+          operator: In
+          # values is a list of values that the field at jsonPath must match to according to the operators
+          values:
+          - value: 1
+          - value: 2
+          - value: 3
 
     # Defines the time to wait before giving up on a resource to be deleted,
     # for instance when deleting resources that are not anymore managed from this DeployItem.

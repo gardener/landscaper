@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package health_test
+package healthcheck_test
 
 import (
-	"github.com/gardener/landscaper/pkg/utils/kubernetes/health"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -15,17 +13,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
 )
 
 func replicas(i int32) *int32 {
 	return &i
 }
 
-var _ = Describe("health", func() {
+var _ = Describe("Default health checks", func() {
 	Describe("CheckPod", func() {
 		DescribeTable("pod",
 			func(pod *corev1.Pod, matcher types.GomegaMatcher) {
-				err := health.CheckPod(pod)
+				err := healthcheck.CheckPod(pod)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy running", &corev1.Pod{
@@ -62,7 +62,7 @@ var _ = Describe("health", func() {
 	Describe("CheckDeployment", func() {
 		DescribeTable("deployments",
 			func(deployment *appsv1.Deployment, matcher types.GomegaMatcher) {
-				err := health.CheckDeployment(deployment)
+				err := healthcheck.CheckDeployment(deployment)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy", &appsv1.Deployment{
@@ -131,7 +131,7 @@ var _ = Describe("health", func() {
 	Describe("CheckStatefulSet", func() {
 		DescribeTable("statefulsets",
 			func(statefulSet *appsv1.StatefulSet, matcher types.GomegaMatcher) {
-				err := health.CheckStatefulSet(statefulSet)
+				err := healthcheck.CheckStatefulSet(statefulSet)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy", &appsv1.StatefulSet{
@@ -158,7 +158,7 @@ var _ = Describe("health", func() {
 		oneUnavailable := intstr.FromInt(1)
 		DescribeTable("daemonsets",
 			func(daemonSet *appsv1.DaemonSet, matcher types.GomegaMatcher) {
-				err := health.CheckDaemonSet(daemonSet)
+				err := healthcheck.CheckDaemonSet(daemonSet)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy", &appsv1.DaemonSet{}, BeNil()),
@@ -189,7 +189,7 @@ var _ = Describe("health", func() {
 	Describe("CheckReplicaSet", func() {
 		DescribeTable("replicaSet",
 			func(replicaSet *appsv1.ReplicaSet, matcher types.GomegaMatcher) {
-				err := health.CheckReplicaSet(replicaSet)
+				err := healthcheck.CheckReplicaSet(replicaSet)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy", &appsv1.ReplicaSet{
@@ -223,7 +223,7 @@ var _ = Describe("health", func() {
 	Describe("CheckReplicationController", func() {
 		DescribeTable("replicationController",
 			func(replicationController *corev1.ReplicationController, matcher types.GomegaMatcher) {
-				err := health.CheckReplicationController(replicationController)
+				err := healthcheck.CheckReplicationController(replicationController)
 				Expect(err).To(matcher)
 			},
 			Entry("healthy", &corev1.ReplicationController{

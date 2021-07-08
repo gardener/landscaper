@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-with-nested-status
+  labels:
+    healthcheck: testme
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      test: healthcheck
+  template:
+    metadata:
+      labels:
+        test: healthcheck
+    spec:
+      containers:
+      - name: test-container
+        image: alpine:3.8
+status:
+  availableReplicas: 3
+  readyReplicas: 2
+  replicas: 3
+  updatedReplicas: 3
+  additionalTestFields:
+    slicedStuff:
+    - name: foo
+      value: bar
+    - name: john
+      value: doe
+    nestedStuff:
+      name:
+        first:
+          value: john
+        last:
+          value: doe

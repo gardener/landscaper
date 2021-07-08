@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -30,7 +31,7 @@ type ProviderConfiguration struct {
 
 	// HealthChecks configures the health checks.
 	// +optional
-	HealthChecks HealthChecksConfiguration `json:"healthChecks,omitempty"`
+	HealthChecks health.HealthChecksConfiguration `json:"healthChecks,omitempty"`
 
 	// DeleteTimeout is the time to wait before giving up on a resource to be deleted.
 	// Defaults to 180s.
@@ -61,17 +62,6 @@ const (
 	UpdateStrategyUpdate UpdateStrategy = "update"
 	UpdateStrategyPatch  UpdateStrategy = "patch"
 )
-
-// HealthChecksConfiguration contains the configuration for health checks.
-type HealthChecksConfiguration struct {
-	// DisableDefault allows to disable the default health checks.
-	// +optional
-	DisableDefault bool `json:"disableDefault,omitempty"`
-	// Timeout is the time to wait before giving up on a resource to be healthy.
-	// Defaults to 180s.
-	// +optional
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-}
 
 // Chart defines the helm chart to render and apply.
 type Chart struct {

@@ -5,8 +5,6 @@
 package v1alpha1
 
 import (
-	"unsafe"
-
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -15,27 +13,11 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/manifest"
 )
 
-// Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration is an manual conversion function.
-func Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(in *HealthChecksConfiguration, out *manifest.HealthChecksConfiguration, s conversion.Scope) error {
-	out.DisableDefault = in.DisableDefault
-	out.Timeout = (*lsv1alpha1.Duration)(unsafe.Pointer(in.Timeout))
-	return nil
-}
-
-// Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration is an manual conversion function.
-func Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(in *manifest.HealthChecksConfiguration, out *HealthChecksConfiguration, s conversion.Scope) error {
-	out.DisableDefault = in.DisableDefault
-	out.Timeout = (*lsv1alpha1.Duration)(unsafe.Pointer(in.Timeout))
-	return nil
-}
-
 // Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration is an manual conversion function.
 func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_v1alpha1_HealthChecksConfiguration_To_manifest_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
@@ -63,9 +45,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
-	if err := Convert_manifest_HealthChecksConfiguration_To_v1alpha1_HealthChecksConfiguration(&in.HealthChecks, &out.HealthChecks, s); err != nil {
-		return err
-	}
+	out.HealthChecks = in.HealthChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
 	} else {
