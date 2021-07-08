@@ -14,19 +14,19 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// Target is the internal representation of a target.
+// TargetList is the internal representation of a list of targets.
 type TargetList struct {
 	Targets []*Target
 }
 
-// New creates a new internal targetlist.
+// NewTargetList creates a new internal targetlist.
 func NewTargetList() *TargetList {
 	return &TargetList{
 		Targets: []*Target{},
 	}
 }
 
-// New creates a new internal targetlist.
+// NewTargetListWithSize creates a new internal targetlist with a given size.
 func NewTargetListWithSize(size int) *TargetList {
 	return &TargetList{
 		Targets: make([]*Target, size),
