@@ -39,7 +39,7 @@ var _ = Describe("Validation", func() {
 		fld = field.NewPath("healthcheck")
 
 		rc = healthchecks.RequirementSpec{
-			JsonPath: "{ .foo.bar }",
+			JsonPath: ".foo.bar",
 			Operator: selection.Equals,
 			Value: []runtime.RawExtension{
 				{

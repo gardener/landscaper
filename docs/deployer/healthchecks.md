@@ -2,6 +2,8 @@
 
 The Helm and Manifest deployers can check the readiness/health of the resources they just deployed. This document describes how the health checks work and how they can be configured.
 
+Both types of health checks, default health checks and custom health checks, can only check the resources that have been deployed by the DeployItem they are a part of, i.e. those resources in the DeployItems `.status.providerStatus.managedResources` field.
+
 **Index**:
 - [Health Check Configuration](#health-check-configuration)
 - [Default Health Checks](#default-health-checks)
@@ -98,7 +100,9 @@ A custom health check must contain a name and a selector that selects the resour
 - a set of `resourceSelector` each of which matches just one resource at a time, identified by its `apiVersion`, `kind`, `namespace` and `name`
 - a `labelSelector` that matches multiple resources of the same `apiVersion` and `kind`, identified by a set of labels they need to have
 
-**WARNING:** It is possible and intended to provide both, `resourceSelector` and `labelSelector` so that resources with labels can be combined with other resources without labels in just one custom health check. However, it is left to the user to make sure that in this case, resources of different `apiVersion` or `kind` will all have the field that is checked in this custom health check (unless the `notExists` operator is used).
+As already mentioned above, these selectors can only select resources that have been deployed by the DeployItem the custom health check is a part of. They can only select resources that are listed in the DeployItems `.status.providerStatus.managedResources` field.
+
+**WARNING:** It is possible and intended to provide both, `resourceSelector` and `labelSelector` so that resources with labels can be combined with other resources without labels in just one custom health check. However, it is left to the user to make sure that in this case, the condition to be checked can successfully evaluate for resources of different `apiVersion` and/or `kind`.
 
 A field that is specified by its `jsonPath` will be extracted from each of the selected objects. The `jsonPath` is just a blank JSON path, i.e. without surrounding braces `{}`. The contents of the extracted field can be matched against a set of values according to an operator:
 
