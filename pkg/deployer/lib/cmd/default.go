@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/logger"
@@ -141,6 +142,16 @@ func (o *DefaultOptions) GetConfig(obj runtime.Object) error {
 
 	if _, _, err := o.decoder.Decode(data, nil, obj); err != nil {
 		return err
+	}
+
+	if o.Log.V(2).Enabled() {
+		// print configuration if enabled
+		configBytes, err := yaml.Marshal(obj)
+		if err != nil {
+			o.Log.Error(err, "unable to marshal configuration")
+		} else {
+			fmt.Println(string(configBytes))
+		}
 	}
 	return nil
 }
