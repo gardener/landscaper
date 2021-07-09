@@ -149,7 +149,7 @@ func Convert_manifest_Manifest_To_v1alpha2_Manifest(in *manifest.Manifest, out *
 func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
-	out.HealthChecks = in.HealthChecks
+	out.ReadinessChecks = in.ReadinessChecks
 	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*manifest.Manifests)(unsafe.Pointer(&in.Manifests))
 	return nil
@@ -163,7 +163,7 @@ func Convert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
-	out.HealthChecks = in.HealthChecks
+	out.ReadinessChecks = in.ReadinessChecks
 	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]Manifest)(unsafe.Pointer(&in.Manifests))
 	return nil

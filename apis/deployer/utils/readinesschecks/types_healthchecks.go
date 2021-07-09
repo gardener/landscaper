@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthchecks
+package readinesschecks
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
@@ -11,36 +11,36 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-// HealthChecksConfiguration contains the configuration for health checks.
-type HealthChecksConfiguration struct {
-	// DisableDefault allows to disable the default health checks.
+// ReadinessCheckConfiguration contains the configuration for readiness checks.
+type ReadinessCheckConfiguration struct {
+	// DisableDefault allows to disable the default readiness checks.
 	// +optional
 	DisableDefault bool `json:"disableDefault,omitempty"`
-	// Timeout is the time to wait before giving up on a resource to be healthy.
+	// Timeout is the time to wait before giving up on a resource to be ready.
 	// Defaults to 180s.
 	// +optional
 	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-	// CustomHealthChecks is a set of custom health check configurations
+	// CustomReadinessChecks is a set of custom readiness check configurations
 	// +optional
-	CustomHealthChecks []CustomHealthCheckConfiguration `json:"custom,omitempty"`
+	CustomReadinessChecks []CustomReadinessCheckConfiguration `json:"custom,omitempty"`
 }
 
-// CustomHealthCheckConfiguration contains the configuration for a custom health check
-type CustomHealthCheckConfiguration struct {
-	// Name is the name of the HealthCheck
+// CustomReadinessCheckConfiguration contains the configuration for a custom readiness check
+type CustomReadinessCheckConfiguration struct {
+	// Name is the name of the ReadinessCheck
 	Name string `json:"name"`
-	// Timeout is the value after which a HealthCheck should time out
+	// Timeout is the value after which a readiness check should time out
 	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-	// Disabled deactivates this custom resource health check
+	// Disabled deactivates this custom ReadinessCheck
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
-	// Resource is the resource for which the health-check should be applied, used for single resources that can be identified by namespace and name
+	// Resource is the resource for which the readiness check should be applied, used for single resources that can be identified by namespace and name
 	// +optional
 	Resource []lsv1alpha1.TypedObjectReference `json:"resourceSelector,omitempty"`
 	// Labels are the labels used to identify multiple resources that can be identified by a unique set of labels
 	// +optional
 	LabelSelector *LabelSelectorSpec `json:"labelSelector,omitempty"`
-	// Requirements is the actual health-check which compares an object's property to a value
+	// Requirements is the actual readiness check which compares an object's property to a value
 	Requirements []RequirementSpec `json:"requirements"`
 }
 
@@ -54,7 +54,7 @@ type LabelSelectorSpec struct {
 	Labels map[string]string `json:"matchLabels"`
 }
 
-// RequirementSpec contains the requirements an object must meet to pass the custom health check
+// RequirementSpec contains the requirements an object must meet to pass the custom readiness check
 type RequirementSpec struct {
 	// JsonPath is the path of the field of the Kubernetes object to be checked (without braces)
 	JsonPath string `json:"jsonPath"`

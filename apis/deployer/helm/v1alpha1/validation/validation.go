@@ -12,15 +12,15 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
-	healthchecks "github.com/gardener/landscaper/apis/deployer/utils/healthchecks/validation"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation"
 )
 
 // ValidateProviderConfiguration validates a helm deployer configuration
 func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) error {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
-	allErrs = append(allErrs, ValidateTimeout(field.NewPath("healthChecks", "timeout"), config.HealthChecks.Timeout)...)
-	allErrs = append(allErrs, healthchecks.ValidateHealthCheckConfiguration(field.NewPath("healthChecks"), &config.HealthChecks)...)
+	allErrs = append(allErrs, ValidateTimeout(field.NewPath("readinessChecks", "timeout"), config.ReadinessChecks.Timeout)...)
+	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath("readinessChecks"), &config.ReadinessChecks)...)
 	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
 
 	expPath := field.NewPath("exportsFromManifests")

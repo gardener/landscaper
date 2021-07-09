@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthcheck
+package readinesscheck
 
 import (
 	"context"
@@ -20,45 +20,45 @@ import (
 )
 
 const (
-	StatusHealthy    StatusType = "Healthy"
-	StatusNotHealthy StatusType = "NotHealthy"
-	StatusUnknown    StatusType = "Unknown"
+	StatusReady    StatusType = "Ready"
+	StatusNotReady StatusType = "NotReady"
+	StatusUnknown  StatusType = "Unknown"
 )
 
 // StatusType defines the value of a Status.
 type StatusType string
 
-// checkObjectFunc is a function to be perform the actual health checks
+// checkObjectFunc is a function to perform the actual readiness check
 type checkObjectFunc func(*unstructured.Unstructured) error
 
-// WaitForObjectsHealthy waits for objects to be heatlhy and
-// returns an error if all the objects are not healthy after the timeout.
-func WaitForObjectsHealthy(ctx context.Context, timeout time.Duration, log logr.Logger, kubeClient client.Client, objects []*unstructured.Unstructured, fn checkObjectFunc) error {
+// WaitForObjectsReady waits for objects to be heatlhy and
+// returns an error if all the objects are not ready after the timeout.
+func WaitForObjectsReady(ctx context.Context, timeout time.Duration, log logr.Logger, kubeClient client.Client, objects []*unstructured.Unstructured, fn checkObjectFunc) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
 
-		// allErrs contains all the errors not related to the healthiness of objects.
+		// allErrs contains all the errors not related to the readiness of objects.
 		allErrs []error
-		// notHealthyErrs contains all the errors related to the healthiness of objects.
-		notHealthyErrs []error
+		// notReadyErrs contains all the errors related to the readiness of objects.
+		notReadyErrs []error
 	)
 
 	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
-		log.V(3).Info("wait resources healthy", "try", try)
+		log.V(3).Info("wait resources ready", "try", try)
 		try++
 
 		allErrs = nil
-		notHealthyErrs = nil
+		notReadyErrs = nil
 		for _, obj := range objects {
 			wg.Add(1)
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 
-				if err := IsObjectHealthy(ctx, log, kubeClient, obj, fn); err != nil {
+				if err := IsObjectReady(ctx, log, kubeClient, obj, fn); err != nil {
 					switch err.(type) {
-					case *ObjectNotHealthyError:
-						notHealthyErrs = append(notHealthyErrs, err)
+					case *ObjectNotReadyError:
+						notReadyErrs = append(notReadyErrs, err)
 					default:
 						allErrs = append(allErrs, err)
 					}
@@ -70,7 +70,7 @@ func WaitForObjectsHealthy(ctx context.Context, timeout time.Duration, log logr.
 		if len(allErrs) > 0 {
 			return false, apimacherrors.NewAggregate(allErrs)
 		}
-		if len(notHealthyErrs) > 0 {
+		if len(notReadyErrs) > 0 {
 			return false, nil
 		}
 
@@ -80,16 +80,16 @@ func WaitForObjectsHealthy(ctx context.Context, timeout time.Duration, log logr.
 	if len(allErrs) > 0 {
 		return apimacherrors.NewAggregate(allErrs)
 	}
-	if len(notHealthyErrs) > 0 {
-		return apimacherrors.NewAggregate(notHealthyErrs)
+	if len(notReadyErrs) > 0 {
+		return apimacherrors.NewAggregate(notReadyErrs)
 	}
 
 	return nil
 }
 
-// ObjectNotHealthyError holds information about an unhealthy object
+// ObjectNotReadyError holds information about an unready object
 // and implements the go error interface.
-type ObjectNotHealthyError struct {
+type ObjectNotReadyError struct {
 	objectGVK       string
 	objectName      string
 	objectNamespace string
@@ -97,16 +97,16 @@ type ObjectNotHealthyError struct {
 }
 
 // Error implements the go error interface.
-func (e *ObjectNotHealthyError) Error() string {
-	return fmt.Sprintf("%s %s/%s is not healthy: %s",
+func (e *ObjectNotReadyError) Error() string {
+	return fmt.Sprintf("%s %s/%s is not ready: %s",
 		e.objectGVK,
 		e.objectName,
 		e.objectNamespace,
 		e.err.Error())
 }
 
-// IsObjectHealthy gets an updated version of an object and checks if it is healthy.
-func IsObjectHealthy(ctx context.Context, log logr.Logger, kubeClient client.Client, obj *unstructured.Unstructured, checkObject checkObjectFunc) error {
+// IsObjectReady gets an updated version of an object and checks if it is ready.
+func IsObjectReady(ctx context.Context, log logr.Logger, kubeClient client.Client, obj *unstructured.Unstructured, checkObject checkObjectFunc) error {
 	objLog := log.WithValues(
 		"object", obj.GroupVersionKind().String(),
 		"resource", kutil.ObjectKey(obj.GetName(), obj.GetNamespace()))
@@ -122,8 +122,8 @@ func IsObjectHealthy(ctx context.Context, log logr.Logger, kubeClient client.Cli
 
 	objLog.V(3).Info("get resource status")
 	if err := checkObject(obj); err != nil {
-		objLog.V(3).Info("resource status", "status", StatusNotHealthy)
-		return &ObjectNotHealthyError{
+		objLog.V(3).Info("resource status", "status", StatusNotReady)
+		return &ObjectNotReadyError{
 			objectGVK:       obj.GroupVersionKind().String(),
 			objectName:      obj.GetName(),
 			objectNamespace: obj.GetNamespace(),
@@ -131,7 +131,7 @@ func IsObjectHealthy(ctx context.Context, log logr.Logger, kubeClient client.Cli
 		}
 	}
 
-	objLog.V(3).Info("resource status", "status", StatusHealthy)
+	objLog.V(3).Info("resource status", "status", StatusReady)
 
 	return nil
 }

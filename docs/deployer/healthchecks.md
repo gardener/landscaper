@@ -1,43 +1,44 @@
 # Deployer Resource Health-/Readiness Checks
 
-The Helm and Manifest deployers can check the readiness/health of the resources they just deployed. This document describes how the health checks work and how they can be configured.
-
-Both types of health checks, default health checks and custom health checks, can only check the resources that have been deployed by the DeployItem they are a part of, i.e. those resources in the DeployItems `.status.providerStatus.managedResources` field.
+The Helm and Manifest deployers can check the health of the resources they just deployed. This document describes how the health checks work and how they can be configured.
+As of now, health checks is synonimous to readiness check. Separate liveness checks may be included in future versions of Landscaper and its deployers.
 
 **Index**:
-- [Health Check Configuration](#health-check-configuration)
-- [Default Health Checks](#default-health-checks)
-- [Custom Health Checks](#custom-health-checks)
+- [Readiness Check Configuration](#readiness-check-configuration)
+- [Default Readiness Checks](#default-readiness-checks)
+- [Custom Readiness Checks](#custom-readiness-checks)
 
-## Health Check configuration
+## Readiness Check configuration
 
-To configure a health check for a DeployItem, the `.spec.healthChecks` field of the provider configuration can be set as follows.
+Readiness checks can operate on the resources that have been deployed by the DeployItem they are a part of, i.e. those resources in the DeployItems `.status.providerStatus.managedResources` field.
+
+To configure a readiness check for a DeployItem, the `.spec.readinessChecks` field of the provider configuration can be set as follows.
 
 ```yaml
-# Configuration of the health checks for the resources.
+# Configuration of the readiness checks for the resources.
 # optional
-healthChecks:
-  # Allows to disable the default health checks.
+readinessChecks:
+  # Allows to disable the default readiness checks.
   # optional; set to false by default.
   disableDefault: true
   # Defines the time to wait before giving up on a resource
-  # to be healthy. Should be changed with long startup time pods.
+  # to be ready. Should be changed with long startup time pods.
   # optional; default to 180 seconds/3 minutes.
   timeout: 3m
-  # Configuration of custom health/readiness checks which are used
+  # Configuration of custom readiness checks which are used
   # to check on custom fields and their values
   # especially useful for resources that came in through CRDs
   # optional
   custom:
-  # the name of the custom health check, required
-  - name: myCustomHealthcheck
-    # timeout of the custom health check
+  # the name of the custom readiness check, required
+  - name: myCustomReadinessCheck
+    # timeout of the custom readiness check
     # optional, defaults to the timeout stated above
     timeout: 2m
-    # temporarily disable this custom health check, useful for test setups
+    # temporarily disable this custom readiness check, useful for test setups
     # optional, defaults to false
     disabled: false
-    # specific resources that should be selected for this health check to be performed on
+    # specific resources that should be selected for this readiness check to be performed on
     # a resource is uniquely defined by its GVK, namespace and name
     # required if no labelSelector is specified, can be combined with a labelSelector which is potentially harmful
     resourceSelector:
@@ -45,7 +46,7 @@ healthChecks:
       kind: Deployment
       name: myDeployment
       namespace: myNamespace
-    # multiple resources for the health check to be performed on can be selected through labels
+    # multiple resources for the readiness check to be performed on can be selected through labels
     # they are identified by their GVK and a set of labels that all need to match
     # required if no resourceSelector is specified, can be combined with a resourceSelector which is potentially harmful
     labelSelector:
@@ -54,7 +55,7 @@ healthChecks:
       matchLabels:
         app: myApp
         component: backendService
-    # requirements specifies what condition must hold true for the given objects to pass the health check
+    # requirements specifies what condition must hold true for the given objects to pass the readiness check
     # multiple requirements can be given and they all need to successfully evaluate
     requirements:
     # jsonPath denotes the path of the field of the selected object to be checked and compared
@@ -69,40 +70,31 @@ healthChecks:
       - value: 3
 ```
 
-## Default health checks
+## Default readiness checks
 
-If the default health check is enabled for a DeployItem (which is the default), the following native Kubernetes resources will be checked as follows:
+If the default readiness check is enabled for a DeployItem (which is the default), the following native Kubernetes resources will be checked as follows:
 
-* `Pod`: It is considered healthy if it successfully completed
-or if it has the the PodReady condition set to true.
-* `Deployment`: It is considered healthy if the controller observed
-its current revision and if the number of updated replicas is equal
-to the number of replicas.
-* `ReplicaSet`: It is considered healthy if its controller observed
-its current revision and if the number of updated replicas is equal to the number of replicas.
-* `StatefulSet`: It is considered healthy if its controller observed
-its current revision, it is not in an update (i.e. UpdateRevision is empty)
-and if its current replicas are equal to its desired replicas.
-* `DaemonSet`: It is considered healthy if its controller observed
-its current revision and if its desired number of scheduled pods is equal
-to its updated number of scheduled pods.
-* `ReplicationController`: It is considered healthy if its controller observed
-its current revision and if the number of updated replicas is equal to the number of replicas.
+* `Pod`: It is considered ready if it successfully completed or if it has the the PodReady condition set to true.
+* `Deployment`: It is considered ready if the controller observed its current revision and if the number of updated replicas is equal to the number of replicas.
+* `ReplicaSet`: It is considered ready if its controller observed its current revision and if the number of updated replicas is equal to the number of replicas.
+* `StatefulSet`: It is considered ready if its controller observed its current revision, it is not in an update (i.e. UpdateRevision is empty) and if its current replicas are equal to its desired replicas.
+* `DaemonSet`: It is considered ready if its controller observed its current revision and if its desired number of scheduled pods is equal to its updated number of scheduled pods.
+* `ReplicationController`: It is considered ready if its controller observed its current revision and if the number of updated replicas is equal to the number of replicas.
 
-## Custom Health Checks
+## Custom readiness Checks
 
-Custom health checks can be used to match custom fields of selected resources to given values.
+Custom readiness checks can be used to match custom fields of selected resources to given values.
 
-Multiple custom health checks can be defined for DeployItem as multiple resources to be checked each require a specifially tailored custom health check.
+Multiple custom readiness checks can be defined for DeployItem as multiple resources to be checked each require a specifially tailored custom readiness check.
 
-A custom health check must contain a name and a selector that selects the resource to be checked. This selector can either be:
+A custom readiness check must contain a name and a selector that selects the resource to be checked. This selector can either be:
 
 - a set of `resourceSelector` each of which matches just one resource at a time, identified by its `apiVersion`, `kind`, `namespace` and `name`
 - a `labelSelector` that matches multiple resources of the same `apiVersion` and `kind`, identified by a set of labels they need to have
 
-As already mentioned above, these selectors can only select resources that have been deployed by the DeployItem the custom health check is a part of. They can only select resources that are listed in the DeployItems `.status.providerStatus.managedResources` field.
+As already mentioned above, these selectors can only select resources that have been deployed by the DeployItem the custom readiness check is a part of. They can only select resources that are listed in the DeployItems `.status.providerStatus.managedResources` field.
 
-**WARNING:** It is possible and intended to provide both, `resourceSelector` and `labelSelector` so that resources with labels can be combined with other resources without labels in just one custom health check. However, it is left to the user to make sure that in this case, the condition to be checked can successfully evaluate for resources of different `apiVersion` and/or `kind`.
+**WARNING:** It is possible and intended to provide both, `resourceSelector` and `labelSelector` so that resources with labels can be combined with other resources without labels in just one custom readiness check. However, it is left to the user to make sure that in this case, the condition to be checked can successfully evaluate for resources of different `apiVersion` and/or `kind`.
 
 A field that is specified by its `jsonPath` will be extracted from each of the selected objects. The `jsonPath` is just a blank JSON path, i.e. without surrounding braces `{}`. The contents of the extracted field can be matched against a set of values according to an operator:
 

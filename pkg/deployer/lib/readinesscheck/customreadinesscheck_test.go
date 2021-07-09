@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package healthcheck
+package readinesscheck
 
 import (
 	"encoding/json"
@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	health "github.com/gardener/landscaper/apis/deployer/utils/healthchecks"
+	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
@@ -27,11 +27,11 @@ import (
 var _ = Describe("Custom health checks", func() {
 
 	var (
-		customHealthCheck CustomHealthCheck
+		customHealthCheck CustomReadinessCheck
 	)
 
 	BeforeEach(func() {
-		customHealthCheck = CustomHealthCheck{
+		customHealthCheck = CustomReadinessCheck{
 			Context:   ctx,
 			Client:    testenv.Client,
 			Log:       logr.Discard(),
@@ -49,7 +49,7 @@ var _ = Describe("Custom health checks", func() {
 		customHealthCheck.ManagedResources = objectRefs
 		ref := customHealthCheck.ManagedResources[0]
 
-		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
 			Name:     "check " + ref.Kind,
 			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
@@ -74,7 +74,7 @@ var _ = Describe("Custom health checks", func() {
 		customHealthCheck.ManagedResources = objectRefs
 		ref := customHealthCheck.ManagedResources[0]
 
-		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
 			Name:     "check " + ref.Kind,
 			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
@@ -120,7 +120,7 @@ var _ = Describe("Custom health checks", func() {
 		customHealthCheck.ManagedResources = objectRefs
 		ref := customHealthCheck.ManagedResources[0]
 
-		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
 			Name:     "check " + ref.Kind,
 			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{
@@ -144,7 +144,7 @@ var _ = Describe("Custom health checks", func() {
 		customHealthCheck.ManagedResources = objectRefs
 		ref := customHealthCheck.ManagedResources[0]
 
-		customHealthCheck.Configuration = health.CustomHealthCheckConfiguration{
+		customHealthCheck.Configuration = health.CustomReadinessCheckConfiguration{
 			Name:     "check " + ref.Kind,
 			Resource: []lsv1alpha1.TypedObjectReference{ref},
 			Requirements: []health.RequirementSpec{

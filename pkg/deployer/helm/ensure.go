@@ -24,7 +24,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
+	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -103,7 +103,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			currOp, "UpdateStatus", err.Error())
 	}
 
-	err = h.CheckResourcesHealth(ctx, targetClient)
+	err = h.CheckResourcesReady(ctx, targetClient)
 	if err != nil {
 		return err
 	}
@@ -116,36 +116,36 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	return nil
 }
 
-// CheckResourcesHealth checks if the managed resources are Ready/Healthy.
-func (h *Helm) CheckResourcesHealth(ctx context.Context, client client.Client) error {
+// CheckResourcesReady checks if the managed resources are Ready/Healthy.
+func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) error {
 
-	if !h.ProviderConfiguration.HealthChecks.DisableDefault {
-		defaultHealthCheck := healthcheck.DefaultHealthCheck{
+	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
+		defaultReadinessCheck := health.DefaultReadinessCheck{
 			Context:          ctx,
 			Client:           client,
-			CurrentOp:        "DefaultCheckResourcesHealthHelm",
+			CurrentOp:        "DefaultCheckResourcesReadinessHelm",
 			Log:              h.log,
-			Timeout:          h.ProviderConfiguration.HealthChecks.Timeout,
+			Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources: h.ProviderStatus.ManagedResources,
 		}
-		err := defaultHealthCheck.CheckResourcesHealth()
+		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
 			return err
 		}
 	}
 
-	if h.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
-		for _, customHealthCheckConfig := range h.ProviderConfiguration.HealthChecks.CustomHealthChecks {
-			customHealthCheck := healthcheck.CustomHealthCheck{
+	if h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
+		for _, customReadinessCheckConfig := range h.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
+			customReadinessCheck := health.CustomReadinessCheck{
 				Context:          ctx,
 				Client:           client,
 				Log:              h.log,
-				CurrentOp:        "CustomCheckResourcesHealthHelm",
-				Timeout:          h.ProviderConfiguration.HealthChecks.Timeout,
+				CurrentOp:        "CustomCheckResourcesReadinessHelm",
+				Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: h.ProviderStatus.ManagedResources,
-				Configuration:    customHealthCheckConfig,
+				Configuration:    customReadinessCheckConfig,
 			}
-			err := customHealthCheck.CheckResourcesHealth()
+			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
 				return err
 			}

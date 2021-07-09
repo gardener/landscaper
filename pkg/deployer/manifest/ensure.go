@@ -19,7 +19,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/pkg/deployer/lib/healthcheck"
+	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -75,11 +75,11 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			currOp, "UpdateStatus", err.Error())
 	}
 
-	return m.CheckResourcesHealth(ctx, targetClient)
+	return m.CheckResourcesReady(ctx, targetClient)
 }
 
-// CheckResourcesHealth checks if the managed resources are Ready/Healthy.
-func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Client) error {
+// CheckResourcesReady checks if the managed resources are Ready/Healthy.
+func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client) error {
 	var managedResources []lsv1alpha1.TypedObjectReference
 	for _, mr := range m.ProviderStatus.ManagedResources {
 		if mr.Policy == manifestv1alpha2.IgnorePolicy {
@@ -88,33 +88,33 @@ func (m *Manifest) CheckResourcesHealth(ctx context.Context, client client.Clien
 		managedResources = append(managedResources, mr.Resource)
 	}
 
-	if !m.ProviderConfiguration.HealthChecks.DisableDefault {
-		defaultHealthCheck := healthcheck.DefaultHealthCheck{
+	if !m.ProviderConfiguration.ReadinessChecks.DisableDefault {
+		defaultReadinessCheck := health.DefaultReadinessCheck{
 			Context:          ctx,
 			Client:           client,
-			CurrentOp:        "DefaultCheckResourcesHealthManifest",
+			CurrentOp:        "DefaultCheckResourcesReadinessManifest",
 			Log:              m.log,
-			Timeout:          m.ProviderConfiguration.HealthChecks.Timeout,
+			Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources: managedResources,
 		}
-		err := defaultHealthCheck.CheckResourcesHealth()
+		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
 			return err
 		}
 	}
 
-	if m.ProviderConfiguration.HealthChecks.CustomHealthChecks != nil {
-		for _, customHealthCheckConfig := range m.ProviderConfiguration.HealthChecks.CustomHealthChecks {
-			customHealthCheck := healthcheck.CustomHealthCheck{
+	if m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks != nil {
+		for _, customReadinessCheckConfig := range m.ProviderConfiguration.ReadinessChecks.CustomReadinessChecks {
+			customReadinessCheck := health.CustomReadinessCheck{
 				Context:          ctx,
 				Client:           client,
 				Log:              m.log,
-				CurrentOp:        "CustomCheckResourcesHealthManifest",
-				Timeout:          m.ProviderConfiguration.HealthChecks.Timeout,
+				CurrentOp:        "CustomCheckResourcesReadinessManifest",
+				Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: managedResources,
-				Configuration:    customHealthCheckConfig,
+				Configuration:    customReadinessCheckConfig,
 			}
-			err := customHealthCheck.CheckResourcesHealth()
+			err := customReadinessCheck.CheckResourcesReady()
 			if err != nil {
 				return err
 			}

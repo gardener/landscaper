@@ -51,7 +51,7 @@ func (in *Configuration) DeepCopyObject() runtime.Object {
 func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.HealthChecks.DeepCopyInto(&out.HealthChecks)
+	in.ReadinessChecks.DeepCopyInto(&out.ReadinessChecks)
 	if in.DeleteTimeout != nil {
 		in, out := &in.DeleteTimeout, &out.DeleteTimeout
 		*out = new(corev1alpha1.Duration)
