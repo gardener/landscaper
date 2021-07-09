@@ -141,6 +141,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                            schema_apis_deployer_container_v1alpha1_PodStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderConfiguration":                schema_apis_deployer_container_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderStatus":                       schema_apis_deployer_container_v1alpha1_ProviderStatus(ref),
+		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.Owner":                                     schema_apis_deployer_core_v1alpha1_Owner(ref),
+		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerList":                                 schema_apis_deployer_core_v1alpha1_OwnerList(ref),
+		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerSpec":                                 schema_apis_deployer_core_v1alpha1_OwnerSpec(ref),
+		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerStatus":                               schema_apis_deployer_core_v1alpha1_OwnerStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess":                             schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                                     schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
@@ -6051,6 +6055,180 @@ func schema_apis_deployer_container_v1alpha1_ProviderStatus(ref common.Reference
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus"},
+	}
+}
+
+func schema_apis_deployer_core_v1alpha1_Owner(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Owner are resources that can hold any kind of json or yaml data.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec contains configuration for a deployer ownership.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerStatus"),
+						},
+					},
+				},
+				Required: []string{"spec", "status"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerSpec", "github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_apis_deployer_core_v1alpha1_OwnerList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OwnerList contains a list of Owners.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/core/v1alpha1.Owner"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.Owner", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_apis_deployer_core_v1alpha1_OwnerSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OwnerSpec describes the configuration for a deployer ownership.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type describes the type of the deployer.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"deployerId": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployerId describes the unique identity of a deployer.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"targets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Targets is a list of targets the referenced deployer is responsible for.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"type", "deployerId"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+	}
+}
+
+func schema_apis_deployer_core_v1alpha1_OwnerStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "OwnerStatus describes the status for a deployer ownership.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"accepted": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Accepted defines if the responsible controller has accepted the owner.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration indicates the generation that was last observed by the responsive deployer controller.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+				Required: []string{"accepted", "observedGeneration"},
+			},
+		},
 	}
 }
 

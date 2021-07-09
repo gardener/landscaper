@@ -68,8 +68,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 // ResourceDefinition defines the custom resources of this version.
 var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 	return lsschema.CustomResourceDefinitions{
-		Group:   SchemeGroupVersion.Group,
-		Version: SchemeGroupVersion.Version,
+		Group:     SchemeGroupVersion.Group,
+		Version:   SchemeGroupVersion.Version,
+		OutputDir: "../pkg/landscaper/crdmanager/crdresources",
 
 		Definitions: []lsschema.CustomResourceDefinition{
 			InstallationDefinition,

@@ -18,10 +18,15 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// CustomResourceDefinition defines the internal representation of the custom resource.
+type CustomResourceDefinition struct {
+	OutputDir string
+	CRD *apiextv1.CustomResourceDefinition
+}
 
 // CRDGenerator defines a generator to generate crd's.
 type CRDGenerator struct {
-	crds map[string]*apiextv1.CustomResourceDefinition
+	crds map[string]*CustomResourceDefinition
 	Definitions map[string]common.OpenAPIDefinition
 }
 
@@ -31,12 +36,12 @@ func NewCRDGenerator(definitionsFunc func(ref common.ReferenceCallback) map[stri
 		return spec.MustCreateRef(path)
 	}
 	return &CRDGenerator{
-		crds: map[string]*apiextv1.CustomResourceDefinition{},
+		crds: map[string]*CustomResourceDefinition{},
 		Definitions: definitionsFunc(origRefCallback),
 	}
 }
 
-func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResourceDefinition) error {
+func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResourceDefinition, outputDir string) error {
 
 	// first find the correct schema definition
 	var (
@@ -76,13 +81,16 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 	crdName := fmt.Sprintf("%s.%s", def.Names.Plural, group)
 	crd, ok := g.crds[crdName]
 	if !ok {
-		crd = &apiextv1.CustomResourceDefinition{}
-		crd.APIVersion = "apiextensions.k8s.io/v1"
-		crd.Kind = "CustomResourceDefinition"
-		crd.Name = crdName
-		crd.Spec.Group = group
-		crd.Spec.Scope = apiextv1.ResourceScope(def.Scope)
-		crd.Spec.Names = apiextv1.CustomResourceDefinitionNames{
+		crd = &CustomResourceDefinition{
+			OutputDir: outputDir,
+			CRD: &apiextv1.CustomResourceDefinition{},
+		}
+		crd.CRD.APIVersion = "apiextensions.k8s.io/v1"
+		crd.CRD.Kind = "CustomResourceDefinition"
+		crd.CRD.Name = crdName
+		crd.CRD.Spec.Group = group
+		crd.CRD.Spec.Scope = apiextv1.ResourceScope(def.Scope)
+		crd.CRD.Spec.Names = apiextv1.CustomResourceDefinitionNames{
 			Plural:     def.Names.Plural,
 			Singular:   def.Names.Singular,
 			ShortNames: def.Names.ShortNames,
@@ -90,10 +98,15 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 			ListKind:   def.Names.ListKind,
 			Categories: def.Names.Categories,
 		}
-		crd.Status.StoredVersions = []string{}
-		crd.Status.Conditions = []apiextv1.CustomResourceDefinitionCondition{}
+		crd.CRD.Status.StoredVersions = []string{}
+		crd.CRD.Status.Conditions = []apiextv1.CustomResourceDefinitionCondition{}
 		g.crds[crdName] = crd
 	}
+	if len(outputDir) != 0 && crd.OutputDir != outputDir {
+		return fmt.Errorf("different output directories defined for the same resource %s/%s/%s: %s vs. %s",
+			group, version, def.Names.Kind, outputDir, crd.OutputDir)
+	}
+
 	defVersion := apiextv1.CustomResourceDefinitionVersion{
 		Name:                     version,
 		Served:                   def.Served,
@@ -119,26 +132,29 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 			JSONPath:    col.JSONPath,
 		})
 	}
-	crd.Spec.Versions = append(crd.Spec.Versions, defVersion)
+	crd.CRD.Spec.Versions = append(crd.CRD.Spec.Versions, defVersion)
 	return nil
 }
 
-func (g *CRDGenerator) CRDs() ([]*apiextv1.CustomResourceDefinition, error) {
-	crds := make([]*apiextv1.CustomResourceDefinition, 0)
+func (g *CRDGenerator) CRDs() ([]*CustomResourceDefinition, error) {
+	crds := make([]*CustomResourceDefinition, 0)
 	for _, c := range g.crds {
-		defaultedCRD := c.DeepCopy()
+		defaultedCRD := c.CRD.DeepCopy()
 		apiextv1.SetDefaults_CustomResourceDefinition(defaultedCRD)
 		coreCRD := &apiext.CustomResourceDefinition{}
 		if err := apiextv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(defaultedCRD, coreCRD, nil); err != nil {
-			return nil, fmt.Errorf("unable to convert crd %s: %w", c.Name, err)
+			return nil, fmt.Errorf("unable to convert crd %s: %w", c.CRD.Name, err)
 		}
 		if err := apiextval.ValidateCustomResourceDefinition(coreCRD, runtimeschema.GroupVersion{
-			Group:   c.GroupVersionKind().Group,
-			Version: c.GroupVersionKind().Version,
+			Group:   c.CRD.GroupVersionKind().Group,
+			Version: c.CRD.GroupVersionKind().Version,
 		}); len(err) != 0 {
-			return nil, fmt.Errorf("crd %s is invalid: %w", c.Name, err.ToAggregate())
+			return nil, fmt.Errorf("crd %s is invalid: %w", c.CRD.Name, err.ToAggregate())
 		}
-		crds = append(crds, c)
+		crds = append(crds, &CustomResourceDefinition{
+			OutputDir: c.OutputDir,
+			CRD: c.CRD,
+		})
 	}
 	return crds, nil
 }
