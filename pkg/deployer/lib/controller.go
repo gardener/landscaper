@@ -154,28 +154,16 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	var target *lsv1alpha1.Target
-	if deployItem.Spec.Target != nil {
-		target = &lsv1alpha1.Target{}
-		if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to get target for deploy item: %w", err)
-		}
-		if len(c.targetSelectors) != 0 {
-			matched, err := targetselector.MatchOne(target, c.targetSelectors)
-			if err != nil {
-				return reconcile.Result{}, fmt.Errorf("unable to match target selector: %w", err)
-			}
-			if !matched {
-				logger.V(5).Info("the deploy item's target has not matched the given target selector",
-					"target", target.Name)
-				return reconcile.Result{}, nil
-			}
-		}
+	target, responsible, err := c.checkTargetResponsibility(ctx, logger, deployItem)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if !responsible {
+		return reconcile.Result{}, nil
 	}
 
 	logger.V(3).Info("check deploy item reconciliation")
-	err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, deployItem, c.info)
-	if err != nil {
+	if err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, deployItem, c.info); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -210,6 +198,32 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 	}
 	return reconcile.Result{}, nil
+}
+
+func (c *controller) checkTargetResponsibility(ctx context.Context, log logr.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
+	if deployItem.Spec.Target == nil {
+		log.V(9).Info("no target defined")
+		return nil, true, nil
+	}
+	log.V(7).Info("Found target. Checking responsibility")
+	target := &lsv1alpha1.Target{}
+	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
+		return nil, false, fmt.Errorf("unable to get target for deploy item: %w", err)
+	}
+	if len(c.targetSelectors) == 0 {
+		log.V(9).Info("no target selectors defined")
+		return target, true, nil
+	}
+	matched, err := targetselector.MatchOne(target, c.targetSelectors)
+	if err != nil {
+		return nil, false, fmt.Errorf("unable to match target selector: %w", err)
+	}
+	if !matched {
+		log.V(5).Info("the deploy item's target has not matched the given target selector",
+			"target", target.Name)
+		return nil, false, nil
+	}
+	return target, true, nil
 }
 
 func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {

@@ -118,6 +118,7 @@ var _ = Describe("Helm Deployer", func() {
 		// Get the managed objects from Status and set them in Ready status
 		status := &helm.ProviderStatus{}
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(di.Status.ProviderStatus).ToNot(BeNil())
 
 		helmDecoder := serializer.NewCodecFactory(helmctrl.HelmScheme).UniversalDecoder()
 		_, _, err = helmDecoder.Decode(di.Status.ProviderStatus.Raw, nil, status)
