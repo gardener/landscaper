@@ -46,7 +46,7 @@ bash "${API_PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/apis/deployer \
   $PROJECT_MOD_ROOT/apis/deployer \
-  "helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1 utils/readinesschecks" \
+  "helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1 core:v1alpha1 utils/readinesschecks" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
 echo "> Generating openapi definitions"
@@ -57,6 +57,7 @@ ${GOPATH}/bin/openapi-gen "$@" \
   --input-dirs=github.com/gardener/landscaper/apis/core/v1alpha1 \
   --input-dirs=github.com/gardener/landscaper/apis/config/v1alpha1 \
   --input-dirs=github.com/gardener/landscaper/apis/config \
+  --input-dirs=github.com/gardener/landscaper/apis/deployer/core/v1alpha1 \
   --input-dirs=github.com/gardener/landscaper/apis/deployer/utils/readinesschecks \
   --input-dirs=github.com/gardener/landscaper/apis/deployer/helm/v1alpha1 \
   --input-dirs=github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1 \

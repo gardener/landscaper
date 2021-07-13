@@ -14,8 +14,16 @@ const (
 
 // CustomResourceDefinitions defines a list of definitions from the same api group and version.
 type CustomResourceDefinitions struct {
+	// Group is the apigroup of the CRD.
 	Group string
+	// Version defines the version of the CRD.
 	Version string
+
+	// OutputDir defines the optional output directory where the crd should be written to.
+	// Be aware that this path is relative to the apis directory.
+	// If this is empty it will be written to the default CRD location.
+	//+optional
+	OutputDir string
 
 	Definitions []CustomResourceDefinition
 }

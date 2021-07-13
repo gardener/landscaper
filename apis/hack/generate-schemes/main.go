@@ -15,9 +15,11 @@ import (
 	"strings"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	depv1alpha1 "github.com/gardener/landscaper/apis/deployer/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
 	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/go-openapi/spec"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/yaml"
 
 	"github.com/go-openapi/jsonreference"
@@ -35,6 +37,7 @@ var Exports = []string{
 
 var CRDs = []lsschema.CustomResourceDefinitions{
 	lsv1alpha1.ResourceDefinition,
+	depv1alpha1.ResourceDefinition,
 }
 
 var (
@@ -98,7 +101,7 @@ func run(schemaDir, crdDir string) error {
 	crdGen := generators.NewCRDGenerator(openapi.GetOpenAPIDefinitions)
 	for _, crdVersion := range CRDs {
 		for _, crdDef := range crdVersion.Definitions {
-			if err := crdGen.Generate(crdVersion.Group, crdVersion.Version, crdDef); err != nil {
+			if err := crdGen.Generate(crdVersion.Group, crdVersion.Version, crdDef, crdVersion.OutputDir); err != nil {
 				return fmt.Errorf("unable to generate crd for %s %s %s: %w", crdVersion.Group, crdVersion.Version, crdDef.Names.Kind, err)
 			}
 		}
@@ -108,23 +111,35 @@ func run(schemaDir, crdDir string) error {
 	if err != nil {
 		return err
 	}
+	cleanedCrdDirs := sets.NewString(crdDir)
 	for _, crd := range crds {
-		jsonBytes, err := json.Marshal(crd)
+		jsonBytes, err := json.Marshal(crd.CRD)
 		if err != nil {
-			return fmt.Errorf("unable to marshal CRD %s: %w", crd.Name, err)
+			return fmt.Errorf("unable to marshal CRD %s: %w", crd.CRD.Name, err)
 		}
 		data, err := yaml.JSONToYAML(jsonBytes)
 		if err != nil {
-			return fmt.Errorf("unable to convert json of CRD %s to yaml: %w", crd.Name, err)
+			return fmt.Errorf("unable to convert json of CRD %s to yaml: %w", crd.CRD.Name, err)
+		}
+
+		outDir := crdDir
+		if len(crd.OutputDir) != 0 {
+			outDir = crd.OutputDir
+		}
+		if !cleanedCrdDirs.Has(outDir) {
+			if err := prepareExportDir(outDir); err != nil {
+				return err
+			}
+			cleanedCrdDirs.Insert(outDir)
 		}
 
 		// write file
-		file := filepath.Join(crdDir, fmt.Sprintf("%s_%s.yaml", crd.Spec.Group, crd.Spec.Names.Plural))
+		file := filepath.Join(outDir, fmt.Sprintf("%s_%s.yaml", crd.CRD.Spec.Group, crd.CRD.Spec.Names.Plural))
 		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
-			return fmt.Errorf("unable to write crd for %q to %q: %w", file, crd.Name, err)
+			return fmt.Errorf("unable to write crd for %q to %q: %w", file, crd.CRD.Name, err)
 		}
 
-		fmt.Printf("Generated crd for %q...\n", crd.Name)
+		fmt.Printf("Generated crd for %q in %s...\n", crd.CRD.Name, file)
 	}
 
 	return nil
@@ -141,6 +156,7 @@ func ShouldCreateDefinition(exportNames []string, defName string) bool {
 }
 
 func prepareExportDir(exportDir string) error {
+	log.Printf("Prepate export dir %q", exportDir)
 	if err := os.MkdirAll(exportDir, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to to create export directory %q: %w", exportDir, err)
 	}

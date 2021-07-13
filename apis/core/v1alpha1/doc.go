@@ -12,5 +12,4 @@
 
 // Package v1alpha1 is a version of the API.
 // +groupName=landscaper.gardener.cloud
-// +kubebuilder:storageversion
 package v1alpha1
