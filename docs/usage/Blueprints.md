@@ -36,7 +36,7 @@ A Blueprint is a versioned configuration file that consists of
 
 It is defined by a YAML definition that sits on the top level inside the blueprints filesystem.
 
-The following snippet shows the structure of a `blueprint.yaml` file. Refer to [.schemas/landscaper_Blueprint.json](../../.schemas/landscaper_Blueprint.json) for the automatically generated jsonschema definition.
+The following snippet shows the structure of a `blueprint.yaml` file. Refer to [apis/.schemes/core-v1alpha1-Blueprint.json](../../apis/.schemes/core-v1alpha1-Blueprint.json) for the automatically generated jsonschema definition.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
