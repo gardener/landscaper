@@ -11,6 +11,7 @@ import (
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -41,6 +42,16 @@ func Request(name, namespace string) reconcile.Request {
 	req.Name = name
 	req.Namespace = namespace
 	return req
+}
+
+// RequestFromObject creates a new reconcile.for a object
+func RequestFromObject(obj client.Object) reconcile.Request {
+	return reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Namespace: obj.GetNamespace(),
+			Name:      obj.GetName(),
+		},
+	}
 }
 
 // DeleteInstallation deletes a component by reconciling it with the expected reconcile loops

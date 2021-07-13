@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: {{ .Namespace }}
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+
+  blueprint:
+    ref:
+      resourceName: root
+
+  imports:
+    data:
+    - name: root.a
+      dataRef: ext.a
+
+  exports:
+    data:
+    - name: root.y
+      dataRef: root.y
+    - name: root.z
+      dataRef: root.z
+
+status:
+  phase: Progressing
+  configGeneration: ""
+
+  imports:
+  - name: root.a
+    configGeneration: ""
+
+  observedGeneration: 0

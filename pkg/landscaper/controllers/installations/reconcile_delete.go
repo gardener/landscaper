@@ -7,9 +7,15 @@ package installations
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -30,6 +36,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 }
 
 func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
+	op.CurrentOperation = "Deletion"
 	op.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 	// check if suitable for deletion
 	// todo: replacements and internal deletions
@@ -39,12 +46,20 @@ func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 
 	execDeleted, err := deleteExecution(ctx, op)
 	if err != nil {
-		return err
+		return op.NewError(err, "DeleteExecution", err.Error())
 	}
 
 	subInstsDeleted, err := deleteSubInstallations(ctx, op)
 	if err != nil {
-		return err
+		return op.NewError(err, "DeleteSubinstallations", err.Error())
+	}
+
+	// remove force reconcile annotation
+	if metav1.HasAnnotation(op.Inst.Info.ObjectMeta, lsv1alpha1.OperationAnnotation) {
+		delete(op.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := op.Client().Update(ctx, op.Inst.Info); err != nil {
+			return op.NewError(err, "RemoveOperationAnnotation", "Unable to remove operation annotation")
+		}
 	}
 
 	if !execDeleted || !subInstsDeleted {
@@ -56,11 +71,8 @@ func EnsureDeletion(ctx context.Context, op *installations.Operation) error {
 }
 
 func deleteExecution(ctx context.Context, op *installations.Operation) (bool, error) {
-	if op.Inst.Info.Status.ExecutionReference == nil {
-		return true, nil
-	}
 	exec := &lsv1alpha1.Execution{}
-	if err := op.Client().Get(ctx, op.Inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := op.Client().Get(ctx, kutil.ObjectKeyFromObject(op.Inst.Info), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -70,6 +82,14 @@ func deleteExecution(ctx context.Context, op *installations.Operation) (bool, er
 	if exec.DeletionTimestamp.IsZero() {
 		if err := op.Client().Delete(ctx, exec); err != nil {
 			return false, err
+		}
+	}
+
+	// add force reconcile annotation if present
+	if lsv1alpha1helper.HasOperation(op.Inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+		if err := op.Client().Update(ctx, exec); err != nil {
+			return false, fmt.Errorf("unable to add force reconcile label")
 		}
 	}
 	return false, nil
@@ -89,6 +109,12 @@ func deleteSubInstallations(ctx context.Context, op *installations.Operation) (b
 		if inst.DeletionTimestamp.IsZero() {
 			if err := op.Client().Delete(ctx, inst); err != nil {
 				return false, err
+			}
+		}
+		if lsv1alpha1helper.HasOperation(op.Inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+			if err := op.Client().Update(ctx, inst); err != nil {
+				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", inst.Name, err)
 			}
 		}
 	}
