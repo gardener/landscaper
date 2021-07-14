@@ -109,45 +109,11 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should update a secret defined by a manifest deployer", func() {
-		ctx := context.Background()
-		defer ctx.Done()
+		checkUpdate("./testdata/01-di.yaml", "./testdata/02-di-updated.yaml", state, ctrl)
+	})
 
-		By("create deploy item")
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
-
-		// First reconcile will add a finalizer
-		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
-		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
-
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
-		// Expect that the secret has been created
-		secret := &corev1.Secret{}
-		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
-		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
-
-		By("update deploy item")
-		di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/02-di-updated.yaml")
-		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
-		// Expect that the secret has been updated
-		secret = &corev1.Secret{}
-		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
-		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("efg")))
-
-		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
-		// Expect that the deploy item gets deleted
-		Eventually(func() error {
-			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-			return err
-		}, time.Minute, 5*time.Second).Should(Succeed())
-
-		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
-
-		err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
-		Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
+	It("should patch a secret defined by a manifest deployer", func() {
+		checkUpdate("./testdata/05-di.yaml", "./testdata/06-di-patched.yaml", state, ctrl)
 	})
 
 	It("should cleanup resources that are removed from the list of managed resources", func() {
@@ -272,4 +238,46 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 	di.ObjectMeta = old.ObjectMeta
 	testutil.ExpectNoError(testenv.Client.Patch(ctx, di, client.MergeFrom(old)))
 	return di
+}
+
+func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
+	ctx := context.Background()
+	defer ctx.Done()
+
+	By("create deploy item")
+	di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
+
+	// First reconcile will add a finalizer
+	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+
+	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+
+	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	// Expect that the secret has been created
+	secret := &corev1.Secret{}
+	testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
+	Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
+
+	By("update deploy item")
+	di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
+	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	// Expect that the secret has been updated
+	secret = &corev1.Secret{}
+	testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
+	Expect(secret.Data).To(HaveKeyWithValue("config", []byte("efg")))
+
+	testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+	// Expect that the deploy item gets deleted
+	Eventually(func() error {
+		_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+		return err
+	}, time.Minute, 5*time.Second).Should(Succeed())
+
+	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
+
+	err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
+	Expect(apierrors.IsNotFound(err)).To(BeTrue(), "secret should be deleted")
 }
