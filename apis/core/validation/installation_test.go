@@ -235,11 +235,11 @@ var _ = Describe("Installation", func() {
 				},
 				Targets: []core.TargetImport{
 					{
-						Name:   "foo",
+						Name:   "foobaz",
 						Target: "fooTarget",
 					},
 					{
-						Name:                "bar",
+						Name:                "barbaz",
 						TargetListReference: "foobaz",
 					},
 					{
@@ -282,10 +282,15 @@ var _ = Describe("Installation", func() {
 						Name:   "bar",
 						Target: "foo",
 					},
+					{
+						Name:   "foo",
+						Target: "foo",
+					},
 				},
 			}
 
 			allErrs := validation.ValidateInstallationImports(imp, field.NewPath("imports"))
+			Expect(allErrs).To(HaveLen(3))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeDuplicate),
 				"Field": Equal("imports.data[1]"),
@@ -293,6 +298,10 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeDuplicate),
 				"Field": Equal("imports.targets[1]"),
+			}))))
+			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+				"Type":  Equal(field.ErrorTypeDuplicate),
+				"Field": Equal("imports.targets[2]"),
 			}))))
 		})
 

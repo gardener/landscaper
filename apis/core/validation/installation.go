@@ -95,18 +95,21 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 // ValidateInstallationImports validates the imports of an Installation
 func ValidateInstallationImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+	importNames := map[string]bool{}
+	var tmpErrs field.ErrorList
 
-	allErrs = append(allErrs, ValidateInstallationDataImports(imports.Data, fldPath.Child("data"))...)
-	allErrs = append(allErrs, ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"))...)
+	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
+	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
 }
 
 // ValidateInstallationDataImports validates the data imports of an Installation
-func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
 	allErrs := field.ErrorList{}
 
-	importNames := map[string]bool{}
 	for idx, imp := range imports {
 		impPath := fldPath.Index(idx)
 
@@ -140,14 +143,13 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 		importNames[imp.Name] = true
 	}
 
-	return allErrs
+	return allErrs, importNames
 }
 
 // ValidateInstallationTargetImports validates the target imports of an Installation
-func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
 	allErrs := field.ErrorList{}
 
-	importNames := map[string]bool{}
 	for idx, imp := range imports {
 		fldPathIdx := fldPath.Index(idx)
 		if imp.Name == "" {
@@ -173,7 +175,7 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 		importNames[imp.Name] = true
 	}
 
-	return allErrs
+	return allErrs, importNames
 }
 
 // specifiedTargetImportConfigFields is a helper function that returns which config fields for a target import are set

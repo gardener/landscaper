@@ -423,18 +423,21 @@ func ValidateInstallationTemplate(fldPath *field.Path, template *core.Installati
 // ValidateInstallationTemplateImports validates the imports of an InstallationTemplate
 func ValidateInstallationTemplateImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+	importNames := map[string]bool{}
+	var tmpErrs field.ErrorList
 
-	allErrs = append(allErrs, ValidateInstallationTemplateDataImports(imports.Data, fldPath.Child("data"))...)
-	allErrs = append(allErrs, ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"))...)
+	tmpErrs, importNames = ValidateInstallationTemplateDataImports(imports.Data, fldPath.Child("data"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
+	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
 }
 
 // ValidateInstallationTemplateDataImports validates the data imports of an InstallationTemplate
-func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
 	allErrs := field.ErrorList{}
 
-	importNames := map[string]bool{}
 	for idx, imp := range imports {
 		impPath := fldPath.Index(idx)
 
@@ -459,5 +462,5 @@ func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath 
 		importNames[imp.Name] = true
 	}
 
-	return allErrs
+	return allErrs, importNames
 }
