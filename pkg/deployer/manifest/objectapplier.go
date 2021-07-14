@@ -135,7 +135,7 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 			return fmt.Errorf("unable to update resource %s: %w", key.String(), err)
 		}
 	case manifestv1alpha2.UpdateStrategyPatch:
-		if err := a.kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
+		if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
 			return fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 		}
 	default:
