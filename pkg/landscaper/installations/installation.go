@@ -32,8 +32,9 @@ func newInstallationBase(inst *lsv1alpha1.Installation) InstallationBase {
 	internalInst := InstallationBase{
 		Info: inst,
 		importsStatus: ImportStatus{
-			Data:   make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
-			Target: make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
+			Data:                make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
+			Target:              make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
+			ComponentDescriptor: make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
 		},
 	}
 
@@ -141,6 +142,16 @@ func (i *Installation) GetExportDefinition(key string) (lsv1alpha1.ExportDefinit
 		}
 	}
 	return lsv1alpha1.ExportDefinition{}, fmt.Errorf("export with key %s not found", key)
+}
+
+// GetImportDefinition return the import for a given key
+func (i *Installation) GetCDImport(key string) (lsv1alpha1.ComponentDescriptorImport, error) {
+	for _, elem := range i.Info.Spec.Imports.ComponentDescriptors {
+		if elem.Name == key {
+			return elem, nil
+		}
+	}
+	return lsv1alpha1.ComponentDescriptorImport{}, fmt.Errorf("import with key %s not found", key)
 }
 
 // getFlattenedImports is an auxiliary method that flattens the tree of conditional imports into a list

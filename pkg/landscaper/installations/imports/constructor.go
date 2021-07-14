@@ -51,14 +51,22 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	if err != nil {
 		return err
 	}
+	importedComponentDescriptors, err := c.GetImportedComponentDescriptors(ctx) // returns a map mapping logical names to component descriptors
+	if err != nil {
+		return err
+	}
+	importedComponentDescriptorLists, err := c.GetImportedComponentDescriptorLists(ctx) // returns a map mapping logical names to lists of component descriptors
+	if err != nil {
+		return err
+	}
 
-	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets, importedTargetLists) // returns a map mapping logical names to data content
+	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets, importedTargetLists, importedComponentDescriptors, importedComponentDescriptorLists) // returns a map mapping logical names to data content
 	if err != nil {
 		return err
 	}
 
 	// add additional imports and targets
-	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, importedTargetLists, templatedDataMappings, fldPath)
+	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, importedTargetLists, importedComponentDescriptors, importedComponentDescriptorLists, templatedDataMappings, fldPath)
 	if err != nil {
 		return err
 	}
@@ -73,6 +81,8 @@ func (c *Constructor) constructImports(
 	importedDataObjects map[string]*dataobjects.DataObject,
 	importedTargets map[string]*dataobjects.Target,
 	importedTargetLists map[string]*dataobjects.TargetList,
+	importedComponentDescriptors map[string]*dataobjects.ComponentDescriptor,
+	importedComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList,
 	templatedDataMappings map[string]interface{},
 	fldPath *field.Path) (map[string]interface{}, error) {
 
@@ -98,7 +108,7 @@ func (c *Constructor) constructImports(
 			}
 			if len(def.ConditionalImports) > 0 {
 				// recursively check conditional imports
-				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, importedTargetLists, templatedDataMappings, defPath)
+				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, importedTargetLists, importedComponentDescriptors, importedComponentDescriptorLists, templatedDataMappings, defPath)
 				if err != nil {
 					return nil, err
 				}
@@ -159,6 +169,36 @@ func (c *Constructor) constructImports(
 				}
 			}
 			continue
+		case lsv1alpha1.ImportTypeComponentDescriptor:
+			if val, ok := importedComponentDescriptors[def.Name]; ok {
+				imports[def.Name], err = val.GetData()
+				if err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported component descriptor cannot be parsed", defPath.String())
+				}
+			}
+			_, ok := imports[def.Name]
+			if !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+			}
+			continue
+		case lsv1alpha1.ImportTypeComponentDescriptorList:
+			if val, ok := importedComponentDescriptorLists[def.Name]; ok {
+				imports[def.Name], err = val.GetData()
+				if err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported component descriptor list cannot be parsed", defPath.String())
+				}
+			}
+			_, ok := imports[def.Name]
+			if !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+			}
+			continue
 		default:
 			return nil, fmt.Errorf("%s: unknown import type '%s'", defPath.String(), string(def.Type))
 		}
@@ -167,7 +207,14 @@ func (c *Constructor) constructImports(
 	return imports, nil
 }
 
-func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target, importedTargetLists map[string]*dataobjects.TargetList) (map[string]interface{}, error) {
+func (c *Constructor) templateDataMappings(
+	fldPath *field.Path,
+	importedDataObjects map[string]*dataobjects.DataObject,
+	importedTargets map[string]*dataobjects.Target,
+	importedTargetLists map[string]*dataobjects.TargetList,
+	importedComponentDescriptors map[string]*dataobjects.ComponentDescriptor,
+	importedComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList) (map[string]interface{}, error) {
+
 	templateValues := map[string]interface{}{}
 	for name, do := range importedDataObjects {
 		templateValues[name] = do.Data
@@ -184,6 +231,13 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 		templateValues[name], err = targetlist.GetData()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get targetlist data for import %s", name)
+		}
+	}
+	for name, cd := range importedComponentDescriptors {
+		var err error
+		templateValues[name], err = cd.GetData()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get target data for import %s", name)
 		}
 	}
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(templateValues)

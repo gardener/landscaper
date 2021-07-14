@@ -12,8 +12,9 @@ import (
 
 // ImportStatus is the internal representation of all import status of a installation.
 type ImportStatus struct {
-	Data   map[string]*lsv1alpha1.ImportStatus
-	Target map[string]*lsv1alpha1.ImportStatus
+	Data                map[string]*lsv1alpha1.ImportStatus
+	Target              map[string]*lsv1alpha1.ImportStatus
+	ComponentDescriptor map[string]*lsv1alpha1.ImportStatus
 }
 
 func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
@@ -21,6 +22,9 @@ func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
 		s.Data[status.Name] = &status
 	}
 	if status.Type == lsv1alpha1.TargetImportStatusType || status.Type == lsv1alpha1.TargetListImportStatusType {
+		s.Target[status.Name] = &status
+	}
+	if status.Type == lsv1alpha1.CDImportStatusType || status.Type == lsv1alpha1.CDListImportStatusType {
 		s.Target[status.Name] = &status
 	}
 }
@@ -39,6 +43,9 @@ func (s *ImportStatus) GetStatus() []lsv1alpha1.ImportStatus {
 	for _, state := range s.Target {
 		states = append(states, *state)
 	}
+	for _, state := range s.ComponentDescriptor {
+		states = append(states, *state)
+	}
 	return states
 }
 
@@ -53,6 +60,15 @@ func (s *ImportStatus) GetData(name string) (lsv1alpha1.ImportStatus, error) {
 
 // GetTarget returns the import target state for the given key.
 func (s *ImportStatus) GetTarget(name string) (lsv1alpha1.ImportStatus, error) {
+	state, ok := s.Target[name]
+	if !ok {
+		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
+	}
+	return *state, nil
+}
+
+// GetComponentDescriptor returns the import target state for the given key.
+func (s *ImportStatus) GetComponentDescriptor(name string) (lsv1alpha1.ImportStatus, error) {
 	state, ok := s.Target[name]
 	if !ok {
 		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
