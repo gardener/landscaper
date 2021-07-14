@@ -261,7 +261,7 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 				currOp, "ApplyObject", err.Error())
 		}
 	case helmv1alpha1.UpdateStrategyPatch:
-		if err := kubeClient.Patch(ctx, &currObj, client.MergeFrom(obj)); err != nil {
+		if err := kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
 			err = fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 			return lserrors.NewWrappedError(err,
 				currOp, "ApplyObject", err.Error())
