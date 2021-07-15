@@ -17,4 +17,4 @@ spec:
     --address-format=ip
     --timeout=10m
 
-  image: golang:1.15.7
+  image: golang:1.16.6

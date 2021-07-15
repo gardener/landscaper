@@ -5,6 +5,7 @@
 package credentials
 
 import (
+	"context"
 	"net/url"
 	"path"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	dockercreds "github.com/docker/cli/cli/config/credentials"
 	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	"github.com/google/go-containerregistry/pkg/authn"
+
+	"github.com/gardener/component-cli/pkg/logcontext"
 )
 
 // to find a suitable secret for images on Docker Hub, we need its two domains to do matching
@@ -21,22 +24,125 @@ const (
 	dockerHubLegacyDomain = "index.docker.io"
 )
 
+// UsedUserLogKey describes the key that is injected into the logging context values.
+const UsedUserLogKey = "ociUser"
+
+// Auth describes a interface of the dockerconfigtypes.Auth struct
+type Auth interface {
+	GetUsername() string
+	GetPassword() string
+	GetAuth() string
+
+	// GetIdentityToken is used to authenticate the user and get
+	// an access token for the registry.
+	GetIdentityToken() string
+
+	// GetRegistryToken is a bearer token to be sent to a registry
+	GetRegistryToken() string
+}
+
+// Informer describes a interface that returns optional metadata.
+// The Auth interface can be enhanced using metadata
+type Informer interface {
+	Info() map[string]string
+}
+
+// AuthConfig implements the Auth using the docker authconfig type.
+// It also implements the Iformer interface for additional information
+type AuthConfig struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Auth     string `json:"auth,omitempty"`
+
+	// Email is an optional value associated with the username.
+	// This field is deprecated and will be removed in a later
+	// version of docker.
+	Email string `json:"email,omitempty"`
+
+	ServerAddress string `json:"serveraddress,omitempty"`
+
+	// IdentityToken is used to authenticate the user and get
+	// an access token for the registry.
+	IdentityToken string `json:"identitytoken,omitempty"`
+
+	// RegistryToken is a bearer token to be sent to a registry
+	RegistryToken string `json:"registrytoken,omitempty"`
+
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// FromAuthConfig creates a Auth object using the docker authConfig type
+func FromAuthConfig(cfg dockerconfigtypes.AuthConfig, keysAndValues ...string) AuthConfig {
+	metadata := make(map[string]string)
+	var prevKey string
+	for _, v := range keysAndValues {
+		if len(prevKey) == 0 {
+			prevKey = v
+			continue
+		}
+		metadata[prevKey] = v
+		prevKey = ""
+	}
+
+	return AuthConfig{
+		Username:      cfg.Username,
+		Password:      cfg.Password,
+		Auth:          cfg.Auth,
+		IdentityToken: cfg.IdentityToken,
+		RegistryToken: cfg.RegistryToken,
+		Metadata:      metadata,
+	}
+}
+
+func (a AuthConfig) GetUsername() string {
+	return a.Username
+}
+
+func (a AuthConfig) GetPassword() string {
+	return a.Password
+}
+
+func (a AuthConfig) GetAuth() string {
+	return a.Auth
+}
+
+func (a AuthConfig) GetIdentityToken() string {
+	return a.IdentityToken
+}
+
+func (a AuthConfig) GetRegistryToken() string {
+	return a.RegistryToken
+}
+
+func (a AuthConfig) Info() map[string]string {
+	return a.Metadata
+}
+
+// Keyring enhances the google go-lib auth keyring with a contextified resolver
+type Keyring interface {
+	authn.Keychain
+	// ResolveWithContext looks up the most appropriate credential for the specified target.
+	ResolveWithContext(context.Context, authn.Resource) (authn.Authenticator, error)
+}
+
 // OCIKeyring is the interface that implements are keyring to retrieve credentials for a given
 // server.
 type OCIKeyring interface {
 	authn.Keychain
+	// ResolveWithContext looks up the most appropriate credential for the specified target.
+	ResolveWithContext(context.Context, authn.Resource) (authn.Authenticator, error)
 	// Get retrieves credentials from the keyring for a given resource url.
-	Get(resourceURl string) (dockerconfigtypes.AuthConfig, bool)
+	Get(resourceURl string) Auth
 	// GetCredentials returns the username and password for a hostname if defined.
 	GetCredentials(hostname string) (username, password string, err error)
 }
 
 // AuthConfigGetter is a function that returns a auth config for a given host name
-type AuthConfigGetter func(address string) (dockerconfigtypes.AuthConfig, error)
+type AuthConfigGetter func(address string) (Auth, error)
 
 // DefaultAuthConfigGetter describes a default getter method for a authentication method
-func DefaultAuthConfigGetter(config dockerconfigtypes.AuthConfig) AuthConfigGetter {
-	return func(_ string) (dockerconfigtypes.AuthConfig, error) {
+func DefaultAuthConfigGetter(config Auth) AuthConfigGetter {
+	return func(_ string) (Auth, error) {
 		return config, nil
 	}
 }
@@ -107,14 +213,14 @@ func (o GeneralOciKeyring) Size() int {
 	return len(o.store)
 }
 
-func (o GeneralOciKeyring) Get(resourceURl string) (dockerconfigtypes.AuthConfig, bool) {
+func (o GeneralOciKeyring) Get(resourceURl string) Auth {
 	ref, err := dockerreference.ParseDockerRef(resourceURl)
 	if err == nil {
 		// if the name is not conical try to treat it like a host name
 		resourceURl = ref.Name()
 	}
-	if auth, ok := o.get(resourceURl); ok {
-		return auth, true
+	if auth := o.get(resourceURl); auth != nil {
+		return auth
 	}
 
 	// fallback to legacy docker domain if applicable
@@ -123,13 +229,13 @@ func (o GeneralOciKeyring) Get(resourceURl string) (dockerconfigtypes.AuthConfig
 		dockerreference.Path(ref)
 		return o.get(path.Join(dockerHubLegacyDomain, dockerreference.Path(ref)))
 	}
-	return dockerconfigtypes.AuthConfig{}, false
+	return nil
 }
 
-func (o GeneralOciKeyring) get(url string) (dockerconfigtypes.AuthConfig, bool) {
+func (o GeneralOciKeyring) get(url string) Auth {
 	addresses, ok := o.index.Find(url)
 	if !ok {
-		return dockerconfigtypes.AuthConfig{}, false
+		return nil
 	}
 	for _, address := range addresses {
 		authGetters, ok := o.store[address]
@@ -146,18 +252,18 @@ func (o GeneralOciKeyring) get(url string) (dockerconfigtypes.AuthConfig, bool) 
 				// try another config if the current one is emtpy
 				continue
 			}
-			return auth, true
+			return auth
 		}
 
 	}
-	return dockerconfigtypes.AuthConfig{}, false
+	return nil
 }
 
 // GetCredentials returns the username and password for a given hostname.
 // It implements the Credentials func for a docker resolver
 func (o *GeneralOciKeyring) GetCredentials(hostname string) (username, password string, err error) {
-	auth, ok := o.get(hostname)
-	if !ok {
+	auth := o.get(hostname)
+	if auth == nil {
 		// fallback to legacy docker domain if applicable
 		// this is how containerd translates the old domain for DockerHub to the new one, taken from containerd/reference/docker/reference.go:674
 		if hostname == dockerHubDomain {
@@ -171,11 +277,11 @@ func (o *GeneralOciKeyring) GetCredentials(hostname string) (username, password 
 		//return "", "", fmt.Errorf("authentication for %s cannot be found", hostname)
 	}
 
-	return auth.Username, auth.Password, nil
+	return auth.GetUsername(), auth.GetPassword(), nil
 }
 
 // AddAuthConfig adds a auth config for a address
-func (o *GeneralOciKeyring) AddAuthConfig(address string, auth dockerconfigtypes.AuthConfig) error {
+func (o *GeneralOciKeyring) AddAuthConfig(address string, auth Auth) error {
 	return o.AddAuthConfigGetter(address, DefaultAuthConfigGetter(auth))
 }
 
@@ -199,7 +305,7 @@ func (o *GeneralOciKeyring) Add(store dockercreds.Store) error {
 		return err
 	}
 	for address, auth := range auths {
-		if err := o.AddAuthConfig(address, auth); err != nil {
+		if err := o.AddAuthConfig(address, FromAuthConfig(auth)); err != nil {
 			return err
 		}
 	}
@@ -208,17 +314,33 @@ func (o *GeneralOciKeyring) Add(store dockercreds.Store) error {
 
 // Resolve implements the google container registry auth interface.
 func (o *GeneralOciKeyring) Resolve(resource authn.Resource) (authn.Authenticator, error) {
-	authconfig, ok := o.Get(resource.String())
-	if !ok {
+	return o.ResolveWithContext(context.TODO(), resource)
+}
+
+// ResolveWithContext implements the google container registry auth interface.
+func (o *GeneralOciKeyring) ResolveWithContext(ctx context.Context, resource authn.Resource) (authn.Authenticator, error) {
+	authconfig := o.Get(resource.String())
+	if authconfig == nil {
+		logcontext.AddContextValue(ctx, UsedUserLogKey, "anonymous")
 		return authn.FromConfig(authn.AuthConfig{}), nil
 	}
 
+	if ctxVal := logcontext.FromContext(ctx); ctxVal != nil {
+		(*ctxVal)[UsedUserLogKey] = authconfig.GetUsername()
+		if informer, ok := authconfig.(Informer); ok {
+			ctxVal := logcontext.FromContext(ctx)
+			for key, val := range informer.Info() {
+				(*ctxVal)[key] = val
+			}
+		}
+	}
+
 	return authn.FromConfig(authn.AuthConfig{
-		Username:      authconfig.Username,
-		Password:      authconfig.Password,
-		Auth:          authconfig.Auth,
-		IdentityToken: authconfig.IdentityToken,
-		RegistryToken: authconfig.RegistryToken,
+		Username:      authconfig.GetUsername(),
+		Password:      authconfig.GetPassword(),
+		Auth:          authconfig.GetAuth(),
+		IdentityToken: authconfig.GetIdentityToken(),
+		RegistryToken: authconfig.GetRegistryToken(),
 	}), nil
 }
 
@@ -247,11 +369,11 @@ func Merge(k1, k2 *GeneralOciKeyring) error {
 }
 
 // IsEmptyAuthConfig validates if the resulting auth config contains credentails
-func IsEmptyAuthConfig(auth dockerconfigtypes.AuthConfig) bool {
-	if len(auth.Auth) != 0 {
+func IsEmptyAuthConfig(auth Auth) bool {
+	if len(auth.GetAuth()) != 0 {
 		return false
 	}
-	if len(auth.Username) != 0 {
+	if len(auth.GetUsername()) != 0 {
 		return false
 	}
 	return true

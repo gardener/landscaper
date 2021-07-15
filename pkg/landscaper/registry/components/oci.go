@@ -6,7 +6,6 @@ package componentsregistry
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -107,7 +106,7 @@ func (p predefinedComponentCache) Get(_ context.Context, repoCtx cdv2.OCIRegistr
 			return cd.DeepCopy(), nil
 		}
 	}
-	return nil, errors.New("not found")
+	return nil, ctf.NotFoundError
 }
 
 func (p predefinedComponentCache) Store(_ context.Context, _ *cdv2.ComponentDescriptor) error {

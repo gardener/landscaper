@@ -18,7 +18,7 @@ const (
 	dockerHubLegacyDomain = "index.docker.io"
 )
 
-// ParseRef parses a oci refernce into a internal representation.
+// ParseRef parses a oci reference into a internal representation.
 func ParseRef(ref string) (RefSpec, error) {
 	if strings.Contains(ref, "://") {
 		// remove protocol if exists

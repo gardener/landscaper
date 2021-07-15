@@ -394,8 +394,8 @@ const (
 
 // syncSecrets identifies a authSecrets based on a given registry. It then creates or updates a pull secret in a target for the matched authSecret.
 func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference string, keyring *credentials.GeneralOciKeyring) (string, error) {
-	authConfig, ok := keyring.Get(imageReference)
-	if !ok {
+	authConfig := keyring.Get(imageReference)
+	if authConfig == nil {
 		return "", nil
 	}
 
@@ -412,7 +412,13 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 
 	targetAuthConfigs := &dockerconfigfile.ConfigFile{
 		AuthConfigs: map[string]types.AuthConfig{
-			host: authConfig,
+			host: {
+				Username:      authConfig.GetUsername(),
+				Password:      authConfig.GetPassword(),
+				Auth:          authConfig.GetAuth(),
+				IdentityToken: authConfig.GetIdentityToken(),
+				RegistryToken: authConfig.GetRegistryToken(),
+			},
 		},
 	}
 

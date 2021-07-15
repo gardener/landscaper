@@ -152,6 +152,16 @@ func (i Identity) Digest() []byte {
 	return data
 }
 
+// Match implements the selector interface.
+func (i Identity) Match(obj map[string]string) (bool, error) {
+	for k, v := range i {
+		if obj[k] != v {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 // IdentityObjectMeta defines a object that is uniquely identified by its identity.
 // +k8s:deepcopy-gen=true
 // +k8s:openapi-gen=true
