@@ -149,26 +149,17 @@ If the landscaper is deployed via helm, the credentials can be configured using 
 landscaper:
   # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
   registryConfig: # contains optional oci secrets
-    blueprints:
-      allowPlainHttpRegistries: false
-      secrets:
-        default:  {
-                    "auths": {
-                      "http://registry-harbor-registry.harbor:5000/": {
-                        "auth": "${AUTH_TOKEN}"
-                      }
+    cache: {}
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: false
+    secrets:
+      default:  {
+                  "auths": {
+                    "http://registry-harbor-registry.harbor:5000/": {
+                      "auth": "${AUTH_TOKEN}"
                     }
                   }
-    components:
-      allowPlainHttpRegistries: false
-      secrets:
-        default:  {
-                    "auths": {
-                      "http://registry-harbor-registry.harbor:5000/": {
-                        "auth": "${AUTH_TOKEN}"
-                      }
-                    }
-                  }
+                }
 ```
 
 ### Common Pitfalls
@@ -178,6 +169,11 @@ In order for the `landscaper-cli` to work with the registry, it needs valid cred
 ```shell
 docker login -u my-user localhost:5000 # use the user name and pwd as specified in the harbor chart values.yaml
 ```
+On some systems `docker login` will fail when using `localhost` as the registry URL.
+```shell
+Error response from daemon: Get http://localhost:5000/v2/: dial tcp [::1]:5000: connect: connection refused
+```
+A workaround for this issue is to add an alias hostname to `/etc/hosts` that points to localhost and use this alias for `docker login`.
 
 Later, when dealing with artifacts like the component descriptor, be aware that the URLs used to push and access the artifacts differ due to the port-forwarding. Make sure the base URL points to the cluster-internal representation of the registry:
 
@@ -189,7 +185,7 @@ Later, when dealing with artifacts like the component descriptor, be aware that 
 But push explicitly to `localhost` instead implicitly using the baseUrl:
 
 ```shell
-landscaper-cli  componentdescriptor push localhost:5000/comp/ github.com/gardener/landscaper/ingress-nginx v0.1.0 component-descriptor.yaml
+landscaper-cli components-cli ca remote push ./path-to-componentdescriptor --repo-ctx localhost:5000/comp/
 ```
 
 #### Targets
