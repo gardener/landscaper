@@ -13,7 +13,6 @@ import (
 	dockerconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
-	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -119,7 +118,8 @@ func (b *KeyringBuilder) Build() (*GeneralOciKeyring, error) {
 			return nil, err
 		}
 
-		for address, auth := range dockerConfig.AuthConfigs {
+		for address, dockerAuth := range dockerConfig.AuthConfigs {
+			auth := FromAuthConfig(dockerAuth)
 			// if the auth is empty use the default store to get the authentication
 			if !IsEmptyAuthConfig(auth) || len(defaultStore) == 0 {
 				if err := store.AddAuthConfig(address, auth); err != nil {
@@ -151,14 +151,14 @@ func (b *KeyringBuilder) Build() (*GeneralOciKeyring, error) {
 // CredentialHelperAuthConfigGetter describes a default getter method for a authentication method
 func CredentialHelperAuthConfigGetter(log logr.Logger, dockerConfig *configfile.ConfigFile, address, helper string) AuthConfigGetter {
 	nativeStore := credentials.NewNativeStore(dockerConfig, helper)
-	return func(_ string) (dockerconfigtypes.AuthConfig, error) {
+	return func(_ string) (Auth, error) {
 		log.V(8).Info(fmt.Sprintf("use oci cred helper %q to get %q", helper, address))
 		auth, err := nativeStore.Get(address)
 		if err != nil {
 			msg := fmt.Sprintf("unable to get oci authentication information from external credentials helper %q for %q: %s", helper, address, err.Error())
 			log.V(4).Info(msg)
 		}
-		return auth, err
+		return FromAuthConfig(auth, "credential-helper", helper), err
 	}
 }
 

@@ -111,6 +111,16 @@ func (c ComponentDescriptor) GetComponentReferences(selectors ...IdentitySelecto
 	return refs, nil
 }
 
+// GetResourceByIdentity returns resource that match the given identity.
+func (c ComponentDescriptor) GetResourceByIdentity(id Identity) (Resource, error) {
+	for _, res := range c.Resources {
+		if bytes.Equal(res.GetIdentityDigest(), id.Digest()) {
+			return res, nil
+		}
+	}
+	return Resource{}, NotFound
+}
+
 // GetComponentReferencesByName returns all component references with a given name.
 func (c ComponentDescriptor) GetComponentReferencesByName(name string) ([]ComponentReference, error) {
 	return c.GetComponentReferences(NewNameSelector(name))

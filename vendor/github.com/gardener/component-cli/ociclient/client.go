@@ -23,7 +23,6 @@ import (
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/go-logr/logr"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	distributionspecv1 "github.com/opencontainers/distribution-spec/specs-go/v1"
@@ -40,7 +39,7 @@ import (
 type client struct {
 	log            logr.Logger
 	cache          cache.Cache
-	keychain       authn.Keychain
+	keychain       credentials.Keyring
 	httpClient     *http.Client
 	transport      http.RoundTripper
 	allowPlainHttp bool
@@ -115,6 +114,14 @@ func NewClient(log logr.Logger, opts ...Option) (*client, error) {
 func (c *client) InjectCache(cache cache.Cache) error {
 	c.cache = cache
 	return nil
+}
+
+func (c *client) Resolve(ctx context.Context, ref string) (name string, desc ocispecv1.Descriptor, err error) {
+	resolver, err := c.getResolverForRef(ctx, ref, transport.PullScope)
+	if err != nil {
+		return "", ocispecv1.Descriptor{}, err
+	}
+	return resolver.Resolve(ctx, ref)
 }
 
 func (c *client) GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error) {
@@ -264,7 +271,7 @@ func (c *client) getTransportForRef(ctx context.Context, ref string, scopes ...s
 		return nil, fmt.Errorf("unable to parse ref: %w", err)
 	}
 
-	auth, err := c.keychain.Resolve(repo.Context())
+	auth, err := c.keychain.ResolveWithContext(ctx, repo.Context())
 	if err != nil {
 		return nil, fmt.Errorf("unable to get authentication: %w", err)
 	}
@@ -359,7 +366,7 @@ func (c *client) ListRepositories(ctx context.Context, ref string) ([]string, er
 		return nil, fmt.Errorf("unable to parse ref: %w", err)
 	}
 
-	auth, err := c.keychain.Resolve(repo.Context())
+	auth, err := c.keychain.ResolveWithContext(ctx, repo.Context())
 	if err != nil {
 		return nil, fmt.Errorf("unable to get authentication: %w", err)
 	}

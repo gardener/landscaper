@@ -61,6 +61,14 @@ type BlobInput struct {
 	// PreserveDir defines that the directory specified in the Path field should be included in the blob.
 	// Only supported for Type dir.
 	PreserveDir bool `json:"preserveDir,omitempty"`
+	// IncludeFiles is a list of shell file name patterns that describe the files that should be included.
+	// If nothing is defined all files are included.
+	// Only relevant for blobinput type "dir".
+	IncludeFiles []string `json:"includeFiles,omitempty"`
+	// ExcludeFiles is a list of shell file name patterns that describe the files that should be excluded from the resulting tar.
+	// Excluded files always overwrite included files.
+	// Only relevant for blobinput type "dir".
+	ExcludeFiles []string `json:"excludeFiles,omitempty"`
 }
 
 // Compress returns if the blob should be compressed using gzip.
@@ -134,7 +142,10 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 		if input.Compress() {
 			input.SetMediaTypeIfNotDefined(MediaTypeGZip)
 			gw := gzip.NewWriter(&data)
-			if err := TarFileSystem(blobFs, gw); err != nil {
+			if err := TarFileSystem(blobFs, gw, TarFileSystemOptions{
+				IncludeFiles: input.IncludeFiles,
+				ExcludeFiles: input.ExcludeFiles,
+			}); err != nil {
 				return nil, fmt.Errorf("unable to tar input artifact: %w", err)
 			}
 			if err := gw.Close(); err != nil {
@@ -142,7 +153,10 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 			}
 		} else {
 			input.SetMediaTypeIfNotDefined(MediaTypeTar)
-			if err := TarFileSystem(blobFs, &data); err != nil {
+			if err := TarFileSystem(blobFs, &data, TarFileSystemOptions{
+				IncludeFiles: input.IncludeFiles,
+				ExcludeFiles: input.ExcludeFiles,
+			}); err != nil {
 				return nil, fmt.Errorf("unable to tar input artifact: %w", err)
 			}
 		}
@@ -196,9 +210,44 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 	}
 }
 
+// TarFileSystemOptions describes additional options for tarring a filesystem.
+type TarFileSystemOptions struct {
+	IncludeFiles []string
+	ExcludeFiles []string
+}
+
 // TarFileSystem creates a tar archive from a filesystem.
-func TarFileSystem(fs vfs.FileSystem, writer io.Writer) error {
+func TarFileSystem(fs vfs.FileSystem, writer io.Writer, opts TarFileSystemOptions) error {
 	tw := tar.NewWriter(writer)
+
+	includeFile := func(path string) (bool, error) {
+		// first check if a exclude regex matches
+		for _, ex := range opts.ExcludeFiles {
+			match, err := filepath.Match(ex, path)
+			if err != nil {
+				return false, fmt.Errorf("malformed filepath syntax %q", ex)
+			}
+			if match {
+				return false, nil
+			}
+		}
+
+		// if no includes are defined, include all files
+		if len(opts.IncludeFiles) == 0 {
+			return true, nil
+		}
+		// otherwise check if the file should be included
+		for _, in := range opts.IncludeFiles {
+			match, err := filepath.Match(in, path)
+			if err != nil {
+				return false, fmt.Errorf("malformed filepath syntax %q", in)
+			}
+			if match {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 
 	err := vfs.Walk(fs, "/", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -216,6 +265,14 @@ func TarFileSystem(fs vfs.FileSystem, writer io.Writer) error {
 		if relPath == "." {
 			return nil
 		}
+		include, err := includeFile(relPath)
+		if err != nil {
+			return err
+		}
+		if !include {
+			return nil
+		}
+
 		header.Name = relPath
 		if err := tw.WriteHeader(header); err != nil {
 			return fmt.Errorf("unable to write header for %q: %w", path, err)
