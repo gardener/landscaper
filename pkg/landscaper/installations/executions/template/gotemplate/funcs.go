@@ -14,7 +14,7 @@ import (
 	gotmpl "text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/gardener/component-cli/pkg/imagevector"
+	imagevector "github.com/gardener/image-vector/pkg"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -272,7 +272,14 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 			panic("No component descriptor list is defined.")
 		}
 
-		vector, err := imagevector.GenerateImageOverwrite(internalCd, internalComponents)
+		cdResolver, err := ctf.NewListResolver(list)
+		if err != nil {
+			panic(fmt.Sprintf("list component resolver could not be build: %s", err.Error()))
+		}
+
+		vector, err := imagevector.GenerateImageOverwrite(context.TODO(), cdResolver, internalCd, imagevector.GenerateImageOverwriteOptions{
+			Components:         internalComponents,
+		})
 		if err != nil {
 			panic(err)
 		}

@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/containerd/containerd/remotes"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -18,6 +17,7 @@ import (
 )
 
 type Client interface {
+	Resolver
 	// GetManifest returns the ocispec Manifest for a reference
 	GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error)
 
@@ -37,12 +37,20 @@ type ExtendedClient interface {
 	ListRepositories(ctx context.Context, registryHost string) ([]string, error)
 }
 
-// Resolver is a interface that should return a new resolver for a given ref if called.
+// Resolver provides remotes based on a locator.
 type Resolver interface {
-	// Resolver returns a new authenticated resolver.
-	Resolver(ctx context.Context, ref string, client *http.Client, plainHTTP bool) (remotes.Resolver, error)
-	// GetCredentials returns the username and password for a hostname if defined.
-	GetCredentials(hostname string) (username, password string, err error)
+	// Resolve attempts to resolve the reference into a name and descriptor.
+	//
+	// The argument `ref` should be a scheme-less URI representing the remote.
+	// Structurally, it has a host and path. The "host" can be used to directly
+	// reference a specific host or be matched against a specific handler.
+	//
+	// The returned name should be used to identify the referenced entity.
+	// Depending on the remote namespace, this may be immutable or mutable.
+	// While the name may differ from ref, it should itself be a valid ref.
+	//
+	// If the resolution fails, an error will be returned.
+	Resolve(ctx context.Context, ref string) (name string, desc ocispecv1.Descriptor, err error)
 }
 
 // Store describes a store that returns a io reader for a descriptor
