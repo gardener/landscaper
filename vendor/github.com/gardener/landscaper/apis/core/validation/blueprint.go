@@ -423,7 +423,7 @@ func ValidateInstallationTemplate(fldPath *field.Path, template *core.Installati
 // ValidateInstallationTemplateImports validates the imports of an InstallationTemplate
 func ValidateInstallationTemplateImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	importNames := map[string]bool{}
+	importNames := sets.NewString()
 	var tmpErrs field.ErrorList
 
 	tmpErrs, importNames = ValidateInstallationTemplateDataImports(imports.Data, fldPath.Child("data"), importNames)
@@ -435,7 +435,7 @@ func ValidateInstallationTemplateImports(imports core.InstallationImports, fldPa
 }
 
 // ValidateInstallationTemplateDataImports validates the data imports of an InstallationTemplate
-func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
+func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
 	allErrs := field.ErrorList{}
 
 	for idx, imp := range imports {
@@ -456,10 +456,10 @@ func ValidateInstallationTemplateDataImports(imports []core.DataImport, fldPath 
 			allErrs = append(allErrs, field.Required(impPath.Child("name"), "name must not be empty"))
 			continue
 		}
-		if importNames[imp.Name] {
+		if importNames.Has(imp.Name) {
 			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
 		}
-		importNames[imp.Name] = true
+		importNames.Insert(imp.Name)
 	}
 
 	return allErrs, importNames

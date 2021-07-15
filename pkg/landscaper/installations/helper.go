@@ -12,7 +12,9 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -193,31 +195,44 @@ func GetTargetListImportByNames(ctx context.Context, kubeClient client.Client, c
 }
 
 // GetTargetListImportBySelector fetches the target imports from the cluster, based on a label selector.
-func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, selector map[string]string) (*dataobjects.TargetList, error) {
+// If restrictToImport is true, a label selector will be added which fetches only targets that are marked as import.
+func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, selector map[string]string, restrictToImport bool) (*dataobjects.TargetList, error) {
 	targets := &lsv1alpha1.TargetList{}
-	// add context to selector
-	selectorWithContext := map[string]string{}
-	for k, v := range selector {
-		selectorWithContext[k] = v
-	}
+	// construct label selector
+	contextSelector := labels.NewSelector()
 	if len(contextName) != 0 {
 		// top-level targets probably don't have an empty context set, so only add the selector if there actually is a context
-		selectorWithContext[lsv1alpha1.DataObjectContextLabel] = contextName
-	}
-	if err := kubeClient.List(ctx, targets, client.MatchingLabels(selectorWithContext), client.InNamespace(inst.Info.Namespace)); err != nil {
-		return nil, err
-	}
-	if len(contextName) == 0 {
-		// if we didn't add the context label selector, we now need to sort out all targets which have a non-empty context label
-		newTargets := &lsv1alpha1.TargetList{}
-		newTargets.Items = []lsv1alpha1.Target{}
-		for _, t := range targets.Items {
-			cls, ok := t.Labels[lsv1alpha1.DataObjectContextLabel]
-			if !ok || len(cls) == 0 {
-				newTargets.Items = append(newTargets.Items, t)
-			}
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.Equals, []string{contextName})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
 		}
-		targets = newTargets
+		contextSelector = contextSelector.Add(*r)
+	} else {
+		// top-level targets probably don't have an empty context set, so check for non-existence of the label
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.DoesNotExist, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	// add given labels to selector
+	for k, v := range selector {
+		r, err := labels.NewRequirement(k, selection.Equals, []string{v})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	if restrictToImport {
+		// add further labels to ensure that only targets imported by that installation are selected
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	if err := kubeClient.List(ctx, targets, client.InNamespace(inst.Info.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
+		return nil, err
 	}
 	targetList, err := dataobjects.NewFromTargetList(targets.Items)
 	if err != nil {

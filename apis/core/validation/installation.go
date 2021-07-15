@@ -7,6 +7,7 @@ package validation
 import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -95,7 +96,7 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 // ValidateInstallationImports validates the imports of an Installation
 func ValidateInstallationImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	importNames := map[string]bool{}
+	importNames := sets.NewString()
 	var tmpErrs field.ErrorList
 
 	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
@@ -107,7 +108,7 @@ func ValidateInstallationImports(imports core.InstallationImports, fldPath *fiel
 }
 
 // ValidateInstallationDataImports validates the data imports of an Installation
-func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
+func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
 	allErrs := field.ErrorList{}
 
 	for idx, imp := range imports {
@@ -137,17 +138,17 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 			allErrs = append(allErrs, field.Required(impPath.Child("name"), "name must not be empty"))
 			continue
 		}
-		if importNames[imp.Name] {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
+		if importNames.Has(imp.Name) {
+			allErrs = append(allErrs, field.Duplicate(impPath, imp.Name))
 		}
-		importNames[imp.Name] = true
+		importNames.Insert(imp.Name)
 	}
 
 	return allErrs, importNames
 }
 
 // ValidateInstallationTargetImports validates the target imports of an Installation
-func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames map[string]bool) (field.ErrorList, map[string]bool) {
+func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
 	allErrs := field.ErrorList{}
 
 	for idx, imp := range imports {
@@ -169,10 +170,10 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 				}
 			}
 		}
-		if importNames[imp.Name] {
+		if importNames.Has(imp.Name) {
 			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
 		}
-		importNames[imp.Name] = true
+		importNames.Insert(imp.Name)
 	}
 
 	return allErrs, importNames

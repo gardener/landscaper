@@ -179,7 +179,7 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 		}
 		targets = tl.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference})
+		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
 		if err != nil {
 			return false, fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
@@ -286,7 +286,7 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 		targets = tl.Targets
 		targetImportReferences = targetImport.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference})
+		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
 		if err != nil {
 			return fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}

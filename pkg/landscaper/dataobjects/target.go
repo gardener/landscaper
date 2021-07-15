@@ -106,7 +106,7 @@ func (t Target) Build() (*lsv1alpha1.Target, error) {
 	return newTarget, nil
 }
 
-// Apply applies data and metadata to a existing target (except owner references).
+// Apply applies data and metadata to an existing target (except owner references).
 func (t Target) Apply(raw *lsv1alpha1.Target) error {
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	raw.Namespace = t.Metadata.Namespace

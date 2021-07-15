@@ -101,9 +101,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 			}
 			continue
 		case lsv1alpha1.ImportTypeTarget:
-			if val, ok := templatedDataMappings[def.Name]; ok {
-				imports[def.Name] = val
-			} else if val, ok := importedTargets[def.Name]; ok {
+			if val, ok := importedTargets[def.Name]; ok {
 				imports[def.Name], err = val.GetData()
 				if err != nil {
 					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
@@ -126,9 +124,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 			}
 			continue
 		case lsv1alpha1.ImportTypeTargetList:
-			if val, ok := templatedDataMappings[def.Name]; ok {
-				imports[def.Name] = val
-			} else if val, ok := importedTargetLists[def.Name]; ok {
+			if val, ok := importedTargetLists[def.Name]; ok {
 				imports[def.Name], err = val.GetData()
 				if err != nil {
 					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
