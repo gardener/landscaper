@@ -8,9 +8,9 @@ import (
 	"context"
 	"encoding/json"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	imagevector "github.com/gardener/image-vector/pkg"
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/spiff/dynaml"
 	"github.com/mandelsoft/spiff/spiffing"
 	spiffyaml "github.com/mandelsoft/spiff/yaml"
@@ -146,7 +146,7 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 		}
 
 		vector, err := imagevector.GenerateImageOverwrite(context.TODO(), cdResolver, internalCd, imagevector.GenerateImageOverwriteOptions{
-			Components:         internalComponents,
+			Components: internalComponents,
 		})
 		if err != nil {
 			return info.Error(err.Error())

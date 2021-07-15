@@ -14,10 +14,10 @@ import (
 	gotmpl "text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	imagevector "github.com/gardener/image-vector/pkg"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	imagevector "github.com/gardener/image-vector/pkg"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
@@ -278,7 +278,7 @@ func generateImageVectorGoFunc(cd *cdv2.ComponentDescriptor, list *cdv2.Componen
 		}
 
 		vector, err := imagevector.GenerateImageOverwrite(context.TODO(), cdResolver, internalCd, imagevector.GenerateImageOverwriteOptions{
-			Components:         internalComponents,
+			Components: internalComponents,
 		})
 		if err != nil {
 			panic(err)
