@@ -73,6 +73,10 @@ component:
   sources: []
   componentReferences: []
 
+  respositoryContext:
+    - type: ociRegistry
+      baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+
   resources:
   - type: helm
     name: ingress-nginx-chart
