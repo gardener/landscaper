@@ -44,6 +44,23 @@ spec:
       - "#my-target"
     - name: emptyTargetListImp
       targets: []
+    componentDescriptors:
+    - name: cdImpBySecretRef
+      secretRef:
+        name: my-cd-secret
+        key: componentDescriptor
+    - name: cdImpByConfigMapRef
+      configMapRef:
+        name: my-cd-configmap
+        key: componentDescriptor
+    - name: cdListImp
+      cdList:
+      - secretRef:
+          name: my-cd-secret
+          key: componentDescriptor
+      - configMapRef:
+          name: my-cd-configmap
+          key: componentDescriptor
   
   exports:
     data:
@@ -78,6 +95,12 @@ spec:
           - name: emptyTargetListImp
             type: targetList
             targetType: landscaper.gardener.cloud/mock
+          - name: cdImpBySecretRef
+            type: componentDescriptor
+          - name: cdImpByConfigMapRef
+            type: componentDescriptor
+          - name: cdListImp
+            type: componentDescriptorList
 
           exports:
           - name: dataExp
@@ -110,6 +133,17 @@ spec:
                 targetListRef: targetListImp
               - name: subEmptyTargetListImp
                 targetListRef: emptyTargetListImp
+              componentDescriptors:
+              - name: subCdImpBySecretRef
+                dataRef: cdImpBySecretRef
+              - name: subCdImpByConfigMapRef
+                dataRef: cdImpByConfigMapRef
+              - name: subCdListImpByCdRefs
+                cdList:
+                - dataRef: cdImpBySecretRef
+                - dataRef: cdImpByConfigMapRef
+              - name: subCdListImpByListRef
+                dataRef: cdListImp
             exports:
               data:
               - name: subDataExp
@@ -123,8 +157,8 @@ spec:
                   apiVersion: landscaper.gardener.cloud/v1alpha1
                   kind: Blueprint
                   deployExecutions:
-                  - type: GoTemplate
-                    template: |
+                  - type: Spiff
+                    template:
                       deployItems:
                       - name: submain-import
                         type: landscaper.gardener.cloud/mock
@@ -134,6 +168,10 @@ spec:
                           providerStatus:
                             apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
                             kind: ProviderStatus
+                            cdImportBySecretRef: (( imports.subCdImpBySecretRef ))
+                            cdImportByConfigMapRef: (( imports.subCdImpByConfigMapRef ))
+                            cdListImportByCdRefs: (( imports.subCdListImpByCdRefs ))
+                            cdListImportByListRef: (( imports.subCdListImpByListRef ))
                   imports:
                   - name: subDataImp
                     type: data
@@ -148,6 +186,14 @@ spec:
                   - name: subEmptyTargetListImp
                     type: targetList
                     targetType: landscaper.gardener.cloud/mock
+                  - name: subCdImpBySecretRef
+                    type: componentDescriptor
+                  - name: subCdImpByConfigMapRef
+                    type: componentDescriptor
+                  - name: subCdListImpByCdRefs
+                    type: componentDescriptorList
+                  - name: subCdListImpByListRef
+                    type: componentDescriptorList
                   exports:
                   - name: subDataExp
                     type: data
