@@ -73,6 +73,10 @@ component:
   sources: []
   componentReferences: []
 
+  respositoryContext:
+    - type: ociRegistry
+      baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+
   resources:
   - type: helm
     name: ingress-nginx-chart
@@ -124,6 +128,7 @@ imports:
   targetType: landscaper.gardener.cloud/kubernetes-cluster
 # the namespace is expected to be a string
 - name: namespace
+  type: data
   schema:
     type: string
 ```
@@ -211,6 +216,10 @@ imports:
 - name: cluster
   type: target
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+- name: namespace
+  type: data
+  schema:
+    type: string
 
 deployExecutions:
 - name: default
@@ -228,7 +237,7 @@ deployExecutions:
         
         chart:
           {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
-          ref: {{ $resource.access.imageReference" }}
+          ref: {{ $resource.access.imageReference }}
         
         updateStrategy: patch
         
