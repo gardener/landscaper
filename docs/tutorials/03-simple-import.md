@@ -103,7 +103,7 @@ deployItems:
                 app: echo-server
             spec:
               containers:
-                - image: {{ index .cd.component.resources "echo-server-image" "access" "imageReference" }}
+                - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
                   imagePullPolicy: IfNotPresent
                   name: echo-server
                   args:
@@ -124,7 +124,9 @@ deployItems:
           - protocol: TCP
             port: 80
             targetPort: 5678
-      - apiVersion: networking.k8s.io/v1
+    - policy: manage
+      manifest:
+        apiVersion: networking.k8s.io/v1
         kind: Ingress
         metadata:
           name: {{ $name }}
@@ -173,9 +175,13 @@ component:
   - type: ociRegistry
     baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
+  sources: []
+  componentReferences: []
+
   resources:
   - type: blueprint
     name: echo-server-blueprint
+    version: v0.2.0
     relation: local
     access:
       type: ociRegistry
