@@ -257,6 +257,7 @@ component:
   resources:
   - type: blueprint
     name: simple-aggregated
+    version: v0.2.0
     relation: local
     access:
       type: ociRegistry
