@@ -94,8 +94,8 @@ input:
 
 Add the resource to the component descriptor with the component-cli:
 ```
-component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
-  -r ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
+landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+  ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
 ```
 :warning: Note that the directory `./docs/tutorials/resources/local-ingress-nginx` _MUST_ contain the component descriptor at `./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml`.
 
@@ -188,8 +188,8 @@ input:
 ```
 
 ```
-component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
-  -r ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
+landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+  ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 ```
 
 With his, the blueprint has been added to the component descriptor as `localFilesystemBlob` and the content has been packaged and copied to the blobs directory, which contains now 2 files.<br>
@@ -229,7 +229,7 @@ component:
 
 Upload the component and its local artifacts with the `component-cli`:
 ```
-component-cli ca remote push ./docs/tutorials/resources/local-ingress-nginx
+landscaper-cli components-cli ca remote push ./docs/tutorials/resources/local-ingress-nginx
 ```
 :warning: make sure to have write permissions for the component registry. (Run `docker login registry` to login into the registry)
 
