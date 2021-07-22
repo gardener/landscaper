@@ -1,6 +1,6 @@
 component:
   componentReferences: []
-  name: github.com/gardener/landscaper/external-jsonscheme/definitions
+  name: github.com/gardener/landscaper/external-jsonschema/definitions
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
