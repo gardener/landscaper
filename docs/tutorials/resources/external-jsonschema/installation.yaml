@@ -12,7 +12,7 @@ spec:
       repositoryContext:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
-      componentName: github.com/gardener/landscaper/external-jsonscheme/echo-server
+      componentName: github.com/gardener/landscaper/external-jsonschema/echo-server
       version: v0.1.0
 
   blueprint:
@@ -22,8 +22,8 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-cluster"
+      # the "#" forces the landscaper to use the target with the name "my-target-cluster" in the same namespace
+      target: "#my-target-cluster"
     data:
     - name: ingressClass
       configMapRef:

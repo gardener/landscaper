@@ -33,7 +33,7 @@ This tutorial uses 2 different components:
 First the shared jsonschema has to be created.
 Kubernetes' definition of `resources`  is used as an example here.
 
-```
+```json
 # ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -101,18 +101,18 @@ component:
 ```
 
 ```
-component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions -r ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml -v 5
+landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml
 ```
 
 ```
-component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
+landscaper-cli components-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
 ```
 
 </details>
 
 #### Echo Server Deployment
 
-With the _definitions_  component ready, let's move on and create a component which will consume those definitions.```
+With the _definitions_  component ready, let's move on and create a component which will consume those definitions.
 
 To keep things as simple as possible, the echo server example will be reused and enhanced with another import parameter _resources_.
 
@@ -134,29 +134,29 @@ meta:
   schemaVersion: v2
 
 component:
-name: github.com/gardener/landscaper/external-jsonschema/echo-server
-version: v0.1.0
-
-provider: internal
-
-repositoryContexts:
-- type: ociRegistry
-  baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
-
-sources: []
-componentReferences:
-- name: definitions
-  componentName: github.com/gardener/landscaper/external-jsonschema/definitions
+  name: github.com/gardener/landscaper/external-jsonschema/echo-server
   version: v0.1.0
 
-resources:
-- type: ociImage
-  name: echo-server-image
-  version: v0.2.3
-  relation: external
-  access:
-  type: ociRegistry
-  imageReference: hashicorp/http-echo:0.2.3
+  provider: internal
+
+  repositoryContexts:
+  - type: ociRegistry
+    baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+
+  sources: []
+  componentReferences:
+  - name: definitions
+    componentName: github.com/gardener/landscaper/external-jsonschema/definitions
+    version: v0.1.0
+
+  resources:
+  - type: ociImage
+    name: echo-server-image
+    version: v0.2.3
+    relation: external
+    access:
+      type: ociRegistry
+      imageReference: hashicorp/http-echo:0.2.3
 ```
 
 </details>
@@ -208,76 +208,78 @@ deployExecutions:
 {{ $name :=  "echo-server" }}
 {{ $namespace :=  "default" }}
 deployItems:
-- name: deploy
-  type: landscaper.gardener.cloud/kubernetes-manifest
-  target:
-    name: {{ .imports.cluster.metadata.name }}
-    namespace: {{ .imports.cluster.metadata.namespace }}
-  config:
-    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
-    kind: ProviderConfiguration
+  - name: deploy
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      name: {{ .imports.cluster.metadata.name }}
+      namespace: {{ .imports.cluster.metadata.namespace }}
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
 
-    updateStrategy: patch
+      updateStrategy: patch
 
-    manifests:
-    - policy: manage
-      manifest:
-        apiVersion: apps/v1
-        kind: Deployment
-        metadata:
-          name: {{ $name }}
-          namespace: {{ $namespace }}
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              app: echo-server
-          template:
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: apps/v1
+            kind: Deployment
             metadata:
-              labels:
-                app: echo-server
+              name: {{ $name }}
+              namespace: {{ $namespace }}
             spec:
-              containers:
-                - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
-                  imagePullPolicy: IfNotPresent
-                  name: echo-server
-                  args:
-                  - -text="hello world"
-                  ports:
-                    - containerPort: 5678
-                  resources:
-{{ toYaml .imports.resources | indent 21 }}
-    - policy: manage
-      manifest:
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: {{ $name }}
-          namespace: {{ $namespace }}
-        spec:
-          selector:
-            app: echo-server
-          ports:
-          - protocol: TCP
-            port: 80
-            targetPort: 5678
-      - apiVersion: networking.k8s.io/v1
-        kind: Ingress
-        metadata:
-          name: {{ $name }}
-          namespace: {{ $namespace }}
-          annotations:
-            nginx.ingress.kubernetes.io/rewrite-target: /
-            kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
-        spec:
-          rules:
-          - http:
-              paths:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: {{ $name }}
+              template:
+                metadata:
+                  labels:
+                    app: {{ $name }}
+                spec:
+                  containers:
+                    - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
+                      imagePullPolicy: IfNotPresent
+                      name: {{ $name }}
+                      args:
+                        - -text="hello world"
+                      ports:
+                        - containerPort: 5678
+                      resources:
+  {{ toYaml .imports.resources | indent 21 }}
+- policy: manage
+  manifest:
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: {{ $name }}
+      namespace: {{ $namespace }}
+    spec:
+      selector:
+        app: {{ $name }}
+      ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 5678
+- policy: manage
+  manifest:
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: {{ $name }}
+      namespace: {{ $namespace }}
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /
+        kubernetes.io/ingress.class: "{{ .imports.ingressClass }}"
+    spec:
+      rules:
+        - http:
+            paths:
               - path: /
                 pathType: Prefix
                 backend:
                   service:
-                    name: echo-server
+                    name: {{ $name }}
                     port:
                       number: 80
 ```
@@ -298,11 +300,11 @@ input:
 ```
 
 ```
-component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server -r ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml -v 5
+landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
 ```
 
 ```
-component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
+landscaper-cli components-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
 ```
 
 </details>
@@ -349,7 +351,7 @@ kubectl apply -f ./docs/tutorials/resources/external-jsonschema/configmap.yaml
 
 The imports are now available in the system, so the installation can be applied and will be processed by Landscaper.
 
-```
+```yaml
 # ./docs/tutorials/resources/external-jsonschema/installation.yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
@@ -361,7 +363,7 @@ spec:
       repositoryContext:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
-      componentName: github.com/gardener/landscaper/external-jsonscheme/echo-server
+      componentName: github.com/gardener/landscaper/external-jsonschema/echo-server
       version: v0.1.0
 
   blueprint:
@@ -371,8 +373,8 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-cluster"
+      # the "#" forces the landscaper to use the target with the name "my-target-cluster" in the same namespace
+      target: "#my-target-cluster"
     data:
     - name: ingressClass
       configMapRef:
