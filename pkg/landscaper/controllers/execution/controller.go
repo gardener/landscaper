@@ -64,6 +64,10 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, errHdl(ctx, err)
 	}
 
+	if err := HandleDeployItemGeneration(ctx, c.client, logger, exec); err != nil {
+		return reconcile.Result{}, errHdl(ctx, err)
+	}
+
 	if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
 		logger.V(7).Info("execution item is already in completion phase")
 		return reconcile.Result{}, nil
@@ -133,6 +137,34 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 				return err
 			}
 			log.V(7).Info("successfully updated status")
+		}
+	}
+	return nil
+}
+
+// HandleDeployItemGeneration checks the managed DeployItems owned by this execution and will force a reconcilcation
+// by setting the Executions Phase to "Init" if an DeployItem cannot be retrieved or if a DeployItems's generation does not
+// match the observed generation.
+func HandleDeployItemGeneration(ctx context.Context, client client.Client, log logr.Logger, exec *lsv1alpha1.Execution) error {
+	for _, managedDi := range exec.Status.DeployItemReferences {
+		var err error
+		di := &lsv1alpha1.DeployItem{}
+
+		if err = client.Get(ctx, managedDi.Reference.NamespacedName(), di); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		if (err != nil && apierrors.IsNotFound(err)) || managedDi.Reference.ObservedGeneration != di.Generation {
+			log.V(7).Info("deploy item cannot be found or does not match last observed generation")
+
+			exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+
+			log.V(7).Info("updating status")
+			if err := client.Status().Update(ctx, exec); err != nil {
+				return err
+			}
+
+			break
 		}
 	}
 	return nil
