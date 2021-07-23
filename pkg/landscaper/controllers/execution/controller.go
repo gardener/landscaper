@@ -66,11 +66,13 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
 		op := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, false)
-		err := op.HandleDeployItemPhaseChanges(ctx, logger)
+		err := op.HandleDeployItemPhaseAndGenerationChanges(ctx, logger)
 		if err != nil {
-			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleDeployItemPhaseChanges", err.Error())
+			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleDeployItemPhaseAndGenerationChanges", err.Error())
 		}
-		return reconcile.Result{}, nil
+		if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
+			return reconcile.Result{}, nil
+		}
 	}
 
 	return reconcile.Result{}, errHdl(ctx, c.Ensure(ctx, logger, exec))
