@@ -96,16 +96,16 @@ deployItems:
           replicas: 1
           selector:
             matchLabels:
-              app: echo-server
+              app: {{ $name }}
           template:
             metadata:
               labels:
-                app: echo-server
+                app: {{ $name }}
             spec:
               containers:
                 - image: {{ with (getResource .cd "name" "echo-server-image") }}{{ .access.imageReference }}{{end}}
                   imagePullPolicy: IfNotPresent
-                  name: echo-server
+                  name: {{ $name }}
                   args:
                   - -text="hello world"
                   ports:
@@ -119,7 +119,7 @@ deployItems:
           namespace: {{ .imports.namespace }}
         spec:
           selector:
-            app: echo-server
+            app: {{ $name }}
           ports:
           - protocol: TCP
             port: 80
@@ -142,7 +142,7 @@ deployItems:
                 pathType: Prefix
                 backend:
                   service:
-                    name: echo-server
+                    name: {{ $name }}
                     port:
                       number: 80
 ```
