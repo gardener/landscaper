@@ -5,10 +5,8 @@
 package cdutils_test
 
 import (
-	"context"
-	"errors"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -20,9 +18,6 @@ import (
 
 var _ = Describe("URI", func() {
 	var (
-		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-			return cdv2.ComponentDescriptor{}, errors.New("NotFound")
-		}
 		repoCtx       = []*cdv2.UnstructuredTypedObject{testutils.ExampleRepositoryContext()}
 		cd            *cdv2.ComponentDescriptor
 		testResources = []cdv2.Resource{
@@ -59,7 +54,7 @@ var _ = Describe("URI", func() {
 		cd.Resources = testResources
 		uri, err := cdutils.ParseURI("cd://resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, compRefResolver)
+		kind, res, err := uri.Get(cd, nil)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources[0]))
@@ -69,12 +64,12 @@ var _ = Describe("URI", func() {
 		cd.Resources = testResources
 		uri, err := cdutils.ParseURI("cd://resources/r3")
 		Expect(err).ToNot(HaveOccurred())
-		_, _, err = uri.Get(cd, compRefResolver)
+		_, _, err = uri.Get(cd, nil)
 		Expect(err).To(HaveOccurred())
 
 		uri, err = cdutils.ParseURI("cd://fail/r1")
 		Expect(err).ToNot(HaveOccurred())
-		_, _, err = uri.Get(cd, compRefResolver)
+		_, _, err = uri.Get(cd, nil)
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -82,21 +77,30 @@ var _ = Describe("URI", func() {
 		comp1 := cdv2.ComponentDescriptor{
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta: cdv2.ObjectMeta{
-					Name: "comp1",
+					Name:    "my-comp1",
+					Version: "v0.0.0",
 				},
+				RepositoryContexts: []*cdv2.UnstructuredTypedObject{testutils.ExampleRepositoryContext()},
 			},
 		}
 		cd.ComponentReferences = []cdv2.ComponentReference{
 			{
-				Name: "comp1",
+				Name:          "comp1",
+				ComponentName: "my-comp1",
+				Version:       "v0.0.0",
 			},
 		}
-		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-			return comp1, nil
-		}
+
+		compResolver, err := ctf.NewListResolver(&cdv2.ComponentDescriptorList{
+			Metadata: cdv2.Metadata{},
+			Components: []cdv2.ComponentDescriptor{
+				comp1,
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, compRefResolver)
+		kind, res, err := uri.Get(cd, compResolver)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ComponentResourceKind))
 		Expect(res).To(Equal(&comp1))
@@ -106,22 +110,30 @@ var _ = Describe("URI", func() {
 		comp1 := cdv2.ComponentDescriptor{
 			ComponentSpec: cdv2.ComponentSpec{
 				ObjectMeta: cdv2.ObjectMeta{
-					Name: "comp1",
+					Name:    "my-comp1",
+					Version: "v0.0.0",
 				},
-				Resources: testResources,
+				RepositoryContexts: []*cdv2.UnstructuredTypedObject{testutils.ExampleRepositoryContext()},
+				Resources:          testResources,
 			},
 		}
 		cd.ComponentReferences = []cdv2.ComponentReference{
 			{
-				Name: "comp1",
+				Name:          "comp1",
+				ComponentName: "my-comp1",
+				Version:       "v0.0.0",
 			},
 		}
-		compRefResolver = func(_ context.Context, meta cdv2.ComponentReference) (cdv2.ComponentDescriptor, error) {
-			return comp1, nil
-		}
+		compResolver, err := ctf.NewListResolver(&cdv2.ComponentDescriptorList{
+			Metadata: cdv2.Metadata{},
+			Components: []cdv2.ComponentDescriptor{
+				comp1,
+			},
+		})
+		Expect(err).ToNot(HaveOccurred())
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, compRefResolver)
+		kind, res, err := uri.Get(cd, compResolver)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources[0]))
