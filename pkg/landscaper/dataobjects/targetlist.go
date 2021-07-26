@@ -41,7 +41,7 @@ func (t *TargetList) SetAllSourceType(sourceType lsv1alpha1.DataObjectSourceType
 	return t
 }
 
-// NewFromTargetList creates a new internal target instance from a raw target.
+// NewFromTargetList creates a new internal targetlist instance from a list of raw targets.
 func NewFromTargetList(targets []lsv1alpha1.Target) (*TargetList, error) {
 	res := NewTargetListWithSize(len(targets))
 	for i := range targets {
