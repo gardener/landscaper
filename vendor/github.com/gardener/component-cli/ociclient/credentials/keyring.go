@@ -48,7 +48,7 @@ type Informer interface {
 }
 
 // AuthConfig implements the Auth using the docker authconfig type.
-// It also implements the Iformer interface for additional information
+// It also implements the Informer interface for additional information
 type AuthConfig struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`

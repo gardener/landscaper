@@ -142,27 +142,34 @@ func GenerateImageOverwrite(ctx context.Context,
 	compResolver ctf.ComponentResolver,
 	cd *cdv2.ComponentDescriptor,
 	opts GenerateImageOverwriteOptions) (*ImageVector, error) {
+	log := logr.FromContextOrDiscard(ctx)
 
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
 
+	io := imageOverwrite{
+		log:          log,
+		compResolver: compResolver,
+		opts:         opts,
+	}
+
 	imageVector := &ImageVector{}
 
 	// parse all images from the component descriptors resources
-	images, err := parseImagesFromResources(cd.Resources)
+	images, err := io.parseImagesFromResources(cd.Resources)
 	if err != nil {
 		return nil, err
 	}
 	imageVector.Images = append(imageVector.Images, images...)
 
-	images, err = parseImagesFromComponentReferences(ctx, compResolver, cd)
+	images, err = io.parseImagesFromComponentReferences(ctx, cd)
 	if err != nil {
 		return nil, err
 	}
 	imageVector.Images = append(imageVector.Images, images...)
 
-	images, err = parseGenericImages(cd, opts.Components)
+	images, err = io.parseGenericImages(ctx, cd, opts.Components)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +184,19 @@ func GenerateImageOverwrite(ctx context.Context,
 	return imageVector, nil
 }
 
+type imageOverwrite struct {
+	log          logr.Logger
+	compResolver ctf.ComponentResolver
+	opts         GenerateImageOverwriteOptions
+}
+
 // parseImagesFromResources parse all images from the component descriptors resources
-func parseImagesFromResources(resources []cdv2.Resource) ([]ImageEntry, error) {
+func (io *imageOverwrite) parseImagesFromResources(resources []cdv2.Resource) ([]ImageEntry, error) {
 	images := make([]ImageEntry, 0)
 	for _, res := range resources {
+		log := io.log.WithValues("resource", res.Name)
 		if res.GetType() != cdv2.OCIImageType || res.Access.GetType() != cdv2.OCIRegistryType {
+			log.V(9).Info("ignoring non oci resource")
 			continue
 		}
 		var name string
@@ -189,9 +204,11 @@ func parseImagesFromResources(resources []cdv2.Resource) ([]ImageEntry, error) {
 			if err != nil {
 				return nil, fmt.Errorf("unable to get name for %q: %w", res.GetName(), err)
 			}
+			log.V(9).Info("ignoring resource without image vector overwrite label")
 			continue
 		}
 
+		log.V(5).Info("create image entry from resource")
 		entry := ImageEntry{
 			Name: name,
 		}
@@ -222,39 +239,50 @@ func parseImagesFromResources(resources []cdv2.Resource) ([]ImageEntry, error) {
 }
 
 // parseImagesFromComponentReferences parse all images from the component descriptors references
-func parseImagesFromComponentReferences(ctx context.Context, compResolver ctf.ComponentResolver, ca *cdv2.ComponentDescriptor) ([]ImageEntry, error) {
+func (io *imageOverwrite) parseImagesFromComponentReferences(ctx context.Context, ca *cdv2.ComponentDescriptor) ([]ImageEntry, error) {
 	images := make([]ImageEntry, 0)
 
 	for _, ref := range ca.ComponentReferences {
-
+		log := io.log.WithValues("component", ref.ComponentName, "version", ref.Version)
 		// only resolve the component reference if a images.yaml is defined
 		imageVector := &ComponentReferenceImageVector{}
 		if ok, err := getLabel(ref.GetLabels(), ImagesLabel, imageVector); !ok || err != nil {
 			if err != nil {
 				return nil, fmt.Errorf("unable to parse images label from component reference %q: %w", ref.GetName(), err)
 			}
+			log.V(9).Info("ignore component ref without a image vector label")
 			continue
 		}
 
-		refCD, err := compResolver.Resolve(ctx, ca.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
+		log.V(5).Info("create image entries from component ref")
+		refCD, err := io.compResolver.Resolve(ctx, ca.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
 		if err != nil {
 			return nil, fmt.Errorf("unable to resolve component descriptor %q: %w", ref.GetName(), err)
 		}
 
 		// find the matching resource by name and version
 		for _, image := range imageVector.Images {
-			foundResources, err := getImageFromCompDesc(ctx, image, refCD)
+			imgLog := log.WithValues("image", image.Name, "imageVersion", image.Tag)
+			imgLog.V(5).Info("create image entry for image")
+			foundResources, err := getImageFromCompDesc(logr.NewContext(ctx, imgLog), image, refCD)
 			if err != nil {
 				return nil, fmt.Errorf("unable to find images for %q in component reference %q: %w", image.Name, ref.GetName(), err)
 			}
+			imgLog.V(7).Info(fmt.Sprintf("found %d images", len(foundResources)))
+			resourceFound := false
 			for _, res := range foundResources {
 				if res.GetVersion() != *image.Tag {
+					imgLog.V(7).Info("found resource version do not match", "version", *image.Tag, "expected", res.GetVersion())
 					continue
 				}
 				if err := parseResourceAccess(&image.ImageEntry, res); err != nil {
 					return nil, fmt.Errorf("unable to find images for %q in component reference %q: %w", image.Name, ref.GetName(), err)
 				}
+				resourceFound = true
 				images = append(images, image.ImageEntry)
+			}
+			if !resourceFound {
+				return nil, fmt.Errorf("unable to find images for %q in component reference %q: %w", image.Name, ref.GetName(), err)
 			}
 		}
 
@@ -264,8 +292,10 @@ func parseImagesFromComponentReferences(ctx context.Context, compResolver ctf.Co
 }
 
 func getImageFromCompDesc(ctx context.Context, image ComponentReferenceImageEntry, refCompDesc *cdv2.ComponentDescriptor) ([]cdv2.Resource, error) {
+	log := logr.FromContextOrDiscard(ctx)
 	// if a resource name is defined use this
 	if len(image.ResourceID) != 0 {
+		log.V(7).Info("match image with resource id", "resourceId", image.ResourceID)
 		foundResource, err := refCompDesc.GetResourceByIdentity(image.ResourceID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to find images for %q in component reference %q", image.Name, image.ResourceID)
@@ -273,13 +303,12 @@ func getImageFromCompDesc(ctx context.Context, image ComponentReferenceImageEntr
 		return []cdv2.Resource{foundResource}, nil
 	}
 
-	log := logr.FromContextOrDiscard(ctx)
 	// otherwise first try to get the resource via image name
 	foundResources, err := refCompDesc.GetResourcesByName(image.Name)
 	if err == nil {
 		return foundResources, nil
 	}
-	log.V(5).Info(fmt.Sprintf("unable to find image in component descriptor %s:%s by image name %s", refCompDesc.Name, refCompDesc.Version, image.Name), "err", err)
+	log.V(7).Info(fmt.Sprintf("unable to find image in component descriptor %s:%s by image name %s", refCompDesc.Name, refCompDesc.Version, image.Name), "err", err)
 
 	for _, res := range refCompDesc.Resources {
 		if res.Type != cdv2.OCIImageType {
@@ -303,6 +332,7 @@ func getImageFromCompDesc(ctx context.Context, image ComponentReferenceImageEntr
 				continue
 			}
 			if repo == image.Repository {
+				log.V(7).Info("match image with original image ref", "originalImageRef", originalRef)
 				return []cdv2.Resource{res}, nil
 			}
 		}
@@ -319,6 +349,7 @@ func getImageFromCompDesc(ctx context.Context, image ComponentReferenceImageEntr
 			continue
 		}
 		if repo == image.Repository {
+			log.V(7).Info("match image with image repository", "repository", image.Repository)
 			return []cdv2.Resource{res}, nil
 		}
 	}
@@ -326,65 +357,137 @@ func getImageFromCompDesc(ctx context.Context, image ComponentReferenceImageEntr
 }
 
 // parseGenericImages parses the generic images of the component descriptor and matches all oci resources of the other component descriptors
-func parseGenericImages(ca *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) ([]ImageEntry, error) {
+func (io *imageOverwrite) parseGenericImages(ctx context.Context, ca *cdv2.ComponentDescriptor, list *cdv2.ComponentDescriptorList) ([]ImageEntry, error) {
+	io.log.V(5).Info("parse generic images")
 	images := make([]ImageEntry, 0)
 	imageVector := &ImageVector{}
 	if ok, err := getLabel(ca.GetLabels(), ImagesLabel, imageVector); !ok || err != nil {
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse images label from component reference %q: %w", ca.GetName(), err)
 		}
+		io.log.V(7).Info("no image vector label for generic images defined")
 		return images, nil
 	}
 
 	for _, image := range imageVector.Images {
 		if image.TargetVersion == nil {
+			// it is expected that generic images without a target version are already handled as part of the default component descriptor.
+			io.log.V(7).Info("ignore image with no target version", "image", image.Name)
 			continue
 		}
-		constr, err := semver.NewConstraint(*image.TargetVersion)
+		entries, err := io.findGenericImageResource(ctx, image, list.Components)
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse target version for %q: %w", image.Name, err)
+			return nil, err
 		}
-
-		for _, comp := range list.Components {
-			resources, err := comp.GetResourcesByType(cdv2.OCIImageType)
-			if err != nil {
-				if errors.Is(err, cdv2.NotFound) {
-					continue
-				}
-				return nil, fmt.Errorf("unable to get oci resources from %q: %w", comp.GetName(), err)
-			}
-			for _, res := range resources {
-				var imageName string
-				ok, err := getLabel(res.GetLabels(), NameLabel, &imageName)
-				if err != nil {
-					return nil, fmt.Errorf("unable to parse image name label from resource %q of component %q: %w", res.GetName(), ca.GetName(), err)
-				}
-				if !ok || imageName != image.Name {
-					continue
-				}
-				semverVersion, err := semver.NewVersion(res.GetVersion())
-				if err != nil {
-					return nil, fmt.Errorf("unable to parse resource version from resource %q of component %q: %w", res.GetName(), ca.GetName(), err)
-				}
-				if !constr.Check(semverVersion) {
-					continue
-				}
-
-				entry := ImageEntry{
-					Name: image.Name,
-				}
-				if err := parseResourceAccess(&entry, res); err != nil {
-					return nil, fmt.Errorf("unable to parse oci access from resource %q of component %q: %w", res.GetName(), ca.GetName(), err)
-				}
-				targetVersion := fmt.Sprintf("= %s", res.GetVersion())
-				entry.TargetVersion = &targetVersion
-				images = append(images, entry)
-			}
+		if len(entries) == 0 {
+			return nil, fmt.Errorf("no corresponding resource found for %s", image.Name)
 		}
-
+		images = append(images, entries...)
 	}
 
 	return images, nil
+}
+
+func (io *imageOverwrite) findGenericImageResource(ctx context.Context, image ImageEntry, components []cdv2.ComponentDescriptor) ([]ImageEntry, error) {
+	log := io.log.WithValues("image", image.Name)
+
+	constr, err := semver.NewConstraint(*image.TargetVersion)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse target version for %q: %w", image.Name, err)
+	}
+
+	log.V(7).Info("search corresponding resource for generic image in component descriptors")
+	images := make([]ImageEntry, 0)
+	for _, comp := range components {
+		cLog := log.WithValues("component_name", comp.GetName(), "component_version", comp.GetVersion())
+
+		resources, err := comp.GetResourcesByType(cdv2.OCIImageType)
+		if err != nil {
+			if errors.Is(err, cdv2.NotFound) {
+				cLog.V(7).Info("no oci images found")
+				continue
+			}
+			return nil, fmt.Errorf("unable to get oci resources from %q: %w", comp.GetName(), err)
+		}
+
+		cLog.V(7).Info("try to match found resources", "resources", len(resources))
+		for _, res := range resources {
+			rLog := cLog.WithValues("resource", res.Name)
+			matches, err := resourceMatchesGenericImage(logr.NewContext(ctx, rLog), image, res)
+			if err != nil {
+				return nil, fmt.Errorf("unable to match image and resource %q of component %q: %w", res.GetName(), comp.GetName(), err)
+			}
+			if !matches {
+				rLog.V(9).Info("neither the resource name nor the label name match the given image")
+				continue
+			}
+
+			rLog.V(7).Info("add found resource for image")
+			semverVersion, err := semver.NewVersion(res.GetVersion())
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse resource version from resource %q of component %q: %w", res.GetName(), comp.GetName(), err)
+			}
+			if !constr.Check(semverVersion) {
+				rLog.V(9).Info("semver constraint does not match", "version", res.GetVersion(), "constraint", *image.TargetVersion)
+				continue
+			}
+
+			entry := ImageEntry{
+				Name: image.Name,
+			}
+			if err := parseResourceAccess(&entry, res); err != nil {
+				return nil, fmt.Errorf("unable to parse oci access from resource %q of component %q: %w", res.GetName(), comp.GetName(), err)
+			}
+			targetVersion := semverVersion.String()
+			entry.TargetVersion = &targetVersion
+			images = append(images, entry)
+		}
+	}
+	return images, nil
+}
+
+func resourceMatchesGenericImage(ctx context.Context, image ImageEntry, res cdv2.Resource) (bool, error) {
+	log := logr.FromContextOrDiscard(ctx)
+	var imageName string
+	_, err := getLabel(res.GetLabels(), NameLabel, &imageName)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse image name label from resource %q: %w", res.GetName(), err)
+	}
+	if res.Name == image.Name || imageName == image.Name {
+		return true, nil
+	}
+
+	// try to match the repository
+	// if not found try to match it via labels
+	originalRef := ""
+	if ok, err := getLabel(res.Labels, GardenerCIOriginalRefLabel, &originalRef); ok {
+		if err != nil {
+			return false, fmt.Errorf("unable to get image label: %w", err)
+		}
+		repo, _, err := ParseImageRef(originalRef)
+		if err != nil {
+			return false, fmt.Errorf("unable to parse image reference: %w", err)
+		}
+		if repo == image.Repository {
+			log.V(7).Info("match image with original image ref", "originalImageRef", originalRef)
+			return true, nil
+		}
+	}
+
+	// or if not found try to match the repository
+	acc := &cdv2.OCIRegistryAccess{}
+	if err := res.Access.DecodeInto(acc); err != nil {
+		return false, fmt.Errorf("unable to decode into oci registry: %w", err)
+	}
+	repo, _, err := ParseImageRef(acc.ImageReference)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse image reference %q: %w", acc.ImageReference, err)
+	}
+	if repo == image.Repository {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // resolveDigests replaces all tags with their digest.
