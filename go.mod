@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.4.2
+	github.com/containerd/containerd v1.4.8
 	github.com/docker/cli v20.10.0-rc1+incompatible
 	github.com/gardener/component-cli v0.25.0
 	github.com/gardener/component-spec/bindings-go v0.0.52
