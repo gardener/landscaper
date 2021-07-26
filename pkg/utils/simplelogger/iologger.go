@@ -33,11 +33,11 @@ func (l IOLogger) Enabled() bool {
 }
 
 func (l IOLogger) Info(msg string, keysAndValues ...interface{}) {
-	fmt.Fprintf(l.writer, "%s: %s - %#v", l.name, msg, keysAndValues)
+	fmt.Fprintf(l.writer, "%s: %s - %#v\n", l.name, msg, keysAndValues)
 }
 
 func (l IOLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	fmt.Fprintf(l.writer, "error %s: %s %s - %#v", l.name, err.Error(), msg, keysAndValues)
+	fmt.Fprintf(l.writer, "error %s: %s %s - %#v\n", l.name, err.Error(), msg, keysAndValues)
 }
 
 func (l IOLogger) V(level int) logr.Logger {

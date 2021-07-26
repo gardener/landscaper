@@ -26,16 +26,26 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 	"github.com/gardener/landscaper/pkg/utils"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 type BlueprintRenderArgs struct {
-	Fs                          vfs.FileSystem
-	BlueprintPath               string
-	ImportValuesFilepath        string
+	Fs            vfs.FileSystem
+	BlueprintPath string
+	// ImportValuesFilepath is a path to to a imports.yaml file
+	// +optional
+	ImportValuesFilepath string
+	// Imports describes the imports that should be used for the blueprint templating.
+	// If the imports values filepath is given and the imports then both imports are merged.
+	// +optional
+	Imports *Imports
+	// ComponentDescriptorFilepath describes the path to the component descriptor.
 	ComponentDescriptorFilepath string
+	// ComponentDescriptorList is a list of component descriptors that should be the transitive component references of the original component descriptor.
+	ComponentDescriptorList *cdv2.ComponentDescriptorList
+	// ComponentResolver implements a component descriptor resolver.
+	ComponentResolver ctf.ComponentResolver
 
 	// RootDir describes a directory that is used to default the other filepaths.
 	// The blueprint is expected to have the following structure
@@ -47,8 +57,6 @@ type BlueprintRenderArgs struct {
 	//   - component-descriptor.yaml
 	// +optional
 	RootDir string
-
-	ComponentsResolveFunc cdutils.ResolveComponentReferenceFunc
 }
 
 // Default defaults the BlueprintRender args
@@ -66,7 +74,7 @@ func (args *BlueprintRenderArgs) Default() error {
 			args.BlueprintPath = ""
 		}
 	}
-	if len(args.ImportValuesFilepath) == 0 {
+	if args.Imports == nil && len(args.ImportValuesFilepath) == 0 {
 		args.ImportValuesFilepath = filepath.Join(exampleDir, "imports.yaml")
 		if _, err := args.Fs.Stat(args.ImportValuesFilepath); err != nil {
 			args.ImportValuesFilepath = ""
@@ -77,6 +85,9 @@ func (args *BlueprintRenderArgs) Default() error {
 		if _, err := args.Fs.Stat(args.ComponentDescriptorFilepath); err != nil {
 			args.ComponentDescriptorFilepath = ""
 		}
+	}
+	if args.ComponentDescriptorList == nil {
+		args.ComponentDescriptorList = &cdv2.ComponentDescriptorList{}
 	}
 	return nil
 }
@@ -89,6 +100,7 @@ type BlueprintRenderOut struct {
 	InstallationTemplateState map[string][]byte
 }
 
+// Imports describes the json/yaml file format for blueprint render imports.
 type Imports struct {
 	Imports map[string]interface{} `json:"imports"`
 }
@@ -99,14 +111,21 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		return nil, fmt.Errorf("unable to default args: %w", err)
 	}
 	imports := Imports{}
-	if err := utils.YAMLReadFromFile(osfs.New(), args.ImportValuesFilepath, &imports); err != nil {
-		return nil, fmt.Errorf("unable to read imports from %q: %w", args.ImportValuesFilepath, err)
+	if len(args.ImportValuesFilepath) != 0 {
+		if err := utils.YAMLReadFromFile(args.Fs, args.ImportValuesFilepath, &imports); err != nil {
+			return nil, fmt.Errorf("unable to read imports from %q: %w", args.ImportValuesFilepath, err)
+		}
+	}
+
+	// merge imports
+	if args.Imports != nil {
+		MergeImports(&imports, args.Imports)
 	}
 
 	var cd *cdv2.ComponentDescriptor
 	if len(args.ComponentDescriptorFilepath) != 0 {
 		cd = &cdv2.ComponentDescriptor{}
-		data, err := vfs.ReadFile(osfs.New(), args.ComponentDescriptorFilepath)
+		data, err := vfs.ReadFile(args.Fs, args.ComponentDescriptorFilepath)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read component descriptor from %q: %w", args.ComponentDescriptorFilepath, err)
 		}
@@ -115,7 +134,7 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		}
 	}
 
-	bpFs, err := projectionfs.New(osfs.New(), args.BlueprintPath)
+	bpFs, err := projectionfs.New(args.Fs, args.BlueprintPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create blueprint fs for %q: %w", args.BlueprintPath, err)
 	}
@@ -124,7 +143,7 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		return nil, fmt.Errorf("unable to read blueprint from %q: %w", args.BlueprintPath, err)
 	}
 
-	if err := ValidateImports(blueprint, &imports, cd, nil, args.ComponentsResolveFunc); err != nil {
+	if err := ValidateImports(blueprint, &imports, cd, args.ComponentResolver); err != nil {
 		return nil, err
 	}
 
@@ -152,12 +171,23 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		}
 	}
 
-	deployItems, deployItemsState, err := RenderBlueprintDeployItems(blueprint, imports, cd, inst)
+	deployItems, deployItemsState, err := RenderBlueprintDeployItems(
+		blueprint,
+		imports,
+		cd,
+		args.ComponentDescriptorList,
+		inst)
 	if err != nil {
 		return nil, err
 	}
 
-	installations, installationsState, err := RenderBlueprintSubInstallations(blueprint, imports, cd, inst, args.ComponentsResolveFunc)
+	installations, installationsState, err := RenderBlueprintSubInstallations(
+		blueprint,
+		imports,
+		cd,
+		args.ComponentDescriptorList,
+		args.ComponentResolver,
+		inst)
 	if err != nil {
 		return nil, err
 	}
@@ -174,16 +204,18 @@ func RenderBlueprintDeployItems(
 	blueprint *blueprints.Blueprint,
 	imports Imports,
 	cd *cdv2.ComponentDescriptor,
+	cdList *cdv2.ComponentDescriptorList,
 	inst *lsv1alpha1.Installation) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	deployItemTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).TemplateDeployExecutions(template.DeployExecutionOptions{
-		Imports:              imports.Imports,
-		Blueprint:            blueprint,
-		ComponentDescriptor:  cd,
-		ComponentDescriptors: &cdv2.ComponentDescriptorList{},
-		Installation:         inst,
-	})
+	deployItemTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).
+		TemplateDeployExecutions(template.DeployExecutionOptions{
+			Imports:              imports.Imports,
+			Blueprint:            blueprint,
+			ComponentDescriptor:  cd,
+			ComponentDescriptors: cdList,
+			Installation:         inst,
+		})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template deploy executions: %w", err)
 	}
@@ -195,6 +227,7 @@ func RenderBlueprintDeployItems(
 			return nil, nil, fmt.Errorf("unable to inject deploy item type information for %q: %w", tmpl.Name, err)
 		}
 		execution.ApplyDeployItemTemplate(di, tmpl)
+		di.Name = tmpl.Name
 		deployItems[i] = di
 	}
 	return deployItems, templateStateHandler, nil
@@ -204,8 +237,9 @@ func RenderBlueprintSubInstallations(
 	blueprint *blueprints.Blueprint,
 	imports Imports,
 	cd *cdv2.ComponentDescriptor,
-	inst *lsv1alpha1.Installation,
-	cdResolveFunc cdutils.ResolveComponentReferenceFunc) ([]*lsv1alpha1.Installation, map[string][]byte, error) {
+	cdList *cdv2.ComponentDescriptorList,
+	compResolver ctf.ComponentResolver,
+	inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, map[string][]byte, error) {
 
 	installationTemplates, err := blueprint.GetSubinstallations()
 	if err != nil {
@@ -213,13 +247,14 @@ func RenderBlueprintSubInstallations(
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-		Imports:              imports.Imports,
-		Blueprint:            blueprint,
-		ComponentDescriptor:  cd,
-		ComponentDescriptors: &cdv2.ComponentDescriptorList{},
-		Installation:         inst,
-	})
+	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).
+		TemplateSubinstallationExecutions(template.DeployExecutionOptions{
+			Imports:              imports.Imports,
+			Blueprint:            blueprint,
+			ComponentDescriptor:  cd,
+			ComponentDescriptors: cdList,
+			Installation:         inst,
+		})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template subinstalltion executions: %w", err)
 	}
@@ -228,6 +263,7 @@ func RenderBlueprintSubInstallations(
 	installations := make([]*lsv1alpha1.Installation, len(installationTemplates))
 	for i, subInstTmpl := range installationTemplates {
 		subInst := &lsv1alpha1.Installation{}
+		subInst.Name = subInstTmpl.Name
 		subInst.Spec = lsv1alpha1.InstallationSpec{
 			Imports:            subInstTmpl.Imports,
 			ImportDataMappings: subInstTmpl.ImportDataMappings,
@@ -238,7 +274,7 @@ func RenderBlueprintSubInstallations(
 			inst,
 			subInstTmpl,
 			cd,
-			cdResolveFunc)
+			compResolver)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
@@ -253,16 +289,14 @@ func RenderBlueprintSubInstallations(
 func ValidateImports(bp *blueprints.Blueprint,
 	imports *Imports,
 	cd *cdv2.ComponentDescriptor,
-	componentResolver ctf.ComponentResolver,
-	componentReferenceResolver cdutils.ResolveComponentReferenceFunc) error {
+	componentResolver ctf.ComponentResolver) error {
 
 	jsonschemaValidator := &jsonschema.Validator{
 		Config: &jsonschema.LoaderConfig{
-			LocalTypes:                 bp.Info.LocalTypes,
-			BlueprintFs:                bp.Fs,
-			ComponentDescriptor:        cd,
-			ComponentResolver:          componentResolver,
-			ComponentReferenceResolver: componentReferenceResolver,
+			LocalTypes:          bp.Info.LocalTypes,
+			BlueprintFs:         bp.Fs,
+			ComponentDescriptor: cd,
+			ComponentResolver:   componentResolver,
 		},
 	}
 
@@ -312,4 +346,15 @@ func ValidateImports(bp *blueprints.Blueprint,
 	}
 
 	return allErr.ToAggregate()
+}
+
+// MergeImports merges all imports of b into a.
+func MergeImports(a, b *Imports) {
+	if a.Imports == nil {
+		a.Imports = b.Imports
+		return
+	}
+	for key, val := range b.Imports {
+		a.Imports[key] = val
+	}
 }
