@@ -17,7 +17,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
 	"github.com/gardener/landscaper/apis/core/validation"
-	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -278,7 +277,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	subBlueprint, subCdDef, err := GetBlueprintDefinitionFromInstallationTemplate(inst,
 		subInstTmpl,
 		o.ComponentDescriptor,
-		cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList))
+		o.ComponentsRegistry())
 	if err != nil {
 		return nil, err
 	}

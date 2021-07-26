@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -84,7 +85,7 @@ func ParseURI(cdURI string) (*URI, error) {
 
 // Get resolves to a resource or component descriptor specified by the URI.
 // It also returns the resource kind.
-func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
+func (u *URI) Get(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver) (lsv1alpha1.ComponentDescriptorKind, interface{}, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -99,11 +100,11 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenc
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
 
-			comp, err := refFunc(ctx, refs[0])
+			ref := refs[0]
+			component, err = compResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
 			if err != nil {
 				return "", nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			component = &comp
 			if isLast {
 				return lsv1alpha1.ComponentResourceKind, component, nil
 			}
@@ -123,9 +124,9 @@ func (u *URI) Get(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenc
 	return lsv1alpha1.ComponentResourceKind, component, nil
 }
 
-// Get resolves to the component descriptor specified by the URI.
+// GetComponent resolves to the component descriptor specified by the URI.
 // If a resource is specified, the component descriptor of the resource is returned.
-func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (*cdv2.ComponentDescriptor, error) {
+func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver) (*cdv2.ComponentDescriptor, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -139,11 +140,11 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponen
 			if err != nil || len(refs) == 0 {
 				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			comp, err := refFunc(ctx, refs[0])
+			ref := refs[0]
+			component, err = compResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
 			if err != nil {
 				return nil, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			component = &comp
 			if isLast {
 				return component, nil
 			}
@@ -161,7 +162,7 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, refFunc ResolveComponen
 
 // GetResource resolves to a resource specified by the URI.
 // It also returns the resource kind.
-func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, refFunc ResolveComponentReferenceFunc) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
+func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -176,11 +177,11 @@ func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, refFunc ResolveComponent
 				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
 
-			comp, err := refFunc(ctx, refs[0])
+			ref := refs[0]
+			component, err = compResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
 			if err != nil {
 				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
-			component = &comp
 			if isLast {
 				return nil, cdv2.Resource{}, fmt.Errorf("the selector seems to target a component desscriptor but a resource is requested")
 			}
