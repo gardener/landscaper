@@ -12,7 +12,9 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
@@ -157,20 +159,86 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 }
 
 // GetTargetImport fetches the target import from the cluster.
-func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetName string) (*dataobjects.Target, *v1.OwnerReference, error) {
+func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetName string) (*dataobjects.Target, error) {
 	// get deploy item from current context
 	raw := &lsv1alpha1.Target{}
 	targetName = helper.GenerateDataObjectName(contextName, targetName)
 	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	owner := kubernetes.GetOwner(raw.ObjectMeta)
 	target, err := dataobjects.NewFromTarget(raw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
+		return nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
 	}
-	return target, owner, nil
+	return target, nil
+}
+
+// GetTargetListImportByNames fetches the target imports from the cluster, based on a list of target names.
+func GetTargetListImportByNames(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, targetNames []string) (*dataobjects.TargetList, error) {
+	targets := make([]lsv1alpha1.Target, len(targetNames))
+	for i, targetName := range targetNames {
+		// get deploy item from current context
+		raw := &lsv1alpha1.Target{}
+		targetName = helper.GenerateDataObjectName(contextName, targetName)
+		if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Info.Namespace), raw); err != nil {
+			return nil, err
+		}
+		targets[i] = *raw
+	}
+	targetList, err := dataobjects.NewFromTargetList(targets)
+	if err != nil {
+		return nil, err
+	}
+
+	return targetList, nil
+}
+
+// GetTargetListImportBySelector fetches the target imports from the cluster, based on a label selector.
+// If restrictToImport is true, a label selector will be added which fetches only targets that are marked as import.
+func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client, contextName string, inst *Installation, selector map[string]string, restrictToImport bool) (*dataobjects.TargetList, error) {
+	targets := &lsv1alpha1.TargetList{}
+	// construct label selector
+	contextSelector := labels.NewSelector()
+	if len(contextName) != 0 {
+		// top-level targets probably don't have an empty context set, so only add the selector if there actually is a context
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.Equals, []string{contextName})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	} else {
+		// top-level targets probably don't have an empty context set, so check for non-existence of the label
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectContextLabel, selection.DoesNotExist, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	// add given labels to selector
+	for k, v := range selector {
+		r, err := labels.NewRequirement(k, selection.Equals, []string{v})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	if restrictToImport {
+		// add further labels to ensure that only targets imported by that installation are selected
+		r, err := labels.NewRequirement(lsv1alpha1.DataObjectSourceTypeLabel, selection.Equals, []string{string(lsv1alpha1.ImportDataObjectSourceType)})
+		if err != nil {
+			return nil, fmt.Errorf("unable to construct label selector: %w", err)
+		}
+		contextSelector = contextSelector.Add(*r)
+	}
+	if err := kubeClient.List(ctx, targets, client.InNamespace(inst.Info.Namespace), &client.ListOptions{LabelSelector: contextSelector}); err != nil {
+		return nil, err
+	}
+	targetList, err := dataobjects.NewFromTargetList(targets.Items)
+	if err != nil {
+		return nil, err
+	}
+	return targetList, nil
 }
 
 // GetReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition

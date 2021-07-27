@@ -43,6 +43,14 @@ component:
       type: localFilesystemBlob
       mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root-3
+  - name: root-4
+    type: blueprint
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+      filename: root-4
   - name: res-a
     type: blueprint
     version: 1.0.0

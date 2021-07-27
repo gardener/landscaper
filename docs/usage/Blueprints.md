@@ -143,7 +143,7 @@ The export definitions describe the data that is produced by the blueprint.<br>
 
 Imports and Exports always consists of a name (_MUST_ be unique for the blueprint) and can be generally described as _Target_-Im/Exports or _Data_-Im/Exports. The `type` field specifies which one it is.
 
-> The `type` field is currently optional to ensure backward compatibility. This is likely to change in the future and it is strongly recommended to specify a type for each im-/export.
+> The `type` field is currently optional (for data and target imports) to ensure backward compatibility. This is likely to change in the future and it is strongly recommended to specify a type for each im-/export.
 
 ```yaml
 imports:
@@ -191,6 +191,21 @@ imports:
 ```
 
 Target im-/exports have the type `target`.
+
+##### Targetlists
+
+For some scenarios, it might be helpful to import an unknown number of targets. This can be done via a targetlist import.
+
+```yaml
+imports:
+- name: my-import
+  type: targetList
+  targetType: <string> # name of the target type for all targets in the list
+```
+
+All targets of a targetlist *MUST* have the same type, mixing is not possible. Exporting targetlists is not possible.
+
+Targetlist imports have the type `targetList`. Please note that the `type` field is mandatory for targetlist imports - if it is not set, the landscaper will assume that a single target is to be imported.
 
 ### DeployExecutions
 
@@ -453,6 +468,29 @@ subinstallationExecutions:
       blueprint:
         ref: cd://componentReferences/ingress/resources/blueprint
       ...
+```
+
+
+#### Targetlist Imports in Subinstallations
+
+To import a targetlist that has been imported by a parent installation, use `targetListRef` to reference the name of the parent import.
+
+```yaml
+imports:
+  targets:
+  - name: "my-foo-targets"
+    targets: # targetlist import
+    - foo
+    - foobar
+    - foobaz
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: mysubinst
+  imports:
+    targets:
+    - name: "also-my-foo-targets"
+      targetListRef: "my-foo-targets"
 ```
 
 

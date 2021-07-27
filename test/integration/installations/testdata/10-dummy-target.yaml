@@ -1,0 +1,8 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  name: my-target
+spec:
+  type: landscaper.gardener.cloud/mock
+  config:
+    value: targetValue

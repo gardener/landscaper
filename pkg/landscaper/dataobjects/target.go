@@ -11,6 +11,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -19,6 +20,7 @@ type Target struct {
 	Raw        *lsv1alpha1.Target
 	FieldValue *lsv1alpha1.FieldValueDefinition
 	Metadata   Metadata
+	Owner      *metav1.OwnerReference
 }
 
 // NewTarget creates a new internal target.
@@ -31,6 +33,7 @@ func NewFromTarget(target *lsv1alpha1.Target) (*Target, error) {
 	return &Target{
 		Raw:      target,
 		Metadata: GetMetadataFromObject(target),
+		Owner:    kubernetes.GetOwner(target.ObjectMeta),
 	}, nil
 }
 
@@ -77,7 +80,14 @@ func (t *Target) SetKey(key string) *Target {
 	return t
 }
 
+// SetOwner sets the owner for the given data object.
+func (t *Target) SetOwner(own *metav1.OwnerReference) *Target {
+	t.Owner = own
+	return t
+}
+
 // Build creates a new data object based on the given data and metadata.
+// Does not set owner references.
 func (t Target) Build() (*lsv1alpha1.Target, error) {
 	newTarget := &lsv1alpha1.Target{}
 	newTarget.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
@@ -96,7 +106,7 @@ func (t Target) Build() (*lsv1alpha1.Target, error) {
 	return newTarget, nil
 }
 
-// Apply applies data and metadata to a existing target.
+// Apply applies data and metadata to an existing target (except owner references).
 func (t Target) Apply(raw *lsv1alpha1.Target) error {
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	raw.Namespace = t.Metadata.Namespace

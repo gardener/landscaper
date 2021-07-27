@@ -47,14 +47,18 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 	if err != nil {
 		return err
 	}
+	importedTargetLists, err := c.GetImportedTargetLists(ctx) // returns a map mapping logical names to target lists
+	if err != nil {
+		return err
+	}
 
-	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets) // returns a map mapping logical names to data content
+	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets, importedTargetLists) // returns a map mapping logical names to data content
 	if err != nil {
 		return err
 	}
 
 	// add additional imports and targets
-	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, templatedDataMappings, fldPath)
+	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, importedTargetLists, templatedDataMappings, fldPath)
 	if err != nil {
 		return err
 	}
@@ -64,7 +68,14 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 }
 
 // constructImports is an auxiliary function that can be called in a recursive manner to traverse the tree of conditional imports
-func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionList, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target, templatedDataMappings map[string]interface{}, fldPath *field.Path) (map[string]interface{}, error) {
+func (c *Constructor) constructImports(
+	importList lsv1alpha1.ImportDefinitionList,
+	importedDataObjects map[string]*dataobjects.DataObject,
+	importedTargets map[string]*dataobjects.Target,
+	importedTargetLists map[string]*dataobjects.TargetList,
+	templatedDataMappings map[string]interface{},
+	fldPath *field.Path) (map[string]interface{}, error) {
+
 	imports := map[string]interface{}{}
 	for _, def := range importList {
 		var err error
@@ -87,7 +98,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 			}
 			if len(def.ConditionalImports) > 0 {
 				// recursively check conditional imports
-				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, templatedDataMappings, defPath)
+				conditionalImports, err := c.constructImports(def.ConditionalImports, importedDataObjects, importedTargets, importedTargetLists, templatedDataMappings, defPath)
 				if err != nil {
 					return nil, err
 				}
@@ -97,9 +108,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 			}
 			continue
 		case lsv1alpha1.ImportTypeTarget:
-			if val, ok := templatedDataMappings[def.Name]; ok {
-				imports[def.Name] = val
-			} else if val, ok := importedTargets[def.Name]; ok {
+			if val, ok := importedTargets[def.Name]; ok {
 				imports[def.Name], err = val.GetData()
 				if err != nil {
 					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
@@ -115,10 +124,39 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 
 			var targetType string
 			if err := jsonpath.GetValue(".spec.type", data, &targetType); err != nil {
-				return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: exported target does not match the expected target template schema", defPath.String())
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target does not match the expected target template schema", defPath.String())
 			}
 			if def.TargetType != targetType {
-				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: exported target type is %s but expected %s", defPath.String(), targetType, def.TargetType)
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: imported target type is %s but expected %s", defPath.String(), targetType, def.TargetType)
+			}
+			continue
+		case lsv1alpha1.ImportTypeTargetList:
+			if val, ok := importedTargetLists[def.Name]; ok {
+				imports[def.Name], err = val.GetData()
+				if err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported target cannot be parsed", defPath.String())
+				}
+			}
+			data, ok := imports[def.Name]
+			if !ok {
+				if def.Required != nil && !*def.Required {
+					continue // don't throw an error if the import is not required
+				}
+				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+			}
+
+			var targetType string
+			listData, ok := data.([]interface{})
+			if !ok {
+				return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: targetlist import is not a list", defPath.String())
+			}
+			for i, elem := range listData {
+				if err := jsonpath.GetValue(".spec.type", elem, &targetType); err != nil {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: element at position %d of the imported targetlist does not match the expected target template schema", defPath.String(), i)
+				}
+				if def.TargetType != targetType {
+					return nil, installations.NewErrorf(installations.SchemaValidationFailed, nil, "%s: type of the element at position %d of the imported targetlist is %s but expected %s", defPath.String(), i, targetType, def.TargetType)
+				}
 			}
 			continue
 		default:
@@ -129,7 +167,7 @@ func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionLis
 	return imports, nil
 }
 
-func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target) (map[string]interface{}, error) {
+func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target, importedTargetLists map[string]*dataobjects.TargetList) (map[string]interface{}, error) {
 	templateValues := map[string]interface{}{}
 	for name, do := range importedDataObjects {
 		templateValues[name] = do.Data
@@ -139,6 +177,13 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, importedDataObje
 		templateValues[name], err = target.GetData()
 		if err != nil {
 			return nil, fmt.Errorf("unable to get target data for import %s", name)
+		}
+	}
+	for name, targetlist := range importedTargetLists {
+		var err error
+		templateValues[name], err = targetlist.GetData()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get targetlist data for import %s", name)
 		}
 	}
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(templateValues)

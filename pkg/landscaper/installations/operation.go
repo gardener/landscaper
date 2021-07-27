@@ -213,7 +213,11 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobjects.Target, error) {
 	targets := map[string]*dataobjects.Target{}
 	for _, def := range o.Inst.Info.Spec.Imports.Targets {
-		target, _, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst, def.Target)
+		if len(def.Target) == 0 {
+			// It's a target list, skip it
+			continue
+		}
+		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst, def.Target)
 		if err != nil {
 			return nil, err
 		}
@@ -242,6 +246,69 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			Target:           def.Target,
 			SourceRef:        sourceRef,
 			ConfigGeneration: configGen,
+		})
+	}
+
+	return targets, nil
+}
+
+// GetImportedTargetLists returns all imported target lists of the installation.
+func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dataobjects.TargetList, error) {
+	targets := map[string]*dataobjects.TargetList{}
+	for _, def := range o.Inst.Info.Spec.Imports.Targets {
+		if len(def.Target) != 0 {
+			// It's a single target, skip it
+			continue
+		}
+		var (
+			tl  *dataobjects.TargetList
+			err error
+		)
+		if def.Targets != nil {
+			// List of target names
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst, def.Targets)
+		} else if len(def.TargetListReference) != 0 {
+			// TargetListReference is converted to a label selector internally
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
+		} else {
+			// Invalid target
+			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		targets[def.Name] = tl
+
+		tis := make([]lsv1alpha1.TargetImportStatus, len(tl.Targets))
+		for i, t := range tl.Targets {
+			var (
+				sourceRef *lsv1alpha1.ObjectReference
+				configGen = strconv.Itoa(int(t.Raw.Generation))
+				owner     = kutil.GetOwner(t.Raw.ObjectMeta)
+			)
+			if owner != nil && owner.Kind == "Installation" {
+				sourceRef = &lsv1alpha1.ObjectReference{
+					Name:      owner.Name,
+					Namespace: o.Inst.Info.Namespace,
+				}
+				inst := &lsv1alpha1.Installation{}
+				if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
+						sourceRef.NamespacedName().String(), def.Name, err)
+				}
+				configGen = inst.Status.ConfigGeneration
+			}
+			tis[i] = lsv1alpha1.TargetImportStatus{
+				Target:           t.Raw.Name,
+				SourceRef:        sourceRef,
+				ConfigGeneration: configGen,
+			}
+		}
+		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+			Name:    def.Name,
+			Type:    lsv1alpha1.TargetListImportStatusType,
+			Targets: tis,
 		})
 	}
 
@@ -463,6 +530,14 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			if err := o.createOrUpdateTargetImport(ctx, src, importDef, importData); err != nil {
 				return fmt.Errorf("unable to create or update target import '%s': %w", importDef.Name, err)
 			}
+		case lsv1alpha1.ImportTypeTargetList:
+			importDataList, ok2 := importData.([]interface{})
+			if !ok2 {
+				return fmt.Errorf("targetlist import '%s' is not a list", importDef.Name)
+			}
+			if err := o.createOrUpdateTargetListImport(ctx, src, importDef, importDataList); err != nil {
+				return fmt.Errorf("unable to create or update targetlist import '%s': %w", importDef.Name, err)
+			}
 		default:
 			return fmt.Errorf("unknown import type '%s' for import %s", string(importDef.Type), importDef.Name)
 		}
@@ -555,6 +630,66 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
 			err.Error())
 		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
+	}
+
+	return nil
+}
+
+func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src string, importDef lsv1alpha1.ImportDefinition, values []interface{}) error {
+	cond := lsv1alpha1helper.GetOrInitCondition(o.Inst.Info.Status.Conditions, lsv1alpha1.CreateImportsCondition)
+	tars := make([]lsv1alpha1.Target, len(values))
+	for i := range values {
+		tar := &lsv1alpha1.Target{}
+		data, err := json.Marshal(values[i])
+		if err != nil {
+			return err
+		}
+		if _, _, err := api.Decoder.Decode(data, nil, tar); err != nil {
+			return err
+		}
+		tars[i] = *tar
+	}
+	intTL, err := dataobjects.NewFromTargetList(tars)
+	if err != nil {
+		return err
+	}
+	for i := range intTL.Targets {
+		tar := intTL.Targets[i]
+		tar.SetNamespace(o.Inst.Info.Namespace).
+			SetContext(src).
+			SetKey(importDef.Name).
+			SetSource(src).SetSourceType(lsv1alpha1.ImportDataObjectSourceType)
+	}
+
+	targets, err := intTL.Build(importDef.Name)
+	if err != nil {
+		o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				"CreateTargets",
+				fmt.Sprintf("unable to create targets for import '%s'", importDef.Name)))
+		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
+			"CreateTargets", fmt.Sprintf("unable to create targets for import '%s'", importDef.Name),
+			err.Error())
+		return fmt.Errorf("unable to build targets for import '%s': %w", importDef.Name, err)
+	}
+
+	// we do not need to set controller ownership as we anyway need a separate garbage collection.
+	for i, target := range targets {
+		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+			if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
+				return err
+			}
+			return intTL.Apply(target, i)
+		}); err != nil {
+			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
+				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+					"CreateTargets",
+					fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
+			o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
+				"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
+				err.Error())
+			return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
+		}
 	}
 
 	return nil

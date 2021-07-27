@@ -122,7 +122,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.SubinstallationTemplate":                            schema_landscaper_apis_core_v1alpha1_SubinstallationTemplate(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TLSClientConfig":                                    schema_landscaper_apis_core_v1alpha1_TLSClientConfig(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Target":                                             schema_landscaper_apis_core_v1alpha1_Target(ref),
-		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportExport":                                 schema_landscaper_apis_core_v1alpha1_TargetImportExport(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport":                                       schema_landscaper_apis_core_v1alpha1_TargetExport(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport":                                       schema_landscaper_apis_core_v1alpha1_TargetImport(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus":                                 schema_landscaper_apis_core_v1alpha1_TargetImportStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetList":                                         schema_landscaper_apis_core_v1alpha1_TargetList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector":                                     schema_landscaper_apis_core_v1alpha1_TargetSelector(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSpec":                                         schema_landscaper_apis_core_v1alpha1_TargetSpec(ref),
@@ -4101,7 +4103,7 @@ func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallb
 					},
 					"type": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Type defines the kind of import. Can be either DataObject or Target",
+							Description: "Type defines the kind of import. Can be either DataObject, Target, or TargetList",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -4112,6 +4114,20 @@ func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallb
 							Description: "Target is the name of the in-cluster target object.",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"targetList": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetList is a list of import statuses for in-cluster target objects.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"),
+									},
+								},
+							},
 						},
 					},
 					"dataRef": {
@@ -4137,24 +4153,23 @@ func schema_landscaper_apis_core_v1alpha1_ImportStatus(ref common.ReferenceCallb
 					},
 					"sourceRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SourceRef is the reference to the installation where the value is imported",
+							Description: "SourceRef is the reference to the installation from where the value is imported",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
 					"configGeneration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ConfigGeneration is the generation of the imported value.",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
-				Required: []string{"name", "type", "configGeneration"},
+				Required: []string{"name", "type"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportStatus"},
 	}
 }
 
@@ -4260,7 +4275,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationExports(ref common.Referen
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportExport"),
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport"),
 									},
 								},
 							},
@@ -4270,7 +4285,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationExports(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.DataExport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportExport"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DataExport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetExport"},
 	}
 }
 
@@ -4303,7 +4318,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationImports(ref common.Referen
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportExport"),
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport"),
 									},
 								},
 							},
@@ -4313,7 +4328,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationImports(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImportExport"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetImport"},
 	}
 }
 
@@ -5174,16 +5189,16 @@ func schema_landscaper_apis_core_v1alpha1_Target(ref common.ReferenceCallback) c
 	}
 }
 
-func schema_landscaper_apis_core_v1alpha1_TargetImportExport(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_landscaper_apis_core_v1alpha1_TargetExport(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "TargetImportExport is a target import/export.",
+				Description: "TargetExport is a single target export.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name the internal name of the imported/exported target.",
+							Description: "Name the internal name of the exported target.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -5192,15 +5207,100 @@ func schema_landscaper_apis_core_v1alpha1_TargetImportExport(ref common.Referenc
 					"target": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Target is the name of the in-cluster target object.",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
-				Required: []string{"name", "target"},
+				Required: []string{"name"},
 			},
 		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TargetImport(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetImport is either a single target or a target list import.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name the internal name of the imported target.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target is the name of the in-cluster target object. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"targets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Targets is a list of in-cluster target objects. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"targetListRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation. Exactly one of Target, Targets, and TargetListReference has to be specified.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_TargetImportStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetImportStatus",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target is the name of the in-cluster target object.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"sourceRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SourceRef is the reference to the installation from where the value is imported",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
+						},
+					},
+					"configGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigGeneration is the generation of the imported value.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"},
 	}
 }
 

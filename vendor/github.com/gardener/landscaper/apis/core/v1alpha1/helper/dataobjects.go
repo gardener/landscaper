@@ -42,6 +42,13 @@ func GenerateDataObjectName(context string, name string) string {
 	return base32.NewEncoding(Base32EncodeStdLowerCase).WithPadding(base32.NoPadding).EncodeToString(h.Sum(nil))
 }
 
+// GenerateDataObjectNameWithIndex generates a unique name for a data object which is part of a list
+// and therefore has no own name but is identified by a combination of name and index.
+// It builds a fake name by combining name and index and then calls GenerateDataObjectName.
+func GenerateDataObjectNameWithIndex(context string, name string, index int) string {
+	return GenerateDataObjectName(context, fmt.Sprintf("%s[%d]", name, index))
+}
+
 // DataObjectSourceFromObject returns the data object source for a runtime object.
 func DataObjectSourceFromObject(src runtime.Object) (string, error) {
 	acc, ok := src.(metav1.Object)

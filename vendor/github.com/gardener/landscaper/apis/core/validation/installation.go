@@ -7,6 +7,7 @@ package validation
 import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -95,18 +96,21 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 // ValidateInstallationImports validates the imports of an Installation
 func ValidateInstallationImports(imports core.InstallationImports, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+	importNames := sets.NewString()
+	var tmpErrs field.ErrorList
 
-	allErrs = append(allErrs, ValidateInstallationDataImports(imports.Data, fldPath.Child("data"))...)
-	allErrs = append(allErrs, ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"))...)
+	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
+	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
 }
 
 // ValidateInstallationDataImports validates the data imports of an Installation
-func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
 	allErrs := field.ErrorList{}
 
-	importNames := map[string]bool{}
 	for idx, imp := range imports {
 		impPath := fldPath.Index(idx)
 
@@ -134,34 +138,60 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 			allErrs = append(allErrs, field.Required(impPath.Child("name"), "name must not be empty"))
 			continue
 		}
-		if importNames[imp.Name] {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
+		if importNames.Has(imp.Name) {
+			allErrs = append(allErrs, field.Duplicate(impPath, imp.Name))
 		}
-		importNames[imp.Name] = true
+		importNames.Insert(imp.Name)
 	}
 
-	return allErrs
+	return allErrs, importNames
 }
 
 // ValidateInstallationTargetImports validates the target imports of an Installation
-func ValidateInstallationTargetImports(imports []core.TargetImportExport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
 	allErrs := field.ErrorList{}
 
-	importNames := map[string]bool{}
 	for idx, imp := range imports {
-		if imp.Target == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("target"), "target must not be empty"))
-		}
+		fldPathIdx := fldPath.Index(idx)
 		if imp.Name == "" {
-			allErrs = append(allErrs, field.Required(fldPath.Index(idx).Child("name"), "name must not be empty"))
+			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		if importNames[imp.Name] {
-			allErrs = append(allErrs, field.Duplicate(fldPath.Index(idx), imp.Name))
+		impFields := specifiedTargetImportConfigFields(imp)
+		if len(impFields) == 0 {
+			allErrs = append(allErrs, field.Required(fldPathIdx.Child("target|targets|targetListRef"), "either target, targets, or targetListRef must be specified"))
 		}
-		importNames[imp.Name] = true
+		if len(impFields) > 1 {
+			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("target|targets|targetListRef"), imp, "only one of target, targets, and targetListRef may be specified"))
+		}
+		if len(imp.Targets) > 0 {
+			for idx2, tg := range imp.Targets {
+				if len(tg) == 0 {
+					allErrs = append(allErrs, field.Required(fldPathIdx.Child("targets").Index(idx2), "target must not be empty"))
+				}
+			}
+		}
+		if importNames.Has(imp.Name) {
+			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
+		}
+		importNames.Insert(imp.Name)
 	}
 
-	return allErrs
+	return allErrs, importNames
+}
+
+// specifiedTargetImportConfigFields is a helper function that returns which config fields for a target import are set
+func specifiedTargetImportConfigFields(imp core.TargetImport) map[string]bool {
+	res := map[string]bool{}
+	if len(imp.Target) != 0 {
+		res["target"] = true
+	}
+	if imp.Targets != nil {
+		res["targets"] = true
+	}
+	if len(imp.TargetListReference) != 0 {
+		res["targetListRef"] = true
+	}
+	return res
 }
 
 // ValidateInstallationExports validates the exports of an Installation
@@ -197,7 +227,7 @@ func ValidateInstallationDataExports(exports []core.DataExport, fldPath *field.P
 }
 
 // ValidateInstallationTargetExports validates the target exports of an Installation
-func ValidateInstallationTargetExports(exports []core.TargetImportExport, fldPath *field.Path) field.ErrorList {
+func ValidateInstallationTargetExports(exports []core.TargetExport, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	importNames := map[string]bool{}

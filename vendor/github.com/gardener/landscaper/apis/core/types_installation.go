@@ -114,7 +114,7 @@ type InstallationImports struct {
 
 	// Targets defines all target imports.
 	// +optional
-	Targets []TargetImportExport `json:"targets,omitempty"`
+	Targets []TargetImport `json:"targets,omitempty"`
 }
 
 // InstallationExports defines exports of data objects and targets.
@@ -125,7 +125,7 @@ type InstallationExports struct {
 
 	// Targets defines all target exports.
 	// +optional
-	Targets []TargetImportExport `json:"targets,omitempty"`
+	Targets []TargetExport `json:"targets,omitempty"`
 }
 
 // DataImport is a data object import.
@@ -161,13 +161,35 @@ type DataExport struct {
 	DataRef string `json:"dataRef"`
 }
 
-// TargetImportExport is a target import/export.
-type TargetImportExport struct {
-	// Name the internal name of the imported/exported target.
+// TargetImport is either a single target or a target list import.
+type TargetImport struct {
+	// Name the internal name of the imported target.
 	Name string `json:"name"`
 
 	// Target is the name of the in-cluster target object.
-	Target string `json:"target"`
+	// Exactly one of Target, Targets, and TargetListReference has to be specified.
+	// +optional
+	Target string `json:"target,omitempty"`
+
+	// Targets is a list of in-cluster target objects.
+	// Exactly one of Target, Targets, and TargetListReference has to be specified.
+	// +optional
+	Targets []string `json:"targets"`
+
+	// TargetListReference can (only) be used to import a targetlist that has been imported by the parent installation.
+	// Exactly one of Target, Targets, and TargetListReference has to be specified.
+	// +optional
+	TargetListReference string `json:"targetListRef,omitempty"`
+}
+
+// TargetExport is a single target export.
+type TargetExport struct {
+	// Name the internal name of the exported target.
+	Name string `json:"name"`
+
+	// Target is the name of the in-cluster target object.
+	// +optional
+	Target string `json:"target,omitempty"`
 }
 
 // BlueprintDefinition defines the blueprint that should be used for the installation.
@@ -264,7 +286,19 @@ const (
 	DataImportStatusType ImportStatusType = "dataobject"
 	// TargetImportStatusType is an ImportStatusType for targets
 	TargetImportStatusType ImportStatusType = "target"
+	// TargetListImportStatusType is an ImportStatusType for target lists
+	TargetListImportStatusType ImportStatusType = "targetList"
 )
+
+// TargetImportStatus
+type TargetImportStatus struct {
+	// Target is the name of the in-cluster target object.
+	Target string `json:"target,omitempty"`
+	// SourceRef is the reference to the installation from where the value is imported
+	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
+	// ConfigGeneration is the generation of the imported value.
+	ConfigGeneration string `json:"configGeneration,omitempty"`
+}
 
 // ImportStatus hold the state of a import.
 type ImportStatus struct {
@@ -272,11 +306,14 @@ type ImportStatus struct {
 	// Can be either from data or target imports
 	Name string `json:"name"`
 	// Type defines the kind of import.
-	// Can be either DataObject or Target
+	// Can be either DataObject, Target, or TargetList
 	Type ImportStatusType `json:"type"`
 	// Target is the name of the in-cluster target object.
 	// +optional
 	Target string `json:"target,omitempty"`
+	// TargetList is a list of import statuses for in-cluster target objects.
+	// +optional
+	Targets []TargetImportStatus `json:"targetList,omitempty"`
 	// DataRef is the name of the in-cluster data object.
 	// +optional
 	DataRef string `json:"dataRef,omitempty"`
@@ -286,8 +323,10 @@ type ImportStatus struct {
 	// ConfigMapRef is the name of the imported configmap.
 	// +optional
 	ConfigMapRef string `json:"configMapRef,omitempty"`
-	// SourceRef is the reference to the installation where the value is imported
+	// SourceRef is the reference to the installation from where the value is imported
+	// +optional
 	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
 	// ConfigGeneration is the generation of the imported value.
-	ConfigGeneration string `json:"configGeneration"`
+	// +optional
+	ConfigGeneration string `json:"configGeneration,omitempty"`
 }
