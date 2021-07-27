@@ -68,7 +68,7 @@ func NewCrdManager(log logr.Logger, mgr manager.Manager, lsConfig *config.Landsc
 
 // EnsureCRDs installs or updates Landscaper CRDs based on Landscaper's configuration
 func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
-	if !*crdmgr.cfg.DeployCustomResourceDefinitions {
+	if crdmgr.cfg.DeployCustomResourceDefinitions == nil || !*crdmgr.cfg.DeployCustomResourceDefinitions {
 		crdmgr.log.V(1).Info("Registering Landscaper CRDs disabled by configuration")
 		return nil
 	}

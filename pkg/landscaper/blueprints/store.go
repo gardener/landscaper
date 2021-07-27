@@ -99,7 +99,7 @@ func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintSto
 		log = logr.Discard()
 	}
 
-	if len(config.Path) != 0 {
+	if len(config.Path) == 0 {
 		var err error
 		config.Path, err = vfs.TempDir(baseFs, baseFs.FSTempDir(), "bsStore")
 		if err != nil {
@@ -120,7 +120,7 @@ func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintSto
 		gcConfig: config.GarbageCollectionConfiguration,
 	}
 
-	if config.Size != "0" {
+	if config.Size != "0" && config.Size != "" {
 		quantity, err := resource.ParseQuantity(config.Size)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse size %q: %w", config.Size, err)

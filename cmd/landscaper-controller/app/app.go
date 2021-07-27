@@ -28,6 +28,7 @@ import (
 
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
 
+	lsconfig "github.com/gardener/landscaper/apis/config"
 	install "github.com/gardener/landscaper/apis/core/install"
 	deployitemctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/deployitem"
 	executionactrl "github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
@@ -113,6 +114,10 @@ func (o *Options) run(ctx context.Context) error {
 
 	if err := executionactrl.AddControllerToManager(ctrlLogger, mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
+	}
+
+	if o.Config.DeployItemTimeouts == nil {
+		o.Config.DeployItemTimeouts = &lsconfig.DeployItemTimeouts{}
 	}
 
 	if err := deployitemctrl.AddControllerToManager(ctrlLogger, mgr, o.Config.DeployItemTimeouts.Pickup, o.Config.DeployItemTimeouts.Abort, o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
