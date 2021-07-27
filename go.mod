@@ -3,11 +3,11 @@ module github.com/gardener/landscaper
 go 1.16
 
 require (
-	github.com/Masterminds/sprig/v3 v3.1.0
+	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.4.2
-	github.com/docker/cli v20.10.0-rc1+incompatible
+	github.com/containerd/containerd v1.4.4
+	github.com/docker/cli v20.10.5+incompatible
 	github.com/gardener/component-cli v0.28.0
 	github.com/gardener/component-spec/bindings-go v0.0.52
 	github.com/gardener/image-vector v0.5.0
@@ -35,7 +35,7 @@ require (
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/tools v0.1.3 // indirect
-	helm.sh/helm/v3 v3.2.4
+	helm.sh/helm/v3 v3.6.1
 	k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver v0.21.2
 	k8s.io/apimachinery v0.21.2
