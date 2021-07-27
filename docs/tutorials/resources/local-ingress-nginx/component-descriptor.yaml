@@ -1,14 +1,28 @@
-meta:
-  schemaVersion: v2
-
 component:
+  componentReferences: []
   name: github.com/gardener/landscaper/local/ingress-nginx
   provider: internal
   repositoryContexts:
   - baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
     type: ociRegistry
-  version: v0.3.1
-
-  componentReferences: []
+  resources:
+  - access:
+      filename: sha256:06228646f3e2a11957a7700cfe39a1d6cd094ae4127b1fa0ba18bd5a3346cf53
+      mediaType: application/gzip
+      type: localFilesystemBlob
+    name: ingress-nginx-chart
+    relation: external
+    type: helm
+    version: v3.29.0
+  - access:
+      filename: sha256:a3df07057c53ca29c6cd35ac75d38d71d473210351a34a22bf154575c66702d3
+      mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+      type: localFilesystemBlob
+    name: ingress-nginx-blueprint
+    relation: local
+    type: blueprint
+    version: v0.3.1
   sources: []
-  resources: []
+  version: v0.3.1
+meta:
+  schemaVersion: v2

@@ -16,6 +16,13 @@ then
     exit
 fi
 
+if ! command -v component-cli &> /dev/null
+then
+    echo "component-cli could not be found"
+    echo "install it by running: make install-cli"
+    exit
+fi
+
 # this array consists of <oci-path of blueprint>;<local path of blueprint>;<default version tag>
 # the version tag can be set inline in the blueprint.yaml file itself by the comment line
 # # TUTORIAL_BLUEPRINT_VERSION: <my version>
@@ -31,18 +38,21 @@ component_descriptors=(
   "./docs/tutorials/resources/echo-server"
   "./docs/tutorials/resources/aggregated"
   "./docs/tutorials/resources/local-ingress-nginx"
+  "./docs/tutorials/resources/external-jsonschema/definitions"
   "./docs/tutorials/resources/external-jsonschema/echo-server"
 )
 
 function prepare_local_nginx_resources() {
   cp ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml ./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yam_
-  landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
-  landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
+  component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
+  component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx  ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 }
 
 function prepare_external_json_schema_resourcess() {
   cp ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yam_
-  landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server  ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
+  component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server  ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
+  cp ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yaml ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yam_
+  component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions  ./docs/tutorials/resources/external-jsonschema/definitions/jsonschema-resource.yaml
 }
 
 function cleanup_local_nginx_resources() {
@@ -57,6 +67,11 @@ function cleanup_external_json_schema_resourcess() {
     rm -rf ./docs/tutorials/resources/external-jsonschema/echo-server/blobs
   fi
   mv -f ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yam_ ./docs/tutorials/resources/external-jsonschema/echo-server/component-descriptor.yaml
+
+  if [ -d ./docs/tutorials/resources/external-jsonschema/definitions/blobs ]; then
+    rm -rf ./docs/tutorials/resources/external-jsonschema/definitions/blobs
+  fi
+  mv -f ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yam_ ./docs/tutorials/resources/external-jsonschema/definitions/component-descriptor.yaml
 }
 
 prepare_local_nginx_resources
