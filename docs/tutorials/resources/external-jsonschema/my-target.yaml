@@ -5,7 +5,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Target
 metadata:
-  name: my-cluster
+  name: my-target-cluster
 spec:
   type: landscaper.gardener.cloud/kubernetes-cluster
   config:
