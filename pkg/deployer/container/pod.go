@@ -294,6 +294,11 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 	pod.Spec.RestartPolicy = corev1.RestartPolicyNever
 	pod.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(300)
 	pod.Spec.Volumes = volumes
+	pod.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser:  pointer.Int64(1000),
+		RunAsGroup: pointer.Int64(3000),
+		FSGroup:    pointer.Int64(2000),
+	}
 	pod.Spec.InitContainers = []corev1.Container{initContainer}
 	pod.Spec.Containers = []corev1.Container{mainContainer, waitContainer}
 	if len(opts.ImagePullSecret) != 0 {

@@ -94,8 +94,13 @@ When the image with your program is executed, it gets access to particular infor
 - If *componentDescriptor* and *blueprint* is specified, a *content blob* can be accessed at the directory given by 
   the env var `CONTENT_PATH`. The *content blob* consists of all data stored in the blueprint, consisting of the blueprint 
   yaml file and all other files and folders you stored together with this.
+- The container is not executed as root user due to security reasons.
+  Instead, the following user/group is used (see the [Kubernetes Documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod) for details):
+  - **User**: 1000
+  - **Group**: 3000
+  - **FSGroup**: 2000
   
-Again you will find a more detailed explanation of these env variable
+Again you will find a more detailed explanation of these env variables
 [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
 
 ### Status
