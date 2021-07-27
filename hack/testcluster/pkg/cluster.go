@@ -52,7 +52,7 @@ metadata:
   generateName: k3s-cluster-
 spec:
   containers:
-  - image: docker.io/rancher/k3s:v1.20.9-k3s1
+  - image: docker.io/rancher/k3s:v1.20.8-k3s1
     imagePullPolicy: IfNotPresent
     name: cluster
     stdin: true
