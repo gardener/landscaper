@@ -5194,7 +5194,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetExport(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name the internal name of the imported/exported target.",
+							Description: "Name the internal name of the exported target.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
@@ -5223,7 +5223,7 @@ func schema_landscaper_apis_core_v1alpha1_TargetImport(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name the internal name of the imported/exported target.",
+							Description: "Name the internal name of the imported target.",
 							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",

@@ -163,7 +163,7 @@ type DataExport struct {
 
 // TargetImport is either a single target or a target list import.
 type TargetImport struct {
-	// Name the internal name of the imported/exported target.
+	// Name the internal name of the imported target.
 	Name string `json:"name"`
 
 	// Target is the name of the in-cluster target object.
@@ -184,7 +184,7 @@ type TargetImport struct {
 
 // TargetExport is a single target export.
 type TargetExport struct {
-	// Name the internal name of the imported/exported target.
+	// Name the internal name of the exported target.
 	Name string `json:"name"`
 
 	// Target is the name of the in-cluster target object.

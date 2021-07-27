@@ -4203,7 +4203,7 @@ string
 </em>
 </td>
 <td>
-<p>Name the internal name of the imported/exported target.</p>
+<p>Name the internal name of the exported target.</p>
 </td>
 </tr>
 <tr>
@@ -4245,7 +4245,7 @@ string
 </em>
 </td>
 <td>
-<p>Name the internal name of the imported/exported target.</p>
+<p>Name the internal name of the imported target.</p>
 </td>
 </tr>
 <tr>

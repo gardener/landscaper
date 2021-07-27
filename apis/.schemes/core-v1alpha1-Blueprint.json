@@ -322,7 +322,7 @@
       ],
       "properties": {
         "name": {
-          "description": "Name the internal name of the imported/exported target.",
+          "description": "Name the internal name of the exported target.",
           "type": "string",
           "default": ""
         },
@@ -340,7 +340,7 @@
       ],
       "properties": {
         "name": {
-          "description": "Name the internal name of the imported/exported target.",
+          "description": "Name the internal name of the imported target.",
           "type": "string",
           "default": ""
         },

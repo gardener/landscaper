@@ -68,7 +68,14 @@ func (c *Constructor) Construct(ctx context.Context, inst *installations.Install
 }
 
 // constructImports is an auxiliary function that can be called in a recursive manner to traverse the tree of conditional imports
-func (c *Constructor) constructImports(importList lsv1alpha1.ImportDefinitionList, importedDataObjects map[string]*dataobjects.DataObject, importedTargets map[string]*dataobjects.Target, importedTargetLists map[string]*dataobjects.TargetList, templatedDataMappings map[string]interface{}, fldPath *field.Path) (map[string]interface{}, error) {
+func (c *Constructor) constructImports(
+	importList lsv1alpha1.ImportDefinitionList,
+	importedDataObjects map[string]*dataobjects.DataObject,
+	importedTargets map[string]*dataobjects.Target,
+	importedTargetLists map[string]*dataobjects.TargetList,
+	templatedDataMappings map[string]interface{},
+	fldPath *field.Path) (map[string]interface{}, error) {
+
 	imports := map[string]interface{}{}
 	for _, def := range importList {
 		var err error

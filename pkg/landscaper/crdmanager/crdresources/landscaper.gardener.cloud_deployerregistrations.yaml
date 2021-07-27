@@ -455,7 +455,7 @@ spec:
                             target list import.
                           properties:
                             name:
-                              description: Name the internal name of the imported/exported
+                              description: Name the internal name of the imported
                                 target.
                               type: string
                             target:

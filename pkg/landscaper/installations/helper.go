@@ -241,7 +241,6 @@ func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client
 	return targetList, nil
 }
 
-// GeReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
 // GetReferenceFromComponentDescriptorDefinition tries to extract a component descriptor reference from a given component descriptor definition
 func GetReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDescriptorDefinition) *lsv1alpha1.ComponentDescriptorReference {
 	if cdDef == nil {
