@@ -118,11 +118,10 @@ func (o *Operation) InstallationContextName() string {
 func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 	return &jsonschema.Validator{
 		Config: &jsonschema.LoaderConfig{
-			LocalTypes:                 o.Inst.Blueprint.Info.LocalTypes,
-			BlueprintFs:                o.Inst.Blueprint.Fs,
-			ComponentDescriptor:        o.ComponentDescriptor,
-			ComponentResolver:          o.ComponentsRegistry(),
-			ComponentReferenceResolver: cdutils.ComponentReferenceResolverFromList(o.ResolvedComponentDescriptorList),
+			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
+			BlueprintFs:         o.Inst.Blueprint.Fs,
+			ComponentDescriptor: o.ComponentDescriptor,
+			ComponentResolver:   o.ComponentsRegistry(),
 		},
 	}
 }

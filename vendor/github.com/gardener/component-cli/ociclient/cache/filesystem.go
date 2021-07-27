@@ -452,7 +452,7 @@ func CalculatePriority(entry IndexEntry, minHits, maxHits int64, oldest, newest 
 	if math.IsNaN(hitsVal) {
 		hitsVal = 0
 	}
-	dateVal := float64(entry.CreatedAt.Unix()-oldest.Unix()) / float64(newest.Unix()-oldest.Unix())
+	dateVal := float64(entry.CreatedAt.UnixNano()-oldest.UnixNano()) / float64(newest.UnixNano()-oldest.UnixNano())
 	if math.IsNaN(dateVal) {
 		dateVal = 0
 	}

@@ -10,6 +10,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -28,7 +29,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 	inst *lsv1alpha1.Installation,
 	subInstTmpl *lsv1alpha1.InstallationTemplate,
 	cd *cdv2.ComponentDescriptor,
-	cdResolveFunc cdutils.ResolveComponentReferenceFunc) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
+	compResolver ctf.ComponentResolver) (*lsv1alpha1.BlueprintDefinition, *lsv1alpha1.ComponentDescriptorDefinition, error) {
 	subBlueprint := &lsv1alpha1.BlueprintDefinition{}
 
 	//store reference to parent component descriptor
@@ -51,7 +52,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		}
 
 		// resolve component descriptor list
-		_, res, err := uri.Get(cd, cdResolveFunc)
+		_, res, err := uri.Get(cd, compResolver)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}
@@ -61,7 +62,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 			return nil, nil, fmt.Errorf("expected a resource from the component descriptor %s", cd.Name)
 		}
 
-		subInstCompDesc, err := uri.GetComponent(cd, cdResolveFunc)
+		subInstCompDesc, err := uri.GetComponent(cd, compResolver)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve component of blueprint ref in component descriptor %s: %w", cd.Name, err)
 		}

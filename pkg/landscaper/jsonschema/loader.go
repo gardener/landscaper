@@ -67,8 +67,6 @@ type LoaderConfig struct {
 	ComponentDescriptor *cdv2.ComponentDescriptor
 	// ComponentResolver is a object that can resolve component descriptors.
 	ComponentResolver ctf.ComponentResolver
-	// ComponentReferenceResolver is a function that resolves component references
-	ComponentReferenceResolver cdutils.ResolveComponentReferenceFunc
 	// DefaultLoader is the fallback loader that is used of the protocol is unknown.
 	DefaultLoader gojsonschema.JSONLoader
 }
@@ -166,14 +164,14 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 	if l.ComponentDescriptor == nil {
 		return nil, errors.New("no component descriptor defined to resolve the ref")
 	}
-	if l.ComponentReferenceResolver == nil {
+	if l.ComponentResolver == nil {
 		return nil, errors.New("no component reference resolver defined to resolve the ref")
 	}
 	uri, err := cdutils.ParseURI(refURL.String())
 	if err != nil {
 		return nil, err
 	}
-	cd, res, err := uri.GetResource(l.ComponentDescriptor, l.ComponentReferenceResolver)
+	cd, res, err := uri.GetResource(l.ComponentDescriptor, l.ComponentResolver)
 	if err != nil {
 		return nil, err
 	}
