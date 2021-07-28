@@ -245,7 +245,7 @@ var _ = Describe("SubInstallation", func() {
 		})
 	})
 
-	Context("#Update", func() {
+	Context("Update", func() {
 
 		It("should update a reference even if nothing has changed to trigger a reconcile", func() {
 			ctx := context.Background()
