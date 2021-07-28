@@ -73,23 +73,23 @@ func (o *Options) parseConfigurationFile(ctx context.Context) (*config.Landscape
 	decoder := serializer.NewCodecFactory(api.ConfigScheme).UniversalDecoder()
 
 	configv1alpha1 := &v1alpha1.LandscaperConfiguration{}
+
+	if len(o.ConfigPath) != 0 {
+		data, err := ioutil.ReadFile(o.ConfigPath)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, _, err := decoder.Decode(data, nil, configv1alpha1); err != nil {
+			return nil, err
+		}
+	}
+
 	api.ConfigScheme.Default(configv1alpha1)
+
 	config := &config.LandscaperConfiguration{}
 	err := api.ConfigScheme.Convert(configv1alpha1, config, ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	if len(o.ConfigPath) == 0 {
-		return config, nil
-	}
-
-	data, err := ioutil.ReadFile(o.ConfigPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, _, err := decoder.Decode(data, nil, config); err != nil {
 		return nil, err
 	}
 
