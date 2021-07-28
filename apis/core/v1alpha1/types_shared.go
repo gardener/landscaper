@@ -272,6 +272,7 @@ type VersionedNamedObjectReference struct {
 type SecretReference struct {
 	ObjectReference `json:",inline"`
 	// Key is the name of the key in the secret that holds the data.
+	// +optional
 	Key string `json:"key"`
 }
 
@@ -280,6 +281,7 @@ type SecretReference struct {
 type ConfigMapReference struct {
 	ObjectReference `json:",inline"`
 	// Key is the name of the key in the configmap that holds the data.
+	// +optional
 	Key string `json:"key"`
 }
 

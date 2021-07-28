@@ -15,8 +15,7 @@
       "description": "ConfigMapReference is reference to data in a configmap. The configmap can also be in a different namespace.",
       "type": "object",
       "required": [
-        "name",
-        "key"
+        "name"
       ],
       "properties": {
         "key": {
@@ -235,8 +234,7 @@
       "description": "SecretReference is reference to data in a secret. The secret can also be in a different namespace.",
       "type": "object",
       "required": [
-        "name",
-        "key"
+        "name"
       ],
       "properties": {
         "key": {

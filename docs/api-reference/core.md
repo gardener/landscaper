@@ -1776,6 +1776,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Key is the name of the key in the configmap that holds the data.</p>
 </td>
 </tr>
@@ -3965,6 +3966,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Key is the name of the key in the secret that holds the data.</p>
 </td>
 </tr>

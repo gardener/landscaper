@@ -276,23 +276,13 @@ func ValidateObjectReferenceList(orl []core.ObjectReference, fldPath *field.Path
 // ValidateSecretReference validates that the secret reference is valid
 func ValidateSecretReference(sr core.SecretReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-
 	allErrs = append(allErrs, ValidateObjectReference(sr.ObjectReference, fldPath)...)
-	if sr.Key == "" {
-		allErrs = append(allErrs, field.Required(fldPath.Child("key"), "key must not be empty"))
-	}
-
 	return allErrs
 }
 
 // ValidateConfigMapReference validates that the secret reference is valid
 func ValidateConfigMapReference(cmr core.ConfigMapReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-
 	allErrs = append(allErrs, ValidateObjectReference(cmr.ObjectReference, fldPath)...)
-	if cmr.Key == "" {
-		allErrs = append(allErrs, field.Required(fldPath.Child("key"), "key must not be empty"))
-	}
-
 	return allErrs
 }

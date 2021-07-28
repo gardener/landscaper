@@ -2774,7 +2774,7 @@ func schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"name", "key"},
+				Required: []string{"name"},
 			},
 		},
 	}
@@ -4940,7 +4940,7 @@ func schema_landscaper_apis_core_v1alpha1_SecretReference(ref common.ReferenceCa
 						},
 					},
 				},
-				Required: []string{"name", "key"},
+				Required: []string{"name"},
 			},
 		},
 	}

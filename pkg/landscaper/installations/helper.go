@@ -6,6 +6,7 @@ package installations
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -129,24 +130,69 @@ func GetDataImport(ctx context.Context,
 		if err := kubeClient.Get(ctx, dataImport.SecretRef.NamespacedName(), secret); err != nil {
 			return nil, nil, err
 		}
-		data, ok := secret.Data[dataImport.SecretRef.Key]
-		if !ok {
-			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.SecretRef.Key, dataImport.SecretRef.NamespacedName().String())
-		}
+
 		rawDataObject = &lsv1alpha1.DataObject{}
-		rawDataObject.Data.RawMessage = data
+		if len(dataImport.SecretRef.Key) != 0 {
+			data, ok := secret.Data[dataImport.SecretRef.Key]
+			if !ok {
+				return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.SecretRef.Key, dataImport.SecretRef.NamespacedName().String())
+			}
+			rawDataObject.Data.RawMessage = data
+		} else {
+			// use the whole secret as map
+			data, err := json.Marshal(ByteMapToRawMessageMap(secret.Data))
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to marshal secret data as map: %w", err)
+			}
+			rawDataObject.Data.RawMessage = data
+		}
+
+		// set the generation as it is used to detect outdated imports.
+		rawDataObject.SetGeneration(secret.Generation)
 	}
 	if dataImport.ConfigMapRef != nil {
 		cm := &corev1.ConfigMap{}
 		if err := kubeClient.Get(ctx, dataImport.ConfigMapRef.NamespacedName(), cm); err != nil {
 			return nil, nil, err
 		}
-		data, ok := cm.Data[dataImport.ConfigMapRef.Key]
-		if !ok {
-			return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.ConfigMapRef.Key, dataImport.ConfigMapRef.NamespacedName().String())
-		}
+
 		rawDataObject = &lsv1alpha1.DataObject{}
-		rawDataObject.Data.RawMessage = []byte(data)
+		if cm.Data != nil {
+			if len(dataImport.ConfigMapRef.Key) != 0 {
+				data, ok := cm.Data[dataImport.ConfigMapRef.Key]
+				if !ok {
+					return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.ConfigMapRef.Key, dataImport.ConfigMapRef.NamespacedName().String())
+				}
+				rawDataObject.Data.RawMessage = []byte(data)
+			} else {
+				// use whole configmap as json object
+				data, err := json.Marshal(StringMapToRawMessageMap(cm.Data))
+				if err != nil {
+					return nil, nil, fmt.Errorf("unable to marshal configmap data as map: %w", err)
+				}
+				rawDataObject.Data.RawMessage = data
+			}
+		} else if cm.BinaryData != nil {
+			if len(dataImport.ConfigMapRef.Key) != 0 {
+				data, ok := cm.BinaryData[dataImport.ConfigMapRef.Key]
+				if !ok {
+					return nil, nil, fmt.Errorf("key %s in %s does not exist", dataImport.ConfigMapRef.Key, dataImport.ConfigMapRef.NamespacedName().String())
+				}
+				rawDataObject.Data.RawMessage = data
+			} else {
+				// use whole configmap as json object
+				data, err := json.Marshal(ByteMapToRawMessageMap(cm.BinaryData))
+				if err != nil {
+					return nil, nil, fmt.Errorf("unable to marshal configmap data as map: %w", err)
+				}
+				rawDataObject.Data.RawMessage = data
+			}
+		} else {
+			return nil, nil, fmt.Errorf("no data defined in the referenced configmap %s", cm.Name)
+		}
+
+		// set the generation as it is used to detect outdated imports.
+		rawDataObject.SetGeneration(cm.Generation)
 	}
 
 	do, err := dataobjects.NewFromDataObject(rawDataObject)
@@ -257,4 +303,22 @@ func GetReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDe
 	}
 
 	return cdDef.Reference
+}
+
+// ByteMapToRawMessageMap converts a map of bytes to a map of json.RawMessages
+func ByteMapToRawMessageMap(m map[string][]byte) map[string]json.RawMessage {
+	n := make(map[string]json.RawMessage, len(m))
+	for key, val := range m {
+		n[key] = json.RawMessage(val)
+	}
+	return n
+}
+
+// StringMapToRawMessageMap converts a map of strings to a map of json.RawMessages
+func StringMapToRawMessageMap(m map[string]string) map[string]json.RawMessage {
+	n := make(map[string]json.RawMessage, len(m))
+	for key, val := range m {
+		n[key] = json.RawMessage(val)
+	}
+	return n
 }

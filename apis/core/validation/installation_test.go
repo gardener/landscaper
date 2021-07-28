@@ -402,10 +402,6 @@ var _ = Describe("Installation", func() {
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.data[0].secretRef.namespace"),
 			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.data[0].secretRef.key"),
-			}))))
 		})
 
 		It("should fail if secret imports contain empty values", func() {
@@ -426,10 +422,6 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("imports.data[0].configMapRef.namespace"),
-			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("imports.data[0].configMapRef.key"),
 			}))))
 		})
 
