@@ -5,6 +5,8 @@
 package dataobjects
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,6 +34,14 @@ type Metadata struct {
 	SourceType lsv1alpha1.DataObjectSourceType
 	Source     string
 	Key        string
+	Hash       string
+}
+
+// generateHash returns the internal data generation function for dataobjects or targets.
+func generateHash(data []byte) string {
+	h := sha1.New()
+	_, _ = h.Write(data) // will never throw an error
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // New creates a new internal dataobject.
@@ -48,12 +58,12 @@ func NewFromDataObject(do *lsv1alpha1.DataObject) (*DataObject, error) {
 	return &DataObject{
 		Raw:      do,
 		Data:     data,
-		Metadata: GetMetadataFromObject(do),
+		Metadata: GetMetadataFromObject(do, do.Data.RawMessage),
 	}, nil
 }
 
 // GetMetadataFromObject read optional metadata from object's labels and annotations
-func GetMetadataFromObject(objAcc metav1.Object) Metadata {
+func GetMetadataFromObject(objAcc metav1.Object, data []byte) Metadata {
 	meta := Metadata{}
 	if objAcc.GetLabels() != nil {
 		labels := objAcc.GetLabels()
@@ -69,6 +79,12 @@ func GetMetadataFromObject(objAcc metav1.Object) Metadata {
 		if key, ok := labels[lsv1alpha1.DataObjectKeyLabel]; ok {
 			meta.Key = key
 		}
+	}
+	if hash, ok := objAcc.GetAnnotations()[lsv1alpha1.DataObjectHashAnnotation]; ok {
+		meta.Hash = hash
+	} else if data != nil {
+		// calculate the hash based on the data
+		meta.Hash = generateHash(data)
 	}
 	return meta
 }
@@ -93,6 +109,14 @@ func SetMetadataFromObject(objAcc metav1.Object, meta Metadata) {
 	}
 
 	objAcc.SetLabels(labels)
+
+	ann := objAcc.GetAnnotations()
+	if ann == nil {
+		ann = map[string]string{}
+	}
+	ann[lsv1alpha1.DataObjectHashAnnotation] = meta.Hash
+
+	objAcc.SetAnnotations(ann)
 }
 
 // GetData searches its data for the given Javascript Object Notation path
@@ -149,6 +173,7 @@ func (do DataObject) Build() (*lsv1alpha1.DataObject, error) {
 	if err != nil {
 		return nil, err
 	}
+	do.Metadata.Hash = generateHash(raw.Data.RawMessage)
 	SetMetadataFromObject(raw, do.Metadata)
 	return raw, nil
 }
@@ -164,6 +189,7 @@ func (do DataObject) Apply(raw *lsv1alpha1.DataObject) error {
 	if err != nil {
 		return err
 	}
+	do.Metadata.Hash = generateHash(raw.Data.RawMessage)
 	SetMetadataFromObject(raw, do.Metadata)
 	return nil
 }

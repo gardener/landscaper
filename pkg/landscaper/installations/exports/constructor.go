@@ -151,7 +151,7 @@ func (c *Constructor) aggregateDataObjectsInContext(ctx context.Context) (map[st
 
 	aggDataObjects := map[string]interface{}{}
 	for _, do := range dataObjectList.Items {
-		meta := dataobjects.GetMetadataFromObject(&do)
+		meta := dataobjects.GetMetadataFromObject(&do, do.Data.RawMessage)
 		var data interface{}
 		if err := yaml.Unmarshal(do.Data.RawMessage, &data); err != nil {
 			return nil, fmt.Errorf("error while decoding data object %s: %w", do.Name, err)
@@ -170,7 +170,7 @@ func (c *Constructor) aggregateTargetsInContext(ctx context.Context) (map[string
 
 	aggTargets := map[string]interface{}{}
 	for _, target := range targetList.Items {
-		meta := dataobjects.GetMetadataFromObject(&target)
+		meta := dataobjects.GetMetadataFromObject(&target, target.Spec.Configuration.RawMessage)
 		raw, err := json.Marshal(target)
 		if err != nil {
 			return nil, fmt.Errorf("error while encoding target %s: %w", target.Name, err)

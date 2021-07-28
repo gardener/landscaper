@@ -109,8 +109,12 @@ func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *Installation
 }
 
 // GetDataImport fetches the data import from the cluster.
-func GetDataImport(ctx context.Context, kubeClient client.Client, contextName string, inst *InstallationBase,
+func GetDataImport(ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
+	inst *InstallationBase,
 	dataImport lsv1alpha1.DataImport) (*dataobjects.DataObject, *v1.OwnerReference, error) {
+
 	var rawDataObject *lsv1alpha1.DataObject
 	// get deploy item from current context
 	if len(dataImport.DataRef) != 0 {
@@ -131,8 +135,6 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
 		rawDataObject.Data.RawMessage = data
-		// set the generation as it is used to detect outdated imports.
-		rawDataObject.SetGeneration(secret.Generation)
 	}
 	if dataImport.ConfigMapRef != nil {
 		cm := &corev1.ConfigMap{}
@@ -145,8 +147,6 @@ func GetDataImport(ctx context.Context, kubeClient client.Client, contextName st
 		}
 		rawDataObject = &lsv1alpha1.DataObject{}
 		rawDataObject.Data.RawMessage = []byte(data)
-		// set the generation as it is used to detect outdated imports.
-		rawDataObject.SetGeneration(cm.Generation)
 	}
 
 	do, err := dataobjects.NewFromDataObject(rawDataObject)

@@ -143,7 +143,7 @@ func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *fiel
 
 	// we cannot validate if the source is not an installation
 	if owner == nil || owner.Kind != "Installation" {
-		if strconv.Itoa(int(do.Raw.Generation)) != importStatus.ConfigGeneration {
+		if do.Metadata.Hash != importStatus.ConfigGeneration {
 			return true, nil
 		}
 

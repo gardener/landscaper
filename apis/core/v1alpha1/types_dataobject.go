@@ -35,6 +35,9 @@ const DataObjectKeyLabel = "data.landscaper.gardener.cloud/key"
 // DataObjectSourceLabel defines the name of the label that specifies the source of the dataobject.
 const DataObjectSourceLabel = "data.landscaper.gardener.cloud/source"
 
+// DataObjectHashAnnotation defines the name of the annotation that specifies the hash of the data.
+const DataObjectHashAnnotation = "data.landscaper.gardener.cloud/hash"
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataObjectList contains a list of DataObject

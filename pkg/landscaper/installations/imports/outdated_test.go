@@ -137,7 +137,9 @@ var _ = Describe("OutdatedImports", func() {
 
 		It("should return that no imports are outdated", func() {
 			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+			instRoot := fakeInstallations["test1/root"]
+			instRoot.Status.Imports[0].ConfigGeneration = "d62a6724cde91ae43d5946a9dcb581b873194b74"
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Inst = inInstRoot

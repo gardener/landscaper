@@ -32,7 +32,7 @@ func NewTarget() *Target {
 func NewFromTarget(target *lsv1alpha1.Target) (*Target, error) {
 	return &Target{
 		Raw:      target,
-		Metadata: GetMetadataFromObject(target),
+		Metadata: GetMetadataFromObject(target, target.Spec.Configuration.RawMessage),
 		Owner:    kubernetes.GetOwner(target.ObjectMeta),
 	}, nil
 }
@@ -100,7 +100,9 @@ func (t Target) Build() (*lsv1alpha1.Target, error) {
 		for key, val := range t.Raw.Labels {
 			kutil.SetMetaDataLabel(newTarget, key, val)
 		}
+		t.Metadata.Hash = generateHash(t.Raw.Spec.Configuration.RawMessage)
 	}
+
 	SetMetadataFromObject(newTarget, t.Metadata)
 	t.Raw = newTarget
 	return newTarget, nil
@@ -111,6 +113,7 @@ func (t Target) Apply(raw *lsv1alpha1.Target) error {
 	raw.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	raw.Namespace = t.Metadata.Namespace
 	raw.Spec = t.Raw.Spec
+	t.Metadata.Hash = generateHash(t.Raw.Spec.Configuration.RawMessage)
 	SetMetadataFromObject(raw, t.Metadata)
 	return nil
 }

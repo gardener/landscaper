@@ -172,7 +172,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = strconv.Itoa(int(do.Raw.Generation))
+			configGen = do.Metadata.Hash
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if owner != nil && owner.Kind == "Installation" {
