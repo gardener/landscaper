@@ -71,27 +71,29 @@ func (o *Options) Complete(ctx context.Context) error {
 
 func (o *Options) parseConfigurationFile(ctx context.Context) (*config.LandscaperConfiguration, error) {
 	decoder := serializer.NewCodecFactory(api.ConfigScheme).UniversalDecoder()
-	if len(o.ConfigPath) == 0 {
-		configv1alpha1 := &v1alpha1.LandscaperConfiguration{}
-		api.ConfigScheme.Default(configv1alpha1)
-		config := &config.LandscaperConfiguration{}
-		err := api.ConfigScheme.Convert(configv1alpha1, config, ctx)
+
+	configv1alpha1 := &v1alpha1.LandscaperConfiguration{}
+
+	if len(o.ConfigPath) != 0 {
+		data, err := ioutil.ReadFile(o.ConfigPath)
 		if err != nil {
 			return nil, err
 		}
-		return config, nil
+
+		if _, _, err := decoder.Decode(data, nil, configv1alpha1); err != nil {
+			return nil, err
+		}
 	}
-	data, err := ioutil.ReadFile(o.ConfigPath)
+
+	api.ConfigScheme.Default(configv1alpha1)
+
+	config := &config.LandscaperConfiguration{}
+	err := api.ConfigScheme.Convert(configv1alpha1, config, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg := &config.LandscaperConfiguration{}
-	if _, _, err := decoder.Decode(data, nil, cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
+	return config, nil
 }
 
 // validates the Options

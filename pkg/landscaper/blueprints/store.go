@@ -99,7 +99,7 @@ func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintSto
 		log = logr.Discard()
 	}
 
-	if len(config.Path) != 0 {
+	if len(config.Path) == 0 {
 		var err error
 		config.Path, err = vfs.TempDir(baseFs, baseFs.FSTempDir(), "bsStore")
 		if err != nil {
