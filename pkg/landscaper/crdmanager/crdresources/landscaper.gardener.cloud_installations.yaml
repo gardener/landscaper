@@ -446,7 +446,6 @@ spec:
                               type: string
                           required:
                           - name
-                          - key
                           type: object
                         dataRef:
                           description: DataRef is the name of the in-cluster data
@@ -474,7 +473,6 @@ spec:
                               type: string
                           required:
                           - name
-                          - key
                           type: object
                         version:
                           description: Version specifies the imported data version.

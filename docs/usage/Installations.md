@@ -291,6 +291,25 @@ By default dataobjects are used but for usability users can directly specify sec
 Dataobjects are the internal format of the landscaper for its data flow, therefore they are [contextified](../concepts/Context.md) by default and can also be referenced directly by their name. 
 To reference a dataobject directly, prefix the `dataRef` with `#`.
 
+Data can be also imported using secrets or configmaps.
+A secret/configmap is referenced using its name, namespace and key inside data section.
+The namespace is optional and will be defaulted to the namespace of the installation.
+The key is also optional and if omitted the whole data section is used as object.
+
+e.g. 
+```yaml
+apiVersion: v1
+kind: Secret
+data:
+  seedBackupCredentials: <base64 of accessKeyID + secretAccessKey>
+# can be also written as
+apiVersion: v1
+kind: Secret
+data:
+  accessKeyID: <id>
+  secretAccessKey: <more secret stuff>
+```
+
 ```yaml
 imports:
   data:
@@ -299,13 +318,13 @@ imports:
   - name: my-import
     secretRef: 
       name: ""
-      namespace: ""
-      key: ""
+      namespace: "" #  optional, defaulted to installation namespace
+      key: "" # optional
   - name: my-import
     configMapRef: 
       name: ""
-      namespace: ""
-      key: ""
+      namespace: "" #  optional, defaulted to installation namespace
+      key: "" # optional
 ```
 
 ### Target Imports

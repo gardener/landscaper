@@ -2,28 +2,30 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package installations
+package installations_test
 
 import (
 	"context"
 
-	g "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-var _ = g.Describe("helper", func() {
+var _ = Describe("helper", func() {
 
-	g.Context("IsRoot", func() {
+	Context("IsRoot", func() {
 
-		g.It("should validate that a installation with a non Installation type owner is a root installation", func() {
+		It("should validate that a installation with a non Installation type owner is a root installation", func() {
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "inst"
 			inst.Namespace = "default"
@@ -35,11 +37,11 @@ var _ = g.Describe("helper", func() {
 			err := controllerutil.SetOwnerReference(owner, inst, scheme.Scheme)
 			Expect(err).ToNot(HaveOccurred())
 
-			isRoot := IsRootInstallation(inst)
+			isRoot := installations.IsRootInstallation(inst)
 			Expect(isRoot).To(BeTrue())
 		})
 
-		g.It("should validate that a installation with a installation owner is not a root installation", func() {
+		It("should validate that a installation with a installation owner is not a root installation", func() {
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "inst"
 			inst.Namespace = "default"
@@ -51,24 +53,24 @@ var _ = g.Describe("helper", func() {
 			err := controllerutil.SetOwnerReference(owner, inst, api.LandscaperScheme)
 			Expect(err).ToNot(HaveOccurred())
 
-			isRoot := IsRootInstallation(inst)
+			isRoot := installations.IsRootInstallation(inst)
 			Expect(isRoot).To(BeFalse())
 		})
 	})
 
-	g.Context("GetDataImport", func() {
+	Context("GetDataImport", func() {
 
 		var (
 			kubeClient client.Client
 		)
 
-		g.BeforeEach(func() {
+		BeforeEach(func() {
 			var err error
 			kubeClient, _, err = envtest.NewFakeClientFromPath("")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		g.It("should get an import from a dataobject", func() {
+		It("should get an import from a dataobject", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			data := &lsv1alpha1.DataObject{}
@@ -77,13 +79,13 @@ var _ = g.Describe("helper", func() {
 			data.Data = lsv1alpha1.NewAnyJSON([]byte("\"val1\""))
 			Expect(kubeClient.Create(ctx, data)).To(Succeed())
 
-			inst := &Installation{
-				InstallationBase: InstallationBase{
+			inst := &installations.Installation{
+				InstallationBase: installations.InstallationBase{
 					Info: &lsv1alpha1.Installation{},
 				},
 			}
 			inst.Info.Namespace = data.Namespace
-			do, owner, err := GetDataImport(ctx, kubeClient, "", &inst.InstallationBase, lsv1alpha1.DataImport{
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &inst.InstallationBase, lsv1alpha1.DataImport{
 				Name:    "imp",
 				DataRef: "#test-do",
 			})
@@ -92,24 +94,24 @@ var _ = g.Describe("helper", func() {
 			Expect(do.Data).To(Equal("val1"))
 		})
 
-		g.It("should throw an error if the dataobject does not exist", func() {
+		It("should throw an error if the dataobject does not exist", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 
-			inst := &Installation{
-				InstallationBase: InstallationBase{
+			inst := &installations.Installation{
+				InstallationBase: installations.InstallationBase{
 					Info: &lsv1alpha1.Installation{},
 				},
 			}
 			inst.Info.Namespace = "default"
-			_, _, err := GetDataImport(ctx, kubeClient, "", &inst.InstallationBase, lsv1alpha1.DataImport{
+			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &inst.InstallationBase, lsv1alpha1.DataImport{
 				Name:    "imp",
 				DataRef: "#test-do",
 			})
 			Expect(err).To(HaveOccurred())
 		})
 
-		g.It("should get an import from a configmap", func() {
+		It("should get an import from a configmap", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			cm := &corev1.ConfigMap{}
@@ -120,7 +122,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			do, owner, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -135,7 +137,33 @@ var _ = g.Describe("helper", func() {
 			Expect(do.Data).To(Equal("val1"))
 		})
 
-		g.It("should throw an error if the imported key of a configmap does not exist", func() {
+		It("should get an import from a configmap's binary data", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			cm := &corev1.ConfigMap{}
+			cm.Name = "test-cm"
+			cm.Namespace = "default"
+			cm.BinaryData = map[string][]byte{
+				"key1": []byte("\"val1\""),
+			}
+			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
+
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
+				Name: "imp",
+				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
+					ObjectReference: lsv1alpha1.ObjectReference{
+						Name:      cm.Name,
+						Namespace: cm.Namespace,
+					},
+					Key: "key1",
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(owner).To(BeNil())
+			Expect(do.Data).To(Equal("val1"))
+		})
+
+		It("should get an import from a whole configmap as object", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			cm := &corev1.ConfigMap{}
@@ -146,7 +174,35 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
-			_, _, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
+				Name: "imp",
+				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
+					ObjectReference: lsv1alpha1.ObjectReference{
+						Name:      cm.Name,
+						Namespace: cm.Namespace,
+					},
+					Key: "",
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(owner).To(BeNil())
+			Expect(do.Data).To(Equal(map[string]interface{}{
+				"key1": "val1",
+			}))
+		})
+
+		It("should throw an error if the imported key of a configmap does not exist", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			cm := &corev1.ConfigMap{}
+			cm.Name = "test-cm"
+			cm.Namespace = "default"
+			cm.Data = map[string]string{
+				"key1": "\"val1\"",
+			}
+			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
+
+			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -159,7 +215,7 @@ var _ = g.Describe("helper", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		g.It("should get an import from a secret", func() {
+		It("should get an import from a secret", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			secret := &corev1.Secret{}
@@ -170,7 +226,7 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			do, owner, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				SecretRef: &lsv1alpha1.SecretReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
@@ -185,7 +241,7 @@ var _ = g.Describe("helper", func() {
 			Expect(do.Data).To(Equal("val1"))
 		})
 
-		g.It("should throw an error if the imported key of a secret does not exist", func() {
+		It("should get an import from a whole secret", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			secret := &corev1.Secret{}
@@ -196,7 +252,35 @@ var _ = g.Describe("helper", func() {
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
-			_, _, err := GetDataImport(ctx, kubeClient, "", &InstallationBase{}, lsv1alpha1.DataImport{
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
+				Name: "imp",
+				SecretRef: &lsv1alpha1.SecretReference{
+					ObjectReference: lsv1alpha1.ObjectReference{
+						Name:      secret.Name,
+						Namespace: secret.Namespace,
+					},
+					Key: "",
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(owner).To(BeNil())
+			Expect(do.Data).To(Equal(map[string]interface{}{
+				"key1": "val1",
+			}))
+		})
+
+		It("should throw an error if the imported key of a secret does not exist", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			secret := &corev1.Secret{}
+			secret.Name = "test-secret"
+			secret.Namespace = "default"
+			secret.Data = map[string][]byte{
+				"key1": []byte("\"val1\""),
+			}
+			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
+
+			_, _, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
 				Name: "imp",
 				SecretRef: &lsv1alpha1.SecretReference{
 					ObjectReference: lsv1alpha1.ObjectReference{
