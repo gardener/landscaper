@@ -120,7 +120,7 @@ func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintSto
 		gcConfig: config.GarbageCollectionConfiguration,
 	}
 
-	if config.Size != "0" && config.Size != "" {
+	if config.Size != "0" {
 		quantity, err := resource.ParseQuantity(config.Size)
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse size %q: %w", config.Size, err)
