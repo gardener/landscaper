@@ -31,6 +31,24 @@
           "default": ""
         }
       }
+    },
+    "utils-managedresource-ManagedResourceStatus": {
+      "description": "ManagedResourceStatus describes the managed resource and their metadata.",
+      "type": "object",
+      "required": [
+        "resource"
+      ],
+      "properties": {
+        "policy": {
+          "description": "Policy defines the manage policy for that resource.",
+          "type": "string"
+        },
+        "resource": {
+          "description": "Resources describes the managed kubernetes resource.",
+          "default": {},
+          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        }
+      }
     }
   },
   "description": "ProviderStatus is the helm provider specific status",
@@ -46,7 +64,7 @@
     "managedResources": {
       "description": "ManagedResources contains all kubernetes resources that are deployed by the helm deployer.",
       "items": {
-        "$ref": "#/definitions/core-v1alpha1-TypedObjectReference",
+        "$ref": "#/definitions/utils-managedresource-ManagedResourceStatus",
         "default": {}
       },
       "type": "array"

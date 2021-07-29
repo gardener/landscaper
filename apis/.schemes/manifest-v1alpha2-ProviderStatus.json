@@ -32,7 +32,7 @@
         }
       }
     },
-    "manifest-v1alpha2-ManagedResourceStatus": {
+    "utils-managedresource-ManagedResourceStatus": {
       "description": "ManagedResourceStatus describes the managed resource and their metadata.",
       "type": "object",
       "required": [
@@ -64,7 +64,7 @@
     "managedResources": {
       "description": "ManagedResources contains all kubernetes resources that are deployed by the deployer.",
       "items": {
-        "$ref": "#/definitions/manifest-v1alpha2-ManagedResourceStatus",
+        "$ref": "#/definitions/utils-managedresource-ManagedResourceStatus",
         "default": {}
       },
       "type": "array"

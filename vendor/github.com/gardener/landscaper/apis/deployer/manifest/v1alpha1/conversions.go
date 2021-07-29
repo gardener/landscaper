@@ -8,15 +8,17 @@ import (
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/apis/deployer/manifest"
+	manifestcore "github.com/gardener/landscaper/apis/deployer/manifest"
 )
 
 // Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration is an manual conversion function.
-func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifest.ProviderConfiguration, s conversion.Scope) error {
+func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in *ProviderConfiguration, out *manifestcore.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
-	out.UpdateStrategy = manifest.UpdateStrategy(in.UpdateStrategy)
+	out.UpdateStrategy = manifestcore.UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
 	if in.DeleteTimeout == nil {
 		out.DeleteTimeout = nil
@@ -28,10 +30,10 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 	}
 	if in.Manifests != nil {
 		in, out := &in.Manifests, &out.Manifests
-		*out = make([]manifest.Manifest, len(*in))
+		*out = make([]managedresource.Manifest, len(*in))
 		for i := range *in {
-			(*out)[i] = manifest.Manifest{
-				Policy:   manifest.ManagePolicy,
+			(*out)[i] = managedresource.Manifest{
+				Policy:   managedresource.ManagePolicy,
 				Manifest: (*in)[i],
 			}
 		}
@@ -42,7 +44,7 @@ func Convert_v1alpha1_ProviderConfiguration_To_manifest_ProviderConfiguration(in
 }
 
 // Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration is an manual conversion function.
-func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifest.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
+func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in *manifestcore.ProviderConfiguration, out *ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = UpdateStrategy(in.UpdateStrategy)
 	out.ReadinessChecks = in.ReadinessChecks
@@ -67,17 +69,17 @@ func Convert_manifest_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 }
 
 // Convert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus is an manual conversion function.
-func Convert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStatus, out *manifest.ProviderStatus, s conversion.Scope) error {
+func Convert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStatus, out *manifestcore.ProviderStatus, s conversion.Scope) error {
 	if in.ManagedResources != nil {
 		in, out := &in.ManagedResources, &out.ManagedResources
-		*out = make([]manifest.ManagedResourceStatus, len(*in))
+		*out = make([]manifestcore.ManagedResourceStatus, len(*in))
 		for i := range *in {
 			tmpOut := &lscore.TypedObjectReference{}
 			if err := lsv1alpha1.Convert_v1alpha1_TypedObjectReference_To_core_TypedObjectReference(&(*in)[i], tmpOut, s); err != nil {
 				return err
 			}
-			(*out)[i] = manifest.ManagedResourceStatus{
-				Policy:   manifest.ManagePolicy,
+			(*out)[i] = manifestcore.ManagedResourceStatus{
+				Policy:   managedresource.ManagePolicy,
 				Resource: (*in)[i],
 			}
 		}
@@ -88,7 +90,7 @@ func Convert_v1alpha1_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStat
 }
 
 // Convert_manifest_ProviderStatus_To_v1alpha1_ProviderStatus is an manual conversion function.
-func Convert_manifest_ProviderStatus_To_v1alpha1_ProviderStatus(in *manifest.ProviderStatus, out *ProviderStatus, s conversion.Scope) error {
+func Convert_manifest_ProviderStatus_To_v1alpha1_ProviderStatus(in *manifestcore.ProviderStatus, out *ProviderStatus, s conversion.Scope) error {
 	if in.ManagedResources != nil {
 		in, out := &in.ManagedResources, &out.ManagedResources
 		*out = make([]lsv1alpha1.TypedObjectReference, len(*in))

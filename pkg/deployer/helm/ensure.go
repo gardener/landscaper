@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -51,7 +53,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 				APIVersion: helmv1alpha1.SchemeGroupVersion.String(),
 				Kind:       "ProviderStatus",
 			},
-			ManagedResources: make([]lsv1alpha1.TypedObjectReference, 0),
+			ManagedResources: make(managedresource.ManagedResourceStatusList, 0),
 		}
 	}
 
@@ -64,7 +66,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		h.injectLabels(obj)
 	}
 
-	managedResources := make([]lsv1alpha1.TypedObjectReference, len(objects))
+	managedResources := make(managedresource.ManagedResourceStatusList, len(objects))
 	for i, obj := range objects {
 		// need to default the namespace if it is not given, as some helmcharts
 		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
@@ -76,12 +78,15 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			return err
 		}
 
-		managedResources[i] = lsv1alpha1.TypedObjectReference{
-			APIVersion: obj.GetAPIVersion(),
-			Kind:       obj.GetKind(),
-			ObjectReference: lsv1alpha1.ObjectReference{
-				Name:      obj.GetName(),
-				Namespace: obj.GetNamespace(),
+		managedResources[i] = managedresource.ManagedResourceStatus{
+			Policy: managedresource.ManagePolicy,
+			Resource: lsv1alpha1.TypedObjectReference{
+				APIVersion: obj.GetAPIVersion(),
+				Kind:       obj.GetKind(),
+				ObjectReference: lsv1alpha1.ObjectReference{
+					Name:      obj.GetName(),
+					Namespace: obj.GetNamespace(),
+				},
 			},
 		}
 	}
@@ -126,7 +131,7 @@ func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) er
 			CurrentOp:        "DefaultCheckResourcesReadinessHelm",
 			Log:              h.log,
 			Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
-			ManagedResources: h.ProviderStatus.ManagedResources,
+			ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -142,7 +147,7 @@ func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) er
 				Log:              h.log,
 				CurrentOp:        "CustomCheckResourcesReadinessHelm",
 				Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
-				ManagedResources: h.ProviderStatus.ManagedResources,
+				ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 				Configuration:    customReadinessCheckConfig,
 			}
 			err := customReadinessCheck.CheckResourcesReady()
@@ -209,14 +214,14 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 
 	nonCompletedResources := make([]string, 0)
 	for _, ref := range h.ProviderStatus.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		obj := kutil.ObjectFromTypedObjectReference(&ref.Resource)
 		if err := targetClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
 			return err
 		}
-		nonCompletedResources = append(nonCompletedResources, fmt.Sprintf("%s/%s(%s)", ref.Namespace, ref.Name, ref.Kind))
+		nonCompletedResources = append(nonCompletedResources, fmt.Sprintf("%s/%s(%s)", ref.Resource.Namespace, ref.Resource.Name, ref.Resource.Kind))
 	}
 
 	if len(nonCompletedResources) != 0 {
@@ -275,7 +280,7 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects []lsv1alpha1.TypedObjectReference, currentObjects []*unstructured.Unstructured) error {
+func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects managedresource.ManagedResourceStatusList, currentObjects []*unstructured.Unstructured) error {
 	//objectList := &unstructured.UnstructuredList{}
 	//if err := lsKubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
 	//	return fmt.Errorf("unable to list all managed resources: %w", err)
@@ -285,8 +290,8 @@ func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.C
 		wg      sync.WaitGroup
 	)
 	for _, ref := range oldObjects {
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(ref.Name, ref.Namespace), obj); err != nil {
+		obj := kutil.ObjectFromTypedObjectReference(&ref.Resource)
+		if err := kubeClient.Get(ctx, kutil.ObjectKey(ref.Resource.Name, ref.Resource.Namespace), obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -385,7 +390,7 @@ func (h *Helm) addExport(exports map[string]interface{}, obj *unstructured.Unstr
 	return utils.MergeMaps(exports, newValue), nil
 }
 
-func (h *Helm) findResource(obj *unstructured.Unstructured) *helmv1alpha1.ExportFromManifestItem {
+func (h *Helm) findResource(obj *unstructured.Unstructured) *managedresource.Export {
 	for _, export := range h.ProviderConfiguration.ExportsFromManifests {
 		if export.FromResource == nil {
 			continue

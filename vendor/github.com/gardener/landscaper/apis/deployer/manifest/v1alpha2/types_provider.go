@@ -6,9 +6,9 @@ package v1alpha2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
@@ -33,33 +33,10 @@ type ProviderConfiguration struct {
 	// +optional
 	DeleteTimeout *lsv1alpha1.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
-	Manifests []Manifest `json:"manifests,omitempty"`
-}
-
-// ManifestPolicy defines the strategy how a mnifest should be managed
-// by the deployer.
-type ManifestPolicy string
-
-const (
-	// ManagePolicy is the default policy where the resource is
-	// created, updated and deleted and it occupies already managed resources
-	ManagePolicy ManifestPolicy = "manage"
-	// FallbackPolicy defines a policy where the resource is created, updated and deleted
-	// but only if not already managed by someone else (check for annotation with landscaper identity, deployitem name + namespace)
-	FallbackPolicy ManifestPolicy = "fallback"
-	// KeepPolicy defines a policy where the resource is only created and updated but not deleted.
-	// It is not deleted when the whole deploy item is nor when the resource is not defined anymore.
-	KeepPolicy ManifestPolicy = "keep"
-	// IgnorePolicy defines a policy where the resource is completely ignored by the deployer.
-	IgnorePolicy ManifestPolicy = "ignore"
-)
-
-// Manifest defines a manifest that is managed by the deployer.
-type Manifest struct {
-	// Policy defines the manage policy for that resource.
-	Policy ManifestPolicy `json:"policy,omitempty"`
-	// Manifest defines the raw k8s manifest.
-	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
+	Manifests []managedresource.Manifest `json:"manifests,omitempty"`
+	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.
+	// +optional
+	Exports []managedresource.Export `json:"exports,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
@@ -76,16 +53,5 @@ const (
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the deployer.
-	ManagedResources ManagedResourceStatusList `json:"managedResources,omitempty"`
-}
-
-// ManagedResourceStatusList describes a list of managed resource statuses.
-type ManagedResourceStatusList []ManagedResourceStatus
-
-// ManagedResourceStatus describes the managed resource and their metadata.
-type ManagedResourceStatus struct {
-	// Policy defines the manage policy for that resource.
-	Policy ManifestPolicy `json:"policy,omitempty"`
-	// Resources describes the managed kubernetes resource.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
 }

@@ -16,6 +16,8 @@ import (
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -32,8 +34,8 @@ type ObjectApplier struct {
 	deployItemName   string
 	deleteTimeout    lsv1alpha1.Duration
 	updateStrategy   manifestv1alpha2.UpdateStrategy
-	manifests        []manifestv1alpha2.Manifest
-	managedResources []manifestv1alpha2.ManagedResourceStatus
+	manifests        []managedresource.Manifest
+	managedResources managedresource.ManagedResourceStatusList
 	managedObjects   []*unstructured.Unstructured
 }
 
@@ -47,10 +49,10 @@ func (a *ObjectApplier) Apply(ctx context.Context) error {
 	// Keep track of the current managed resources before applying so
 	// we can then compare which one need to be cleaned up.
 	oldManagedResources := a.managedResources
-	a.managedResources = make([]manifestv1alpha2.ManagedResourceStatus, 0)
+	a.managedResources = make(managedresource.ManagedResourceStatusList, 0)
 	for i, m := range a.manifests {
 		wg.Add(1)
-		go func(i int, m manifestv1alpha2.Manifest) {
+		go func(i int, m managedresource.Manifest) {
 			defer wg.Done()
 			if err := a.ApplyObject(ctx, i, m); err != nil {
 				errMux.Lock()
@@ -76,8 +78,8 @@ func (a *ObjectApplier) Apply(ctx context.Context) error {
 }
 
 // ApplyObject applies a managed resource to the target cluster.
-func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData manifestv1alpha2.Manifest) error {
-	if manifestData.Policy == manifestv1alpha2.IgnorePolicy {
+func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData managedresource.Manifest) error {
+	if manifestData.Policy == managedresource.IgnorePolicy {
 		return nil
 	}
 	obj := &unstructured.Unstructured{}
@@ -85,7 +87,7 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 		return fmt.Errorf("error while decoding manifest at index %d: %w", i, err)
 	}
 
-	mr := manifestv1alpha2.ManagedResourceStatus{
+	mr := managedresource.ManagedResourceStatus{
 		Policy:   manifestData.Policy,
 		Resource: *kutil.TypedObjectReferenceFromUnstructuredObject(obj),
 	}
@@ -116,7 +118,7 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 
 	// if fallback policy is set and the resource is already managed by another deployer
 	// we are not allowed to manage that resource
-	if manifestData.Policy == manifestv1alpha2.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+	if manifestData.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
 		a.log.Info("resource is already managed", "resource", key.String())
 		return nil
 	}
@@ -145,14 +147,14 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedResources []manifestv1alpha2.ManagedResourceStatus) error {
+func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedResources []managedresource.ManagedResourceStatus) error {
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
 	)
 
 	for _, mr := range managedResources {
-		if mr.Policy == manifestv1alpha2.IgnorePolicy || mr.Policy == manifestv1alpha2.KeepPolicy {
+		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
 			continue
 		}
 		ref := mr.Resource

@@ -9,6 +9,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
@@ -52,7 +54,7 @@ type ProviderConfiguration struct {
 
 	// ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
-	ExportsFromManifests []ExportFromManifestItem `json:"exportsFromManifests,omitempty"`
+	ExportsFromManifests []managedresource.Export `json:"exportsFromManifests,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
@@ -102,20 +104,6 @@ type RemoteArchiveAccess struct {
 	URL string `json:"url,omitempty"`
 }
 
-// ExportFromManifestItem describes one export that is read from the templates values or a templated resource.
-// The value will be by default read from the values if fromResource is not specified.
-type ExportFromManifestItem struct {
-	// Key is the key that the value from JSONPath is exported to.
-	Key string `json:"key"`
-
-	// JSONPath is the jsonpath to look for a value.
-	// The JSONPath root is the referenced resource
-	JSONPath string `json:"jsonPath"`
-
-	// FromResource specifies the name of the resource where the value should be read.
-	FromResource *lsv1alpha1.TypedObjectReference `json:"fromResource,omitempty"`
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderStatus is the helm provider specific status
@@ -123,5 +111,5 @@ type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 
 	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
-	ManagedResources []lsv1alpha1.TypedObjectReference `json:"managedResources,omitempty"`
+	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
 }

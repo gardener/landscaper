@@ -16,6 +16,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 
@@ -65,9 +67,9 @@ func DeployerBlueprintTests(f *framework.Framework) {
 					Key(state.Namespace, "my-di").
 					Target(target.Namespace, target.Name).
 					ProviderConfig(&manifestv1alpha2.ProviderConfiguration{
-						Manifests: []manifestv1alpha2.Manifest{
+						Manifests: []managedresource.Manifest{
 							{
-								Policy:   manifestv1alpha2.ManagePolicy,
+								Policy:   managedresource.ManagePolicy,
 								Manifest: secret,
 							},
 						},

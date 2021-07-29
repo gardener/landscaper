@@ -9,6 +9,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
@@ -29,7 +31,7 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	}
 	for i := range obj.Manifests {
 		if len(obj.Manifests[i].Policy) == 0 {
-			obj.Manifests[i].Policy = ManagePolicy
+			obj.Manifests[i].Policy = managedresource.ManagePolicy
 		}
 	}
 }

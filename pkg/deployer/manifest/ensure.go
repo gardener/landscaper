@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -39,7 +41,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 				APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
 				Kind:       "ProviderStatus",
 			},
-			ManagedResources: make([]manifestv1alpha2.ManagedResourceStatus, 0),
+			ManagedResources: make([]managedresource.ManagedResourceStatus, 0),
 		}
 	}
 
@@ -82,7 +84,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client) error {
 	var managedResources []lsv1alpha1.TypedObjectReference
 	for _, mr := range m.ProviderStatus.ManagedResources {
-		if mr.Policy == manifestv1alpha2.IgnorePolicy {
+		if mr.Policy == managedresource.IgnorePolicy {
 			continue
 		}
 		managedResources = append(managedResources, mr.Resource)
@@ -143,7 +145,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	completed := true
 	for _, mr := range m.ProviderStatus.ManagedResources {
-		if mr.Policy == manifestv1alpha2.IgnorePolicy || mr.Policy == manifestv1alpha2.KeepPolicy {
+		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
 			continue
 		}
 		ref := mr.Resource
