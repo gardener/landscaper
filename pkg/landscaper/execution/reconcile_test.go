@@ -167,6 +167,22 @@ var _ = Describe("Reconcile", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
 		})
+
+		It("should set the status of a previously failed execution to progressing if a deployitem has a newer generation than the last observed generation", func() {
+			ctx := context.Background()
+			exec := fakeExecutions["test2/exec-1"]
+			exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			eOp := execution.NewOperation(op, exec, false)
+
+			deployItemA := fakeDeployItems["test2/di-a"]
+			deployItemA.Generation = 3
+			deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
+
+			err := eOp.Reconcile(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		})
 	})
 
 	It("should not deploy new items if a execution failed", func() {

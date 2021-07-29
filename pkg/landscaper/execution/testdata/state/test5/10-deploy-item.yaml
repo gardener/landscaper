@@ -10,7 +10,7 @@ metadata:
   labels:
     execution.landscaper.gardener.cloud/managed-by: exec-1
     execution.landscaper.gardener.cloud/name: a
-  generation: 1
+  generation: 2
 spec:
   type: landscaper.gardener.cloud/helm
   config:
