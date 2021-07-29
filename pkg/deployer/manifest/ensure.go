@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -53,6 +55,9 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		UpdateStrategy:   m.ProviderConfiguration.UpdateStrategy,
 		Manifests:        m.ProviderConfiguration.Manifests,
 		ManagedResources: m.ProviderStatus.ManagedResources,
+		Labels: map[string]string{
+			manifestv1alpha2.ManagedDeployItemLabel: m.DeployItem.Name,
+		},
 	})
 
 	err = applier.Apply(ctx)
@@ -76,7 +81,28 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 			currOp, "UpdateStatus", err.Error())
 	}
 
-	return m.CheckResourcesReady(ctx, targetClient)
+	if err := m.CheckResourcesReady(ctx, targetClient); err != nil {
+		return err
+	}
+
+	if m.ProviderConfiguration.Exports != nil {
+		opts := resourcemanager.ExporterOptions{
+			KubeClient: targetClient,
+			Objects:    applier.GetManagedResourcesStatus(),
+		}
+		if m.Configuration.Export.DefaultTimeout != nil {
+			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration
+		}
+		exports, err := resourcemanager.NewExporter(m.log, opts).
+			Export(ctx, m.ProviderConfiguration.Exports)
+		if err != nil {
+			return lserrors.NewWrappedError(err,
+				currOp, "ReadExportValues", err.Error())
+		}
+
+		return deployerlib.CreateOrUpdateExport(ctx, m.lsKubeClient, m.DeployItem, exports)
+	}
+	return nil
 }
 
 // CheckResourcesReady checks if the managed resources are Ready/Healthy.
@@ -163,8 +189,6 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		m.DeployItem.Status.LastError = nil
 		return errors.New("not all items are deleted")
 	}
-
-	// remove finalizer
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.lsKubeClient.Update(ctx, m.DeployItem)
 }
