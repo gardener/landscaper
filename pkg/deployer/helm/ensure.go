@@ -8,16 +8,19 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
+
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
@@ -41,12 +44,6 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			currOp, "TargetClusterClient", err.Error())
 	}
 
-	objects, err := kutil.ParseFiles(h.log, files)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "DecodeHelmTemplatedObjects", err.Error())
-	}
-
 	if h.ProviderStatus == nil {
 		h.ProviderStatus = &helmv1alpha1.ProviderStatus{
 			TypeMeta: metav1.TypeMeta{
@@ -57,45 +54,48 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		}
 	}
 
-	for _, obj := range objects {
+	objects, err := kutil.ParseFilesToRawExtension(h.log, files)
+	if err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "DecodeHelmTemplatedObjects", err.Error())
+	}
+	// create manifests from objects for the applier
+	manifests := make([]managedresource.Manifest, len(objects))
+	for i, obj := range objects {
+		manifests[i] = managedresource.Manifest{
+			Policy:   managedresource.ManagePolicy,
+			Manifest: obj,
+		}
+	}
+	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
+		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
+		KubeClient:       targetClient,
+		DefaultNamespace: h.ProviderConfiguration.Namespace,
+		DeployItemName:   h.DeployItem.Name,
+		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
+		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
+		Manifests:        manifests,
+		ManagedResources: h.ProviderStatus.ManagedResources,
+	})
+
+	err = applier.Apply(ctx)
+	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
+	if err != nil {
+		var err2 error
+		h.DeployItem.Status.ProviderStatus, err2 = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
+		if err2 != nil {
+			h.log.Error(err, "unable to encode status")
+		}
+		return err
+	}
+
+	for _, obj := range applier.GetManagedObjects() {
 		exports, err = h.addExport(exports, obj)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				currOp, "ReadExportValues", err.Error())
 		}
 		h.injectLabels(obj)
-	}
-
-	managedResources := make(managedresource.ManagedResourceStatusList, len(objects))
-	for i, obj := range objects {
-		// need to default the namespace if it is not given, as some helmcharts
-		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
-		// todo: check for clusterwide resources
-		if len(obj.GetNamespace()) == 0 {
-			obj.SetNamespace(h.ProviderConfiguration.Namespace)
-		}
-		if err := h.ApplyObject(ctx, targetClient, obj); err != nil {
-			return err
-		}
-
-		managedResources[i] = managedresource.ManagedResourceStatus{
-			Policy: managedresource.ManagePolicy,
-			Resource: lsv1alpha1.TypedObjectReference{
-				APIVersion: obj.GetAPIVersion(),
-				Kind:       obj.GetKind(),
-				ObjectReference: lsv1alpha1.ObjectReference{
-					Name:      obj.GetName(),
-					Namespace: obj.GetNamespace(),
-				},
-			},
-		}
-	}
-	h.ProviderStatus.ManagedResources = managedResources
-
-	if err := h.cleanupOrphanedResources(ctx, targetClient, h.ProviderStatus.ManagedResources, objects); err != nil {
-		err = fmt.Errorf("unable to cleanup orphaned resources: %w", err)
-		return lserrors.NewWrappedError(err,
-			currOp, "CleanupOrphanedResources", err.Error())
 	}
 
 	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
@@ -277,65 +277,6 @@ func (h *Helm) ApplyObject(ctx context.Context, kubeClient client.Client, obj *u
 			currOp, "ApplyObject", err.Error())
 	}
 	return nil
-}
-
-// cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (h *Helm) cleanupOrphanedResources(ctx context.Context, kubeClient client.Client, oldObjects managedresource.ManagedResourceStatusList, currentObjects []*unstructured.Unstructured) error {
-	//objectList := &unstructured.UnstructuredList{}
-	//if err := lsKubeClient.List(ctx, objectList, client.MatchingLabels{helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name}); err != nil {
-	//	return fmt.Errorf("unable to list all managed resources: %w", err)
-	//}
-	var (
-		allErrs []error
-		wg      sync.WaitGroup
-	)
-	for _, ref := range oldObjects {
-		obj := kutil.ObjectFromTypedObjectReference(&ref.Resource)
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(ref.Resource.Name, ref.Resource.Namespace), obj); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
-		}
-
-		if !containsUnstructuredObject(obj, currentObjects) {
-			wg.Add(1)
-			go func(obj *unstructured.Unstructured) {
-				defer wg.Done()
-				// Delete object and ensure it is deleted from the cluster.
-				timeout := h.ProviderConfiguration.DeleteTimeout.Duration
-				err := kutil.DeleteAndWaitForObjectDeleted(ctx, kubeClient, timeout, obj)
-				if err != nil {
-					allErrs = append(allErrs, err)
-				}
-			}(obj)
-		}
-	}
-	wg.Wait()
-
-	if len(allErrs) == 0 {
-		return nil
-	}
-	return apimacherrors.NewAggregate(allErrs)
-}
-
-func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
-	for _, found := range objects {
-		if len(obj.GetUID()) != 0 && len(found.GetUID()) != 0 {
-			if obj.GetUID() == found.GetUID() {
-				return true
-			}
-			continue
-		}
-		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
-		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
-			continue
-		}
-		if found.GetName() == obj.GetName() && found.GetNamespace() == obj.GetNamespace() {
-			return true
-		}
-	}
-	return false
 }
 
 func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {

@@ -10,11 +10,11 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
@@ -45,29 +45,28 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	applier := &ObjectApplier{
-		log:              m.log,
-		decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
-		kubeClient:       targetClient,
-		deployItemName:   m.DeployItem.Name,
-		deleteTimeout:    *m.ProviderConfiguration.DeleteTimeout,
-		updateStrategy:   m.ProviderConfiguration.UpdateStrategy,
-		manifests:        m.ProviderConfiguration.Manifests,
-		managedResources: m.ProviderStatus.ManagedResources,
-	}
+	applier := resourcemanager.NewManifestApplier(m.log, resourcemanager.ManifestApplierOptions{
+		Decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
+		KubeClient:       targetClient,
+		DeployItemName:   m.DeployItem.Name,
+		DeleteTimeout:    m.ProviderConfiguration.DeleteTimeout.Duration,
+		UpdateStrategy:   m.ProviderConfiguration.UpdateStrategy,
+		Manifests:        m.ProviderConfiguration.Manifests,
+		ManagedResources: m.ProviderStatus.ManagedResources,
+	})
 
 	err = applier.Apply(ctx)
-	m.ProviderStatus.ManagedResources = applier.managedResources
+	m.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
 	if err != nil {
 		var err2 error
-		m.DeployItem.Status.ProviderStatus, err2 = encodeStatus(m.ProviderStatus)
+		m.DeployItem.Status.ProviderStatus, err2 = kutil.ConvertToRawExtension(m.ProviderStatus, Scheme)
 		if err2 != nil {
 			m.log.Error(err, "unable to encode status")
 		}
 		return err
 	}
 
-	m.DeployItem.Status.ProviderStatus, err = encodeStatus(m.ProviderStatus)
+	m.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(m.ProviderStatus, Scheme)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
@@ -168,37 +167,4 @@ func (m *Manifest) Delete(ctx context.Context) error {
 	// remove finalizer
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
 	return m.lsKubeClient.Update(ctx, m.DeployItem)
-}
-
-func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
-	for _, found := range objects {
-		if len(obj.GetUID()) != 0 && len(found.GetUID()) != 0 {
-			if obj.GetUID() == found.GetUID() {
-				return true
-			}
-			continue
-		}
-		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
-		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
-			continue
-		}
-		if found.GetName() == obj.GetName() && found.GetNamespace() == obj.GetNamespace() {
-			return true
-		}
-	}
-	return false
-}
-
-func encodeStatus(status *manifestv1alpha2.ProviderStatus) (*runtime.RawExtension, error) {
-	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: manifestv1alpha2.SchemeGroupVersion.String(),
-		Kind:       "ProviderStatus",
-	}
-
-	raw := &runtime.RawExtension{}
-	obj := status.DeepCopyObject()
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
-		return nil, err
-	}
-	return raw, nil
 }

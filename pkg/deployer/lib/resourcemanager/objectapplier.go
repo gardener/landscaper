@@ -2,12 +2,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package manifest
+package resourcemanager
 
 import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,29 +19,68 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// ObjectApplier creates or updated manifest based on their definition.
-type ObjectApplier struct {
-	mux        sync.Mutex
-	log        logr.Logger
-	decoder    runtime.Decoder
-	kubeClient client.Client
+// ManifestApplierOptions describes options for the manifest applier
+type ManifestApplierOptions struct {
+	Decoder          runtime.Decoder
+	KubeClient       client.Client
+	DefaultNamespace string
+
+	DeployItemName   string
+	DeleteTimeout    time.Duration
+	UpdateStrategy   manifestv1alpha2.UpdateStrategy
+	Manifests        []managedresource.Manifest
+	ManagedResources managedresource.ManagedResourceStatusList
+}
+
+// ManifestApplier creates or updated manifest based on their definition.
+type ManifestApplier struct {
+	mux              sync.Mutex
+	log              logr.Logger
+	decoder          runtime.Decoder
+	kubeClient       client.Client
+	defaultNamespace string
 
 	deployItemName   string
-	deleteTimeout    lsv1alpha1.Duration
+	deleteTimeout    time.Duration
 	updateStrategy   manifestv1alpha2.UpdateStrategy
 	manifests        []managedresource.Manifest
 	managedResources managedresource.ManagedResourceStatusList
 	managedObjects   []*unstructured.Unstructured
 }
 
+// NewManifestApplier creates a new manifest deployer
+func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestApplier {
+	return &ManifestApplier{
+		mux:              sync.Mutex{},
+		log:              log,
+		decoder:          opts.Decoder,
+		kubeClient:       opts.KubeClient,
+		defaultNamespace: opts.DefaultNamespace,
+		deployItemName:   opts.DeployItemName,
+		deleteTimeout:    opts.DeleteTimeout,
+		updateStrategy:   opts.UpdateStrategy,
+		manifests:        opts.Manifests,
+		managedResources: opts.ManagedResources,
+	}
+}
+
+// GetManagedResourcesStatus returns the managed resources of the applier.
+func (a *ManifestApplier) GetManagedResourcesStatus() managedresource.ManagedResourceStatusList {
+	return a.managedResources
+}
+
+// GetManagedObjects returns all managed objects as unstructured object.
+func (a *ManifestApplier) GetManagedObjects() []*unstructured.Unstructured {
+	return a.managedObjects
+}
+
 // Apply creates or updates all configured manifests.
-func (a *ObjectApplier) Apply(ctx context.Context) error {
+func (a *ManifestApplier) Apply(ctx context.Context) error {
 	var (
 		allErrs []error
 		errMux  sync.Mutex
@@ -78,13 +118,20 @@ func (a *ObjectApplier) Apply(ctx context.Context) error {
 }
 
 // ApplyObject applies a managed resource to the target cluster.
-func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData managedresource.Manifest) error {
+func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData managedresource.Manifest) error {
 	if manifestData.Policy == managedresource.IgnorePolicy {
 		return nil
 	}
 	obj := &unstructured.Unstructured{}
 	if _, _, err := a.decoder.Decode(manifestData.Manifest.Raw, nil, obj); err != nil {
 		return fmt.Errorf("error while decoding manifest at index %d: %w", i, err)
+	}
+
+	if len(a.defaultNamespace) != 0 && len(obj.GetNamespace()) == 0 {
+		// need to default the namespace if it is not given, as some helmcharts
+		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
+		// todo: check for clusterwide resources
+		obj.SetNamespace(a.defaultNamespace)
 	}
 
 	mr := managedresource.ManagedResourceStatus{
@@ -147,7 +194,7 @@ func (a *ObjectApplier) ApplyObject(ctx context.Context, i int, manifestData man
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.
-func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedResources []managedresource.ManagedResourceStatus) error {
+func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedResources []managedresource.ManagedResourceStatus) error {
 	var (
 		allErrs []error
 		wg      sync.WaitGroup
@@ -171,8 +218,7 @@ func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedRes
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
 				// Delete object and ensure it is actually deleted from the cluster.
-				timeout := a.deleteTimeout.Duration
-				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, timeout, obj)
+				err := kutil.DeleteAndWaitForObjectDeleted(ctx, a.kubeClient, a.deleteTimeout, obj)
 				if err != nil {
 					allErrs = append(allErrs, err)
 				}
@@ -185,4 +231,23 @@ func (a *ObjectApplier) cleanupOrphanedResources(ctx context.Context, managedRes
 		return nil
 	}
 	return apimacherrors.NewAggregate(allErrs)
+}
+
+func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
+	for _, found := range objects {
+		if len(obj.GetUID()) != 0 && len(found.GetUID()) != 0 {
+			if obj.GetUID() == found.GetUID() {
+				return true
+			}
+			continue
+		}
+		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
+		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
+			continue
+		}
+		if found.GetName() == obj.GetName() && found.GetNamespace() == obj.GetNamespace() {
+			return true
+		}
+	}
+	return false
 }
