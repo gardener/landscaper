@@ -67,6 +67,19 @@ imports:
   required: true # required, defaults to true
   type: target # this is a target import
   targetType: landscaper.gardener.cloud/kubernetes-cluster
+# Import a targetlist
+- name: my-targetlist-import-key
+  # required: true # defaults to true
+  type: targetList # this is a targetlist import
+  targetType: landscaper.gardener.cloud/kubernetes-cluster
+# Import a component descriptor
+- name: my-cd-import-key
+  # required: true # defaults to true
+  type: componentDescriptor # this is a component descriptor import
+# Import a component descriptor list
+- name: my-cdlist-import-key
+  # required: true # defaults to true
+  type: componentDescriptorList # this is a component descriptor list import
 
 # exports defines all values that are produced by the blueprint
 # and that are exported.
@@ -206,6 +219,31 @@ imports:
 All targets of a targetlist *MUST* have the same type, mixing is not possible. Exporting targetlists is not possible.
 
 Targetlist imports have the type `targetList`. Please note that the `type` field is mandatory for targetlist imports - if it is not set, the landscaper will assume that a single target is to be imported.
+
+
+#### Component Descriptors
+
+It is also possible to define imports of component descriptors (see [here](./Installations.md#component-descriptor) for more information on component descriptors).
+There is no configuration for a component descriptor import.
+```yaml
+imports:
+- name: my-import
+  type: componentDescriptor
+```
+
+The type for these imports is `componentDescriptor`. Component descriptors cannot be exported.
+
+##### Component Descriptor Lists
+
+Apart from single component descriptor imports, also a list of them can be imported.
+```yaml
+imports:
+- name: my-import
+  type: componentDescriptorList
+```
+
+Use the `componentDescriptorList` type for this. Exporting is not possible.
+
 
 ### DeployExecutions
 
@@ -440,6 +478,11 @@ All possible options to define a subinstallation can be used in parallel and are
     targets:
     - name: "" # target import name
       target: "" # target name
+    - name: ""
+      targetListRef: "" # references a targetlist import of the parent
+    componentDescriptors:
+    - name: ""
+      dataRef: "" # references a component descriptor (single or list) import of the parent
   #importMappings: {}
 
   exports:
@@ -491,6 +534,40 @@ subinstallations:
     targets:
     - name: "also-my-foo-targets"
       targetListRef: "my-foo-targets"
+```
+
+
+#### Component Descriptor Imports in Subinstallations
+
+Only root installations can directly reference component descriptors in their imports. In subinstallations, it is only possible to reference a component descriptor which has already been imported by the parent. Therefore, only the fields `dataRef` and `cdList` are allowed in component descriptor imports in subinstallations.
+With `dataRef`, a single component descriptor or a list of component descriptors imported by the parent can be referenced.
+The `cdList` field can be used to build a new component descriptor list import, in the same way it is used in regular installations. The only difference is that all list entries can only use `dataRef` to reference a component descriptor.
+
+```yaml
+imports:
+  componentDescriptors:
+  - name: "my-single-cd"
+    secretRef: ... # single component descriptor import
+  - name: "my-other-single-cd"
+    secretRef: ... # single component descriptor import
+  - name: "my-cd-list"
+    cdList: # component descriptor list import
+    - secretRef: ...
+    - configMapRef: ...
+subinstallations:
+- apiVersion: landscaper.gardener.cloud/v1alpha1
+  kind: InstallationTemplate
+  name: mysubinst
+  imports:
+    componentDescriptors:
+    - name: "also-my-single-cd" # single component descriptor reference
+      dataRef: "my-single-cd"
+    - name: "also-my-cd-list" # component descriptor list reference
+      dataRef: "my-cd-list"
+    - name: "new-cd-list" # a new component descriptor list import based on multiple single cd imports
+      cdList:
+      - dataRef: "my-single-cd"
+      - dataRef: "my-other-single-cd"
 ```
 
 

@@ -10,6 +10,7 @@ Each installation contains the state of its executed blueprint and has its own c
   - [Imports](#imports)
     - [Data Imports](#data-imports)
     - [Target Imports](#target-imports)
+    - [Component Descriptor Imports](#component-descriptor-imports)
     - [Import Data Mappings](#import-data-mappings)
   - [Exports](#exports)
     - [Data Exports](#data-exports)
@@ -357,6 +358,75 @@ imports:
 
 A list of targets can be imported by listing all targets by name. This works similarly to a single target import.
 Please note that for a targetlist import, only `targets` has to be specified and `target` may not be specified. In this context, setting `targets: []` counts as specifying the `targets` field - an empty list is a valid value - while setting it to nil (`targets: ~`) counts as not specifying it.
+
+
+### Component Descriptor Imports
+
+A component descriptor import consists of the import name and a reference to the component descriptor.
+The import must contain exactly one of `cdRef`, `secretRef`, and `configMapRef` for a single component descriptor. For a list import, `cdList` has to be specified instead.
+
+##### Component Descriptor in Registry
+
+A component descriptor which lies in a registry can be referenced similarly to how it is explained [above](#component-descriptor).
+```yaml
+imports:
+  componentDescriptors:
+  - name: ""
+    cdRef: 
+      componentName: github.com/my-comp
+      version: v0.0.1
+#      repositoryContext:
+#        type: ociRegistry
+#        baseUrl: ""
+```
+
+Providing an inline component descriptor is not possible here.
+
+##### Local Component Descriptors
+
+While component descriptors should be stored in a registry for all productive purposes, it is possible to reference a component descriptor in a secret or configmap in the cluster.
+The syntax for this is equivalent to the one for [data imports](#data-imports).
+```yaml
+imports:
+  componentDescriptors:
+  - name: my-import
+    secretRef: 
+      name: ""
+      namespace: "" #  optional, defaulted to installation namespace
+      key: "" # optional
+  - name: my-import
+    configMapRef: 
+      name: ""
+      namespace: "" #  optional, defaulted to installation namespace
+      key: "" # optional
+```
+
+For data and target imports, the imported values are copied for subinstallations. This ensures that, if a secret containing data is modified, the subinstallations still have access to the old data until everything has been properly reconciled. As component descriptors are expected to be immutable, only the references are copied for subinstallations, not the actual values. Modyfing or deleting a component descriptor which is currently being imported by one or more installations is therefore strongly discouraged and could lead to undesired behaviour of the respective installation(s).
+
+#### Component Descriptor List Imports
+
+Component descriptor list imports work pretty much analoguous to targetlist imports.
+Each entry of `cdList` must contain a reference to a component descriptor. All three methods explained above (registry, secret, configmap) are valid and can be combined.
+```yaml
+imports:
+  componentDescriptors:
+  - name: ""
+    cdList:
+    - cdRef: 
+        componentName: github.com/my-comp
+        version: v0.0.1
+#        repositoryContext:
+#          type: ociRegistry
+#          baseUrl: ""
+    - secretRef: 
+        name: ""
+        namespace: "" #  optional, defaulted to installation namespace
+        key: "" # optional
+    - configMapRef: 
+        name: ""
+        namespace: "" #  optional, defaulted to installation namespace
+        key: "" # optional
+```
 
 
 ### Import Data Mappings
