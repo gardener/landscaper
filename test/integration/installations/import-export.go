@@ -257,6 +257,12 @@ func ImportExportTests(f *framework.Framework) {
 			Expect(cdListImportByListRef).To(PointTo(HaveLen(2)))
 			Expect(cdListImportByListRef).To(PointTo(ContainElement(*secretCD)))
 			Expect(cdListImportByListRef).To(PointTo(ContainElement(*cmCD)))
+			// empty cd list import
+			emptyCdListImportRaw, ok := providerStatusDef["emptyCdListImport"]
+			Expect(ok).To(BeTrue(), "emptyCdListImport not found in provider status definition")
+			emptyCdListImport := &[]cdv2.ComponentDescriptor{}
+			utils.ExpectNoError(json.Unmarshal(emptyCdListImportRaw, emptyCdListImport))
+			Expect(emptyCdListImport).To(PointTo(HaveLen(0)))
 		})
 
 	})

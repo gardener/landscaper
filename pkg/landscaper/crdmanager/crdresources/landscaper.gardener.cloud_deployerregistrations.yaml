@@ -438,7 +438,6 @@ spec:
                                         type: string
                                     required:
                                     - name
-                                    - key
                                     type: object
                                   dataRef:
                                     description: DataRef can be used to reference
@@ -466,7 +465,6 @@ spec:
                                         type: string
                                     required:
                                     - name
-                                    - key
                                     type: object
                                 type: object
                               type: array
@@ -511,7 +509,6 @@ spec:
                                   type: string
                               required:
                               - name
-                              - key
                               type: object
                             dataRef:
                               description: DataRef can be used to reference component
@@ -542,7 +539,6 @@ spec:
                                   type: string
                               required:
                               - name
-                              - key
                               type: object
                           required:
                           - name

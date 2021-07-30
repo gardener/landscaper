@@ -524,3 +524,31 @@ func (ti TargetImport) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(TargetImportWithTargets(ti))
 }
+
+// MarshalJSON implements the json marshaling for a ComponentDescriptorImport
+// This is needed for the same reasons as the MarshalJSON function for TargetImports.
+func (cdi ComponentDescriptorImport) MarshalJSON() ([]byte, error) {
+
+	type ComponentDescriptorImportWithCDs struct {
+		Name         string                          `json:"name"`
+		CDRef        *ComponentDescriptorReference   `json:"cdRef,omitempty"`
+		SecretRef    *SecretReference                `json:"secretRef,omitempty"`
+		ConfigMapRef *ConfigMapReference             `json:"configMapRef,omitempty"`
+		CDList       []ComponentDescriptorImportData `json:"cdList"`
+		DataRef      string                          `json:"dataRef,omitempty"`
+	}
+
+	type ComponentDescriptorImportWithoutCDs struct {
+		Name         string                          `json:"name"`
+		CDRef        *ComponentDescriptorReference   `json:"cdRef,omitempty"`
+		SecretRef    *SecretReference                `json:"secretRef,omitempty"`
+		ConfigMapRef *ConfigMapReference             `json:"configMapRef,omitempty"`
+		CDList       []ComponentDescriptorImportData `json:"cdList,omitempty"`
+		DataRef      string                          `json:"dataRef,omitempty"`
+	}
+
+	if cdi.CDList == nil {
+		return json.Marshal(ComponentDescriptorImportWithoutCDs(cdi))
+	}
+	return json.Marshal(ComponentDescriptorImportWithCDs(cdi))
+}

@@ -61,6 +61,8 @@ spec:
       - configMapRef:
           name: my-cd-configmap
           key: componentDescriptor
+    - name: emptyCdListImp
+      cdList: []
   
   exports:
     data:
@@ -100,6 +102,8 @@ spec:
           - name: cdImpByConfigMapRef
             type: componentDescriptor
           - name: cdListImp
+            type: componentDescriptorList
+          - name: emptyCdListImp
             type: componentDescriptorList
 
           exports:
@@ -144,6 +148,8 @@ spec:
                 - dataRef: cdImpByConfigMapRef
               - name: subCdListImpByListRef
                 dataRef: cdListImp
+              - name: subEmptyCdListImp
+                dataRef: emptyCdListImp
             exports:
               data:
               - name: subDataExp
@@ -172,6 +178,7 @@ spec:
                             cdImportByConfigMapRef: (( imports.subCdImpByConfigMapRef ))
                             cdListImportByCdRefs: (( imports.subCdListImpByCdRefs ))
                             cdListImportByListRef: (( imports.subCdListImpByListRef ))
+                            emptyCdListImport: (( imports.subEmptyCdListImp ))
                   imports:
                   - name: subDataImp
                     type: data
@@ -193,6 +200,8 @@ spec:
                   - name: subCdListImpByCdRefs
                     type: componentDescriptorList
                   - name: subCdListImpByListRef
+                    type: componentDescriptorList
+                  - name: subEmptyCdListImp
                     type: componentDescriptorList
                   exports:
                   - name: subDataExp
