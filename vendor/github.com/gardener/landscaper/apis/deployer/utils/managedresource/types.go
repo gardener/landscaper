@@ -86,7 +86,12 @@ type Export struct {
 // FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from.
 // This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.
 type FromObjectReference struct {
-	lsv1alpha1.TypedObjectReference
+	// APIVersion is the group and version for the resource being referenced.
+	// If APIVersion is not specified, the specified Kind must be in the core API group.
+	// For any other third-party types, APIVersion is required.
+	APIVersion string `json:"apiVersion"`
+	// Kind is the type of resource being referenced
+	Kind string `json:"kind"`
 	// JSONPath is the jsonpath to look for a value.
 	// The JSONPath root is the referenced resource
 	JSONPath string `json:"jsonPath"`

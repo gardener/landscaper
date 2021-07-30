@@ -67,7 +67,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 		}
 
 		if !e.resourceIsManaged(*export.FromResource) {
-			return nil, fmt.Errorf("resource %s %s %s is not managed by the deployer", export.FromResource.APIVersion, export.FromResource.Name, export.FromResource.Namespace)
+			return nil, fmt.Errorf("resource %s/%s %s %s is not managed by the deployer", export.FromResource.APIVersion, export.FromResource.Kind, export.FromResource.Name, export.FromResource.Namespace)
 		}
 	}
 	var (
@@ -145,11 +145,63 @@ func (e *Exporter) doExport(ctx context.Context, export managedresource.Export) 
 		return nil, err
 	}
 
+	if export.FromObjectReference != nil {
+		var err error
+		val, err = e.exportFromReferencedResource(ctx, export, val)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	newValue, err := jsonpath.Construct(export.Key, val)
 	if err != nil {
 		return nil, err
 	}
 	return newValue, nil
+}
+
+func (e *Exporter) exportFromReferencedResource(ctx context.Context, export managedresource.Export, ref interface{}) (interface{}, error) {
+	// check if the ref is of the right type
+	refMap, ok := ref.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected reference %#v, expected map with name and namespace", ref)
+	}
+	refName, ok := refMap["name"]
+	if !ok {
+		return nil, fmt.Errorf("unexpected reference %#v, expected map to have a name key", ref)
+	}
+	name, ok := refName.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected name %#v to be a string", refName)
+	}
+
+	namespace := export.FromResource.Namespace // default to same namespace as resource
+	refNamespace, ok := refMap["namespace"]
+	if ok {
+		namespace, ok = refNamespace.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected namespace %#v to be a string", refName)
+		}
+	}
+
+	// get resource from client
+	obj := kutil.ObjectFromTypedObjectReference(&lsv1alpha1.TypedObjectReference{
+		APIVersion: export.FromObjectReference.APIVersion,
+		Kind:       export.FromObjectReference.Kind,
+		ObjectReference: lsv1alpha1.ObjectReference{
+			Name:      name,
+			Namespace: namespace,
+		},
+	})
+	if err := e.kubeClient.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+		return nil, err
+	}
+
+	var val interface{}
+	if err := jsonpath.GetValue(export.FromObjectReference.JSONPath, obj.Object, &val); err != nil {
+		return nil, err
+	}
+	return val, nil
 }
 
 func (e *Exporter) resourceIsManaged(res lsv1alpha1.TypedObjectReference) bool {

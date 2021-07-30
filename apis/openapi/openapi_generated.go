@@ -7189,10 +7189,20 @@ func schema_apis_deployer_utils_managedresource_FromObjectReference(ref common.R
 				Description: "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"TypedObjectReference": {
+					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
+							Description: "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is the type of resource being referenced",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"jsonPath": {
@@ -7204,11 +7214,9 @@ func schema_apis_deployer_utils_managedresource_FromObjectReference(ref common.R
 						},
 					},
 				},
-				Required: []string{"TypedObjectReference", "jsonPath"},
+				Required: []string{"apiVersion", "kind", "jsonPath"},
 			},
 		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"},
 	}
 }
 

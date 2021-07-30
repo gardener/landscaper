@@ -71,7 +71,12 @@ func ValidateTypedObjectReference(fldPath *field.Path, ref *lsv1alpha1.TypedObje
 // ValidateFromObjectReference validates a typed object reference.
 func ValidateFromObjectReference(fldPath *field.Path, ref *managedresource.FromObjectReference) field.ErrorList {
 	var allErrs field.ErrorList
-	allErrs = append(allErrs, ValidateTypedObjectReference(fldPath, &ref.TypedObjectReference)...)
+	if len(ref.APIVersion) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("apiVersion"), "must not be empty"))
+	}
+	if len(ref.Kind) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("kind"), "must not be empty"))
+	}
 	if len(ref.JSONPath) == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("jsonPath"), "must not be empty"))
 	}

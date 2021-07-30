@@ -6,6 +6,7 @@ package resourcemanager_test
 
 import (
 	"context"
+	"encoding/base64"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -21,7 +22,10 @@ import (
 
 var _ = Describe("Exporter", func() {
 
-	var state *envtest.State
+	var (
+		state   *envtest.State
+		timeout = 20 * time.Second
+	)
 
 	BeforeEach(func() {
 		var err error
@@ -163,7 +167,8 @@ var _ = Describe("Exporter", func() {
 			},
 		}
 		res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
-			KubeClient: testenv.Client,
+			KubeClient:     testenv.Client,
+			DefaultTimeout: &timeout,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
 					Resource: lsv1alpha1.TypedObjectReference{
@@ -210,10 +215,138 @@ var _ = Describe("Exporter", func() {
 			},
 		}
 		_, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
-			KubeClient: testenv.Client,
-			Objects:    managedresource.ManagedResourceStatusList{},
+			KubeClient:     testenv.Client,
+			DefaultTimeout: &timeout,
+			Objects:        managedresource.ManagedResourceStatusList{},
 		}).Export(ctx, exports)
 		Expect(err).To(HaveOccurred())
+	})
+
+	Context("referenced resource", func() {
+		It("should export from a referenced configmap", func() {
+			ctx := context.Background()
+			cm := &corev1.ConfigMap{}
+			cm.Name = "my-data"
+			cm.Namespace = state.Namespace
+			cm.Data = map[string]string{
+				"name":      "my-ref-data",
+				"namespace": cm.Namespace,
+			}
+			Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+			refCm := &corev1.ConfigMap{}
+			refCm.Name = "my-ref-data"
+			refCm.Namespace = state.Namespace
+			refCm.Data = map[string]string{
+				"somekey": "abc",
+			}
+			Expect(state.Create(ctx, testenv.Client, refCm)).To(Succeed())
+
+			exports := &managedresource.Exports{
+				Exports: []managedresource.Export{
+					{
+						Key:      "exportkey",
+						JSONPath: "data",
+						FromResource: &lsv1alpha1.TypedObjectReference{
+							APIVersion: "v1",
+							Kind:       "ConfigMap",
+							ObjectReference: lsv1alpha1.ObjectReference{
+								Name:      cm.Name,
+								Namespace: cm.Namespace,
+							},
+						},
+						FromObjectReference: &managedresource.FromObjectReference{
+							APIVersion: "v1",
+							Kind:       "ConfigMap",
+							JSONPath:   "data.somekey",
+						},
+					},
+				},
+			}
+			res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+				KubeClient:     testenv.Client,
+				DefaultTimeout: &timeout,
+				Objects: managedresource.ManagedResourceStatusList{
+					{
+						Resource: lsv1alpha1.TypedObjectReference{
+							APIVersion: "v1",
+							Kind:       "ConfigMap",
+							ObjectReference: lsv1alpha1.ObjectReference{
+								Name:      cm.Name,
+								Namespace: cm.Namespace,
+							},
+						},
+					},
+				},
+			}).Export(ctx, exports)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(Equal(map[string]interface{}{
+				"exportkey": "abc",
+			}))
+		})
+
+		It("should export from a referenced secret in an array", func() {
+			ctx := context.Background()
+
+			sa := &corev1.ServiceAccount{}
+			sa.Name = "my-sa"
+			sa.Namespace = state.Namespace
+			sa.Secrets = []corev1.ObjectReference{
+				{
+					Name: "sa-token",
+				},
+			}
+			Expect(state.Create(ctx, testenv.Client, sa)).To(Succeed())
+
+			secret := &corev1.Secret{}
+			secret.Name = "sa-token"
+			secret.Namespace = state.Namespace
+			secret.Data = map[string][]byte{
+				"somekey": []byte("abc"),
+			}
+			Expect(state.Create(ctx, testenv.Client, secret)).To(Succeed())
+
+			exports := &managedresource.Exports{
+				Exports: []managedresource.Export{
+					{
+						Key:      "exportkey",
+						JSONPath: "secrets[0]",
+						FromResource: &lsv1alpha1.TypedObjectReference{
+							APIVersion: "v1",
+							Kind:       "ServiceAccount",
+							ObjectReference: lsv1alpha1.ObjectReference{
+								Name:      sa.Name,
+								Namespace: sa.Namespace,
+							},
+						},
+						FromObjectReference: &managedresource.FromObjectReference{
+							APIVersion: "v1",
+							Kind:       "Secret",
+							JSONPath:   "data.somekey",
+						},
+					},
+				},
+			}
+			res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+				KubeClient:     testenv.Client,
+				DefaultTimeout: &timeout,
+				Objects: managedresource.ManagedResourceStatusList{
+					{
+						Resource: lsv1alpha1.TypedObjectReference{
+							APIVersion: "v1",
+							Kind:       "ServiceAccount",
+							ObjectReference: lsv1alpha1.ObjectReference{
+								Name:      sa.Name,
+								Namespace: sa.Namespace,
+							},
+						},
+					},
+				},
+			}).Export(ctx, exports)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(Equal(map[string]interface{}{
+				"exportkey": base64.StdEncoding.EncodeToString([]byte("abc")),
+			}))
+		})
 	})
 
 })

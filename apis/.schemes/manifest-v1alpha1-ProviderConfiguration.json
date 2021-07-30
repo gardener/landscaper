@@ -93,16 +93,23 @@
       "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
       "type": "object",
       "required": [
-        "TypedObjectReference",
+        "apiVersion",
+        "kind",
         "jsonPath"
       ],
       "properties": {
-        "TypedObjectReference": {
-          "default": {},
-          "$ref": "#/definitions/core-v1alpha1-TypedObjectReference"
+        "apiVersion": {
+          "description": "APIVersion is the group and version for the resource being referenced. If APIVersion is not specified, the specified Kind must be in the core API group. For any other third-party types, APIVersion is required.",
+          "type": "string",
+          "default": ""
         },
         "jsonPath": {
           "description": "JSONPath is the jsonpath to look for a value. The JSONPath root is the referenced resource",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is the type of resource being referenced",
           "type": "string",
           "default": ""
         }
