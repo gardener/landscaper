@@ -466,6 +466,10 @@
           "description": "Key is the key that the value from JSONPath is exported to.",
           "type": "string",
           "default": ""
+        },
+        "timeout": {
+          "description": "Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
     },

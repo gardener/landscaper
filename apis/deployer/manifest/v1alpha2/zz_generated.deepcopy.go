@@ -67,10 +67,8 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	}
 	if in.Exports != nil {
 		in, out := &in.Exports, &out.Exports
-		*out = make([]managedresource.Export, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+		*out = new(managedresource.Exports)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }

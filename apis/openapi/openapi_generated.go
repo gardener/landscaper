@@ -163,6 +163,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.Configuration":                             schema_apis_deployer_mock_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/mock/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_mock_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export":                            schema_apis_deployer_utils_managedresource_Export(ref),
+		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports":                           schema_apis_deployer_utils_managedresource_Exports(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference":               schema_apis_deployer_utils_managedresource_FromObjectReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.ManagedResourceStatus":             schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest":                          schema_apis_deployer_utils_managedresource_Manifest(ref),
@@ -6767,22 +6768,14 @@ func schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref common.Ref
 					"exports": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Exports describe the exports from the templated manifests that should be exported by the helm deployer.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"),
-									},
-								},
-							},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -6945,22 +6938,14 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 					"exports": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Exports describe the exports from the templated manifests that should be exported by the helm deployer.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"),
-									},
-								},
-							},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
@@ -7120,6 +7105,12 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 				Description: "Export describes one export that is read from a resource.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
 					"key": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Key is the key that the value from JSONPath is exported to.",
@@ -7153,7 +7144,41 @@ func schema_apis_deployer_utils_managedresource_Export(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.FromObjectReference"},
+	}
+}
+
+func schema_apis_deployer_utils_managedresource_Exports(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Exports describes one export that is read from a resource.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"defaultTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DefaultTimeout defines the default timeout for all exports that the exporter waits for the value in the jsonpath to occur.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+					"exports": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export"},
 	}
 }
 

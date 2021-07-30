@@ -65,6 +65,27 @@
           "description": "Key is the key that the value from JSONPath is exported to.",
           "type": "string",
           "default": ""
+        },
+        "timeout": {
+          "description": "Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
+    },
+    "utils-managedresource-Exports": {
+      "description": "Exports describes one export that is read from a resource.",
+      "type": "object",
+      "properties": {
+        "defaultTimeout": {
+          "description": "DefaultTimeout defines the default timeout for all exports that the exporter waits for the value in the jsonpath to occur.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-Export"
+          }
         }
       }
     },
@@ -235,12 +256,8 @@
       "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
     "exports": {
-      "description": "Exports describe the exports from the templated manifests that should be exported by the helm deployer.",
-      "items": {
-        "$ref": "#/definitions/utils-managedresource-Export",
-        "default": {}
-      },
-      "type": "array"
+      "$ref": "#/definitions/utils-managedresource-Exports",
+      "description": "Exports describe the exports from the templated manifests that should be exported by the helm deployer."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

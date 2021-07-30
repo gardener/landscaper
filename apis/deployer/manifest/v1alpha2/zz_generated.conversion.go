@@ -89,7 +89,7 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	out.ReadinessChecks = in.ReadinessChecks
 	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
-	out.Exports = *(*[]managedresource.Export)(unsafe.Pointer(&in.Exports))
+	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	return nil
 }
 
@@ -104,7 +104,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguratio
 	out.ReadinessChecks = in.ReadinessChecks
 	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
-	out.Exports = *(*[]managedresource.Export)(unsafe.Pointer(&in.Exports))
+	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	return nil
 }
 
