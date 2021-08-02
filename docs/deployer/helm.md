@@ -117,19 +117,43 @@ spec:
     # optional
     values: {}
 
-    # Describes one export that is read from the templates values or a templated resource.
-    # The value will be by default read from the values if fromResource is not specified.
-    # The specified jsonPath value is written with the given key to the exported configuration.
-    exportsFromManifests:
-    - key: KeyA # value is read from the values file
-      jsonPath: .Values.keyA
-    - key: KeyB # value is read from secret
-      jsonPath: .spec.config
-      fromResource:
-        apiVersion: v1
-        kind: Secret
-        name: my-secret
-        namespace: a
+    # Define exports that are read from the manifests and exported so 
+    # that is can be used by other deployitems.
+    # The exports are read form the deployed resources so status and other runtime attributes
+    # are available and can be exported.
+    exports:
+      defaultTimeout: 5m
+      exports:
+      # Describes one export that is read from the templates values or a templated resource.
+      # The value will be by default read from the values if fromResource is not specified.
+      # The specified jsonPath value is written with the given key to the exported configuration.
+      - key: KeyA # value is read from the values file
+        jsonPath: .Values.keyA
+      - key: KeyB # value is read from secret
+        timeout: 10m # optional specific timeout
+        jsonPath: .spec.config
+        fromResource:
+          apiVersion: v1
+          kind: Secret
+          name: my-secret
+          namespace: a
+      - key: KeyC # value is read from secret that is referenced by a service account
+        timeout: 10m # optional specific timeout
+        jsonPath: .secrets[0] # points to a object ref that consists of a name and namespace
+        fromResource:
+          apiVersion: v1
+          kind: ServiceAccount
+          name: my-user
+          namespace: a
+        # Defines the referenced objects kind and version. 
+        # The name and namespace is taken from the resource defined in "fromResource".
+        fromObjectRef: 
+          apiVersion: v1
+          kind: Secret
+          jsonPath: ".data.somekey" # jsonpath in the secret
+
+    
+    exportsFromManifests: [] # same as exports.exports but deprecated
 ```
 
 Exports can be defined in `exportsFromManifests` by specifying the exported key to export.
