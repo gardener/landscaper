@@ -473,6 +473,23 @@
         }
       }
     },
+    "utils-managedresource-Exports": {
+      "description": "Exports describes one export that is read from a resource.",
+      "type": "object",
+      "properties": {
+        "defaultTimeout": {
+          "description": "DefaultTimeout defines the default timeout for all exports that the exporter waits for the value in the jsonpath to occur.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/utils-managedresource-Export"
+          }
+        }
+      }
+    },
     "utils-managedresource-FromObjectReference": {
       "description": "FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from. This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.",
       "type": "object",
@@ -637,8 +654,12 @@
       "$ref": "#/definitions/core-v1alpha1-Duration",
       "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
     },
+    "exports": {
+      "$ref": "#/definitions/utils-managedresource-Exports",
+      "description": "Exports describe the exports from the templated manifests that should be exported by the helm deployer."
+    },
     "exportsFromManifests": {
-      "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.",
+      "description": "ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer. DEPRECATED",
       "items": {
         "$ref": "#/definitions/utils-managedresource-Export",
         "default": {}

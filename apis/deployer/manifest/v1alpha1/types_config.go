@@ -28,4 +28,13 @@ type Configuration struct {
 	Identity string `json:"identity,omitempty"`
 	// TargetSelector describes all selectors the deployer should depend on.
 	TargetSelector []lsv1alpha1.TargetSelector `json:"targetSelector,omitempty"`
+	// Export defines the export configuration.
+	Export ExportConfiguration `json:"export,omitempty"`
+}
+
+// ExportConfiguration defines the export configuration for the deployer.
+type ExportConfiguration struct {
+	// DefaultTimeout configures the default timeout for all exports without a explicit export timeout defined.
+	// +optional
+	DefaultTimeout *lsv1alpha1.Duration `json:"defaultTimeout,omitempty"`
 }
