@@ -387,7 +387,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 		for i, cd := range cdl.ComponentDescriptors {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
-				configGen = cd.Descriptor.Version
 				owner     = cd.Owner
 			)
 			if owner != nil && owner.Kind == "Installation" {
@@ -400,7 +399,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
-				configGen = inst.Status.ConfigGeneration
 			}
 			var (
 				sref, cmref string
@@ -419,7 +417,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 				ConfigMapRef:           cmref,
 				SecretRef:              sref,
 				SourceRef:              sourceRef,
-				ConfigGeneration:       configGen,
 			}
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{

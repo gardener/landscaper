@@ -2404,13 +2404,6 @@ func schema_landscaper_apis_core_v1alpha1_CDImportStatus(ref common.ReferenceCal
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
-					"configGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigGeneration is the generation of the imported value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 				},
 			},
 		},

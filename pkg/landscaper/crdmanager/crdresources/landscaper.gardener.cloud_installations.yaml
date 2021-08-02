@@ -785,10 +785,6 @@ spec:
                             - componentName
                             - version
                             type: object
-                          configGeneration:
-                            description: ConfigGeneration is the generation of the
-                              imported value.
-                            type: string
                           configMapRef:
                             description: ConfigMapRef is the name of the imported
                               configmap.
