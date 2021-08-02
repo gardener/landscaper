@@ -319,7 +319,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[string]*dataobjects.ComponentDescriptor, error) {
 	cds := map[string]*dataobjects.ComponentDescriptor{}
 	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
-		if def.CDList != nil {
+		if def.List != nil {
 			// It's a component descriptor list, skip it
 			continue
 		}
@@ -373,7 +373,7 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (map[string]*dataobjects.ComponentDescriptorList, error) {
 	cdls := map[string]*dataobjects.ComponentDescriptorList{}
 	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
-		if def.CDList == nil {
+		if def.List == nil {
 			// It's a single component descriptor import, skip it
 			continue
 		}

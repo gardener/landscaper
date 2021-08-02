@@ -25,7 +25,7 @@ spec:
   imports:
     componentDescriptors:
     - name: cd-from-registry
-      cdRef:
+      ref:
         repositoryContext:
           type: local
           baseUrl: "../testdata/registry"
@@ -40,8 +40,8 @@ spec:
         name: my-cd-secret
         key: componentDescriptor
     - name: cdlist
-      cdList:
-      - cdRef:
+      list:
+      - ref:
           repositoryContext:
             type: local
             baseUrl: "../testdata/registry"

@@ -1038,10 +1038,10 @@ func Convert_core_ComponentDescriptorDefinition_To_v1alpha1_ComponentDescriptorD
 
 func autoConvert_v1alpha1_ComponentDescriptorImport_To_core_ComponentDescriptorImport(in *ComponentDescriptorImport, out *core.ComponentDescriptorImport, s conversion.Scope) error {
 	out.Name = in.Name
-	out.CDRef = (*core.ComponentDescriptorReference)(unsafe.Pointer(in.CDRef))
+	out.Ref = (*core.ComponentDescriptorReference)(unsafe.Pointer(in.Ref))
 	out.SecretRef = (*core.SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.ConfigMapRef = (*core.ConfigMapReference)(unsafe.Pointer(in.ConfigMapRef))
-	out.CDList = *(*[]core.ComponentDescriptorImportData)(unsafe.Pointer(&in.CDList))
+	out.List = *(*[]core.ComponentDescriptorImportData)(unsafe.Pointer(&in.List))
 	out.DataRef = in.DataRef
 	return nil
 }
@@ -1053,10 +1053,10 @@ func Convert_v1alpha1_ComponentDescriptorImport_To_core_ComponentDescriptorImpor
 
 func autoConvert_core_ComponentDescriptorImport_To_v1alpha1_ComponentDescriptorImport(in *core.ComponentDescriptorImport, out *ComponentDescriptorImport, s conversion.Scope) error {
 	out.Name = in.Name
-	out.CDRef = (*ComponentDescriptorReference)(unsafe.Pointer(in.CDRef))
+	out.Ref = (*ComponentDescriptorReference)(unsafe.Pointer(in.Ref))
 	out.SecretRef = (*SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.ConfigMapRef = (*ConfigMapReference)(unsafe.Pointer(in.ConfigMapRef))
-	out.CDList = *(*[]ComponentDescriptorImportData)(unsafe.Pointer(&in.CDList))
+	out.List = *(*[]ComponentDescriptorImportData)(unsafe.Pointer(&in.List))
 	out.DataRef = in.DataRef
 	return nil
 }
@@ -1067,7 +1067,7 @@ func Convert_core_ComponentDescriptorImport_To_v1alpha1_ComponentDescriptorImpor
 }
 
 func autoConvert_v1alpha1_ComponentDescriptorImportData_To_core_ComponentDescriptorImportData(in *ComponentDescriptorImportData, out *core.ComponentDescriptorImportData, s conversion.Scope) error {
-	out.CDRef = (*core.ComponentDescriptorReference)(unsafe.Pointer(in.CDRef))
+	out.Ref = (*core.ComponentDescriptorReference)(unsafe.Pointer(in.Ref))
 	out.SecretRef = (*core.SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.ConfigMapRef = (*core.ConfigMapReference)(unsafe.Pointer(in.ConfigMapRef))
 	out.DataRef = in.DataRef
@@ -1080,7 +1080,7 @@ func Convert_v1alpha1_ComponentDescriptorImportData_To_core_ComponentDescriptorI
 }
 
 func autoConvert_core_ComponentDescriptorImportData_To_v1alpha1_ComponentDescriptorImportData(in *core.ComponentDescriptorImportData, out *ComponentDescriptorImportData, s conversion.Scope) error {
-	out.CDRef = (*ComponentDescriptorReference)(unsafe.Pointer(in.CDRef))
+	out.Ref = (*ComponentDescriptorReference)(unsafe.Pointer(in.Ref))
 	out.SecretRef = (*SecretReference)(unsafe.Pointer(in.SecretRef))
 	out.ConfigMapRef = (*ConfigMapReference)(unsafe.Pointer(in.ConfigMapRef))
 	out.DataRef = in.DataRef

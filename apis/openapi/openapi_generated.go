@@ -2527,27 +2527,27 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImport(ref common.R
 							Format:      "",
 						},
 					},
-					"cdRef": {
+					"ref": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CDRef is a reference to a component descriptor in a registry. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+							Description: "Ref is a reference to a component descriptor in a registry. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
 						},
 					},
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 					"configMapRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference"),
 						},
 					},
-					"cdList": {
+					"list": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CDList represents a list of component descriptor imports. Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.",
+							Description: "List represents a list of component descriptor imports. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -2561,7 +2561,7 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImport(ref common.R
 					},
 					"dataRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, instead of one of the other fields.",
+							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, use one of the other fields instead for root installations.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -2581,27 +2581,27 @@ func schema_landscaper_apis_core_v1alpha1_ComponentDescriptorImportData(ref comm
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"cdRef": {
+					"ref": {
 						SchemaProps: spec.SchemaProps{
-							Description: "CDRef is a reference to a component descriptor in a registry. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+							Description: "Ref is a reference to a component descriptor in a registry. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentDescriptorReference"),
 						},
 					},
 					"secretRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+							Description: "SecretRef is a reference to a key in a secret in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.SecretReference"),
 						},
 					},
 					"configMapRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.",
+							Description: "ConfigMapRef is a reference to a key in a config map in the cluster. Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference"),
 						},
 					},
 					"dataRef": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, instead of one of the other fields.",
+							Description: "DataRef can be used to reference component descriptors imported by the parent installation. This field is used in subinstallation templates only, use one of the other fields instead for root installations.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

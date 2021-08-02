@@ -241,7 +241,7 @@ func GetTargetListImportBySelector(ctx context.Context, kubeClient client.Client
 
 // GetComponentDescriptorImport fetches the component descriptor import from the cluster/registry.
 func GetComponentDescriptorImport(ctx context.Context, kubeClient client.Client, contextName string, op *Operation, imp lsv1alpha1.ComponentDescriptorImport) (*dataobjects.ComponentDescriptor, error) {
-	return getComponentDescriptorImport(ctx, kubeClient, contextName, op, imp.Name, imp.CDRef, imp.ConfigMapRef, imp.SecretRef, imp.DataRef)
+	return getComponentDescriptorImport(ctx, kubeClient, contextName, op, imp.Name, imp.Ref, imp.ConfigMapRef, imp.SecretRef, imp.DataRef)
 }
 
 // getComponentDescriptorImport fetches the component descriptor import from the cluster/registry.
@@ -273,7 +273,7 @@ func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 	case dataobjects.RegistryReference:
 		// fetch component descriptor from registry
 		if regRef == nil {
-			return nil, fmt.Errorf("reference type mismatch: reference type is '%s', but CDRef is nil", string(refType))
+			return nil, fmt.Errorf("reference type mismatch: reference type is '%s', but Ref is nil", string(refType))
 		}
 		cd, err := op.ComponentsRegistry().Resolve(ctx, regRef.RepositoryContext, regRef.ComponentName, regRef.Version)
 		if err != nil {
@@ -320,12 +320,12 @@ func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 // GetComponentDescriptorListImport fetches all component descriptor imports in the list from the cluster/registry.
 func GetComponentDescriptorListImport(ctx context.Context, kubeClient client.Client, contextName string, op *Operation, imp lsv1alpha1.ComponentDescriptorImport) (*dataobjects.ComponentDescriptorList, error) {
 	// verify that the import describes a component descriptor list
-	if imp.CDList == nil {
+	if imp.List == nil {
 		return nil, fmt.Errorf("invalid component descriptor list import %s: import does not describe a list", imp.Name)
 	}
-	res := dataobjects.NewComponentDescriptorListWithSize(len(imp.CDList))
-	for i, elem := range imp.CDList {
-		cd, err := getComponentDescriptorImport(ctx, kubeClient, contextName, op, fmt.Sprintf("%s[%d]", imp.Name, i), elem.CDRef, elem.ConfigMapRef, elem.SecretRef, elem.DataRef)
+	res := dataobjects.NewComponentDescriptorListWithSize(len(imp.List))
+	for i, elem := range imp.List {
+		cd, err := getComponentDescriptorImport(ctx, kubeClient, contextName, op, fmt.Sprintf("%s[%d]", imp.Name, i), elem.Ref, elem.ConfigMapRef, elem.SecretRef, elem.DataRef)
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve component descriptor for index %d of cd import list %s: %w", i, imp.Name, err)
 		}

@@ -108,13 +108,13 @@ func (o *Operation) Ensure(ctx context.Context) error {
 				}
 				// set import to that of the parent
 				imp.DataRef = cdimp.DataRef
-				imp.CDRef = cdimp.CDRef
+				imp.Ref = cdimp.Ref
 				imp.ConfigMapRef = cdimp.ConfigMapRef
 				imp.SecretRef = cdimp.SecretRef
-				imp.CDList = cdimp.CDList
-			} else if len(imp.CDList) != 0 {
-				for j := range imp.CDList {
-					limp := &imp.CDList[j]
+				imp.List = cdimp.List
+			} else if len(imp.List) != 0 {
+				for j := range imp.List {
+					limp := &imp.List[j]
 					if len(limp.DataRef) != 0 {
 						cdlimp, err := o.Inst.GetCDImport(limp.DataRef)
 						if err != nil {
@@ -122,7 +122,7 @@ func (o *Operation) Ensure(ctx context.Context) error {
 						}
 						// set import to that of the parent
 						limp.DataRef = cdlimp.DataRef
-						limp.CDRef = cdlimp.CDRef
+						limp.Ref = cdlimp.Ref
 						limp.ConfigMapRef = cdlimp.ConfigMapRef
 						limp.SecretRef = cdlimp.SecretRef
 					}

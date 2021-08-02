@@ -277,12 +277,12 @@ var _ = Describe("Installation", func() {
 						},
 					},
 					{
-						Name:  "cdbaz",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "cdbaz",
+						Ref:  &core.ComponentDescriptorReference{},
 					},
 					{
-						Name:   "cdfoobar",
-						CDList: []core.ComponentDescriptorImportData{},
+						Name: "cdfoobar",
+						List: []core.ComponentDescriptorImportData{},
 					},
 				},
 			}
@@ -319,16 +319,16 @@ var _ = Describe("Installation", func() {
 				},
 				ComponentDescriptors: []core.ComponentDescriptorImport{
 					{
-						Name:  "baz",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "baz",
+						Ref:  &core.ComponentDescriptorReference{},
 					},
 					{
-						Name:  "baz",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "baz",
+						Ref:  &core.ComponentDescriptorReference{},
 					},
 					{
-						Name:  "foo",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "foo",
+						Ref:  &core.ComponentDescriptorReference{},
 					},
 				},
 			}
@@ -379,8 +379,8 @@ var _ = Describe("Installation", func() {
 				},
 				ComponentDescriptors: []core.ComponentDescriptorImport{
 					{
-						Name:  "",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "",
+						Ref:  &core.ComponentDescriptorReference{},
 					},
 				},
 			}
@@ -446,7 +446,7 @@ var _ = Describe("Installation", func() {
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(field.ErrorTypeRequired),
 				"Field":  Equal("imports.componentDescriptors[0]"),
-				"Detail": And(ContainSubstring("CDRef"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef"), ContainSubstring("CDList")),
+				"Detail": And(ContainSubstring("Ref"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef"), ContainSubstring("List")),
 			}))))
 		})
 
@@ -483,20 +483,20 @@ var _ = Describe("Installation", func() {
 			}
 		})
 
-		It("should fail if multiple of cdRef, secretRef, configMapRef, and cdList are specified", func() {
+		It("should fail if multiple of ref, secretRef, configMapRef, and list are specified", func() {
 			imp := core.InstallationImports{
 				ComponentDescriptors: []core.ComponentDescriptorImport{
 					{
-						Name:  "foo",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "foo",
+						Ref:  &core.ComponentDescriptorReference{},
 						SecretRef: &core.SecretReference{
 							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 							Key:             "dummy",
 						},
 					},
 					{
-						Name:  "bar",
-						CDRef: &core.ComponentDescriptorReference{},
+						Name: "bar",
+						Ref:  &core.ComponentDescriptorReference{},
 						ConfigMapRef: &core.ConfigMapReference{
 							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 							Key:             "dummy",
@@ -514,9 +514,9 @@ var _ = Describe("Installation", func() {
 						},
 					},
 					{
-						Name:   "foobar",
-						CDRef:  &core.ComponentDescriptorReference{},
-						CDList: []core.ComponentDescriptorImportData{},
+						Name: "foobar",
+						Ref:  &core.ComponentDescriptorReference{},
+						List: []core.ComponentDescriptorImportData{},
 					},
 					{
 						Name: "foobaz",
@@ -524,7 +524,7 @@ var _ = Describe("Installation", func() {
 							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 							Key:             "dummy",
 						},
-						CDList: []core.ComponentDescriptorImportData{},
+						List: []core.ComponentDescriptorImportData{},
 					},
 					{
 						Name: "foofoo",
@@ -532,21 +532,21 @@ var _ = Describe("Installation", func() {
 							ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 							Key:             "dummy",
 						},
-						CDList: []core.ComponentDescriptorImportData{},
+						List: []core.ComponentDescriptorImportData{},
 					},
 					{
 						Name: "fooo",
-						// valid top-level definition, but invalid CDList elements
-						CDList: []core.ComponentDescriptorImportData{
+						// valid top-level definition, but invalid List elements
+						List: []core.ComponentDescriptorImportData{
 							{
-								CDRef: &core.ComponentDescriptorReference{},
+								Ref: &core.ComponentDescriptorReference{},
 								SecretRef: &core.SecretReference{
 									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 									Key:             "dummy",
 								},
 							},
 							{
-								CDRef: &core.ComponentDescriptorReference{},
+								Ref: &core.ComponentDescriptorReference{},
 								ConfigMapRef: &core.ConfigMapReference{
 									ObjectReference: core.ObjectReference{Name: "dummy", Namespace: "dummy"},
 									Key:             "dummy",
@@ -572,7 +572,7 @@ var _ = Describe("Installation", func() {
 			for _, elem := range allErrs {
 				Expect(elem).To(PointTo(MatchFields(IgnoreExtras, Fields{
 					"Type":   Equal(field.ErrorTypeInvalid),
-					"Detail": And(ContainSubstring("CDRef"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef")),
+					"Detail": And(ContainSubstring("Ref"), ContainSubstring("SecretRef"), ContainSubstring("ConfigMapRef")),
 				})))
 			}
 		})

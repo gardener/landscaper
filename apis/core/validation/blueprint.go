@@ -366,9 +366,9 @@ func ValidateInstallationTemplates(fldPath *field.Path, blueprintImportDefs []co
 					Name: cd.DataRef,
 					Path: impPath,
 				})
-			} else if cd.CDList != nil {
-				for i2, cd2 := range cd.CDList {
-					tmpPath := impPath.Child("cdList").Index(i2)
+			} else if cd.List != nil {
+				for i2, cd2 := range cd.List {
+					tmpPath := impPath.Child("list").Index(i2)
 					if len(cd2.DataRef) != 0 {
 						importedComponentDescriptors = append(importedComponentDescriptors, Import{
 							Name: cd2.DataRef,
@@ -496,16 +496,16 @@ func ValidateInstallationTemplateComponentDescriptorImports(imports []core.Compo
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "DataRef", "CDList")...)
+		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "DataRef", "List")...)
 		if imp.ConfigMapRef != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("configMapRef"), "only 'dataRef' and 'cdList' fields may be used in subinstallation templates"))
+			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("configMapRef"), "only 'dataRef' and 'list' fields may be used in subinstallation templates"))
 		}
 		if imp.SecretRef != nil {
-			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("secretRef"), "only 'dataRef' and 'cdList' fields may be used in subinstallation templates"))
+			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("secretRef"), "only 'dataRef' and 'list' fields may be used in subinstallation templates"))
 		}
-		if len(imp.CDList) > 0 {
-			for idx2, cd := range imp.CDList {
-				fldPathIdx2 := fldPathIdx.Child("cdList").Index(idx2)
+		if len(imp.List) > 0 {
+			for idx2, cd := range imp.List {
+				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
 				if cd.ConfigMapRef != nil {
 					allErrs = append(allErrs, field.Forbidden(fldPathIdx2.Child("configMapRef"), "only 'dataRef' may be used for referencing component descriptors in subinstallation templates"))
 				}

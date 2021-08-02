@@ -389,40 +389,43 @@ spec:
                           imports.
                         items:
                           properties:
-                            cdList:
-                              description: CDList represents a list of component descriptor
-                                imports. Exactly one of CDRef, SecretRef, ConfigMapRef,
-                                and CDList has to be specified.
+                            configMapRef:
+                              description: ConfigMapRef is a reference to a key in
+                                a config map in the cluster. Exactly one of Ref, SecretRef,
+                                ConfigMapRef, and List has to be specified.
+                              properties:
+                                key:
+                                  description: Key is the name of the key in the configmap
+                                    that holds the data.
+                                  type: string
+                                name:
+                                  description: Name is the name of the kubernetes
+                                    object.
+                                  type: string
+                                namespace:
+                                  description: Namespace is the namespace of kubernetes
+                                    object.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            dataRef:
+                              description: DataRef can be used to reference component
+                                descriptors imported by the parent installation. This
+                                field is used in subinstallation templates only, use
+                                one of the other fields instead for root installations.
+                              type: string
+                            list:
+                              description: List represents a list of component descriptor
+                                imports. Exactly one of Ref, SecretRef, ConfigMapRef,
+                                and List has to be specified.
                               items:
                                 properties:
-                                  cdRef:
-                                    description: CDRef is a reference to a component
-                                      descriptor in a registry. Exactly one of CDRef,
-                                      SecretRef, and ConfigMapRef has to be specified.
-                                    properties:
-                                      componentName:
-                                        description: ComponentName defines the unique
-                                          of the component containing the resource.
-                                        type: string
-                                      repositoryContext:
-                                        description: RepositoryContext defines the
-                                          context of the component repository to resolve
-                                          blueprints.
-                                        type: object
-                                        x-kubernetes-preserve-unknown-fields: true
-                                      version:
-                                        description: Version defines the version of
-                                          the component.
-                                        type: string
-                                    required:
-                                    - componentName
-                                    - version
-                                    type: object
                                   configMapRef:
                                     description: ConfigMapRef is a reference to a
                                       key in a config map in the cluster. Exactly
-                                      one of CDRef, SecretRef, and ConfigMapRef has
-                                      to be specified.
+                                      one of Ref, SecretRef, ConfigMapRef, and List
+                                      has to be specified.
                                     properties:
                                       key:
                                         description: Key is the name of the key in
@@ -443,13 +446,38 @@ spec:
                                     description: DataRef can be used to reference
                                       component descriptors imported by the parent
                                       installation. This field is used in subinstallation
-                                      templates only, instead of one of the other
-                                      fields.
+                                      templates only, use one of the other fields
+                                      instead for root installations.
                                     type: string
+                                  ref:
+                                    description: Ref is a reference to a component
+                                      descriptor in a registry. Exactly one of Ref,
+                                      SecretRef, ConfigMapRef, and List has to be
+                                      specified.
+                                    properties:
+                                      componentName:
+                                        description: ComponentName defines the unique
+                                          of the component containing the resource.
+                                        type: string
+                                      repositoryContext:
+                                        description: RepositoryContext defines the
+                                          context of the component repository to resolve
+                                          blueprints.
+                                        type: object
+                                        x-kubernetes-preserve-unknown-fields: true
+                                      version:
+                                        description: Version defines the version of
+                                          the component.
+                                        type: string
+                                    required:
+                                    - componentName
+                                    - version
+                                    type: object
                                   secretRef:
                                     description: SecretRef is a reference to a key
-                                      in a secret in the cluster. Exactly one of CDRef,
-                                      SecretRef, and ConfigMapRef has to be specified.
+                                      in a secret in the cluster. Exactly one of Ref,
+                                      SecretRef, ConfigMapRef, and List has to be
+                                      specified.
                                     properties:
                                       key:
                                         description: Key is the name of the key in
@@ -468,10 +496,14 @@ spec:
                                     type: object
                                 type: object
                               type: array
-                            cdRef:
-                              description: CDRef is a reference to a component descriptor
-                                in a registry. Exactly one of CDRef, SecretRef, ConfigMapRef,
-                                and CDList has to be specified.
+                            name:
+                              description: Name the internal name of the imported/exported
+                                component descriptor.
+                              type: string
+                            ref:
+                              description: Ref is a reference to a component descriptor
+                                in a registry. Exactly one of Ref, SecretRef, ConfigMapRef,
+                                and List has to be specified.
                               properties:
                                 componentName:
                                   description: ComponentName defines the unique of
@@ -490,40 +522,10 @@ spec:
                               - componentName
                               - version
                               type: object
-                            configMapRef:
-                              description: ConfigMapRef is a reference to a key in
-                                a config map in the cluster. Exactly one of CDRef,
-                                SecretRef, ConfigMapRef, and CDList has to be specified.
-                              properties:
-                                key:
-                                  description: Key is the name of the key in the configmap
-                                    that holds the data.
-                                  type: string
-                                name:
-                                  description: Name is the name of the kubernetes
-                                    object.
-                                  type: string
-                                namespace:
-                                  description: Namespace is the namespace of kubernetes
-                                    object.
-                                  type: string
-                              required:
-                              - name
-                              type: object
-                            dataRef:
-                              description: DataRef can be used to reference component
-                                descriptors imported by the parent installation. This
-                                field is used in subinstallation templates only, instead
-                                of one of the other fields.
-                              type: string
-                            name:
-                              description: Name the internal name of the imported/exported
-                                component descriptor.
-                              type: string
                             secretRef:
                               description: SecretRef is a reference to a key in a
-                                secret in the cluster. Exactly one of CDRef, SecretRef,
-                                ConfigMapRef, and CDList has to be specified.
+                                secret in the cluster. Exactly one of Ref, SecretRef,
+                                ConfigMapRef, and List has to be specified.
                               properties:
                                 key:
                                   description: Key is the name of the key in the secret

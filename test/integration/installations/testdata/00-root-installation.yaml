@@ -54,7 +54,7 @@ spec:
         name: my-cd-configmap
         key: componentDescriptor
     - name: cdListImp
-      cdList:
+      list:
       - secretRef:
           name: my-cd-secret
           key: componentDescriptor
@@ -62,7 +62,7 @@ spec:
           name: my-cd-configmap
           key: componentDescriptor
     - name: emptyCdListImp
-      cdList: []
+      list: []
   
   exports:
     data:
@@ -143,7 +143,7 @@ spec:
               - name: subCdImpByConfigMapRef
                 dataRef: cdImpByConfigMapRef
               - name: subCdListImpByCdRefs
-                cdList:
+                list:
                 - dataRef: cdImpBySecretRef
                 - dataRef: cdImpByConfigMapRef
               - name: subCdListImpByListRef

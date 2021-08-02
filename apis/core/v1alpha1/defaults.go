@@ -99,9 +99,9 @@ func SetDefaults_Installation(obj *Installation) {
 				obj.Spec.Imports.ComponentDescriptors[i].SecretRef.Namespace = obj.GetNamespace()
 			}
 		}
-		if len(cdImport.CDList) != 0 {
-			for j := range cdImport.CDList {
-				impDef := &cdImport.CDList[j]
+		if len(cdImport.List) != 0 {
+			for j := range cdImport.List {
+				impDef := &cdImport.List[j]
 				if impDef.ConfigMapRef != nil {
 					if len(impDef.ConfigMapRef.Namespace) == 0 {
 						impDef.ConfigMapRef.Namespace = obj.GetNamespace()

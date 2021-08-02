@@ -118,7 +118,7 @@ type InstallationImports struct {
 
 	// ComponentDescriptors defines all component descriptor imports.
 	// +optional
-	ComponentDescriptors []ComponentDescriptorImport `json:"componentDescriptors"`
+	ComponentDescriptors []ComponentDescriptorImport `json:"componentDescriptors,omitempty"`
 }
 
 // InstallationExports defines exports of data objects and targets.
@@ -200,50 +200,50 @@ type ComponentDescriptorImport struct {
 	// Name the internal name of the imported/exported component descriptor.
 	Name string `json:"name"`
 
-	// CDRef is a reference to a component descriptor in a registry.
-	// Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.
+	// Ref is a reference to a component descriptor in a registry.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
-	CDRef *ComponentDescriptorReference `json:"cdRef,omitempty"`
+	Ref *ComponentDescriptorReference `json:"ref,omitempty"`
 
 	// SecretRef is a reference to a key in a secret in the cluster.
-	// Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
 	SecretRef *SecretReference `json:"secretRef,omitempty"`
 
 	// ConfigMapRef is a reference to a key in a config map in the cluster.
-	// Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
 	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
 
-	// CDList represents a list of component descriptor imports.
-	// Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.
+	// List represents a list of component descriptor imports.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
-	CDList []ComponentDescriptorImportData `json:"cdList,omitempty"`
+	List []ComponentDescriptorImportData `json:"list,omitempty"`
 
 	// DataRef can be used to reference component descriptors imported by the parent installation.
-	// This field is used in subinstallation templates only, instead of one of the other fields.
+	// This field is used in subinstallation templates only, use one of the other fields instead for root installations.
 	// +optional
 	DataRef string `json:"dataRef,omitempty"`
 }
 
 type ComponentDescriptorImportData struct {
-	// CDRef is a reference to a component descriptor in a registry.
-	// Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.
+	// Ref is a reference to a component descriptor in a registry.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
-	CDRef *ComponentDescriptorReference `json:"cdRef,omitempty"`
+	Ref *ComponentDescriptorReference `json:"ref,omitempty"`
 
 	// SecretRef is a reference to a key in a secret in the cluster.
-	// Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
 	SecretRef *SecretReference `json:"secretRef,omitempty"`
 
 	// ConfigMapRef is a reference to a key in a config map in the cluster.
-	// Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.
+	// Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.
 	// +optional
 	ConfigMapRef *ConfigMapReference `json:"configMapRef,omitempty"`
 
 	// DataRef can be used to reference component descriptors imported by the parent installation.
-	// This field is used in subinstallation templates only, instead of one of the other fields.
+	// This field is used in subinstallation templates only, use one of the other fields instead for root installations.
 	// +optional
 	DataRef string `json:"dataRef,omitempty"`
 }

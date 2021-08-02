@@ -539,9 +539,9 @@ subinstallations:
 
 #### Component Descriptor Imports in Subinstallations
 
-Only root installations can directly reference component descriptors in their imports. In subinstallations, it is only possible to reference a component descriptor which has already been imported by the parent. Therefore, only the fields `dataRef` and `cdList` are allowed in component descriptor imports in subinstallations.
+Only root installations can directly reference component descriptors in their imports. In subinstallations, it is only possible to reference a component descriptor which has already been imported by the parent. Therefore, only the fields `dataRef` and `list` are allowed in component descriptor imports in subinstallations.
 With `dataRef`, a single component descriptor or a list of component descriptors imported by the parent can be referenced.
-The `cdList` field can be used to build a new component descriptor list import, in the same way it is used in regular installations. The only difference is that all list entries can only use `dataRef` to reference a component descriptor.
+The `list` field can be used to build a new component descriptor list import, in the same way it is used in regular installations. The only difference is that all list entries can only use `dataRef` to reference a component descriptor.
 
 ```yaml
 imports:
@@ -551,7 +551,7 @@ imports:
   - name: "my-other-single-cd"
     secretRef: ... # single component descriptor import
   - name: "my-cd-list"
-    cdList: # component descriptor list import
+    list: # component descriptor list import
     - secretRef: ...
     - configMapRef: ...
 subinstallations:
@@ -565,7 +565,7 @@ subinstallations:
     - name: "also-my-cd-list" # component descriptor list reference
       dataRef: "my-cd-list"
     - name: "new-cd-list" # a new component descriptor list import based on multiple single cd imports
-      cdList:
+      list:
       - dataRef: "my-single-cd"
       - dataRef: "my-other-single-cd"
 ```

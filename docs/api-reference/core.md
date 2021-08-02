@@ -1549,7 +1549,7 @@ string
 </tr>
 <tr>
 <td>
-<code>cdRef</code></br>
+<code>ref</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
 ComponentDescriptorReference
@@ -1558,8 +1558,8 @@ ComponentDescriptorReference
 </td>
 <td>
 <em>(Optional)</em>
-<p>CDRef is a reference to a component descriptor in a registry.
-Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+<p>Ref is a reference to a component descriptor in a registry.
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1574,7 +1574,7 @@ SecretReference
 <td>
 <em>(Optional)</em>
 <p>SecretRef is a reference to a key in a secret in the cluster.
-Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1589,12 +1589,12 @@ ConfigMapReference
 <td>
 <em>(Optional)</em>
 <p>ConfigMapRef is a reference to a key in a config map in the cluster.
-Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>cdList</code></br>
+<code>list</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorImportData">
 []ComponentDescriptorImportData
@@ -1603,8 +1603,8 @@ Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</
 </td>
 <td>
 <em>(Optional)</em>
-<p>CDList represents a list of component descriptor imports.
-Exactly one of CDRef, SecretRef, ConfigMapRef, and CDList has to be specified.</p>
+<p>List represents a list of component descriptor imports.
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1617,7 +1617,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>DataRef can be used to reference component descriptors imported by the parent installation.
-This field is used in subinstallation templates only, instead of one of the other fields.</p>
+This field is used in subinstallation templates only, use one of the other fields instead for root installations.</p>
 </td>
 </tr>
 </tbody>
@@ -1640,7 +1640,7 @@ This field is used in subinstallation templates only, instead of one of the othe
 <tbody>
 <tr>
 <td>
-<code>cdRef</code></br>
+<code>ref</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentDescriptorReference">
 ComponentDescriptorReference
@@ -1649,8 +1649,8 @@ ComponentDescriptorReference
 </td>
 <td>
 <em>(Optional)</em>
-<p>CDRef is a reference to a component descriptor in a registry.
-Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+<p>Ref is a reference to a component descriptor in a registry.
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1665,7 +1665,7 @@ SecretReference
 <td>
 <em>(Optional)</em>
 <p>SecretRef is a reference to a key in a secret in the cluster.
-Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1680,7 +1680,7 @@ ConfigMapReference
 <td>
 <em>(Optional)</em>
 <p>ConfigMapRef is a reference to a key in a config map in the cluster.
-Exactly one of CDRef, SecretRef, and ConfigMapRef has to be specified.</p>
+Exactly one of Ref, SecretRef, ConfigMapRef, and List has to be specified.</p>
 </td>
 </tr>
 <tr>
@@ -1693,7 +1693,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>DataRef can be used to reference component descriptors imported by the parent installation.
-This field is used in subinstallation templates only, instead of one of the other fields.</p>
+This field is used in subinstallation templates only, use one of the other fields instead for root installations.</p>
 </td>
 </tr>
 </tbody>

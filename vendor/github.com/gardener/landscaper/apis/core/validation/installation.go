@@ -164,7 +164,7 @@ func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDesc
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "CDRef", "ConfigMapRef", "SecretRef", "CDList")...)
+		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "Ref", "ConfigMapRef", "SecretRef", "List")...)
 		if imp.ConfigMapRef != nil {
 			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, fldPathIdx.Child("configMapRef"))...)
 		}
@@ -174,10 +174,10 @@ func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDesc
 		if len(imp.DataRef) != 0 {
 			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("dataRef"), imp.DataRef, "must be set in subinstallation templates only"))
 		}
-		if len(imp.CDList) > 0 {
-			for idx2, cd := range imp.CDList {
-				fldPathIdx2 := fldPathIdx.Child("cdList").Index(idx2)
-				allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx2, cd, "CDRef", "ConfigMapRef", "SecretRef")...)
+		if len(imp.List) > 0 {
+			for idx2, cd := range imp.List {
+				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
+				allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx2, cd, "Ref", "ConfigMapRef", "SecretRef")...)
 				if cd.ConfigMapRef != nil {
 					allErrs = append(allErrs, ValidateConfigMapReference(*cd.ConfigMapRef, fldPathIdx2.Child("configMapRef"))...)
 				}

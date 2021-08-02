@@ -363,7 +363,7 @@ Please note that for a targetlist import, only `targets` has to be specified and
 ### Component Descriptor Imports
 
 A component descriptor import consists of the import name and a reference to the component descriptor.
-The import must contain exactly one of `cdRef`, `secretRef`, and `configMapRef` for a single component descriptor. For a list import, `cdList` has to be specified instead.
+The import must contain exactly one of `ref`, `secretRef`, and `configMapRef` for a single component descriptor. For a list import, `list` has to be specified instead.
 
 ##### Component Descriptor in Registry
 
@@ -372,7 +372,7 @@ A component descriptor which lies in a registry can be referenced similarly to h
 imports:
   componentDescriptors:
   - name: ""
-    cdRef: 
+    ref: 
       componentName: github.com/my-comp
       version: v0.0.1
 #      repositoryContext:
@@ -406,13 +406,13 @@ For data and target imports, the imported values are copied for subinstallations
 #### Component Descriptor List Imports
 
 Component descriptor list imports work pretty much analoguous to targetlist imports.
-Each entry of `cdList` must contain a reference to a component descriptor. All three methods explained above (registry, secret, configmap) are valid and can be combined.
+Each entry of `list` must contain a reference to a component descriptor. All three methods explained above (registry, secret, configmap) are valid and can be combined.
 ```yaml
 imports:
   componentDescriptors:
   - name: ""
-    cdList:
-    - cdRef: 
+    list:
+    - ref: 
         componentName: github.com/my-comp
         version: v0.0.1
 #        repositoryContext:
