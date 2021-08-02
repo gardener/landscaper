@@ -102,10 +102,6 @@ var _ = Describe("Validation", func() {
 			}))))
 			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("a.fromObjectRef.name"),
-			}))))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
 				"Field": Equal("a.fromObjectRef.jsonPath"),
 			}))))
 		})

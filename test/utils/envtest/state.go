@@ -7,6 +7,7 @@ package envtest
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +22,7 @@ import (
 
 // State contains the state of initialized fake client
 type State struct {
+	mux           sync.Mutex
 	Namespace     string
 	Installations map[string]*lsv1alpha1.Installation
 	Executions    map[string]*lsv1alpha1.Execution
@@ -46,20 +48,22 @@ func NewState() *State {
 	}
 }
 
-// AddsResources to the current state
+// AddResources to the current state
 func (s *State) AddResources(objects ...client.Object) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	for _, obj := range objects {
 		switch o := obj.(type) {
 		case *lsv1alpha1.Installation:
-			s.Installations[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.Installations[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *lsv1alpha1.Execution:
-			s.Executions[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.Executions[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *lsv1alpha1.DeployItem:
-			s.DeployItems[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.DeployItems[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *lsv1alpha1.DataObject:
-			s.DataObjects[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.DataObjects[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *lsv1alpha1.Target:
-			s.Targets[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.Targets[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *corev1.Secret:
 			// add stringdata and data
 			if o.Data == nil {
@@ -69,11 +73,11 @@ func (s *State) AddResources(objects ...client.Object) error {
 				o.Data[key] = []byte(data)
 			}
 
-			s.Secrets[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.Secrets[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		case *corev1.ConfigMap:
-			s.ConfigMaps[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o
+			s.ConfigMaps[types.NamespacedName{Name: o.Name, Namespace: o.Namespace}.String()] = o.DeepCopy()
 		default:
-			s.Generic[types.NamespacedName{Name: o.GetName(), Namespace: o.GetNamespace()}.String()] = o
+			s.Generic[types.NamespacedName{Name: o.GetName(), Namespace: o.GetNamespace()}.String()] = o.DeepCopyObject().(client.Object)
 		}
 	}
 	return nil
@@ -149,6 +153,8 @@ func (s *State) CleanupState(ctx context.Context, c client.Client, timeout *time
 		t := 30 * time.Second
 		timeout = &t
 	}
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	for _, obj := range s.DeployItems {
 		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
 			return err

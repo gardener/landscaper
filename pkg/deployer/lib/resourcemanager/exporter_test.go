@@ -23,17 +23,21 @@ import (
 var _ = Describe("Exporter", func() {
 
 	var (
+		ctx     context.Context
+		cancel  context.CancelFunc
 		state   *envtest.State
 		timeout = 20 * time.Second
 	)
 
 	BeforeEach(func() {
+		ctx, cancel = context.WithCancel(context.Background())
 		var err error
-		state, err = testenv.InitState(context.TODO())
+		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
+		cancel()
 		Expect(state.CleanupState(context.TODO(), testenv.Client, nil))
 	})
 
@@ -94,8 +98,12 @@ var _ = Describe("Exporter", func() {
 		}
 
 		go func() {
-			time.Sleep(10 * time.Second)
-			Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(10 * time.Second):
+				Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+			}
 		}()
 
 		exports := &managedresource.Exports{
@@ -143,11 +151,16 @@ var _ = Describe("Exporter", func() {
 		Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
 
 		go func() {
-			time.Sleep(5 * time.Second)
-			cm.Data = map[string]string{
-				"somekey": "abc",
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(5 * time.Second):
+				time.Sleep(5 * time.Second)
+				cm.Data = map[string]string{
+					"somekey": "abc",
+				}
+				Expect(testenv.Client.Update(ctx, cm)).To(Succeed())
 			}
-			Expect(testenv.Client.Update(ctx, cm)).To(Succeed())
 		}()
 
 		exports := &managedresource.Exports{

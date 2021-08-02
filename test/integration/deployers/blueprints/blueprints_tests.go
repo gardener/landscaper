@@ -222,7 +222,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 				Build()
 			utils.ExpectNoError(err)
 		} else if td.DeployItem != nil {
-			di, err = td.DeployItem(&state.State, target)
+			di, err = td.DeployItem(state.State, target)
 			utils.ExpectNoError(err)
 		}
 		g.Expect(di).ToNot(g.BeNil())
