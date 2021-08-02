@@ -16,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha1 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
@@ -93,7 +95,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, item, target)
+		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -139,7 +141,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, item, target)
+		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())

@@ -58,6 +58,7 @@ func NewExporter(log logr.Logger, opts ExporterOptions) *Exporter {
 
 // Export exports all keys that are defined in the exports definition.
 func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports) (map[string]interface{}, error) {
+	var allErrs []error
 	// first validate if referenced resource is managed.
 	for _, export := range exports.Exports {
 		if export.FromResource == nil {
@@ -67,11 +68,14 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 		}
 
 		if !e.resourceIsManaged(*export.FromResource) {
-			return nil, fmt.Errorf("resource %s/%s %s %s is not managed by the deployer", export.FromResource.APIVersion, export.FromResource.Kind, export.FromResource.Name, export.FromResource.Namespace)
+			err := fmt.Errorf("resource %s/%s %s %s is not managed by the deployer", export.FromResource.APIVersion, export.FromResource.Kind, export.FromResource.Name, export.FromResource.Namespace)
+			allErrs = append(allErrs, err)
 		}
 	}
+	if len(allErrs) != 0 {
+		return nil, apimacherrors.NewAggregate(allErrs)
+	}
 	var (
-		allErrs     []error
 		wg          sync.WaitGroup
 		resultMutex sync.Mutex
 		result      map[string]interface{}

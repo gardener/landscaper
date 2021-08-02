@@ -41,7 +41,7 @@ type deployer struct {
 
 func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
-	manifest, err := New(logger, d.lsClient, d.hostClient, di, target)
+	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, tar
 
 func (d deployer) Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
-	manifest, err := New(logger, d.lsClient, d.hostClient, di, target)
+	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
 		return err
 	}

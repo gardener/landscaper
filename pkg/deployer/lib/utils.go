@@ -6,6 +6,7 @@ package lib
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -16,6 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/pkg/api"
 
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 
@@ -136,5 +141,48 @@ func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme 
 		return err
 	}
 	di.Status.ProviderStatus = rawStatus
+	return nil
+}
+
+// CreateOrUpdateExport creates or updates the export of a deploy item.
+func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {
+	if values == nil {
+		return nil
+	}
+	const currOp = "CreateExports"
+	data, err := json.Marshal(values)
+	if err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "MarshalExportData", err.Error())
+	}
+
+	secret := &corev1.Secret{}
+	secret.Name = fmt.Sprintf("%s-export", deployItem.Name)
+	secret.Namespace = deployItem.Namespace
+	if deployItem.Status.ExportReference != nil {
+		secret.Name = deployItem.Status.ExportReference.Name
+		secret.Namespace = deployItem.Status.ExportReference.Namespace
+	}
+
+	_, err = controllerutil.CreateOrUpdate(ctx, kubeClient, secret, func() error {
+		secret.Data = map[string][]byte{
+			lsv1alpha1.DataObjectSecretDataKey: data,
+		}
+		return controllerutil.SetOwnerReference(deployItem, secret, api.LandscaperScheme)
+	})
+	if err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "CreateOrUpdateSecret", err.Error())
+	}
+
+	deployItem.Status.ExportReference = &lsv1alpha1.ObjectReference{
+		Name:      secret.Name,
+		Namespace: secret.Namespace,
+	}
+
+	if err := kubeClient.Status().Update(ctx, deployItem); err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "Update DeployItem", err.Error())
+	}
 	return nil
 }
