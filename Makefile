@@ -139,15 +139,19 @@ upload-tutorial-resources:
 # Local development  #
 ######################
 
+.PHONY: install-testcluster-cmd
+install-testcluster-cmd:
+	@go install $(REPO_ROOT)/hack/testcluster
+
 .PHONY: setup-local-registry
 setup-local-registry:
-	@go run ./hack/testcluster create --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false --registry-auth=./tmp/local-docker.config
+	@go run $(REPO_ROOT)/hack/testcluster create --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false --registry-auth=./tmp/local-docker.config
 	@echo "For local development add '127.0.0.1 registry-local.default' to your '/etc/hosts' and run a port-forward to the registry pod 'kubectl port-forward registry-local 5000'"
 
 .PHONY: remove-local-registry
 remove-local-registry:
-	@go run ./hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false
+	@go run $(REPO_ROOT)/hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false
 
 .PHONY: start-webhooks
 start-webhooks:
-	@go run ./cmd/landscaper-webhooks-server -v 3 --kubeconfig=$(KUBECONFIG)
+	@go run $(REPO_ROOT)/cmd/landscaper-webhooks-server -v 3 --kubeconfig=$(KUBECONFIG)

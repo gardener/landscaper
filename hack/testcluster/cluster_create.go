@@ -39,6 +39,8 @@ type CreateClusterOptions struct {
 	CommonOptions
 	// ExportKubeconfigPath is the path to the test cluster kubeconfig
 	ExportKubeconfigPath string
+	// KubernetesVersion defines the kubernetes version of the cluster.
+	KubernetesVersion string
 }
 
 // AddFlags adds flags for the options to a flagset
@@ -48,6 +50,7 @@ func (o *CreateClusterOptions) AddFlags(fs *pflag.FlagSet) {
 	}
 	o.CommonOptions.AddFlags(fs)
 	fs.StringVar(&o.ExportKubeconfigPath, "export", "", "path where the target kubeconfig should be written to")
+	fs.StringVar(&o.KubernetesVersion, "kubernetes-version", pkg.DefaultK8sVersion, "specify the kubernetes version of the cluster")
 }
 
 func (o *CreateClusterOptions) Complete() error {
@@ -71,13 +74,14 @@ func (o *CreateClusterOptions) Validate() error {
 
 func (o *CreateClusterOptions) Run(ctx context.Context) error {
 	logger := simplelogger.NewLogger().WithTimestamp()
-	return pkg.CreateCluster(ctx,
-		logger,
-		o.kubeClient,
-		o.restConfig,
-		o.Namespace,
-		o.ID,
-		o.StateFile,
-		o.ExportKubeconfigPath,
-		o.Timeout)
+	return pkg.CreateCluster(ctx, logger, pkg.CreateClusterArgs{
+		KubeClient:           o.kubeClient,
+		RestConfig:           o.restConfig,
+		Namespace:            o.Namespace,
+		ID:                   o.ID,
+		StateFile:            o.StateFile,
+		ExportKubeconfigPath: o.ExportKubeconfigPath,
+		Timeout:              o.Timeout,
+		KubernetesVersion:    o.KubernetesVersion,
+	})
 }

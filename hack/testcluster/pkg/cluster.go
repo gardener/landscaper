@@ -7,9 +7,11 @@ package pkg
 import (
 	"bytes"
 	"context"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,8 +45,15 @@ const (
 	ComponentRegistry = "registry"
 )
 
-// see this issue for more discussions around min resources for a k8s cluster running in a pod.
-// we will stick for now with req of 500M RAM/1 CPU
+// DefaultK8sVersion defines the default k3s version.
+// The real version is appended with a "-k3s1"
+const DefaultK8sVersion = "v1.20.8"
+
+// K3sImageRepository is the repository name of the k3s images.
+const K3sImageRepository = "docker.io/rancher/k3s"
+
+// see this issue for more discussions about min resources for a k8s cluster running in a pod.
+// we will stick for now with req of 1GB RAM/1 CPU and limits up to 3GB RAM/3 CPU as other requests have lead to instabilities.
 const podTmpl = `
 apiVersion: v1
 kind: Pod
@@ -112,19 +121,32 @@ type State struct {
 	ID string `json:"id"`
 }
 
-// CreateCluster creates a new k3d cluster running in a pod.
-func CreateCluster(ctx context.Context,
-	logger simplelogger.Logger,
-	kubeClient client.Client,
-	restConfig *rest.Config,
-	namespace string,
-	id string,
-	stateFile string,
-	exportKubeconfigPath string,
-	timeout time.Duration) (err error) {
+// CreateClusterArgs defines the arguments to create a cluster.
+type CreateClusterArgs struct {
+	KubeClient           client.Client
+	RestConfig           *rest.Config
+	Namespace            string
+	ID                   string
+	StateFile            string
+	ExportKubeconfigPath string
+	Timeout              time.Duration
+	KubernetesVersion    string
+}
 
+// CreateCluster creates a new k3d cluster running in a pod.
+func CreateCluster(ctx context.Context, logger simplelogger.Logger, args CreateClusterArgs) (err error) {
+	var (
+		kubeClient           = args.KubeClient
+		stateFile            = args.StateFile
+		exportKubeconfigPath = args.ExportKubeconfigPath
+		kubernetesVersion    = args.KubernetesVersion
+	)
+	if len(kubernetesVersion) == 0 {
+		// todo: validate k8s version exists as k3s release
+		kubernetesVersion = DefaultK8sVersion
+	}
 	// parse and template pod
-	token := "asdlfjasdoifjsadfasfasf"
+	token := generateToken()
 	tmpl, err := template.New("pod").Parse(podTmpl)
 	if err != nil {
 		return err
@@ -142,9 +164,10 @@ func CreateCluster(ctx context.Context,
 	if _, _, err := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder().Decode(podBytes.Bytes(), nil, pod); err != nil {
 		return err
 	}
-	pod.Namespace = namespace
+	pod.Namespace = args.Namespace
+	pod.Spec.Containers[0].Image = fmt.Sprintf("%s:%s-k3s1", K3sImageRepository, kubernetesVersion)
 	kutil.SetMetaDataLabel(pod, ComponentLabelName, ComponentCluster)
-	kutil.SetMetaDataLabel(pod, ClusterIdLabelName, id)
+	kutil.SetMetaDataLabel(pod, ClusterIdLabelName, args.ID)
 
 	if err := kubeClient.Create(ctx, pod); err != nil {
 		return fmt.Errorf("unable to create cluster pod: %w", err)
@@ -156,12 +179,12 @@ func CreateCluster(ctx context.Context,
 		if err == nil {
 			return
 		}
-		if err := cleanupPod(ctx, logger, ComponentCluster, kubeClient, pod, timeout); err != nil {
+		if err := cleanupPod(ctx, logger, ComponentCluster, kubeClient, pod, args.Timeout); err != nil {
 			logger.Logfln("Error while cleanup of the cluster: %s", err.Error())
 		}
 	}()
 
-	err = wait.PollImmediate(10*time.Second, timeout, func() (done bool, err error) {
+	err = wait.PollImmediate(10*time.Second, args.Timeout, func() (done bool, err error) {
 		updatedPod := &corev1.Pod{}
 		if err := kubeClient.Get(ctx, client.ObjectKey{Name: pod.Name, Namespace: pod.Namespace}, updatedPod); err != nil {
 			return false, err
@@ -191,7 +214,7 @@ func CreateCluster(ctx context.Context,
 	logger.Logln("Successfully created cluster")
 
 	logger.Logln("Get kubeconfig for cluster...")
-	kubeconfigBytes, err := getKubeconfigFromCluster(logger, restConfig, pod)
+	kubeconfigBytes, err := getKubeconfigFromCluster(logger, args.RestConfig, pod)
 	if err != nil {
 		return fmt.Errorf("unable to read kubeconfig from pod: %w", err)
 	}
@@ -209,7 +232,7 @@ func CreateCluster(ctx context.Context,
 			return fmt.Errorf("unable to create state directory %q: %w", filepath.Dir(stateFile), err)
 		}
 
-		data, err := json.Marshal(State{ID: id})
+		data, err := json.Marshal(State{ID: args.ID})
 		if err != nil {
 			return fmt.Errorf("unable to marshal state: %w", err)
 		}
@@ -352,4 +375,11 @@ func executeCommandOnPod(logger simplelogger.Logger, restConfig *rest.Config, na
 		return nil, fmt.Errorf("remote command failed: %w", err)
 	}
 	return stdout.Bytes(), nil
+}
+
+func generateToken() string {
+	const length = 20
+	token := make([]byte, length)
+	_, _ = rand.Read(token)
+	return strings.ReplaceAll(base32.StdEncoding.EncodeToString(token), "=", "")
 }
