@@ -7,6 +7,7 @@ package kubernetes
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -430,6 +431,22 @@ func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstr
 	return objects, nil
 }
 
+// ParseFilesToRawExtension parses a map of filename->data into unstructured yaml objects.
+func ParseFilesToRawExtension(log logr.Logger, files map[string]string) ([]*runtime.RawExtension, error) {
+	objects := make([]*runtime.RawExtension, 0)
+	for name, content := range files {
+		if _, file := filepath.Split(name); file == "NOTES.txt" {
+			continue
+		}
+		decodedObjects, err := DecodeObjectsToRawExtension(log, name, []byte(content))
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode files for %q: %w", name, err)
+		}
+		objects = append(objects, decodedObjects...)
+	}
+	return objects, nil
+}
+
 // DecodeObjects decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
 func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
 	var (
@@ -452,6 +469,39 @@ func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.U
 		obj := &unstructured.Unstructured{Object: decodedObj}
 		// ignore the obj if no group version is defined
 		if len(obj.GetAPIVersion()) == 0 {
+			continue
+		}
+		objects = append(objects, obj.DeepCopy())
+	}
+	return objects, nil
+}
+
+// DecodeObjectsToRawExtension decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
+func DecodeObjectsToRawExtension(log logr.Logger, name string, data []byte) ([]*runtime.RawExtension, error) {
+	var (
+		decoder = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
+		objects = make([]*runtime.RawExtension, 0)
+	)
+
+	for i := 0; true; i++ {
+		obj := &runtime.RawExtension{}
+		if err := decoder.Decode(&obj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Error(err, fmt.Sprintf("unable to decode resource %d of file %q", i, name))
+			continue
+		}
+		if obj == nil || obj.Raw == nil {
+			continue
+		}
+		// ignore the obj if no group version is defined
+		var typeMeta runtime.TypeMeta
+		if err := json.Unmarshal(obj.Raw, &typeMeta); err != nil {
+			log.Error(err, fmt.Sprintf("unable to parse type meta %d of file %q to runtime object", i, name))
+			continue
+		}
+		if typeMeta.GetObjectKind().GroupVersionKind().Empty() {
 			continue
 		}
 		objects = append(objects, obj.DeepCopy())

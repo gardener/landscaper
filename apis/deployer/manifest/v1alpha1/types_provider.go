@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
@@ -35,6 +36,9 @@ type ProviderConfiguration struct {
 	DeleteTimeout *lsv1alpha1.Duration `json:"deleteTimeout,omitempty"`
 	// Manifests contains a list of manifests that should be applied in the target cluster
 	Manifests []*runtime.RawExtension `json:"manifests,omitempty"`
+	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.
+	// +optional
+	Exports []managedresource.Export `json:"exports,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
