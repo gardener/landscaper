@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: init
+      type: container
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        {{- $image := parseOCIRef .imports.ref1 }}
+        image0: "{{ index $image 0 }}:{{ index $image 1 }}"
+        image1: "{{ ociRefRepo .imports.ref1 }}:{{ ociRefVersion .imports.ref1 }}"
+        image2: "{{ ociRefRepo .imports.ref2 }}@{{ ociRefVersion .imports.ref2 }}"

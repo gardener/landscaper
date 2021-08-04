@@ -36,7 +36,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.webhooksServer.image.repository }}:{{ .Values.webhooksServer.image.tag | default .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ include "landscaper-webhook-image" . }}"
           imagePullPolicy: {{ .Values.webhooksServer.image.pullPolicy }}
           args:
           - "-v={{ .Values.landscaper.verbosity }}"

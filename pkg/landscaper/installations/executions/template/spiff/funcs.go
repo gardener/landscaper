@@ -23,6 +23,9 @@ func LandscaperSpiffFuncs(functions spiffing.Functions, cd *cdv2.ComponentDescri
 	functions.RegisterFunction("getResource", spiffResolveResources(cd))
 	functions.RegisterFunction("getComponent", spiffResolveComponent(cd, cdList))
 	functions.RegisterFunction("generateImageOverwrite", spiffGenerateImageOverwrite(cd, cdList))
+	functions.RegisterFunction("parseOCIRef", parseOCIReference)
+	functions.RegisterFunction("ociRefRepo", getOCIReferenceRepository)
+	functions.RegisterFunction("ociRefVersion", getOCIReferenceVersion)
 }
 
 func spiffResolveResources(cd *cdv2.ComponentDescriptor) func(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
@@ -169,4 +172,76 @@ func spiffGenerateImageOverwrite(cd *cdv2.ComponentDescriptor, cdList *cdv2.Comp
 
 		return result.Value(), info, true
 	}
+}
+
+func parseOCIReference(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	info := dynaml.DefaultInfo()
+	if len(arguments) > 1 {
+		return info.Error("Too many arguments for parseOCIReference. Expected 1 reference.")
+	}
+	ref := arguments[0].(string)
+	data, err := yaml.Marshal(template.ParseOCIReference(ref))
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	node, err := spiffyaml.Parse("", data)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	result, err := binding.Flow(node, false)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	return result.Value(), info, true
+}
+
+func getOCIReferenceRepository(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	info := dynaml.DefaultInfo()
+	if len(arguments) > 1 {
+		return info.Error("Too many arguments for parseOCIReference. Expected 1 reference.")
+	}
+	ref := arguments[0].(string)
+	data, err := yaml.Marshal(template.ParseOCIReference(ref)[0])
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	node, err := spiffyaml.Parse("", data)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	result, err := binding.Flow(node, false)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	return result.Value(), info, true
+}
+
+func getOCIReferenceVersion(arguments []interface{}, binding dynaml.Binding) (interface{}, dynaml.EvaluationInfo, bool) {
+	info := dynaml.DefaultInfo()
+	if len(arguments) > 1 {
+		return info.Error("Too many arguments for parseOCIReference. Expected 1 reference.")
+	}
+	ref := arguments[0].(string)
+	data, err := yaml.Marshal(template.ParseOCIReference(ref)[1])
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	node, err := spiffyaml.Parse("", data)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	result, err := binding.Flow(node, false)
+	if err != nil {
+		return info.Error(err.Error())
+	}
+
+	return result.Value(), info, true
 }

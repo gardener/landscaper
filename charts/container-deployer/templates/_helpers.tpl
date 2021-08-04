@@ -73,12 +73,12 @@ identity: {{ .Values.deployer.identity }}
 {{- end }}
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 initContainer:
-  image: "{{ .Values.deployer.initContainer.repository }}:{{ .Values.deployer.initContainer.tag | default .Chart.AppVersion }}"
+  image: "{{ include "init-image" . }}"
 waitContainer:
-  image: "{{ .Values.deployer.waitContainer.repository }}:{{ .Values.deployer.waitContainer.tag | default .Chart.AppVersion }}"
+  image: "{{ include "wait-image" . }}"
 {{- if .Values.deployer.defaultImage }}
 defaultImage:
-  image: "{{ required .Values.deployer.defaultImage.repository }}:{{ required .Values.deployer.defaultImage.tag }}"
+  image: "{{ include "utils-templates.image" .Values.deployer.defaultImage }}"
 {{- end }}
 {{- if .Values.deployer.oci }}
 oci:
@@ -96,3 +96,29 @@ targetSelector:
 {{ toYaml . }}
 {{- end }}
 {{- end }}
+
+{{- define "deployer-image" -}}
+{{- $tag := ( .Values.image.tag | default .Chart.AppVersion )  -}}
+{{- $image :=  dict "repository" .Values.image.repository "tag" $tag  -}}
+{{- include "utils-templates.image" $image }}
+{{- end -}}
+
+{{- define "init-image" -}}
+{{- $tag := ( .Values.deployer.initContainer.tag | default .Chart.AppVersion )  -}}
+{{- $image :=  dict "repository" .Values.deployer.initContainer.repository "tag" $tag  -}}
+{{- include "utils-templates.image" $image }}
+{{- end -}}
+
+{{- define "wait-image" -}}
+{{- $tag := ( .Values.deployer.waitContainer.tag | default .Chart.AppVersion )  -}}
+{{- $image :=  dict "repository" .Values.deployer.waitContainer.repository "tag" $tag  -}}
+{{- include "utils-templates.image" $image }}
+{{- end -}}
+
+{{- define "utils-templates.image" -}}
+{{- if hasPrefix "sha256:" (required "$.tag is required" $.tag) -}}
+{{ required "$.repository is required" $.repository }}@{{ required "$.tag is required" $.tag }}
+{{- else -}}
+{{ required "$.repository is required" $.repository }}:{{ required "$.tag is required" $.tag }}
+{{- end -}}
+{{- end -}}
