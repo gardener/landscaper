@@ -6,11 +6,14 @@ package execution
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -74,4 +77,43 @@ func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executio
 		}
 	}
 	return execItems, orphaned
+}
+
+// HandleDeployItemPhaseChanges updates the phase of the given execution, if its phase doesn't match the combined phase of its deploy items anymore.
+// If the phase changed to 'Succeeded', it also updates the deployitems' exports.
+func (o *Operation) HandleDeployItemPhaseChanges(ctx context.Context, logger logr.Logger) error {
+	deployitems, err := o.listManagedDeployItems(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to list deploy items: %w", err)
+	}
+	phases := []lsv1alpha1.ExecutionPhase{}
+	for _, di := range deployitems {
+		phases = append(phases, di.Status.Phase)
+	}
+	cp := lsv1alpha1helper.CombinedExecutionPhase(phases...)
+	if o.exec.Status.Phase != cp {
+		// Phase is completed but doesn't fit to the deploy items' phases
+		logger.V(5).Info("execution phase mismatch", "phase", string(o.exec.Status.Phase), "combinedPhase", string(cp))
+		o.exec.Status.Phase = cp
+		err := o.Client().Status().Update(ctx, o.exec)
+		if err != nil {
+			return fmt.Errorf("error updating execution status for %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
+		}
+
+		if cp == lsv1alpha1.ExecutionPhaseSucceeded {
+			// phase changed to Succeeded, it might be necessary to generate the exports again
+			logger.V(5).Info("phase changed to %q, compute deploy item exports again", string(lsv1alpha1.ExecutionPhaseSucceeded))
+			execItems, _ := o.getExecutionItems(deployitems)
+			err = o.collectAndUpdateExports(ctx, execItems)
+			if err != nil {
+				return fmt.Errorf("error while updating exports of execution %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
+			}
+		}
+
+		return nil
+	} else {
+		logger.V(7).Info("execution is in a final state and up-to-date")
+	}
+
+	return nil
 }

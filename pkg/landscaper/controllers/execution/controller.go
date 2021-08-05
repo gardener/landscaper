@@ -65,7 +65,11 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-		logger.V(7).Info("execution item is already in completion phase")
+		op := execution.NewOperation(operation.NewOperation(logger, c.client, c.scheme, c.eventRecorder), exec, false)
+		err := op.HandleDeployItemPhaseChanges(ctx, logger)
+		if err != nil {
+			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleDeployItemPhaseChanges", err.Error())
+		}
 		return reconcile.Result{}, nil
 	}
 
@@ -91,12 +95,9 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 	return op.Reconcile(ctx)
 }
 
-// HandleAnnotationsAndGeneration is meant to be called at the beginning of a deployer's reconcile loop.
+// HandleAnnotationsAndGeneration is meant to be called at the beginning of the reconcile loop.
 // If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
-// It will also remove the timeout annotation if it is set.
-// Returns:
-//   - the modified execution
-//   - an error, if updating the execution failed, nil otherwise
+// Returns: an error, if updating the execution failed, nil otherwise
 func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c client.Client, exec *lsv1alpha1.Execution) error {
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	if hasReconcileAnnotation || exec.Status.ObservedGeneration != exec.Generation {
@@ -143,7 +144,13 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
 	old := exec.DeepCopy()
 	return func(ctx context.Context, err error) error {
-		exec.Status.LastError = lserrors.TryUpdateError(exec.Status.LastError, err)
+		if err == nil && reflect.DeepEqual(old.Status.LastError, exec.Status.LastError) {
+			// don't set LastError to nil if it already has been overwritten and no error occured
+			// this is needed to allow the Reconcile function to set LastError without returning an Error
+			// (meaning the execution is failed but the reconciliation itself was successful)
+			// if an error is returned, any changes to LastError will be overwritten
+			exec.Status.LastError = lserrors.TryUpdateError(old.Status.LastError, err)
+		}
 		exec.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(
 			lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase),
 			exec.Status.LastError,

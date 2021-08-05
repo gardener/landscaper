@@ -57,11 +57,13 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
 					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name)))
-				return lserrors.NewError(
+				o.exec.Status.LastError = lserrors.UpdatedError(
+					o.exec.Status.LastError,
 					"DeployItemReconcile",
 					"DeployItemFailed",
 					fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name),
 				)
+				return nil
 			}
 
 			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
@@ -88,11 +90,13 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
 					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
-				return lserrors.NewError(
+				o.exec.Status.LastError = lserrors.UpdatedError(
+					o.exec.Status.LastError,
 					"DeployItemReconcile",
 					"DeployItemFailed",
 					fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
 				)
+				return nil
 			}
 
 			if lastAppliedGeneration == o.exec.Generation {
