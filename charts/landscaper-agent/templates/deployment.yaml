@@ -42,7 +42,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - "--config=/app/ls/config/config.yaml"
-          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          - "--landscaper-kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
           - "-v={{ .Values.agent.verbosity }}"
           volumeMounts:
           - name: oci-cache

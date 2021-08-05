@@ -12,20 +12,21 @@ agent:
   name: "" # name of the environment
 
   landscaperClusterKubeconfig: {} # is required
-  #   secretRef: my-kubeconfig-secret
+  #   secretRef:
+  #     name: my-kubeconfig-secret
   #   kubeconfig: |
   #     <landscaper-cluster-kubeconfig>
 
 #  namespace: "" # overwrite the namespace where the deployers are installed.
 #  targetSelectors: # overwrite the default selectors
 #  - annotations: []
-  registryConfig: {} # contains optional oci secrets
-#    cache: {}
-##      useInMemoryOverlay: false
-#    allowPlainHttpRegistries: false
-#    insecureSkipVerify: false
-#    secrets: {}
-##     <name>: <docker config json>
+  registryConfig: # contains optional oci secrets
+    cache:
+      useInMemoryOverlay: false
+#   allowPlainHttpRegistries: false
+#   insecureSkipVerify: false
+#   secrets: {}
+##    <name>: <docker config json
 
 
 image:

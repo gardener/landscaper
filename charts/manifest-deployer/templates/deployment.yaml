@@ -39,7 +39,6 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.targetSelector }}
           args:
           - "--config=/app/ls/config/config.yaml"
           {{- if .Values.deployer.landscaperClusterKubeconfig }}
@@ -67,7 +66,6 @@ spec:
           {{- else }}
           secretName:  {{ .Values.deployer.landscaperClusterKubeconfig.secretRef }}
           {{- end }}
-      {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
