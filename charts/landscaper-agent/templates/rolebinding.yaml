@@ -19,3 +19,4 @@ subjects:
   name: {{ include "landscaper.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 ---
+{{- end }}
