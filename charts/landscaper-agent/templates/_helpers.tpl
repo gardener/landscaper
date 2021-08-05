@@ -85,8 +85,8 @@ name: {{ default .Release.Name .Values.agent.name }}
 namespace: {{default .Release.Namespace .Values.agent.namespace }}
 {{- if .Values.agent.registryConfig }}
 oci:
-  allowPlainHttp: {{ .Values.agent.registryConfig.allowPlainHttpRegistries }}
-  insecureSkipVerify: {{ .Values.agent.registryConfig.insecureSkipVerify }}
+  allowPlainHttp: {{ .Values.agent.registryConfig.allowPlainHttpRegistries | default false }}
+  insecureSkipVerify: {{ .Values.agent.registryConfig.insecureSkipVerify | default false }}
   {{- if .Values.agent.registryConfig.secrets }}
   configFiles:
   {{- range $key, $value := .Values.agent.registryConfig.secrets }}

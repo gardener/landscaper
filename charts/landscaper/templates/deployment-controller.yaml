@@ -79,7 +79,7 @@ spec:
           secretName: {{ include "landscaper.fullname" . }}-registry
       {{- end }}
       {{- if .Values.landscaper.deployersConfig }}
-      - name: config
+      - name: deployers-config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-deployers-config
       {{- end }}
