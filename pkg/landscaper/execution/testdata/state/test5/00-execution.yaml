@@ -25,5 +25,5 @@ status:
   - name: a
     ref:
       name: di-a
-      namespace: test2
+      namespace: test5
       observedGeneration: 2
