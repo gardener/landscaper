@@ -35,7 +35,7 @@ type DeployerApplyArgs struct {
 	Values                      map[string]interface{}
 }
 
-type DeployerApplyFunc func(args DeployerApplyArgs) error
+type DeployerApplyFunc func(reg *lsv1alpha1.DeployerRegistration, args DeployerApplyArgs) error
 
 var DefaultDeployerConfiguration = map[string]DeployerApplyArgs{
 	"container": {
