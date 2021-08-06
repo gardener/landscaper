@@ -61,7 +61,7 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, log logr.Logger, 
 		}
 	}
 
-	apply := func(args DeployerApplyArgs) error {
+	apply := func(reg *lsv1alpha1.DeployerRegistration, args DeployerApplyArgs) error {
 		if args.Registration.Spec.InstallationTemplate.ComponentDescriptor == nil {
 			args.Registration.Spec.InstallationTemplate.ComponentDescriptor = commonCompDescRef.DeepCopy()
 		}
@@ -81,12 +81,16 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, log logr.Logger, 
 
 		valuesBytes, err := json.Marshal(utils.MergeMaps(values, args.Values))
 		if err != nil {
-			return fmt.Errorf("unable to create Deployer values: %w", err)
+			return fmt.Errorf("unable to create deployer values: %w", err)
 		}
 		if args.Registration.Spec.InstallationTemplate.ImportDataMappings == nil {
 			args.Registration.Spec.InstallationTemplate.ImportDataMappings = map[string]lsv1alpha1.AnyJSON{}
 		}
 		args.Registration.Spec.InstallationTemplate.ImportDataMappings["values"] = lsv1alpha1.NewAnyJSON(valuesBytes)
+
+		// apply args registrations values to registration
+		reg.Spec.InstallationTemplate = args.Registration.Spec.InstallationTemplate
+		reg.Spec.DeployItemTypes = args.Registration.Spec.DeployItemTypes
 		return nil
 	}
 
@@ -119,8 +123,9 @@ func (o *Options) deployInternalDeployer(ctx context.Context, log logr.Logger, d
 			}
 			deployerArg.Values = values
 		}
-		if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, deployerArg.Registration, func() error {
-			return apply(deployerArg)
+		reg := deployerArg.Registration.DeepCopy()
+		if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, reg, func() error {
+			return apply(reg, deployerArg)
 		}); err != nil {
 			return fmt.Errorf("unable to create Deployer registration for %q: %w", deployerName, err)
 		}
@@ -137,8 +142,9 @@ func (o *Options) deployInternalDeployer(ctx context.Context, log logr.Logger, d
 		deployerArg.Values = deployerConfig.Values
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, deployerArg.Registration, func() error {
-		if err := apply(deployerArg); err != nil {
+	reg := deployerArg.Registration.DeepCopy()
+	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, reg, func() error {
+		if err := apply(reg, deployerArg); err != nil {
 			return err
 		}
 		if deployerName == "helm" {
@@ -157,7 +163,7 @@ func (o *Options) deployInternalDeployer(ctx context.Context, log logr.Logger, d
 			if err != nil {
 				return fmt.Errorf("unable to marshal helm target selector: %w", err)
 			}
-			deployerArg.Registration.Spec.InstallationTemplate.ImportDataMappings["targetSelectors"] = lsv1alpha1.NewAnyJSON(targetSelectorBytes)
+			reg.Spec.InstallationTemplate.ImportDataMappings["targetSelectors"] = lsv1alpha1.NewAnyJSON(targetSelectorBytes)
 		}
 		return nil
 	}); err != nil {
