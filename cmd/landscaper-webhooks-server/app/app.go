@@ -120,13 +120,14 @@ func registerWebhooks(ctx context.Context,
 		ServicePort:        o.webhook.webhookServicePort,
 		ServiceName:        o.webhook.webhookServiceName,
 		ServiceNamespace:   o.webhook.webhookServiceNamespace,
+		ServiceURL:         o.webhookURL,
 		WebhookedResources: o.webhook.enabledWebhooks,
 	}
 
 	// generate certificates
 	webhookServer.CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	var err error
-	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, wo.ServiceNamespace, wo.ServiceName)
+	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, wo.ServiceName)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}
