@@ -54,7 +54,12 @@ type ProviderConfiguration struct {
 
 	// ExportsFromManifests describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
+	// DEPRECATED
 	ExportsFromManifests []managedresource.Export `json:"exportsFromManifests,omitempty"`
+
+	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.
+	// +optional
+	Exports *managedresource.Exports `json:"exports,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.

@@ -35,6 +35,8 @@ type ManifestApplierOptions struct {
 	UpdateStrategy   manifestv1alpha2.UpdateStrategy
 	Manifests        []managedresource.Manifest
 	ManagedResources managedresource.ManagedResourceStatusList
+	// Labels defines additional labels that are automatically injected into all resources.
+	Labels map[string]string
 }
 
 // ManifestApplier creates or updated manifest based on their definition.
@@ -51,6 +53,7 @@ type ManifestApplier struct {
 	manifests        []managedresource.Manifest
 	managedResources managedresource.ManagedResourceStatusList
 	managedObjects   []*unstructured.Unstructured
+	labels           map[string]string
 }
 
 // NewManifestApplier creates a new manifest deployer
@@ -66,6 +69,7 @@ func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestA
 		updateStrategy:   opts.UpdateStrategy,
 		manifests:        opts.Manifests,
 		managedResources: opts.ManagedResources,
+		labels:           opts.Labels,
 	}
 }
 
@@ -146,7 +150,7 @@ func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData m
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("unable to get object: %w", err)
 		}
-		// inject manifest specific labels
+		// inject labels
 		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
 		if err := a.kubeClient.Create(ctx, obj); err != nil {
 			return fmt.Errorf("unable to create resource %s: %w", key.String(), err)
@@ -170,6 +174,7 @@ func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData m
 		return nil
 	}
 	// inject manifest specific labels
+	a.injectLabels(obj)
 	kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
 
 	// Set the required and immutable fields from the current object.
@@ -191,6 +196,20 @@ func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData m
 		return fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)
 	}
 	return nil
+}
+
+func (a *ManifestApplier) injectLabels(obj client.Object) {
+	if len(a.labels) == 0 {
+		return
+	}
+	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	for key, val := range a.labels {
+		labels[key] = val
+	}
+	obj.SetLabels(labels)
 }
 
 // cleanupOrphanedResources removes all managed resources that are not rendered anymore.

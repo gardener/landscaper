@@ -56,8 +56,18 @@ type ManagedResourceStatus struct {
 	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
 }
 
+// Exports describes one export that is read from a resource.
+type Exports struct {
+	// DefaultTimeout defines the default timeout for all exports
+	// that the exporter waits for the value in the jsonpath to occur.
+	DefaultTimeout *lsv1alpha1.Duration `json:"defaultTimeout,omitempty"`
+	Exports        []Export             `json:"exports,omitempty"`
+}
+
 // Export describes one export that is read from a resource.
 type Export struct {
+	// Timeout defines the timeout that the exporter waits for the value in the jsonpath to occur.
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
 	// Key is the key that the value from JSONPath is exported to.
 	Key string `json:"key"`
 
@@ -76,7 +86,12 @@ type Export struct {
 // FromObjectReference describes that the jsonpath points to a object reference where the actual value is read from.
 // This is helpful if for example a deployed resource referenced a secret and that exported value is in that secret.
 type FromObjectReference struct {
-	lsv1alpha1.TypedObjectReference
+	// APIVersion is the group and version for the resource being referenced.
+	// If APIVersion is not specified, the specified Kind must be in the core API group.
+	// For any other third-party types, APIVersion is required.
+	APIVersion string `json:"apiVersion"`
+	// Kind is the type of resource being referenced
+	Kind string `json:"kind"`
 	// JSONPath is the jsonpath to look for a value.
 	// The JSONPath root is the referenced resource
 	JSONPath string `json:"jsonPath"`

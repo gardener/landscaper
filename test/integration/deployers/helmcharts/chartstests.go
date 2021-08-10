@@ -60,8 +60,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "helm-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 		})
 
 		It("should deploy the Container-deployer through its Helm Chart", func() {
@@ -73,8 +73,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "container-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 		})
 
 		It("should deploy the Manifest-deployer through its Helm Chart", func() {
@@ -86,8 +86,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "manifest-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 		})
 
 		It("should deploy the Mock-deployer through its Helm Chart", func() {
@@ -99,8 +99,8 @@ func DeployerTests(f *framework.Framework) {
 
 			const deployerName = "mock-deployer"
 
-			di := deployDeployItemAndWaitForSuccess(ctx, f, &state.State, deployerName, chartDir, valuesFile)
-			removeDeployItemAndWaitForSuccess(ctx, f, &state.State, di)
+			di := deployDeployItemAndWaitForSuccess(ctx, f, state.State, deployerName, chartDir, valuesFile)
+			removeDeployItemAndWaitForSuccess(ctx, f, state.State, di)
 		})
 	})
 }

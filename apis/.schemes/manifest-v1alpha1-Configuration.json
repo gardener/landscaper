@@ -1,6 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
     "core-v1alpha1-ObjectReference": {
       "description": "ObjectReference is the reference to a kubernetes object.",
       "type": "object",
@@ -75,6 +79,16 @@
           }
         }
       }
+    },
+    "manifest-v1alpha1-ExportConfiguration": {
+      "description": "ExportConfiguration defines the export configuration for the deployer.",
+      "type": "object",
+      "properties": {
+        "defaultTimeout": {
+          "description": "DefaultTimeout configures the default timeout for all exports without a explicit export timeout defined.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
     }
   },
   "description": "Configuration is the manifest deployer configuration that configures the controller",
@@ -82,6 +96,11 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "export": {
+      "$ref": "#/definitions/manifest-v1alpha1-ExportConfiguration",
+      "default": {},
+      "description": "Export defines the export configuration."
     },
     "identity": {
       "description": "Identity identity describes the unique identity of the deployer.",

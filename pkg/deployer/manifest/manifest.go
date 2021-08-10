@@ -48,6 +48,7 @@ type Manifest struct {
 	log            logr.Logger
 	lsKubeClient   client.Client
 	hostKubeClient client.Client
+	Configuration  *manifestv1alpha2.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
@@ -67,6 +68,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 func New(log logr.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
+	configuration *manifestv1alpha2.Configuration,
 	item *lsv1alpha1.DeployItem,
 	target *lsv1alpha1.Target) (*Manifest, error) {
 
@@ -96,6 +98,7 @@ func New(log logr.Logger,
 		log:                   log.WithValues("deployitem", kutil.ObjectKey(item.Name, item.Namespace)),
 		lsKubeClient:          lsKubeClient,
 		hostKubeClient:        hostKubeClient,
+		Configuration:         configuration,
 		DeployItem:            item,
 		Target:                target,
 		ProviderConfiguration: config,

@@ -277,7 +277,7 @@ func (f *Framework) Register() *State {
 		dumper.startTime = time.Now()
 
 		s := State{
-			State:   *envState,
+			State:   envState,
 			dumper:  dumper,
 			cleanup: cleanup,
 		}

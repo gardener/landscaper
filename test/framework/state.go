@@ -14,7 +14,7 @@ type CleanupFunc func(ctx context.Context) error
 
 // State wraps the envtest.State with framework related functionality.
 type State struct {
-	envtest.State
+	*envtest.State
 	dumper  *Dumper
 	cleanup CleanupFunc
 }
