@@ -7,6 +7,7 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"path"
 
 	"github.com/go-logr/logr"
@@ -56,8 +57,8 @@ type Options struct {
 
 // UpdateValidatingWebhookConfiguration will create or update a ValidatingWebhookConfiguration
 func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, o Options, webhookLogger logr.Logger) error {
-	// do not deploy or update the webhook if no service name is given
-	if len(o.ServiceName) == 0 || len(o.ServiceNamespace) == 0 {
+	// do not deploy or update the webhook if no service name or webhook url is given
+	if (len(o.ServiceName) == 0 || len(o.ServiceNamespace) == 0) && len(o.WebhookURL) == 0 {
 		return nil
 	}
 
@@ -84,7 +85,12 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 			CABundle: o.CABundle,
 		}
 		if len(o.WebhookURL) != 0 {
-			webhookURL := path.Join(o.WebhookURL, o.WebhookBasePath, elem.ResourceName)
+			parsedURL, err := url.Parse(o.WebhookURL)
+			if err != nil {
+				return fmt.Errorf("unable to parse webhook url: %w", err)
+			}
+			parsedURL.Path = path.Join(parsedURL.Path, o.WebhookBasePath, elem.ResourceName)
+			webhookURL := parsedURL.String()
 			clientConfig.URL = &webhookURL
 		} else {
 			webhookPath := path.Join(o.WebhookBasePath, elem.ResourceName)
