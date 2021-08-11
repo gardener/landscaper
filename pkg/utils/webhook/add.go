@@ -45,7 +45,7 @@ type Options struct {
 	// port of the service
 	ServicePort int32
 	// external service URL
-	ServiceURL string
+	WebhookURL string
 	// LabelSelector that is used to filter all resources handled by this webhook
 	ObjectSelector metav1.LabelSelector
 	// the resources that should be handled by this webhook
@@ -83,9 +83,9 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 		clientConfig := admissionregistrationv1.WebhookClientConfig{
 			CABundle: o.CABundle,
 		}
-		if len(o.ServiceURL) != 0 {
-			serviceURL := path.Join(o.ServiceURL, o.WebhookBasePath, elem.ResourceName)
-			clientConfig.URL = &serviceURL
+		if len(o.WebhookURL) != 0 {
+			webhookURL := path.Join(o.WebhookURL, o.WebhookBasePath, elem.ResourceName)
+			clientConfig.URL = &webhookURL
 		} else {
 			webhookPath := path.Join(o.WebhookBasePath, elem.ResourceName)
 			clientConfig.Service = &admissionregistrationv1.ServiceReference{

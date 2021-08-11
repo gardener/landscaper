@@ -120,7 +120,7 @@ func registerWebhooks(ctx context.Context,
 		ServicePort:        o.webhook.webhookServicePort,
 		ServiceName:        o.webhook.webhookServiceName,
 		ServiceNamespace:   o.webhook.webhookServiceNamespace,
-		ServiceURL:         o.webhookURL,
+		WebhookURL:         o.webhookURL,
 		WebhookedResources: o.webhook.enabledWebhooks,
 	}
 
