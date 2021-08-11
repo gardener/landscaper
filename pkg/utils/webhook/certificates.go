@@ -169,7 +169,7 @@ func GenerateNewCAAndServerCert(dnsNamesConfig DNSNamesConfig, caConfig certific
 	)
 
 	serverConfig := &certificates.CertificateSecretConfig{
-		CommonName:  "webhook-ca",
+		CommonName:  "landscaper-webhooks",
 		DNSNames:    dnsNamesConfig.Get(),
 		IPAddresses: ipAddresses,
 		CertType:    certificates.ServerCert,
