@@ -44,6 +44,8 @@ type Options struct {
 	ServiceNamespace string
 	// port of the service
 	ServicePort int32
+	// external service URL
+	WebhookURL string
 	// LabelSelector that is used to filter all resources handled by this webhook
 	ObjectSelector metav1.LabelSelector
 	// the resources that should be handled by this webhook
@@ -78,7 +80,21 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 		rule.Rule.APIGroups = []string{elem.APIGroup}
 		rule.Rule.APIVersions = elem.APIVersions
 		rule.Rule.Resources = []string{elem.ResourceName}
-		webhookPath := path.Join(o.WebhookBasePath, elem.ResourceName)
+		clientConfig := admissionregistrationv1.WebhookClientConfig{
+			CABundle: o.CABundle,
+		}
+		if len(o.WebhookURL) != 0 {
+			webhookURL := path.Join(o.WebhookURL, o.WebhookBasePath, elem.ResourceName)
+			clientConfig.URL = &webhookURL
+		} else {
+			webhookPath := path.Join(o.WebhookBasePath, elem.ResourceName)
+			clientConfig.Service = &admissionregistrationv1.ServiceReference{
+				Namespace: o.ServiceNamespace,
+				Name:      o.ServiceName,
+				Path:      &webhookPath,
+				Port:      &o.ServicePort,
+			}
+		}
 		vwcWebhook := admissionregistrationv1.ValidatingWebhook{
 			Name:                    elem.ResourceName + o.WebhookNameSuffix,
 			SideEffects:             &noSideEffects,
@@ -86,15 +102,7 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 			ObjectSelector:          &o.ObjectSelector,
 			AdmissionReviewVersions: []string{"v1"},
 			Rules:                   []admissionregistrationv1.RuleWithOperations{rule},
-			ClientConfig: admissionregistrationv1.WebhookClientConfig{
-				Service: &admissionregistrationv1.ServiceReference{
-					Namespace: o.ServiceNamespace,
-					Name:      o.ServiceName,
-					Path:      &webhookPath,
-					Port:      &o.ServicePort,
-				},
-				CABundle: o.CABundle,
-			},
+			ClientConfig:            clientConfig,
 		}
 		vwcWebhooks = append(vwcWebhooks, vwcWebhook)
 	}

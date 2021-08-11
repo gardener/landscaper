@@ -48,6 +48,8 @@ type options struct {
 	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
 	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>
 	webhookServicePort          int32  // port of the webhook service
+	webhookURL                  string // URL referring to the webhook service running externally
+	certificatesNamespace       string // the namespace in which the webhook credentials are being created/updated
 
 	webhook webhookOptions
 }
@@ -57,6 +59,7 @@ type webhookOptions struct {
 	webhookServiceNamespace string                                // webhook service namespace
 	webhookServiceName      string                                // webhook service name
 	webhookServicePort      int32                                 // port of the webhook service
+	certificatesNamespace   string                                // the certificate namespace
 	enabledWebhooks         []webhook.WebhookedResourceDefinition // which resources should be watched by the webhook
 }
 
@@ -71,6 +74,8 @@ func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.disabledWebhooks, "disable-webhooks", "", "Specify validation webhooks that should be disabled ('all' to disable validation completely)")
 	fs.StringVar(&o.webhookServiceNamespaceName, "webhook-service", "", "Specify namespace and name of the webhook service (format: <namespace>/<name>)")
 	fs.Int32Var(&o.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
+	fs.StringVar(&o.webhookURL, "webhook-url", "", "Specify the URL of the external webhook service (scheme://host:port")
+	fs.StringVar(&o.certificatesNamespace, "certificates-namespace", "", "Specify the namespace in which the certificates are being stored")
 	logger.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
@@ -98,6 +103,7 @@ func (o *options) Complete() error {
 		o.webhook.webhookServiceNamespace = webhookService[0]
 		o.webhook.webhookServiceName = webhookService[1]
 	}
+	o.webhook.certificatesNamespace = getCertificateNamespace(o)
 	return allErrs.ToAggregate()
 }
 
@@ -115,6 +121,12 @@ func (o *options) validate() error {
 			}
 		}
 	}
+
+	// webhookServiceNamespaceName/webhookServicePort and webhookURL are mutually exclusive
+	if len(o.webhookURL) > 0 && len(o.webhookServiceNamespaceName) > 0 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-url"), o.webhookURL, "must not specified together with --webhook-service"))
+	}
+
 	// validate service name and namespace
 	if len(o.webhookServiceNamespaceName) > 0 {
 		ws := strings.Split(o.webhookServiceNamespaceName, "/")
@@ -130,7 +142,7 @@ func (o *options) validate() error {
 	if o.port <= 0 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("--port"), o.port, "must be greater than zero"))
 	}
-	if o.webhookServicePort <= 0 {
+	if o.webhookServicePort <= 0 && len(o.webhookURL) == 0 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("--webhook-service-port"), o.webhookServicePort, "must be greater than zero"))
 	}
 	return allErrs.ToAggregate()
@@ -171,4 +183,15 @@ func stringListToMap(opt string) map[string]bool {
 		res[t] = true
 	}
 	return res
+}
+
+func getCertificateNamespace(opt *options) string {
+	if len(opt.certificatesNamespace) != 0 {
+		return opt.certificatesNamespace
+	}
+	if len(opt.webhookURL) != 0 {
+		return ""
+	} else {
+		return opt.webhook.webhookServiceNamespace
+	}
 }
