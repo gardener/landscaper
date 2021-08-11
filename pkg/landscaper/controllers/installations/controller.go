@@ -25,6 +25,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -131,6 +133,16 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
+		// check whether the current phase does still match the combined phase of subinstallations and executions
+		getOperationFunc := func(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+			return c.initPrerequisites(ctx, inst)
+		}
+		getExportsFunc := func(ctx context.Context, instOp *installations.Operation) ([]*dataobjects.DataObject, []*dataobjects.Target, error) {
+			return exports.NewConstructor(instOp).Construct(ctx)
+		}
+		if err := installations.HandleSubComponentPhaseChanges(ctx, logger, c.Client(), inst, getOperationFunc, getExportsFunc); err != nil {
+			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleSubComponentPhaseChanges", err.Error())
+		}
 		return reconcile.Result{}, nil
 	}
 

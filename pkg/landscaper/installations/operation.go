@@ -129,10 +129,15 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 // ListSubinstallations returns a list of all subinstallations of the given installation.
 // Returns nil if no installations can be found
 func (o *Operation) ListSubinstallations(ctx context.Context) ([]*lsv1alpha1.Installation, error) {
+	return listSubinstallations(ctx, o.Client(), o.Inst.Info)
+}
+
+// listSubinstallations is a helper function which doesn't require an operation
+func listSubinstallations(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, error) {
 	installationList := &lsv1alpha1.InstallationList{}
 
-	err := o.Client().List(ctx, installationList, client.InNamespace(o.Inst.Info.Namespace), client.MatchingLabels{
-		lsv1alpha1.EncompassedByLabel: o.Inst.Info.Name,
+	err := kubeClient.List(ctx, installationList, client.InNamespace(inst.Namespace), client.MatchingLabels{
+		lsv1alpha1.EncompassedByLabel: inst.Name,
 	})
 	if err != nil {
 		return nil, err

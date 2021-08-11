@@ -1,0 +1,30 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: subexec
+  namespace: {{ .Namespace }}
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Installation
+    name: root
+    uid: abc-def-root
+spec:
+  deployItems:
+  - config:
+      apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+    name: subexec
+    type: landscaper.gardener.cloud/mock
+status:
+  deployItemRefs:
+  - name: subexec
+    ref:
+      name: root-subexec-abcde
+      namespace: {{ .Namespace }}
+      observedGeneration: 1
+  observedGeneration: 1
+  phase: Succeeded
