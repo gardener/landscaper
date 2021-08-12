@@ -127,20 +127,15 @@ func registerWebhooks(ctx context.Context,
 	// generate certificates
 	webhookServer.CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	var err error
-	var dnsNamesConfig webhook.DNSNamesConfig
+	var dnsNames []string
 	if len(wo.WebhookURL) != 0 {
-		conf := webhook.DNSWebhookURLConfig{}
-		err = conf.Set(wo.WebhookURL)
-		if err != nil {
+		if dnsNames, err = webhook.GetDNSNamesFromURL(wo.WebhookURL); err != nil {
 			return fmt.Errorf("unable to create webhook certificate configuration: %w", err)
 		}
-		dnsNamesConfig = &conf
 	} else {
-		conf := webhook.DNSNamespacedNameConfig{}
-		conf.Set(wo.ServiceName, wo.ServiceNamespace)
-		dnsNamesConfig = &conf
+		dnsNames = webhook.GeDNSNamesFromNamespacedName(wo.ServiceNamespace, wo.ServiceName)
 	}
-	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, dnsNamesConfig)
+	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, "landscaper-webhook", dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}

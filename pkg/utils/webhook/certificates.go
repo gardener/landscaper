@@ -27,60 +27,38 @@ const (
 	certSecretName = "landscaper-webhook-cert"
 )
 
-// The DNSNamesConfig holds the list of DNS names used in the certificates.CertificateSecretConfig.
-type DNSNamesConfig interface {
-	Get() []string
-}
-
-// The DNSNamespacedNameConfig derives the DNS names from the service name and service namespace.
-type DNSNamespacedNameConfig struct {
-	config []string
-}
-
-// The DNSWebhookURLConfig derives the DNS names directly from the webhook url.
-type DNSWebhookURLConfig struct {
-	config []string
-}
-
-func (c *DNSNamespacedNameConfig) Set(name, namespace string) {
-	c.config = []string{
+// GeDNSNamesFromNamespacedName creates a list of DNS names derived from a service name and namespace.
+func GeDNSNamesFromNamespacedName(namespace, name string) []string {
+	return []string{
 		name,
 		fmt.Sprintf("%s.%s", name, namespace),
 		fmt.Sprintf("%s.%s.svc", name, namespace),
 	}
 }
 
-func (c *DNSNamespacedNameConfig) Get() []string {
-	return c.config
-}
-
-func (c *DNSWebhookURLConfig) Set(webhookURL string) error {
-	parsedURL, err := url.Parse(webhookURL)
+// GetDNSNamesFromURL creates a list of DNS names derived from a URL.
+func GetDNSNamesFromURL(rawurl string) ([]string, error) {
+	parsedURL, err := url.Parse(rawurl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	dnsName, _, err := net.SplitHostPort(parsedURL.Host)
 	if err != nil {
 		// If SplitHostPort fails here, it is due to a missing port.
 		// In this case the host of the parsed URL is used directly.
-		c.config = []string{
+		return []string{
 			parsedURL.Host,
-		}
+		}, nil
 	} else {
-		c.config = []string{
+		return []string{
 			dnsName,
-		}
+		}, nil
 	}
-	return nil
-}
-
-func (c *DNSWebhookURLConfig) Get() []string {
-	return c.config
 }
 
 // GenerateCertificates generates the certificates that are required for a webhook. It returns the ca bundle, and it
 // stores the server certificate and key locally on the file system.
-func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace string, dnsNamesConfig DNSNamesConfig) ([]byte, error) {
+func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir, namespace, name string, dnsNames []string) ([]byte, error) {
 	var (
 		caCert     *certificates.Certificate
 		serverCert *certificates.Certificate
@@ -95,7 +73,7 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 
 	// If the namespace is not set then the webhook controller is running locally. We simply generate a new certificate in this case.
 	if len(namespace) == 0 {
-		caCert, serverCert, err = GenerateNewCAAndServerCert(dnsNamesConfig, *caConfig)
+		caCert, serverCert, err = GenerateNewCAAndServerCert(name, dnsNames, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -107,7 +85,7 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 
 	generateAndUpdateCertificate := func() ([]byte, error) {
 		// The secret was not found, let's generate new certificates and store them in the secret afterwards.
-		caCert, serverCert, err = GenerateNewCAAndServerCert(dnsNamesConfig, *caConfig)
+		caCert, serverCert, err = GenerateNewCAAndServerCert(name, dnsNames, *caConfig)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error generating new certificates for webhook server")
 		}
@@ -150,7 +128,7 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 	}
 
 	// update certificates if the dns names have changed
-	if !sets.NewString(caCert.Certificate.DNSNames...).HasAll(dnsNamesConfig.Get()...) {
+	if !sets.NewString(caCert.Certificate.DNSNames...).HasAll(dnsNames...) {
 		return generateAndUpdateCertificate()
 	}
 
@@ -158,7 +136,7 @@ func GenerateCertificates(ctx context.Context, kubeClient client.Client, certDir
 }
 
 // GenerateNewCAAndServerCert generates a new ca and server certificate for a service in a name and namespace.
-func GenerateNewCAAndServerCert(dnsNamesConfig DNSNamesConfig, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
+func GenerateNewCAAndServerCert(name string, dnsNames []string, caConfig certificates.CertificateSecretConfig) (*certificates.Certificate, *certificates.Certificate, error) {
 	caCert, err := caConfig.GenerateCertificate()
 	if err != nil {
 		return nil, nil, err
@@ -169,8 +147,8 @@ func GenerateNewCAAndServerCert(dnsNamesConfig DNSNamesConfig, caConfig certific
 	)
 
 	serverConfig := &certificates.CertificateSecretConfig{
-		CommonName:  "landscaper-webhooks",
-		DNSNames:    dnsNamesConfig.Get(),
+		CommonName:  name,
+		DNSNames:    dnsNames,
 		IPAddresses: ipAddresses,
 		CertType:    certificates.ServerCert,
 		SigningCA:   caCert,
