@@ -132,7 +132,7 @@ func registerWebhooks(ctx context.Context,
 		conf := webhook.DNSWebhookURLConfig{}
 		err = conf.Set(wo.WebhookURL)
 		if err != nil {
-			return fmt.Errorf("unabble to create webhook certificate configuration: %w", err)
+			return fmt.Errorf("unable to create webhook certificate configuration: %w", err)
 		}
 		dnsNamesConfig = &conf
 	} else {
