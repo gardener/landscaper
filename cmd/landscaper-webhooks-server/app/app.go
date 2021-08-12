@@ -127,7 +127,15 @@ func registerWebhooks(ctx context.Context,
 	// generate certificates
 	webhookServer.CertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	var err error
-	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, wo.ServiceName)
+	var dnsNames []string
+	if len(wo.WebhookURL) != 0 {
+		if dnsNames, err = webhook.GetDNSNamesFromURL(wo.WebhookURL); err != nil {
+			return fmt.Errorf("unable to create webhook certificate configuration: %w", err)
+		}
+	} else {
+		dnsNames = webhook.GeDNSNamesFromNamespacedName(wo.ServiceNamespace, wo.ServiceName)
+	}
+	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, "landscaper-webhook", dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}
