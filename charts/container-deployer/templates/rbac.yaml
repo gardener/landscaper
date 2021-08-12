@@ -20,6 +20,7 @@ rules:
   - watch
   - list
   - update
+  - patch
 - apiGroups:
   - landscaper.gardener.cloud
   resources:
