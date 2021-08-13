@@ -94,14 +94,15 @@ func (s AnyJSON) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements json unmarshaling for a JSON
 func (s *AnyJSON) UnmarshalJSON(data []byte) error {
-	raw := json.RawMessage{}
-
-	if string(data) != "null" {
-		if err := raw.UnmarshalJSON(data); err != nil {
-			return err
-		}
+	if string(data) == "null" {
+		*s = AnyJSON{RawMessage: nil}
+		return nil
 	}
 
+	raw := json.RawMessage{}
+	if err := raw.UnmarshalJSON(data); err != nil {
+		return err
+	}
 	*s = AnyJSON{RawMessage: raw}
 	return nil
 }
