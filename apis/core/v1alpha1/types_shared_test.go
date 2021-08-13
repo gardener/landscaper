@@ -26,7 +26,7 @@ var _ = Describe("Shared Types", func() {
 			err = yaml.Unmarshal(result1, executor2)
 
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			gomega.Expect(executor2.Template.RawMessage).To(gomega.HaveLen(0))
+			gomega.Expect(executor2.Template.RawMessage).To(gomega.BeNil())
 		})
 
 	})
