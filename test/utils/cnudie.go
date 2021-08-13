@@ -16,3 +16,17 @@ func DefaultRepositoryContext(baseUrl string) *cdv2.UnstructuredTypedObject {
 func ExampleRepositoryContext() *cdv2.UnstructuredTypedObject {
 	return DefaultRepositoryContext("example.com")
 }
+
+// BuildLocalFilesystemResource creates a local filesystem blob resource from a path.
+func BuildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
+	res := cdv2.Resource{}
+	res.Name = name
+	res.Type = ttype
+	res.Relation = cdv2.LocalRelation
+
+	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
+	uAcc, err := cdv2.NewUnstructured(localFsAccess)
+	ExpectNoError(err)
+	res.Access = &uAcc
+	return res
+}

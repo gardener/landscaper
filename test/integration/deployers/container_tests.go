@@ -6,12 +6,26 @@ package deployers
 
 import (
 	"context"
+	"io"
+	"os"
 	"path"
 	"time"
 
+	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+	"github.com/mandelsoft/vfs/pkg/memoryfs"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/onsi/ginkgo"
 	g "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
+
+	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/pkg/deployer/container"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -26,16 +40,16 @@ func ContainerDeployerTests(f *framework.Framework) {
 		var (
 			state      = f.Register()
 			exampleDir = path.Join(f.RootPath, "examples/deploy-items")
+			testdataFs vfs.FileSystem
 
 			ctx context.Context
 		)
 
 		ginkgo.BeforeEach(func() {
 			ctx = context.Background()
-		})
-
-		ginkgo.AfterEach(func() {
-			ctx.Done()
+			var err error
+			testdataFs, err = projectionfs.New(osfs.New(), path.Join(f.RootPath, "test/integration/deployers/testdata"))
+			utils.ExpectNoError(err)
 		})
 
 		ginkgo.It("should run a simple docker image with a sleep command", func() {
@@ -180,6 +194,93 @@ func ContainerDeployerTests(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
 
-	})
+		ginkgo.It("should read data from the content path", func() {
+			if !f.IsRegistryEnabled() {
+				ginkgo.Skip("No registry configured skipping the registry tests...")
+			}
 
+			ginkgo.By("upload blueprint")
+			buildAndUploadComponentDescriptorWithArtifacts(ctx, f, testdataFs,
+				"example.com/container-test-1", "v0.0.1", "/blueprints/container-deployer-example1")
+
+			di, err := container.NewDeployItemBuilder().ProviderConfig(&containerv1alpha1.ProviderConfiguration{
+				Image:   "alpine",
+				Command: []string{"/bin/sh", "-c"},
+				Args: []string{`
+echo "{ \"my-val\": \"$(cat $CONTENT_PATH/file1)\" }" > $EXPORTS_PATH
+`},
+			}).Build()
+			utils.ExpectNoError(err)
+			di.SetName("")
+			di.SetGenerateName("container-content-")
+			di.SetNamespace(state.Namespace)
+
+			ginkgo.By("Create container deploy item")
+			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
+
+			// expect that the export contains a valid json with { "my-val": "val1" }
+			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
+			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
+			utils.ExpectNoError(err)
+			g.Expect(exportData).To(g.MatchJSON(`{ "my-val": "val1" }`))
+
+			ginkgo.By("Delete container deploy item")
+			utils.ExpectNoError(f.Client.Delete(ctx, di))
+		})
+
+	})
+}
+
+func buildAndUploadComponentDescriptorWithArtifacts(
+	ctx context.Context,
+	f *framework.Framework,
+	baseFs vfs.FileSystem,
+	name, version string, blueprintDir string) *cdv2.ComponentDescriptor {
+	// define component descriptor
+	var (
+		cd = &cdv2.ComponentDescriptor{}
+		fs = memoryfs.New()
+	)
+	cd.Name = name
+	cd.Version = version
+	cd.Provider = cdv2.InternalProvider
+	repoCtx := cdv2.OCIRegistryRepository{
+		ObjectType: cdv2.ObjectType{
+			Type: cdv2.OCIRegistryType,
+		},
+		BaseURL:              f.RegistryBasePath,
+		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
+	}
+	utils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
+	utils.ExpectNoError(fs.MkdirAll("blobs", os.ModePerm))
+
+	blueprintInput := input.BlobInput{
+		Type:             input.DirInputType,
+		Path:             blueprintDir,
+		MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
+		CompressWithGzip: pointer.BoolPtr(true),
+	}
+	blob, err := blueprintInput.Read(baseFs, "")
+	utils.ExpectNoError(err)
+	defer blob.Reader.Close()
+	file, err := fs.Create("blobs/bp")
+	utils.ExpectNoError(err)
+	_, err = io.Copy(file, blob.Reader)
+	utils.ExpectNoError(err)
+	utils.ExpectNoError(file.Close())
+	utils.ExpectNoError(blob.Reader.Close())
+
+	cd.Resources = append(cd.Resources, utils.BuildLocalFilesystemResource("my-blueprint", mediatype.BlueprintType, blueprintInput.MediaType, "bp"))
+
+	utils.ExpectNoError(cdv2.DefaultComponent(cd))
+
+	ca := ctf.NewComponentArchive(cd, fs)
+	manifest, err := cdoci.NewManifestBuilder(f.OCICache, ca).Build(ctx)
+	utils.ExpectNoError(err)
+
+	ref, err := cdoci.OCIRef(repoCtx, cd.Name, cd.Version)
+	utils.ExpectNoError(err)
+	utils.ExpectNoError(f.OCIClient.PushManifest(ctx, ref, manifest))
+	return cd
 }

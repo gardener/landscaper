@@ -30,7 +30,7 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 )
 
 func RegistryTest(f *framework.Framework) {
@@ -71,21 +71,21 @@ func RegistryTest(f *framework.Framework) {
 
 			ginkgo.By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
-			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
-			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, false)
-			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			testutils.ExpectNoError(testutils.ReadResourceFromFile(target, targetResource))
+			target, err := testutils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, false)
+			testutils.ExpectNoError(err)
+			testutils.ExpectNoError(state.Create(ctx, f.Client, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			cm.SetNamespace(state.Namespace)
-			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
+			testutils.ExpectNoError(testutils.ReadResourceFromFile(cm, importResource))
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			testutils.ExpectNoError(state.Create(ctx, f.Client, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
-			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
+			gomega.Expect(testutils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
 			inst.SetNamespace(state.Namespace)
 			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 				Reference: &lsv1alpha1.ComponentDescriptorReference{
@@ -96,30 +96,30 @@ func RegistryTest(f *framework.Framework) {
 			}
 			inst.Spec.Blueprint.Reference.ResourceName = "my-blueprint"
 
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			testutils.ExpectNoError(state.Create(ctx, f.Client, inst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+			testutils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
 
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			gomega.Expect(deployItems).To(gomega.HaveLen(1))
 			gomega.Expect(deployItems[0].Status.Phase).To(gomega.Equal(lsv1alpha1.ExecutionPhaseSucceeded))
 
 			// expect that the nginx deployment is successfully running
 			nginxIngressDeploymentName := "test-ingress-nginx-controller"
 			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
-			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
+			testutils.ExpectNoError(testutils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
 			ginkgo.By("Delete installation")
-			utils.ExpectNoError(f.Client.Delete(ctx, inst))
-			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
+			testutils.ExpectNoError(f.Client.Delete(ctx, inst))
+			testutils.ExpectNoError(testutils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
 
 			// expect that the nginx deployment is already deleted or has an deletion timestamp
 			nginxDeployment := &appsv1.Deployment{}
 			err = f.Client.Get(ctx, nginxIngressObjectKey, nginxDeployment)
 			if err != nil && !apierrors.IsNotFound(err) {
-				utils.ExpectNoError(err)
+				testutils.ExpectNoError(err)
 			} else if err == nil {
 				gomega.Expect(nginxDeployment.DeletionTimestamp.IsZero()).To(gomega.BeTrue())
 			}
@@ -146,8 +146,8 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 		BaseURL:              f.RegistryBasePath,
 		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
 	}
-	utils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
-	utils.ExpectNoError(fs.MkdirAll("blobs", os.ModePerm))
+	testutils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
+	testutils.ExpectNoError(fs.MkdirAll("blobs", os.ModePerm))
 
 	// gzip and add helm chart
 	helmInput := input.BlobInput{
@@ -156,15 +156,15 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 		CompressWithGzip: pointer.BoolPtr(true),
 	}
 	blob, err := helmInput.Read(osfs.New(), "")
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 	file, err := fs.Create("blobs/chart")
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 	_, err = io.Copy(file, blob.Reader)
-	utils.ExpectNoError(err)
-	utils.ExpectNoError(file.Close())
-	utils.ExpectNoError(blob.Reader.Close())
+	testutils.ExpectNoError(err)
+	testutils.ExpectNoError(file.Close())
+	testutils.ExpectNoError(blob.Reader.Close())
 
-	cd.Resources = append(cd.Resources, buildLocalFilesystemResource("ingress-nginx-chart", "helm", input.MediaTypeGZip, "chart"))
+	cd.Resources = append(cd.Resources, testutils.BuildLocalFilesystemResource("ingress-nginx-chart", "helm", input.MediaTypeGZip, "chart"))
 
 	blueprintInput := input.BlobInput{
 		Type:             input.DirInputType,
@@ -173,38 +173,25 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 		CompressWithGzip: pointer.BoolPtr(true),
 	}
 	blob, err = blueprintInput.Read(osfs.New(), "")
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 	defer blob.Reader.Close()
 	file, err = fs.Create("blobs/bp")
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 	_, err = io.Copy(file, blob.Reader)
-	utils.ExpectNoError(err)
-	utils.ExpectNoError(file.Close())
-	utils.ExpectNoError(blob.Reader.Close())
+	testutils.ExpectNoError(err)
+	testutils.ExpectNoError(file.Close())
+	testutils.ExpectNoError(blob.Reader.Close())
 
-	cd.Resources = append(cd.Resources, buildLocalFilesystemResource("my-blueprint", mediatype.BlueprintType, blueprintInput.MediaType, "bp"))
+	cd.Resources = append(cd.Resources, testutils.BuildLocalFilesystemResource("my-blueprint", mediatype.BlueprintType, blueprintInput.MediaType, "bp"))
 
-	utils.ExpectNoError(cdv2.DefaultComponent(cd))
+	testutils.ExpectNoError(cdv2.DefaultComponent(cd))
 
 	ca := ctf.NewComponentArchive(cd, fs)
 	manifest, err := cdoci.NewManifestBuilder(f.OCICache, ca).Build(ctx)
-	utils.ExpectNoError(err)
+	testutils.ExpectNoError(err)
 
 	ref, err := cdoci.OCIRef(repoCtx, cd.Name, cd.Version)
-	utils.ExpectNoError(err)
-	utils.ExpectNoError(f.OCIClient.PushManifest(ctx, ref, manifest))
+	testutils.ExpectNoError(err)
+	testutils.ExpectNoError(f.OCIClient.PushManifest(ctx, ref, manifest))
 	return cd
-}
-
-func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
-	res := cdv2.Resource{}
-	res.Name = name
-	res.Type = ttype
-	res.Relation = cdv2.LocalRelation
-
-	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
-	uAcc, err := cdv2.NewUnstructured(localFsAccess)
-	utils.ExpectNoError(err)
-	res.Access = &uAcc
-	return res
 }
