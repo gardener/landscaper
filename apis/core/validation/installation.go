@@ -66,12 +66,7 @@ func ValidateInstallationBlueprint(bp core.BlueprintDefinition, fldPath *field.P
 	allErrs := field.ErrorList{}
 
 	// check that either inline blueprint or reference is provided (and not both)
-	if bp.Reference == nil && bp.Inline == nil {
-		allErrs = append(allErrs, field.Required(fldPath.Child("definition"), "must specify either inline blueprint or reference"))
-	}
-	if bp.Reference != nil && bp.Inline != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("definition"), bp, "must specify either inline blueprint or reference, not both"))
-	}
+	allErrs = append(allErrs, validateExactlyOneOf(fldPath.Child("definition"), bp, "Inline", "Reference")...)
 
 	return allErrs
 }
@@ -82,12 +77,7 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 
 	// check that a ComponentDescriptor - if given - is either inline or ref but not both
 	if cd != nil {
-		if cd.Inline == nil && cd.Reference == nil {
-			allErrs = append(allErrs, field.Required(fldPath.Child("definition"), "must specify either inline Component Descriptor or reference if a Component Descriptor is supplied"))
-		}
-		if cd.Inline != nil && cd.Reference != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Child("definition"), *cd, "must specify either inline Component Descriptor or reference - not both - if a Component Descriptor is supplied "))
-		}
+		allErrs = append(allErrs, validateExactlyOneOf(fldPath.Child("definition"), *cd, "Inline", "Reference")...)
 	}
 
 	return allErrs
@@ -101,7 +91,9 @@ func ValidateInstallationImports(imports core.InstallationImports, fldPath *fiel
 
 	tmpErrs, importNames = ValidateInstallationDataImports(imports.Data, fldPath.Child("data"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
-	tmpErrs, _ = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	tmpErrs, importNames = ValidateInstallationTargetImports(imports.Targets, fldPath.Child("targets"), importNames)
+	allErrs = append(allErrs, tmpErrs...)
+	tmpErrs, _ = ValidateInstallationComponentDescriptorImports(imports.ComponentDescriptors, fldPath.Child("componentDescriptors"), importNames)
 	allErrs = append(allErrs, tmpErrs...)
 
 	return allErrs
@@ -114,24 +106,14 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 	for idx, imp := range imports {
 		impPath := fldPath.Index(idx)
 
-		if imp.DataRef == "" && imp.SecretRef == nil && imp.ConfigMapRef == nil {
-			allErrs = append(allErrs, field.Required(impPath, "either dataRef, secretRef or configMapRef must not be empty"))
-		}
+		allErrs = append(allErrs, validateExactlyOneOf(impPath, imp, "DataRef", "SecretRef", "ConfigMapRef")...)
 
 		if imp.SecretRef != nil {
-			secRefField := impPath.Child("secretRef")
-			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, secRefField)...)
-			if imp.DataRef != "" || imp.ConfigMapRef != nil {
-				allErrs = append(allErrs, field.Forbidden(secRefField, "multiple data references are defined"))
-			}
+			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, impPath.Child("secretRef"))...)
 		}
 
 		if imp.ConfigMapRef != nil {
-			cmRefField := impPath.Child("configMapRef")
-			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, cmRefField)...)
-			if imp.DataRef != "" || imp.SecretRef != nil {
-				allErrs = append(allErrs, field.Forbidden(cmRefField, "multiple data references are defined"))
-			}
+			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, impPath.Child("configMapRef"))...)
 		}
 
 		if imp.Name == "" {
@@ -156,13 +138,7 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		impFields := specifiedTargetImportConfigFields(imp)
-		if len(impFields) == 0 {
-			allErrs = append(allErrs, field.Required(fldPathIdx.Child("target|targets|targetListRef"), "either target, targets, or targetListRef must be specified"))
-		}
-		if len(impFields) > 1 {
-			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("target|targets|targetListRef"), imp, "only one of target, targets, and targetListRef may be specified"))
-		}
+		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "Target", "Targets", "TargetListReference")...)
 		if len(imp.Targets) > 0 {
 			for idx2, tg := range imp.Targets {
 				if len(tg) == 0 {
@@ -179,19 +155,47 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 	return allErrs, importNames
 }
 
-// specifiedTargetImportConfigFields is a helper function that returns which config fields for a target import are set
-func specifiedTargetImportConfigFields(imp core.TargetImport) map[string]bool {
-	res := map[string]bool{}
-	if len(imp.Target) != 0 {
-		res["target"] = true
+// ValidateInstallationComponentDescriptorImports validates the component descriptor imports of an Installation
+func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDescriptorImport, fldPath *field.Path, importNames sets.String) (field.ErrorList, sets.String) {
+	allErrs := field.ErrorList{}
+
+	for idx, imp := range imports {
+		fldPathIdx := fldPath.Index(idx)
+		if imp.Name == "" {
+			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
+		}
+		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "Ref", "ConfigMapRef", "SecretRef", "List")...)
+		if imp.ConfigMapRef != nil {
+			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, fldPathIdx.Child("configMapRef"))...)
+		}
+		if imp.SecretRef != nil {
+			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, fldPathIdx.Child("secretRef"))...)
+		}
+		if len(imp.DataRef) != 0 {
+			allErrs = append(allErrs, field.Invalid(fldPathIdx.Child("dataRef"), imp.DataRef, "must be set in subinstallation templates only"))
+		}
+		if len(imp.List) > 0 {
+			for idx2, cd := range imp.List {
+				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
+				allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx2, cd, "Ref", "ConfigMapRef", "SecretRef")...)
+				if cd.ConfigMapRef != nil {
+					allErrs = append(allErrs, ValidateConfigMapReference(*cd.ConfigMapRef, fldPathIdx2.Child("configMapRef"))...)
+				}
+				if cd.SecretRef != nil {
+					allErrs = append(allErrs, ValidateSecretReference(*cd.SecretRef, fldPathIdx2.Child("secretRef"))...)
+				}
+				if len(cd.DataRef) != 0 {
+					allErrs = append(allErrs, field.Invalid(fldPathIdx2.Child("dataRef"), cd.DataRef, "must be set in subinstallation templates only"))
+				}
+			}
+		}
+		if importNames.Has(imp.Name) {
+			allErrs = append(allErrs, field.Duplicate(fldPathIdx, imp.Name))
+		}
+		importNames.Insert(imp.Name)
 	}
-	if imp.Targets != nil {
-		res["targets"] = true
-	}
-	if len(imp.TargetListReference) != 0 {
-		res["targetListRef"] = true
-	}
-	return res
+
+	return allErrs, importNames
 }
 
 // ValidateInstallationExports validates the exports of an Installation

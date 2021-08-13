@@ -6,18 +6,24 @@ package imports_test
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	k8sv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -251,6 +257,58 @@ var _ = Describe("Constructor", func() {
 						"config": Equal("val-sib-a"),
 					}),
 				}),
+			)))
+		})
+	})
+
+	Context("ComponentDescriptors", func() {
+		It("should construct component descriptor imports from registry, secret, and configmap", func() {
+			ctx := context.Background()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test10/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			c := imports.NewConstructor(op)
+			Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
+			Expect(inInstRoot.GetImports()).ToNot(BeNil())
+
+			// check import from registry
+			cdData, err := dataobjects.NewComponentDescriptor().SetDescriptor(op.ComponentDescriptor).GetData()
+			utils.ExpectNoError(err)
+			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-registry", BeEquivalentTo(cdData)))
+
+			// check import from configmap
+			cm := &k8sv1.ConfigMap{}
+			utils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-configmap", "test10"), cm))
+			tmpData := cm.Data["componentDescriptor"]
+			tmpDataJSON, err := yaml.ToJSON([]byte(tmpData))
+			utils.ExpectNoError(err)
+			configMapCD := &cdv2.ComponentDescriptor{}
+			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, configMapCD))
+			configMapCDData, err := dataobjects.NewComponentDescriptor().SetDescriptor(configMapCD).GetData()
+			utils.ExpectNoError(err)
+			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-configmap", BeEquivalentTo(configMapCDData)))
+
+			// check import from secret
+			secret := &k8sv1.Secret{}
+			utils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-secret", "test10"), secret))
+			tmpDataByte := secret.Data["componentDescriptor"]
+			tmpDataJSON, err = yaml.ToJSON(tmpDataByte)
+			utils.ExpectNoError(err)
+			secretCD := &cdv2.ComponentDescriptor{}
+			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, secretCD))
+			secretCDData, err := dataobjects.NewComponentDescriptor().SetDescriptor(secretCD).GetData()
+			utils.ExpectNoError(err)
+			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-secret", BeEquivalentTo(secretCDData)))
+
+			// check component descriptor list import
+			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cdlist", And(
+				HaveLen(3),
+				ContainElement(cdData),
+				ContainElement(configMapCDData),
+				ContainElement(secretCDData),
 			)))
 		})
 	})

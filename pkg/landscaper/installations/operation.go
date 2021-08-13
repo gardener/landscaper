@@ -315,6 +315,119 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 	return targets, nil
 }
 
+// GetImportedComponentDescriptors returns all imported component descriptors of the installation.
+func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[string]*dataobjects.ComponentDescriptor, error) {
+	cds := map[string]*dataobjects.ComponentDescriptor{}
+	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
+		if def.List != nil {
+			// It's a component descriptor list, skip it
+			continue
+		}
+		cd, err := GetComponentDescriptorImport(ctx, o.Client(), o.Context().Name, o, def)
+		if err != nil {
+			return nil, err
+		}
+		cds[def.Name] = cd
+
+		var (
+			sref, cmref string
+			cdref       *lsv1alpha1.ComponentDescriptorReference = nil
+			sourceRef   *lsv1alpha1.ObjectReference
+			configGen   = cd.Descriptor.Version
+			owner       = cd.Owner
+		)
+		if owner != nil && owner.Kind == "Installation" {
+			sourceRef = &lsv1alpha1.ObjectReference{
+				Name:      owner.Name,
+				Namespace: o.Inst.Info.Namespace,
+			}
+			inst := &lsv1alpha1.Installation{}
+			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
+					sourceRef.NamespacedName().String(), def.Name, err)
+			}
+		}
+		switch cd.RefType {
+		case dataobjects.RegistryReference:
+			cdref = cd.RegistryRef
+		case dataobjects.ConfigMapReference:
+			cmref = fmt.Sprintf("%s#%s", def.ConfigMapRef.NamespacedName().String(), def.ConfigMapRef.Key)
+		case dataobjects.SecretReference:
+			sref = fmt.Sprintf("%s#%s", def.SecretRef.NamespacedName().String(), def.SecretRef.Key)
+		}
+		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+			Name:                   def.Name,
+			Type:                   lsv1alpha1.CDImportStatusType,
+			SecretRef:              sref,
+			ConfigMapRef:           cmref,
+			ComponentDescriptorRef: cdref,
+			SourceRef:              sourceRef,
+			ConfigGeneration:       configGen,
+		})
+	}
+
+	return cds, nil
+}
+
+// GetImportedComponentDescriptorLists returns all imported component descriptor lists of the installation.
+func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (map[string]*dataobjects.ComponentDescriptorList, error) {
+	cdls := map[string]*dataobjects.ComponentDescriptorList{}
+	for _, def := range o.Inst.Info.Spec.Imports.ComponentDescriptors {
+		if def.List == nil {
+			// It's a single component descriptor import, skip it
+			continue
+		}
+		cdl, err := GetComponentDescriptorListImport(ctx, o.Client(), o.Context().Name, o, def)
+		if err != nil {
+			return nil, err
+		}
+		cdls[def.Name] = cdl
+
+		cdis := make([]lsv1alpha1.CDImportStatus, len(cdl.ComponentDescriptors))
+		for i, cd := range cdl.ComponentDescriptors {
+			var (
+				sourceRef *lsv1alpha1.ObjectReference
+				owner     = cd.Owner
+			)
+			if owner != nil && owner.Kind == "Installation" {
+				sourceRef = &lsv1alpha1.ObjectReference{
+					Name:      owner.Name,
+					Namespace: o.Inst.Info.Namespace,
+				}
+				inst := &lsv1alpha1.Installation{}
+				if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
+						sourceRef.NamespacedName().String(), def.Name, err)
+				}
+			}
+			var (
+				sref, cmref string
+				cdref       *lsv1alpha1.ComponentDescriptorReference = nil
+			)
+			switch cd.RefType {
+			case dataobjects.RegistryReference:
+				cdref = cd.RegistryRef
+			case dataobjects.ConfigMapReference:
+				cmref = fmt.Sprintf("%s#%s", cd.ConfigMapRef.NamespacedName().String(), cd.ConfigMapRef.Key)
+			case dataobjects.SecretReference:
+				sref = fmt.Sprintf("%s#%s", cd.SecretRef.NamespacedName().String(), cd.SecretRef.Key)
+			}
+			cdis[i] = lsv1alpha1.CDImportStatus{
+				ComponentDescriptorRef: cdref,
+				ConfigMapRef:           cmref,
+				SecretRef:              sref,
+				SourceRef:              sourceRef,
+			}
+		}
+		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
+			Name:                 def.Name,
+			Type:                 lsv1alpha1.CDListImportStatusType,
+			ComponentDescriptors: cdis,
+		})
+	}
+	return cdls, nil
+}
+
 // NewError creates a new error with the current operation
 func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) error {
 	return lserrors.NewWrappedError(err,
@@ -538,8 +651,12 @@ func (o *Operation) createOrUpdateImports(ctx context.Context, importDefs lsv1al
 			if err := o.createOrUpdateTargetListImport(ctx, src, importDef, importDataList); err != nil {
 				return fmt.Errorf("unable to create or update targetlist import '%s': %w", importDef.Name, err)
 			}
+		case lsv1alpha1.ImportTypeComponentDescriptor:
+			// nothing to do for component descriptors, since they do not use in-cluster objects for import propagation
+		case lsv1alpha1.ImportTypeComponentDescriptorList:
+			// nothing to do for component descriptor lists, since they do not use in-cluster objects for import propagation
 		default:
-			return fmt.Errorf("unknown import type '%s' for import %s", string(importDef.Type), importDef.Name)
+			return fmt.Errorf("unknown import type '%s' for import '%s'", string(importDef.Type), importDef.Name)
 		}
 
 	}

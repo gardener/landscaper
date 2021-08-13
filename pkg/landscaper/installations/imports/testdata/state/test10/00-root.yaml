@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: test10
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+      kind: localResource
+
+  blueprint:
+    ref:
+      resourceName: root-5
+
+  imports:
+    componentDescriptors:
+    - name: cd-from-registry
+      ref:
+        repositoryContext:
+          type: local
+          baseUrl: "../testdata/registry"
+        version: 1.0.0
+        componentName: example.com/root
+    - name: cd-from-configmap
+      configMapRef:
+        name: my-cd-configmap
+        key: componentDescriptor
+    - name: cd-from-secret
+      secretRef:
+        name: my-cd-secret
+        key: componentDescriptor
+    - name: cdlist
+      list:
+      - ref:
+          repositoryContext:
+            type: local
+            baseUrl: "../testdata/registry"
+          version: 1.0.0
+          componentName: example.com/root
+      - configMapRef:
+          name: my-cd-configmap
+          key: componentDescriptor
+      - secretRef:
+          name: my-cd-secret
+          key: componentDescriptor
