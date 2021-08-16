@@ -463,6 +463,36 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 				Expect(string(imageVector)).To(BeIdenticalTo(resultString))
 			}
 		})
+
+		It("should use a parsed oci ref to template", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-13.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
+
+			res, err := op.TemplateDeployExecutions(template.DeployExecutionOptions{
+				Imports: map[string]interface{}{
+					"ref1": "myimage:0.0.0",
+					"ref2": "myimage@sha256:66371f17cc61bbbed2667b0285a10981deba5eb969df9bfd4cf273706044ddcb",
+				},
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+					Fs:   nil,
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).To(HaveLen(1))
+
+			config := make(map[string]interface{})
+			Expect(yaml.Unmarshal(res[0].Configuration.Raw, &config)).ToNot(HaveOccurred())
+			Expect(config).To(HaveKeyWithValue("image0", "myimage:0.0.0"))
+			Expect(config).To(HaveKeyWithValue("image1", "myimage:0.0.0"))
+			Expect(config).To(HaveKeyWithValue("image2", "myimage@sha256:66371f17cc61bbbed2667b0285a10981deba5eb969df9bfd4cf273706044ddcb"))
+		})
 	})
 
 	Context("TemplateExportExecutions", func() {

@@ -126,3 +126,23 @@ deployItemTimeouts:
 {{- end }}
 
 {{- end }}
+
+{{- define "landscaper-image" -}}
+{{- $tag := ( .Values.controller.image.tag | default .Values.image.tag | default .Chart.AppVersion )  -}}
+{{- $image :=  dict "repository" .Values.controller.image.repository "tag" $tag  -}}
+{{- include "utils-templates.image" $image }}
+{{- end -}}
+
+{{- define "landscaper-webhook-image" -}}
+{{- $tag := ( .Values.webhooksServer.image.tag | default .Values.image.tag | default .Chart.AppVersion )  -}}
+{{- $image :=  dict "repository" .Values.webhooksServer.image.repository "tag" $tag  -}}
+{{- include "utils-templates.image" $image }}
+{{- end -}}
+
+{{- define "utils-templates.image" -}}
+{{- if hasPrefix "sha256:" (required "$.tag is required" $.tag) -}}
+{{ required "$.repository is required" $.repository }}@{{ required "$.tag is required" $.tag }}
+{{- else -}}
+{{ required "$.repository is required" $.repository }}:{{ required "$.tag is required" $.tag }}
+{{- end -}}
+{{- end -}}

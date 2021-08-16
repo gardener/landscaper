@@ -41,7 +41,7 @@ func LandscaperTplFuncMap(fs vfs.FileSystem, cd *cdv2.ComponentDescriptor, cdLis
 
 		"toYaml": toYAML,
 
-		"parseOCIRef":   parseOCIReference,
+		"parseOCIRef":   lstmpl.ParseOCIReference,
 		"ociRefRepo":    getOCIReferenceRepository,
 		"ociRefVersion": getOCIReferenceVersion,
 		"resolve":       resolveArtifactFunc(blobResolver),
@@ -93,28 +93,14 @@ func toYAML(v interface{}) string {
 	return strings.TrimSuffix(string(data), "\n")
 }
 
-// parseOCIReference parses a oci reference string into its repository and version.
-// e.g. host:5000/myrepo/myimage:1.0.0 -> ["host:5000/myrepo/myimage:1.0.0", "1.0.0"]
-func parseOCIReference(ref string) [2]string {
-	splitRef := strings.Split(ref, ":")
-	if len(splitRef) < 2 {
-		panic("invalid reference")
-	}
-
-	return [2]string{
-		strings.Join(splitRef[:len(splitRef)-1], ":"),
-		splitRef[len(splitRef)-1],
-	}
-}
-
 // getOCIReferenceVersion returns the version of a oci reference
 func getOCIReferenceVersion(ref string) string {
-	return parseOCIReference(ref)[1]
+	return lstmpl.ParseOCIReference(ref)[1]
 }
 
 // getOCIReferenceRepository returns the repository of a oci reference
 func getOCIReferenceRepository(ref string) string {
-	return parseOCIReference(ref)[0]
+	return lstmpl.ParseOCIReference(ref)[0]
 }
 
 // resolveArtifactFunc returns a function that can resolve artifact defined by a component descriptor access

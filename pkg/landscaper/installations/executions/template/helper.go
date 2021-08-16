@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/gardener/component-cli/ociclient/oci"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/utils/selector"
@@ -128,4 +130,37 @@ func ResolveComponents(defaultCD *cdv2.ComponentDescriptor, list *cdv2.Component
 	}
 
 	return components, nil
+}
+
+// ParseOCIReference parses a oci reference string into its repository and version.
+// e.g. host:5000/myrepo/myimage:1.0.0 -> ["host:5000/myrepo/myimage", "1.0.0"]
+// host:5000/myrepo/myimage@sha256:123 -> ["host:5000/myrepo/myimage", "sha256:123"]
+func ParseOCIReference(ref string) [2]string {
+	refspec, err := oci.ParseRef(ref)
+	if err != nil {
+		panic(err)
+	}
+	splitRef := strings.Split(ref, ":")
+	if len(splitRef) < 2 {
+		panic("invalid reference")
+	}
+
+	// todo: remove workaround with new component-cli version
+	repository := strings.TrimPrefix(refspec.Name(), "index.docker.io/library/")
+
+	if refspec.Tag != nil {
+		return [2]string{
+			repository,
+			*refspec.Tag,
+		}
+	} else if refspec.Digest != nil {
+		return [2]string{
+			repository,
+			refspec.Digest.String(),
+		}
+	}
+	return [2]string{
+		repository,
+		"",
+	}
 }
