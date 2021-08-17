@@ -94,7 +94,7 @@ input:
 
 Add the resource to the component descriptor with the component-cli:
 ```
-landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+landscaper-cli component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
   ./docs/tutorials/resources/local-ingress-nginx/helm-resource.yaml
 ```
 :warning: Note that the directory `./docs/tutorials/resources/local-ingress-nginx` _MUST_ contain the component descriptor at `./docs/tutorials/resources/local-ingress-nginx/component-descriptor.yaml`.
@@ -188,7 +188,7 @@ input:
 ```
 
 ```
-landscaper-cli components-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
+landscaper-cli component-cli ca resources add ./docs/tutorials/resources/local-ingress-nginx \
   ./docs/tutorials/resources/local-ingress-nginx/blueprint-resource.yaml
 ```
 
@@ -229,7 +229,7 @@ component:
 
 Upload the component and its local artifacts with the `component-cli`:
 ```
-landscaper-cli components-cli ca remote push ./docs/tutorials/resources/local-ingress-nginx
+landscaper-cli component-cli ca remote push ./docs/tutorials/resources/local-ingress-nginx
 ```
 :warning: make sure to have write permissions for the component registry. (Run `docker login registry` to login into the registry)
 
@@ -239,7 +239,7 @@ During the upload the `localFilesystemBlob` are converted to `localOciBlob` as t
 
 :information_source: The uploaded component descriptor can be checked by running
 ```
-landscaper-cli components-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.2.0
+landscaper-cli component-cli ca remote get eu.gcr.io/gardener-project/landscaper/tutorials/components github.com/gardener/landscaper/local/ingress-nginx v0.2.0
 ```
 
 ```yaml
