@@ -326,7 +326,7 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 		}
 
 		// otherwise validate as sibling export
-		err := v.checkStateForSiblingDataExport(ctx, fldPath, ref, targetImportReference)
+		err := v.checkStateForSiblingTargetExport(ctx, fldPath, ref, targetImportReference)
 		if err != nil {
 			allErrs = append(allErrs, err)
 		}
@@ -347,14 +347,30 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName st
 	return nil
 }
 
+type IsExportingDataFunc func(*installations.InstallationBase, string) bool
+
 func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
+	isExportingFunc := func (sibling  *installations.InstallationBase, name string) bool {
+		return sibling.IsExportingData(name)
+	}
+	return v.checkStateForSiblingExport(ctx, fldPath, siblingRef, importName, isExportingFunc)
+}
+
+func (v *Validator) checkStateForSiblingTargetExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
+	isExportingFunc := func (sibling  *installations.InstallationBase, name string) bool {
+		return sibling.IsExportingTarget(name)
+	}
+	return v.checkStateForSiblingExport(ctx, fldPath, siblingRef, importName, isExportingFunc)
+}
+
+func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string, isExporting IsExportingDataFunc) error {
 	sibling := v.getSiblingForObjectReference(siblingRef)
 	if sibling == nil {
 		return fmt.Errorf("%s: installation %s is not a sibling", fldPath.String(), siblingRef.NamespacedName().String())
 	}
 
 	// search in the sibling for the export mapping where importmap.from == exportmap.to
-	if !sibling.IsExportingData(importName) {
+	if !isExporting(sibling, importName) {
 		return installations.NewImportNotFoundErrorf(nil, "%s: export in sibling not found", fldPath.String())
 	}
 
