@@ -350,14 +350,14 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName st
 type IsExportingDataFunc func(*installations.InstallationBase, string) bool
 
 func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
-	isExportingFunc := func (sibling  *installations.InstallationBase, name string) bool {
+	isExportingFunc := func(sibling *installations.InstallationBase, name string) bool {
 		return sibling.IsExportingData(name)
 	}
 	return v.checkStateForSiblingExport(ctx, fldPath, siblingRef, importName, isExportingFunc)
 }
 
 func (v *Validator) checkStateForSiblingTargetExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
-	isExportingFunc := func (sibling  *installations.InstallationBase, name string) bool {
+	isExportingFunc := func(sibling *installations.InstallationBase, name string) bool {
 		return sibling.IsExportingTarget(name)
 	}
 	return v.checkStateForSiblingExport(ctx, fldPath, siblingRef, importName, isExportingFunc)
