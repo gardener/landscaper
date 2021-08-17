@@ -185,7 +185,7 @@ Later, when dealing with artifacts like the component descriptor, be aware that 
 But push explicitly to `localhost` instead implicitly using the baseUrl:
 
 ```shell
-landscaper-cli components-cli ca remote push ./path-to-componentdescriptor --repo-ctx localhost:5000/comp/
+landscaper-cli component-cli ca remote push ./path-to-componentdescriptor --repo-ctx localhost:5000/comp/
 ```
 
 #### Targets

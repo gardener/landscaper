@@ -101,11 +101,11 @@ component:
 ```
 
 ```
-landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml
+landscaper-cli component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/definitions ./docs/tutorials/resources/external-jsonschema/definitions/jsonscheme-resource.yaml
 ```
 
 ```
-landscaper-cli components-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
+landscaper-cli component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/definitions
 ```
 
 </details>
@@ -300,11 +300,11 @@ input:
 ```
 
 ```
-landscaper-cli components-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
+landscaper-cli component-cli ca resources add ./docs/tutorials/resources/external-jsonschema/echo-server ./docs/tutorials/resources/external-jsonschema/echo-server/blueprint-resource.yaml
 ```
 
 ```
-landscaper-cli components-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
+landscaper-cli component-cli ca remote push ./docs/tutorials/resources/external-jsonschema/echo-server
 ```
 
 </details>

@@ -392,11 +392,11 @@ Finally, the Component Descriptor must be uploaded to an OCI registry. This is d
 ```shell script
 
 # replace the values to match your registry and file locations
-landscaper-cli components-cli ca remote push <path to directory with component-descriptor.yaml>
+landscaper-cli component-cli ca remote push <path to directory with component-descriptor.yaml>
 
 # e.g. if you were to use the provided sample content
 # (this will fail as you have no write access to gardener-project on eu.gcr.io)
-landscaper-cli components-cli ca remote push ./docs/tutorials/resources/ingress-nginx
+landscaper-cli component-cli ca remote push ./docs/tutorials/resources/ingress-nginx
 ```
 
 Once the upload succeeds, the Component Descriptor should be accessible at `eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/ingress-nginx/v0.3.0` in the registry.

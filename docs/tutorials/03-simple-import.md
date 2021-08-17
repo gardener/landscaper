@@ -196,7 +196,7 @@ component:
 ```
 
 ```shell script
-landscaper-cli components-cli ca remote push docs/tutorials/resources/echo-server
+landscaper-cli component-cli ca remote push docs/tutorials/resources/echo-server
 ```
 
 ### Installation
