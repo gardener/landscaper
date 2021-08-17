@@ -70,7 +70,7 @@ var _ = Describe("Validation", func() {
 		Expect(val.ImportsSatisfied(ctx, inInstA)).To(Succeed())
 	})
 
-	It("should successfully validate when the import of a component is defined by a sibling and all sibling dependencies are completed", func() {
+	It("should successfully validate when the data import of a component is defined by a sibling and all sibling dependencies are completed", func() {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
@@ -90,6 +90,28 @@ var _ = Describe("Validation", func() {
 
 		val := imports.NewValidator(op)
 		Expect(val.ImportsSatisfied(ctx, inInstB)).To(Succeed())
+	})
+
+	It("should successfully validate when the target import of a component is defined by a sibling and all sibling dependencies are completed", func() {
+		ctx := context.Background()
+		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		Expect(err).ToNot(HaveOccurred())
+
+		inInstE, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/e"])
+		Expect(err).ToNot(HaveOccurred())
+		inInstE.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+
+		inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/f"])
+		Expect(err).ToNot(HaveOccurred())
+		op.Inst = inInstF
+		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+		op.Context().Parent = inInstRoot
+		op.Context().Siblings = []*installations.InstallationBase{&inInstE.InstallationBase}
+		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+		val := imports.NewValidator(op)
+		Expect(val.ImportsSatisfied(ctx, inInstF)).To(Succeed())
 	})
 
 	It("should reject the validation when the parent component is not progressing", func() {

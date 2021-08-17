@@ -62,5 +62,13 @@ status:
     ref:
       name: d
       namespace: test1
+  - name: e
+    ref:
+      name: e
+      namespace: test1
+  - name: f
+    ref:
+      name: f
+      namespace: test1
 
   observedGeneration: 0

@@ -1,0 +1,16 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+
+metadata:
+  name: {{ dataObjectName ( dataObjectContext "test1" "root" )  "e.z" }}
+  namespace: test1
+  labels:
+    "landscaper.gardener.cloud/encompassed-by": root
+  ownerReferences:
+    - apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: Installation
+      name: e
+
+spec:
+  config:
+    type: landscaper.gardener.cloud/kubernetes-cluster
