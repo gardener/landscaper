@@ -347,8 +347,8 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName st
 	return nil
 }
 
-// The IsExportingDataFunc returns true if the passed sibling has a Data/Target export by the given name.
-type IsExportingDataFunc func(*installations.InstallationBase, string) bool
+// The isExportingDataFunc returns true if the passed sibling has a Data/Target export by the given name.
+type isExportingDataFunc func(*installations.InstallationBase, string) bool
 
 func (v *Validator) checkStateForSiblingDataExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string) error {
 	isExportingFunc := func(sibling *installations.InstallationBase, name string) bool {
@@ -364,7 +364,7 @@ func (v *Validator) checkStateForSiblingTargetExport(ctx context.Context, fldPat
 	return v.checkStateForSiblingExport(ctx, fldPath, siblingRef, importName, isExportingFunc)
 }
 
-func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string, isExporting IsExportingDataFunc) error {
+func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *field.Path, siblingRef lsv1alpha1.ObjectReference, importName string, isExporting isExportingDataFunc) error {
 	sibling := v.getSiblingForObjectReference(siblingRef)
 	if sibling == nil {
 		return fmt.Errorf("%s: installation %s is not a sibling", fldPath.String(), siblingRef.NamespacedName().String())
