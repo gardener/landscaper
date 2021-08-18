@@ -200,10 +200,22 @@ func ContainerDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("upload blueprint")
-			buildAndUploadComponentDescriptorWithArtifacts(ctx, f, testdataFs,
+			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, f, testdataFs,
 				"example.com/container-test-1", "v0.0.1", "/blueprints/container-deployer-example1")
 
 			di, err := container.NewDeployItemBuilder().ProviderConfig(&containerv1alpha1.ProviderConfiguration{
+				ComponentDescriptor: &lsv1alpha1.ComponentDescriptorDefinition{
+					Reference: &lsv1alpha1.ComponentDescriptorReference{
+						RepositoryContext: cd.GetEffectiveRepositoryContext(),
+						ComponentName:     cd.GetName(),
+						Version:           cd.GetVersion(),
+					},
+				},
+				Blueprint: &lsv1alpha1.BlueprintDefinition{
+					Reference: &lsv1alpha1.RemoteBlueprintReference{
+						ResourceName: "my-blueprint",
+					},
+				},
 				Image:   "alpine",
 				Command: []string{"/bin/sh", "-c"},
 				Args: []string{`

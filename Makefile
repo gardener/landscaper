@@ -145,12 +145,12 @@ install-testcluster-cmd:
 
 .PHONY: setup-local-registry
 setup-local-registry:
-	@go run $(REPO_ROOT)/hack/testcluster create --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false --registry-auth=./tmp/local-docker.config
+	@go run $(REPO_ROOT)/hack/testcluster registry create --kubeconfig $(KUBECONFIG) -n default --id=local --registry-auth=./tmp/local-docker.config
 	@echo "For local development add '127.0.0.1 registry-local.default' to your '/etc/hosts' and run a port-forward to the registry pod 'kubectl port-forward registry-local 5000'"
 
 .PHONY: remove-local-registry
 remove-local-registry:
-	@go run $(REPO_ROOT)/hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false
+	@go run $(REPO_ROOT)/hack/testcluster registry delete--kubeconfig $(KUBECONFIG) -n default --id=local
 
 .PHONY: start-webhooks
 start-webhooks:
