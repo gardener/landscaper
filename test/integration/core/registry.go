@@ -155,7 +155,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 		Path:             helmChartDir,
 		CompressWithGzip: pointer.BoolPtr(true),
 	}
-	blob, err := helmInput.Read(osfs.New(), "")
+	blob, err := helmInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
 	file, err := fs.Create("blobs/chart")
 	utils.ExpectNoError(err)
@@ -172,7 +172,7 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 		MediaType:        mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String(),
 		CompressWithGzip: pointer.BoolPtr(true),
 	}
-	blob, err = blueprintInput.Read(osfs.New(), "")
+	blob, err = blueprintInput.Read(ctx, osfs.New(), "")
 	utils.ExpectNoError(err)
 	defer blob.Reader.Close()
 	file, err = fs.Create("blobs/bp")

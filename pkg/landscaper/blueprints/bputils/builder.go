@@ -5,6 +5,7 @@
 package bputils
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -72,7 +73,7 @@ func (b *Builder) BuildResource(compress bool) (io.ReadCloser, error) {
 		Path:             "",
 		CompressWithGzip: &compress,
 	}
-	blob, err := blueprintInput.Read(b.fs, "/")
+	blob, err := blueprintInput.Read(context.TODO(), b.fs, "/")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create blob from in memory filesystem: %w", err)
 	}

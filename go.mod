@@ -6,17 +6,17 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.4.4
+	github.com/containerd/containerd v1.5.5
 	github.com/docker/cli v20.10.5+incompatible
-	github.com/gardener/component-cli v0.28.0
-	github.com/gardener/component-spec/bindings-go v0.0.52
+	github.com/gardener/component-cli v0.29.0
+	github.com/gardener/component-spec/bindings-go v0.0.53
 	github.com/gardener/image-vector v0.5.0
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.5.0
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.2.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mandelsoft/spiff v1.5.0
 	github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
@@ -31,7 +31,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/zap v1.17.0
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/tools v0.1.3 // indirect

@@ -250,6 +250,22 @@ func (fs *FileSystem) Remove(name string) error {
 	return nil
 }
 
+// DeleteAll removes all files in the filesystem
+func (fs *FileSystem) DeleteAll() error {
+	fs.mux.Lock()
+	defer fs.mux.Unlock()
+	files, err := vfs.ReadDir(fs.FileSystem, "/")
+	if err != nil {
+		return fmt.Errorf("unable to read current cached files: %w", err)
+	}
+	for _, file := range files {
+		if err := fs.Remove(file.Name()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CurrentSize returns the current size of the filesystem
 func (fs *FileSystem) CurrentSize() int64 {
 	return fs.currentSize
@@ -311,12 +327,16 @@ func (fs *FileSystem) RunGarbageCollection() {
 }
 
 type Index struct {
+	mut     sync.RWMutex
 	entries map[string]IndexEntry
 }
 
 // NewIndex creates a new index structure
 func NewIndex() Index {
-	return Index{entries: map[string]IndexEntry{}}
+	return Index{
+		mut:     sync.RWMutex{},
+		entries: map[string]IndexEntry{},
+	}
 }
 
 type IndexEntry struct {
@@ -333,7 +353,7 @@ type IndexEntry struct {
 }
 
 // Add adds a entry to the index.
-func (i Index) Add(name string, size int64, createdAt time.Time) {
+func (i *Index) Add(name string, size int64, createdAt time.Time) {
 	i.entries[name] = IndexEntry{
 		Name:               name,
 		Size:               size,
@@ -344,22 +364,28 @@ func (i Index) Add(name string, size int64, createdAt time.Time) {
 }
 
 // Len returns the number of items that are currently in the index.
-func (i Index) Len() int {
+func (i *Index) Len() int {
 	return len(i.entries)
 }
 
 // Get return the index entry with the given name.
-func (i Index) Get(name string) IndexEntry {
+func (i *Index) Get(name string) IndexEntry {
+	i.mut.RLock()
+	defer i.mut.RUnlock()
 	return i.entries[name]
 }
 
 // Remove removes the entry from the index.
-func (i Index) Remove(name string) {
+func (i *Index) Remove(name string) {
+	i.mut.Lock()
+	defer i.mut.Unlock()
 	delete(i.entries, name)
 }
 
 // Hit increases the hit count for the file.
-func (i Index) Hit(name string) {
+func (i *Index) Hit(name string) {
+	i.mut.Lock()
+	defer i.mut.Unlock()
 	entry, ok := i.entries[name]
 	if !ok {
 		return
@@ -371,7 +397,7 @@ func (i Index) Hit(name string) {
 
 // Reset resets the hit counter for all entries.
 // The reset preserves 20% if the old hits.
-func (i Index) Reset() {
+func (i *Index) Reset() {
 	for name := range i.entries {
 		entry := i.Get(name)
 
@@ -385,8 +411,8 @@ func (i Index) Reset() {
 }
 
 // DeepCopy creates a deep copy of the current index.
-func (i Index) DeepCopy() Index {
-	index := Index{
+func (i *Index) DeepCopy() *Index {
+	index := &Index{
 		entries: make(map[string]IndexEntry, len(i.entries)),
 	}
 	for key, value := range i.entries {
@@ -398,7 +424,7 @@ func (i Index) DeepCopy() Index {
 // PriorityList returns a entries of all entries
 // sorted by their gc priority.
 // The entry with the lowest priority is the first item.
-func (i Index) PriorityList() []IndexEntry {
+func (i *Index) PriorityList() []IndexEntry {
 	p := priorityList{
 		entries: make([]IndexEntry, 0),
 	}

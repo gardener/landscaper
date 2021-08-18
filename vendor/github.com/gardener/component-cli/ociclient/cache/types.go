@@ -28,6 +28,28 @@ type Cache interface {
 	Add(desc ocispecv1.Descriptor, reader io.ReadCloser) error
 }
 
+// Info contains additional information about the cache
+type Info struct {
+	// Size is the max size of the filesystem in bytes.
+	// If the value is 0 there is no limit and no garbage collection will happen.
+	// +optional
+	Size int64 `json:"size"`
+	// CurrentSize is the current size of the cache
+	CurrentSize int64 `json:"currentSize"`
+	// ItemsCount is the number of items that are currently managed by the cache.
+	ItemsCount int64 `json:"items"`
+}
+
+// InfoInterface describes an interface that can be optionally exposed by a cache to give additional information.
+type InfoInterface interface {
+	Info() (Info, error)
+}
+
+// PruneInterface describes an interface that can be optionally exposed by a cache to manually prune the cache.
+type PruneInterface interface {
+	Prune() error
+}
+
 // InjectCache is a interface to inject a cache.
 type InjectCache interface {
 	InjectCache(c Cache) error
