@@ -131,6 +131,8 @@ func ResolveBlueprintFromBlobResolver(
 		}
 	}
 	blueprint, err := GetStore().Store(ctx, cd, resource, blobReader)
+	// drain the pipe reader, otherwise the error group wait may block indefinitely
+	_, _ = io.Copy(io.Discard, pr)
 	if err != nil {
 		if err2 := eg.Wait(); err2 != nil {
 			return nil, errorsutil.NewAggregate([]error{err, err2})
