@@ -16,16 +16,16 @@ import (
 // The artifact is copied without any modification.
 // This function does directly stream the blobs from the upstream it does not use any cache.
 func Copy(ctx context.Context, client Client, from, to string) error {
-	srcManifest, err := client.GetManifest(ctx, from)
+	artifact, err := client.GetOCIArtifact(ctx, from)
 	if err != nil {
-		return fmt.Errorf("unable to get manifest for source artifact %q: %w", from, err)
+		return fmt.Errorf("unable to get source oci artifact %q: %w", from, err)
 	}
 
 	store := GenericStore(func(ctx context.Context, desc ocispecv1.Descriptor, writer io.Writer) error {
 		return client.Fetch(ctx, from, desc, writer)
 	})
 
-	return client.PushManifest(ctx, to, srcManifest, WithStore(store))
+	return client.PushOCIArtifact(ctx, to, artifact, WithStore(store))
 }
 
 // GenericStore is a helper struct to implement a custom oci blob store.

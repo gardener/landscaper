@@ -8,16 +8,16 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	pathutil "path"
 	"path/filepath"
+	"strings"
 
-	"github.com/mandelsoft/vfs/pkg/composefs"
-	"github.com/mandelsoft/vfs/pkg/memoryfs"
-
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 )
@@ -69,6 +69,10 @@ type BlobInput struct {
 	// Excluded files always overwrite included files.
 	// Only relevant for blobinput type "dir".
 	ExcludeFiles []string `json:"excludeFiles,omitempty"`
+	// FollowSymlinks configures to follow and resolve symlinks when a directory is tarred.
+	// This options will include the content of the symlink directly in the tar.
+	// This option should be used with care.
+	FollowSymlinks bool `json:"followSymlinks,omitempty"`
 }
 
 // Compress returns if the blob should be compressed using gzip.
@@ -88,7 +92,7 @@ func (input *BlobInput) SetMediaTypeIfNotDefined(mediaType string) {
 }
 
 // Read reads the configured blob and returns a reader to the given file.
-func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutput, error) {
+func (input *BlobInput) Read(ctx context.Context, fs vfs.FileSystem, inputFilePath string) (*BlobOutput, error) {
 	inputPath := input.Path
 	if !filepath.IsAbs(input.Path) {
 		var wd string
@@ -114,27 +118,6 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 		if !inputInfo.IsDir() {
 			return nil, fmt.Errorf("resource type is dir but a file was provided")
 		}
-		blobFs, err := projectionfs.New(fs, inputPath)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create internal fs for %q: %w", inputPath, err)
-		}
-
-		if input.PreserveDir {
-			dir := string(filepath.Separator) + filepath.Base(inputPath)
-			fs := memoryfs.New()
-			err = fs.Mkdir(dir, os.FileMode(0777))
-			if err != nil {
-				return nil, err
-			}
-
-			composedFs := composefs.New(fs)
-			err = composedFs.Mount(dir, blobFs)
-			if err != nil {
-				return nil, err
-			}
-
-			blobFs = composedFs
-		}
 
 		var (
 			data bytes.Buffer
@@ -142,9 +125,11 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 		if input.Compress() {
 			input.SetMediaTypeIfNotDefined(MediaTypeGZip)
 			gw := gzip.NewWriter(&data)
-			if err := TarFileSystem(blobFs, gw, TarFileSystemOptions{
-				IncludeFiles: input.IncludeFiles,
-				ExcludeFiles: input.ExcludeFiles,
+			if err := TarFileSystem(ctx, fs, inputPath, gw, TarFileSystemOptions{
+				IncludeFiles:   input.IncludeFiles,
+				ExcludeFiles:   input.ExcludeFiles,
+				PreserveDir:    input.PreserveDir,
+				FollowSymlinks: input.FollowSymlinks,
 			}); err != nil {
 				return nil, fmt.Errorf("unable to tar input artifact: %w", err)
 			}
@@ -153,9 +138,11 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 			}
 		} else {
 			input.SetMediaTypeIfNotDefined(MediaTypeTar)
-			if err := TarFileSystem(blobFs, &data, TarFileSystemOptions{
-				IncludeFiles: input.IncludeFiles,
-				ExcludeFiles: input.ExcludeFiles,
+			if err := TarFileSystem(ctx, fs, inputPath, &data, TarFileSystemOptions{
+				IncludeFiles:   input.IncludeFiles,
+				ExcludeFiles:   input.ExcludeFiles,
+				PreserveDir:    input.PreserveDir,
+				FollowSymlinks: input.FollowSymlinks,
 			}); err != nil {
 				return nil, fmt.Errorf("unable to tar input artifact: %w", err)
 			}
@@ -214,84 +201,135 @@ func (input *BlobInput) Read(fs vfs.FileSystem, inputFilePath string) (*BlobOutp
 type TarFileSystemOptions struct {
 	IncludeFiles []string
 	ExcludeFiles []string
+	// PreserveDir defines that the directory specified in the Path field should be included in the blob.
+	// Only supported for Type dir.
+	PreserveDir    bool
+	FollowSymlinks bool
+
+	root string
+}
+
+// Included determines whether a file should be included.
+func (opts *TarFileSystemOptions) Included(path string) (bool, error) {
+	// if a root path is given remove it rom the path to be checked
+	if len(opts.root) != 0 {
+		path = strings.TrimPrefix(path, opts.root)
+	}
+	// first check if a exclude regex matches
+	for _, ex := range opts.ExcludeFiles {
+		match, err := filepath.Match(ex, path)
+		if err != nil {
+			return false, fmt.Errorf("malformed filepath syntax %q", ex)
+		}
+		if match {
+			return false, nil
+		}
+	}
+
+	// if no includes are defined, include all files
+	if len(opts.IncludeFiles) == 0 {
+		return true, nil
+	}
+	// otherwise check if the file should be included
+	for _, in := range opts.IncludeFiles {
+		match, err := filepath.Match(in, path)
+		if err != nil {
+			return false, fmt.Errorf("malformed filepath syntax %q", in)
+		}
+		if match {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // TarFileSystem creates a tar archive from a filesystem.
-func TarFileSystem(fs vfs.FileSystem, writer io.Writer, opts TarFileSystemOptions) error {
+func TarFileSystem(ctx context.Context, fs vfs.FileSystem, root string, writer io.Writer, opts TarFileSystemOptions) error {
 	tw := tar.NewWriter(writer)
-
-	includeFile := func(path string) (bool, error) {
-		// first check if a exclude regex matches
-		for _, ex := range opts.ExcludeFiles {
-			match, err := filepath.Match(ex, path)
-			if err != nil {
-				return false, fmt.Errorf("malformed filepath syntax %q", ex)
-			}
-			if match {
-				return false, nil
-			}
-		}
-
-		// if no includes are defined, include all files
-		if len(opts.IncludeFiles) == 0 {
-			return true, nil
-		}
-		// otherwise check if the file should be included
-		for _, in := range opts.IncludeFiles {
-			match, err := filepath.Match(in, path)
-			if err != nil {
-				return false, fmt.Errorf("malformed filepath syntax %q", in)
-			}
-			if match {
-				return true, nil
-			}
-		}
-		return false, nil
+	if opts.PreserveDir {
+		opts.root = pathutil.Base(root)
 	}
+	if err := addFileToTar(ctx, fs, tw, opts.root, root, opts); err != nil {
+		return err
+	}
+	return tw.Close()
+}
 
-	err := vfs.Walk(fs, "/", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		header, err := tar.FileInfoHeader(info, "")
-		if err != nil {
-			return err
-		}
-		relPath, err := filepath.Rel("/", path)
-		if err != nil {
-			return fmt.Errorf("unable to calculate relative path for %s: %w", path, err)
-		}
-		// ignore the root directory.
-		if relPath == "." {
-			return nil
-		}
-		include, err := includeFile(relPath)
+func addFileToTar(ctx context.Context, fs vfs.FileSystem, tw *tar.Writer, path string, realPath string, opts TarFileSystemOptions) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	log := logr.FromContextOrDiscard(ctx)
+
+	if len(path) != 0 { // do not check the root
+		include, err := opts.Included(path)
 		if err != nil {
 			return err
 		}
 		if !include {
 			return nil
 		}
+	}
+	info, err := fs.Lstat(realPath)
+	if err != nil {
+		return err
+	}
 
-		header.Name = relPath
+	header, err := tar.FileInfoHeader(info, "")
+	if err != nil {
+		return err
+	}
+	header.Name = path
+
+	switch {
+	case info.IsDir():
+		// do not write root header
+		if len(path) != 0 {
+			if err := tw.WriteHeader(header); err != nil {
+				return fmt.Errorf("unable to write header for %q: %w", path, err)
+			}
+		}
+		err := vfs.Walk(fs, realPath, func(subFilePath string, info os.FileInfo, err error) error {
+			if subFilePath == realPath {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			relPath, err := filepath.Rel(realPath, subFilePath)
+			if err != nil {
+				return fmt.Errorf("unable to calculate relative path for %s: %w", subFilePath, err)
+			}
+			return addFileToTar(ctx, fs, tw, pathutil.Join(path, relPath), subFilePath, opts)
+		})
+		return err
+	case info.Mode().IsRegular():
 		if err := tw.WriteHeader(header); err != nil {
 			return fmt.Errorf("unable to write header for %q: %w", path, err)
 		}
-		if info.IsDir() {
-			return nil
-		}
-
-		file, err := fs.OpenFile(path, os.O_RDONLY, os.ModePerm)
+		file, err := fs.OpenFile(realPath, os.O_RDONLY, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("unable to open file %q: %w", path, err)
 		}
 		if _, err := io.Copy(tw, file); err != nil {
+			_ = file.Close()
 			return fmt.Errorf("unable to add file to tar %q: %w", path, err)
 		}
 		if err := file.Close(); err != nil {
 			return fmt.Errorf("unable to close file %q: %w", path, err)
 		}
 		return nil
-	})
-	return err
+	case header.Typeflag == tar.TypeSymlink:
+		if !opts.FollowSymlinks {
+			log.Info(fmt.Sprintf("symlink found in %q but symlinks are not followed", path))
+			return nil
+		}
+		realPath, err := vfs.EvalSymlinks(fs, realPath)
+		if err != nil {
+			return fmt.Errorf("unable to follow symlink %s: %w", realPath, err)
+		}
+		return addFileToTar(ctx, fs, tw, path, realPath, opts)
+	default:
+		return fmt.Errorf("unsupported file type %s in %s", info.Mode().String(), path)
+	}
 }

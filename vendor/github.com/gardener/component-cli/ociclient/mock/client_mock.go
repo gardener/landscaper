@@ -13,32 +13,33 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	ociclient "github.com/gardener/component-cli/ociclient"
+	oci "github.com/gardener/component-cli/ociclient/oci"
 )
 
-// MockClient is a mock of Client interface
+// MockClient is a mock of Client interface.
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
 }
 
-// MockClientMockRecorder is the mock recorder for MockClient
+// MockClientMockRecorder is the mock recorder for MockClient.
 type MockClientMockRecorder struct {
 	mock *MockClient
 }
 
-// NewMockClient creates a new mock instance
+// NewMockClient creates a new mock instance.
 func NewMockClient(ctrl *gomock.Controller) *MockClient {
 	mock := &MockClient{ctrl: ctrl}
 	mock.recorder = &MockClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// Fetch mocks base method
+// Fetch mocks base method.
 func (m *MockClient) Fetch(arg0 context.Context, arg1 string, arg2 v1.Descriptor, arg3 io.Writer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Fetch", arg0, arg1, arg2, arg3)
@@ -46,13 +47,13 @@ func (m *MockClient) Fetch(arg0 context.Context, arg1 string, arg2 v1.Descriptor
 	return ret0
 }
 
-// Fetch indicates an expected call of Fetch
+// Fetch indicates an expected call of Fetch.
 func (mr *MockClientMockRecorder) Fetch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockClient)(nil).Fetch), arg0, arg1, arg2, arg3)
 }
 
-// GetManifest mocks base method
+// GetManifest mocks base method.
 func (m *MockClient) GetManifest(arg0 context.Context, arg1 string) (*v1.Manifest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetManifest", arg0, arg1)
@@ -61,13 +62,28 @@ func (m *MockClient) GetManifest(arg0 context.Context, arg1 string) (*v1.Manifes
 	return ret0, ret1
 }
 
-// GetManifest indicates an expected call of GetManifest
+// GetManifest indicates an expected call of GetManifest.
 func (mr *MockClientMockRecorder) GetManifest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManifest", reflect.TypeOf((*MockClient)(nil).GetManifest), arg0, arg1)
 }
 
-// PushManifest mocks base method
+// GetOCIArtifact mocks base method.
+func (m *MockClient) GetOCIArtifact(arg0 context.Context, arg1 string) (*oci.Artifact, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOCIArtifact", arg0, arg1)
+	ret0, _ := ret[0].(*oci.Artifact)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOCIArtifact indicates an expected call of GetOCIArtifact.
+func (mr *MockClientMockRecorder) GetOCIArtifact(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOCIArtifact", reflect.TypeOf((*MockClient)(nil).GetOCIArtifact), arg0, arg1)
+}
+
+// PushManifest mocks base method.
 func (m *MockClient) PushManifest(arg0 context.Context, arg1 string, arg2 *v1.Manifest, arg3 ...ociclient.PushOption) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
@@ -79,14 +95,33 @@ func (m *MockClient) PushManifest(arg0 context.Context, arg1 string, arg2 *v1.Ma
 	return ret0
 }
 
-// PushManifest indicates an expected call of PushManifest
+// PushManifest indicates an expected call of PushManifest.
 func (mr *MockClientMockRecorder) PushManifest(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushManifest", reflect.TypeOf((*MockClient)(nil).PushManifest), varargs...)
 }
 
-// Resolve mocks base method
+// PushOCIArtifact mocks base method.
+func (m *MockClient) PushOCIArtifact(arg0 context.Context, arg1 string, arg2 *oci.Artifact, arg3 ...ociclient.PushOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PushOCIArtifact", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PushOCIArtifact indicates an expected call of PushOCIArtifact.
+func (mr *MockClientMockRecorder) PushOCIArtifact(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushOCIArtifact", reflect.TypeOf((*MockClient)(nil).PushOCIArtifact), varargs...)
+}
+
+// Resolve mocks base method.
 func (m *MockClient) Resolve(arg0 context.Context, arg1 string) (string, v1.Descriptor, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Resolve", arg0, arg1)
@@ -96,7 +131,7 @@ func (m *MockClient) Resolve(arg0 context.Context, arg1 string) (string, v1.Desc
 	return ret0, ret1, ret2
 }
 
-// Resolve indicates an expected call of Resolve
+// Resolve indicates an expected call of Resolve.
 func (mr *MockClientMockRecorder) Resolve(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Resolve", reflect.TypeOf((*MockClient)(nil).Resolve), arg0, arg1)

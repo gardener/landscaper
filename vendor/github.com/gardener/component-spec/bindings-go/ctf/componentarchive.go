@@ -32,7 +32,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
-	"github.com/gardener/component-spec/bindings-go/apis/v2"
+	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 )
 
@@ -97,13 +97,13 @@ func NewComponentArchiveFromTarReader(in io.Reader) (*ComponentArchive, error) {
 }
 
 // NewComponentArchiveFromFilesystem creates a new component archive from a filesystem.
-func NewComponentArchiveFromFilesystem(fs vfs.FileSystem) (*ComponentArchive, error) {
+func NewComponentArchiveFromFilesystem(fs vfs.FileSystem, decodeOpts ...codec.DecodeOption) (*ComponentArchive, error) {
 	data, err := vfs.ReadFile(fs, filepath.Join("/", ComponentDescriptorFileName))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read the component descriptor from %s: %w", ComponentDescriptorFileName, err)
 	}
 	cd := &v2.ComponentDescriptor{}
-	if err := codec.Decode(data, cd); err != nil {
+	if err := codec.Decode(data, cd, decodeOpts...); err != nil {
 		return nil, fmt.Errorf("unable to parse component descriptor read from %s: %w", ComponentDescriptorFileName, err)
 	}
 

@@ -6,6 +6,7 @@ package oci
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
@@ -66,7 +67,7 @@ type RefSpec struct {
 }
 
 func (r *RefSpec) Name() string {
-	return fmt.Sprintf("%s/%s", r.Host, r.Repository)
+	return path.Join(r.Host, r.Repository)
 }
 
 func (r RefSpec) String() string {
