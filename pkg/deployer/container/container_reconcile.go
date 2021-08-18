@@ -401,7 +401,7 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 
 	imageref, err := dockerreference.ParseDockerRef(imageReference)
 	if err != nil {
-		return "", fmt.Errorf("Not a valid imageReference reference %s: %w", c.ProviderConfiguration.Image, err)
+		return "", fmt.Errorf("not a valid imageReference reference %s: %w", imageReference, err)
 	}
 
 	host := dockerreference.Domain(imageref)
