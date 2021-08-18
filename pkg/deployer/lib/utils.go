@@ -33,9 +33,7 @@ import (
 // HandleAnnotationsAndGeneration is meant to be called at the beginning of a deployer's reconcile loop.
 // If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
 // It will also remove the timeout annotation if it is set.
-// Returns:
-//   - the modified deployitem
-//   - an error, if updating the deployitem failed, nil otherwise
+// Returns: an error, if updating the deployitem failed, nil otherwise
 func HandleAnnotationsAndGeneration(ctx context.Context,
 	log logr.Logger,
 	kubeClient client.Client,
@@ -48,16 +46,9 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		// - reconcile annotation
 		// - outdated generation
 		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
-		di.Status.ObservedGeneration = di.Generation
-		di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-		now := metav1.Now()
-		di.Status.LastReconcileTime = &now
-
-		log.V(7).Info("updating status")
-		if err := kubeClient.Status().Update(ctx, di); err != nil {
+		if err := PrepareReconcile(ctx, log, kubeClient, di); err != nil {
 			return err
 		}
-		log.V(7).Info("successfully updated status")
 	}
 	if hasReconcileAnnotation {
 		log.V(5).Info("removing reconcile annotation")
@@ -82,6 +73,22 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		log.V(7).Info("successfully updated metadata")
 	}
 
+	return nil
+}
+
+// PrepareReconcile prepares a reconcile by setting the status of the deploy item accordingly.
+// It updates ObservedGeneration, LastReconcileTime, and sets the Phase to 'Init'.
+func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Client, di *lsv1alpha1.DeployItem) error {
+	di.Status.ObservedGeneration = di.Generation
+	di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+	now := metav1.Now()
+	di.Status.LastReconcileTime = &now
+
+	log.V(7).Info("updating status")
+	if err := kubeClient.Status().Update(ctx, di); err != nil {
+		return err
+	}
+	log.V(7).Info("successfully updated status")
 	return nil
 }
 
