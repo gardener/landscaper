@@ -13,13 +13,16 @@ spec:
     apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration
 
-    blueprint:
+    componentDescriptor:
       ref:
         repositoryContext:
           baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components/
           type: ociRegistry
         componentName: github.com/gardener/landscaper/ingress-nginx
         version: v0.2.1
+
+    blueprint:
+      ref:
         resourceName: ingress-nginx-blueprint
 
     registryPullSecrets:
@@ -33,5 +36,7 @@ spec:
     args:
     - |
       env
-      ls -laR $CONTENT_PATH
-      ls -laR $REGISTRY_SECRETS_DIR
+      ls -la $CONTENT_PATH
+      ls -la $REGISTRY_SECRETS_DIR
+      ls -la $CONTENT_PATH > $EXPORTS_PATH
+

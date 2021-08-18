@@ -47,7 +47,7 @@ type controller struct {
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Info("reconcile")
+	logger.V(5).Info("reconcile")
 
 	exec := &lsv1alpha1.Execution{}
 	if err := c.client.Get(ctx, req.NamespacedName, exec); err != nil {
