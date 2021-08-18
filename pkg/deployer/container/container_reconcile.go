@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -519,12 +520,16 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 		c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext != nil &&
 		c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.GetType() == cdv2.OCIRegistryType {
 
-		ociRepoCtx := &cdv2.OCIRegistryRepository{}
-		if err := c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.DecodeInto(ociRepoCtx); err != nil {
+		ociRepoCtx := cdv2.OCIRegistryRepository{}
+		if err := c.ProviderConfiguration.ComponentDescriptor.Reference.RepositoryContext.DecodeInto(&ociRepoCtx); err != nil {
 			erro = fmt.Errorf("unable to decode oci repository context: %w", err)
 			return
 		}
-		cdRef := ociRepoCtx.BaseURL
+		cdRef, err := cdoci.OCIRef(ociRepoCtx, c.ProviderConfiguration.ComponentDescriptor.Reference.ComponentName, c.ProviderConfiguration.ComponentDescriptor.Reference.Version)
+		if err != nil {
+			erro = fmt.Errorf("unable to generate component descriptor oci reference: %w", err)
+			return
+		}
 		componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
 		if err != nil {
 			erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
