@@ -225,6 +225,10 @@ func (d *Dumper) DumpConfigMapsInNamespace(ctx context.Context, namespace string
 		return fmt.Errorf("unable to list installations for namespace %q: %w", namespace, err)
 	}
 	for _, cm := range cmList.Items {
+		// ignore default configmap
+		if cm.Name == "kube-root-ca.crt" {
+			continue
+		}
 		if err := DumpConfigMap(d.logger, &cm); err != nil {
 			return err
 		}
@@ -248,6 +252,12 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 		return fmt.Errorf("unable to list deployments for namespace %q: %w", d.lsNamespace, err)
 	}
 	for _, deploy := range deployments.Items {
+		// skip landscaper webhook if ready and no restarts
+		if deploy.Name == "ls-landscaper-webhooks" {
+			if deploy.Spec.Replicas == nil || deploy.Status.ReadyReplicas == *deploy.Spec.Replicas {
+				continue
+			}
+		}
 		if err := DumpDeployment(d.logger, &deploy); err != nil {
 			return err
 		}
