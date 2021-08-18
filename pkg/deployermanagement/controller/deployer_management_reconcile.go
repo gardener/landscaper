@@ -261,6 +261,11 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 				Resources: []string{"deployitems/status"},
 				Verbs:     []string{"get", "watch", "list", "update", "patch"},
 			},
+			{
+				APIGroups: []string{corev1.SchemeGroupVersion.Group},
+				Resources: []string{"events"},
+				Verbs:     []string{"create", "get", "watch", "patch", "update"},
+			},
 		}
 		return nil
 	}); err != nil {

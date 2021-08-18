@@ -35,6 +35,10 @@ rules:
   - "events"
   verbs:
   - create
+  - get
+  - watch
+  - patch
+  - update
 - apiGroups:
   - ""
   resources:
