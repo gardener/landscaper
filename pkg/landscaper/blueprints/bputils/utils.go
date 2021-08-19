@@ -37,7 +37,7 @@ func BuildNewBlueprint(cache cache.Cache, fs vfs.FileSystem, path string) (*ocis
 	if err != nil {
 		return nil, err
 	}
-	defLayer.MediaType = mediatype.BlueprintArtifactsLayerMediaTypeV1
+	defLayer.MediaType = mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()
 
 	manifest := &ocispecv1.Manifest{
 		Versioned: specs.Versioned{SchemaVersion: 2},
