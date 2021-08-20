@@ -121,6 +121,8 @@ github.com/gardener/landscaper/apis/deployer/manifest/validation
 github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
+github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile
+github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1
 github.com/gardener/landscaper/apis/deployer/utils/managedresource
 github.com/gardener/landscaper/apis/deployer/utils/managedresource/validation
 github.com/gardener/landscaper/apis/deployer/utils/readinesschecks
@@ -321,6 +323,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/robfig/cron/v3 v3.0.1
+## explicit
+github.com/robfig/cron/v3
 # github.com/russross/blackfriday/v2 v2.0.1
 github.com/russross/blackfriday/v2
 # github.com/shopspring/decimal v1.2.0

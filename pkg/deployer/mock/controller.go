@@ -6,6 +6,7 @@ package mock
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -18,22 +19,26 @@ import (
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// NewDeployer creates a new deployer that reconciles deploy items of type helm.
+// NewDeployer creates a new deployer that reconciles deploy items of type mock.
 func NewDeployer(log logr.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	config mockv1alpha1.Configuration) (deployerlib.Deployer, error) {
 
-	return &deployer{
+	dep := &deployer{
 		log:        log,
 		lsClient:   lsKubeClient,
 		hostClient: hostKubeClient,
 		config:     config,
-	}, nil
+		hooks:      extension.ReconcileExtensionHooks{},
+	}
+	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
+	return dep, nil
 }
 
 type deployer struct {
@@ -155,4 +160,21 @@ func (d *deployer) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (
 		"SuccessfullValidation", "Successfully validated configuration")
 	_ = d.lsClient.Status().Update(ctx, item)
 	return config, nil
+}
+
+func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
+	config, err := d.getConfig(ctx, di)
+	if err != nil {
+		return nil, err
+	}
+	if config.ContinuousReconcile == nil {
+		// no continuous reconciliation configured
+		return nil, nil
+	}
+	schedule, err := cr.Schedule(config.ContinuousReconcile)
+	if err != nil {
+		return nil, err
+	}
+	next := schedule.Next(last)
+	return &next, nil
 }
