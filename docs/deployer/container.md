@@ -17,6 +17,7 @@ deployer could be found [here](https://github.com/gardener/landscapercli/blob/ma
 - [Provider Configuration](#provider-configuration)
 - [Provider Status](#status)
 - [Deployer Configuration](#deployer-configuration)
+- [Architecture](#architecture)
 
 ### Provider Configuration
 
@@ -187,3 +188,47 @@ debug:
   # keep the pod and do not delete it after it finishes.
   keepPod: false
 ```
+
+## Architecture
+
+### Reconcile
+The container deployer is a Landscaper deployer that can execute arbitrary containers.
+The deployer itself is Kubernetes controller that runs inside a kubernetes cluster.
+This cluster can be same as the Landscaper Cluster but does not have to. 
+In the example this execution cluster is called `Deployer Host Cluster`.
+
+As the deployer already inside a Kubernetes cluster that is able to execute containers, this cluster is used to execute the container specified in the DeployItems ProviderConfig.
+The containers are not executed in the `Landscaper Cluster` as this cluster might not be able to execute containers (virtual/nodeless cluster).
+And with that approach, it is possible to run the container deployer in a fenced environment and access apis/resources that are not accessible from the Landscaper cluster.
+As for the other container, the target is used to determine the responsible container deployer.
+> Note: The target does not need to be a kubernetes cluster target. And the container deployer does not execute the container in the target cluster. It always executes it in its host cluster (although that host cluster is configurable).
+
+When a Container DeployItem is reconciled basically the following steps are performed:
+1. The Container Deployer watches the DeployItem
+2. When the DeployItem is ready to be executed (configuration has changed), the container deployer schedules a Pod.
+3. That pod contains a InitContainer that fetches the targets, import values, blueprint and the resolved component descriptor. The data is stored in a shared local volume.
+4. The actual application code is executed in a main container as soon as the initContainer has finished. The main container has access to the shared volume which make it possible for the application to access runtime data and configuration.
+5. When the main container has successfully finished, optionally data is exported. See [Container Eexport](#export) for detailed export architecture.
+
+![Container Deployer Reconcile](../images/container-deployer_reconcile.png)
+
+#### Export
+
+When the main container in a pod execution of the Container Deployer has been successfully completed. Optionally data can be exported and made available to other deployitems/installation in the cluster.
+
+The export process looks as follows:
+0. The data to be exported is written to shared volume
+1. The shared volume is also accessible from the sidecar container that picks up the export and creates a secret in the host cluster
+2. The secret in the host cluster is then synced by the Container Deployer to the virtual cluster. This is necessary to keep the credentials in the sidecar container as minimal as possible. (Because the main container executes arbitrary code we do not want to expose credentials in the sidecar.)
+
+![Container Deployer Export](../images/container-deployer_export.png)
+
+#### State
+
+When executing a container with the Container Deployer, optionally a state can be used that is handled by the Container Deployer as made available for subsequent runs of the container.
+
+1. When a Container Deployer runs a deploy items the pod contains an init container as described above in the general process.
+2. That initContainer tries to read the state from a secret in the host cluster. If the secret does not exist it assumes that no state has been written or it is the first run. The state is read from the secret and again written to the shared volume so that the application can access the data.
+3. As soon as the main container has finished and written a state. That state is again on the shared volume and the sidecar container reads the state and creates the state secret.
+
+![Container Deployer State](../images/container-deployer_state.png)
