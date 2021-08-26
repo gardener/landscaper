@@ -1,0 +1,67 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+spec:
+
+  componentDescriptor:
+    inline:
+      meta:
+        schemaVersion: v2
+
+      component:
+        name: mock-installation
+        version: 1.0.0
+
+        provider: internal
+
+        repositoryContexts:
+          - type: ociRegistry
+            baseUrl: "example.com/test"
+
+        sources: []
+        componentReferences: []
+
+        resources: []
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+
+          annotations:
+            local/name: root
+            local/version: 1.0.0
+
+          deployExecutions:
+          - type: Spiff
+            template:
+              deployItems:
+              - name: subexec
+                type: landscaper.gardener.cloud/mock
+                config:
+                  apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                  kind: ProviderConfiguration
+                  initialPhase: Succeeded
+
+          subinstallations:
+          - apiVersion: landscaper.gardener.cloud/v1alpha1
+            kind: InstallationTemplate
+            name: subinst
+            blueprint:
+              filesystem:
+                blueprint.yaml: |
+                  apiVersion: landscaper.gardener.cloud/v1alpha1
+                  kind: Blueprint
+                  deployExecutions:
+                  - type: Spiff
+                    template:
+                      deployItems:
+                      - name: subinst
+                        type: landscaper.gardener.cloud/mock
+                        config:
+                          apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+                          kind: ProviderConfiguration
+                          initialPhase: Succeeded

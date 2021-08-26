@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,19 +27,9 @@ import (
 	"github.com/gardener/landscaper/test/utils"
 )
 
-// RegisterTests registers all tests of this package
-func RegisterTests(f *framework.Framework) {
-	ImportExportTests(f)
-}
-
-var (
-	resyncTime  = 1 * time.Second
-	timeoutTime = 30 * time.Second
-)
-
 func ImportExportTests(f *framework.Framework) {
 	var (
-		testdataDir = filepath.Join(f.RootPath, "test", "integration", "installations", "testdata")
+		testdataDir = filepath.Join(f.RootPath, "test", "integration", "installations", "testdata", "test1")
 	)
 
 	Describe("Imports/Exports", func() {
