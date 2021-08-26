@@ -43,60 +43,68 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 
 	var phase lsv1alpha1.ExecutionPhase
 	for _, item := range executionItems {
-		if item.DeployItem != nil && !o.forceReconcile {
-			phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
-			deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
-
-			// we need to check if the deployitem is failed due to that its not picked up by a deployer.
-			// This is a error scenario that needs special handling as other detections in this code will not work.
-			// Mostly due to outdated observed generation
-			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
-				(item.DeployItem.Status.LastError != nil && item.DeployItem.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason) {
-				o.exec.Status.ObservedGeneration = o.exec.Generation
-				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
-					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name)))
-				return lserrors.NewError(
-					"DeployItemReconcile",
-					"DeployItemFailed",
-					fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name),
-				)
-			}
-
-			if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
-				o.EventRecorder().Eventf(o.exec, corev1.EventTypeNormal,
-					"DeployItemCompleted",
-					"deploy item %s not triggered because it already exists and is not completed", item.Info.Name,
-				)
-				o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
-				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-				phase = lsv1alpha1.ExecutionPhaseProgressing
-				continue
-			}
-
+		if item.DeployItem != nil {
 			// get last applied status from own status
 			var lastAppliedGeneration int64
 			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
 				lastAppliedGeneration = ref.Reference.ObservedGeneration
 			}
 
-			if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
-				// TODO: check if need to wait for other deploy items to finish
-				o.exec.Status.ObservedGeneration = o.exec.Generation
-				o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-				o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
-					lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-						"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
-				return lserrors.NewError(
-					"DeployItemReconcile",
-					"DeployItemFailed",
-					fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
-				)
-			}
+			deployItemLastAppliedUpToDate := lastAppliedGeneration == item.DeployItem.GetGeneration()
 
-			if lastAppliedGeneration == o.exec.Generation {
-				continue
+			if deployItemLastAppliedUpToDate && !o.forceReconcile {
+				phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
+				deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
+
+				// we need to check if the deployitem is failed due to that its not picked up by a deployer.
+				// This is a error scenario that needs special handling as other detections in this code will not work.
+				// Mostly due to outdated observed generation
+				if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+					(item.DeployItem.Status.LastError != nil && item.DeployItem.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason) {
+					o.exec.Status.ObservedGeneration = o.exec.Generation
+					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+					o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+						lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+							"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name)))
+					o.exec.Status.LastError = lserrors.UpdatedError(
+						o.exec.Status.LastError,
+						"DeployItemReconcile",
+						"DeployItemFailed",
+						fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name),
+					)
+					return nil
+				}
+
+				if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
+					o.EventRecorder().Eventf(o.exec, corev1.EventTypeNormal,
+						"DeployItemCompleted",
+						"deploy item %s not triggered because it already exists and is not completed", item.Info.Name,
+					)
+					o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
+					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+					phase = lsv1alpha1.ExecutionPhaseProgressing
+					continue
+				}
+
+				if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
+					// TODO: check if need to wait for other deploy items to finish
+					o.exec.Status.ObservedGeneration = o.exec.Generation
+					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+					o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+						lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+							"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
+					o.exec.Status.LastError = lserrors.UpdatedError(
+						o.exec.Status.LastError,
+						"DeployItemReconcile",
+						"DeployItemFailed",
+						fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
+					)
+					return nil
+				}
+
+				if lastAppliedGeneration == o.exec.Generation {
+					continue
+				}
 			}
 		}
 		runnable, err := o.checkRunnable(ctx, item, executionItems)
@@ -167,7 +175,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	ref.Name = item.Info.Name
 	ref.Reference.Name = item.DeployItem.Name
 	ref.Reference.Namespace = item.DeployItem.Namespace
-	ref.Reference.ObservedGeneration = o.exec.Generation
+	ref.Reference.ObservedGeneration = item.DeployItem.Generation
 
 	old := o.exec.DeepCopy()
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
