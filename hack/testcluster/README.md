@@ -30,7 +30,7 @@ $ testcluster registry create --kubeconfig HOST_KUBECONFIG --id [UNIQUE_ID]
 $ testcluster registry delete --kubeconfig HOST_KUBECONFIG --id [UNIQUE_ID]
 ```
 The registry is scheduled as a pod in a kubernetes cluster and is only reachable within the k8s cluster with the service name.
-The registry serves a https endpoint with a self-signed certificates that has included the service name (`<service-name>.<service-namespace>`and `<service-name>.<service-namespace>`).
+The registry serves a https endpoint with a self-signed certificate that has included the service name (`<service-name>.<service-namespace>`and `<service-name>.<service-namespace>`).
 
 > Note: the certificates root CA is currently not exported but only stored in a secret in the cluster.
 
