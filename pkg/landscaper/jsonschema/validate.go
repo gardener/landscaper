@@ -22,6 +22,15 @@ func ValidateSchema(schemaBytes []byte) error {
 	return nil
 }
 
+// ValidateSchemaWithLoader validates a jsonschema schema definition by using the given loader.
+func ValidateSchemaWithLoader(loader gojsonschema.JSONLoader) error {
+	_, err := gojsonschema.NewSchemaLoader().Compile(loader)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v *Validator) ValidateGoStruct(schemaBytes []byte, data interface{}) error {
 	return v.validate(schemaBytes, gojsonschema.NewGoLoader(data))
 }
