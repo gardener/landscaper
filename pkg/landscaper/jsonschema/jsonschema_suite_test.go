@@ -106,6 +106,19 @@ var _ = Describe("jsonschema", func() {
 			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
 		})
 
+		It("should pass with a blueprint reference within the schema", func() {
+			localSchema1 := []byte(`{ "$ref": "blueprint://myfile2" }`)
+			Expect(vfs.WriteFile(config.BlueprintFs, "myfile1", localSchema1, os.ModePerm)).To(Succeed())
+
+			localSchema2 := []byte(`{ "type": "string"}`)
+			Expect(vfs.WriteFile(config.BlueprintFs, "myfile2", localSchema2, os.ModePerm)).To(Succeed())
+
+			schemaBytes := []byte(`{ "$ref": "blueprint://myfile1" }`)
+			data := []byte(`"abc"`)
+
+			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		})
+
 		It("should validate with a definition local reference in a blueprint file reference", func() {
 			localSchema := []byte(`{ "definitions": { "myschema": { "type": "string" } } }`)
 			Expect(vfs.WriteFile(config.BlueprintFs, "myfile", localSchema, os.ModePerm)).To(Succeed())

@@ -116,7 +116,8 @@ func (l *Loader) LoadJSON() (interface{}, error) {
 		return nil, err
 	}
 
-	if err := ValidateSchema(schemaJSONBytes); err != nil {
+	wrappedLoader := NewWrappedLoader(l.LoaderConfig, gojsonschema.NewBytesLoader(schemaJSONBytes))
+	if err := ValidateSchemaWithLoader(wrappedLoader); err != nil {
 		return nil, err
 	}
 
