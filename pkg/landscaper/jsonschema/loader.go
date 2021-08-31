@@ -6,9 +6,11 @@ package jsonschema
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"path/filepath"
 
@@ -18,6 +20,8 @@ import (
 	"github.com/xeipuuv/gojsonreference"
 	"github.com/xeipuuv/gojsonschema"
 	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/apis/mediatype"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
@@ -186,9 +190,29 @@ func (l *Loader) loadComponentDescriptorReference(refURL *url.URL) ([]byte, erro
 	}
 
 	var JSONSchemaBuf bytes.Buffer
-	_, err = blobResolver.Resolve(ctx, res, &JSONSchemaBuf)
+	info, err := blobResolver.Resolve(ctx, res, &JSONSchemaBuf)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch jsonschema for '%s': %w", refURL.String(), err)
+	}
+
+	mt, err := mediatype.Parse(info.MediaType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse media type %q: %w", info.MediaType, err)
+	}
+	if mt.Type != mediatype.JSONSchemaArtifactsMediaTypeV1 {
+		return nil, fmt.Errorf("unknown media type %s expected %s", info.MediaType, mediatype.JSONSchemaArtifactsMediaTypeV1)
+	}
+
+	if mt.IsCompressed(mediatype.GZipCompression) {
+		var decompJSONSchemaBuf bytes.Buffer
+		r, err := gzip.NewReader(&JSONSchemaBuf)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decompress jsonschema: %w", err)
+		}
+		if _, err := io.Copy(&decompJSONSchemaBuf, r); err != nil {
+			return nil, fmt.Errorf("unable to decompress jsonschema: %w", err)
+		}
+		return decompJSONSchemaBuf.Bytes(), nil
 	}
 
 	return JSONSchemaBuf.Bytes(), nil
