@@ -214,13 +214,15 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 
 	initMounts := []corev1.VolumeMount{configurationVolumeMount, initServiceAccountMount, sharedVolumeMount}
 
-	for _, v := range []string{opts.BluePrintPullSecret, opts.ComponentDescriptorPullSecret} {
+	for name, v := range map[string]string{
+		"blueprint-pull-secret": opts.BluePrintPullSecret,
+		"cd-pull-secret":        opts.ComponentDescriptorPullSecret} {
 		if len(v) == 0 {
 			continue
 		}
 
 		volumes = append(volumes, corev1.Volume{
-			Name: v,
+			Name: name,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: v,
@@ -229,9 +231,9 @@ func generatePod(opts PodOptions) (*corev1.Pod, error) {
 		})
 
 		initMounts = append(initMounts, corev1.VolumeMount{
-			Name:      v,
+			Name:      name,
 			ReadOnly:  true,
-			MountPath: filepath.Join(container.RegistrySecretBasePath, v),
+			MountPath: filepath.Join(container.RegistrySecretBasePath, name),
 		})
 	}
 
