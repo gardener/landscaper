@@ -28,15 +28,18 @@ import (
 )
 
 type dummyBlobResolver struct {
+	mediaType string
 }
 
-func newDummyBlobResolver() ctf.BlobResolver {
-	return dummyBlobResolver{}
+func newDummyBlobResolver(mediaType string) ctf.BlobResolver {
+	return dummyBlobResolver{
+		mediaType: mediaType,
+	}
 }
 
 func (r dummyBlobResolver) Info(_ context.Context, _ cdv2.Resource) (*ctf.BlobInfo, error) {
 	return &ctf.BlobInfo{
-		MediaType: mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String(),
+		MediaType: r.mediaType,
 	}, nil
 }
 
@@ -180,9 +183,38 @@ var _ = Describe("Resolve", func() {
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 
-			blobResolver := newDummyBlobResolver()
-			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
-				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()))
+			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()
+			blobResolver := newDummyBlobResolver(mediaType)
+			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
+			Expect(err).ToNot(HaveOccurred())
+
+			cd := &cdv2.ComponentDescriptor{}
+			cd.Name = "example.com/a"
+			cd.Version = "0.0.1"
+			cd.Resources = append(cd.Resources, cdv2.Resource{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name:    "my-bp",
+					Version: "1.2.3",
+					Type:    mediatype.BlueprintType,
+				},
+				Relation: cdv2.ExternalRelation,
+				Access:   &localFSAccess,
+			})
+
+			_, err = blueprints.ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, "my-bp")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should throw an error if a blueprint is received corrupted with gzipped media type", func() {
+			ctx := context.Background()
+
+			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			Expect(err).ToNot(HaveOccurred())
+			blueprints.SetStore(store)
+
+			mediaType := mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()
+			blobResolver := newDummyBlobResolver(mediaType)
+			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar", mediaType))
 			Expect(err).ToNot(HaveOccurred())
 
 			cd := &cdv2.ComponentDescriptor{}

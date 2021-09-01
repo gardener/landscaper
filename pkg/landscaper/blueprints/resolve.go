@@ -101,6 +101,9 @@ func ResolveBlueprintFromBlobResolver(
 	}
 
 	pr, pw := io.Pipe()
+	// close the writer to unblock any pending io writes
+	defer pw.Close()
+
 	mediaType, err := mediatype.Parse(blobInfo.MediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse media type: %w", err)
@@ -134,7 +137,7 @@ func ResolveBlueprintFromBlobResolver(
 	if err != nil {
 		// cancel early to unblock the blob resolver
 		cancel()
-		// close the writer to unblock any pending io writes
+		// close the writer early to unblock any pending io writes
 		_ = pw.Close()
 		if err2 := eg.Wait(); err2 != nil {
 			return nil, errorsutil.NewAggregate([]error{err, err2})
