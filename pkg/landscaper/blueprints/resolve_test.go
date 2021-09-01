@@ -6,8 +6,12 @@ package blueprints_test
 
 import (
 	"context"
+	"io"
+	"math/rand"
+	"time"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo"
@@ -23,6 +27,33 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
+
+type dummyBlobResolver struct {
+}
+
+func newDummyBlobResolver() ctf.BlobResolver {
+	return dummyBlobResolver{}
+}
+
+func (r dummyBlobResolver) Info(_ context.Context, _ cdv2.Resource) (*ctf.BlobInfo, error) {
+	return &ctf.BlobInfo{
+		MediaType: mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String(),
+	}, nil
+}
+
+func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+	data := make([]byte, 256)
+	rand.Read(data)
+
+	for i := 0; i < 20; i++ {
+		if _, err := writer.Write(data); err != nil {
+			return nil, err
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil, nil
+}
 
 var _ = Describe("Resolve", func() {
 
@@ -126,6 +157,35 @@ var _ = Describe("Resolve", func() {
 			blobResolver := componentsregistry.NewLocalFilesystemBlobResolver(memFs)
 			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
 				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).Compression(mediatype.GZipCompression).String()))
+			Expect(err).ToNot(HaveOccurred())
+
+			cd := &cdv2.ComponentDescriptor{}
+			cd.Name = "example.com/a"
+			cd.Version = "0.0.1"
+			cd.Resources = append(cd.Resources, cdv2.Resource{
+				IdentityObjectMeta: cdv2.IdentityObjectMeta{
+					Name:    "my-bp",
+					Version: "1.2.3",
+					Type:    mediatype.BlueprintType,
+				},
+				Relation: cdv2.ExternalRelation,
+				Access:   &localFSAccess,
+			})
+
+			_, err = blueprints.ResolveBlueprintFromBlobResolver(ctx, cd, blobResolver, "my-bp")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should throw an error if a blueprint is received corrupted", func() {
+			ctx := context.Background()
+
+			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			Expect(err).ToNot(HaveOccurred())
+			blueprints.SetStore(store)
+
+			blobResolver := newDummyBlobResolver()
+			localFSAccess, err := cdv2.NewUnstructured(cdv2.NewLocalFilesystemBlobAccess("bp.tar",
+				mediatype.NewBuilder(mediatype.BlueprintArtifactsLayerMediaTypeV1).String()))
 			Expect(err).ToNot(HaveOccurred())
 
 			cd := &cdv2.ComponentDescriptor{}

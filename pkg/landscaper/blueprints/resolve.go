@@ -110,7 +110,7 @@ func ResolveBlueprintFromBlobResolver(
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		_, err := blobResolver.Resolve(ctx, resource, pw)
+		_, err := blobResolver.Resolve(ctx, resource, utils.NewContextAwareWriter(ctx, pw))
 		if err != nil {
 			if err2 := pw.Close(); err2 != nil {
 				return errorsutil.NewAggregate([]error{err, err2})
@@ -131,9 +131,11 @@ func ResolveBlueprintFromBlobResolver(
 		}
 	}
 	blueprint, err := GetStore().Store(ctx, cd, resource, blobReader)
-	// drain the pipe reader, otherwise the error group wait may block indefinitely
-	_, _ = io.Copy(io.Discard, pr)
 	if err != nil {
+		// cancel early to unblock the blob resolver
+		cancel()
+		// close the writer to unblock any pending io writes
+		_ = pw.Close()
 		if err2 := eg.Wait(); err2 != nil {
 			return nil, errorsutil.NewAggregate([]error{err, err2})
 		}
