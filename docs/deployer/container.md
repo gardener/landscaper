@@ -52,7 +52,7 @@ spec:
         resourceName: <abc....>
     
     importValues: 
-      {{ toJson . | indent 2 }}
+      {{ toJson . | indent 6 }}
 
     image: <image ref>
     command: ["my command"]
