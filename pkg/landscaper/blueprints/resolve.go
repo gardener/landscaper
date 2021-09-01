@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -101,6 +101,9 @@ func ResolveBlueprintFromBlobResolver(
 	}
 
 	pr, pw := io.Pipe()
+	// close the writer to unblock any pending io writes
+	defer pw.Close()
+
 	mediaType, err := mediatype.Parse(blobInfo.MediaType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse media type: %w", err)
@@ -110,7 +113,7 @@ func ResolveBlueprintFromBlobResolver(
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		_, err := blobResolver.Resolve(ctx, resource, pw)
+		_, err := blobResolver.Resolve(ctx, resource, utils.NewContextAwareWriter(ctx, pw))
 		if err != nil {
 			if err2 := pw.Close(); err2 != nil {
 				return errorsutil.NewAggregate([]error{err, err2})
@@ -132,6 +135,10 @@ func ResolveBlueprintFromBlobResolver(
 	}
 	blueprint, err := GetStore().Store(ctx, cd, resource, blobReader)
 	if err != nil {
+		// cancel early to unblock the blob resolver
+		cancel()
+		// close the writer early to unblock any pending io writes
+		_ = pw.Close()
 		if err2 := eg.Wait(); err2 != nil {
 			return nil, errorsutil.NewAggregate([]error{err, err2})
 		}
