@@ -74,6 +74,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwritesList":                            schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Condition":                                          schema_landscaper_apis_core_v1alpha1_Condition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference":                                 schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.Context":                                            schema_landscaper_apis_core_v1alpha1_Context(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ContextList":                                        schema_landscaper_apis_core_v1alpha1_ContextList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataExport":                                         schema_landscaper_apis_core_v1alpha1_DataExport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataImport":                                         schema_landscaper_apis_core_v1alpha1_DataImport(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DataObject":                                         schema_landscaper_apis_core_v1alpha1_DataObject(ref),
@@ -2930,6 +2932,110 @@ func schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref common.Referenc
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Context is a resource that contains shared information of installations. This includes information about the repository context like the context itself or secrets to access the oci artifacts. But it can also contain deployer specific config.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"repositoryContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
+							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+						},
+					},
+					"registryPullSecrets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RegistryPullSecrets defines a list of registry credentials that are used to pull blueprints, component descriptors and jsonschemas from the respective registry. For more info see: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/ Note that the type information is used to determine the secret key and the type of the secret.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.LocalObjectReference"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ContextList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextList contains a list of Contexts",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.Context"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Context", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_DataExport(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4572,6 +4678,13 @@ func schema_landscaper_apis_core_v1alpha1_InstallationSpec(ref common.ReferenceC
 				Description: "InstallationSpec defines a component installation.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Context defines the current context of the installation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"componentDescriptor": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ComponentDescriptor is a reference to the installation's component descriptor",

@@ -75,6 +75,12 @@ func SetDefaults_DefinitionExport(exports *ExportDefinitionList) {
 
 // SetDefaults_Installation sets default values for installation objects
 func SetDefaults_Installation(obj *Installation) {
+
+	// default the repository context to "default"
+	if len(obj.Spec.Context) == 0 {
+		obj.Spec.Context = DefaultContextName
+	}
+
 	// default the namespace of imports
 	for i, dataImport := range obj.Spec.Imports.Data {
 		if dataImport.ConfigMapRef != nil {

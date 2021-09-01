@@ -40,6 +40,10 @@ type Installation struct {
 
 // InstallationSpec defines a component installation.
 type InstallationSpec struct {
+	// Context defines the current context of the installation.
+	// +optional
+	Context string `json:"context,omitempty"`
+
 	//ComponentDescriptor is a reference to the installation's component descriptor
 	// +optional
 	ComponentDescriptor *ComponentDescriptorDefinition `json:"componentDescriptor,omitempty"`

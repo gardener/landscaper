@@ -14,6 +14,8 @@ Resource Types:
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentOverwrites">ComponentOverwrites</a>
 </li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>
+</li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItem">DeployItem</a>
@@ -244,6 +246,85 @@ ComponentOverwriteList
 </td>
 <td>
 <p>Overwrites defines a list of component overwrites</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.Context">Context
+</h3>
+<p>
+<p>Context is a resource that contains shared information of installations.
+This includes information about the repository context like the context itself or secrets to access the oci artifacts.
+But it can also contain deployer specific config.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>Context</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>repositoryContext</code></br>
+<em>
+<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
+github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RepositoryContext defines the context of the component repository to resolve blueprints.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>registryPullSecrets</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#localobjectreference-v1-core">
+[]Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RegistryPullSecrets defines a list of registry credentials that are used to
+pull blueprints, component descriptors and jsonschemas from the respective registry.
+For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
+Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
 </tbody>
@@ -829,6 +910,18 @@ InstallationSpec
 <br/>
 <br/>
 <table>
+<tr>
+<td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the installation.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>componentDescriptor</code></br>
@@ -3607,6 +3700,18 @@ AnyJSON
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the installation.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>componentDescriptor</code></br>
