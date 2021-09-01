@@ -6,16 +6,14 @@ package blueprints_test
 
 import (
 	"context"
-	"io"
-	"math/rand"
-	"time"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io"
+	"math/rand"
 
 	"github.com/gardener/landscaper/apis/mediatype"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
@@ -49,8 +47,6 @@ func (r dummyBlobResolver) Resolve(_ context.Context, _ cdv2.Resource, writer io
 		if _, err := writer.Write(data); err != nil {
 			return nil, err
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 	return nil, nil
 }
