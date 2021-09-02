@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
@@ -90,12 +91,22 @@ func CreateTestInstallationResources(op *lsoperation.Operation, cfg TestInstalla
 
 	rootBlueprint := CreateBlueprintFromFile(cfg.BlueprintFilePath, cfg.BlueprintContentPath)
 
-	rootIntInst, err := installations.New(rootInst, rootBlueprint)
+	lsCtx := installations.ContextFromInstallation(rootInst)
+
+	rootIntInst, err := installations.New(lsCtx, rootInst, rootBlueprint)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	rootInstOp, err := installations.NewInstallationOperationFromOperation(context.TODO(), op, rootIntInst, nil)
+	rootInstOp, err := installations.NewInstallationOperationFromOperation(context.TODO(), op, rootIntInst)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	return rootInst, rootIntInst, rootBlueprint, rootInstOp
+}
+
+// CreateInternalInstallation is a simple wrapper for installations.CreateInternalInstallation that uses a simple context
+func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*installations.Installation, error) {
+	return installations.CreateInternalInstallation(ctx,
+		installations.ContextFromInstallation(inst),
+		compResolver,
+		inst)
 }
 
 // LocalRemoteComponentDescriptorRef creates a new default local remote component descriptor reference

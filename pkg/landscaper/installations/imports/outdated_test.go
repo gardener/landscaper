@@ -14,6 +14,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	testutils "github.com/gardener/landscaper/test/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -54,16 +56,16 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that imports are outdated if a import from the parent is outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+		inInstA, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		op.Scope().Parent = inInstRoot
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
@@ -73,20 +75,20 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that imports are outdated if a import from another component is outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
 		instA := fakeInstallations["test1/a"]
 		instA.Status.ConfigGeneration = "outdated"
 		Expect(fakeClient.Status().Update(ctx, instA)).To(Succeed())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+		inInstB, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		op.Scope().Parent = inInstRoot
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
@@ -96,16 +98,16 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that no imports are outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
+		inInstB, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		op.Scope().Parent = inInstRoot
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
@@ -120,14 +122,14 @@ var _ = Describe("OutdatedImports", func() {
 
 			instRoot := fakeInstallations["test1/root"]
 			instRoot.Status.Imports[0].ConfigGeneration = "1"
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			op.Scope().Parent = inInstRoot
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)
 			outdated, err := val.OutdatedImports(ctx)
@@ -139,14 +141,14 @@ var _ = Describe("OutdatedImports", func() {
 			ctx := context.Background()
 			instRoot := fakeInstallations["test1/root"]
 			instRoot.Status.Imports[0].ConfigGeneration = "d62a6724cde91ae43d5946a9dcb581b873194b74"
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), instRoot)
 			Expect(err).ToNot(HaveOccurred())
 
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			op.Scope().Parent = inInstRoot
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			val := imports.NewValidator(op)
 			outdated, err := val.OutdatedImports(ctx)

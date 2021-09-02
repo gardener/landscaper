@@ -71,10 +71,12 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
+		inInstA, err := testutils.CreateInternalInstallation(ctx,
+			op.ComponentsRegistry(),
+			state.Installations[state.Namespace+"/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstA, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstA)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -93,10 +95,12 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx,
+			op.ComponentsRegistry(),
+			state.Installations[state.Namespace+"/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -118,10 +122,12 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/b"])
+		inInstB, err := testutils.CreateInternalInstallation(ctx,
+			op.ComponentsRegistry(),
+			state.Installations[state.Namespace+"/b"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)
@@ -135,10 +141,12 @@ var _ = Describe("Delete", func() {
 		state, err = testenv.InitResources(ctx, "./testdata/state/test2")
 		Expect(err).ToNot(HaveOccurred())
 
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
+		inInstB, err := testutils.CreateInternalInstallation(ctx,
+			op.ComponentsRegistry(),
+			state.Installations[state.Namespace+"/a"])
 		Expect(err).ToNot(HaveOccurred())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = installationsctl.EnsureDeletion(ctx, instOp)

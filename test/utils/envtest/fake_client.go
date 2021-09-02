@@ -13,11 +13,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
@@ -25,15 +23,7 @@ import (
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
 func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	objects := make([]client.Object, 0)
-	state := &State{
-		Installations: make(map[string]*lsv1alpha1.Installation),
-		Executions:    make(map[string]*lsv1alpha1.Execution),
-		DeployItems:   make(map[string]*lsv1alpha1.DeployItem),
-		DataObjects:   make(map[string]*lsv1alpha1.DataObject),
-		Targets:       make(map[string]*lsv1alpha1.Target),
-		Secrets:       make(map[string]*corev1.Secret),
-		ConfigMaps:    make(map[string]*corev1.ConfigMap),
-	}
+	state := NewState()
 	if len(path) != 0 {
 		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {

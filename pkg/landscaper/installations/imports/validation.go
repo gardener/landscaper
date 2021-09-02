@@ -23,8 +23,8 @@ import (
 func NewValidator(op *installations.Operation) *Validator {
 	return &Validator{
 		Operation: op,
-		parent:    op.Context().Parent,
-		siblings:  op.Context().Siblings,
+		parent:    op.Scope().Parent,
+		siblings:  op.Scope().Siblings,
 	}
 }
 
@@ -132,7 +132,7 @@ func (v *Validator) ImportsSatisfied(ctx context.Context, inst *installations.In
 
 func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) (bool, error) {
 	// get deploy item from current context
-	do, owner, err := installations.GetDataImport(ctx, v.Client(), v.Context().Name, &inst.InstallationBase, dataImport)
+	do, owner, err := installations.GetDataImport(ctx, v.Client(), v.Scope().Name, &inst.InstallationBase, dataImport)
 	if err != nil {
 		return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
 	}
@@ -167,19 +167,19 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 	singleTarget := false
 	if len(targetImport.Target) != 0 {
 		singleTarget = true
-		target, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
+		target, err := installations.GetTargetImport(ctx, v.Client(), v.Scope().Name, inst, targetImport.Target)
 		if err != nil {
 			return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
 		targets = []*dataobjects.Target{target}
 	} else if targetImport.Targets != nil {
-		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Context().Name, inst, targetImport.Targets)
+		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Scope().Name, inst, targetImport.Targets)
 		if err != nil {
 			return false, fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
 		targets = tl.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
+		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Scope().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
 		if err != nil {
 			return false, fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
@@ -236,7 +236,7 @@ func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *fi
 
 func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, dataImport lsv1alpha1.DataImport) error {
 	// get deploy item from current context
-	_, owner, err := installations.GetDataImport(ctx, v.Client(), v.Context().Name, &inst.InstallationBase, dataImport)
+	_, owner, err := installations.GetDataImport(ctx, v.Client(), v.Scope().Name, &inst.InstallationBase, dataImport)
 	if err != nil {
 		return fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), dataImport.Name, err)
 	}
@@ -269,14 +269,14 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 	var targets []*dataobjects.Target
 	var targetImportReferences []string
 	if len(targetImport.Target) != 0 {
-		target, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
+		target, err := installations.GetTargetImport(ctx, v.Client(), v.Scope().Name, inst, targetImport.Target)
 		if err != nil {
 			return fmt.Errorf("%s: unable to get target for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
 		targets = []*dataobjects.Target{target}
 		targetImportReferences = []string{targetImport.Target}
 	} else if targetImport.Targets != nil {
-		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Context().Name, inst, targetImport.Targets)
+		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Scope().Name, inst, targetImport.Targets)
 		if err != nil {
 			return fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}
@@ -286,7 +286,7 @@ func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *f
 		targets = tl.Targets
 		targetImportReferences = targetImport.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
+		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Scope().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
 		if err != nil {
 			return fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
 		}

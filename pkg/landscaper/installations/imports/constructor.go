@@ -25,8 +25,8 @@ func NewConstructor(op *installations.Operation) *Constructor {
 		Operation: op,
 		validator: NewValidator(op),
 
-		parent:   op.Context().Parent,
-		siblings: op.Context().Siblings,
+		parent:   op.Scope().Parent,
+		siblings: op.Scope().Siblings,
 	}
 }
 

@@ -45,32 +45,28 @@ type Operation struct {
 	ComponentDescriptor             *cdv2.ComponentDescriptor
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
-	context                         Context
+	scope                           Scope
 
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
-
-	// default repo context
-	DefaultRepoContext *cdv2.UnstructuredTypedObject
 }
 
 // NewInstallationOperation creates a new installation operation
 func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, recorder).SetComponentsRegistry(cRegistry), inst, nil)
+	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, recorder).SetComponentsRegistry(cRegistry), inst)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
-func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, defaultRepoContext *cdv2.UnstructuredTypedObject) (*Operation, error) {
+func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation) (*Operation, error) {
 	instOp := &Operation{
-		Operation:          op,
-		Inst:               inst,
-		DefaultRepoContext: defaultRepoContext,
+		Operation: op,
+		Inst:      inst,
 	}
 
 	if err := instOp.ResolveComponentDescriptors(ctx); err != nil {
 		return nil, err
 	}
-	if err := instOp.SetInstallationContext(ctx); err != nil {
+	if err := instOp.SetInstallationScope(ctx); err != nil {
 		return nil, err
 	}
 	return instOp, nil
@@ -78,7 +74,7 @@ func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
-	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
+	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Context)
 	if err != nil {
 		return err
 	}
@@ -104,14 +100,14 @@ func (o *Operation) Log() logr.Logger {
 	})
 }
 
-// Context returns the context of the operated installation
-func (o *Operation) Context() *Context {
-	return &o.context
+// Scope returns the scope of the operated installation
+func (o *Operation) Scope() *Scope {
+	return &o.scope
 }
 
-// InstallationContextName returns the name of the current installation context.
-func (o *Operation) InstallationContextName() string {
-	return o.context.Name
+// InstallationScopeName returns the name of the current installation context.
+func (o *Operation) InstallationScopeName() string {
+	return o.scope.Name
 }
 
 // JSONSchemaValidator returns a jsonschema validator for the current installation and blueprint.
@@ -169,7 +165,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 	dataObjects := map[string]*dataobjects.DataObject{}
 	for _, def := range o.Inst.Info.Spec.Imports.Data {
 
-		do, _, err := GetDataImport(ctx, o.Client(), o.Context().Name, &o.Inst.InstallationBase, def)
+		do, _, err := GetDataImport(ctx, o.Client(), o.Scope().Name, &o.Inst.InstallationBase, def)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +218,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst, def.Target)
+		target, err := GetTargetImport(ctx, o.Client(), o.Scope().Name, o.Inst, def.Target)
 		if err != nil {
 			return nil, err
 		}
@@ -271,10 +267,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst, def.Targets)
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Scope().Name, o.Inst, def.Targets)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Scope().Name, o.Inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -328,7 +324,7 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 			// It's a component descriptor list, skip it
 			continue
 		}
-		cd, err := GetComponentDescriptorImport(ctx, o.Client(), o.Context().Name, o, def)
+		cd, err := GetComponentDescriptorImport(ctx, o.Client(), o.Scope().Name, o, def)
 		if err != nil {
 			return nil, err
 		}
@@ -382,7 +378,7 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 			// It's a single component descriptor import, skip it
 			continue
 		}
-		cdl, err := GetComponentDescriptorListImport(ctx, o.Client(), o.Context().Name, o, def)
+		cdl, err := GetComponentDescriptorListImport(ctx, o.Client(), o.Scope().Name, o, def)
 		if err != nil {
 			return nil, err
 		}
@@ -445,8 +441,8 @@ func (o *Operation) CreateEventFromCondition(ctx context.Context, inst *lsv1alph
 	return nil
 }
 
-// GetRootInstallations returns all root installations in the system
-func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1alpha1.Installation) bool, opts ...client.ListOption) ([]*lsv1alpha1.Installation, error) {
+// GetRootInstallations returns all root installations in the system.
+func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1alpha1.Installation) bool, opts ...client.ListOption) ([]*InstallationBase, error) {
 	r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
 	if err != nil {
 		return nil, err
@@ -463,67 +459,15 @@ func (o *Operation) GetRootInstallations(ctx context.Context, filter func(lsv1al
 		if filter != nil && filter(obj) {
 			continue
 		}
-		inst := obj
-
-		if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Reference != nil &&
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = o.DefaultRepoContext
-		}
-
-		installations = append(installations, &inst)
+		installations = append(installations, &obj)
 	}
-	return installations, nil
+	return CreateInternalInstallationBases(ctx, o, installations...)
 }
-
-//// GetStaticData constructs the static data from the installation.
-//func (o *Operation) GetStaticData(ctx context.Context) (map[string]interface{}, error) {
-//	if o.staticData != nil {
-//		return o.staticData, nil
-//	}
-//
-//	if len(o.Inst.Info.Spec.StaticData) == 0 {
-//		return nil, nil
-//	}
-//
-//	data := make(map[string]interface{})
-//	for _, source := range o.Inst.Info.Spec.StaticData {
-//		if source.Value != nil {
-//			var values map[string]interface{}
-//			if err := yaml.Unmarshal(source.Value, &values); err != nil {
-//				return nil, errors.Wrap(err, "unable to parse value into map")
-//			}
-//			data = utils.MergeMaps(data, values)
-//			continue
-//		}
-//
-//		if source.ValueFrom == nil {
-//			continue
-//		}
-//
-//		if source.ValueFrom.SecretKeyRef != nil {
-//			values, err := GetDataFromSecretKeyRef(ctx, o.Client(), source.ValueFrom.SecretKeyRef, o.Inst.Info.Namespace)
-//			if err != nil {
-//				return nil, err
-//			}
-//			data = utils.MergeMaps(data, values)
-//			continue
-//		}
-//		if source.ValueFrom.SecretLabelSelector != nil {
-//			values, err := GetDataFromSecretLabelSelectorRef(ctx, o.Client(), source.ValueFrom.SecretLabelSelector, o.Inst.Info.Namespace)
-//			if err != nil {
-//				return nil, err
-//			}
-//			data = utils.MergeMaps(data, values)
-//		}
-//	}
-//	o.staticData = data
-//	return data, nil
-//}
 
 // TriggerDependants triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
 func (o *Operation) TriggerDependants(ctx context.Context) error {
-	for _, sibling := range o.Context().Siblings {
+	for _, sibling := range o.Scope().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
 			continue
 		}
@@ -561,7 +505,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 	src := lsv1alpha1helper.DataObjectSourceFromInstallation(o.Inst.Info)
 	for _, do := range dataExports {
-		do = do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		do = do.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationScopeName())
 		raw, err := do.Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
@@ -586,7 +530,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 	}
 
 	for _, target := range targetExports {
-		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationContextName())
+		target = target.SetNamespace(o.Inst.Info.Namespace).SetSource(src).SetContext(o.InstallationScopeName())
 		raw, err := target.Build()
 		if err != nil {
 			o.Inst.Info.Status.Conditions = lsv1alpha1helper.MergeConditions(o.Inst.Info.Status.Conditions,
@@ -819,7 +763,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 // GetExportForKey creates a dataobject from a dataobject
 func (o *Operation) GetExportForKey(ctx context.Context, key string) (*dataobjects.DataObject, error) {
-	doName := lsv1alpha1helper.GenerateDataObjectName(o.context.Name, key)
+	doName := lsv1alpha1helper.GenerateDataObjectName(o.scope.Name, key)
 	rawDO := &lsv1alpha1.DataObject{}
 	if err := o.Client().Get(ctx, kutil.ObjectKey(doName, o.Inst.Info.Namespace), rawDO); err != nil {
 		return nil, err

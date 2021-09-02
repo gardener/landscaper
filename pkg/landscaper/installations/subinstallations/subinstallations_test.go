@@ -88,9 +88,9 @@ var _ = Describe("SubInstallation", func() {
 			)
 
 			blue := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
-			inst, err := installations.New(&lsv1alpha1.Installation{}, blue)
+			inst, err := installations.New(installations.Context{}, &lsv1alpha1.Installation{}, blue)
 			Expect(err).ToNot(HaveOccurred())
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
+			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst)
 			Expect(err).ToNot(HaveOccurred())
 
 			si := subinstallations.New(instOp)

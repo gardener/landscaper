@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -8,106 +8,59 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
-	"k8s.io/client-go/tools/record"
-
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Context", func() {
 
-	var (
-		op *lsoperation.Operation
-
-		fakeInstallations map[string]*lsv1alpha1.Installation
-		fakeClient        client.Client
-		fakeCompRepo      ctf.ComponentResolver
-	)
+	var state *envtest.State
 
 	BeforeEach(func() {
-		var (
-			err   error
-			state *envtest.State
-		)
-		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
+		var err error
+		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
-		fakeInstallations = state.Installations
-
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
-		Expect(err).ToNot(HaveOccurred())
-
-		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 	})
 
-	It("should show no parent nor siblings for the test1 root", func() {
-		ctx := context.Background()
-
-		instRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
-
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, instRoot, nil)
-		Expect(err).ToNot(HaveOccurred())
-		lCtx := instOp.Context()
-
-		Expect(lCtx.Parent).To(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(0))
+	AfterEach(func() {
+		Expect(state.CleanupState(context.TODO(), testenv.Client, nil)).To(Succeed())
 	})
 
-	It("should show no parent and one sibling for the test2/a installation", func() {
-		ctx := context.Background()
+	Context("GetContext", func() {
+		It("should default the repository context", func() {
+			ctx := context.Background()
+			type custom struct {
+				cdv2.ObjectType
+				BaseURL string `json:"baseUrl"`
+			}
 
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/a"])
-		Expect(err).ToNot(HaveOccurred())
+			repoCtx, err := cdv2.NewUnstructured(&custom{
+				ObjectType: cdv2.ObjectType{
+					Type: "mycustom",
+				},
+				BaseURL: "test",
+			})
+			Expect(err).ToNot(HaveOccurred())
+			lsCtx := &lsv1alpha1.Context{}
+			lsCtx.Name = "cc"
+			lsCtx.Namespace = state.Namespace
+			lsCtx.RepositoryContext = &repoCtx
+			Expect(state.Create(ctx, testenv.Client, lsCtx)).To(Succeed())
 
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
-		Expect(err).ToNot(HaveOccurred())
-		lCtx := instOp.Context()
+			inst := &lsv1alpha1.Installation{}
+			inst.Namespace = state.Namespace
+			inst.Spec.Context = "cc"
+			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{}
+			inst.Spec.ComponentDescriptor.Reference = &lsv1alpha1.ComponentDescriptorReference{}
 
-		Expect(lCtx.Parent).To(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(1))
+			res, err := installations.GetContext(ctx, testenv.Client, inst, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.RepositoryContext.Object).To(Equal(repoCtx.Object))
+			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext).ToNot(BeNil())
+		})
 	})
-
-	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
-		Expect(err).ToNot(HaveOccurred())
-
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
-		Expect(err).ToNot(HaveOccurred())
-		lCtx := instOp.Context()
-
-		Expect(lCtx.Parent).ToNot(BeNil())
-		Expect(lCtx.Siblings).To(HaveLen(3))
-
-		Expect(lCtx.Parent.Info.Name).To(Equal("root"))
-	})
-
-	It("initialize root installations with default context", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-
-		defaultRepoContext, err := cdv2.NewUnstructured(componentsregistry.NewLocalRepository("../testdata/registry"))
-		Expect(err).ToNot(HaveOccurred())
-
-		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root-test40"])
-		Expect(err).ToNot(HaveOccurred())
-
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, &defaultRepoContext)
-		Expect(err).ToNot(HaveOccurred())
-		repoContextOfOtherRoot := instOp.Context().Siblings[0].Info.Spec.ComponentDescriptor.Reference.RepositoryContext
-		Expect(repoContextOfOtherRoot).ToNot(BeNil())
-	})
-
 })

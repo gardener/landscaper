@@ -16,6 +16,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	testutils "github.com/gardener/landscaper/test/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
@@ -59,7 +61,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the exported config from its execution", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 
@@ -90,10 +92,10 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the exported config from a child", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
@@ -132,10 +134,10 @@ var _ = Describe("Constructor", func() {
 
 	It("should forbid the export from a child when the schema is not satisfied", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
@@ -152,10 +154,10 @@ var _ = Describe("Constructor", func() {
 	It("should construct the exported config from a siblings and the execution config", func() {
 		ctx := context.Background()
 		defer ctx.Done()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 		op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
 			{
@@ -197,10 +199,10 @@ var _ = Describe("Constructor", func() {
 		It("should export a target from a template and a subinstallation", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			c := exports.NewConstructor(op)
 			_, res, err := c.Construct(ctx)
@@ -242,10 +244,10 @@ var _ = Describe("Constructor", func() {
 
 		It("should forbid export of a wrong target type", func() {
 			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			target := &lsv1alpha1.Target{}
 			targetName := lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.z")

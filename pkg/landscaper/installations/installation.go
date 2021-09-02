@@ -15,7 +15,7 @@ import (
 
 // InstallationBase is the internal representation of an installation without resolved blueprint.
 type InstallationBase struct {
-	Context *lsv1alpha1.Context
+	Context Context
 	Imports map[string]interface{}
 	Info    *lsv1alpha1.Installation
 	// indexes the import state with from/to as key
@@ -23,16 +23,16 @@ type InstallationBase struct {
 }
 
 // NewInstallationBase creates a new internal representation of an installation without blueprint
-func NewInstallationBase(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation) *InstallationBase {
+func NewInstallationBase(lsCtx Context, inst *lsv1alpha1.Installation) *InstallationBase {
 	internalInst := newInstallationBase(lsCtx, inst)
 	return &internalInst
 }
 
 // newInstallationBase creates a new internal representation of an installation without blueprint
-func newInstallationBase(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation) InstallationBase {
+func newInstallationBase(lsCtx Context, inst *lsv1alpha1.Installation) InstallationBase {
 	internalInst := InstallationBase{
 		Context: lsCtx,
-		Info: inst,
+		Info:    inst,
 		importsStatus: ImportStatus{
 			Data:                make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
 			Target:              make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
@@ -45,6 +45,11 @@ func newInstallationBase(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installatio
 	}
 
 	return internalInst
+}
+
+// ComponentDescriptorRef returns the component descriptor reference for the current installation
+func (i *InstallationBase) ComponentDescriptorRef() *lsv1alpha1.ComponentDescriptorReference {
+	return i.Context.ComponentDescriptorRef()
 }
 
 // ImportStatus returns the internal representation of the internal import state
@@ -116,7 +121,7 @@ type Installation struct {
 }
 
 // New creates a new internal representation of an installation with blueprint
-func New(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
+func New(lsCtx Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
 		InstallationBase: newInstallationBase(lsCtx, inst),
 		Blueprint:        blueprint,

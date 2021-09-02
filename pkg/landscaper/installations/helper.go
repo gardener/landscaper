@@ -50,24 +50,15 @@ func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 	return name
 }
 
-// CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(ctx context.Context, compResolver ctf.ComponentResolver, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
-	internalInstallations := make([]*Installation, len(installations))
-	for i, inst := range installations {
-		inInst, err := CreateInternalInstallation(ctx, compResolver, inst)
-		if err != nil {
-			return nil, err
-		}
-		internalInstallations[i] = inInst
-	}
-	return internalInstallations, nil
-}
-
 // CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
-func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) ([]*InstallationBase, error) {
+func CreateInternalInstallationBases(ctx context.Context, op *Operation, installations ...*lsv1alpha1.Installation) ([]*InstallationBase, error) {
 	internalInstallations := make([]*InstallationBase, len(installations))
 	for i, inst := range installations {
-		inInst := CreateInternalInstallationBase(inst)
+		lsCtx, err := GetContext(ctx, op.Client(), inst, op.ComponentsOverwriter())
+		if err != nil {
+			return nil, fmt.Errorf("unable to get context for %s: %w", inst.Name, err)
+		}
+		inInst := CreateInternalInstallationBase(lsCtx, inst)
 		internalInstallations[i] = inInst
 	}
 	return internalInstallations, nil
@@ -75,40 +66,25 @@ func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) 
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
 // Inline Component Descriptors take precedence
-func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
-	if inst.Spec.ComponentDescriptor == nil || (inst.Spec.ComponentDescriptor.Reference == nil && inst.Spec.ComponentDescriptor.Inline == nil) {
+func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResolver, lsCtx Context) (*cdv2.ComponentDescriptor, ctf.BlobResolver, error) {
+	if len(lsCtx.ComponentName) == 0 {
 		return nil, nil, nil
 	}
-	var (
-		repoCtx *cdv2.UnstructuredTypedObject
-		ref     cdv2.ObjectMeta
-	)
-	//case inline component descriptor
-	if inst.Spec.ComponentDescriptor.Inline != nil {
-		repoCtx = inst.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
-		ref = inst.Spec.ComponentDescriptor.Inline.ObjectMeta
-	}
-	// case remote reference
-	if inst.Spec.ComponentDescriptor.Reference != nil {
-		repoCtx = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
-		ref = inst.Spec.ComponentDescriptor.Reference.ObjectMeta()
-	}
-	return compRepo.ResolveWithBlobResolver(ctx, repoCtx, ref.GetName(), ref.GetVersion())
+	return compRepo.ResolveWithBlobResolver(ctx, lsCtx.RepositoryContext, lsCtx.ComponentName, lsCtx.ComponentVersion)
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation
-func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
-	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
+func CreateInternalInstallation(ctx context.Context, lsCtx Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
+	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
-	return New(inst, blue)
+	return New(lsCtx, inst, blue)
 }
 
 // CreateInternalInstallationBase creates an internal installation base for an Installation
-func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
-	return NewInstallationBase(inst)
+func CreateInternalInstallationBase(lsCtx Context, inst *lsv1alpha1.Installation) *InstallationBase {
+	return NewInstallationBase(lsCtx, inst)
 }
 
 // GetDataImport fetches the data import from the cluster.

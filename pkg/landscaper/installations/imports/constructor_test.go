@@ -29,7 +29,7 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -64,7 +64,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a sibling", func() {
 		ctx := context.Background()
-		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/b"])
+		inInstB, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -73,7 +73,7 @@ var _ = Describe("Constructor", func() {
 			"b.a": "val-a",
 		}
 
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, inInstB)).To(Succeed())
 		Expect(inInstB.GetImports()).ToNot(BeNil())
@@ -82,7 +82,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a sibling and the indirect parent import", func() {
 		ctx := context.Background()
-		inInstC, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/c"])
+		inInstC, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test2/c"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstC
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -92,7 +92,7 @@ var _ = Describe("Constructor", func() {
 			"c.b": "val-root-import", // from root import
 		}
 
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, inInstC)).To(Succeed())
 		Expect(inInstC.GetImports()).ToNot(BeNil())
@@ -102,7 +102,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a manual created data object", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -111,7 +111,7 @@ var _ = Describe("Constructor", func() {
 			"root.a": "val-root-import",
 		}
 
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
 		Expect(inInstRoot.GetImports()).ToNot(BeNil())
@@ -121,7 +121,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a secret", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -130,7 +130,7 @@ var _ = Describe("Constructor", func() {
 			"root.a": "val-root-import",
 		}
 
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
 		Expect(inInstRoot.GetImports()).ToNot(BeNil())
@@ -139,7 +139,7 @@ var _ = Describe("Constructor", func() {
 
 	It("should construct the imported config from a configmap", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test7/root"])
+		inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test7/root"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstRoot
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
@@ -148,7 +148,7 @@ var _ = Describe("Constructor", func() {
 			"root.a": "val-root-import",
 		}
 
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
 		Expect(inInstRoot.GetImports()).ToNot(BeNil())
@@ -158,16 +158,16 @@ var _ = Describe("Constructor", func() {
 	Context("schema validation", func() {
 		It("should forbid when the import of a component does not satisfy the schema", func() {
 			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 			Expect(err).ToNot(HaveOccurred())
 
-			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
+			inInstA, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			op.Scope().Parent = inInstRoot
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			do := &lsv1alpha1.DataObject{}
 			do.Name = lsv1alpha1helper.GenerateDataObjectName(lsv1alpha1helper.DataObjectSourceFromInstallation(inInstRoot.Info), "root.a")
@@ -185,11 +185,11 @@ var _ = Describe("Constructor", func() {
 	Context("Targets", func() {
 		It("should construct import from a manually added target", func() {
 			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			c := imports.NewConstructor(op)
 			Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
@@ -205,11 +205,11 @@ var _ = Describe("Constructor", func() {
 
 		It("should construct import from a parent import", func() {
 			ctx := context.Background()
-			inInstF, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
+			inInstF, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test4/f"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstF
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			c := imports.NewConstructor(op)
 			Expect(c.Construct(ctx, inInstF)).To(Succeed())
@@ -228,14 +228,14 @@ var _ = Describe("Constructor", func() {
 		It("should construct a targetlist import from target names", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test9/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test9/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
-			utils.ExpectNoError(op.ResolveComponentDescriptors(ctx))
-			utils.ExpectNoError(op.SetInstallationContext(ctx))
+			testutils.ExpectNoError(op.ResolveComponentDescriptors(ctx))
+			testutils.ExpectNoError(op.SetInstallationScope(ctx))
 
 			c := imports.NewConstructor(op)
-			utils.ExpectNoError(c.Construct(ctx, inInstRoot))
+			testutils.ExpectNoError(c.Construct(ctx, inInstRoot))
 			Expect(inInstRoot.GetImports()).ToNot(BeNil())
 
 			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("root.a", ConsistOf(
@@ -264,11 +264,11 @@ var _ = Describe("Constructor", func() {
 	Context("ComponentDescriptors", func() {
 		It("should construct component descriptor imports from registry, secret, and configmap", func() {
 			ctx := context.Background()
-			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test10/root"])
+			inInstRoot, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test10/root"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			Expect(op.SetInstallationScope(ctx)).To(Succeed())
 
 			c := imports.NewConstructor(op)
 			Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
@@ -276,31 +276,31 @@ var _ = Describe("Constructor", func() {
 
 			// check import from registry
 			cdData, err := dataobjects.NewComponentDescriptor().SetDescriptor(op.ComponentDescriptor).GetData()
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-registry", BeEquivalentTo(cdData)))
 
 			// check import from configmap
 			cm := &k8sv1.ConfigMap{}
-			utils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-configmap", "test10"), cm))
+			testutils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-configmap", "test10"), cm))
 			tmpData := cm.Data["componentDescriptor"]
 			tmpDataJSON, err := yaml.ToJSON([]byte(tmpData))
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			configMapCD := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, configMapCD))
+			testutils.ExpectNoError(json.Unmarshal(tmpDataJSON, configMapCD))
 			configMapCDData, err := dataobjects.NewComponentDescriptor().SetDescriptor(configMapCD).GetData()
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-configmap", BeEquivalentTo(configMapCDData)))
 
 			// check import from secret
 			secret := &k8sv1.Secret{}
-			utils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-secret", "test10"), secret))
+			testutils.ExpectNoError(fakeClient.Get(ctx, kutil.ObjectKey("my-cd-secret", "test10"), secret))
 			tmpDataByte := secret.Data["componentDescriptor"]
 			tmpDataJSON, err = yaml.ToJSON(tmpDataByte)
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			secretCD := &cdv2.ComponentDescriptor{}
-			utils.ExpectNoError(json.Unmarshal(tmpDataJSON, secretCD))
+			testutils.ExpectNoError(json.Unmarshal(tmpDataJSON, secretCD))
 			secretCDData, err := dataobjects.NewComponentDescriptor().SetDescriptor(secretCD).GetData()
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
 			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-secret", BeEquivalentTo(secretCDData)))
 
 			// check component descriptor list import

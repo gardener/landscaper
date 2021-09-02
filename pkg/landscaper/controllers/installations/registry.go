@@ -10,10 +10,9 @@ import (
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/gardener/landscaper/pkg/landscaper/operation"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
 
@@ -23,24 +22,24 @@ import (
 )
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
-func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+func (c *Controller) SetupRegistries(ctx context.Context, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) (ctf.ComponentResolver, error) {
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	compRegistry, err := componentsregistry.New(c.SharedCache)
 	if err != nil {
-		return fmt.Errorf("unable to create component registry manager: %w", err)
+		return nil, fmt.Errorf("unable to create component registry manager: %w", err)
 	}
 	if c.LsConfig.Registry.Local != nil {
 		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.LsConfig.Registry.Local.RootPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := compRegistry.Set(componentsOCIRegistry); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -55,7 +54,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		FromPullSecrets(secrets...).
 		Build()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	ociClient, err := ociclient.NewClient(c.Log(),
 		utils.WithConfiguration(c.LsConfig.Registry.OCI),
@@ -63,7 +62,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		ociclient.WithCache(c.SharedCache),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var inlineCd *cdv2.ComponentDescriptor = nil
@@ -73,14 +72,13 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 
 	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(c.Log(), ociClient, inlineCd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := compRegistry.Set(componentsOCIRegistry); err != nil {
-		return err
+		return nil, err
 	}
 
-	op.SetComponentsRegistry(compRegistry)
-	return nil
+	return compRegistry, nil
 }
 
 func (c *Controller) resolveSecrets(ctx context.Context, secretRefs []lsv1alpha1.ObjectReference) ([]corev1.Secret, error) {

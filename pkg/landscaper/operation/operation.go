@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 )
 
 // RegistriesAccessor is a getter interface for available registries.
@@ -20,12 +22,13 @@ type RegistriesAccessor interface {
 
 // Operation is the type that is used to share common operational data across the landscaper reconciler
 type Operation struct {
-	log               logr.Logger
-	client            client.Client
-	directReader      client.Reader
-	scheme            *runtime.Scheme
-	eventRecorder     record.EventRecorder
-	componentRegistry ctf.ComponentResolver
+	log                 logr.Logger
+	client              client.Client
+	directReader        client.Reader
+	scheme              *runtime.Scheme
+	eventRecorder       record.EventRecorder
+	componentRegistry   ctf.ComponentResolver
+	componentOverwriter componentoverwrites.Overwriter
 }
 
 // NewOperation creates a new internal installation Operation object.
@@ -85,5 +88,17 @@ func (o *Operation) ComponentsRegistry() ctf.ComponentResolver {
 // SetComponentsRegistry injects a component blueprintsRegistry into the operation
 func (o *Operation) SetComponentsRegistry(c ctf.ComponentResolver) *Operation {
 	o.componentRegistry = c
+	return o
+}
+
+// ComponentsOverwriter returns a component overwriter instance.
+// Can be nil.
+func (o *Operation) ComponentsOverwriter() componentoverwrites.Overwriter {
+	return o.componentOverwriter
+}
+
+// SetComponentsOverwriter injects a component overwriter into the operation
+func (o *Operation) SetComponentsOverwriter(ow componentoverwrites.Overwriter) *Operation {
+	o.componentOverwriter = ow
 	return o
 }

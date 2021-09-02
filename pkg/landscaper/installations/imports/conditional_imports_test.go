@@ -24,7 +24,7 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -64,25 +64,25 @@ var _ = Describe("ConditionalImports", func() {
 	It("should remove imports based on optional/conditional parent imports from subinstallation", func() {
 		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
-		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
-		utils.ExpectNoError(err)
+		testutils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
+		conInst, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		testutils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
-		utils.ExpectNoError(err)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst)
+		testutils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		Expect(imports.NewConstructor(op).Construct(ctx, conInst)).To(Succeed())
 		// create subinstallation
-		utils.ExpectNoError(subInstOp.Ensure(ctx))
+		testutils.ExpectNoError(subInstOp.Ensure(ctx))
 		Expect(conInst.Info.Status.InstallationReferences).NotTo(BeEmpty())
 		subinst := &lsv1alpha1.Installation{}
 		found := false
 		for _, sir := range conInst.Info.Status.InstallationReferences { // fetch subinstallation from client
 			if sir.Name == "subinst-import" {
-				utils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
+				testutils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
 				found = true
 				break
 			}
@@ -100,7 +100,7 @@ var _ = Describe("ConditionalImports", func() {
 	It("should not remove imports based on optional/conditional parent imports which are satisfied from subinstallation", func() {
 		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
-		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
+		testutils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation
 		inst.Spec.Imports.Data = append(inst.Spec.Imports.Data, lsv1alpha1.DataImport{
 			Name: "rootcond.foo",
@@ -115,25 +115,25 @@ var _ = Describe("ConditionalImports", func() {
 				ObjectReference: cmRef,
 			},
 		})
-		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
-		utils.ExpectNoError(err)
+		testutils.ExpectNoError(fakeClient.Update(ctx, inst))
+		conInst, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		testutils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
-		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst, nil)
-		utils.ExpectNoError(err)
+		instOp, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, conInst)
+		testutils.ExpectNoError(err)
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		Expect(imports.NewConstructor(op).Construct(ctx, conInst)).To(Succeed())
 		// create subinstallation
-		utils.ExpectNoError(subInstOp.Ensure(ctx))
+		testutils.ExpectNoError(subInstOp.Ensure(ctx))
 		Expect(conInst.Info.Status.InstallationReferences).NotTo(BeEmpty())
 		subinst := &lsv1alpha1.Installation{}
 		found := false
 		for _, sir := range conInst.Info.Status.InstallationReferences { // fetch subinstallation from client
 			if sir.Name == "subinst-import" {
-				utils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
+				testutils.ExpectNoError(fakeClient.Get(ctx, sir.Reference.NamespacedName(), subinst))
 				found = true
 				break
 			}
@@ -159,7 +159,7 @@ var _ = Describe("ConditionalImports", func() {
 	It("should not succeed if a conditional import is not fulfilled while it's condition is fulfilled", func() {
 		ctx := context.Background()
 		inst := &lsv1alpha1.Installation{}
-		utils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
+		testutils.ExpectNoError(fakeClient.Get(ctx, instRef, inst))
 		// add imports to installation
 		inst.Spec.Imports.Data = append(inst.Spec.Imports.Data, lsv1alpha1.DataImport{
 			Name: "rootcond.foo",
@@ -168,13 +168,13 @@ var _ = Describe("ConditionalImports", func() {
 				ObjectReference: cmRef,
 			},
 		})
-		utils.ExpectNoError(fakeClient.Update(ctx, inst))
-		conInst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
-		utils.ExpectNoError(err)
+		testutils.ExpectNoError(fakeClient.Update(ctx, inst))
+		conInst, err := testutils.CreateInternalInstallation(ctx, op.ComponentsRegistry(), inst)
+		testutils.ExpectNoError(err)
 		op.Inst = conInst
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 		// satisfy imports
-		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		Expect(op.SetInstallationScope(ctx)).To(Succeed())
 		err = imports.NewConstructor(op).Construct(ctx, conInst)
 		parsedErr, ok := err.(*installations.Error)
 		Expect(ok).To(BeTrue(), "error should be of type installations.Error")

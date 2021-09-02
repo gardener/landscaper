@@ -123,7 +123,7 @@ func deleteSubInstallations(ctx context.Context, op *installations.Operation) (b
 }
 
 func checkIfSiblingImports(op *installations.Operation) bool {
-	for _, sibling := range op.Context().Siblings {
+	for _, sibling := range op.Scope().Siblings {
 		for _, dataImports := range op.Inst.Info.Spec.Exports.Data {
 			if sibling.IsImportingData(dataImports.DataRef) {
 				return true

@@ -44,7 +44,7 @@ func NewState() *State {
 		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
 		ConfigMaps:    make(map[string]*corev1.ConfigMap),
-		Generic:       map[string]client.Object{},
+		Generic:       make(map[string]client.Object),
 	}
 }
 

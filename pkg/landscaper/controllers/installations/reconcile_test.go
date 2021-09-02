@@ -7,7 +7,6 @@ package installations_test
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -27,34 +26,6 @@ import (
 )
 
 var _ = Describe("Reconcile", func() {
-
-	Context("HandleComponenReference", func() {
-		It("should default the repository context", func() {
-			type custom struct {
-				cdv2.ObjectType
-				BaseURL string `json:"baseUrl"`
-			}
-
-			repoCtx, err := cdv2.NewUnstructured(&custom{
-				ObjectType: cdv2.ObjectType{
-					Type: "mycustom",
-				},
-				BaseURL: "test",
-			})
-			Expect(err).ToNot(HaveOccurred())
-			c := &installationsctl.Controller{
-				LsConfig: &config.LandscaperConfiguration{
-					RepositoryContext: &repoCtx,
-				},
-			}
-			inst := &lsv1alpha1.Installation{}
-			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{}
-			inst.Spec.ComponentDescriptor.Reference = &lsv1alpha1.ComponentDescriptorReference{}
-
-			Expect(c.HandleComponentReference(inst)).To(Succeed())
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object).To(Equal(repoCtx.Object))
-		})
-	})
 
 	Context("PhasePropagation", func() {
 

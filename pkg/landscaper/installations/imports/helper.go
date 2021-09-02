@@ -20,7 +20,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	if parent == nil {
 		return true, nil
 	}
-	parentsOperation, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, parent, op.DefaultRepoContext)
+	parentsOperation, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, parent)
 	if err != nil {
 		return false, fmt.Errorf("unable to create parent operation: %w", err)
 	}
@@ -84,7 +84,11 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			return false, nil
 		}
 
-		intInst := installations.CreateInternalInstallationBase(inst)
+		lsCtx, err := installations.GetContext(ctx, op.Client(), inst, op.ComponentsOverwriter())
+		if err != nil {
+			return false, fmt.Errorf("unable to get context for %s: %w", inst.Name, err)
+		}
+		intInst := installations.CreateInternalInstallationBase(lsCtx, inst)
 
 		isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
 		if err != nil {
@@ -107,7 +111,7 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	}
 
 	// we have to get the corresponding installation from the the cluster
-	_, owner, err := installations.GetDataImport(ctx, op.Client(), op.Context().Name, inst, dataImport)
+	_, owner, err := installations.GetDataImport(ctx, op.Client(), op.Scope().Name, inst, dataImport)
 	if err != nil {
 		return nil, err
 	}
