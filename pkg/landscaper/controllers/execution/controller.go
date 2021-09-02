@@ -28,7 +28,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-// NewController creates a new execution controller that reconcile Execution resources.
+// NewController creates a new execution controller that reconciles Execution resources.
 func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) (reconcile.Reconciler, error) {
 	return &controller{
 		log:           log,

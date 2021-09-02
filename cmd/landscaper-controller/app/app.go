@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
+
 	"github.com/gardener/landscaper/pkg/metrics"
 
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -113,6 +115,10 @@ func (o *Options) run(ctx context.Context) error {
 
 	if err := executionactrl.AddControllerToManager(ctrlLogger, mgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
+	}
+
+	if err := contextctrl.AddControllerToManager(ctrlLogger, mgr, o.Config); err != nil {
+		return fmt.Errorf("unable to setup context controller: %w", err)
 	}
 
 	if err := deployitemctrl.AddControllerToManager(ctrlLogger, mgr, o.Config.DeployItemTimeouts.Pickup, o.Config.DeployItemTimeouts.Abort, o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
