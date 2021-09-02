@@ -152,17 +152,36 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
-	if err := c.SetupRegistries(ctx, op, inst.Spec.RegistryPullSecrets, inst); err != nil {
+
+	var (
+		lsCtx = &lsv1alpha1.Context{}
+		registryPullSecrets []lsv1alpha1.ObjectReference
+	)
+	if len(inst.Spec.Context) != 0 {
+		if err := c.Client().Get(ctx, kubernetes.ObjectKey(inst.Spec.Context, inst.Namespace), lsCtx); err != nil {
+			return nil, lserrors.NewWrappedError(err,
+				currOp, "GetContext", err.Error())
+		}
+		for _, ref := range lsCtx.RegistryPullSecrets {
+			registryPullSecrets = append(registryPullSecrets, lsv1alpha1.ObjectReference{
+				Name: ref.Name,
+				Namespace: inst.Namespace,
+			})
+		}
+	}
+
+	registryPullSecrets = append(registryPullSecrets, inst.Spec.RegistryPullSecrets...)
+	if err := c.SetupRegistries(ctx, op, registryPullSecrets, inst); err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "SetupRegistries", err.Error())
 	}
 
 	// default repository context if not defined
-	if err := c.HandleComponentReference(inst); err != nil {
+	if err := c.HandleComponentReference(lsCtx, inst); err != nil {
 		return nil, err
 	}
 
-	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(lsCtx, inst.Spec.ComponentDescriptor)
 
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint)
 	if err != nil {
@@ -170,7 +189,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			currOp, "ResolveBlueprint", err.Error())
 	}
 
-	internalInstallation, err := installations.New(inst, intBlueprint)
+	internalInstallation, err := installations.New(lsCtx, inst, intBlueprint)
 	if err != nil {
 		err = fmt.Errorf("unable to create internal representation of installation: %w", err)
 		return nil, lserrors.NewWrappedError(err,
@@ -187,13 +206,14 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 }
 
 // HandleComponentReference defaults and optionally replaces the component reference of a installation.
-func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) error {
+func (c *Controller) HandleComponentReference(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation) error {
 	if inst.Spec.ComponentDescriptor == nil || inst.Spec.ComponentDescriptor.Reference == nil {
 		return nil
 	}
 	// default repository context if not defined
-	if inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = c.LsConfig.RepositoryContext
+	if inst.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = lsCtx.RepositoryContext
+		lsCtx.RepositoryContext = inst.Spec.ComponentDescriptor.Reference.RepositoryContext
 	}
 
 	if c.ComponentOverwriter == nil {
@@ -201,17 +221,21 @@ func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) err
 	}
 
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.ComponentReferenceOverwriteCondition)
-	oldRef := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
-	overwritten, err := c.ComponentOverwriter.Replace(inst.Spec.ComponentDescriptor.Reference)
+	newRef := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
+	newRef.RepositoryContext = lsCtx.RepositoryContext
+
+	overwritten, err := c.ComponentOverwriter.Replace(newRef)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
 			"HandleComponentReference", "OverwriteComponentReference", err.Error())
 	}
 	if overwritten {
-		newRef := inst.Spec.ComponentDescriptor.Reference
+		diff := componentoverwrites.ReferenceDiff(inst.Spec.ComponentDescriptor.Reference, newRef)
+		lsCtx.RepositoryContext = newRef.RepositoryContext
+		inst.Spec.ComponentDescriptor.Reference = newRef
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 			"FoundOverwrite",
-			componentoverwrites.ReferenceDiff(oldRef, newRef))
+			diff)
 	} else {
 		cond = lsv1alpha1helper.UpdatedCondition(cond,
 			lsv1alpha1.ConditionFalse,

@@ -329,6 +329,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
+			Context:             inst.Spec.Context,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			ComponentDescriptor: subCdDef,
 			Blueprint:           *subBlueprint,

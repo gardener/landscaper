@@ -13,8 +13,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
-// Installation is the internal representation of an installation without resolved blueprint.
+// InstallationBase is the internal representation of an installation without resolved blueprint.
 type InstallationBase struct {
+	Context *lsv1alpha1.Context
 	Imports map[string]interface{}
 	Info    *lsv1alpha1.Installation
 	// indexes the import state with from/to as key
@@ -22,14 +23,15 @@ type InstallationBase struct {
 }
 
 // NewInstallationBase creates a new internal representation of an installation without blueprint
-func NewInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
-	internalInst := newInstallationBase(inst)
+func NewInstallationBase(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation) *InstallationBase {
+	internalInst := newInstallationBase(lsCtx, inst)
 	return &internalInst
 }
 
 // newInstallationBase creates a new internal representation of an installation without blueprint
-func newInstallationBase(inst *lsv1alpha1.Installation) InstallationBase {
+func newInstallationBase(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation) InstallationBase {
 	internalInst := InstallationBase{
+		Context: lsCtx,
 		Info: inst,
 		importsStatus: ImportStatus{
 			Data:                make(map[string]*lsv1alpha1.ImportStatus, len(inst.Status.Imports)),
@@ -114,9 +116,9 @@ type Installation struct {
 }
 
 // New creates a new internal representation of an installation with blueprint
-func New(inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
+func New(lsCtx *lsv1alpha1.Context, inst *lsv1alpha1.Installation, blueprint *blueprints.Blueprint) (*Installation, error) {
 	internalInst := &Installation{
-		InstallationBase: newInstallationBase(inst),
+		InstallationBase: newInstallationBase(lsCtx, inst),
 		Blueprint:        blueprint,
 	}
 
