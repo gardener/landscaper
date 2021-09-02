@@ -35,6 +35,7 @@
 - [Local Setup](./development/local-setup.md)
 - [Extend the API](./development/extend-the-api.md)
 - [Creating Tutorial Resources](./development/tutorials.md)
+- [Testing](./development/testing.md)
 
 ### API Reference
 - [Types](./technical/types.md)
