@@ -46,7 +46,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 
 			di := &lsv1alpha1.DeployItem{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "30-DeployItem-Container-sleep.yaml")))
@@ -59,7 +59,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create container deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			ginkgo.By("Delete container deploy item")
@@ -73,7 +73,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 
 			di := utils.BuildContainerDeployItem(&containerv1alpha1.ProviderConfiguration{
 				Image: "example.com/some-invalid/image:v0.0.1",
@@ -87,7 +87,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create erroneous container deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseFailed, 2*time.Minute))
 
 			ginkgo.By("update the DeployItem and set a valid image")
@@ -111,7 +111,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 
 			di := &lsv1alpha1.DeployItem{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "31-DeployItem-Container-export.yaml")))
@@ -124,7 +124,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create container deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "my-val": true }
@@ -144,7 +144,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 
 			di := &lsv1alpha1.DeployItem{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "32-DeployItem-Container-state.yaml")))
@@ -157,7 +157,7 @@ func ContainerDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create container deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "counter": 1 }

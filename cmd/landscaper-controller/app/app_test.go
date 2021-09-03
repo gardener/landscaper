@@ -76,7 +76,7 @@ var _ = Describe("Landscaper Controller", func() {
 
 		AfterEach(func() {
 			ctx := context.Background()
-			Expect(state.CleanupState(ctx, testenv.Client, nil)).To(Succeed())
+			Expect(state.CleanupState(ctx)).To(Succeed())
 			// remove all Deployer registrations
 			deployerRegistrations := &lsv1alpha1.DeployerRegistrationList{}
 			Expect(testenv.Client.List(ctx, deployerRegistrations)).To(Succeed())

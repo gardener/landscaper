@@ -59,7 +59,7 @@ var _ = Describe("Reconcile", func() {
 				},
 			},
 		}
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, exec))
+		testutils.ExpectNoError(state.CreateWithClient(ctx, testenv.Client, exec))
 		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 		// expect a deploy item
@@ -102,7 +102,7 @@ var _ = Describe("Reconcile", func() {
 				},
 			},
 		}
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, exec))
+		testutils.ExpectNoError(state.CreateWithClient(ctx, testenv.Client, exec))
 		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
 
 		// expect a deploy item

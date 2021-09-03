@@ -75,7 +75,7 @@ func loadObjectsIntoTestEnv(dirname string, c client.Client, s *envtest.State) (
 		}
 
 		u.SetNamespace(s.Namespace)
-		err = s.Create(ctx, c, u)
+		err = s.CreateWithClient(ctx, c, u)
 		if err != nil {
 			return nil, err
 		}

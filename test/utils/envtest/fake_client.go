@@ -60,7 +60,9 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 		}
 	}
 
-	return fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithObjects(objects...).Build(), state, nil
+	kubeclient := fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithObjects(objects...).Build()
+	state.Client = kubeclient
+	return kubeclient, state, nil
 }
 
 // RegisterFakeClientToMock adds fake client calls to a mockclient

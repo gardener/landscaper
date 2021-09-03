@@ -250,8 +250,7 @@ func (f *Framework) NewState(ctx context.Context) (*envtest.State, CleanupFunc, 
 		}
 		f.Log().Logln("Start state cleanup...")
 		f.Cleanup.Remove(handle)
-		t := time.Minute
-		return state.CleanupState(ctx, f.Client, &t)
+		return state.CleanupState(ctx, envtest.WithCleanupTimeout(time.Minute))
 	}
 	if !f.DisableCleanup {
 		handle = f.Cleanup.Add(func() {

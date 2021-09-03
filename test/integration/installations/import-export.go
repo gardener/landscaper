@@ -53,19 +53,19 @@ func ImportExportTests(f *framework.Framework) {
 			secret := &k8sv1.Secret{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(secret, path.Join(testdataDir, "10-dummy-secret.yaml")))
 			secret.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, secret))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, secret))
 			expectedDataExport := string(secret.Data["value"])
 			// dummy target
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "10-dummy-target.yaml")))
 			target.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 			expectedTargetExport := target.Spec
 			// component descriptor secret
 			secret2 := &k8sv1.Secret{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(secret2, path.Join(testdataDir, "10-cdimport-secret.yaml")))
 			secret2.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, secret2))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, secret2))
 			tmpData := secret2.Data["componentDescriptor"]
 			tmpDataJSON, err := yaml.ToJSON(tmpData)
 			utils.ExpectNoError(err)
@@ -75,7 +75,7 @@ func ImportExportTests(f *framework.Framework) {
 			cm := &k8sv1.ConfigMap{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, path.Join(testdataDir, "10-cdimport-configmap.yaml")))
 			cm.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, cm))
 			tmpDataString := cm.Data["componentDescriptor"]
 			tmpDataJSON, err = yaml.ToJSON([]byte(tmpDataString))
 			utils.ExpectNoError(err)
@@ -86,7 +86,7 @@ func ImportExportTests(f *framework.Framework) {
 			root := &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(root, path.Join(testdataDir, "00-root-installation.yaml")))
 			root.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, root))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, root))
 
 			By("verify that subinstallation has been created")
 			subinst := &lsv1alpha1.Installation{}

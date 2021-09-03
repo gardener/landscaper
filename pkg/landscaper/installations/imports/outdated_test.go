@@ -48,6 +48,8 @@ var _ = Describe("OutdatedImports", func() {
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
+		createDefaultContextsForNamespace(fakeClient)
+
 		op = &installations.Operation{
 			Operation: lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).
 				SetComponentsRegistry(fakeCompRepo),

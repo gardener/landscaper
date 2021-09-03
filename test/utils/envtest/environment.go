@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
@@ -91,9 +93,9 @@ func (e *Environment) InitState(ctx context.Context) (*State, error) {
 	return InitStateWithNamespace(ctx, e.Client)
 }
 
-// InitState creates a new isolated environment with its own namespace.
+// InitStateWithNamespace creates a new isolated environment with its own namespace.
 func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error) {
-	state := NewState()
+	state := NewStateWithClient(c)
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
 	ns.GenerateName = "tests-"
@@ -112,16 +114,23 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		return nil, err
 	}
 
-	if err := state.InitResources(ctx, e.Client, resourcesPath); err != nil {
+	if err := state.InitResourcesWithClient(ctx, e.Client, resourcesPath); err != nil {
 		return nil, err
 	}
 	return state, err
 }
 
+// InitDefaultContextFromInst creates a default landsacpe context object from a installation.
+func (e *Environment) InitDefaultContextFromInst(ctx context.Context, state *State, inst *lsv1alpha1.Installation) error {
+	lsCtx := installations.ContextFromInstallation(inst)
+	lsCtx.Name = lsv1alpha1.DefaultContextName
+	lsCtx.Namespace = inst.Namespace
+	return state.CreateWithClient(ctx, e.Client, &lsCtx.Context)
+}
+
 // CleanupState cleans up a test environment.
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
-	t := 5 * time.Second
-	return state.CleanupState(ctx, e.Client, &t)
+	return state.CleanupStateWithClient(ctx, e.Client, WithCleanupTimeout(5*time.Second))
 }
 
 func parseResources(path string, state *State) ([]client.Object, error) {

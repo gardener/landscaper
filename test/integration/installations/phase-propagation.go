@@ -43,7 +43,7 @@ func PhasePropagationTests(f *framework.Framework) {
 			root := &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(root, path.Join(testdataDir, "00-root-installation.yaml")))
 			root.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, root))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, root))
 
 			By("verify that execution has been created and fetch deploy item")
 			exec := &lsv1alpha1.Execution{}

@@ -72,6 +72,7 @@ var _ = Describe("Reconcile", func() {
 			inst := state.Installations[state.Namespace+"/root"]
 			exec := state.Executions[state.Namespace+"/subexec"]
 
+			Expect(testenv.InitDefaultContextFromInst(ctx, state, inst))
 			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
 			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
@@ -101,6 +102,7 @@ var _ = Describe("Reconcile", func() {
 			inst := state.Installations[state.Namespace+"/root"]
 			subinst := state.Installations[state.Namespace+"/subinst"]
 
+			Expect(testenv.InitDefaultContextFromInst(ctx, state, inst))
 			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
 			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))

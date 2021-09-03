@@ -109,7 +109,7 @@ var _ = Describe("Helm Deployer", func() {
 		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(state.Create(ctx, testenv.Client, di, envtest.UpdateStatus(true))).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, di, envtest.UpdateStatus(true))).To(Succeed())
 
 		// At this stage, resources are not yet ready
 		err = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))

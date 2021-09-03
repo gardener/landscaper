@@ -27,7 +27,7 @@ var _ = Describe("Context", func() {
 	})
 
 	AfterEach(func() {
-		Expect(state.CleanupState(context.TODO(), testenv.Client, nil)).To(Succeed())
+		Expect(state.CleanupState(context.TODO())).To(Succeed())
 	})
 
 	Context("GetContext", func() {
@@ -49,7 +49,7 @@ var _ = Describe("Context", func() {
 			lsCtx.Name = "cc"
 			lsCtx.Namespace = state.Namespace
 			lsCtx.RepositoryContext = &repoCtx
-			Expect(state.Create(ctx, testenv.Client, lsCtx)).To(Succeed())
+			Expect(state.CreateWithClient(ctx, testenv.Client, lsCtx)).To(Succeed())
 
 			inst := &lsv1alpha1.Installation{}
 			inst.Namespace = state.Namespace

@@ -70,6 +70,7 @@ var _ = Describe("Delete", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testenv.InitDefaultContextFromInst(ctx, state, state.Installations[state.Namespace+"/a"]))
 
 		inInstA, err := testutils.CreateInternalInstallation(ctx,
 			op.ComponentsRegistry(),
@@ -94,6 +95,7 @@ var _ = Describe("Delete", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testenv.InitDefaultContextFromInst(ctx, state, state.Installations[state.Namespace+"/root"]))
 
 		inInstRoot, err := testutils.CreateInternalInstallation(ctx,
 			op.ComponentsRegistry(),
@@ -121,6 +123,7 @@ var _ = Describe("Delete", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testenv.InitDefaultContextFromInst(ctx, state, state.Installations[state.Namespace+"/b"]))
 
 		inInstB, err := testutils.CreateInternalInstallation(ctx,
 			op.ComponentsRegistry(),
@@ -140,6 +143,7 @@ var _ = Describe("Delete", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, "./testdata/state/test2")
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testenv.InitDefaultContextFromInst(ctx, state, state.Installations[state.Namespace+"/a"]))
 
 		inInstB, err := testutils.CreateInternalInstallation(ctx,
 			op.ComponentsRegistry(),
@@ -167,8 +171,10 @@ var _ = Describe("Delete", func() {
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = "root"
 		inst.Namespace = state.Namespace
+		Expect(testenv.InitDefaultContextFromInst(ctx, state, inst))
 		testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
-		_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst)) // returns a still waiting error
+		err = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst)) // returns a still waiting error
+		Expect(err.Error()).To(ContainSubstring("waiting"))
 
 		exec := &lsv1alpha1.Execution{}
 		exec.Name = "root"

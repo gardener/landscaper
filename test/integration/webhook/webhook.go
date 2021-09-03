@@ -58,7 +58,7 @@ func WebhookTest(f *framework.Framework) {
 
 			// make installation invalid by duplicating the first export
 			inst.Spec.Exports.Data = append(inst.Spec.Exports.Data, inst.Spec.Exports.Data[0])
-			err := state.Create(ctx, f.Client, inst)
+			err := state.CreateWithClient(ctx, f.Client, inst)
 			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
 			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
 		})
@@ -102,7 +102,7 @@ func WebhookTest(f *framework.Framework) {
 				},
 			}
 
-			err := state.Create(ctx, f.Client, exec)
+			err := state.CreateWithClient(ctx, f.Client, exec)
 			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
 			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"executions.validation.landscaper.gardener.cloud\" denied the request"))
 		})
@@ -137,7 +137,7 @@ func WebhookTest(f *framework.Framework) {
 				},
 			}
 
-			err := state.Create(ctx, f.Client, di)
+			err := state.CreateWithClient(ctx, f.Client, di)
 			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
 			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
@@ -153,7 +153,7 @@ func WebhookTest(f *framework.Framework) {
 				},
 			}
 
-			err := state.Create(ctx, f.Client, di)
+			err := state.CreateWithClient(ctx, f.Client, di)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			updated := di.DeepCopy()

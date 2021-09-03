@@ -25,7 +25,6 @@ type ContextList struct {
 // Context is a resource that contains shared information of installations.
 // This includes information about the repository context like the context itself or secrets to access the oci artifacts.
 // But it can also contain deployer specific config.
-// +kubebuilder:resource:path="contexts",scope="Cluster",shortName={"do","dobj"},singular="dataobject"
 type Context struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

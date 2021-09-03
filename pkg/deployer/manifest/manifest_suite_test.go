@@ -66,13 +66,13 @@ var _ = Describe("Reconcile", func() {
 
 	AfterEach(func() {
 		defer ctx.Done()
-		Expect(state.CleanupState(ctx, testenv.Client, nil)).To(Succeed())
+		Expect(state.CleanupState(ctx)).To(Succeed())
 	})
 
 	It("should create a configured configmap", func() {
 		target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, testenv.Client, target)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, target)).To(Succeed())
 
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
@@ -93,7 +93,7 @@ var _ = Describe("Reconcile", func() {
 			Target(target.Namespace, target.Name).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, item)).To(Succeed())
 
 		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
@@ -114,11 +114,11 @@ var _ = Describe("Reconcile", func() {
 		kSecret.Data = map[string][]byte{
 			lsv1alpha1.DefaultKubeconfigKey: kubeconfigBytes,
 		}
-		Expect(state.Create(ctx, testenv.Client, kSecret)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, kSecret)).To(Succeed())
 
 		target, err := utils.CreateKubernetesTargetFromSecret(state.Namespace, "my-target", kSecret)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, testenv.Client, target)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, target)).To(Succeed())
 
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-cm"
@@ -139,7 +139,7 @@ var _ = Describe("Reconcile", func() {
 			Target(target.Namespace, target.Name).
 			Build()
 		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, item)).To(Succeed())
 
 		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())

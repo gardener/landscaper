@@ -74,7 +74,7 @@ var _ = Describe("Reconcile", func() {
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = state.Namespace
 		lsCtx.RepositoryContext = &uObj
-		Expect(state.Create(ctx, testenv.Client, lsCtx)).To(Succeed())
+		Expect(state.CreateWithClient(ctx, testenv.Client, lsCtx)).To(Succeed())
 
 		ns := &corev1.Namespace{}
 		ns.Name = state.Namespace

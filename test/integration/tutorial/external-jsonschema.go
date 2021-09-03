@@ -42,19 +42,19 @@ func ExternalJSONSchemaTest(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
 			g.Expect(utils.ReadResourceFromFile(inst, instResource)).To(g.Succeed())
 			inst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))

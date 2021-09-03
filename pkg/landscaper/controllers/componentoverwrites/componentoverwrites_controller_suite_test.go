@@ -23,7 +23,7 @@ import (
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Component OVerwrites Controller Test Suite")
+	RunSpecs(t, "Component Overwrites Controller Test Suite")
 }
 
 var (
@@ -58,14 +58,14 @@ var _ = Describe("Reconcile", func() {
 	AfterEach(func() {
 		defer ctx.Done()
 		if state != nil {
-			Expect(state.CleanupState(ctx, testenv.Client, nil))
+			Expect(state.CleanupState(ctx))
 		}
 	})
 
 	It("should add a component overwrite to the manager", func() {
 		mgr := componentoverwrites.New()
 		c := coctrl.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mgr)
-		state = envtest.NewState()
+		state = envtest.NewStateWithClient(testenv.Client)
 
 		co := &lsv1alpha1.ComponentOverwrites{}
 		co.Name = "my-co"
@@ -79,7 +79,7 @@ var _ = Describe("Reconcile", func() {
 				},
 			},
 		}
-		Expect(state.Create(ctx, testenv.Client, co)).To(Succeed())
+		Expect(state.Create(ctx, co)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, c, testutil.Request("my-co", ""))
 

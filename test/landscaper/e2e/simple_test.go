@@ -75,6 +75,11 @@ var _ = Describe("Simple", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "01-simple", "cluster"))
 		Expect(err).ToNot(HaveOccurred())
+		lsCtx := &lsv1alpha1.Context{}
+		lsCtx.Name = lsv1alpha1.DefaultContextName
+		lsCtx.Namespace = state.Namespace
+		lsCtx.RepositoryContext = testutils.ExampleRepositoryContext()
+		Expect(state.Create(ctx, lsCtx)).To(Succeed())
 
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution

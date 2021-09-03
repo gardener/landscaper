@@ -59,13 +59,13 @@ var _ = Describe("Deployer Management Test", func() {
 			env.GenerateName = "test-"
 			env.Spec.TargetSelectors = make([]lsv1alpha1.TargetSelector, 0)
 			env.Spec.HostTarget.Type = "mytype"
-			Expect(state.Create(ctx, testenv.Client, env)).To(Succeed())
+			Expect(state.CreateWithClient(ctx, testenv.Client, env)).To(Succeed())
 
 			reg := &lsv1alpha1.DeployerRegistration{}
 			reg.GenerateName = "test-"
 			controllerutil.AddFinalizer(reg, lsv1alpha1.LandscaperDMFinalizer)
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
-			testutils.ExpectNoError(state.Create(ctx, testenv.Client, reg))
+			testutils.ExpectNoError(state.CreateWithClient(ctx, testenv.Client, reg))
 
 			inst := &lsv1alpha1.Installation{}
 			inst.GenerateName = "test-"
@@ -74,7 +74,7 @@ var _ = Describe("Deployer Management Test", func() {
 				lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
 				lsv1alpha1.DeployerRegistrationLabelName: reg.Name,
 			}
-			testutils.ExpectNoError(state.Create(ctx, testenv.Client, inst))
+			testutils.ExpectNoError(state.CreateWithClient(ctx, testenv.Client, inst))
 			instKey := kutil.ObjectKeyFromObject(inst)
 
 			testutils.ExpectNoError(dm.Delete(ctx, reg, env))
@@ -92,13 +92,13 @@ var _ = Describe("Deployer Management Test", func() {
 			env.Spec.TargetSelectors = make([]lsv1alpha1.TargetSelector, 0)
 			env.Spec.HostTarget.Type = "mytype"
 			env.Spec.Namespace = state.Namespace
-			Expect(state.Create(ctx, testenv.Client, env)).To(Succeed())
+			Expect(state.CreateWithClient(ctx, testenv.Client, env)).To(Succeed())
 
 			reg := &lsv1alpha1.DeployerRegistration{}
 			reg.GenerateName = "test-"
 			controllerutil.AddFinalizer(reg, lsv1alpha1.LandscaperDMFinalizer)
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
-			testutils.ExpectNoError(state.Create(ctx, testenv.Client, reg))
+			testutils.ExpectNoError(state.CreateWithClient(ctx, testenv.Client, reg))
 
 			testutils.MimicKCMServiceAccount(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
 				Name:      deployers.FQName(reg, env),

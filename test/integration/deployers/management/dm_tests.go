@@ -227,7 +227,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				"values": lsv1alpha1.NewAnyJSON([]byte("{}")),
 			}
 
-			testutil.ExpectNoError(state.Create(ctx, f.Client, reg))
+			testutil.ExpectNoError(state.CreateWithClient(ctx, f.Client, reg))
 
 			g.Eventually(func() error {
 				instList = &lsv1alpha1.InstallationList{}

@@ -82,8 +82,8 @@ func TimeoutTests(f *framework.Framework) {
 			dummy_inst.SetNamespace(state.Namespace)
 			mock_inst.SetNamespace(state.Namespace)
 			mock_di_prog.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, dummy_inst))
-			utils.ExpectNoError(state.Create(ctx, f.Client, mock_inst))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, dummy_inst))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, mock_inst))
 
 			By("verify that deploy items have been created")
 			dummy_inst_di := &lsv1alpha1.DeployItem{}
@@ -121,7 +121,7 @@ func TimeoutTests(f *framework.Framework) {
 				// return true if both deploy items could be fetched
 				return true, err
 			}, waitingForDeployItems, resyncTime).Should(BeTrue(), "unable to fetch deploy items")
-			utils.ExpectNoError(state.Create(ctx, f.Client, mock_di_prog))
+			utils.ExpectNoError(state.CreateWithClient(ctx, f.Client, mock_di_prog))
 
 			By("check for reconcile timestamp annotation")
 			// checking whether the set timestamp is up-to-date is difficult due to potential differences between the

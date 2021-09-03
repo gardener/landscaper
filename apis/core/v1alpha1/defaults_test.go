@@ -56,7 +56,7 @@ var _ = Describe("Defaults", func() {
 				},
 			}
 			lsv1alpha1.SetDefaults_Installation(inst)
-			Expect(inst.Spec.Imports.Data[0].SecretRef.Namespace).To(Equal("test"))
+			Expect(inst.Spec.Imports.Data[0].ConfigMapRef.Namespace).To(Equal("test"))
 		})
 	})
 
