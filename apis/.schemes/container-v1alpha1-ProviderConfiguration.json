@@ -376,6 +376,10 @@
         }
       }
     },
+    "core-v1alpha1-Duration": {
+      "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
+      "type": "string"
+    },
     "core-v1alpha1-InlineBlueprint": {
       "description": "InlineBlueprint defines a inline blueprint with component descriptor and filesystem.",
       "type": "object",
@@ -422,6 +426,20 @@
           "default": ""
         }
       }
+    },
+    "utils-continuousreconcile-ContinuousReconcileSpec": {
+      "description": "ContinuousReconcileSpec represents the specification of a continuous reconcile schedule.",
+      "type": "object",
+      "properties": {
+        "cron": {
+          "description": "Cron is a standard crontab specification of the reconciliation schedule. Either Cron or Every has to be specified.",
+          "type": "string"
+        },
+        "every": {
+          "description": "Every specifies a delay after which the reconcile should happen. Either Cron or Every has to be specified.",
+          "$ref": "#/definitions/core-v1alpha1-Duration"
+        }
+      }
     }
   },
   "description": "ProviderConfiguration is the container deployer configuration that is expected in a DeployItem",
@@ -453,6 +471,10 @@
     "componentDescriptor": {
       "$ref": "#/definitions/core-v1alpha1-ComponentDescriptorDefinition",
       "description": "ComponentDescriptor is the resolved reference to the ComponentDescriptor defnition"
+    },
+    "continuousReconcile": {
+      "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
+      "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
     },
     "image": {
       "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images The image will be defaulted by the container deployer to the configured default.",

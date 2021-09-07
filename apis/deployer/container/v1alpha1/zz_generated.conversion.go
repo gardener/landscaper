@@ -22,6 +22,7 @@ import (
 	config "github.com/gardener/landscaper/apis/config"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	container "github.com/gardener/landscaper/apis/deployer/container"
+	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 )
 
 func init() {
@@ -274,6 +275,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_container_ProviderConfigurati
 	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
 	out.ComponentDescriptor = (*corev1alpha1.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
@@ -290,6 +292,7 @@ func autoConvert_container_ProviderConfiguration_To_v1alpha1_ProviderConfigurati
 	out.Blueprint = (*corev1alpha1.BlueprintDefinition)(unsafe.Pointer(in.Blueprint))
 	out.ComponentDescriptor = (*corev1alpha1.ComponentDescriptorDefinition)(unsafe.Pointer(in.ComponentDescriptor))
 	out.RegistryPullSecrets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
