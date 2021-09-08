@@ -39,7 +39,7 @@ spec:
           image: "{{ include "landscaper-webhook-image" . }}"
           imagePullPolicy: {{ .Values.webhooksServer.image.pullPolicy }}
           args:
-          {{- if .Values.webhooksServer.clusterKubeconfig }}
+          {{- if .Values.webhooksServer.landscaperKubeconfig }}
           - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
           - --webhook-url=https://{{ include "landscaper.webhooks.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.webhooksServer.servicePort }}
           - --certificates-namespace={{ .Values.webhooksServer.certificatesNamespace }}
@@ -52,21 +52,21 @@ spec:
           {{- if .Values.webhooksServer.disableWebhooks }}
           - --disable-webhooks={{ .Values.webhooksServer.disableWebhooks | join "," }}
           {{- end }}
-          {{- if .Values.webhooksServer.clusterKubeconfig }}
+          {{- if .Values.webhooksServer.landscaperKubeconfig }}
           volumeMounts:
           - name: landscaper-cluster-kubeconfig
             mountPath: /app/ls/landscaper-cluster-kubeconfig
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.webhooksServer.clusterKubeconfig }}
+      {{- if .Values.webhooksServer.landscaperKubeconfig }}
       volumes:
       - name: landscaper-cluster-kubeconfig
         secret:
-          {{- if .Values.webhooksServer.clusterKubeconfig.kubeconfig }}
+          {{- if .Values.webhooksServer.landscaperKubeconfig.kubeconfig }}
           secretName: {{ include "landscaper.fullname" . }}-webhooks-cluster-kubeconfig
           {{- else }}
-          secretName: {{ .Values.webhooksServer.clusterKubeconfig.secretRef }}
+          secretName: {{ .Values.webhooksServer.landscaperKubeconfig.secretRef }}
           {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
