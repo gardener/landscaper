@@ -34,20 +34,25 @@ const (
 	ShouldReconcileHook HookType = "ShouldReconcile"
 
 	// Called if the deploy item is to be aborted due to the abort operation annotation.
+	// Beware: Aborting the reconciliation at this point might leave the deploy item in an inconsistent state and is discouraged.
 	BeforeAbortHook HookType = "BeforeAbort"
 
 	// Called if the deploy item is to be force-reconciled due to the force reconcile operation annotation.
+	// Beware: Aborting the reconciliation at this point might leave the deploy item in an inconsistent state and is discouraged.
 	BeforeForceReconcileHook HookType = "BeforeForceReconcile"
 
 	// Called if the deploy item is to be deleted.
+	// Beware: Aborting the reconciliation at this point might leave the deploy item in an inconsistent state and is discouraged.
 	BeforeDeleteHook HookType = "BeforeDelete"
 
 	// Called if a "normal" reconcile of the deploy item is about to happen.
 	// This is the case if a reconcile is required and the deploy item is not aborted, force-reconciled, or deleted.
+	// Beware: Aborting the reconciliation at this point might leave the deploy item in an inconsistent state and is discouraged.
 	BeforeReconcileHook HookType = "BeforeReconcile"
 
 	// Called before any of abortion, deletion, and (force-)reconciliation.
 	// This will always be called if the reconciliation has not been aborted before or during the ShouldReconcile check.
+	// Beware: Aborting the reconciliation at this point might leave the deploy item in an inconsistent state and is discouraged.
 	BeforeAnyReconcileHook HookType = "BeforeAnyReconcile"
 
 	// Called after a successful reconciliation.
