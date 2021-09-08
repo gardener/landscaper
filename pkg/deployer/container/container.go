@@ -105,7 +105,6 @@ func New(log logr.Logger,
 }
 
 func applyDefaults(config *containerv1alpha1.Configuration, providerConfig *containerv1alpha1.ProviderConfiguration) {
-	// default configuration
 	DefaultConfiguration(config)
 
 	// default provider configuration
