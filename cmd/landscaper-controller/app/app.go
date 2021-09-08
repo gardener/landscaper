@@ -7,7 +7,11 @@ package app
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+
+	"golang.org/x/sync/errgroup"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
@@ -77,9 +81,30 @@ func (o *Options) run(ctx context.Context) error {
 		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
+	hostMgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
 	if err != nil {
 		return fmt.Errorf("unable to setup manager: %w", err)
+	}
+
+	lsMgr := hostMgr
+	if len(o.landscaperKubeconfigPath) > 0 {
+		data, err := ioutil.ReadFile(o.landscaperKubeconfigPath)
+		if err != nil {
+			return fmt.Errorf("unable to read landscaper kubeconfig from %s: %w", o.landscaperKubeconfigPath, err)
+		}
+		client, err := clientcmd.NewClientConfigFromBytes(data)
+		if err != nil {
+			return fmt.Errorf("unable to build landscaper cluster client from %s: %w", o.landscaperKubeconfigPath, err)
+		}
+		hostConfig, err := client.ClientConfig()
+		if err != nil {
+			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.landscaperKubeconfigPath, err)
+		}
+		opts.MetricsBindAddress = "0"
+		lsMgr, err = ctrl.NewManager(hostConfig, opts)
+		if err != nil {
+			return fmt.Errorf("unable to setup landscaper cluster manager from %s: %w", o.landscaperKubeconfigPath, err)
+		}
 	}
 
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
@@ -90,7 +115,7 @@ func (o *Options) run(ctx context.Context) error {
 	}
 	blueprints.SetStore(store)
 
-	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), mgr, o.Config)
+	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), lsMgr, o.Config)
 	if err != nil {
 		return fmt.Errorf("unable to setup CRD manager: %w", err)
 	}
@@ -99,28 +124,28 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("failed to handle CRDs: %w", err)
 	}
 
-	install.Install(mgr.GetScheme())
+	install.Install(lsMgr.GetScheme())
 
 	ctrlLogger := o.Log.WithName("controllers")
 	componentOverwriteMgr := componentoverwrites.New()
-	if err := coctrl.AddControllerToManager(ctrlLogger, mgr, componentOverwriteMgr); err != nil {
+	if err := coctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr); err != nil {
 		return fmt.Errorf("unable to setup commponent overwrites controller: %w", err)
 	}
 
-	if err := installationsctrl.AddControllerToManager(ctrlLogger, mgr, componentOverwriteMgr, o.Config); err != nil {
+	if err := installationsctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, mgr); err != nil {
+	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
-	if err := deployitemctrl.AddControllerToManager(ctrlLogger, mgr, o.Config.DeployItemTimeouts.Pickup, o.Config.DeployItemTimeouts.Abort, o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
+	if err := deployitemctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config.DeployItemTimeouts.Pickup, o.Config.DeployItemTimeouts.Abort, o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 
 	if !o.Config.DeployerManagement.Disable {
-		if err := deployers.AddControllersToManager(ctrlLogger, mgr, o.Config); err != nil {
+		if err := deployers.AddControllersToManager(ctrlLogger, lsMgr, o.Config); err != nil {
 			return fmt.Errorf("unable to setup deployer controllers: %w", err)
 		}
 		if !o.Config.DeployerManagement.Agent.Disable {
@@ -140,21 +165,38 @@ func (o *Options) run(ctx context.Context) error {
 					},
 				},
 			)
-			if err := agent.AddToManager(ctx, o.Log, mgr, mgr, agentConfig); err != nil {
+			if err := agent.AddToManager(ctx, o.Log, lsMgr, hostMgr, agentConfig); err != nil {
 				return fmt.Errorf("unable to setup default agent: %w", err)
 			}
 		}
-		if err := o.DeployInternalDeployers(ctx, mgr); err != nil {
+		if err := o.DeployInternalDeployers(ctx, lsMgr); err != nil {
 			return err
 		}
 	}
 
 	o.Log.Info("starting the controllers")
-	if err := mgr.Start(ctx); err != nil {
-		o.Log.Error(err, "error while running manager")
-		os.Exit(1)
+	eg, ctx := errgroup.WithContext(ctx)
+
+	if lsMgr != hostMgr {
+		eg.Go(func() error {
+			if err := hostMgr.Start(ctx); err != nil {
+				return fmt.Errorf("error while running host manager: %w", err)
+			}
+			return nil
+		})
+		o.Log.Info("Waiting for host cluster cache to sync")
+		if !hostMgr.GetCache().WaitForCacheSync(ctx) {
+			return fmt.Errorf("unable to sync host cluster cache")
+		}
+		o.Log.Info("Cache of host cluster successfully synced")
 	}
-	return nil
+	eg.Go(func() error {
+		if err := lsMgr.Start(ctx); err != nil {
+			return fmt.Errorf("error while running landscaper manager: %w", err)
+		}
+		return nil
+	})
+	return eg.Wait()
 }
 
 // DeployInternalDeployers automatically deploys configured deployers using the new Deployer registrations.

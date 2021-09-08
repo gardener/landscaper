@@ -24,8 +24,9 @@ import (
 
 // Options describes the options to configure the Landscaper controller.
 type Options struct {
-	Log        logr.Logger
-	ConfigPath string
+	Log                      logr.Logger
+	ConfigPath               string
+	landscaperKubeconfigPath string
 
 	Config   *config.LandscaperConfiguration
 	Deployer deployerconfig.Options
@@ -37,6 +38,7 @@ func NewOptions() *Options {
 
 func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.ConfigPath, "config", "", "Specify the path to the configuration file")
+	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
 	o.Deployer.AddFlags(fs)
 	logger.InitFlags(fs)
 
