@@ -105,6 +105,9 @@ func New(log logr.Logger,
 }
 
 func applyDefaults(config *containerv1alpha1.Configuration, providerConfig *containerv1alpha1.ProviderConfiguration) {
+	DefaultConfiguration(config)
+
+	// default provider configuration
 	if len(providerConfig.Image) == 0 {
 		providerConfig.Image = config.DefaultImage.Image
 	}
