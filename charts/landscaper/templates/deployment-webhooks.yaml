@@ -28,7 +28,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.serviceAccount.create }}
+      {{- if not .Values.webhooksServer.landscaperKubeconfig }}
       serviceAccountName: {{ include "landscaper.webhooks.serviceAccountName" . }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.webhooksServer.landscaperKubeconfig }}
+      automountServiceAccountToken: false
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}

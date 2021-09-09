@@ -20,6 +20,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
 ---
 {{- if not (has "all" .Values.webhooksServer.disableWebhooks) }}
+{{- if not .Values.webhooksServer.landscaperKubeconfig }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -34,5 +35,6 @@ subjects:
 - kind: ServiceAccount
   name: {{ include "landscaper.webhooks.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}
 {{- end }}
