@@ -23,6 +23,13 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath("readinessChecks"), &config.ReadinessChecks)...)
 	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
 
+	if len(config.Name) == 0 {
+		allErrs = append(allErrs, field.Required(field.NewPath("name"), "must not be empty"))
+	}
+	if len(config.Namespace) == 0 {
+		allErrs = append(allErrs, field.Required(field.NewPath("namespace"), "must not be empty"))
+	}
+
 	expPath := field.NewPath("exportsFromManifests")
 	keys := sets.NewString()
 	for i, export := range config.ExportsFromManifests {
