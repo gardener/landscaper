@@ -39,6 +39,9 @@ spec:
           image: "{{ include "landscaper-image" . }}"
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           args:
+          {{- if .Values.controller.landscaperKubeconfig }}
+          - "--landscaper-kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          {{- end }}
           - "--config=/app/ls/config/config.yaml"
           - "-v={{ .Values.landscaper.verbosity }}"
           {{- if .Values.landscaper.deployers }}
@@ -65,6 +68,10 @@ spec:
           - name: deployers-config
             mountPath: /app/ls/deployers
           {{- end }}
+          {{- if .Values.controller.landscaperKubeconfig }}
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -82,6 +89,15 @@ spec:
       - name: deployers-config
         secret:
           secretName: {{ include "landscaper.fullname" . }}-deployers-config
+      {{- end }}
+      {{- if .Values.controller.landscaperKubeconfig }}
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.controller.landscaperKubeconfig.kubeconfig }}
+          secretName: {{ include "landscaper.fullname" . }}-controller-cluster-kubeconfig
+          {{- else }}
+          secretName: {{ .Values.controller.landscaperKubeconfig.secretRef }}
+          {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

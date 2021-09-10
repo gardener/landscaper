@@ -27,7 +27,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.serviceAccount.create }}
+      {{- if .Values.webhooksServer.landscaperKubeconfig }}
+      automountServiceAccountToken: false
+      {{- else }}
       serviceAccountName: {{ include "landscaper.webhooks.serviceAccountName" . }}
       {{- end }}
       securityContext:
@@ -39,15 +41,36 @@ spec:
           image: "{{ include "landscaper-webhook-image" . }}"
           imagePullPolicy: {{ .Values.webhooksServer.image.pullPolicy }}
           args:
-          - "-v={{ .Values.landscaper.verbosity }}"
-          - --port={{ .Values.webhooksServer.servicePort }}
+          {{- if .Values.webhooksServer.landscaperKubeconfig }}
+          - "--kubeconfig=/app/ls/landscaper-cluster-kubeconfig/kubeconfig"
+          - --webhook-url=https://{{ include "landscaper.webhooks.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.webhooksServer.servicePort }}
+          - --certificates-namespace={{ .Values.webhooksServer.certificatesNamespace }}
+          {{- else }}
           - --webhook-service={{ .Release.Namespace }}/{{ include "landscaper.webhooks.fullname" . }}
           - --webhook-service-port={{ .Values.webhooksServer.servicePort }}
+          {{- end }}
+          - "-v={{ .Values.landscaper.verbosity }}"
+          - --port={{ .Values.webhooksServer.servicePort }}
           {{- if .Values.webhooksServer.disableWebhooks }}
           - --disable-webhooks={{ .Values.webhooksServer.disableWebhooks | join "," }}
           {{- end }}
+          {{- if .Values.webhooksServer.landscaperKubeconfig }}
+          volumeMounts:
+          - name: landscaper-cluster-kubeconfig
+            mountPath: /app/ls/landscaper-cluster-kubeconfig
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.webhooksServer.landscaperKubeconfig }}
+      volumes:
+      - name: landscaper-cluster-kubeconfig
+        secret:
+          {{- if .Values.webhooksServer.landscaperKubeconfig.kubeconfig }}
+          secretName: {{ include "landscaper.fullname" . }}-webhooks-cluster-kubeconfig
+          {{- else }}
+          secretName: {{ .Values.webhooksServer.landscaperKubeconfig.secretRef }}
+          {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
