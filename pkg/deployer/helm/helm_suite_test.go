@@ -60,6 +60,8 @@ var _ = Describe("Template", func() {
 		helmConfig.Chart.Archive = &helmv1alpha1.ArchiveAccess{
 			Raw: base64.StdEncoding.EncodeToString(chartData),
 		}
+		helmConfig.Name = "foo"
+		helmConfig.Namespace = "foo"
 		providerConfig, err := helper.ProviderConfigurationToRawExtension(helmConfig)
 		Expect(err).ToNot(HaveOccurred())
 
