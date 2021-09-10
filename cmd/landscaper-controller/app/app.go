@@ -96,12 +96,12 @@ func (o *Options) run(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("unable to build landscaper cluster client from %s: %w", o.landscaperKubeconfigPath, err)
 		}
-		hostConfig, err := client.ClientConfig()
+		lsConfig, err := client.ClientConfig()
 		if err != nil {
 			return fmt.Errorf("unable to build landscaper cluster rest client from %s: %w", o.landscaperKubeconfigPath, err)
 		}
 		opts.MetricsBindAddress = "0"
-		lsMgr, err = ctrl.NewManager(hostConfig, opts)
+		lsMgr, err = ctrl.NewManager(lsConfig, opts)
 		if err != nil {
 			return fmt.Errorf("unable to setup landscaper cluster manager from %s: %w", o.landscaperKubeconfigPath, err)
 		}
