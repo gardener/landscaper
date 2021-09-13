@@ -206,6 +206,10 @@ func DeployerManagementTests(f *framework.Framework) {
 			instList := &lsv1alpha1.InstallationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
 			numOfInstallations := len(instList.Items)
+			previousInstallations := sets.String{}
+			for _, inst := range instList.Items {
+				previousInstallations.Insert(inst.Name)
+			}
 			numOfEnvironments := previousEnvironments.Len()
 
 			repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
@@ -232,17 +236,23 @@ func DeployerManagementTests(f *framework.Framework) {
 			g.Eventually(func() error {
 				instList = &lsv1alpha1.InstallationList{}
 				testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
-				newInstallations := len(instList.Items) - numOfInstallations
-				if newInstallations != numOfEnvironments {
-					err := fmt.Errorf("expect %d installation but found %d new", numOfEnvironments, newInstallations)
+				newInstallations := []lsv1alpha1.Installation{}
+				for _, inst := range instList.Items {
+					if !previousInstallations.Has(inst.Name) {
+						newInstallations = append(newInstallations, inst)
+					}
+				}
+				newInstallationCount := len(newInstallations)
+				if newInstallationCount != numOfEnvironments {
+					err := fmt.Errorf("expected %d new installations but found %d", numOfEnvironments, newInstallationCount)
 					f.TestLog().Logln(err.Error())
 					return err
 				}
 				// expect that all installations are healthy
 				var allErrs []error
-				for _, inst := range instList.Items {
+				for _, inst := range newInstallations {
 					if err := health.CheckInstallation(&inst); err != nil {
-						allErrs = append(allErrs, err)
+						allErrs = append(allErrs, fmt.Errorf("installation %q not healthy: %w", inst.Name, err))
 					}
 				}
 				if len(allErrs) != 0 {
@@ -258,7 +268,7 @@ func DeployerManagementTests(f *framework.Framework) {
 
 			instList = &lsv1alpha1.InstallationList{}
 			testutil.ExpectNoError(f.Client.List(ctx, instList, client.InNamespace(f.LsNamespace)))
-			g.Expect(instList.Items).To(g.HaveLen(numOfInstallations), fmt.Sprintf("expect %d new installation but found %d new", numOfInstallations, len(instList.Items)))
+			g.Expect(instList.Items).To(g.HaveLen(numOfInstallations), fmt.Sprintf("expected %d installations total but found %d", numOfInstallations, len(instList.Items)))
 		})
 	})
 }
