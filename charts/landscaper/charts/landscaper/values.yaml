@@ -1,0 +1,147 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Default values for landscaper.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+landscaper:
+  verbosity: 2
+  crdManagement:
+    deployCrd: true
+#   forceUpdate: true
+  registryConfig: # contains optional oci secrets
+    cache: {}
+#      useInMemoryOverlay: false
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: false
+    secrets: {}
+#     <name>: <docker config json>
+
+#  The default repositoryContext that will be used if no repositoryContext is defined in an installation
+#  repositoryContext:
+#    type: "ociRegistry"
+#    baseUrl: ""
+
+#  metrics:
+#    port: 8080
+
+#  deployerManagement:
+#    disable: false
+#    agent:
+#      disable: false
+
+  deployers: []
+#  - container
+#  - helm
+#  - mock
+#  - manifest
+  deployersConfig: {}
+#    container:
+#      container-helm chart values
+#      ...
+#    my-custom-deployer:
+#      apiVersion: landscaper.gardener.cloud/v1alpha1
+#      kind: DeployerRegistration
+#      ...
+
+#  deployItemTimeouts:
+#    # how long deployers may take to react on changes to deploy items
+#    pickup: 5m
+#    # how long deployers may take to abort processing a deploy item after the annotation has been set
+#    abort: 5m
+#    # default for how long deployers may take to process a deploy item before being aborted, can be overwritten via the deploy item's 'spec.timeout' field
+#    progressingDefault: 10m
+
+image: {}
+   # Overrides the image tag whose default is the chart appVersion.
+#  tag: ""
+
+controller:
+  # Allows to target a different cluster than the hosting cluster of the controller instance.
+  # Provide the kubeconfig to access the remote Landscaper cluster here (inline or via secretRef).
+  # When providing a secretRef, see ./templates/cluster-kubeconfig-secret.yaml for the correct secret format.
+  # If no value is provided at all, the controller will default to the in-cluster kubeconfig.
+  landscaperKubeconfig: {}
+  #   secretRef: my-kubeconfig-secret
+  #   kubeconfig: |
+  #     <cluster-kubeconfig>
+
+  replicaCount: 1
+  image:
+    repository: eu.gcr.io/gardener-project/landscaper/landscaper-controller
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the .Values.image.tag or chart appVersion.
+    #tag: ""
+
+webhooksServer:
+  # Allows to target a different cluster than the hosting cluster of the webhooks server instance.
+  # Provide the kubeconfig to access the remote Landscaper cluster here (inline or via secretRef).
+  # When providing a secretRef, see ./templates/cluster-kubeconfig-secret.yaml for the correct secret format.
+  # If no value is provided at all, the webhooks server will default to the in-cluster kubeconfig.
+  landscaperKubeconfig: {}
+  #   secretRef: my-kubeconfig-secret
+  #   kubeconfig: |
+  #     <cluster-kubeconfig>
+
+  replicaCount: 1
+  image:
+    repository: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the .Values.image.tag or the chart appVersion.
+    #tag: ""
+
+  servicePort: 9443 # required unless disableWebhooks contains "all"
+  disableWebhooks: [] # options: installation, deployitem, execution, all
+  # Specify the namespace where the webhooks server certificate secret is stored.
+  # Required when "landscaperKubeconfig" is defined.
+  certificatesNamespace: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,148 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: hostingCluster
+    required: true
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: hostingClusterNamespace
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: deleteHostingClusterNamespace
+    type: data
+    schema:
+      type: boolean
+
+  - name: virtualClusterNamespace
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: registryConfig
+    type: data
+    schema:
+      $ref: "cd://resources/registry-config-definition"
+
+  - name: landscaperConfig
+    type: data
+    schema:
+      $ref: "cd://resources/landscaper-config-definition"
+
+  - name: providerType
+    type: data
+    required: true
+    schema:
+      type: string
+
+exportExecutions:
+  - name: export
+    type: GoTemplate
+    template: |
+      exports:
+        landscaperClusterEndpoint: {{ .values.dataobjects.virtualGardenEndpoint }}
+        landscaperClusterKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
+
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: virtual-garden
+
+    blueprint:
+      ref: cd://componentReferences/virtual-garden/resources/blueprint
+
+    imports:
+      targets:
+        - name: cluster
+          target: hostingCluster
+      data:
+        - name: importHostingClusterNamespace
+          dataRef: hostingClusterNamespace
+        - name: importProviderType
+          dataRef: providerType
+        - name: importDeleteNamespace
+          dataRef: deleteHostingClusterNamespace
+
+    importDataMappings:
+      hostingCluster:
+        namespace: (( importHostingClusterNamespace ))
+        infrastructureProvider: (( importProviderType ))
+
+      virtualGarden:
+        deleteNamespace: (( importDeleteNamespace ))
+        etcd:
+          storageClassName: (( "landscaper-" importHostingClusterNamespace))
+          handleETCDPersistentVolumes: true
+        kubeAPIServer:
+          replicas: 1
+          dnsAccessDomain: ""
+          gardenerControlplane:
+            validatingWebhookEnabled: true
+            mutatingWebhookEnabled: true
+
+    exports:
+      data:
+        - name: virtualGardenEndpoint
+          dataRef: virtualGardenEndpoint
+      targets:
+        - name: virtualGardenKubeconfig
+          target: virtualGardenKubeconfig
+
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: landscaper-rbac
+
+    blueprint:
+      ref: cd://resources/rbac-blueprint
+
+    imports:
+      targets:
+        - name: virtualCluster
+          target: virtualGardenKubeconfig
+      data:
+        - name: virtualClusterNamespace
+          dataRef: virtualClusterNamespace
+        - name: virtualClusterEndpoint
+          dataRef: virtualGardenEndpoint
+
+    exports:
+      data:
+        - name: landscaperControllerKubeconfigYaml
+          dataRef: landscaperControllerKubeconfigYaml
+        - name: landscaperWebhooksKubeconfigYaml
+          dataRef: landscaperWebhooksKubeconfigYaml
+        - name: landscaperUserKubeconfigYaml
+          dataRef: landscaperUserKubeconfigYaml
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: landscaper-deployment
+
+    blueprint:
+      ref: cd://resources/landscaper-blueprint
+
+    imports:
+      targets:
+        - name: hostingCluster
+          target: hostingCluster
+      data:
+        - name: hostingClusterNamespace
+          dataRef: hostingClusterNamespace
+        - name: virtualClusterNamespace
+          dataRef: virtualClusterNamespace
+        - name: landscaperControllerKubeconfigYaml
+          dataRef: landscaperControllerKubeconfigYaml
+        - name: landscaperWebhooksKubeconfigYaml
+          dataRef: landscaperWebhooksKubeconfigYaml
+        - name: registryConfig
+          dataRef: registryConfig
+        - name: landscaperConfig
+          dataRef: landscaperConfig

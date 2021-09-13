@@ -1,0 +1,51 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: hostingCluster
+    required: true
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: hostingClusterNamespace
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: virtualClusterNamespace
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: landscaperControllerKubeconfigYaml
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: landscaperWebhooksKubeconfigYaml
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: registryConfig
+    type: data
+    schema:
+      $ref: "cd://resources/registry-config-definition"
+
+  - name: landscaperConfig
+    type: data
+    schema:
+      $ref: "cd://resources/landscaper-config-definition"
+
+exportExecutions: []
+
+deployExecutions:
+  - name: deploy-execution
+    file: /deploy-execution.yaml
+    type: GoTemplate
+
+
+subinstallations: []

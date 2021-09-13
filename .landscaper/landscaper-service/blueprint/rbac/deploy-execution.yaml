@@ -1,0 +1,120 @@
+deployItems:
+  - name: landscaper-rbac
+    type: landscaper.gardener.cloud/helm
+    target:
+      name: {{ .imports.virtualCluster.metadata.name }}
+      namespace: {{ .imports.virtualCluster.metadata.namespace }}
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      updateStrategy: patch
+      name: landscaper-rbac
+      namespace: {{ .imports.virtualClusterNamespace }}
+
+      chart:
+        fromResource:
+{{ toYaml .componentDescriptorDef | indent 10 }}
+          resourceName: rbac-chart
+
+      values:
+        namespace:
+          create: true
+
+        controller:
+          serviceAccount:
+            create: true
+            annotations: {}
+            name: landscaper-controller
+
+        webhooksServer:
+          serviceAccount:
+            create: true
+            annotations: {}
+            name: landscaper-webhooks
+
+        user:
+          serviceAccount:
+            create: true
+            annotations: {}
+            name: landscaper-user
+
+      exports:
+        defaultTimeout: 10m
+        exports:
+        - key: landscaperControllerToken
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-controller
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.token"
+
+        - key: landscaperControllerCaCrt
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-controller
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.ca\\.crt"
+
+        - key: landscaperWebhooksToken
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-webhooks
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.token"
+
+        - key: landscaperWebhooksCaCrt
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-webhooks
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.ca\\.crt"
+
+        - key: landscaperUserToken
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-user
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.token"
+
+        - key: landscaperUserCaCrt
+          timeout: 10m
+          jsonPath: .secrets[0]
+          fromResource:
+            apiVersion: v1
+            kind: ServiceAccount
+            name: landscaper-user
+            namespace: {{ .imports.virtualClusterNamespace }}
+          fromObjectRef:
+            apiVersion: v1
+            kind: Secret
+            jsonPath: ".data.ca\\.crt"
