@@ -71,7 +71,7 @@ landscaper:
 
 ### Landscaper image and tag
 
-If Landscaper is installed with a local copy of the Helm chart, the field `image.tag` has to be defined to specifiy which container image for Landscaper should be used.
+If Landscaper is installed with a local copy of the Helm chart, the field `image.tag` has to be defined to specify which container image for Landscaper should be used.
 
 If Landscaper is installed through an OCI chart, the image tag will automatically be matched with the given version.
 
