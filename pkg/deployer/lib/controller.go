@@ -170,6 +170,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
+	errHdl := HandleErrorFunc(logger, c.lsClient, c.lsEventRecorder, di)
+
 	target, shouldReconcile, err := c.checkTargetResponsibility(ctx, logger, di)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -188,7 +190,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.AfterResponsibilityCheckHook)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errHdl(ctx, err)
 	}
 	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	if hookRes.AbortReconcile {
@@ -203,7 +205,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	shouldReconcile = ShouldReconcile(di)
 	tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.ShouldReconcileHook)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errHdl(ctx, err)
 	}
 	if tmpHookRes != nil {
 		hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
@@ -225,11 +227,9 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// reset AbortReconcile, since it could be 'true' at this point, which would wrongly cause an abort after the next hook
 	hookRes.AbortReconcile = false
 
-	errHdl := HandleErrorFunc(logger, c.lsClient, c.lsEventRecorder, di)
-
 	tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeAnyReconcileHook)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errHdl(ctx, err)
 	}
 	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	if hookRes.AbortReconcile {
@@ -241,7 +241,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		logger.V(5).Info("handle deploy item abort")
 		tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeAbortHook)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, errHdl(ctx, err)
 		}
 		hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 		if hookRes.AbortReconcile {
@@ -254,7 +254,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		logger.V(5).Info("handle deploy item force-reconcile")
 		tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeForceReconcileHook)
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, errHdl(ctx, err)
 		}
 		hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 		if hookRes.AbortReconcile {
@@ -269,7 +269,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.V(5).Info("handle deploy item deletion")
 			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeDeleteHook)
 			if err != nil {
-				return reconcile.Result{}, err
+				return reconcile.Result{}, errHdl(ctx, err)
 			}
 			hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 			if hookRes.AbortReconcile {
@@ -283,7 +283,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			logger.V(7).Info("handle deploy item reconcile")
 			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeReconcileHook)
 			if err != nil {
-				return reconcile.Result{}, err
+				return reconcile.Result{}, errHdl(ctx, err)
 			}
 			hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 			if hookRes.AbortReconcile {
@@ -298,7 +298,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.EndHook)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errHdl(ctx, err)
 	}
 	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	return returnAndLogReconcileResult(logger, *hookRes), nil
