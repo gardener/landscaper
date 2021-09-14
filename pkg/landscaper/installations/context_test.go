@@ -11,6 +11,8 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/gardener/landscaper/test/utils/envtest"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,7 +23,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Context", func() {
@@ -32,21 +33,25 @@ var _ = Describe("Context", func() {
 		fakeInstallations map[string]*lsv1alpha1.Installation
 		fakeClient        client.Client
 		fakeCompRepo      ctf.ComponentResolver
+		state             *envtest.State
 	)
 
 	BeforeEach(func() {
-		var (
-			err   error
-			state *envtest.State
-		)
-		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
+		var err error
+		state, err = testenv.InitResources(context.TODO(), "./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 		fakeInstallations = state.Installations
+
+		fakeClient = testenv.Client
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+	})
+
+	AfterEach(func() {
+		Expect(testenv.CleanupState(context.TODO(), state)).To(Succeed())
 	})
 
 	It("should show no parent nor siblings for the test1 root", func() {
@@ -79,7 +84,6 @@ var _ = Describe("Context", func() {
 
 	It("should correctly determine the visible context of a installation with its parent and sibling installations", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		inst, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
@@ -96,7 +100,6 @@ var _ = Describe("Context", func() {
 
 	It("initialize root installations with default context", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		defaultRepoContext, err := cdv2.NewUnstructured(componentsregistry.NewLocalRepository("../testdata/registry"))
 		Expect(err).ToNot(HaveOccurred())

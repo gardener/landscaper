@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,7 +18,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
-	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.
@@ -71,14 +69,4 @@ func NewFakeClientFromPath(path string) (client.Client, *State, error) {
 	}
 
 	return fake.NewClientBuilder().WithScheme(api.LandscaperScheme).WithObjects(objects...).Build(), state, nil
-}
-
-// RegisterFakeClientToMock adds fake client calls to a mockclient
-func RegisterFakeClientToMock(mockClient *mock_client.MockClient, fakeClient client.Client) error {
-	mockClient.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Get)
-	mockClient.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Create)
-	mockClient.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Update)
-	mockClient.EXPECT().Patch(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Patch)
-	mockClient.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(fakeClient.Delete)
-	return nil
 }

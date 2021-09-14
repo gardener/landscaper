@@ -21,26 +21,15 @@ spec:
 
   blueprint:
     ref:
-      resourceName: root
-
-  imports:
-    data:
-    - name: root.a
-      dataRef: ext.a
-
-  exports:
-    data:
-    - name: root.y
-      dataRef: root.y
-    - name: root.z
-      dataRef: root.z
+      resourceName: root-no-imports
 
 status:
-  phase: Progressing
+  phase: Failed
   configGeneration: ""
+
 
   imports:
   - name: root.a
     configGeneration: ""
 
-  observedGeneration: 0
+  observedGeneration: 2

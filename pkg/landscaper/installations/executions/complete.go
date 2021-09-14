@@ -8,6 +8,7 @@ import (
 	"context"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -16,14 +17,14 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
-func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installations.Installation) (lsv1alpha1.ExecutionPhase, error) {
-	if inst.Info.Status.ExecutionReference == nil {
-		return "", nil
-	}
-
-	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+// CombinedPhase returns the phase of the referenced execution.
+func CombinedPhase(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (lsv1alpha1.ExecutionPhase, error) {
+	exec, err := GetExecutionForInstallation(ctx, kubeClient, inst)
+	if err != nil {
 		return "", err
+	}
+	if exec == nil {
+		return "", nil
 	}
 
 	if exec.Generation != exec.Status.ObservedGeneration {
@@ -31,24 +32,6 @@ func (o *ExecutionOperation) CombinedState(ctx context.Context, inst *installati
 	}
 
 	return exec.Status.Phase, nil
-}
-
-func (o *ExecutionOperation) HandleUpdate(ctx context.Context, inst *installations.Installation) error {
-	if inst.Info.Status.ExecutionReference == nil {
-		return nil
-	}
-
-	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, inst.Info.Status.ExecutionReference.NamespacedName(), exec); err != nil {
-		return err
-	}
-
-	if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseFailed
-		return nil
-	}
-
-	return nil
 }
 
 // GetExportedValues returns the exported values of the execution

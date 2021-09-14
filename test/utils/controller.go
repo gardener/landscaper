@@ -65,8 +65,7 @@ func DeleteInstallation(ctx context.Context, client client.Client, execActuator,
 	gomega.Expect(client.Get(ctx, execReq.NamespacedName, exec)).ToNot(gomega.HaveOccurred())
 
 	// the installation controller should propagate the deletion to its subcharts
-	err := ShouldNotReconcile(ctx, instActuator, instReq)
-	gomega.Expect(err.Error()).To(gomega.ContainSubstring("waiting for deletion"))
+	ShouldReconcile(ctx, instActuator, instReq)
 
 	gomega.Expect(client.Get(ctx, execReq.NamespacedName, exec)).ToNot(gomega.HaveOccurred())
 	gomega.Expect(exec.DeletionTimestamp.IsZero()).To(gomega.BeFalse(), "deletion timestamp should be set")
@@ -85,14 +84,14 @@ func DeleteInstallation(ctx context.Context, client client.Client, execActuator,
 		gomega.Expect(di.DeletionTimestamp.IsZero()).To(gomega.BeFalse(), "deletion timestamp should be set")
 
 		ShouldReconcile(ctx, mockActuator, diReq)
-		err = client.Get(ctx, diReq.NamespacedName, di)
+		err := client.Get(ctx, diReq.NamespacedName, di)
 		gomega.Expect(err).To(gomega.HaveOccurred())
 		gomega.Expect(apierrors.IsNotFound(err)).To(gomega.BeTrue(), "deploy item should be deleted")
 	}
 
 	// execution controller should remove the finalizer
 	ShouldReconcile(ctx, execActuator, execReq)
-	err = client.Get(ctx, execReq.NamespacedName, exec)
+	err := client.Get(ctx, execReq.NamespacedName, exec)
 	gomega.Expect(err).To(gomega.HaveOccurred())
 	gomega.Expect(apierrors.IsNotFound(err)).To(gomega.BeTrue(), "execution should be deleted")
 

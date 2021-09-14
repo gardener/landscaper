@@ -8,7 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
@@ -40,7 +42,7 @@ type ExecutionOperation struct {
 	*installations.Operation
 }
 
-// New creates a new execitions operations object
+// New creates a new executions operations object
 func New(op *installations.Operation) *ExecutionOperation {
 	return &ExecutionOperation{
 		Operation: op,
@@ -103,4 +105,17 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
 	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
+}
+
+// GetExecutionForInstallation returns the execution of an installation.
+// The execution can be nil if no execution has been found.
+func GetExecutionForInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (*lsv1alpha1.Execution, error) {
+	exec := &lsv1alpha1.Execution{}
+	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(inst), exec); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return exec, nil
 }

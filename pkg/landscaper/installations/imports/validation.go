@@ -341,7 +341,7 @@ func (v *Validator) checkStateForParentImport(fldPath *field.Path, importName st
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
 	// parent has to be progressing
-	if v.parent.Info.Status.Phase != lsv1alpha1.ComponentPhaseProgressing {
+	if !lsv1alpha1helper.IsProgressingInstallationPhase(v.parent.Info.Status.Phase) {
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())
 	}
 	return nil

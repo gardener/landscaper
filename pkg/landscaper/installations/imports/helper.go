@@ -33,13 +33,17 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	}
 
 	// check its own parent
-	parentsParent, err := installations.GetParent(ctx, op.Operation, &parent.InstallationBase)
+	parentsParentInst, err := installations.GetParent(ctx, op.Client(), parent.Info)
 	if err != nil {
 		return false, errors.Wrap(err, "unable to get parent of parent")
 	}
 
-	if parentsParent == nil {
+	if parentsParentInst == nil {
 		return true, nil
+	}
+	parentsParent, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), parentsParentInst)
+	if err != nil {
+		return false, err
 	}
 	return CheckCompletedSiblingDependentsOfParent(ctx, parentsOperation, parentsParent)
 }
@@ -65,11 +69,11 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			continue
 		}
 
-		parent, err := installations.GetParentBase(ctx, op.Client(), inst)
+		parent, err := installations.GetParent(ctx, op.Client(), inst.Info)
 		if err != nil {
 			return false, err
 		}
-		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent.Info) {
+		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent) {
 			continue
 		}
 
