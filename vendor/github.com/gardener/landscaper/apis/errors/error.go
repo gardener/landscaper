@@ -29,6 +29,11 @@ func (e Error) Error() string {
 	return fmt.Sprintf("Op: %q - Reason: %q - Message: %q", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
 }
 
+// LandscaperError returns the wrapped landscaper error.
+func (e Error) LandscaperError() *lsv1alpha1.Error {
+	return e.lsErr.DeepCopy()
+}
+
 // Unwrap implements the unwrap interface
 func (e Error) Unwrap() error {
 	return e.err

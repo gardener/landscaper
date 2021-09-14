@@ -91,7 +91,7 @@ func (e *Environment) InitState(ctx context.Context) (*State, error) {
 	return InitStateWithNamespace(ctx, e.Client)
 }
 
-// InitState creates a new isolated environment with its own namespace.
+// InitStateWithNamespace creates a new isolated environment with its own namespace.
 func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error) {
 	state := NewState()
 	// create a new testing namespace
