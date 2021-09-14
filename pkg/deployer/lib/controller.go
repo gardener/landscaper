@@ -207,23 +207,22 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if err != nil {
 		return reconcile.Result{}, errHdl(ctx, err)
 	}
-	if tmpHookRes != nil {
-		hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
-		if !shouldReconcile && !hookRes.AbortReconcile {
+	if !shouldReconcile {
+		if tmpHookRes != nil && !tmpHookRes.AbortReconcile {
 			// if ShouldReconcile returned false but this was overwritten by the extension hooks, we need to call PrepareReconcile,
 			// as this has not yet been done by HandleAnnotationsAndGeneration
 			logger.V(5).Info("reconcile required by extension hook")
 			if err := PrepareReconcile(ctx, logger, c.lsClient, di, c.info); err != nil {
 				return reconcile.Result{}, err
 			}
+		} else {
+			// neither the default logic nor the extension hooks require a reconcile
+			c.log.V(5).Info("aborting reconcile", "phase", di.Status.Phase)
+			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
 	}
-	if !shouldReconcile && hookRes.AbortReconcile {
-		// neither the default logic nor the extension hook requires a reconcile
-		c.log.V(5).Info("aborting reconcile", "phase", di.Status.Phase)
-		return returnAndLogReconcileResult(logger, *hookRes), nil
-	}
 	logger.Info("reconcile deploy item")
+	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	// reset AbortReconcile, since it could be 'true' at this point, which would wrongly cause an abort after the next hook
 	hookRes.AbortReconcile = false
 
