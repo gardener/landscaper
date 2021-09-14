@@ -17,6 +17,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1/validation"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
@@ -167,7 +168,7 @@ func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1al
 	if err != nil {
 		return nil, err
 	}
-	if config.ContinuousReconcile == nil {
+	if crval.ContinuousReconcileSpecIsEmpty(config.ContinuousReconcile) {
 		// no continuous reconciliation configured
 		return nil, nil
 	}

@@ -93,7 +93,7 @@ github.com/gardener/component-spec/bindings-go/utils/selector
 # github.com/gardener/image-vector v0.5.0
 ## explicit
 github.com/gardener/image-vector/pkg
-# github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000 => ./apis
+# github.com/gardener/landscaper/apis v0.13.0 => ./apis
 ## explicit
 github.com/gardener/landscaper/apis/config
 github.com/gardener/landscaper/apis/config/install
@@ -123,6 +123,7 @@ github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
 github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile
 github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1
+github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1/validation
 github.com/gardener/landscaper/apis/deployer/utils/managedresource
 github.com/gardener/landscaper/apis/deployer/utils/managedresource/validation
 github.com/gardener/landscaper/apis/deployer/utils/readinesschecks
