@@ -5,6 +5,8 @@
 package continuousreconcile
 
 import (
+	"strings"
+
 	lscore "github.com/gardener/landscaper/apis/core"
 )
 
@@ -19,4 +21,24 @@ type ContinuousReconcileSpec struct {
 	// Either Cron or Every has to be specified.
 	// +optional
 	Every *lscore.Duration `json:"every,omitempty"`
+}
+
+func (crs ContinuousReconcileSpec) String() string {
+	var sb strings.Builder
+	sb.WriteString("{")
+	if len(crs.Cron) != 0 {
+		sb.WriteString("Cron: \"")
+		sb.WriteString(crs.Cron)
+		sb.WriteString("\"")
+		if crs.Every != nil && crs.Every.Duration != 0 {
+			sb.WriteString(", ")
+		}
+	}
+	if crs.Every != nil && crs.Every.Duration != 0 {
+		sb.WriteString("Every: \"")
+		sb.WriteString(crs.Every.String())
+		sb.WriteString("\"")
+	}
+	sb.WriteString("}")
+	return sb.String()
 }
