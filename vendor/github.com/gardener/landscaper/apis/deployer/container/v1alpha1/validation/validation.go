@@ -5,11 +5,12 @@
 package validation
 
 import (
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/validation"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // ValidateProviderConfiguration validates a container deployer configuration

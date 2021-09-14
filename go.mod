@@ -11,7 +11,7 @@ require (
 	github.com/gardener/component-cli v0.29.0
 	github.com/gardener/component-spec/bindings-go v0.0.53
 	github.com/gardener/image-vector v0.5.0
-	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/apis v0.13.0
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.5.0
