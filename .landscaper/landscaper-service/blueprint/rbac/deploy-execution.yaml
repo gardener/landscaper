@@ -12,9 +12,8 @@ deployItems:
       namespace: {{ .imports.virtualClusterNamespace }}
 
       chart:
-        fromResource:
-{{ toYaml .componentDescriptorDef | indent 10 }}
-          resourceName: rbac-chart
+        {{ $resource := getResource .cd "name" "landscaper-controller-rbac-chart" }}
+        ref: {{ $resource.access.imageReference }}
 
       values:
         namespace:
