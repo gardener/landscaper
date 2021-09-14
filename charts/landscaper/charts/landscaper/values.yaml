@@ -102,14 +102,20 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
+global:
+  serviceAccount:
+    controller:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, the default will be "landscaper"
+      name: ""
+    webhooksServer:
+      # The name of the service account to use.
+      # If not set and create is true, the default will be "landscaper-webhooks"
+      name: ""
 
 podAnnotations: {}
 

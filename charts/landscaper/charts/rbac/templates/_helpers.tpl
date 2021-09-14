@@ -25,13 +25,13 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Create the name of the service account to use
 */}}
 {{- define "landscaper.controller.serviceAccountName" -}}
-{{- default "landscaper" .Values.controller.serviceAccount.name }}
+{{- default "landscaper" .Values.global.serviceAccount.controller.name }}
 {{- end }}
 
 {{- define "landscaper.webhooksServer.serviceAccountName" -}}
-{{- default "landscaper-webhooks" .Values.webhooksServer.serviceAccount.name }}
+{{- default "landscaper-webhooks" .Values.global.serviceAccount.webhooksServer.name }}
 {{- end }}
 
 {{- define "landscaper.user.serviceAccountName" -}}
-{{- default "landscaper-user" .Values.user.serviceAccount.name }}
+{{- default "landscaper-user" .Values.global.serviceAccount.user.name }}
 {{- end }}

@@ -3,7 +3,7 @@
  SPDX-License-Identifier: Apache-2.0
 */}}
 
-{{- if .Values.controller.serviceAccount.create }}
+{{- if .Values.global.serviceAccount.controller.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -20,7 +20,7 @@ subjects:
     name: {{ include "landscaper.controller.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
-{{- if .Values.webhooksServer.serviceAccount.create }}
+{{- if .Values.global.serviceAccount.webhooksServer.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -37,7 +37,7 @@ subjects:
     name: {{ include "landscaper.webhooksServer.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 {{- end }}
-{{- if .Values.user.serviceAccount.create }}
+{{- if .Values.global.serviceAccount.user.create }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

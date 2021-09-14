@@ -82,10 +82,14 @@ deployItems:
           type: ClusterIP
           port: 80
 
-        serviceAccount:
-          create: true
-          annotations: {}
-          name: ""
+        global:
+          serviceAccount:
+            controller:
+              create: true
+              annotations: {}
+              name: landscaper-controller
+            webhooksServer:
+              name: landscaper-webhooks
 
         resources:
 {{ toYaml .imports.landscaperConfig.landscaper.resources | indent 10 }}

@@ -20,20 +20,19 @@ deployItems:
         namespace:
           create: true
 
-        controller:
+        global:
           serviceAccount:
-            create: true
-            annotations: {}
-            name: landscaper-controller
+            controller:
+              create: true
+              annotations: {}
+              name: landscaper-controller
 
-        webhooksServer:
-          serviceAccount:
+          webhooksServer:
             create: true
             annotations: {}
             name: landscaper-webhooks
 
-        user:
-          serviceAccount:
+          user:
             create: true
             annotations: {}
             name: landscaper-user

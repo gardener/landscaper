@@ -2,32 +2,31 @@ namespace:
   # Specifies whether the Helm release namespace should be created
   create: false
 
-controller:
+global:
   serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, the default will be "landscaper"
-    name: ""
+    controller:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, the default will be "landscaper"
+      name: ""
 
-webhooksServer:
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, the default will be "landscaper-webhooks"
-    name: ""
+    webhooksServer:
+      # Specifies whether a service account should be created
+      create: true
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, the default will be "landscaper-webhooks"
+      name: ""
 
-user:
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, the default will be "landscaper-user"
-    name: ""
+    user:
+      # Specifies whether a service account should be created
+      create: false
+      # Annotations to add to the service account
+      annotations: {}
+      # The name of the service account to use.
+      # If not set and create is true, the default will be "landscaper-user"
+      name: ""

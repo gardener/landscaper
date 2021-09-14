@@ -3,11 +3,11 @@
  SPDX-License-Identifier: Apache-2.0
 */}}
 
-{{- if .Values.serviceAccount.create -}}
+{{- if .Values.global.serviceAccount.controller.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "landscaper.serviceAccountName" . }}-agent
+  name: {{ include "landscaper.controller.serviceAccountName" . }}-agent
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 roleRef:
@@ -16,6 +16,6 @@ roleRef:
   name: {{ include "landscaper.agent.fullname" . }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "landscaper.serviceAccountName" . }}
+  name: {{ include "landscaper.controller.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}

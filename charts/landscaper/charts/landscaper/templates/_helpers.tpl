@@ -69,16 +69,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "landscaper.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "landscaper.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
+{{- define "landscaper.controller.serviceAccountName" -}}
+{{- default "landscaper" .Values.global.serviceAccount.controller.name }}
 {{- end }}
 
 {{- define "landscaper.webhooks.serviceAccountName" -}}
-{{- include "landscaper.serviceAccountName" . }}-webhooks
+{{- default "landscaper-webhooks" .Values.global.serviceAccount.webhooksServer.name }}
 {{- end }}
 
 {{- define "landscaper-config" -}}
