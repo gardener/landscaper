@@ -28,6 +28,10 @@ If release name contains chart name it will be used as a full name.
 {{- include "landscaper.fullname" . }}-webhooks
 {{- end }}
 
+{{- define "landscaper.agent.fullname" -}}
+{{- include "landscaper.fullname" . }}-agent
+{{- end }}
+
 {{/*
 Create chart name and version as used by the chart label.
 */}}
