@@ -213,7 +213,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			// if ShouldReconcile returned false but this was overwritten by the extension hooks, we need to call PrepareReconcile,
 			// as this has not yet been done by HandleAnnotationsAndGeneration
 			logger.V(5).Info("reconcile required by extension hook")
-			if err := PrepareReconcile(ctx, logger, c.lsClient, di); err != nil {
+			if err := PrepareReconcile(ctx, logger, c.lsClient, di, c.info); err != nil {
 				return reconcile.Result{}, err
 			}
 		}

@@ -46,7 +46,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		// - reconcile annotation
 		// - outdated generation
 		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
-		if err := PrepareReconcile(ctx, log, kubeClient, di); err != nil {
+		if err := PrepareReconcile(ctx, log, kubeClient, di, deployerInfo); err != nil {
 			return err
 		}
 	}
@@ -59,10 +59,6 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		log.V(5).Info("removing timestamp annotation")
 		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
-	}
-	if di.Status.Deployer.Identity != deployerInfo.Identity {
-		di.Status.Deployer = deployerInfo
-		changedMeta = true
 	}
 
 	if changedMeta {
@@ -78,11 +74,15 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 
 // PrepareReconcile prepares a reconcile by setting the status of the deploy item accordingly.
 // It updates ObservedGeneration, LastReconcileTime, and sets the Phase to 'Init'.
-func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Client, di *lsv1alpha1.DeployItem) error {
+func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Client, di *lsv1alpha1.DeployItem, deployerInfo lsv1alpha1.DeployerInformation) error {
 	di.Status.ObservedGeneration = di.Generation
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
+	if di.Status.Deployer.Identity != deployerInfo.Identity {
+		log.V(7).Info("updating deployer identity")
+		di.Status.Deployer = deployerInfo
+	}
 
 	log.V(7).Info("updating status")
 	if err := kubeClient.Status().Update(ctx, di); err != nil {
