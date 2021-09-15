@@ -51,8 +51,11 @@ deployItems:
             kubeconfig: |
 {{ .imports.landscaperControllerKubeconfigYaml | indent 14 }}
 
+          {{ $landscaperComponent := getComponent .cd "name" "landscaper" }}
+
           replicaCount: {{ .imports.landscaperConfig.landscaper.replicas | default 1 }}
-          {{ $landscaperImgresource := getResource .cd "name" "landscaper-controller-image" }}
+
+          {{ $landscaperImgresource := getResource $landscaperComponent "name" "landscaper-controller" }}
           {{ $landscaperImgrepo := ociRefRepo $landscaperImgresource.access.imageReference }}
           {{ $landscaperImgtag := ociRefVersion $landscaperImgresource.access.imageReference }}
           image:
@@ -66,7 +69,8 @@ deployItems:
 {{ .imports.landscaperWebhooksKubeconfigYaml | indent 14}}
 
           replicaCount: {{ .imports.landscaperConfig.webhooksServer.replicas | default 1 }}
-          {{ $webhooksImgresource := getResource .cd "name" "landscaper-webhooks-server-image" }}
+
+          {{ $webhooksImgresource := getResource $landscaperComponent "name" "landscaper-webhooks-server" }}
           {{ $webhooksImgrepo := ociRefRepo $webhooksImgresource.access.imageReference }}
           {{ $webhooksImgtag := ociRefVersion $webhooksImgresource.access.imageReference }}
           image:
