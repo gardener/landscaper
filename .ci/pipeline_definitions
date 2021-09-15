@@ -60,6 +60,13 @@ landscaper:
     head-update:
       traits:
         draft_release: ~
+      notifications:
+        default:
+          on_error:
+            triggering_policy: 'always'
+            recipients:
+            - committers
+            - codeowners
       steps:
         integration-test:
           execute:
