@@ -18,6 +18,22 @@ imports:
     schema:
       type: string
 
+exports:
+  - name: landscaperControllerKubeconfigYaml
+    type: data
+    schema:
+      type: string
+
+  - name: landscaperWebhooksKubeconfigYaml
+    type: data
+    schema:
+      type: string
+
+  - name: landscaperUserKubeconfigYaml
+    type: data
+    schema:
+      type: string
+
 exportExecutions:
   - name: export-execution
     file: /export-execution.yaml
