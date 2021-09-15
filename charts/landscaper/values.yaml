@@ -25,7 +25,7 @@ global:
       # Annotations to add to the service account
       annotations: {}
       # The name of the service account to use.
-      # If not set and create is true, the default will be "landscaper-webhooks"
+      # If not set and create is true, the default will be "landscaper-user"
       name: ""
 
 landscaper:
