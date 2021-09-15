@@ -39,6 +39,17 @@ imports:
     schema:
       type: string
 
+exports:
+  - name: landscaperClusterEndpoint
+    type: data
+    schema:
+      type: string
+
+  - name: landscaperClusterKubeconfig
+    type: data
+    schema:
+      type: string
+
 exportExecutions:
   - name: export
     type: GoTemplate
