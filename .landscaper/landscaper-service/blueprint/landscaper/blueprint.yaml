@@ -40,12 +40,7 @@ imports:
     schema:
       $ref: "cd://resources/landscaper-config-definition"
 
-exportExecutions: []
-
 deployExecutions:
   - name: deploy-execution
     file: /deploy-execution.yaml
     type: GoTemplate
-
-
-subinstallations: []

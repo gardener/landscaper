@@ -27,6 +27,3 @@ deployExecutions:
   - name: deploy-execution
     file: /deploy-execution.yaml
     type: GoTemplate
-
-
-subinstallations: []
