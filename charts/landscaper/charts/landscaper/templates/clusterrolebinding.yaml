@@ -7,7 +7,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "landscaper.controller.serviceAccountName" . }}-agent
+  name: {{ include "landscaper.agent.fullname" . }}
   labels:
     {{- include "landscaper.labels" . | nindent 4 }}
 roleRef:

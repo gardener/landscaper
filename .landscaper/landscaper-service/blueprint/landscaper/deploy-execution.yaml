@@ -17,6 +17,7 @@ deployItems:
 
       values:
         nameOverride: landscaper-{{ .imports.hostingClusterNamespace }}
+        fullnameOverride: landscaper-{{ .imports.hostingClusterNamespace }}
 
         landscaper:
           verbosity: {{ .imports.landscaperConfig.landscaper.verbosity | default 2 }}
@@ -86,7 +87,7 @@ deployItems:
             controller:
               create: true
               annotations: {}
-              name: landscaper-controller
+              name: landscaper-{{ .imports.hostingClusterNamespace }}
             webhooksServer:
               name: landscaper-webhooks
 

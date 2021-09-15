@@ -26,15 +26,15 @@ deployItems:
               annotations: {}
               name: landscaper-controller
 
-          webhooksServer:
-            create: true
-            annotations: {}
-            name: landscaper-webhooks
+            webhooksServer:
+              create: true
+              annotations: {}
+              name: landscaper-webhooks
 
-          user:
-            create: true
-            annotations: {}
-            name: landscaper-user
+            user:
+              create: true
+              annotations: {}
+              name: landscaper-user
 
       exports:
         defaultTimeout: 10m
