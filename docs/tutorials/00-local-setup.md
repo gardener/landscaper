@@ -147,19 +147,20 @@ registries:
 If the landscaper is deployed via helm, the credentials can be configured using the `values.yaml`:
 ```yaml
 landscaper:
-  # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
-  registryConfig: # contains optional oci secrets
-    cache: {}
-    allowPlainHttpRegistries: false
-    insecureSkipVerify: false
-    secrets:
-      default:  {
-                  "auths": {
-                    "http://registry-harbor-registry.harbor:5000/": {
-                      "auth": "${AUTH_TOKEN}"
+    landscaper:
+      # the local harbor registry only serves http so the landscaper has to be configured to do a fallback to http.
+      registryConfig: # contains optional oci secrets
+        cache: {}
+        allowPlainHttpRegistries: false
+        insecureSkipVerify: false
+        secrets:
+          default:  {
+                      "auths": {
+                        "http://registry-harbor-registry.harbor:5000/": {
+                          "auth": "${AUTH_TOKEN}"
+                        }
+                      }
                     }
-                  }
-                }
 ```
 
 ### Common Pitfalls
