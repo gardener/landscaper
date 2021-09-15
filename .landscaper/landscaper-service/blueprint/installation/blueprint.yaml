@@ -23,6 +23,18 @@ imports:
     schema:
       type: string
 
+  - name: providerType
+    type: data
+    required: true
+    schema:
+      type: string
+
+  - name: dnsAccessDomain
+    type: data
+    required: true
+    schema:
+      type: string
+
   - name: registryConfig
     type: data
     schema:
@@ -32,12 +44,6 @@ imports:
     type: data
     schema:
       $ref: "cd://resources/landscaper-config-definition"
-
-  - name: providerType
-    type: data
-    required: true
-    schema:
-      type: string
 
 exports:
   - name: landscaperClusterEndpoint
@@ -78,6 +84,8 @@ subinstallations:
           dataRef: providerType
         - name: importDeleteNamespace
           dataRef: deleteHostingClusterNamespace
+        - name: importDnsAccessDomain
+          dataRef: dnsAccessDomain
 
     importDataMappings:
       hostingCluster:
@@ -91,7 +99,7 @@ subinstallations:
           handleETCDPersistentVolumes: true
         kubeAPIServer:
           replicas: 1
-          dnsAccessDomain: ""
+          dnsAccessDomain: (( importDnsAccessDomain ))
           gardenerControlplane:
             validatingWebhookEnabled: true
             mutatingWebhookEnabled: true
