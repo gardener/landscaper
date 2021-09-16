@@ -27,6 +27,17 @@ type HookResult struct {
 //     to the smallest value greater than zero that was set among the given hook results.
 //     - If ReconcileResult.Requeue is true, RequeueAfter will be set to zero to ensure an immediate reconcile.
 func AggregateHookResults(hrs ...*HookResult) *HookResult {
+	return aggregateHookResults(func(a, b bool) bool { return a || b }, hrs...)
+}
+
+// AggregateHookResultsWithInvertedAbortPriority works exactly like AggregateHookResults with the exception that
+// the AbortReconcile values are ANDed instead of ORed.
+// This is required for a few special cases where setting the value to 'false' is meant to enforce continuation.
+func AggregateHookResultsWithInvertedAbortPriority(hrs ...*HookResult) *HookResult {
+	return aggregateHookResults(func(a, b bool) bool { return a && b }, hrs...)
+}
+
+func aggregateHookResults(aggregate func(bool, bool) bool, hrs ...*HookResult) *HookResult {
 	var res *HookResult
 	for _, hr := range hrs {
 		if hr == nil {
@@ -37,7 +48,7 @@ func AggregateHookResults(hrs ...*HookResult) *HookResult {
 			continue
 		}
 		res.ReconcileResult.Requeue = res.ReconcileResult.Requeue || hr.ReconcileResult.Requeue
-		res.AbortReconcile = res.AbortReconcile || hr.AbortReconcile
+		res.AbortReconcile = aggregate(res.AbortReconcile, hr.AbortReconcile)
 		if res.ReconcileResult.Requeue {
 			res.ReconcileResult.RequeueAfter = 0
 			continue

@@ -74,6 +74,9 @@ type ReconcileExtensionHookSetup struct {
 }
 
 // ExecuteHooks executes all hooks of a given type in the order they are specified in.
+// The results of all executed hooks are aggregated using the AggregateHookResults function, except for
+//   DuringResponsibilityCheck and ShouldReconcile hooks, where AggregateHookResultsWithInvertedAbortPriority is used instead.
+// An error is returned if one of the hooks returns an error or if an unknown hook type is given.
 func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, hype HookType) (*HookResult, error) {
 	logger := log.WithName(string(hype))
 	logger.V(7).Info("calling extension hooks")
@@ -96,6 +99,9 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.
 		if err != nil {
 			return nil, fmt.Errorf("error executing reconciliation extension hook %d of type %q: %w", i, string(hype), err)
 		}
+	}
+	if hype == DuringResponsibilityCheckHook || hype == ShouldReconcileHook {
+		return AggregateHookResultsWithInvertedAbortPriority(hookRes...), nil
 	}
 	return AggregateHookResults(hookRes...), nil
 }

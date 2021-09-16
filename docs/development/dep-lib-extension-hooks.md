@@ -42,6 +42,7 @@ These aggregations happen according to the following rules:
 - If exactly one hook result is non-nil, the result will be a copy of this hook result.
 - Otherwise:
   - `AbortReconcile` is ORed and will thus result to `true` if any of the hook results has it set to this.
+	  - For `DuringResponsibilityCheck` and `ShouldReconcile` hooks, `AbortReconcile` is ANDed instead. The reason for this is that both hook types are special and setting `AbortReconcile` to `false` is meant to enforce continuation.
   - `ReconcileResult.Requeue` will also be ORed.
   - `ReconcileResult.RequeueAfter` will be set to the smallest value greater than zero which is found among the hook results.
     - If `ReconcileResult.Requeue` is `true`, it will be set to zero instead to enforce an immediate requeue.
@@ -69,10 +70,12 @@ Extension hooks can be registered at several points during the aforementioned re
 **Start** hooks will be executed at the very beginning of the reconciliation flow. The deploy item and target which are given to the hook function will always be nil for these hooks.
 
 **DuringResponsibilityCheck** hooks can influence the outcome of the 'check responsibility' step. If a non-nil hook result is returned, its `AbortReconcile` value will overwrite the result of the responsibility check - if it is `false`, the deployer will be considered responsible and continue the reconciliation, if it is `true` the reconciliation will be aborted independently of the result of the responsibility check. Using this hook in the wrong way can lead to unexpected behaviour among _all_ deploy items, so use with caution.
+The `AbortReconcile` values of all hook results from hooks with this type will be ANDed instead of ORed before being evaluated.
 
 **AfterResponsibilityCheck** hooks are executed after it has been determined that the deployer is responsible for the deploy item (otherwise the reconciliation would have been aborted by now).
 
 **ShouldReconcile** hooks behave similarly to the `DuringResponsibilityCheck` hooks in that they can influence the result of a check. A non-nil hook result with `AbortReconcile` set to `false` will enforce a reconcile, even if it is not required by the default logic. Please note that, apart from the other hooks, setting `AbortReconcile` to `true` will not always abort the reconciliation: if the default logic deems a reconcile necessary (e.g. due to changes in the deploy item), reconciliation cannot be stopped at this point. Since step 3 mentioned above will already have set the `Phase` and `LastReconcileTime`, aborting the reconciliation now would not only leave the deploy item in an inconsistent state, but also heavily meddle with the landscaper logic.
+The `AbortReconcile` values of all hook results from hooks with this type will be ANDed instead of ORed before being evaluated.
 
 **BeforeAnyReconcile** hooks are executed before any of the mentioned `Abort`, `Force-Reconcile`, `Delete`, or `Reconcile` steps, while **BeforeAbort**, **BeforeForceReconcile**, **BeforeDelete**, and **BeforeReconcile** are only executed before their respective step (meaning only one of these hook types is executed each time). While it is possible to abort the reconciliation by setting the hook result's `AbortReconcile` to `true`, this will have the same consequences as mentioned above and should only be done with extreme caution.
 
