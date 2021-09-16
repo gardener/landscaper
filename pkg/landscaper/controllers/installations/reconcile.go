@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
@@ -19,31 +21,29 @@ import (
 )
 
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
-	c.Log().Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
+	var (
+		currentOperation = "Validate"
+		log              = logr.FromContextOrDiscard(ctx)
+	)
+	log.Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
-	instOp, err := c.initPrerequisites(ctx, inst)
+	execState, err := executions.CombinedPhase(ctx, c.Client(), inst)
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err,
+			currentOperation, "CheckExecutionStatus", err.Error(), lsv1alpha1.ErrorInternalProblem)
 	}
 
-	subinstallation := subinstallations.New(instOp)
-	exec := executions.New(instOp)
-	instOp.CurrentOperation = "Validate"
-
-	execState, err := exec.CombinedState(ctx, instOp.Inst)
+	subState, err := subinstallations.CombinedPhase(ctx, c.Client(), inst)
 	if err != nil {
-		return instOp.NewError(err, "CheckStatus", err.Error(), lsv1alpha1.ErrorInternalProblem)
-	}
-
-	subState, err := subinstallation.CombinedState(ctx, instOp.Inst)
-	if err != nil {
-		return instOp.NewError(err, "CheckSubinstallationStatus", err.Error())
+		return lserrors.NewWrappedError(err,
+			currentOperation, "CheckSubinstallationStatus", err.Error())
 	}
 
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
 
 	// we have to wait until all children (subinstallations and execution) are finished
 	if combinedState != "" && !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
+		log.V(2).Info("Waiting for all deploy items and subinstallations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
 	}
@@ -56,6 +56,12 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		}
 		return nil
 	}
+
+	instOp, err := c.initPrerequisites(ctx, inst)
+	if err != nil {
+		return err
+	}
+	instOp.CurrentOperation = currentOperation
 
 	// check if the spec has changed
 	eligibleToUpdate, err := c.eligibleToUpdate(ctx, instOp)
@@ -157,10 +163,6 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	}
 
 	if err := op.CreateOrUpdateImports(ctx); err != nil {
-		inst.Info.Status.LastError = lserrors.UpdatedError(inst.Info.Status.LastError,
-			"CreateImports",
-			"unable to update import objects",
-			err.Error())
 		return lserrors.NewWrappedError(err,
 			currOp, "CreateOrUpdateImports", err.Error())
 	}

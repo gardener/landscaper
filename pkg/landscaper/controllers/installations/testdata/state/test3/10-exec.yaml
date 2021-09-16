@@ -25,7 +25,7 @@ spec:
       my-val: val1
 
 status:
-  phase: Init
+  phase: Failed
 
-  observedGeneration: 0
+  observedGeneration: 1
 

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Logger provides a simplified, plain logging interface in constrast to
+// Logger provides a simplified, plain logging interface in contrast to
 // logr.Logger
 type Logger interface {
 	Log(message string)

@@ -13,7 +13,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 )
 
-// Installation is the internal representation of an installation without resolved blueprint.
+// InstallationBase is the internal representation of an installation without resolved blueprint.
 type InstallationBase struct {
 	Imports map[string]interface{}
 	Info    *lsv1alpha1.Installation

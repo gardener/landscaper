@@ -139,8 +139,7 @@ var _ = Describe("Simple", func() {
 
 		// the installation controller should propagate the deletion to its subcharts
 		_, err = instActuator.Reconcile(ctx, instReq)
-		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("waiting for deletion"))
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(testenv.Client.Get(ctx, execReq.NamespacedName, exec)).ToNot(HaveOccurred())
 		Expect(exec.DeletionTimestamp.IsZero()).To(BeFalse(), "deletion timestamp should be set")

@@ -64,13 +64,16 @@ func CreateInternalInstallations(ctx context.Context, compResolver ctf.Component
 }
 
 // CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
-func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) ([]*InstallationBase, error) {
+func CreateInternalInstallationBases(installations ...*lsv1alpha1.Installation) []*InstallationBase {
+	if len(installations) == 0 {
+		return nil
+	}
 	internalInstallations := make([]*InstallationBase, len(installations))
 	for i, inst := range installations {
 		inInst := CreateInternalInstallationBase(inst)
 		internalInstallations[i] = inInst
 	}
-	return internalInstallations, nil
+	return internalInstallations
 }
 
 // ResolveComponentDescriptor resolves the component descriptor of a installation.
@@ -98,6 +101,9 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 
 // CreateInternalInstallation creates an internal installation for an Installation
 func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
+	if inst == nil {
+		return nil, nil
+	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
 	if err != nil {
@@ -470,7 +476,7 @@ func HandleSubComponentPhaseChanges(
 		}
 		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
 	}
-	subinsts, err := listSubinstallations(ctx, kubeClient, inst)
+	subinsts, err := ListSubinstallations(ctx, kubeClient, inst)
 	if err != nil {
 		return fmt.Errorf("error fetching subinstallations for installation %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

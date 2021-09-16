@@ -275,6 +275,9 @@ func (d *Dumper) DumpLandscaperResources(ctx context.Context) error {
 	if err := d.DumpInstallationsInNamespace(ctx, d.lsNamespace); err != nil {
 		return err
 	}
+	if err := d.DumpExecutionInNamespace(ctx, d.lsNamespace); err != nil {
+		return err
+	}
 	if err := d.DumpDeployItemsInNamespace(ctx, d.lsNamespace); err != nil {
 		return err
 	}

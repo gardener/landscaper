@@ -12,9 +12,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -137,9 +139,63 @@ func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPat
 		return err
 	}
 
+	resourcesChan := make(chan client.Object, len(resources)*2)
+
 	for _, obj := range resources {
+		select {
+		case resourcesChan <- obj:
+		default:
+		}
+	}
+
+	injectOwnerUUIDs := func(obj client.Object) error {
+		refs := obj.GetOwnerReferences()
+		for i, ownerRef := range obj.GetOwnerReferences() {
+			uObj := &unstructured.Unstructured{}
+			uObj.SetAPIVersion(ownerRef.APIVersion)
+			uObj.SetKind(ownerRef.Kind)
+			uObj.SetName(ownerRef.Name)
+			uObj.SetNamespace(obj.GetNamespace())
+			if err := c.Get(ctx, kutil.ObjectKeyFromObject(uObj), uObj); err != nil {
+				return fmt.Errorf("no owner found for %s\n", kutil.ObjectKeyFromObject(obj).String())
+			}
+			refs[i].UID = uObj.GetUID()
+		}
+		obj.SetOwnerReferences(refs)
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+	for obj := range resourcesChan {
+		if ctx.Err() != nil {
+			return fmt.Errorf("context canceled; check resources as there might be a cyclic dependency")
+		}
+		objName := kutil.ObjectKeyFromObject(obj).String()
+		// create namespaces if not exist before
+		if len(obj.GetNamespace()) != 0 {
+			ns := &corev1.Namespace{}
+			ns.Name = obj.GetNamespace()
+			if _, err := controllerutil.CreateOrUpdate(ctx, c, ns, func() error {
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		// inject real uuids if possible
+		if len(obj.GetOwnerReferences()) != 0 {
+			if err := injectOwnerUUIDs(obj); err != nil {
+				// try to requeue
+				// todo: somehow detect cyclic dependencies (maybe just use a context with an timeout)
+				resourcesChan <- obj
+				continue
+			}
+		}
 		if err := s.Create(ctx, c, obj, UpdateStatus(true)); err != nil {
-			return err
+			return fmt.Errorf("unable to create %s %s: %w", objName, obj.GetObjectKind().GroupVersionKind().String(), err)
+		}
+		if len(resourcesChan) == 0 {
+			close(resourcesChan)
 		}
 	}
 

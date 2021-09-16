@@ -88,6 +88,7 @@ type Controller struct {
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.Log().WithValues("installation", req.NamespacedName.String())
+	ctx = logr.NewContext(ctx, logger)
 	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
