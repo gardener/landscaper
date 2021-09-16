@@ -80,13 +80,15 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// validate all exports
-	for name, data := range exports {
+	for name := range exports {
 		def, err := c.Inst.GetExportDefinition(name)
 		if err != nil {
 			// ignore additional exports
 			c.Log().V(5).Info("key exported that is not defined by the blueprint", "name", name)
+			delete(exports, name)
 			continue
 		}
+		data := exports[name]
 
 		switch def.Type {
 		case lsv1alpha1.ExportTypeData:
