@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -71,6 +72,10 @@ func (d *UniversalInternalVersionDecoder) Decode(data []byte, defaults *schema.G
 		if err != nil {
 			return nil, nil, err
 		}
+	}
+
+	if _, isUnstructured := into.(*unstructured.Unstructured); isUnstructured {
+		return d.decoder.Decode(data, defaults, into)
 	}
 
 	gvk, err := apiutil.GVKForObject(into, d.scheme)

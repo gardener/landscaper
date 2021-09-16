@@ -125,7 +125,7 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		for _, ref := range status.ManagedResources {
-			obj := kutil.ObjectFromTypedObjectReference(&ref.Resource)
+			obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
 			Expect(testenv.Client.Get(ctx, testutil.Request(obj.GetName(), obj.GetNamespace()).NamespacedName, obj)).To(Succeed())
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}

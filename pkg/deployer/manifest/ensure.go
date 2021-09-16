@@ -31,7 +31,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	currOp := "ReconcileManifests"
 	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
-	_, targetClient, err := m.TargetClient(ctx)
+	_, targetClient, targetClientSet, err := m.TargetClient(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
@@ -50,6 +50,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 	applier := resourcemanager.NewManifestApplier(m.log, resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
+		Clientset:        targetClientSet,
 		DeployItemName:   m.DeployItem.Name,
 		DeleteTimeout:    m.ProviderConfiguration.DeleteTimeout.Duration,
 		UpdateStrategy:   m.ProviderConfiguration.UpdateStrategy,
@@ -107,14 +108,8 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 
 // CheckResourcesReady checks if the managed resources are Ready/Healthy.
 func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client) error {
-	var managedResources []lsv1alpha1.TypedObjectReference
-	for _, mr := range m.ProviderStatus.ManagedResources {
-		if mr.Policy == managedresource.IgnorePolicy {
-			continue
-		}
-		managedResources = append(managedResources, mr.Resource)
-	}
 
+	managedresources := m.ProviderStatus.ManagedResources.TypedObjectReferenceList()
 	if !m.ProviderConfiguration.ReadinessChecks.DisableDefault {
 		defaultReadinessCheck := health.DefaultReadinessCheck{
 			Context:          ctx,
@@ -122,7 +117,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			CurrentOp:        "DefaultCheckResourcesReadinessManifest",
 			Log:              m.log,
 			Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
-			ManagedResources: managedResources,
+			ManagedResources: managedresources,
 		}
 		err := defaultReadinessCheck.CheckResourcesReady()
 		if err != nil {
@@ -138,7 +133,7 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 				Log:              m.log,
 				CurrentOp:        "CustomCheckResourcesReadinessManifest",
 				Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
-				ManagedResources: managedResources,
+				ManagedResources: managedresources,
 				Configuration:    customReadinessCheckConfig,
 			}
 			err := customReadinessCheck.CheckResourcesReady()
@@ -162,19 +157,20 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		return m.lsKubeClient.Update(ctx, m.DeployItem)
 	}
 
-	_, kubeClient, err := m.TargetClient(ctx)
+	_, kubeClient, _, err := m.TargetClient(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
 	}
 
 	completed := true
-	for _, mr := range m.ProviderStatus.ManagedResources {
+	for i := len(m.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
+		mr := m.ProviderStatus.ManagedResources[i]
 		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
 			continue
 		}
 		ref := mr.Resource
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		if err := kubeClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue

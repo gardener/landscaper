@@ -5,6 +5,7 @@
 package managedresource
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -39,11 +40,27 @@ type Manifest struct {
 // ManagedResourceStatusList describes a list of managed resource statuses.
 type ManagedResourceStatusList []ManagedResourceStatus
 
+// ObjectReferenceList converts a ManagedResourceStatusList to a list of typed objet references.
+func (mr ManagedResourceStatusList) ObjectReferenceList() []corev1.ObjectReference {
+	list := make([]corev1.ObjectReference, len(mr))
+	for i, res := range mr {
+		list[i] = res.Resource
+	}
+	return list
+}
+
 // TypedObjectReferenceList converts a ManagedResourceStatusList to a list of typed objet references.
 func (mr ManagedResourceStatusList) TypedObjectReferenceList() []lsv1alpha1.TypedObjectReference {
 	list := make([]lsv1alpha1.TypedObjectReference, len(mr))
 	for i, res := range mr {
-		list[i] = res.Resource
+		list[i] = lsv1alpha1.TypedObjectReference{
+			APIVersion: res.Resource.APIVersion,
+			Kind:       res.Resource.Kind,
+			ObjectReference: lsv1alpha1.ObjectReference{
+				Name:      res.Resource.Name,
+				Namespace: res.Resource.Namespace,
+			},
+		}
 	}
 	return list
 }
@@ -53,7 +70,7 @@ type ManagedResourceStatus struct {
 	// Policy defines the manage policy for that resource.
 	Policy ManifestPolicy `json:"policy,omitempty"`
 	// Resources describes the managed kubernetes resource.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	Resource corev1.ObjectReference `json:"resource"`
 }
 
 // Exports describes one export that is read from a resource.

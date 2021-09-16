@@ -9,8 +9,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
 	lscore "github.com/gardener/landscaper/apis/core"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
@@ -55,16 +53,5 @@ const (
 type ProviderStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// ManagedResources contains all kubernetes resources that are deployed by the deployer.
-	ManagedResources ManagedResourceStatusList `json:"managedResources,omitempty"`
-}
-
-// ManagedResourceStatusList describes a list of managed resource statuses.
-type ManagedResourceStatusList []ManagedResourceStatus
-
-// ManagedResourceStatus describes the managed resource and their metadata.
-type ManagedResourceStatus struct {
-	// Policy defines the manage policy for that resource.
-	Policy managedresource.ManifestPolicy `json:"policy,omitempty"`
-	// Resources describes the managed kubernetes resource.
-	Resource lsv1alpha1.TypedObjectReference `json:"resource"`
+	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
 }

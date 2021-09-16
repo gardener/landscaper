@@ -235,8 +235,33 @@ func TypedObjectReferenceFromUnstructuredObject(obj *unstructured.Unstructured) 
 	}
 }
 
+// CoreObjectReferenceFromUnstructuredObject creates a core object reference from an unstructured object.
+func CoreObjectReferenceFromUnstructuredObject(obj *unstructured.Unstructured) *corev1.ObjectReference {
+	return &corev1.ObjectReference{
+		APIVersion: obj.GroupVersionKind().GroupVersion().String(),
+		Kind:       obj.GetKind(),
+		Name:       obj.GetName(),
+		Namespace:  obj.GetNamespace(),
+		UID:        obj.GetUID(),
+	}
+}
+
 // ObjectFromTypedObjectReference creates an unstructured object from a typed object reference.
 func ObjectFromTypedObjectReference(ref *v1alpha1.TypedObjectReference) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": ref.APIVersion,
+			"kind":       ref.Kind,
+			"metadata": map[string]interface{}{
+				"name":      ref.Name,
+				"namespace": ref.Namespace,
+			},
+		},
+	}
+}
+
+// ObjectFromCoreObjectReference creates an unstructured object from a core object reference.
+func ObjectFromCoreObjectReference(ref *corev1.ObjectReference) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": ref.APIVersion,
@@ -300,9 +325,14 @@ func ConvertToRawExtension(from runtime.Object, scheme *runtime.Scheme) (*runtim
 		return nil, err
 	}
 
-	ext := &runtime.RawExtension{}
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&from, ext, nil); err != nil {
+	fromBytes, err := json.Marshal(from)
+	if err != nil {
 		return nil, err
+	}
+
+	ext := &runtime.RawExtension{
+		Raw:    fromBytes,
+		Object: from,
 	}
 	return ext, nil
 }

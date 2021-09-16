@@ -71,13 +71,11 @@ var _ = Describe("Exporter", func() {
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
-					Resource: lsv1alpha1.TypedObjectReference{
+					Resource: corev1.ObjectReference{
 						APIVersion: "v1",
 						Kind:       "ConfigMap",
-						ObjectReference: lsv1alpha1.ObjectReference{
-							Name:      cm.Name,
-							Namespace: cm.Namespace,
-						},
+						Name:       cm.Name,
+						Namespace:  cm.Namespace,
 					},
 				},
 			},
@@ -126,13 +124,11 @@ var _ = Describe("Exporter", func() {
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
-					Resource: lsv1alpha1.TypedObjectReference{
+					Resource: corev1.ObjectReference{
 						APIVersion: "v1",
 						Kind:       "ConfigMap",
-						ObjectReference: lsv1alpha1.ObjectReference{
-							Name:      cm.Name,
-							Namespace: cm.Namespace,
-						},
+						Name:       cm.Name,
+						Namespace:  cm.Namespace,
 					},
 				},
 			},
@@ -184,13 +180,11 @@ var _ = Describe("Exporter", func() {
 			DefaultTimeout: &timeout,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
-					Resource: lsv1alpha1.TypedObjectReference{
+					Resource: corev1.ObjectReference{
 						APIVersion: "v1",
 						Kind:       "ConfigMap",
-						ObjectReference: lsv1alpha1.ObjectReference{
-							Name:      cm.Name,
-							Namespace: cm.Namespace,
-						},
+						Name:       cm.Name,
+						Namespace:  cm.Namespace,
 					},
 				},
 			},
@@ -280,13 +274,11 @@ var _ = Describe("Exporter", func() {
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{
 					{
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: corev1.ObjectReference{
 							APIVersion: "v1",
 							Kind:       "ConfigMap",
-							ObjectReference: lsv1alpha1.ObjectReference{
-								Name:      cm.Name,
-								Namespace: cm.Namespace,
-							},
+							Name:       cm.Name,
+							Namespace:  cm.Namespace,
 						},
 					},
 				},
@@ -344,13 +336,11 @@ var _ = Describe("Exporter", func() {
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{
 					{
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: corev1.ObjectReference{
 							APIVersion: "v1",
 							Kind:       "ServiceAccount",
-							ObjectReference: lsv1alpha1.ObjectReference{
-								Name:      sa.Name,
-								Namespace: sa.Namespace,
-							},
+							Name:       sa.Name,
+							Namespace:  sa.Namespace,
 						},
 					},
 				},
