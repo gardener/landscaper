@@ -21,7 +21,7 @@ require (
 	github.com/mandelsoft/spiff v1.5.0
 	github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.13.0
+	github.com/onsi/gomega v1.15.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/errors v0.9.1
@@ -30,18 +30,18 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.uber.org/zap v1.17.0
+	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/tools v0.1.3 // indirect
 	helm.sh/helm/v3 v3.6.1
-	k8s.io/api v0.21.2
-	k8s.io/apiextensions-apiserver v0.21.2
-	k8s.io/apimachinery v0.21.2
-	k8s.io/client-go v0.21.2
-	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
-	sigs.k8s.io/controller-runtime v0.9.2
+	k8s.io/api v0.22.1
+	k8s.io/apiextensions-apiserver v0.22.1
+	k8s.io/apimachinery v0.22.1
+	k8s.io/client-go v0.22.1
+	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
+	sigs.k8s.io/controller-runtime v0.10.0
 	sigs.k8s.io/yaml v1.2.0
 )
 

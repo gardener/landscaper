@@ -117,18 +117,23 @@ func (s *State) Create(ctx context.Context, c client.Client, obj client.Object, 
 	if err := options.ApplyOptions(opts...); err != nil {
 		return err
 	}
+	tmp := obj.DeepCopyObject().(client.Object)
 	if err := c.Create(ctx, obj); err != nil {
 		return err
 	}
 
+	tmp.SetResourceVersion(obj.GetResourceVersion())
+	tmp.SetGeneration(obj.GetGeneration())
+	tmp.SetUID(obj.GetUID())
+	tmp.SetCreationTimestamp(obj.GetCreationTimestamp())
 	if options.UpdateStatus {
-		if err := c.Status().Update(ctx, obj); err != nil {
+		if err := c.Status().Update(ctx, tmp); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
 			}
 		}
 	}
-	return s.AddResources(obj)
+	return s.AddResources(tmp)
 }
 
 // InitResources creates a new isolated environment with its own namespace.
@@ -139,7 +144,7 @@ func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPat
 		return err
 	}
 
-	resourcesChan := make(chan client.Object, len(resources)*2)
+	resourcesChan := make(chan client.Object, len(resources))
 
 	for _, obj := range resources {
 		select {
