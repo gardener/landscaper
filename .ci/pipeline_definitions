@@ -51,7 +51,7 @@ landscaper:
             image: eu.gcr.io/gardener-project/landscaper/mock-deployer-controller
     steps:
       verify:
-        image: 'golang:1.16'
+        image: 'golang:1.17'
       publish-helm-charts:
         depends:
         - verify
