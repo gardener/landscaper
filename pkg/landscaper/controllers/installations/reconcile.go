@@ -42,7 +42,11 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
 
 	// we have to wait until all children (subinstallations and execution) are finished
-	if combinedState != "" && !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
+	if combinedState == "" {
+		// If combinedState is empty, this means there are neither subinstallations nor executions
+		// and an 'empty' installation is Succeeded by default
+		combinedState = lsv1alpha1.ComponentPhaseSucceeded
+	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		log.V(2).Info("Waiting for all deploy items and subinstallations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
