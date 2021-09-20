@@ -6,15 +6,20 @@ package resourcemanager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -24,10 +29,20 @@ import (
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
+// ApplyManifests creates or updates all configured manifests.
+func ApplyManifests(ctx context.Context, log logr.Logger, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
+	applier := NewManifestApplier(log, opts)
+	if err := applier.Apply(ctx); err != nil {
+		return nil, err
+	}
+	return applier.GetManagedResourcesStatus(), nil
+}
+
 // ManifestApplierOptions describes options for the manifest applier
 type ManifestApplierOptions struct {
 	Decoder          runtime.Decoder
 	KubeClient       client.Client
+	Clientset        kubernetes.Interface
 	DefaultNamespace string
 
 	DeployItemName   string
@@ -41,10 +56,10 @@ type ManifestApplierOptions struct {
 
 // ManifestApplier creates or updated manifest based on their definition.
 type ManifestApplier struct {
-	mux              sync.Mutex
 	log              logr.Logger
 	decoder          runtime.Decoder
 	kubeClient       client.Client
+	clientset        kubernetes.Interface
 	defaultNamespace string
 
 	deployItemName   string
@@ -52,17 +67,42 @@ type ManifestApplier struct {
 	updateStrategy   manifestv1alpha2.UpdateStrategy
 	manifests        []managedresource.Manifest
 	managedResources managedresource.ManagedResourceStatusList
-	managedObjects   []*unstructured.Unstructured
 	labels           map[string]string
+
+	// properties created during runtime
+
+	// manifestExecutions contains a sorted list of lists of managed resources.
+	// The list of list describe execution groups of manifests that can run in parallel.
+	//
+	// Currently the fist list can be max 3 whereas the first group contains all CRD's.
+	// The second group contains all clusterwide resources and teh third one contains all namespaced resources.
+	manifestExecutions [3][]*Manifest
+	// apiresources is internal cache for api resources where the key is the GroupVersionKind string.
+	apiresources map[string]metav1.APIResource
+}
+
+const (
+	ExecutionGroupCRD = iota
+	ExecutionGroupClusterwide
+	ExecutionGroupNamespaced
+)
+
+// Manifest is the internal representation of a manifest
+type Manifest struct {
+	TypeMeta metav1.TypeMeta
+	// Policy defines the manage policy for that resource.
+	Policy managedresource.ManifestPolicy `json:"policy,omitempty"`
+	// Manifest defines the raw k8s manifest.
+	Manifest *runtime.RawExtension `json:"manifest,omitempty"`
 }
 
 // NewManifestApplier creates a new manifest deployer
 func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestApplier {
 	return &ManifestApplier{
-		mux:              sync.Mutex{},
 		log:              log,
 		decoder:          opts.Decoder,
 		kubeClient:       opts.KubeClient,
+		clientset:        opts.Clientset,
 		defaultNamespace: opts.DefaultNamespace,
 		deployItemName:   opts.DeployItemName,
 		deleteTimeout:    opts.DeleteTimeout,
@@ -70,6 +110,8 @@ func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestA
 		manifests:        opts.Manifests,
 		managedResources: opts.ManagedResources,
 		labels:           opts.Labels,
+
+		apiresources: make(map[string]metav1.APIResource),
 	}
 }
 
@@ -78,34 +120,48 @@ func (a *ManifestApplier) GetManagedResourcesStatus() managedresource.ManagedRes
 	return a.managedResources
 }
 
-// GetManagedObjects returns all managed objects as unstructured object.
-func (a *ManifestApplier) GetManagedObjects() []*unstructured.Unstructured {
-	return a.managedObjects
-}
-
 // Apply creates or updates all configured manifests.
 func (a *ManifestApplier) Apply(ctx context.Context) error {
+	if err := a.prepareManifests(); err != nil {
+		return err
+	}
+
 	var (
 		allErrs []error
 		errMux  sync.Mutex
-		wg      sync.WaitGroup
 	)
 	// Keep track of the current managed resources before applying so
 	// we can then compare which one need to be cleaned up.
 	oldManagedResources := a.managedResources
 	a.managedResources = make(managedresource.ManagedResourceStatusList, 0)
-	for i, m := range a.manifests {
-		wg.Add(1)
-		go func(i int, m managedresource.Manifest) {
-			defer wg.Done()
-			if err := a.ApplyObject(ctx, i, m); err != nil {
-				errMux.Lock()
-				defer errMux.Unlock()
-				allErrs = append(allErrs, err)
-			}
-		}(i, m)
+	for _, list := range a.manifestExecutions {
+		var (
+			wg               = sync.WaitGroup{}
+			managedResources = make([]managedresource.ManagedResourceStatus, 0)
+			mux              sync.Mutex
+		)
+		for _, m := range list {
+			wg.Add(1)
+			go func(m *Manifest) {
+				defer wg.Done()
+				mr, err := a.applyObject(ctx, m)
+				if err != nil {
+					errMux.Lock()
+					defer errMux.Unlock()
+					allErrs = append(allErrs, err)
+				}
+				if mr != nil {
+					mux.Lock()
+					managedResources = append(managedResources, *mr)
+					mux.Unlock()
+				}
+			}(m)
+		}
+		wg.Wait()
+		sort.Sort(managesResourceList(managedResources))
+		a.managedResources = append(a.managedResources, managedResources...)
 	}
-	wg.Wait()
+
 	if len(allErrs) != 0 {
 		aggErr := apimacherrors.NewAggregate(allErrs)
 		return lserrors.NewWrappedError(apimacherrors.NewAggregate(allErrs),
@@ -121,26 +177,29 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 	return nil
 }
 
-// ApplyObject applies a managed resource to the target cluster.
-func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData managedresource.Manifest) error {
-	if manifestData.Policy == managedresource.IgnorePolicy {
-		return nil
+// applyObject applies a managed resource to the target cluster.
+func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (*managedresource.ManagedResourceStatus, error) {
+	if manifest.Policy == managedresource.IgnorePolicy {
+		return nil, nil
 	}
+
+	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
 	obj := &unstructured.Unstructured{}
-	if _, _, err := a.decoder.Decode(manifestData.Manifest.Raw, nil, obj); err != nil {
-		return fmt.Errorf("error while decoding manifest at index %d: %w", i, err)
+	if _, _, err := a.decoder.Decode(manifest.Manifest.Raw, nil, obj); err != nil {
+		return nil, fmt.Errorf("error while decoding manifest %s: %w", gvk, err)
 	}
 
 	if len(a.defaultNamespace) != 0 && len(obj.GetNamespace()) == 0 {
 		// need to default the namespace if it is not given, as some helmcharts
 		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
-		// todo: check for clusterwide resources
-		obj.SetNamespace(a.defaultNamespace)
-	}
-
-	mr := managedresource.ManagedResourceStatus{
-		Policy:   manifestData.Policy,
-		Resource: *kutil.TypedObjectReferenceFromUnstructuredObject(obj),
+		apiresource, err := a.getApiResource(manifest)
+		if err != nil {
+			return nil, err
+		}
+		// only default namespaced resources.
+		if apiresource.Namespaced {
+			obj.SetNamespace(a.defaultNamespace)
+		}
 	}
 
 	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
@@ -148,30 +207,29 @@ func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData m
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := a.kubeClient.Get(ctx, key, &currObj); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("unable to get object: %w", err)
+			return nil, fmt.Errorf("unable to get object: %w", err)
 		}
 		// inject labels
 		kutil.SetMetaDataLabel(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName)
 		if err := a.kubeClient.Create(ctx, obj); err != nil {
-			return fmt.Errorf("unable to create resource %s: %w", key.String(), err)
+			return nil, fmt.Errorf("unable to create resource %s: %w", key.String(), err)
 		}
-		a.mux.Lock()
-		a.managedResources = append(a.managedResources, mr)
-		a.managedObjects = append(a.managedObjects, obj)
-		a.mux.Unlock()
-		return nil
+		return &managedresource.ManagedResourceStatus{
+			Policy:   manifest.Policy,
+			Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+		}, nil
 	}
 
-	a.mux.Lock()
-	a.managedResources = append(a.managedResources, mr)
-	a.managedObjects = append(a.managedObjects, obj)
-	a.mux.Unlock()
+	mr := &managedresource.ManagedResourceStatus{
+		Policy:   manifest.Policy,
+		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+	}
 
 	// if fallback policy is set and the resource is already managed by another deployer
 	// we are not allowed to manage that resource
-	if manifestData.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
+	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
 		a.log.Info("resource is already managed", "resource", key.String())
-		return nil
+		return nil, nil
 	}
 	// inject manifest specific labels
 	a.injectLabels(obj)
@@ -180,22 +238,22 @@ func (a *ManifestApplier) ApplyObject(ctx context.Context, i int, manifestData m
 	// Set the required and immutable fields from the current object.
 	// Update fails if these fields are missing
 	if err := kutil.SetRequiredNestedFieldsFromObj(&currObj, obj); err != nil {
-		return err
+		return mr, err
 	}
 
 	switch a.updateStrategy {
 	case manifestv1alpha2.UpdateStrategyUpdate:
 		if err := a.kubeClient.Update(ctx, obj); err != nil {
-			return fmt.Errorf("unable to update resource %s: %w", key.String(), err)
+			return mr, fmt.Errorf("unable to update resource %s: %w", key.String(), err)
 		}
 	case manifestv1alpha2.UpdateStrategyPatch:
 		if err := a.kubeClient.Patch(ctx, obj, client.MergeFrom(&currObj)); err != nil {
-			return fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
+			return mr, fmt.Errorf("unable to patch resource %s: %w", key.String(), err)
 		}
 	default:
-		return fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)
+		return mr, fmt.Errorf("%s is not a valid update strategy", a.updateStrategy)
 	}
-	return nil
+	return mr, nil
 }
 
 func (a *ManifestApplier) injectLabels(obj client.Object) {
@@ -224,7 +282,7 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 			continue
 		}
 		ref := mr.Resource
-		obj := kutil.ObjectFromTypedObjectReference(&ref)
+		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		if err := a.kubeClient.Get(ctx, kutil.ObjectKey(ref.Name, ref.Namespace), obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
@@ -232,7 +290,7 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 			return fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
 		}
 
-		if !containsUnstructuredObject(obj, a.managedObjects) {
+		if !containsObjectRef(ref, a.managedResources) {
 			wg.Add(1)
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()
@@ -252,10 +310,82 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 	return apimacherrors.NewAggregate(allErrs)
 }
 
-func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstructured.Unstructured) bool {
-	for _, found := range objects {
-		if len(obj.GetUID()) != 0 && len(found.GetUID()) != 0 {
-			if obj.GetUID() == found.GetUID() {
+func (a *ManifestApplier) getApiResource(manifest *Manifest) (metav1.APIResource, error) {
+	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
+	if res, ok := a.apiresources[gvk]; ok {
+		return res, nil
+	}
+
+	groupVersion := manifest.TypeMeta.GetObjectKind().GroupVersionKind().GroupVersion().String()
+	kind := manifest.TypeMeta.GetObjectKind().GroupVersionKind().Kind
+	apiresourceList, err := a.clientset.Discovery().ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		return metav1.APIResource{}, fmt.Errorf("unable to get api resources for %s: %w", groupVersion, err)
+	}
+
+	for _, apiresource := range apiresourceList.APIResources {
+		if apiresource.Kind == kind {
+			return apiresource, nil
+		}
+	}
+	return metav1.APIResource{}, fmt.Errorf("unable to get apiresource for %s", gvk)
+}
+
+// prepareManifests sorts all manifests.
+func (a *ManifestApplier) prepareManifests() error {
+	a.manifestExecutions = [3][]*Manifest{}
+	for _, obj := range a.manifests {
+		typeMeta := metav1.TypeMeta{}
+		if err := json.Unmarshal(obj.Manifest.Raw, &typeMeta); err != nil {
+			return fmt.Errorf("unable to parse type metadata: %w", err)
+		}
+		kind := typeMeta.GetObjectKind().GroupVersionKind().Kind
+
+		manifest := &Manifest{
+			TypeMeta: typeMeta,
+			Policy:   obj.Policy,
+			Manifest: obj.Manifest,
+		}
+		// add to specific execution group
+		if kind == "CustomResourceDefinition" {
+			a.manifestExecutions[ExecutionGroupCRD] = append(a.manifestExecutions[ExecutionGroupCRD], manifest)
+		} else {
+			apiresource, err := a.getApiResource(manifest)
+			if err != nil {
+				return err
+			}
+			if apiresource.Namespaced {
+				a.manifestExecutions[ExecutionGroupNamespaced] = append(a.manifestExecutions[ExecutionGroupNamespaced], manifest)
+			} else {
+				a.manifestExecutions[ExecutionGroupClusterwide] = append(a.manifestExecutions[ExecutionGroupClusterwide], manifest)
+			}
+		}
+	}
+
+	return nil
+}
+
+type managesResourceList []managedresource.ManagedResourceStatus
+
+func (m managesResourceList) Len() int {
+	return len(m)
+}
+
+func (m managesResourceList) Less(i, j int) bool {
+	gvkI := m[i].Resource.String()
+	gvkJ := m[j].Resource.String()
+	return gvkI < gvkJ
+}
+
+func (m managesResourceList) Swap(i, j int) {
+	m[i], m[j] = m[j], m[i]
+}
+
+func containsObjectRef(obj corev1.ObjectReference, objects []managedresource.ManagedResourceStatus) bool {
+	for _, mr := range objects {
+		found := mr.Resource
+		if len(obj.UID) != 0 && len(found.UID) != 0 {
+			if obj.UID == found.UID {
 				return true
 			}
 			continue
@@ -264,7 +394,7 @@ func containsUnstructuredObject(obj *unstructured.Unstructured, objects []*unstr
 		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
 			continue
 		}
-		if found.GetName() == obj.GetName() && found.GetNamespace() == obj.GetNamespace() {
+		if found.Name == obj.Name && found.Namespace == obj.Namespace {
 			return true
 		}
 	}

@@ -210,7 +210,10 @@ func (e *Exporter) exportFromReferencedResource(ctx context.Context, export mana
 
 func (e *Exporter) resourceIsManaged(res lsv1alpha1.TypedObjectReference) bool {
 	for _, managedRes := range e.objects {
-		if managedRes.Resource == res {
+		if managedRes.Resource.APIVersion == res.APIVersion &&
+			managedRes.Resource.Kind == res.Kind &&
+			managedRes.Resource.Name == res.Name &&
+			managedRes.Resource.Namespace == res.Namespace {
 			return true
 		}
 	}

@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -21,6 +22,7 @@ func TestConfig(t *testing.T) {
 
 var (
 	testenv     *envtest.Environment
+	clientset   kubernetes.Interface
 	projectRoot = filepath.Join("../../../../")
 )
 
@@ -30,6 +32,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = testenv.Start()
+	Expect(err).ToNot(HaveOccurred())
+
+	clientset, err = kubernetes.NewForConfig(testenv.Env.Config)
 	Expect(err).ToNot(HaveOccurred())
 })
 

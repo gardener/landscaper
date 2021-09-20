@@ -18,6 +18,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +27,6 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib"
 
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helminstall "github.com/gardener/landscaper/apis/deployer/helm/install"
@@ -70,6 +70,7 @@ type Helm struct {
 
 	TargetKubeClient client.Client
 	TargetRestConfig *rest.Config
+	TargetClientSet  kubernetes.Interface
 }
 
 // New creates a new internal helm item
@@ -121,7 +122,7 @@ func New(log logr.Logger,
 func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]interface{}, error) {
 	currOp := "TemplateChart"
 
-	restConfig, _, err := h.TargetClient(ctx)
+	restConfig, _, _, err := h.TargetClient(ctx)
 	if err != nil {
 		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "GetTargetClient", err.Error())
@@ -168,67 +169,79 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 	return files, values, nil
 }
 
-func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, error) {
+func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
 	if h.TargetKubeClient != nil {
-		return h.TargetRestConfig, h.TargetKubeClient, nil
+		return h.TargetRestConfig, h.TargetKubeClient, h.TargetClientSet, nil
 	}
 	// use the configured kubeconfig over the target if defined
 	if len(h.ProviderConfiguration.Kubeconfig) != 0 {
 		kubeconfig, err := base64.StdEncoding.DecodeString(h.ProviderConfiguration.Kubeconfig)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		cConfig, err := clientcmd.NewClientConfigFromBytes(kubeconfig)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		restConfig, err := cConfig.ClientConfig()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		kubeClient, err := client.New(restConfig, client.Options{})
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
+
+		clientset, err := kubernetes.NewForConfig(restConfig)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
 		h.TargetRestConfig = restConfig
 		h.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, nil
+		return restConfig, kubeClient, clientset, nil
 	}
 	if h.Target != nil {
 		targetConfig := &lsv1alpha1.KubernetesClusterTargetConfig{}
 		if err := json.Unmarshal(h.Target.Spec.Configuration.RawMessage, targetConfig); err != nil {
-			return nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
+			return nil, nil, nil, fmt.Errorf("unable to parse target confíguration: %w", err)
 		}
 
 		kubeconfigBytes, err := lib.GetKubeconfigFromTargetConfig(ctx, targetConfig, h.lsKubeClient, h.hostKubeClient)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		kubeconfig, err := clientcmd.NewClientConfigFromBytes(kubeconfigBytes)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		restConfig, err := kubeconfig.ClientConfig()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		kubeClient, err := client.New(restConfig, client.Options{})
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
+		clientset, err := kubernetes.NewForConfig(restConfig)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
 		h.TargetRestConfig = restConfig
 		h.TargetKubeClient = kubeClient
-		return restConfig, kubeClient, nil
+		h.TargetClientSet = clientset
+		return restConfig, kubeClient, clientset, nil
 	}
-	return nil, nil, errors.New("neither a target nor kubeconfig are defined")
+	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
 func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
 	// resolve all pull secrets
-	secrets, err := kubernetes.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
+	secrets, err := kutil.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
 	if err != nil {
 		return nil, err
 	}

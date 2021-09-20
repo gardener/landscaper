@@ -7510,7 +7510,7 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 						SchemaProps: spec.SchemaProps{
 							Description: "Resources describes the managed kubernetes resource.",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"),
+							Ref:         ref("k8s.io/api/core/v1.ObjectReference"),
 						},
 					},
 				},
@@ -7518,7 +7518,7 @@ func schema_apis_deployer_utils_managedresource_ManagedResourceStatus(ref common
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TypedObjectReference"},
+			"k8s.io/api/core/v1.ObjectReference"},
 	}
 }
 

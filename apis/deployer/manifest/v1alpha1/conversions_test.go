@@ -7,6 +7,7 @@ package v1alpha1_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -96,27 +97,23 @@ var _ = Describe("Conversion", func() {
 			}
 
 			manifestStatus = &manifestcore.ProviderStatus{
-				ManagedResources: []manifestcore.ManagedResourceStatus{
+				ManagedResources: []managedresource.ManagedResourceStatus{
 					{
 						Policy: managedresource.ManagePolicy,
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: corev1.ObjectReference{
 							APIVersion: "v1",
 							Kind:       "Secret",
-							ObjectReference: lsv1alpha1.ObjectReference{
-								Name:      "s1",
-								Namespace: "default",
-							},
+							Name:       "s1",
+							Namespace:  "default",
 						},
 					},
 					{
 						Policy: managedresource.ManagePolicy,
-						Resource: lsv1alpha1.TypedObjectReference{
+						Resource: corev1.ObjectReference{
 							APIVersion: "v1",
 							Kind:       "Secret",
-							ObjectReference: lsv1alpha1.ObjectReference{
-								Name:      "s2",
-								Namespace: "default",
-							},
+							Name:       "s2",
+							Namespace:  "default",
 						},
 					},
 				},

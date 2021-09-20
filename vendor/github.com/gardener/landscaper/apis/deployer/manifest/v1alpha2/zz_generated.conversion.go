@@ -150,7 +150,7 @@ func Convert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguration(in
 }
 
 func autoConvert_v1alpha2_ProviderStatus_To_manifest_ProviderStatus(in *ProviderStatus, out *manifest.ProviderStatus, s conversion.Scope) error {
-	out.ManagedResources = *(*manifest.ManagedResourceStatusList)(unsafe.Pointer(&in.ManagedResources))
+	out.ManagedResources = *(*managedresource.ManagedResourceStatusList)(unsafe.Pointer(&in.ManagedResources))
 	return nil
 }
 

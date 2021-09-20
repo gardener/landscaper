@@ -35,7 +35,7 @@ import (
 // ApplyFiles applies the helm templated files to the target cluster.
 func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
 	currOp := "ApplyFile"
-	_, targetClient, err := h.TargetClient(ctx)
+	_, targetClient, targetClientSet, err := h.TargetClient(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "TargetClusterClient", err.Error())
@@ -67,6 +67,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
+		Clientset:        targetClientSet,
 		DefaultNamespace: h.ProviderConfiguration.Namespace,
 		DeployItemName:   h.DeployItem.Name,
 		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
@@ -182,14 +183,15 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 		return h.lsKubeClient.Update(ctx, h.DeployItem)
 	}
 
-	_, targetClient, err := h.TargetClient(ctx)
+	_, targetClient, _, err := h.TargetClient(ctx)
 	if err != nil {
 		return err
 	}
 
 	nonCompletedResources := make([]string, 0)
-	for _, ref := range h.ProviderStatus.ManagedResources {
-		obj := kutil.ObjectFromTypedObjectReference(&ref.Resource)
+	for i := len(h.ProviderStatus.ManagedResources) - 1; i >= 0; i-- {
+		ref := h.ProviderStatus.ManagedResources[i]
+		obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
 		if err := targetClient.Delete(ctx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
