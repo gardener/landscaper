@@ -9,35 +9,35 @@
   "externalPackages": [
     {
       "typeMatchPrefix": "^k8s\\.io/apimachinery/pkg/selection\\.Operator$",
-      "docsURLTemplate": "https://godoc.org/k8s.io/apimachinery/pkg/apis/selection#Operator"
+      "docsURLTemplate": "https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/selection#Operator"
     },
     {
       "typeMatchPrefix": "^github\\.com/gardener/component-spec/bindings-go/apis/v2\\.RepositoryContext",
-      "docsURLTemplate": "https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext"
+      "docsURLTemplate": "https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#RepositoryContext"
     },
     {
       "typeMatchPrefix": "^github\\.com/gardener/component-spec/bindings-go/apis/v2\\.ComponentDescriptor",
-      "docsURLTemplate": "https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor"
+      "docsURLTemplate": "https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor"
     },
     {
       "typeMatchPrefix": "^github\\.com/gardener/component-spec/bindings-go/apis/v2\\.UnstructuredTypedObject",
-      "docsURLTemplate": "https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject"
+      "docsURLTemplate": "https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject"
     },
     {
       "typeMatchPrefix": "^encoding/json\\.RawMessage$",
-      "docsURLTemplate": "https://golang.org/pkg/encoding/json/#RawMessage"
+      "docsURLTemplate": "https://pkg.go.dev/pkg/encoding/json/#RawMessage"
     },
     {
       "typeMatchPrefix": "^k8s\\.io/apimachinery/pkg/runtime\\.RawExtension$",
-      "docsURLTemplate": "https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension"
+      "docsURLTemplate": "https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension"
     },
     {
       "typeMatchPrefix": "^time\\.Duration$",
-      "docsURLTemplate": "https://godoc.org/time#Duration"
+      "docsURLTemplate": "https://pkg.go.dev/time#Duration"
     },
     {
       "typeMatchPrefix": "^k8s\\.io/(api|apimachinery/pkg/apis)/",
-      "docsURLTemplate": "https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#{{lower .TypeIdentifier}}-{{arrIndex .PackageSegments -1}}-{{arrIndex .PackageSegments -2}}"
+      "docsURLTemplate": "https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#{{lower .TypeIdentifier}}-{{arrIndex .PackageSegments -1}}-{{arrIndex .PackageSegments -2}}"
     }
   ],
   "typeDisplayNamePrefixOverrides": {

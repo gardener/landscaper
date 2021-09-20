@@ -134,7 +134,7 @@ var _ = Describe("Delete", func() {
 			Expect(instC.DeletionTimestamp.IsZero()).To(BeFalse())
 		})
 
-		It("should propagate the force deletion annotation to a execution in deletion state", func() {
+		It("should propagate the force deletion annotation to an execution in deletion state", func() {
 			ctx := context.Background()
 
 			var err error
