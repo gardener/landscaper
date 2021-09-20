@@ -223,7 +223,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -282,7 +282,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -341,7 +341,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -397,7 +397,7 @@ It is also used by the deployers to determine the ownernship.</p>
 <td>
 <code>config</code></br>
 <em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension">
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
 k8s.io/apimachinery/pkg/runtime.RawExtension
 </a>
 </em>
@@ -493,7 +493,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -582,7 +582,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -698,7 +698,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -805,7 +805,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1112,7 +1112,7 @@ string
 <td>
 <code>metadata</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1200,7 +1200,7 @@ it is correctly generated</p>
 <td>
 <code>RawMessage</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
+<a href="https://pkg.go.dev/pkg/encoding/json/#RawMessage">
 encoding/json.RawMessage
 </a>
 </em>
@@ -1497,7 +1497,7 @@ ComponentDescriptorReference
 <td>
 <code>inline</code></br>
 <em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor">
+<a href="https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#ComponentDescriptor">
 github.com/gardener/component-spec/bindings-go/apis/v2.ComponentDescriptor
 </a>
 </em>
@@ -1719,7 +1719,7 @@ given an optional context.</p>
 <td>
 <code>repositoryContext</code></br>
 <em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
+<a href="https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
 github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </a>
 </em>
@@ -1824,7 +1824,7 @@ ComponentOverwriteReference
 <td>
 <code>repositoryContext</code></br>
 <em>
-<a href="https://godoc.org/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
+<a href="https://pkg.go.dev/github.com/gardener/component-spec/bindings-go/apis/v2#UnstructuredTypedObject">
 github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject
 </a>
 </em>
@@ -1909,7 +1909,7 @@ ConditionStatus
 <td>
 <code>lastTransitionTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -1922,7 +1922,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastUpdateTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -2249,7 +2249,7 @@ It is also used by the deployers to determine the ownernship.</p>
 <td>
 <code>config</code></br>
 <em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension">
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
 k8s.io/apimachinery/pkg/runtime.RawExtension
 </a>
 </em>
@@ -2369,7 +2369,7 @@ Error
 <td>
 <code>lastReconcileTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -2397,7 +2397,7 @@ DeployerInformation
 <td>
 <code>providerStatus</code></br>
 <em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension">
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
 k8s.io/apimachinery/pkg/runtime.RawExtension
 </a>
 </em>
@@ -2490,7 +2490,7 @@ map[string]string
 <td>
 <code>config</code></br>
 <em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/runtime#RawExtension">
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
 k8s.io/apimachinery/pkg/runtime.RawExtension
 </a>
 </em>
@@ -2718,7 +2718,7 @@ DeployerInstallationTemplate
 <td>
 <code>Duration</code></br>
 <em>
-<a href="https://godoc.org/time#Duration">
+<a href="https://pkg.go.dev/time#Duration">
 time.Duration
 </a>
 </em>
@@ -2837,7 +2837,7 @@ string
 <td>
 <code>lastTransitionTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -2850,7 +2850,7 @@ Kubernetes meta/v1.Time
 <td>
 <code>lastUpdateTime</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -3906,7 +3906,7 @@ The filesystem must be a YAML filesystem.</p>
 <td>
 <code>RawMessage</code></br>
 <em>
-<a href="https://golang.org/pkg/encoding/json/#RawMessage">
+<a href="https://pkg.go.dev/pkg/encoding/json/#RawMessage">
 encoding/json.RawMessage
 </a>
 </em>
@@ -4115,7 +4115,7 @@ string
 <td>
 <code>operator</code></br>
 <em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/apis/selection#Operator">
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/selection#Operator">
 k8s.io/apimachinery/pkg/selection.Operator
 </a>
 </em>
@@ -4335,7 +4335,7 @@ StaticDataValueFrom
 <td>
 <code>secretKeyRef</code></br>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#secretkeyselector-v1-core">
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>

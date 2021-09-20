@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
+	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
 	github.com/containerd/containerd v1.5.5
 	github.com/docker/cli v20.10.5+incompatible

@@ -122,6 +122,8 @@ func (s *State) Create(ctx context.Context, c client.Client, obj client.Object, 
 		return err
 	}
 
+	tmp.SetName(obj.GetName())
+	tmp.SetNamespace(obj.GetNamespace())
 	tmp.SetResourceVersion(obj.GetResourceVersion())
 	tmp.SetGeneration(obj.GetGeneration())
 	tmp.SetUID(obj.GetUID())
