@@ -167,7 +167,7 @@ spec:
       dataRef: landscaperClusterKubeconfig
 ```
 
-The installation exports two string data objects.
-`landscaperClusterEndpoint` is the Kubernetes API server endpoint at which the landscaper available.
-The `landscaperClusterKubeconfig` is a base 64 encoded kubeconfig file which can be used to connect to the Kubernetes API server as a landscaper user.
-The landscaper use has permissions to create landscaper resources, secrets, configmaps and namespaces in the virtual cluster.
+The installation exports two string data objects:
+1. `landscaperClusterEndpoint` is the endpoint of the virtual cluster API server at which the landscaper available.
+2. The `landscaperClusterKubeconfig` is a base 64 encoded kubeconfig file which can be used to connect to the virtual cluster API server as a landscaper user.
+The landscaper user has permissions to create landscaper resources, secrets, configmaps and namespaces in the virtual cluster.
