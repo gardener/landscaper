@@ -58,14 +58,16 @@ var _ = Describe("Reconcile", func() {
 	AfterEach(func() {
 		defer ctx.Done()
 		if state != nil {
-			Expect(state.CleanupState(ctx, testenv.Client, nil))
+			Expect(state.CleanupState(ctx))
 		}
 	})
 
 	It("should add a component overwrite to the manager", func() {
 		mgr := componentoverwrites.New()
 		c := coctrl.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mgr)
-		state = envtest.NewState()
+		var err error
+		state, err = testenv.InitState(context.TODO())
+		Expect(err).ToNot(HaveOccurred())
 
 		co := &lsv1alpha1.ComponentOverwrites{}
 		co.Name = "my-co"
@@ -79,7 +81,7 @@ var _ = Describe("Reconcile", func() {
 				},
 			},
 		}
-		Expect(state.Create(ctx, testenv.Client, co)).To(Succeed())
+		Expect(state.Create(ctx, co)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, c, testutil.Request("my-co", ""))
 

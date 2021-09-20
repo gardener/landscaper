@@ -116,11 +116,11 @@ func deployDeployItemAndWaitForSuccess(
 
 	target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, deployerName, f.RestConfig, true)
 	utils.ExpectNoError(err)
-	utils.ExpectNoError(state.Create(ctx, f.Client, target))
+	utils.ExpectNoError(state.Create(ctx, target))
 
 	By("Creating the DeployItem")
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
-	utils.ExpectNoError(state.Create(ctx, f.Client, di))
+	utils.ExpectNoError(state.Create(ctx, di))
 	By("Waiting for the DeployItem to succeed")
 	utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 	By("Waiting for the corresponding Deployment to become ready")

@@ -40,20 +40,20 @@ func AggregatedBlueprint(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.SetNamespace(state.Namespace)
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.Create(ctx, cm))
 
 			ginkgo.By("Create Aggregated Installation")
 			aggInst := &lsv1alpha1.Installation{}
 			g.Expect(utils.ReadResourceFromFile(aggInst, nginxInstResource)).To(g.Succeed())
 			aggInst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, aggInst))
+			utils.ExpectNoError(state.Create(ctx, aggInst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, aggInst, 4*time.Minute))

@@ -74,14 +74,14 @@ func RegistryTest(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, false)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.Create(ctx, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
@@ -96,7 +96,7 @@ func RegistryTest(f *framework.Framework) {
 			}
 			inst.Spec.Blueprint.Reference.ResourceName = "my-blueprint"
 
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))

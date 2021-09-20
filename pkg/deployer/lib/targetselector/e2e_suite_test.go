@@ -68,7 +68,7 @@ var _ = Describe("E2E", func() {
 			AddAnnotation(AnnotationKey, AnnotationValue).
 			Build()
 		testutils.ExpectNoError(err)
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, tgt))
+		testutils.ExpectNoError(state.Create(ctx, tgt))
 
 		mockConfig := &mockv1alpha1.ProviderConfiguration{}
 		phase := lsv1alpha1.ExecutionPhaseSucceeded
@@ -79,7 +79,7 @@ var _ = Describe("E2E", func() {
 			TargetFromObjectKey(kutil.ObjectKeyFromObject(tgt)).
 			Build()
 		testutils.ExpectNoError(err)
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
+		testutils.ExpectNoError(state.Create(ctx, di))
 
 		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
@@ -117,7 +117,7 @@ var _ = Describe("E2E", func() {
 			AddAnnotation(AnnotationKey, AnnotationValue).
 			Build()
 		testutils.ExpectNoError(err)
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, tgt))
+		testutils.ExpectNoError(state.Create(ctx, tgt))
 
 		mockConfig := &mockv1alpha1.ProviderConfiguration{}
 		phase := lsv1alpha1.ExecutionPhaseSucceeded
@@ -128,7 +128,7 @@ var _ = Describe("E2E", func() {
 			TargetFromObjectKey(kutil.ObjectKeyFromObject(tgt)).
 			Build()
 		testutils.ExpectNoError(err)
-		testutils.ExpectNoError(state.Create(ctx, testenv.Client, di))
+		testutils.ExpectNoError(state.Create(ctx, di))
 
 		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{

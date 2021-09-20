@@ -43,20 +43,20 @@ func SimpleImport(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			cm.SetNamespace(state.Namespace)
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.Create(ctx, cm))
 
 			ginkgo.By("Create Nginx Ingress Installation")
 			nginxInst := &lsv1alpha1.Installation{}
 			g.Expect(utils.ReadResourceFromFile(nginxInst, nginxInstResource)).To(g.Succeed())
 			nginxInst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, nginxInst))
+			utils.ExpectNoError(state.Create(ctx, nginxInst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, nginxInst, 2*time.Minute))
@@ -65,7 +65,7 @@ func SimpleImport(f *framework.Framework) {
 			inst := &lsv1alpha1.Installation{}
 			g.Expect(utils.ReadResourceFromFile(inst, echoServerInstResource)).To(g.Succeed())
 			inst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))

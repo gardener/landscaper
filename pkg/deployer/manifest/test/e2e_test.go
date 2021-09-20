@@ -230,7 +230,7 @@ func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Envir
 	old := &lsv1alpha1.DeployItem{}
 	if err := testenv.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
 		if apierrors.IsNotFound(err) {
-			Expect(state.Create(ctx, testenv.Client, di, envtest.UpdateStatus(true))).To(Succeed())
+			Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(Succeed())
 			return di
 		}
 		testutil.ExpectNoError(err)
