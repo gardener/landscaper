@@ -54,25 +54,27 @@ echo "> Installing Landscaper version ${VERSION}"
 
 printf "
 landscaper:
-  deployers:
-  - container
-  - helm
-  - manifest
-  - mock
-  deployItemTimeouts:
-    pickup: 10s
-    abort: 10s
+  landscaper:
+    deployers:
+    - container
+    - helm
+    - manifest
+    - mock
+    deployItemTimeouts:
+      pickup: 10s
+      abort: 10s
 " > /tmp/values.yaml
 
 touch /tmp/registry-values.yaml
 if [[ -f "$TM_SHARED_PATH/docker.config" ]]; then
   printf "
 landscaper:
-  registryConfig:
-    allowPlainHttpRegistries: false
-    insecureSkipVerify: true
-    secrets:
-      default: $(cat "$TM_SHARED_PATH/docker.config")
+  landscaper:
+    registryConfig:
+      allowPlainHttpRegistries: false
+      insecureSkipVerify: true
+      secrets:
+        default: $(cat "$TM_SHARED_PATH/docker.config")
   " > /tmp/registry-values.yaml
 fi
 
