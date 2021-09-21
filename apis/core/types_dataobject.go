@@ -21,7 +21,6 @@ type DataObjectList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataObject are resources that can hold any kind of json or yaml data.
-// +kubebuilder:resource:path="dataobjects",scope="Cluster",shortName={"do","dobj"},singular="dataobject"
 type DataObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

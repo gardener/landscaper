@@ -360,6 +360,9 @@ spec:
                     - version
                     type: object
                 type: object
+              context:
+                description: Context defines the current context of the installation.
+                type: string
               exportDataMappings:
                 additionalProperties:
                   description: AnyJSON enhances the json.RawMessages with a dedicated
