@@ -13,7 +13,7 @@ import (
 type Validator struct {
 	*installations.Operation
 
-	parent   *installations.Installation
+	parent   *installations.InstallationBase
 	siblings []*installations.InstallationBase
 }
 

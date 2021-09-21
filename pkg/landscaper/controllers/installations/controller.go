@@ -153,6 +153,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
+
+	_, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
+	if err != nil {
+		return nil, lserrors.NewWrappedError(err,
+			currOp, "CalculateContext", err.Error())
+	}
+
 	if err := c.SetupRegistries(ctx, op, inst.Spec.RegistryPullSecrets, inst); err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "SetupRegistries", err.Error())
@@ -184,6 +191,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
+	instOp.SetOverwriter(c.ComponentOverwriter)
 	return instOp, nil
 }
 

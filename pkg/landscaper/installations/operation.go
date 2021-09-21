@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/api"
@@ -43,6 +45,7 @@ type Operation struct {
 
 	Inst                            *Installation
 	ComponentDescriptor             *cdv2.ComponentDescriptor
+	Overwriter                      componentoverwrites.Overwriter
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Context
@@ -54,12 +57,14 @@ type Operation struct {
 	DefaultRepoContext *cdv2.UnstructuredTypedObject
 }
 
-// NewInstallationOperation creates a new installation operation
+// NewInstallationOperation creates a new installation operation.
+// DEPRECATED: use the builder instead.
 func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
 	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, recorder).SetComponentsRegistry(cRegistry), inst, nil)
 }
 
-// NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
+// NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
+// DEPRECATED: use the builder instead.
 func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, defaultRepoContext *cdv2.UnstructuredTypedObject) (*Operation, error) {
 	instOp := &Operation{
 		Operation:          op,
@@ -124,6 +129,11 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 			ComponentResolver:   o.ComponentsRegistry(),
 		},
 	}
+}
+
+// SetOverwriter sets the component overwriter.
+func (o *Operation) SetOverwriter(ow componentoverwrites.Overwriter) {
+	o.Overwriter = ow
 }
 
 // ListSubinstallations returns a list of all subinstallations of the given installation.
