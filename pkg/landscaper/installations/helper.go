@@ -483,6 +483,10 @@ func HandleSubComponentPhaseChanges(
 	for _, sub := range subinsts {
 		phases = append(phases, sub.Status.Phase)
 	}
+	if len(phases) == 0 {
+		// Installation contains neither an execution nor subinstallations, so the phase can't be out of sync.
+		return nil
+	}
 	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
 	if inst.Status.Phase != cp {
 		// Phase is completed but doesn't fit to the deploy items' phases
