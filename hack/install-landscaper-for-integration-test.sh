@@ -79,4 +79,4 @@ landscaper:
 fi
 
 export KUBECONFIG="${TM_KUBECONFIG_PATH}/${CLUSTER_NAME}.config"
-helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "image.tag=${VERSION}"
+helm upgrade --install --create-namespace ls -n ls-system ./charts/landscaper -f /tmp/values.yaml -f /tmp/registry-values.yaml --set "landscaper.image.tag=${VERSION}"
