@@ -38,7 +38,7 @@ var _ = Describe("Exporter", func() {
 
 	AfterEach(func() {
 		cancel()
-		Expect(state.CleanupState(context.TODO(), testenv.Client, nil))
+		Expect(state.CleanupState(context.TODO()))
 	})
 
 	It("should export from a existing configmap", func() {
@@ -49,7 +49,7 @@ var _ = Describe("Exporter", func() {
 		cm.Data = map[string]string{
 			"somekey": "abc",
 		}
-		Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+		Expect(state.Create(ctx, cm)).To(Succeed())
 
 		exports := &managedresource.Exports{
 			Exports: []managedresource.Export{
@@ -100,7 +100,7 @@ var _ = Describe("Exporter", func() {
 			case <-ctx.Done():
 				return
 			case <-time.After(10 * time.Second):
-				Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+				Expect(state.Create(ctx, cm)).To(Succeed())
 			}
 		}()
 
@@ -144,7 +144,7 @@ var _ = Describe("Exporter", func() {
 		cm := &corev1.ConfigMap{}
 		cm.Name = "my-data"
 		cm.Namespace = state.Namespace
-		Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+		Expect(state.Create(ctx, cm)).To(Succeed())
 
 		go func() {
 			select {
@@ -203,7 +203,7 @@ var _ = Describe("Exporter", func() {
 		cm.Data = map[string]string{
 			"somekey": "abc",
 		}
-		Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+		Expect(state.Create(ctx, cm)).To(Succeed())
 
 		exports := &managedresource.Exports{
 			Exports: []managedresource.Export{
@@ -239,14 +239,14 @@ var _ = Describe("Exporter", func() {
 				"name":      "my-ref-data",
 				"namespace": cm.Namespace,
 			}
-			Expect(state.Create(ctx, testenv.Client, cm)).To(Succeed())
+			Expect(state.Create(ctx, cm)).To(Succeed())
 			refCm := &corev1.ConfigMap{}
 			refCm.Name = "my-ref-data"
 			refCm.Namespace = state.Namespace
 			refCm.Data = map[string]string{
 				"somekey": "abc",
 			}
-			Expect(state.Create(ctx, testenv.Client, refCm)).To(Succeed())
+			Expect(state.Create(ctx, refCm)).To(Succeed())
 
 			exports := &managedresource.Exports{
 				Exports: []managedresource.Export{
@@ -300,7 +300,7 @@ var _ = Describe("Exporter", func() {
 					Name: "sa-token",
 				},
 			}
-			Expect(state.Create(ctx, testenv.Client, sa)).To(Succeed())
+			Expect(state.Create(ctx, sa)).To(Succeed())
 
 			secret := &corev1.Secret{}
 			secret.Name = "sa-token"
@@ -308,7 +308,7 @@ var _ = Describe("Exporter", func() {
 			secret.Data = map[string][]byte{
 				"somekey": []byte("abc"),
 			}
-			Expect(state.Create(ctx, testenv.Client, secret)).To(Succeed())
+			Expect(state.Create(ctx, secret)).To(Succeed())
 
 			exports := &managedresource.Exports{
 				Exports: []managedresource.Export{

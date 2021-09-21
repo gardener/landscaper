@@ -41,20 +41,20 @@ func NginxIngressTest(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.SetNamespace(state.Namespace)
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.Create(ctx, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
 			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
 			inst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
@@ -102,20 +102,20 @@ func NginxIngressTest(f *framework.Framework) {
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, targetResource))
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			ginkgo.By("Create ConfigMap with imports for the installation")
 			cm := &corev1.ConfigMap{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(cm, importResource))
 			cm.SetNamespace(state.Namespace)
 			cm.Data["namespace"] = state.Namespace
-			utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+			utils.ExpectNoError(state.Create(ctx, cm))
 
 			ginkgo.By("Create Installation")
 			inst := &lsv1alpha1.Installation{}
 			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
 			inst.SetNamespace(state.Namespace)
-			utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
 			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))

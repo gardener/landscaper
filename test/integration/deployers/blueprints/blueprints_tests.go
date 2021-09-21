@@ -142,7 +142,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		target.Namespace = state.Namespace
 		target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 		utils.ExpectNoError(err)
-		utils.ExpectNoError(state.Create(ctx, f.Client, target))
+		utils.ExpectNoError(state.Create(ctx, target))
 
 		ginkgo.By("Create Configuration for the installation")
 		cm := &corev1.ConfigMap{}
@@ -154,7 +154,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 			// todo: add own target selector to not interfere with other tests
 			"values": "{}",
 		}
-		utils.ExpectNoError(state.Create(ctx, f.Client, cm))
+		utils.ExpectNoError(state.Create(ctx, cm))
 		cmRef := lsv1alpha1.ObjectReference{
 			Name:      cm.Name,
 			Namespace: cm.Namespace,
@@ -209,7 +209,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 			},
 		}
 
-		utils.ExpectNoError(state.Create(ctx, f.Client, inst))
+		utils.ExpectNoError(state.Create(ctx, inst))
 		utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
 
 		ginkgo.By("Testing the deployer with a simple deployitem")
@@ -226,7 +226,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 			utils.ExpectNoError(err)
 		}
 		g.Expect(di).ToNot(g.BeNil())
-		utils.ExpectNoError(state.Create(ctx, f.Client, di))
+		utils.ExpectNoError(state.Create(ctx, di))
 
 		utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 

@@ -56,7 +56,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			di := &lsv1alpha1.DeployItem{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "40-DeployItem-Manifest-secret.yaml")))
@@ -69,7 +69,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create Manifest (v1alpha2) deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
 
 			ginkgo.By("Check presence of Kubernetes Objects")
@@ -116,7 +116,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			target.Namespace = state.Namespace
 			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
 			utils.ExpectNoError(err)
-			utils.ExpectNoError(state.Create(ctx, f.Client, target))
+			utils.ExpectNoError(state.Create(ctx, target))
 
 			di := &lsv1alpha1.DeployItem{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(testDataDir, "00-DeployItem-Manifest-v1alpha1.yaml")))
@@ -129,7 +129,7 @@ func ManifestDeployerTests(f *framework.Framework) {
 			}
 
 			ginkgo.By("Create Manifest (v1alpha1) deploy item")
-			utils.ExpectNoError(state.Create(ctx, f.Client, di))
+			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, timeout))
 
 			ginkgo.By("Check presence of Kubernetes objects")

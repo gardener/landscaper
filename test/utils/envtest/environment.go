@@ -93,7 +93,7 @@ func (e *Environment) InitState(ctx context.Context) (*State, error) {
 
 // InitStateWithNamespace creates a new isolated environment with its own namespace.
 func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error) {
-	state := NewState()
+	state := NewStateWithClient(c)
 	// create a new testing namespace
 	ns := &corev1.Namespace{}
 	ns.GenerateName = "tests-"
@@ -112,7 +112,7 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		return nil, err
 	}
 
-	if err := state.InitResources(ctx, e.Client, resourcesPath); err != nil {
+	if err := state.InitResourcesWithClient(ctx, e.Client, resourcesPath); err != nil {
 		return nil, err
 	}
 	return state, err
@@ -120,8 +120,7 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 
 // CleanupState cleans up a test environment.
 func (e *Environment) CleanupState(ctx context.Context, state *State) error {
-	t := 5 * time.Second
-	return state.CleanupState(ctx, e.Client, &t)
+	return state.CleanupStateWithClient(ctx, e.Client, WithCleanupTimeout(5*time.Second))
 }
 
 func parseResources(path string, state *State) ([]client.Object, error) {

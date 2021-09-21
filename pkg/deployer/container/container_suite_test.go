@@ -88,7 +88,7 @@ var _ = Describe("Template", func() {
 		item.Name = "container-test"
 		item.Namespace = state.Namespace
 
-		Expect(state.Create(ctx, testenv.Client, item)).To(Succeed())
+		Expect(state.Create(ctx, item)).To(Succeed())
 
 		di := &lsv1alpha1.DeployItem{}
 		Eventually(func() error {

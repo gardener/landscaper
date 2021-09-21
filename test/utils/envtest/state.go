@@ -25,6 +25,7 @@ import (
 // State contains the state of initialized fake client
 type State struct {
 	mux           sync.Mutex
+	Client        client.Client
 	Namespace     string
 	Installations map[string]*lsv1alpha1.Installation
 	Executions    map[string]*lsv1alpha1.Execution
@@ -46,8 +47,20 @@ func NewState() *State {
 		Targets:       make(map[string]*lsv1alpha1.Target),
 		Secrets:       make(map[string]*corev1.Secret),
 		ConfigMaps:    make(map[string]*corev1.ConfigMap),
-		Generic:       map[string]client.Object{},
+		Generic:       make(map[string]client.Object),
 	}
+}
+
+// NewStateWithClient initializes a new state with a client.
+func NewStateWithClient(kubeClient client.Client) *State {
+	s := NewState()
+	s.Client = kubeClient
+	return s
+}
+
+// HasClient returns whether a client is configured or not
+func (s *State) HasClient() bool {
+	return s.Client != nil
 }
 
 // AddResources to the current state
@@ -111,8 +124,8 @@ func (s UpdateStatus) ApplyOption(options *CreateOptions) error {
 	return nil
 }
 
-// Create creates or updates a kubernetes resources and adds it to the current state
-func (s *State) Create(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
+// CreateWithClient creates or updates a kubernetes resources and adds it to the current state
+func (s *State) CreateWithClient(ctx context.Context, c client.Client, obj client.Object, opts ...CreateOption) error {
 	options := &CreateOptions{}
 	if err := options.ApplyOptions(opts...); err != nil {
 		return err
@@ -138,8 +151,13 @@ func (s *State) Create(ctx context.Context, c client.Client, obj client.Object, 
 	return s.AddResources(tmp)
 }
 
-// InitResources creates a new isolated environment with its own namespace.
-func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPath string) error {
+// Create creates or updates a kubernetes resources and adds it to the current state
+func (s *State) Create(ctx context.Context, obj client.Object, opts ...CreateOption) error {
+	return s.CreateWithClient(ctx, s.Client, obj, opts...)
+}
+
+// InitResourcesWithClient creates a new isolated environment with its own namespace.
+func (s *State) InitResourcesWithClient(ctx context.Context, c client.Client, resourcesPath string) error {
 	// parse state and create resources in cluster
 	resources, err := parseResources(resourcesPath, s)
 	if err != nil {
@@ -198,7 +216,7 @@ func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPat
 				continue
 			}
 		}
-		if err := s.Create(ctx, c, obj, UpdateStatus(true)); err != nil {
+		if err := s.CreateWithClient(ctx, c, obj, UpdateStatus(true)); err != nil {
 			return fmt.Errorf("unable to create %s %s: %w", objName, obj.GetObjectKind().GroupVersionKind().String(), err)
 		}
 		if len(resourcesChan) == 0 {
@@ -209,13 +227,52 @@ func (s *State) InitResources(ctx context.Context, c client.Client, resourcesPat
 	return nil
 }
 
-// CleanupState cleans up a test environment.
+// InitResources creates a new isolated environment with its own namespace.
+func (s *State) InitResources(ctx context.Context, resourcesPath string) error {
+	return s.InitResourcesWithClient(ctx, s.Client, resourcesPath)
+}
+
+type CleanupOptions struct {
+	// Timeout defines the timout to wait the cleanup of an object.
+	Timeout *time.Duration
+}
+
+// ApplyOptions applies all options from create options to the object
+func (o *CleanupOptions) ApplyOptions(options ...CleanupOption) error {
+	for _, obj := range options {
+		if err := obj.ApplyOption(o); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type CleanupOption interface {
+	ApplyOption(options *CleanupOptions) error
+}
+
+// WithCleanupTimeout configures the cleanup timeout
+type WithCleanupTimeout time.Duration
+
+func (s WithCleanupTimeout) ApplyOption(options *CleanupOptions) error {
+	t := time.Duration(s)
+	options.Timeout = &t
+	return nil
+}
+
+// CleanupStateWithClient cleans up a test environment.
 // todo: remove finalizers of all objects in state
-func (s *State) CleanupState(ctx context.Context, c client.Client, timeout *time.Duration) error {
+func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opts ...CleanupOption) error {
+	options := &CleanupOptions{}
+	if err := options.ApplyOptions(opts...); err != nil {
+		return err
+	}
+	timeout := options.Timeout
 	if timeout == nil {
 		t := 30 * time.Second
 		timeout = &t
 	}
+
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, obj := range s.DeployItems {
@@ -274,6 +331,12 @@ func (s *State) CleanupState(ctx context.Context, c client.Client, timeout *time
 	ns := &corev1.Namespace{}
 	ns.Name = s.Namespace
 	return c.Delete(ctx, ns)
+}
+
+// CleanupState cleans up a test environment.
+// todo: remove finalizers of all objects in state
+func (s *State) CleanupState(ctx context.Context, opts ...CleanupOption) error {
+	return s.CleanupStateWithClient(ctx, s.Client, opts...)
 }
 
 // CleanupForObject cleans up a object from a cluster

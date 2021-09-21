@@ -75,7 +75,7 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 			"test": "val",
 		}
 		env.Spec.HostTarget.Type = "mytype"
-		Expect(state.Create(ctx, testenv.Client, env)).To(Succeed())
+		Expect(state.Create(ctx, env)).To(Succeed())
 
 		envReq := testutils.Request(env.Name, state.Namespace)
 		testutils.ShouldReconcile(ctx, envController, envReq)
@@ -100,7 +100,7 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 			env.GenerateName = "test"
 			env.Spec.TargetSelectors = make([]lsv1alpha1.TargetSelector, 0)
 			env.Spec.HostTarget.Type = "mytype"
-			Expect(state.Create(ctx, testenv.Client, env)).To(Succeed())
+			Expect(state.Create(ctx, env)).To(Succeed())
 			envKey := kutil.ObjectKeyFromObject(env)
 
 			envReq := testutils.Request(env.Name, state.Namespace)
@@ -120,7 +120,7 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 			reg := &lsv1alpha1.DeployerRegistration{}
 			reg.GenerateName = "test-"
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
-			Expect(state.Create(ctx, testenv.Client, reg)).To(Succeed())
+			Expect(state.Create(ctx, reg)).To(Succeed())
 			regKey := kutil.ObjectKeyFromObject(reg)
 			regReq := testutils.Request(reg.Name, state.Namespace)
 
@@ -141,7 +141,7 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 			controllerutil.AddFinalizer(env, lsv1alpha1.LandscaperDMFinalizer)
 			env.Spec.TargetSelectors = make([]lsv1alpha1.TargetSelector, 0)
 			env.Spec.HostTarget.Type = "mytype"
-			testutils.ExpectNoError(state.Create(ctx, testenv.Client, env))
+			testutils.ExpectNoError(state.Create(ctx, env))
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, env))
 			envKey := kutil.ObjectKeyFromObject(env)
 			envReq := testutils.Request(env.Name, state.Namespace)
@@ -168,7 +168,7 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 			reg.GenerateName = "test-"
 			controllerutil.AddFinalizer(reg, lsv1alpha1.LandscaperDMFinalizer)
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
-			testutils.ExpectNoError(state.Create(ctx, testenv.Client, reg))
+			testutils.ExpectNoError(state.Create(ctx, reg))
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, reg))
 			regKey := kutil.ObjectKeyFromObject(reg)
 			regReq := testutils.Request(reg.Name, state.Namespace)

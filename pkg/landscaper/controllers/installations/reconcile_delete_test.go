@@ -238,7 +238,7 @@ var _ = Describe("Delete", func() {
 				},
 			}
 
-			Expect(state.Create(ctx, testenv.Client, inst)).To(Succeed())
+			Expect(state.Create(ctx, inst)).To(Succeed())
 			Eventually(func() error {
 				i := &lsv1alpha1.Installation{}
 				if err := testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), i); err != nil {

@@ -37,7 +37,7 @@ var _ = Describe("ObjectApplier", func() {
 	})
 
 	AfterEach(func() {
-		Expect(state.CleanupState(context.TODO(), testenv.Client, nil))
+		Expect(state.CleanupState(context.TODO()))
 	})
 
 	It("should apply and update a configmap", func() {
