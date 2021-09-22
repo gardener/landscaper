@@ -77,30 +77,30 @@ type ReconcileExtensionHookSetup struct {
 // The results of all executed hooks are aggregated using the AggregateHookResults function, except for
 //   DuringResponsibilityCheck and ShouldReconcile hooks, where AggregateHookResultsWithInvertedAbortPriority is used instead.
 // An error is returned if one of the hooks returns an error or if an unknown hook type is given.
-func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, hype HookType) (*HookResult, error) {
-	logger := log.WithName(string(hype))
+func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, error) {
+	logger := log.WithName(string(ht))
 	logger.V(7).Info("calling extension hooks")
-	typedHooks, ok := hooks[hype]
+	typedHooks, ok := hooks[ht]
 	if !ok {
-		switch hype {
+		switch ht {
 		case StartHook, DuringResponsibilityCheckHook, AfterResponsibilityCheckHook,
 			ShouldReconcileHook, BeforeAbortHook, BeforeForceReconcileHook,
 			BeforeDeleteHook, BeforeReconcileHook, BeforeAnyReconcileHook, EndHook:
 			return nil, nil
 		default:
-			return nil, fmt.Errorf("unknown hook type %q", string(hype))
+			return nil, fmt.Errorf("unknown hook type %q", string(ht))
 		}
 	}
 	hookRes := make([]*HookResult, len(typedHooks))
 	for i, hook := range typedHooks {
 		logger.WithValues("index", i).V(5).Info("calling extension hook")
 		var err error
-		hookRes[i], err = hook(ctx, logger, di, target, hype)
+		hookRes[i], err = hook(ctx, logger, di, target, ht)
 		if err != nil {
-			return nil, fmt.Errorf("error executing reconciliation extension hook %d of type %q: %w", i, string(hype), err)
+			return nil, fmt.Errorf("error executing reconciliation extension hook %d of type %q: %w", i, string(ht), err)
 		}
 	}
-	if hype == DuringResponsibilityCheckHook || hype == ShouldReconcileHook {
+	if ht == DuringResponsibilityCheckHook || ht == ShouldReconcileHook {
 		return AggregateHookResultsWithInvertedAbortPriority(hookRes...), nil
 	}
 	return AggregateHookResults(hookRes...), nil
@@ -108,13 +108,13 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.
 
 // RegisterHook appends the given hook function to the list of hook functions for all given hook types.
 // It returns the ReconcileExtensionHooks object it is called on for chaining.
-func (hooks ReconcileExtensionHooks) RegisterHook(hook ReconcileExtensionHook, hypes ...HookType) ReconcileExtensionHooks {
-	for _, hype := range hypes {
-		hookList, ok := hooks[hype]
+func (hooks ReconcileExtensionHooks) RegisterHook(hook ReconcileExtensionHook, hts ...HookType) ReconcileExtensionHooks {
+	for _, ht := range hts {
+		hookList, ok := hooks[ht]
 		if !ok {
 			hookList = []ReconcileExtensionHook{}
 		}
-		hooks[hype] = append(hookList, hook)
+		hooks[ht] = append(hookList, hook)
 	}
 	return hooks
 }

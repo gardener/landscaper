@@ -115,7 +115,7 @@ The extension library offers a helper method to register a new hook:
 ```golang
 // RegisterHook appends the given hook function to the list of hook functions for all given hook types.
 // It returns the ReconcileExtensionHooks object it is called on for chaining.
-func (hooks ReconcileExtensionHooks) RegisterHook(hook ReconcileExtensionHook, hypes ...HookType) ReconcileExtensionHooks
+func (hooks ReconcileExtensionHooks) RegisterHook(hook ReconcileExtensionHook, hts ...HookType) ReconcileExtensionHooks
 ```
 The given hook will be registered for all provided hook types. If the method is called without hook types, it won't have any effect.
 
