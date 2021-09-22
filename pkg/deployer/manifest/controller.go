@@ -16,6 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
@@ -37,6 +38,7 @@ type deployer struct {
 	lsClient   client.Client
 	hostClient client.Client
 	config     manifestv1alpha2.Configuration
+	hooks      extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
@@ -68,4 +70,8 @@ func (d *deployer) ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem
 func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
+}
+
+func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
+	return d.hooks
 }

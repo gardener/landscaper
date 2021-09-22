@@ -18,6 +18,7 @@ import (
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
@@ -40,6 +41,7 @@ type deployer struct {
 	lsClient   client.Client
 	hostClient client.Client
 	config     mockv1alpha1.Configuration
+	hooks      extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
@@ -86,6 +88,10 @@ func (d *deployer) ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem
 func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
+}
+
+func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
+	return d.hooks
 }
 
 func (d *deployer) ensureDeletion(ctx context.Context, item *lsv1alpha1.DeployItem) error {

@@ -36,6 +36,7 @@
 - [Extend the API](./development/extend-the-api.md)
 - [Creating Tutorial Resources](./development/tutorials.md)
 - [Testing](./development/testing.md)
+- [Deployer Library Extension Hooks](./development/dep-lib-extension-hooks.md)
 
 ### API Reference
 - [Types](./technical/types.md)

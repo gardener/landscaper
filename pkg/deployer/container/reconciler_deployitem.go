@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -60,6 +61,7 @@ type deployer struct {
 	directHostClient client.Client
 	config           containerv1alpha1.Configuration
 	sharedCache      cache.Cache
+	hooks            extension.ReconcileExtensionHooks
 }
 
 func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
@@ -87,4 +89,8 @@ func (d *deployer) ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem
 func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
+}
+
+func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
+	return d.hooks
 }
