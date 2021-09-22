@@ -126,7 +126,7 @@ The given hook will be registered for all provided hook types. If the method is 
 
 With the auxiliary method mentioned above, registering a hook might look like this:
 ```golang
-myDeployer.hooks.RegisterHook(myHookFunction, extension.StartHoo, extension.EndHook)
+myDeployer.hooks.RegisterHook(myHookFunction, extension.StartHook, extension.EndHook)
 ```
 
 There is a small disadvantage though: when registering the hook, one has to know which hook types it was designed for.
