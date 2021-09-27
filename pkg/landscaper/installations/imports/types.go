@@ -13,7 +13,7 @@ import (
 type Validator struct {
 	*installations.Operation
 
-	parent   *installations.InstallationBase
+	parent   *installations.Installation
 	siblings []*installations.InstallationBase
 }
 
@@ -22,8 +22,5 @@ type Validator struct {
 // generate the one imported config
 type Constructor struct {
 	*installations.Operation
-	validator *Validator
-
-	parent   *installations.Installation
 	siblings []*installations.InstallationBase
 }

@@ -114,6 +114,9 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 
 // CreateInternalInstallationBase creates an internal installation base for an Installation
 func CreateInternalInstallationBase(inst *lsv1alpha1.Installation) *InstallationBase {
+	if inst == nil {
+		return nil
+	}
 	return NewInstallationBase(inst)
 }
 

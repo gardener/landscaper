@@ -52,6 +52,8 @@ var _ = Describe("ConditionalImports", func() {
 		fakeClient, _, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
+		createDefaultContextsForNamespace(fakeClient)
+
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 

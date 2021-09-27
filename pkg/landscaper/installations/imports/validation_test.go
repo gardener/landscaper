@@ -42,6 +42,7 @@ var _ = Describe("Validation", func() {
 		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
+		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
@@ -63,10 +64,9 @@ var _ = Describe("Validation", func() {
 		op.Inst = inInstA
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		Expect(val.ImportsSatisfied(ctx, inInstA)).To(Succeed())
 	})
 
@@ -84,11 +84,9 @@ var _ = Describe("Validation", func() {
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		Expect(val.ImportsSatisfied(ctx, inInstB)).To(Succeed())
 	})
 
@@ -106,11 +104,9 @@ var _ = Describe("Validation", func() {
 		op.Inst = inInstF
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{&inInstE.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		Expect(val.ImportsSatisfied(ctx, inInstF)).To(Succeed())
 	})
 
@@ -128,7 +124,7 @@ var _ = Describe("Validation", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		err = val.ImportsSatisfied(ctx, inInstA)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsImportNotSatisfiedError(err)).To(BeTrue())
@@ -136,8 +132,6 @@ var _ = Describe("Validation", func() {
 
 	It("should reject when a direct sibling dependency is still running", func() {
 		ctx := context.Background()
-		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
-		Expect(err).ToNot(HaveOccurred())
 
 		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
@@ -147,11 +141,9 @@ var _ = Describe("Validation", func() {
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
 
-		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		err = val.ImportsSatisfied(ctx, inInstB)
 		Expect(err).ToNot(HaveOccurred())
 	})
@@ -177,15 +169,10 @@ var _ = Describe("Validation", func() {
 
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
-		op.Context().Parent = inInstRoot
-		op.Context().Siblings = []*installations.InstallationBase{
-			&inInstA.InstallationBase,
-			&inInstB.InstallationBase,
-			&inInstC.InstallationBase,
-		}
+
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		val := imports.NewValidator(op)
+		val := imports.NewTestValidator(op, inInstRoot)
 		err = val.ImportsSatisfied(ctx, inInstD)
 		Expect(err).To(HaveOccurred())
 		Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
@@ -197,16 +184,14 @@ var _ = Describe("Validation", func() {
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/a"])
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
-			Expect(op.ResolveComponentDescriptors(context.TODO())).To(Succeed())
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
 			Expect(err).ToNot(HaveOccurred())
 
-			op.Context().Parent = inInstRoot
-			op.Context().Siblings = []*installations.InstallationBase{&inInstA.InstallationBase}
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			val := imports.NewValidator(op)
+			val := imports.NewTestValidator(op, inInstRoot)
 			ok, err := val.CheckDependentInstallations(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeFalse())
@@ -227,8 +212,8 @@ var _ = Describe("Validation", func() {
 			target.Namespace = "test4"
 			Expect(fakeClient.Delete(ctx, target))
 
-			c := imports.NewValidator(op)
-			err = c.ImportsSatisfied(ctx, inInstRoot)
+			val := imports.NewTestValidator(op, nil)
+			err = val.ImportsSatisfied(ctx, inInstRoot)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -245,8 +230,8 @@ var _ = Describe("Validation", func() {
 			target.Namespace = "test4"
 			Expect(fakeClient.Delete(ctx, target))
 
-			c := imports.NewValidator(op)
-			err = c.ImportsSatisfied(ctx, inInstF)
+			val := imports.NewTestValidator(op, nil)
+			err = val.ImportsSatisfied(ctx, inInstF)
 			Expect(err).To(HaveOccurred())
 		})
 	})

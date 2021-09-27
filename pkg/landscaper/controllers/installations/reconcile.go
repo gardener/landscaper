@@ -136,7 +136,10 @@ func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 		return true, nil
 	}
 
-	validator := imports.NewValidator(op)
+	validator, err := imports.NewValidator(ctx, op)
+	if err != nil {
+		return false, err
+	}
 	run, err := validator.OutdatedImports(ctx)
 	if err != nil {
 		return run, err
@@ -152,7 +155,14 @@ func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 func (c *Controller) Update(ctx context.Context, op *installations.Operation) error {
 	currOp := "Validate"
 	inst := op.Inst
-	if err := imports.NewValidator(op).ImportsSatisfied(ctx, inst); err != nil {
+
+	val, err := imports.NewValidator(ctx, op)
+	if err != nil {
+		err = fmt.Errorf("unable to init import validator: %w", err)
+		return lserrors.NewWrappedError(err,
+			currOp, "ImportsSatisfied", err.Error())
+	}
+	if err := val.ImportsSatisfied(ctx, inst); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "ImportsSatisfied", err.Error())
 	}

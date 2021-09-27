@@ -152,6 +152,15 @@ func GetParent(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.I
 	return parent, nil
 }
 
+// GetInstallationContextName returns the name of the context of an installation.
+// The context name is basically the name of the parent component.
+func GetInstallationContextName(inst *lsv1alpha1.Installation) string {
+	if IsRootInstallation(inst) {
+		return ""
+	}
+	return lsv1alpha1helper.DataObjectSourceFromInstallationName(GetParentInstallationName(inst))
+}
+
 // IsRoot returns if the current component is a root component
 func (o *Operation) IsRoot() bool {
 	return o.Context().Parent == nil
