@@ -105,6 +105,18 @@ func (c *ExternalContext) ComponentDescriptorRef() *lsv1alpha1.ComponentDescript
 	return ref
 }
 
+// RegistryPullSecrets returns all registry pull secrets as list of object references.
+func (c *ExternalContext) RegistryPullSecrets() []lsv1alpha1.ObjectReference {
+	refs := make([]lsv1alpha1.ObjectReference, len(c.Context.RegistryPullSecrets))
+	for i, r := range c.Context.RegistryPullSecrets {
+		refs[i] = lsv1alpha1.ObjectReference{
+			Name:      r.Name,
+			Namespace: c.Context.Namespace,
+		}
+	}
+	return refs
+}
+
 // GetParentAndSiblings determines the visible context of an installation.
 // The visible context consists of the installation's parent and siblings.
 // The context is later used to validate and get imported data.

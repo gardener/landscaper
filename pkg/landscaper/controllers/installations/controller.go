@@ -154,25 +154,18 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
-	_, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
+	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "CalculateContext", err.Error())
 	}
 
-	if err := c.SetupRegistries(ctx, op, inst.Spec.RegistryPullSecrets, inst); err != nil {
+	if err := c.SetupRegistries(ctx, op, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "SetupRegistries", err.Error())
 	}
 
-	// default repository context if not defined
-	if err := c.HandleComponentReference(inst); err != nil {
-		return nil, err
-	}
-
-	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-
-	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), cdRef, inst.Spec.Blueprint)
+	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "ResolveBlueprint", err.Error())
@@ -185,7 +178,10 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 			currOp, "InitInstallation", err.Error())
 	}
 
-	instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, internalInstallation, c.LsConfig.RepositoryContext)
+	instOp, err := installations.NewOperationBuilder(internalInstallation).
+		WithOperation(op).
+		WithContext(lsCtx).
+		Build(ctx)
 	if err != nil {
 		err = fmt.Errorf("unable to create installation operation: %w", err)
 		return nil, lserrors.NewWrappedError(err,
@@ -193,42 +189,6 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 	instOp.SetOverwriter(c.ComponentOverwriter)
 	return instOp, nil
-}
-
-// HandleComponentReference defaults and optionally replaces the component reference of a installation.
-func (c *Controller) HandleComponentReference(inst *lsv1alpha1.Installation) error {
-	if inst.Spec.ComponentDescriptor == nil || inst.Spec.ComponentDescriptor.Reference == nil {
-		return nil
-	}
-	// default repository context if not defined
-	if inst.Spec.ComponentDescriptor.Reference.RepositoryContext == nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = c.LsConfig.RepositoryContext
-	}
-
-	if c.ComponentOverwriter == nil {
-		return nil
-	}
-
-	cond := lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.ComponentReferenceOverwriteCondition)
-	oldRef := inst.Spec.ComponentDescriptor.Reference.DeepCopy()
-	overwritten, err := c.ComponentOverwriter.Replace(inst.Spec.ComponentDescriptor.Reference)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			"HandleComponentReference", "OverwriteComponentReference", err.Error())
-	}
-	if overwritten {
-		newRef := inst.Spec.ComponentDescriptor.Reference
-		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
-			"FoundOverwrite",
-			componentoverwrites.ReferenceDiff(oldRef, newRef))
-	} else {
-		cond = lsv1alpha1helper.UpdatedCondition(cond,
-			lsv1alpha1.ConditionFalse,
-			"No overwrite defined",
-			"component reference has not been overwritten")
-	}
-	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-	return nil
 }
 
 // HandleErrorFunc returns a error handler func for deployers.

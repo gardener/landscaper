@@ -10,6 +10,10 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -77,6 +81,39 @@ func (b *OperationBuilder) WithOverwriter(ow componentoverwrites.Overwriter) *Op
 // This value will be calculated during the build if not set.
 func (b *OperationBuilder) WithContext(ctx *Context) *OperationBuilder {
 	b.context = ctx
+	return b
+}
+
+// operation builder wrapped options
+
+// Client sets the kubernetes client.
+func (b *OperationBuilder) Client(c client.Client) *OperationBuilder {
+	b.Builder.Client(c)
+	return b
+}
+
+// Scheme sets the kubernetes scheme.
+func (b *OperationBuilder) Scheme(s *runtime.Scheme) *OperationBuilder {
+	b.Builder.Scheme(s)
+	return b
+}
+
+// ComponentRegistry sets the component registry.
+func (b *OperationBuilder) ComponentRegistry(resolver ctf.ComponentResolver) *OperationBuilder {
+	b.Builder.ComponentRegistry(resolver)
+	return b
+}
+
+// WithLogger sets a logger.
+// If no logger is given the logger from the context is used.
+func (b *OperationBuilder) WithLogger(log logr.Logger) *OperationBuilder {
+	b.Builder.WithLogger(log)
+	return b
+}
+
+// WithEventRecorder sets a event recorder.
+func (b *OperationBuilder) WithEventRecorder(er record.EventRecorder) *OperationBuilder {
+	b.Builder.WithEventRecorder(er)
 	return b
 }
 
