@@ -37,6 +37,13 @@ landscaper:
       - container
       - helm
       - manifest
+
+      deployerManagement:
+        disable: false
+        namespace: ls-system
+        agent:
+          disable: false
+          namespace: ls-system
 ```
 
 This tutorial assumes that the OCI registry usernames is store in environment variable `REGISTRY_USER` and the password is stored in environment variable `REGISTRY_PASSWORD`.
@@ -104,6 +111,13 @@ landscaper:
       - container
       - helm
       - manifest
+
+      deployerManagement:
+        disable: false
+        namespace: ls-system
+        agent:
+          disable: false
+          namespace: ls-system
 ```
 
 The registry secrets have to be provided in a plain Docker auth JSON format. See [here](../gettingstarted/install-landscaper-controller.md#Private registry access) for more details.
