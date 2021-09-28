@@ -6,6 +6,7 @@ package installations
 
 import (
 	"context"
+	"errors"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -105,6 +106,18 @@ func (c *ExternalContext) ComponentDescriptorRef() *lsv1alpha1.ComponentDescript
 	return ref
 }
 
+// InjectComponentDescriptorRef injects the effective component descriptor ref into the given installation
+func (c *ExternalContext) InjectComponentDescriptorRef(inst *lsv1alpha1.Installation) *lsv1alpha1.Installation {
+	if inst.Spec.ComponentDescriptor != nil && inst.Spec.ComponentDescriptor.Inline != nil {
+		// do not inject a different component reference for inlined defined component descriptors
+		return inst
+	}
+	inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
+		Reference: c.ComponentDescriptorRef(),
+	}
+	return inst
+}
+
 // RegistryPullSecrets returns all registry pull secrets as list of object references.
 func (c *ExternalContext) RegistryPullSecrets() []lsv1alpha1.ObjectReference {
 	refs := make([]lsv1alpha1.ObjectReference, len(c.Context.RegistryPullSecrets))
@@ -178,6 +191,9 @@ func (o *Operation) IsRoot() bool {
 	return o.Context().Parent == nil
 }
 
+// MissingRepositoryContextError defines a error when no repository context is defined.
+var MissingRepositoryContextError = errors.New("RepositoryContextMissing")
+
 // GetExternalContext resolves the context for an installation and applies defaults or overwrites if applicable.
 func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter) (ExternalContext, error) {
 	lsCtx := &lsv1alpha1.Context{}
@@ -204,6 +220,9 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 	if cond != nil {
 		inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, *cond)
 	}
+	if cdRef.RepositoryContext == nil {
+		return ExternalContext{}, MissingRepositoryContextError
+	}
 	lsCtx.RepositoryContext = cdRef.RepositoryContext
 	return ExternalContext{
 		Context:          *lsCtx,
@@ -213,6 +232,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 }
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
+// The overwriter can be nil
 func ApplyComponentOverwrite(overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
 	if cdRef == nil {
 		return nil, nil
