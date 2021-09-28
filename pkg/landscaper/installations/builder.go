@@ -35,7 +35,9 @@ type OperationBuilder struct {
 
 // NewOperationBuilder creates a new operation builder.
 func NewOperationBuilder(inst *Installation) *OperationBuilder {
-	return &OperationBuilder{}
+	return &OperationBuilder{
+		inst: inst,
+	}
 }
 
 // Installation sets an installation.

@@ -63,7 +63,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(items.Items).To(HaveLen(1))
 		lsCtx := &items.Items[0]
 		Expect(lsCtx.Name).To(Equal(lsv1alpha1.DefaultContextName))
-		Expect(lsCtx.RepositoryContext).To(Equal(repoCtx))
+		Expect(lsCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
 	It("should update the default config object if changed", func() {
@@ -85,7 +85,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(items.Items).To(HaveLen(1))
 		lsCtx = &items.Items[0]
 		Expect(lsCtx.Name).To(Equal(lsv1alpha1.DefaultContextName))
-		Expect(lsCtx.RepositoryContext).To(Equal(repoCtx))
+		Expect(lsCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
 })

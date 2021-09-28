@@ -70,11 +70,11 @@ var _ = Describe("Simple", func() {
 
 	It("Should successfully reconcile SimpleTest", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "01-simple", "cluster"))
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution

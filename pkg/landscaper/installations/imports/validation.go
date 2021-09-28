@@ -24,7 +24,11 @@ func NewValidator(ctx context.Context, op *installations.Operation) (*Validator,
 	var parent *installations.Installation
 	if op.Context().Parent != nil {
 		var err error
-		parent, err = installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), op.Context().Parent.Info)
+		parent, err = installations.CreateInternalInstallationWithContext(ctx,
+			op.Context().Parent.Info,
+			op.Client(),
+			op.ComponentsRegistry(),
+			op.Overwriter)
 		if err != nil {
 			return nil, err
 		}

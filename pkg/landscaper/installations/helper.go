@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lscheme "github.com/gardener/landscaper/pkg/api"
@@ -48,19 +50,6 @@ func IsRootInstallation(inst *lsv1alpha1.Installation) bool {
 func GetParentInstallationName(inst *lsv1alpha1.Installation) string {
 	name, _ := kubernetes.OwnerOfGVK(inst.OwnerReferences, componentInstallationGVK)
 	return name
-}
-
-// CreateInternalInstallations creates internal installations for a list of ComponentInstallations
-func CreateInternalInstallations(ctx context.Context, compResolver ctf.ComponentResolver, installations ...*lsv1alpha1.Installation) ([]*Installation, error) {
-	internalInstallations := make([]*Installation, len(installations))
-	for i, inst := range installations {
-		inInst, err := CreateInternalInstallation(ctx, compResolver, inst)
-		if err != nil {
-			return nil, err
-		}
-		internalInstallations[i] = inInst
-	}
-	return internalInstallations, nil
 }
 
 // CreateInternalInstallationBases creates internal installation bases for a list of ComponentInstallations
@@ -100,12 +89,34 @@ func ResolveComponentDescriptor(ctx context.Context, compRepo ctf.ComponentResol
 }
 
 // CreateInternalInstallation creates an internal installation for an Installation
+// DEPRECATED: use CreateInternalInstallationWithContext instead
 func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentResolver, inst *lsv1alpha1.Installation) (*Installation, error) {
 	if inst == nil {
 		return nil, nil
 	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
+	}
+	return New(inst, blue)
+}
+
+// CreateInternalInstallationWithContext creates an internal installation for an Installation
+func CreateInternalInstallationWithContext(ctx context.Context,
+	inst *lsv1alpha1.Installation,
+	kubeClient client.Client,
+	compResolver ctf.ComponentResolver,
+	overwriter componentoverwrites.Overwriter,
+) (*Installation, error) {
+	if inst == nil {
+		return nil, nil
+	}
+	lsCtx, err := GetExternalContext(ctx, kubeClient, inst, overwriter)
+	if err != nil {
+		return nil, err
+	}
+	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

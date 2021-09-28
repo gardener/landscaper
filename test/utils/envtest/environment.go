@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
@@ -116,6 +118,17 @@ func (e *Environment) InitResources(ctx context.Context, resourcesPath string) (
 		return nil, err
 	}
 	return state, err
+}
+
+// InitDefaultContextFromInst creates a default landsacpe context object from a installation.
+func (e *Environment) InitDefaultContextFromInst(ctx context.Context, state *State, inst *lsv1alpha1.Installation) error {
+	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
+	lsCtx := &lsv1alpha1.Context{
+		RepositoryContext: cdRef.RepositoryContext,
+	}
+	lsCtx.Name = lsv1alpha1.DefaultContextName
+	lsCtx.Namespace = inst.Namespace
+	return state.CreateWithClient(ctx, e.Client, lsCtx)
 }
 
 // CleanupState cleans up a test environment.

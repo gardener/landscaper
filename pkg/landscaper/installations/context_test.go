@@ -11,6 +11,8 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 
+	testutils "github.com/gardener/landscaper/test/utils"
+
 	"github.com/gardener/landscaper/test/utils/envtest"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -41,6 +43,7 @@ var _ = Describe("Context", func() {
 		state, err = testenv.InitResources(context.TODO(), "./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 		fakeInstallations = state.Installations
+		Expect(testutils.CreateExampleDefaultContext(context.TODO(), testenv.Client, "test1", "test2", "test3", "test4")).To(Succeed())
 
 		fakeClient = testenv.Client
 
