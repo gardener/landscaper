@@ -25,7 +25,7 @@
 - [Container](./deployer/container.md)
 
 ### Tutorials
-- [Local Setup with local OCI Registry](tutorials/00-local-setup.md)
+- [Install the Landscaper](tutorials/00-landscaper-installation.md)
 - [Simple NGINX Ingress blueprint](tutorials/01-create-simple-blueprint.md)
 - [Simple NGINX Ingress blueprint with Local Artifacts](tutorials/02-local-simple-blueprint.md)
 - [HTTP Echo Server with Import from nginx ingress blueprint](tutorials/03-simple-import.md)
