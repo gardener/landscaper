@@ -24,6 +24,12 @@ function buildComponentArchive() {
   CA_PATH="$(mktemp -d)"
   printf "> Building component ${COMPONENT_NAME}\n"
 
+  COMPONENT_REFERENCES=""
+
+  if [ -f ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/component-references.yaml ]; then
+    COMPONENT_REFERENCES="-c ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/component-references.yaml"
+  fi
+
   component-cli ca "${CA_PATH}" "${CTF_PATH}" \
     --component-name=github.com/gardener/landscaper/${COMPONENT_NAME} \
     --component-version=${VERSION} \
@@ -31,13 +37,15 @@ function buildComponentArchive() {
     -s ${SOURCE_PATH}/.landscaper/sources.yaml \
     -r ${SOURCE_PATH}/.landscaper/${COMPONENT_NAME}/resources.yaml \
     COMMIT_SHA=${COMMIT_SHA} \
-    VERSION=${VERSION}
+    VERSION=${VERSION} \
+    $COMPONENT_REFERENCES
 }
 
 buildComponentArchive "container-deployer"
 buildComponentArchive "helm-deployer"
 buildComponentArchive "manifest-deployer"
 buildComponentArchive "mock-deployer"
+buildComponentArchive "landscaper-service"
 
 # add landscaper component descriptor
 printf "> Create Landscaper ca archive\n"

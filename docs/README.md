@@ -7,6 +7,7 @@
 ### Getting Started
 - [Install the landscaper cli](https://github.com/gardener/landscapercli/blob/master/docs/installation.md)
 - [Install the landscaper](./gettingstarted/install-landscaper-controller.md)
+- [Install the landscaper as a service](./gettingstarted/install-landscaper-service.md)
 
 ### Usage
 - [Blueprints](./usage/Blueprints.md)

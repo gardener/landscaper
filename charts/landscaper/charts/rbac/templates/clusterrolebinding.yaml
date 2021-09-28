@@ -1,0 +1,56 @@
+{{/* SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+
+ SPDX-License-Identifier: Apache-2.0
+*/}}
+
+{{- if .Values.global.serviceAccount.controller.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "landscaper.controller.serviceAccountName" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "landscaper.controller.serviceAccountName" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "landscaper.controller.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.global.serviceAccount.webhooksServer.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "landscaper.webhooksServer.serviceAccountName" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "landscaper.webhooksServer.serviceAccountName" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "landscaper.webhooksServer.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.global.serviceAccount.user.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "landscaper.user.serviceAccountName" . }}
+  labels:
+    {{- include "landscaper.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "landscaper.user.serviceAccountName" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "landscaper.user.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

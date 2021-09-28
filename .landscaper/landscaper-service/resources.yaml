@@ -1,0 +1,64 @@
+---
+type: blueprint
+name: rbac-blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint/rbac
+  mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+  compress: true
+...
+---
+type: blueprint
+name: landscaper-blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint/landscaper
+  mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+  compress: true
+...
+---
+type: blueprint
+name: installation-blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint/installation
+  mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+  compress: true
+...
+---
+type: landscaper.gardener.cloud/jsonschema
+name: registry-config-definition
+relation: local
+input:
+  type: file
+  path: ./definition/registry-configuration.json
+  mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+...
+---
+type: landscaper.gardener.cloud/jsonschema
+name: landscaper-config-definition
+relation: local
+input:
+  type: file
+  path: ./definition/landscaper-configuration.json
+  mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+...
+---
+type: helm.io/chart
+name: landscaper-controller-rbac-chart
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-rbac:${VERSION}
+...
+---
+type: helm.io/chart
+name: landscaper-controller-deployment-chart
+relation: local
+access:
+  type: ociRegistry
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-deployment:${VERSION}
+...

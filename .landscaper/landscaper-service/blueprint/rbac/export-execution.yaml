@@ -1,0 +1,57 @@
+exports:
+  landscaperControllerKubeconfigYaml: |
+    apiVersion: v1
+    kind: Config
+    current-context: virtual-cluster
+    contexts:
+    - name: virtual-cluster
+      context:
+        cluster: virtual-cluster
+        user: landscaper-controller
+    clusters:
+    - name: virtual-cluster
+      cluster:
+        certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperControllerCaCrt" }}
+        server: https://{{- trimAll "\n" (index .values "dataobjects" "virtualClusterEndpoint") -}}:443
+    users:
+    - name: landscaper-controller
+      user:
+        token: {{ index .values "deployitems" "landscaper-rbac" "landscaperControllerToken" | b64dec }}
+
+  landscaperWebhooksKubeconfigYaml: |
+    apiVersion: v1
+    kind: Config
+    current-context: virtual-cluster
+    contexts:
+    - name: virtual-cluster
+      context:
+        cluster: virtual-cluster
+        user: landscaper-webhooks
+    clusters:
+    - name: virtual-cluster
+      cluster:
+        certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperWebhooksCaCrt" }}
+        server: https://{{- trimAll "\n" (index .values "dataobjects" "virtualClusterEndpoint") -}}:443
+    users:
+    - name: landscaper-webhooks
+      user:
+        token: {{ index .values "deployitems" "landscaper-rbac" "landscaperWebhooksToken" | b64dec }}
+
+  landscaperUserKubeconfigYaml: |
+    apiVersion: v1
+    kind: Config
+    current-context: virtual-cluster
+    contexts:
+    - name: virtual-cluster
+      context:
+        cluster: virtual-cluster
+        user: landscaper-user
+    clusters:
+    - name: virtual-cluster
+      cluster:
+        certificate-authority-data: {{ index .values "deployitems" "landscaper-rbac" "landscaperUserCaCrt" }}
+        server: https://{{- trimAll "\n" (index .values "dataobjects" "virtualClusterEndpoint") -}}:443
+    users:
+    - name: landscaper-user
+      user:
+        token: {{ index .values "deployitems" "landscaper-rbac" "landscaperUserToken" | b64dec }}

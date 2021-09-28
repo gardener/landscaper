@@ -36,37 +36,38 @@ In case of an OCI registry that is not exposed via https, the `allowPlainHttpReg
 The following snippet shows a sample `values.yaml` file that is used to parameterize the Helm chart:
 
 ```yaml
-controller:
-  image:
-    tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
-
-webhookServer:
-#  disableWebhooks: all # disables specific webhooks. If all are disabled the webhook server is not deployed
-  image:
-    tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
-
 landscaper:
-  cache: {} # Landscaper caches pulled OCI artefacts on disk and optionally in-memory
-#     useInMemoryOverly: false
-  registryConfig:
-    allowPlainHttpRegistries: false
-    secrets: # contains optional oci secrets
-      default: {
-        "auths": {
-          "hostname": {
-            "auth": "my auth"
+    controller:
+      image:
+        tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
+    
+    webhookServer:
+    #  disableWebhooks: all # disables specific webhooks. If all are disabled the webhook server is not deployed
+      image:
+        tag: image version # .e.g. 0.0.0-dev-8bf4b8150f96fed8868618c56787b81fa4e095e6
+    
+    landscaper:
+      cache: {} # Landscaper caches pulled OCI artefacts on disk and optionally in-memory
+    #     useInMemoryOverly: false
+      registryConfig:
+        allowPlainHttpRegistries: false
+        secrets: # contains optional oci secrets
+          default: {
+            "auths": {
+              "hostname": {
+                "auth": "my auth"
+              }
+            }
           }
-        }
-      }
-  metrics:
-    port: 8080  
-
-  # deploy with integrated deployers for quick start
-  deployers: 
-  - container
-  - helm
-  - mock
-  - manifest 
+      metrics:
+        port: 8080  
+    
+      # deploy with integrated deployers for quick start
+      deployers: 
+      - container
+      - helm
+      - mock
+      - manifest 
 ```
 
 ### Landscaper image and tag
@@ -79,7 +80,7 @@ If Landscaper is installed through an OCI chart, the image tag will automaticall
 
 Blueprints and component descriptors must reside in one or more OCI registries. During an installation process, Landscaper attempts to pull them from there. 
 
-If component descriptors or blueprints are stored in a non-public OCI registry, the registry's secrets can be provided in the `landscaper.registrySecrets` section by providing a map of `<config-name>: <docker auth>`. Different sets of secrets can be provided for blueprints and component descriptors by the `landscaper.registrySecrets.blueprint` and `landscaper.registrySecrets.components` fields respectively.
+If component descriptors or blueprints are stored in a non-public OCI registry, the registry's secrets can be provided in the `landscaper.landscaper.registrySecrets` section by providing a map of `<config-name>: <docker auth>`. Different sets of secrets can be provided for blueprints and component descriptors by the `landscaper.landscaper.registrySecrets.blueprint` and `landscaper.landscaper.registrySecrets.components` fields respectively.
 
 The value to provide to `<docker auth>` must be a Docker auth config as plain JSON (not as a string). Refer to Kubernetes' [pull-secret documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#log-in-to-docker) for a comprehensive guide.
 
@@ -101,16 +102,17 @@ The default configuration can be overwritten or enhanced by supplying `deployerC
 See the specific [helm chart values](../../charts) of the deployer for detailed documentation.
 ```yaml
 landscaper:
-  deployers: [container, helm]
-  deployersConfig:
-    # match the deployer name
-    container: 
-      # provide any helm charts values.
-      deployer:
-        oci:
-          allowPlainHttp: false
-    helm:
-      # ...
+    landscaper:
+      deployers: [container, helm]
+      deployersConfig:
+        # match the deployer name
+        container: 
+          # provide any helm charts values.
+          deployer:
+            oci:
+              allowPlainHttp: false
+        helm:
+          # ...
 ```
 
 Additional external deployer can be either configured by applying the `DeployerRegistration` directly or providing the Registration in the helm chart.
@@ -121,30 +123,31 @@ For detailed information about the DeployerRegistration and its configurations s
 
 ```yaml
 landscaper:
-  deployers: [my-custom-deployer] # the external deployer name MUST be set.
-  deployersConfig:
-    # match the deployer name
-    my-custom-deployer: 
-      apiVersion: landscaper.gardener.cloud/v1alpha1
-      kind: DeployerRegistration
-      metadata:
-        name: my-deployer # defaulted to "my-custom-deployer"
-        
-      spec:
-        # describe the deploy items types the deployer is able to reconcile
-        types: ["my-deploy-item-type"]
-        installationTemplate: # note that no exports are allowed here.
-          componentDescriptor:
-            ref:
-              repositoryContext:
-                type: ociRegistry
-                baseUrl: "example.myregistry.com/my-context"
-              componentName: "my-custom-deployer"
-              version: v1.0.0
-
-          blueprint:
-            ref:
-              resourceName: my-deployer-blueprint
-      ...
+    landscaper:
+      deployers: [my-custom-deployer] # the external deployer name MUST be set.
+      deployersConfig:
+        # match the deployer name
+        my-custom-deployer: 
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: DeployerRegistration
+          metadata:
+            name: my-deployer # defaulted to "my-custom-deployer"
+            
+          spec:
+            # describe the deploy items types the deployer is able to reconcile
+            types: ["my-deploy-item-type"]
+            installationTemplate: # note that no exports are allowed here.
+              componentDescriptor:
+                ref:
+                  repositoryContext:
+                    type: ociRegistry
+                    baseUrl: "example.myregistry.com/my-context"
+                  componentName: "my-custom-deployer"
+                  version: v1.0.0
+    
+              blueprint:
+                ref:
+                  resourceName: my-deployer-blueprint
+          ...
 ```
 

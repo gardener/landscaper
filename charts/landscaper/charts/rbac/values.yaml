@@ -1,5 +1,8 @@
+namespace:
+  # Specifies whether the Helm release namespace should be created
+  create: false
+
 global:
-  # global values used by both helm charts
   serviceAccount:
     controller:
       # Specifies whether a service account should be created
@@ -27,9 +30,3 @@ global:
       # The name of the service account to use.
       # If not set and create is true, the default will be "landscaper-user"
       name: ""
-
-landscaper:
-  # landscaper helm chart values
-
-rbac:
-  # rbac helm chart values

@@ -1,0 +1,99 @@
+deployItems:
+  - name: landscaper
+    type: landscaper.gardener.cloud/helm
+    target:
+      name: {{ .imports.hostingCluster.metadata.name }}
+      namespace: {{ .imports.hostingCluster.metadata.namespace }}
+    config:
+      apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      updateStrategy: patch
+      name: landscaper
+      namespace: {{ .imports.hostingClusterNamespace }}
+
+      chart:
+        {{ $resource := getResource .cd "name" "landscaper-controller-deployment-chart" }}
+        ref: {{ $resource.access.imageReference }}
+
+      values:
+        nameOverride: landscaper-{{ .imports.hostingClusterNamespace }}
+        fullnameOverride: landscaper-{{ .imports.hostingClusterNamespace }}
+
+        landscaper:
+          verbosity: {{ .imports.landscaperConfig.landscaper.verbosity | default 2 }}
+          crdManagement:
+            deployCrd: true
+            forceUpdate: true
+          registryConfig:
+{{ toYaml .imports.registryConfig | indent 12 }}
+
+          deployers:
+{{ toYaml .imports.landscaperConfig.deployers | indent 12 }}
+
+          deployerManagement:
+            disable: false
+            namespace: {{ .imports.virtualClusterNamespace }}
+            agent:
+              name: landscaper-{{ .imports.hostingClusterNamespace }}
+              disable: false
+              namespace: {{ .imports.hostingClusterNamespace }}
+
+          {{ if .imports.landscaperConfig.deployersConfig }}
+          deployersConfig:
+            Deployers:
+{{ toYaml .imports.landscaperConfig.deployersConfig | indent 14 }}
+         {{ end }}
+
+        image: {}
+
+        controller:
+          landscaperKubeconfig:
+            kubeconfig: |
+{{ .imports.landscaperControllerKubeconfigYaml | indent 14 }}
+
+          {{ $landscaperComponent := getComponent .cd "name" "landscaper" }}
+
+          replicaCount: {{ .imports.landscaperConfig.landscaper.replicas | default 1 }}
+
+          {{ $landscaperImgresource := getResource $landscaperComponent "name" "landscaper-controller" }}
+          {{ $landscaperImgrepo := ociRefRepo $landscaperImgresource.access.imageReference }}
+          {{ $landscaperImgtag := ociRefVersion $landscaperImgresource.access.imageReference }}
+          image:
+            repository: {{ $landscaperImgrepo }}
+            tag: {{ $landscaperImgtag }}
+            pullPolicy: IfNotPresent
+
+        webhooksServer:
+          landscaperKubeconfig:
+            kubeconfig: |
+{{ .imports.landscaperWebhooksKubeconfigYaml | indent 14}}
+
+          replicaCount: {{ .imports.landscaperConfig.webhooksServer.replicas | default 1 }}
+
+          {{ $webhooksImgresource := getResource $landscaperComponent "name" "landscaper-webhooks-server" }}
+          {{ $webhooksImgrepo := ociRefRepo $webhooksImgresource.access.imageReference }}
+          {{ $webhooksImgtag := ociRefVersion $webhooksImgresource.access.imageReference }}
+          image:
+            repository: {{ $webhooksImgrepo }}
+            tag: {{ $webhooksImgtag }}
+            pullPolicy: IfNotPresent
+
+          servicePort: {{ .imports.landscaperConfig.webhooksServer.servicePort | default 9443 }}
+          disableWebhooks: []
+          certificatesNamespace: {{ .imports.virtualClusterNamespace }}
+
+        service:
+          type: ClusterIP
+          port: 80
+
+        global:
+          serviceAccount:
+            controller:
+              create: true
+              annotations: {}
+              name: landscaper-{{ .imports.hostingClusterNamespace }}
+            webhooksServer:
+              name: landscaper-webhooks
+
+        resources:
+{{ toYaml .imports.landscaperConfig.landscaper.resources | indent 10 }}

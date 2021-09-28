@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 apiVersion: v2
-name: landscaper
-description: Landscaper parent chart
+name: landscaper-rbac
+description: Landscaper RBAC objects
 
 # A chart can be either an 'application' or a 'library' chart.
 #

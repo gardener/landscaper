@@ -11,6 +11,8 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller charts/landscaper
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-rbac charts/landscaper/charts/rbac
+$SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-deployment charts/landscaper/charts/landscaper
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/landscaper-agent charts/landscaper-agent
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller charts/container-deployer
 $SOURCE_PATH/hack/create-helm-chart.sh eu.gcr.io/gardener-project/landscaper/charts/helm-deployer-controller charts/helm-deployer
