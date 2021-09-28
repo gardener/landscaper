@@ -85,8 +85,27 @@ version: v0.1.0
 relation: external
 input:
   type: "dir" # type dir automatically creates a tar from the given dir.
-  path: /tmp/chart # path to the downloaded helm chart
+  path: /tmp/chart # parent path to the downloaded helm chart
   compress: true # compresses the tar/blob using gzip.
+  # Media type automatically defaults to "application/gzip" for compressed=true
+  # mediaType: "application/gzip"
+...
+```
+
+:warning: In the above example, the path to the helm chart points to the parent directory of `/tmp/chart/nginx-ingress`.
+The reason is that helm enforces to have the chart resources located in a parent directory.
+If the fully qualified path to the helm chart should be used, the option `preserveDir` has to be set to `true`.
+```yaml
+---
+type: helm
+name: ingress-nginx-chart
+version: v0.1.0
+relation: external
+input:
+  type: "dir" # type dir automatically creates a tar from the given dir.
+  path: /tmp/chart/nginx-ingress # fully qualified path to the downloaded helm chart
+  compress: true # compresses the tar/blob using gzip.
+  preserveDir: true # preserves the root directory of the helm chart
   # Media type automatically defaults to "application/gzip" for compressed=true
   # mediaType: "application/gzip"
 ...
