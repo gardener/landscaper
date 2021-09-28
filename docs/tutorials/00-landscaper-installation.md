@@ -7,7 +7,7 @@ on a Gardener Shoot cluster.
 
 - Kubernetes cluster
 - Landscaper CLI (see the [installation documentation](https://github.com/gardener/landscapercli/blob/master/docs/installation.md))
-- This tutorial assumes that the landscaper will be installed in the namespace `landscaper`. The namespace has to created before the landscaper is being installed.
+- This tutorial assumes that the landscaper will be installed in the namespace `ls-system`. The namespace has to created before the landscaper is being installed.
 
 ### Install the Landscaper
 
@@ -47,7 +47,7 @@ To install the Landscaper and the OCI registry, use the following command:
 landscaper-cli quickstart install \
     --kubeconfig ./kubeconfig.yaml \
     --landscaper-values ./landscaper-values.yaml \
-    --namespace landscaper \
+    --namespace ls-system \
     --install-oci-registry \
     --install-registry-ingress \
     --registry-username ${REGISTRY_USER} \
@@ -114,7 +114,7 @@ To install the Landscaper and the OCI container registry, use the following comm
 landscaper-cli quickstart install \
     --kubeconfig ./kubeconfig.yaml \
     --landscaper-values ./landscaper-values.yaml \
-    --namespace landscaper
+    --namespace ls-system
 ```
 
 ### Working with the landscaper-cli
