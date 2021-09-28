@@ -80,7 +80,7 @@ This should give the output:
 
 ##### Prerequisites
 
-- An OCI registry that supports the [HTTP API V2](https://docs.docker.com/registry/spec/api/#docker-registry-http-api-v2)
+- An OCI registry that implements the [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec).
 
 First the helm values for the Landscaper configuration (`landscaper-values.yaml`) have to be created:
 
