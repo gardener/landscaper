@@ -76,7 +76,7 @@ This should give the output:
 {"repositories":[]}
 ```
 
-#### Alternative 2: Install using an external container registry
+#### Alternative 2: Install using an external OCI registry
 
 ##### Prerequisites
 
