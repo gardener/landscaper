@@ -53,14 +53,10 @@ var _ = Describe("Validation", func() {
 			}))))
 		})
 
-		It("should deny if neither Cron nor Every are specified", func() {
+		It("should accept if neither Cron nor Every are specified", func() {
 			cronSpec := &crv1alpha1.ContinuousReconcileSpec{}
 			allErrs := crval.ValidateContinuousReconcileSpec(field.NewPath("cronSpec"), cronSpec)
-			Expect(allErrs).To(HaveLen(1))
-			Expect(allErrs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
-				"Type":  Equal(field.ErrorTypeRequired),
-				"Field": Equal("cronSpec"),
-			}))))
+			Expect(allErrs).To(HaveLen(0))
 		})
 
 		It("should deny if the spec is invalid", func() {
