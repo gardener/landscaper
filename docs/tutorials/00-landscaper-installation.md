@@ -7,7 +7,7 @@ on a Gardener Shoot cluster.
 
 - Kubernetes cluster
 - Landscaper CLI (see the [installation documentation](https://github.com/gardener/landscapercli/blob/master/docs/installation.md))
-- This tutorial assumes that the landscaper will be installed in the namespace `ls-system`. The namespace has to created before the landscaper is being installed.
+- This tutorial assumes that the landscaper will be installed in the namespace `ls-system`. The namespace has to be created before the landscaper is being installed.
 
 ### Install the Landscaper
 
@@ -19,7 +19,7 @@ The `landscaper-cli` can install the Landscaper together with an OCI registry. T
 
 ##### Prerequisites
 
-- The target cluster must be a Gardener Shoot (TLS is provided via the Gardener cert manager). 
+- The target cluster must be a Gardener Shoot (TLS certificate is provided via the Gardener cert manager). 
 - A nginx ingress controller must be deployed in the target cluster
 - The command "htpasswd" must be installed on your local machine.
 
@@ -46,7 +46,7 @@ landscaper:
           namespace: ls-system
 ```
 
-This tutorial assumes that the OCI registry usernames is store in environment variable `REGISTRY_USER` and the password is stored in environment variable `REGISTRY_PASSWORD`.
+This tutorial assumes that the OCI registry usernames is stored in environment variable `REGISTRY_USER` and the password is stored in environment variable `REGISTRY_PASSWORD`.
 
 To install the Landscaper and the OCI registry, use the following command:
 
@@ -120,9 +120,9 @@ landscaper:
           namespace: ls-system
 ```
 
-The registry secrets have to be provided in a plain Docker auth JSON format. See [here](../gettingstarted/install-landscaper-controller.md#Private registry access) for more details.
+The registry secrets have to be provided in a plain Docker auth JSON format at `landscaper.landscaper.registryConfig.secrets`. See [here](../gettingstarted/install-landscaper-controller.md#Private registry access) for more details.
 
-To install the Landscaper and the OCI container registry, use the following command:
+To install the Landscaper with the credentials for the OCI container registry, use the following command:
 
 ```shell script
 landscaper-cli quickstart install \
