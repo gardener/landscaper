@@ -72,6 +72,11 @@ var DataObjectDefinition = lsschema.CustomResourceDefinition{
 			Type:     "string",
 			JSONPath: ".metadata.labels['data\\.landscaper\\.gardener\\.cloud\\/key']",
 		},
+		{
+			Name:     "Age",
+			Type:     "date",
+			JSONPath: ".metadata.creationTimestamp",
+		},
 	},
 }
 
@@ -79,9 +84,6 @@ var DataObjectDefinition = lsschema.CustomResourceDefinition{
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DataObject are resources that can hold any kind json or yaml data.
-// +kubebuilder:resource:path="dataobjects",scope="Namespaced",shortName={"do","dobj"},singular="dataobject"
-// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/context']`,name=Context,type=string
-// +kubebuilder:printcolumn:JSONPath=`.metadata.labels['data\.landscaper\.gardener\.cloud\/key']`,name=Key,type=string
 type DataObject struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
