@@ -26,7 +26,7 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 		logger := log.WithName("continuousReconcileExtension")
 		logger.V(7).Info("execute")
 		if di == nil {
-			return nil, nil
+			return nil, fmt.Errorf("deploy item must not be nil")
 		}
 		nextRaw, err := nextReconcile(ctx, di.Status.LastReconcileTime.Time, di)
 		if err != nil {
