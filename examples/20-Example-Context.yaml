@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Context
+metadata:
+  name: default
+  namespace: default
+
+repositoryContext:
+  type: ociRegistry
+  baseUrl: "example.com"
+
+registryPullSecrets: # additional pull secrets to access component descriptors and blueprints
+- name: my-pullsecret

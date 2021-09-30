@@ -20,6 +20,15 @@ repositoryContext: # define the default repository context for installations
   type: ociRegistry
   baseUrl: "myregistry.com/components"
 
+controllers:
+  context:
+    config:
+      disableDefault: false
+      repositoryContext: # define the default repository context for installations
+        type: ociRegistry
+        baseUrl: "myregistry.com/components"
+
+
 registries:
   oci:
     configFiles:

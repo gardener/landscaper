@@ -6,6 +6,8 @@ Each installation contains the state of its executed blueprint and has its own c
 **Index**
 - [Installations](#installations)
       - [Basic structure:](#basic-structure)
+  - [Context](#context) 
+  - [Component Descriptor](#component-descriptor) 
   - [Blueprint](#blueprint)
   - [Imports](#imports)
     - [Data Imports](#data-imports)
@@ -25,9 +27,12 @@ kind: Installation
 metadata:
   name: my-installation
 spec:
+  
+  context: "" # defaults to "default"
+  
   componentDescriptor:
     ref:
-#      repositoryContext:
+#      repositoryContext: # overwrite the context defined repository context.
 #        type: ociRegistry
 #        baseUrl: eu.gcr.io/myproj
       componentName: github.com/gardener/gardener
@@ -122,6 +127,23 @@ status:
       namespace: default
 ```
 
+## Context
+
+The context is a configuration resource containing shared configuration for installations.
+This config can contain the repository context, registry pull secrets, etc. . For detailed documentation see [./Context.md](./Context.md).
+
+Installations *MUST* reference a context by its name in `.spec.context` (it is defaulted to the `default` context if not defined).
+The context must be present in the same namespace as the installtion.
+Cross-namespace consumption is not possible.
+
+The context is automatically passed to subinstallations and deploy items.
+
+```yaml
+spec:
+  # reference to the Context resource in the same namespace
+  context: "my-context"
+```
+
 ## Component Descriptor
 A component descriptor defines a 'component' with all its resources and dependencies. An installation may use this information to determine its activities. In this context , a component descriptor can be located via a remote reference or declared inline (only for development purposes).
 
@@ -130,10 +152,14 @@ Though technically a component descriptor is optional, most installations will u
 __Remote Reference__
 
 A component descriptor can be identified by its name and version. Additionally, it is resolved within a defined repository context as described in the [component descriptor spec](https://gardener.github.io/component-spec/component_descriptor_registries.html).
-This repository context is optional and can be defaulted in the landscaper deployment.
+This repository context SHOULD be defined by the [Context](./Context.md) that is referenced by the installation.
+Optionally the context defined repository context can be overwritten in the reference.
 
 ```yaml
 spec:
+  
+  context: "" # repository context defined in the referenced context resource.
+  
   componentDescriptor:
     ref: 
 #      repositoryContext:
