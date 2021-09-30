@@ -5,7 +5,5 @@
 // Package continuousreconcile contains types for continuous reconciliation specification.
 // +k8s:deepcopy-gen=package
 // +k8s:openapi-gen=true
-// +k8s:defaulter-gen=TypeMeta
 
-// +groupName=continuousreconcile.deployer.landscaper.gardener.cloud
 package continuousreconcile

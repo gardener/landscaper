@@ -46,7 +46,7 @@ bash "${API_PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups
   $PROJECT_MOD_ROOT/pkg/client \
   $PROJECT_MOD_ROOT/apis/deployer \
   $PROJECT_MOD_ROOT/apis/deployer \
-  "utils/readinesschecks utils/managedresource helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1 core:v1alpha1" \
+  "utils/continuousreconcile utils/readinesschecks utils/managedresource helm:v1alpha1 container:v1alpha1 manifest:v1alpha1 manifest:v1alpha2 mock:v1alpha1 core:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/hack/boilerplate.go.txt"
 
 echo "> Generating openapi definitions"
