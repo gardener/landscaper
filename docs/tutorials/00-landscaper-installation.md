@@ -5,7 +5,6 @@ on a Gardener Shoot cluster.
 
 ### Prerequisites
 
-- Kubernetes cluster
 - Landscaper CLI (see the [installation documentation](https://github.com/gardener/landscapercli/blob/master/docs/installation.md))
 - This tutorial assumes that the landscaper will be installed in the namespace `ls-system`. The namespace has to be created before the landscaper is being installed.
 
@@ -87,6 +86,7 @@ This should give the output:
 
 ##### Prerequisites
 
+- Kubernetes cluster
 - An OCI registry that implements the [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec).
 
 First the helm values for the Landscaper configuration (`landscaper-values.yaml`) have to be created:
