@@ -87,7 +87,7 @@ This should give the output:
 ##### Prerequisites
 
 - Kubernetes cluster
-- An OCI registry that implements the [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec).
+- An external OCI registry that implements the [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec).
 
 First the helm values for the Landscaper configuration (`landscaper-values.yaml`) have to be created:
 
