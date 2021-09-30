@@ -13,7 +13,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	duv1alpha1 "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1"
+	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
@@ -77,7 +77,7 @@ func ContinuousReconcileExtensionSetup(nextReconcile func(context.Context, time.
 // Schedule returns a cron schedule based on the specification.
 // If both Cron and Every are specified (which should be prevented by validation), Cron takes precedence.
 // If neither is specified, an error is returned (this should also be prevented by validation).
-func Schedule(crs *duv1alpha1.ContinuousReconcileSpec) (cron.Schedule, error) {
+func Schedule(crs *cr.ContinuousReconcileSpec) (cron.Schedule, error) {
 	if crs == nil {
 		return nil, nil
 	}

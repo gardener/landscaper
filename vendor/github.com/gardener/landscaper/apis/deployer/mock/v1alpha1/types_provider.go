@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1"
+	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

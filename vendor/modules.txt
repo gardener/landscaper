@@ -122,8 +122,7 @@ github.com/gardener/landscaper/apis/deployer/mock
 github.com/gardener/landscaper/apis/deployer/mock/install
 github.com/gardener/landscaper/apis/deployer/mock/v1alpha1
 github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile
-github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1
-github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1/validation
+github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation
 github.com/gardener/landscaper/apis/deployer/utils/managedresource
 github.com/gardener/landscaper/apis/deployer/utils/managedresource/validation
 github.com/gardener/landscaper/apis/deployer/utils/readinesschecks

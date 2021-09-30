@@ -7,7 +7,7 @@ package continuousreconcile
 import (
 	"strings"
 
-	lscore "github.com/gardener/landscaper/apis/core"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // ContinuousReconcileSpec represents the specification of a continuous reconcile schedule.
@@ -20,7 +20,7 @@ type ContinuousReconcileSpec struct {
 	// Every specifies a delay after which the reconcile should happen.
 	// Either Cron or Every has to be specified.
 	// +optional
-	Every *lscore.Duration `json:"every,omitempty"`
+	Every *lsv1alpha1.Duration `json:"every,omitempty"`
 }
 
 func (crs ContinuousReconcileSpec) String() string {

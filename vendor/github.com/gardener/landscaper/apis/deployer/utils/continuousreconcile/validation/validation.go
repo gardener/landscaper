@@ -11,12 +11,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helper "github.com/gardener/landscaper/apis/core/validation"
-	crv1alpha1 "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1"
+	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 )
 
 // ValidateContinuousReconcileSpec validates a continuous reconciliation spec.
 // A value of nil is considered valid, as is an 'empty' spec with all fields equal to nil or their respective zero value.
-func ValidateContinuousReconcileSpec(fldPath *field.Path, spec *crv1alpha1.ContinuousReconcileSpec) field.ErrorList {
+func ValidateContinuousReconcileSpec(fldPath *field.Path, spec *cr.ContinuousReconcileSpec) field.ErrorList {
 	if ContinuousReconcileSpecIsEmpty(spec) {
 		return nil
 	}
@@ -47,6 +47,6 @@ func validateEveryDuration(fldPath *field.Path, dur *lsv1alpha1.Duration) field.
 }
 
 // ContinuousReconcileSpecIsEmpty returns true if the given spec is either nil or all its fields are nil/the zero value.
-func ContinuousReconcileSpecIsEmpty(spec *crv1alpha1.ContinuousReconcileSpec) bool {
+func ContinuousReconcileSpecIsEmpty(spec *cr.ContinuousReconcileSpec) bool {
 	return spec == nil || (len(spec.Cron) == 0 && (spec.Every == nil || spec.Every.Duration == 0))
 }

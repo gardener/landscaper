@@ -15,8 +15,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
-	crv1alpha1 "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1"
-	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/v1alpha1/validation"
+	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 )
 
 func TestConfig(t *testing.T) {
@@ -28,10 +28,10 @@ var _ = Describe("Validation", func() {
 
 	Context("ContinuousReconcileSpec", func() {
 		It("should accept if either Cron or Every is specified and valid", func() {
-			cronSpec := &crv1alpha1.ContinuousReconcileSpec{
+			cronSpec := &cr.ContinuousReconcileSpec{
 				Cron: "* * 1 1 *",
 			}
-			everySpec := &crv1alpha1.ContinuousReconcileSpec{
+			everySpec := &cr.ContinuousReconcileSpec{
 				Every: &lsv1alpha1.Duration{Duration: 5 * time.Hour},
 			}
 			allErrs := field.ErrorList{}
@@ -41,7 +41,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should deny if both Cron and Every are specified", func() {
-			cronSpec := &crv1alpha1.ContinuousReconcileSpec{
+			cronSpec := &cr.ContinuousReconcileSpec{
 				Cron:  "* * 1 1 *",
 				Every: &lsv1alpha1.Duration{Duration: 5 * time.Hour},
 			}
@@ -54,13 +54,13 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should accept if neither Cron nor Every are specified", func() {
-			cronSpec := &crv1alpha1.ContinuousReconcileSpec{}
+			cronSpec := &cr.ContinuousReconcileSpec{}
 			allErrs := crval.ValidateContinuousReconcileSpec(field.NewPath("cronSpec"), cronSpec)
 			Expect(allErrs).To(HaveLen(0))
 		})
 
 		It("should deny if the spec is invalid", func() {
-			specs := []*crv1alpha1.ContinuousReconcileSpec{
+			specs := []*cr.ContinuousReconcileSpec{
 				{
 					Cron: "foo",
 				},
