@@ -42,7 +42,7 @@ helm repo add stable https://charts.helm.sh/stable
 helm repo update
 
 # download the nginx ingress helm chart and extract it to /tmp/nginx-ingress
-helm pull ingress-nginx/ingress-nginx --untar --destination /tmp
+helm pull ingress-nginx/ingress-nginx --version 3.29.0 --untar --destination /tmp
 
 # upload the helm chart to an OCI registry
 export OCI_REGISTRY="eu.gcr.io" # <-- replace this with the URL of your own OCI registry
