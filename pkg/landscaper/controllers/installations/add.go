@@ -9,6 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -35,5 +37,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, overwriter 
 		Owns(&v1alpha1.Execution{}).
 		Owns(&v1alpha1.Installation{}).
 		WithLogger(log).
+		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Installations.CommonControllerConfig)).
 		Complete(a)
 }

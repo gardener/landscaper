@@ -75,6 +75,7 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		SyncPeriod:         &o.Config.Controllers.SyncPeriod.Duration,
 	}
 
 	if o.Config.Metrics != nil {
@@ -128,7 +129,7 @@ func (o *Options) run(ctx context.Context) error {
 
 	ctrlLogger := o.Log.WithName("controllers")
 	componentOverwriteMgr := componentoverwrites.New()
-	if err := coctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr); err != nil {
+	if err := coctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr, o.Config.Controllers.ComponentOverwrites); err != nil {
 		return fmt.Errorf("unable to setup commponent overwrites controller: %w", err)
 	}
 
@@ -136,11 +137,16 @@ func (o *Options) run(ctx context.Context) error {
 		return fmt.Errorf("unable to setup installation controller: %w", err)
 	}
 
-	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr); err != nil {
+	if err := executionactrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config.Controllers.Executions); err != nil {
 		return fmt.Errorf("unable to setup execution controller: %w", err)
 	}
 
-	if err := deployitemctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config.DeployItemTimeouts.Pickup, o.Config.DeployItemTimeouts.Abort, o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
+	if err := deployitemctrl.AddControllerToManager(ctrlLogger,
+		lsMgr,
+		o.Config.Controllers.DeployItems,
+		o.Config.DeployItemTimeouts.Pickup,
+		o.Config.DeployItemTimeouts.Abort,
+		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
 	}
 

@@ -86,6 +86,9 @@ repositoryContext:
     type: {{ .Values.landscaper.repositoryContext.type }}
     baseUrl: {{ .Values.landscaper.repositoryContext.baseUrl }}
 {{- end }}
+
+{{ .Values.landscaper.controllers | toYaml }}
+
 {{- if .Values.landscaper.registryConfig }}
 registry:
     oci:

@@ -9,11 +9,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(logger logr.Logger, mgr manager.Manager) error {
+func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config config.ExecutionsController) error {
 	log := logger.WithName("Executions")
 	a, err := NewController(
 		log,
@@ -29,5 +32,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager) error {
 		For(&lsv1alpha1.Execution{}).
 		Owns(&lsv1alpha1.DeployItem{}).
 		WithLogger(log).
+		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
 		Complete(a)
 }

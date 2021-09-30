@@ -50,6 +50,36 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*CommonControllerConfig)(nil), (*config.CommonControllerConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(a.(*CommonControllerConfig), b.(*config.CommonControllerConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.CommonControllerConfig)(nil), (*CommonControllerConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(a.(*config.CommonControllerConfig), b.(*CommonControllerConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ComponentOverwritesController)(nil), (*config.ComponentOverwritesController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController(a.(*ComponentOverwritesController), b.(*config.ComponentOverwritesController), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.ComponentOverwritesController)(nil), (*ComponentOverwritesController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController(a.(*config.ComponentOverwritesController), b.(*ComponentOverwritesController), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*Controllers)(nil), (*config.Controllers)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Controllers_To_config_Controllers(a.(*Controllers), b.(*config.Controllers), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.Controllers)(nil), (*Controllers)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_Controllers_To_v1alpha1_Controllers(a.(*config.Controllers), b.(*Controllers), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*CrdManagementConfiguration)(nil), (*config.CrdManagementConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_CrdManagementConfiguration_To_config_CrdManagementConfiguration(a.(*CrdManagementConfiguration), b.(*config.CrdManagementConfiguration), scope)
 	}); err != nil {
@@ -70,6 +100,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*DeployItemsController)(nil), (*config.DeployItemsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_DeployItemsController_To_config_DeployItemsController(a.(*DeployItemsController), b.(*config.DeployItemsController), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.DeployItemsController)(nil), (*DeployItemsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_DeployItemsController_To_v1alpha1_DeployItemsController(a.(*config.DeployItemsController), b.(*DeployItemsController), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*DeployerManagementConfiguration)(nil), (*config.DeployerManagementConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_DeployerManagementConfiguration_To_config_DeployerManagementConfiguration(a.(*DeployerManagementConfiguration), b.(*config.DeployerManagementConfiguration), scope)
 	}); err != nil {
@@ -80,6 +120,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*ExecutionsController)(nil), (*config.ExecutionsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_ExecutionsController_To_config_ExecutionsController(a.(*ExecutionsController), b.(*config.ExecutionsController), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.ExecutionsController)(nil), (*ExecutionsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_ExecutionsController_To_v1alpha1_ExecutionsController(a.(*config.ExecutionsController), b.(*ExecutionsController), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*GarbageCollectionConfiguration)(nil), (*config.GarbageCollectionConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_GarbageCollectionConfiguration_To_config_GarbageCollectionConfiguration(a.(*GarbageCollectionConfiguration), b.(*config.GarbageCollectionConfiguration), scope)
 	}); err != nil {
@@ -87,6 +137,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*config.GarbageCollectionConfiguration)(nil), (*GarbageCollectionConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_config_GarbageCollectionConfiguration_To_v1alpha1_GarbageCollectionConfiguration(a.(*config.GarbageCollectionConfiguration), b.(*GarbageCollectionConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*InstallationsController)(nil), (*config.InstallationsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_InstallationsController_To_config_InstallationsController(a.(*InstallationsController), b.(*config.InstallationsController), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*config.InstallationsController)(nil), (*InstallationsController)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_config_InstallationsController_To_v1alpha1_InstallationsController(a.(*config.InstallationsController), b.(*InstallationsController), scope)
 	}); err != nil {
 		return err
 	}
@@ -217,6 +277,96 @@ func Convert_config_BlueprintStore_To_v1alpha1_BlueprintStore(in *config.Bluepri
 	return autoConvert_config_BlueprintStore_To_v1alpha1_BlueprintStore(in, out, s)
 }
 
+func autoConvert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(in *CommonControllerConfig, out *config.CommonControllerConfig, s conversion.Scope) error {
+	out.Workers = in.Workers
+	out.CacheSyncTimeout = (*v1.Duration)(unsafe.Pointer(in.CacheSyncTimeout))
+	return nil
+}
+
+// Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig is an autogenerated conversion function.
+func Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(in *CommonControllerConfig, out *config.CommonControllerConfig, s conversion.Scope) error {
+	return autoConvert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(in, out, s)
+}
+
+func autoConvert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(in *config.CommonControllerConfig, out *CommonControllerConfig, s conversion.Scope) error {
+	out.Workers = in.Workers
+	out.CacheSyncTimeout = (*v1.Duration)(unsafe.Pointer(in.CacheSyncTimeout))
+	return nil
+}
+
+// Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig is an autogenerated conversion function.
+func Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(in *config.CommonControllerConfig, out *CommonControllerConfig, s conversion.Scope) error {
+	return autoConvert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(in, out, s)
+}
+
+func autoConvert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController(in *ComponentOverwritesController, out *config.ComponentOverwritesController, s conversion.Scope) error {
+	if err := Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController is an autogenerated conversion function.
+func Convert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController(in *ComponentOverwritesController, out *config.ComponentOverwritesController, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController(in, out, s)
+}
+
+func autoConvert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController(in *config.ComponentOverwritesController, out *ComponentOverwritesController, s conversion.Scope) error {
+	if err := Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController is an autogenerated conversion function.
+func Convert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController(in *config.ComponentOverwritesController, out *ComponentOverwritesController, s conversion.Scope) error {
+	return autoConvert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController(in, out, s)
+}
+
+func autoConvert_v1alpha1_Controllers_To_config_Controllers(in *Controllers, out *config.Controllers, s conversion.Scope) error {
+	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
+	if err := Convert_v1alpha1_InstallationsController_To_config_InstallationsController(&in.Installations, &out.Installations, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_ExecutionsController_To_config_ExecutionsController(&in.Executions, &out.Executions, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_DeployItemsController_To_config_DeployItemsController(&in.DeployItems, &out.DeployItems, s); err != nil {
+		return err
+	}
+	if err := Convert_v1alpha1_ComponentOverwritesController_To_config_ComponentOverwritesController(&in.ComponentOverwrites, &out.ComponentOverwrites, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_Controllers_To_config_Controllers is an autogenerated conversion function.
+func Convert_v1alpha1_Controllers_To_config_Controllers(in *Controllers, out *config.Controllers, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Controllers_To_config_Controllers(in, out, s)
+}
+
+func autoConvert_config_Controllers_To_v1alpha1_Controllers(in *config.Controllers, out *Controllers, s conversion.Scope) error {
+	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
+	if err := Convert_config_InstallationsController_To_v1alpha1_InstallationsController(&in.Installations, &out.Installations, s); err != nil {
+		return err
+	}
+	if err := Convert_config_ExecutionsController_To_v1alpha1_ExecutionsController(&in.Executions, &out.Executions, s); err != nil {
+		return err
+	}
+	if err := Convert_config_DeployItemsController_To_v1alpha1_DeployItemsController(&in.DeployItems, &out.DeployItems, s); err != nil {
+		return err
+	}
+	if err := Convert_config_ComponentOverwritesController_To_v1alpha1_ComponentOverwritesController(&in.ComponentOverwrites, &out.ComponentOverwrites, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_config_Controllers_To_v1alpha1_Controllers is an autogenerated conversion function.
+func Convert_config_Controllers_To_v1alpha1_Controllers(in *config.Controllers, out *Controllers, s conversion.Scope) error {
+	return autoConvert_config_Controllers_To_v1alpha1_Controllers(in, out, s)
+}
+
 func autoConvert_v1alpha1_CrdManagementConfiguration_To_config_CrdManagementConfiguration(in *CrdManagementConfiguration, out *config.CrdManagementConfiguration, s conversion.Scope) error {
 	out.DeployCustomResourceDefinitions = (*bool)(unsafe.Pointer(in.DeployCustomResourceDefinitions))
 	out.ForceUpdate = (*bool)(unsafe.Pointer(in.ForceUpdate))
@@ -263,6 +413,30 @@ func Convert_config_DeployItemTimeouts_To_v1alpha1_DeployItemTimeouts(in *config
 	return autoConvert_config_DeployItemTimeouts_To_v1alpha1_DeployItemTimeouts(in, out, s)
 }
 
+func autoConvert_v1alpha1_DeployItemsController_To_config_DeployItemsController(in *DeployItemsController, out *config.DeployItemsController, s conversion.Scope) error {
+	if err := Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_DeployItemsController_To_config_DeployItemsController is an autogenerated conversion function.
+func Convert_v1alpha1_DeployItemsController_To_config_DeployItemsController(in *DeployItemsController, out *config.DeployItemsController, s conversion.Scope) error {
+	return autoConvert_v1alpha1_DeployItemsController_To_config_DeployItemsController(in, out, s)
+}
+
+func autoConvert_config_DeployItemsController_To_v1alpha1_DeployItemsController(in *config.DeployItemsController, out *DeployItemsController, s conversion.Scope) error {
+	if err := Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_config_DeployItemsController_To_v1alpha1_DeployItemsController is an autogenerated conversion function.
+func Convert_config_DeployItemsController_To_v1alpha1_DeployItemsController(in *config.DeployItemsController, out *DeployItemsController, s conversion.Scope) error {
+	return autoConvert_config_DeployItemsController_To_v1alpha1_DeployItemsController(in, out, s)
+}
+
 func autoConvert_v1alpha1_DeployerManagementConfiguration_To_config_DeployerManagementConfiguration(in *DeployerManagementConfiguration, out *config.DeployerManagementConfiguration, s conversion.Scope) error {
 	out.Disable = in.Disable
 	out.Namespace = in.Namespace
@@ -289,6 +463,30 @@ func autoConvert_config_DeployerManagementConfiguration_To_v1alpha1_DeployerMana
 // Convert_config_DeployerManagementConfiguration_To_v1alpha1_DeployerManagementConfiguration is an autogenerated conversion function.
 func Convert_config_DeployerManagementConfiguration_To_v1alpha1_DeployerManagementConfiguration(in *config.DeployerManagementConfiguration, out *DeployerManagementConfiguration, s conversion.Scope) error {
 	return autoConvert_config_DeployerManagementConfiguration_To_v1alpha1_DeployerManagementConfiguration(in, out, s)
+}
+
+func autoConvert_v1alpha1_ExecutionsController_To_config_ExecutionsController(in *ExecutionsController, out *config.ExecutionsController, s conversion.Scope) error {
+	if err := Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_ExecutionsController_To_config_ExecutionsController is an autogenerated conversion function.
+func Convert_v1alpha1_ExecutionsController_To_config_ExecutionsController(in *ExecutionsController, out *config.ExecutionsController, s conversion.Scope) error {
+	return autoConvert_v1alpha1_ExecutionsController_To_config_ExecutionsController(in, out, s)
+}
+
+func autoConvert_config_ExecutionsController_To_v1alpha1_ExecutionsController(in *config.ExecutionsController, out *ExecutionsController, s conversion.Scope) error {
+	if err := Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_config_ExecutionsController_To_v1alpha1_ExecutionsController is an autogenerated conversion function.
+func Convert_config_ExecutionsController_To_v1alpha1_ExecutionsController(in *config.ExecutionsController, out *ExecutionsController, s conversion.Scope) error {
+	return autoConvert_config_ExecutionsController_To_v1alpha1_ExecutionsController(in, out, s)
 }
 
 func autoConvert_v1alpha1_GarbageCollectionConfiguration_To_config_GarbageCollectionConfiguration(in *GarbageCollectionConfiguration, out *config.GarbageCollectionConfiguration, s conversion.Scope) error {
@@ -323,6 +521,30 @@ func Convert_config_GarbageCollectionConfiguration_To_v1alpha1_GarbageCollection
 	return autoConvert_config_GarbageCollectionConfiguration_To_v1alpha1_GarbageCollectionConfiguration(in, out, s)
 }
 
+func autoConvert_v1alpha1_InstallationsController_To_config_InstallationsController(in *InstallationsController, out *config.InstallationsController, s conversion.Scope) error {
+	if err := Convert_v1alpha1_CommonControllerConfig_To_config_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha1_InstallationsController_To_config_InstallationsController is an autogenerated conversion function.
+func Convert_v1alpha1_InstallationsController_To_config_InstallationsController(in *InstallationsController, out *config.InstallationsController, s conversion.Scope) error {
+	return autoConvert_v1alpha1_InstallationsController_To_config_InstallationsController(in, out, s)
+}
+
+func autoConvert_config_InstallationsController_To_v1alpha1_InstallationsController(in *config.InstallationsController, out *InstallationsController, s conversion.Scope) error {
+	if err := Convert_config_CommonControllerConfig_To_v1alpha1_CommonControllerConfig(&in.CommonControllerConfig, &out.CommonControllerConfig, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_config_InstallationsController_To_v1alpha1_InstallationsController is an autogenerated conversion function.
+func Convert_config_InstallationsController_To_v1alpha1_InstallationsController(in *config.InstallationsController, out *InstallationsController, s conversion.Scope) error {
+	return autoConvert_config_InstallationsController_To_v1alpha1_InstallationsController(in, out, s)
+}
+
 func autoConvert_v1alpha1_LandscaperAgentConfiguration_To_config_LandscaperAgentConfiguration(in *LandscaperAgentConfiguration, out *config.LandscaperAgentConfiguration, s conversion.Scope) error {
 	out.Disable = in.Disable
 	if err := Convert_v1alpha1_AgentConfiguration_To_config_AgentConfiguration(&in.AgentConfiguration, &out.AgentConfiguration, s); err != nil {
@@ -350,6 +572,9 @@ func Convert_config_LandscaperAgentConfiguration_To_v1alpha1_LandscaperAgentConf
 }
 
 func autoConvert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(in *LandscaperConfiguration, out *config.LandscaperConfiguration, s conversion.Scope) error {
+	if err := Convert_v1alpha1_Controllers_To_config_Controllers(&in.Controllers, &out.Controllers, s); err != nil {
+		return err
+	}
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	if err := Convert_v1alpha1_RegistryConfiguration_To_config_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err
@@ -374,6 +599,9 @@ func Convert_v1alpha1_LandscaperConfiguration_To_config_LandscaperConfiguration(
 }
 
 func autoConvert_config_LandscaperConfiguration_To_v1alpha1_LandscaperConfiguration(in *config.LandscaperConfiguration, out *LandscaperConfiguration, s conversion.Scope) error {
+	if err := Convert_config_Controllers_To_v1alpha1_Controllers(&in.Controllers, &out.Controllers, s); err != nil {
+		return err
+	}
 	out.RepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.RepositoryContext))
 	if err := Convert_config_RegistryConfiguration_To_v1alpha1_RegistryConfiguration(&in.Registry, &out.Registry, s); err != nil {
 		return err

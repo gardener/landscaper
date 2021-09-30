@@ -28,6 +28,12 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 			UseInMemoryOverlay: false,
 		}
 	}
+
+	SetDefaults_CommonControllerConfig(&obj.Controllers.Installations.CommonControllerConfig)
+	SetDefaults_CommonControllerConfig(&obj.Controllers.Executions.CommonControllerConfig)
+	SetDefaults_CommonControllerConfig(&obj.Controllers.DeployItems.CommonControllerConfig)
+	SetDefaults_CommonControllerConfig(&obj.Controllers.ComponentOverwrites.CommonControllerConfig)
+
 	if len(obj.DeployerManagement.Namespace) == 0 {
 		obj.DeployerManagement.Namespace = "ls-system"
 	}
@@ -68,6 +74,18 @@ func SetDefaults_CrdManagementConfiguration(obj *CrdManagementConfiguration) {
 	}
 	if obj.ForceUpdate == nil {
 		obj.ForceUpdate = pointer.BoolPtr(true)
+	}
+}
+
+// SetDefaults_CommonControllerConfig sets the defaults for the CommonControllerConfig.
+func SetDefaults_CommonControllerConfig(obj *CommonControllerConfig) {
+	if obj.Workers == 0 {
+		obj.Workers = 1
+	}
+	if obj.CacheSyncTimeout == nil {
+		obj.CacheSyncTimeout = &metav1.Duration{
+			Duration: 2 * time.Minute,
+		}
 	}
 }
 

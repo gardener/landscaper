@@ -1,6 +1,21 @@
 apiVersion: config.landscaper.gardener.cloud/v1alpha1
 kind: LandscaperConfiguration
 
+controllers:
+  # syncPeriod: 10h
+  installations:
+    workers: 5
+    # cacheSyncTimeout: 2m
+  executions:
+    workers: 5
+    # cacheSyncTimeout: 2m
+  deployItems:
+    workers: 5
+    # cacheSyncTimeout: 2m
+  componentOverwrites:
+    workers: 5
+    # cacheSyncTimeout: 2m
+
 repositoryContext: # define the default repository context for installations
   type: ociRegistry
   baseUrl: "myregistry.com/components"

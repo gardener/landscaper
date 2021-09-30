@@ -34,10 +34,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject":                       schema_component_spec_bindings_go_apis_v2_UnstructuredTypedObject(ref),
 		"github.com/gardener/landscaper/apis/config.AgentConfiguration":                                        schema_gardener_landscaper_apis_config_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                            schema_gardener_landscaper_apis_config_BlueprintStore(ref),
+		"github.com/gardener/landscaper/apis/config.CommonControllerConfig":                                    schema_gardener_landscaper_apis_config_CommonControllerConfig(ref),
+		"github.com/gardener/landscaper/apis/config.ComponentOverwritesController":                             schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref),
+		"github.com/gardener/landscaper/apis/config.Controllers":                                               schema_gardener_landscaper_apis_config_Controllers(ref),
 		"github.com/gardener/landscaper/apis/config.CrdManagementConfiguration":                                schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.DeployItemTimeouts":                                        schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref),
+		"github.com/gardener/landscaper/apis/config.DeployItemsController":                                     schema_gardener_landscaper_apis_config_DeployItemsController(ref),
 		"github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration":                           schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.ExecutionsController":                                      schema_gardener_landscaper_apis_config_ExecutionsController(ref),
 		"github.com/gardener/landscaper/apis/config.GarbageCollectionConfiguration":                            schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.InstallationsController":                                   schema_gardener_landscaper_apis_config_InstallationsController(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration":                              schema_gardener_landscaper_apis_config_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                                   schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration":                                schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref),
@@ -47,10 +53,16 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.RegistryConfiguration":                                     schema_gardener_landscaper_apis_config_RegistryConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.AgentConfiguration":                               schema_landscaper_apis_config_v1alpha1_AgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore":                                   schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig":                           schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController":                    schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.Controllers":                                      schema_landscaper_apis_config_v1alpha1_Controllers(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration":                       schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts":                               schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController":                            schema_landscaper_apis_config_v1alpha1_DeployItemsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration":                  schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController":                             schema_landscaper_apis_config_v1alpha1_ExecutionsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.GarbageCollectionConfiguration":                   schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController":                          schema_landscaper_apis_config_v1alpha1_InstallationsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration":                     schema_landscaper_apis_config_v1alpha1_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":                          schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LocalRegistryConfiguration":                       schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref),
@@ -1129,6 +1141,108 @@ func schema_gardener_landscaper_apis_config_BlueprintStore(ref common.ReferenceC
 	}
 }
 
+func schema_gardener_landscaper_apis_config_CommonControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CommonControllerConfig describes common controller configuration that can be included in the specific controller configurations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Workers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Workers is the maximum number of concurrent Reconciles which can be run. Defaults to 1.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"CacheSyncTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheSyncTimeout refers to the time limit set to wait for syncing the kubernetes resource caches. Defaults to 2 minutes if not set.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+				},
+				Required: []string{"Workers", "CacheSyncTimeout"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.CommonControllerConfig"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_Controllers(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controllers contains all configuration for the specific controllers",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"SyncPeriod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SyncPeriod determines the minimum frequency at which watched resources are reconciled. A lower period will correct entropy more quickly, but reduce responsiveness to change if there are many watched resources. Change this value only if you know what you are doing. Defaults to 10 hours if unset. there will a 10 percent jitter between the SyncPeriod of all controllers so that all controllers will not send list requests simultaneously.\n\nThis applies to all controllers.\n\nA period sync happens for two reasons: 1. To insure against a bug in the controller that causes an object to not be requeued, when it otherwise should be requeued. 2. To insure against an unknown bug in controller-runtime, or its dependencies, that causes an object to not be requeued, when it otherwise should be requeued, or to be removed from the queue, when it otherwise should not be removed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"Installations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Installations contains the controller config that reconciles installations.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.InstallationsController"),
+						},
+					},
+					"Executions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Installations contains the controller config that reconciles executions.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.ExecutionsController"),
+						},
+					},
+					"DeployItems": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItems contains the controller config that reconciles deploy items.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.DeployItemsController"),
+						},
+					},
+					"ComponentOverwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.ComponentOverwritesController"),
+						},
+					},
+				},
+				Required: []string{"SyncPeriod", "Installations", "Executions", "DeployItems", "ComponentOverwrites"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config.DeployItemsController", "github.com/gardener/landscaper/apis/config.ExecutionsController", "github.com/gardener/landscaper/apis/config.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1164,19 +1278,19 @@ func schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref common.Refere
 				Description: "DeployItemTimeouts contains multiple timeout configurations for deploy items",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"pickup": {
+					"Pickup": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PickupTimeout defines how long a deployer can take to react on changes to a deploy item before the landscaper will mark it as failed. Allowed values are 'none' (to disable pickup timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
-					"abort": {
+					"Abort": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Abort specifies how long the deployer may take to abort handling a deploy item after getting the abort annotation. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to five minutes if not specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
 						},
 					},
-					"progressingDefault": {
+					"ProgressingDefault": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ProgressingDefault specifies how long the deployer may take to apply a deploy item by default. The value can be overwritten per deploy item in 'spec.timeout'. Allowed values are 'none' (to disable abort timeout detection) and anything that is understood by golang's time.ParseDuration method. Defaults to ten minutes if not specified.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core.Duration"),
@@ -1187,6 +1301,28 @@ func schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref common.Refere
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core.Duration"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_DeployItemsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployItemsController contains the controller config that reconciles deploy items.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.CommonControllerConfig"},
 	}
 }
 
@@ -1226,6 +1362,28 @@ func schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_ExecutionsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExecutionsController contains the controller config that reconciles executions.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.CommonControllerConfig"},
 	}
 }
 
@@ -1281,6 +1439,28 @@ func schema_gardener_landscaper_apis_config_GarbageCollectionConfiguration(ref c
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_InstallationsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InstallationsController contains the controller config that reconciles installations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.CommonControllerConfig"},
 	}
 }
 
@@ -1378,6 +1558,13 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Format:      "",
 						},
 					},
+					"controllers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controllers contains all controller specific configuration.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.Controllers"),
+						},
+					},
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
@@ -1425,11 +1612,11 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 						},
 					},
 				},
-				Required: []string{"registry", "blueprintStore"},
+				Required: []string{"controllers", "registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
 	}
 }
 
@@ -1688,6 +1875,108 @@ func schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref common.ReferenceC
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CommonControllerConfig describes common controller configuration that can be included in the specific controller configurations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"workers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Workers is the maximum number of concurrent Reconciles which can be run. Defaults to 1.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"cacheSyncTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheSyncTimeout refers to the time limit set to wait for syncing the kubernetes resource caches. Defaults to 2 minutes if not set.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+				},
+				Required: []string{"workers", "cacheSyncTimeout"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_Controllers(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controllers contains all configuration for the specific controllers",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"syncPeriod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SyncPeriod determines the minimum frequency at which watched resources are reconciled. A lower period will correct entropy more quickly, but reduce responsiveness to change if there are many watched resources. Change this value only if you know what you are doing. Defaults to 10 hours if unset. there will a 10 percent jitter between the SyncPeriod of all controllers so that all controllers will not send list requests simultaneously.\n\nThis applies to all controllers.\n\nA period sync happens for two reasons: 1. To insure against a bug in the controller that causes an object to not be requeued, when it otherwise should be requeued. 2. To insure against an unknown bug in controller-runtime, or its dependencies, that causes an object to not be requeued, when it otherwise should be requeued, or to be removed from the queue, when it otherwise should not be removed.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
+					"installations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Installations contains the controller config that reconciles installations.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController"),
+						},
+					},
+					"executions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Installations contains the controller config that reconciles executions.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController"),
+						},
+					},
+					"deployItems": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItems contains the controller config that reconciles deploy items.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController"),
+						},
+					},
+					"componentOverwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController"),
+						},
+					},
+				},
+				Required: []string{"syncPeriod", "installations", "executions", "deployItems", "componentOverwrites"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController", "github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController", "github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1749,6 +2038,28 @@ func schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref common.Refere
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_DeployItemsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployItemsController contains the controller config that reconciles deploy items.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1785,6 +2096,28 @@ func schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref 
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_ExecutionsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExecutionsController contains the controller config that reconciles executions.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 
@@ -1836,6 +2169,28 @@ func schema_landscaper_apis_config_v1alpha1_GarbageCollectionConfiguration(ref c
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_InstallationsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InstallationsController contains the controller config that reconciles installations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 
@@ -1933,6 +2288,13 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Format:      "",
 						},
 					},
+					"controllers": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controllers contains all controller specific configuration.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.Controllers"),
+						},
+					},
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
@@ -1980,11 +2342,11 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 						},
 					},
 				},
-				Required: []string{"registry", "blueprintStore"},
+				Required: []string{"controllers", "registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 

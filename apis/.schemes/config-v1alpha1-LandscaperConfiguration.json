@@ -47,6 +47,76 @@
         }
       }
     },
+    "config-v1alpha1-CommonControllerConfig": {
+      "description": "CommonControllerConfig describes common controller configuration that can be included in the specific controller configurations.",
+      "type": "object",
+      "required": [
+        "workers",
+        "cacheSyncTimeout"
+      ],
+      "properties": {
+        "cacheSyncTimeout": {
+          "description": "CacheSyncTimeout refers to the time limit set to wait for syncing the kubernetes resource caches. Defaults to 2 minutes if not set.",
+          "$ref": "#/definitions/meta-v1-Duration"
+        },
+        "workers": {
+          "description": "Workers is the maximum number of concurrent Reconciles which can be run. Defaults to 1.",
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        }
+      }
+    },
+    "config-v1alpha1-ComponentOverwritesController": {
+      "description": "ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
+        }
+      }
+    },
+    "config-v1alpha1-Controllers": {
+      "description": "Controllers contains all configuration for the specific controllers",
+      "type": "object",
+      "required": [
+        "syncPeriod",
+        "installations",
+        "executions",
+        "deployItems",
+        "componentOverwrites"
+      ],
+      "properties": {
+        "componentOverwrites": {
+          "description": "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-ComponentOverwritesController"
+        },
+        "deployItems": {
+          "description": "DeployItems contains the controller config that reconciles deploy items.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-DeployItemsController"
+        },
+        "executions": {
+          "description": "Installations contains the controller config that reconciles executions.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-ExecutionsController"
+        },
+        "installations": {
+          "description": "Installations contains the controller config that reconciles installations.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-InstallationsController"
+        },
+        "syncPeriod": {
+          "description": "SyncPeriod determines the minimum frequency at which watched resources are reconciled. A lower period will correct entropy more quickly, but reduce responsiveness to change if there are many watched resources. Change this value only if you know what you are doing. Defaults to 10 hours if unset. there will a 10 percent jitter between the SyncPeriod of all controllers so that all controllers will not send list requests simultaneously.\n\nThis applies to all controllers.\n\nA period sync happens for two reasons: 1. To insure against a bug in the controller that causes an object to not be requeued, when it otherwise should be requeued. 2. To insure against an unknown bug in controller-runtime, or its dependencies, that causes an object to not be requeued, when it otherwise should be requeued, or to be removed from the queue, when it otherwise should not be removed.",
+          "$ref": "#/definitions/meta-v1-Duration"
+        }
+      }
+    },
     "config-v1alpha1-CrdManagementConfiguration": {
       "description": "CrdManagementConfiguration contains the configuration of the CRD management",
       "type": "object",
@@ -82,6 +152,19 @@
         }
       }
     },
+    "config-v1alpha1-DeployItemsController": {
+      "description": "DeployItemsController contains the controller config that reconciles deploy items.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
+        }
+      }
+    },
     "config-v1alpha1-DeployerManagementConfiguration": {
       "description": "DeployerManagementConfiguration contains the configuration of the deployer management",
       "type": "object",
@@ -105,6 +188,19 @@
           "description": "Namespace defines the system namespace where the deployer installation should be deployed to.",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    "config-v1alpha1-ExecutionsController": {
+      "description": "ExecutionsController contains the controller config that reconciles executions.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
         }
       }
     },
@@ -138,6 +234,19 @@
         "size": {
           "description": "Size is the size of the filesystem. If the value is 0 there is no limit and no garbage collection will happen. See the kubernetes quantity docs for detailed description of the format https://github.com/kubernetes/apimachinery/blob/master/pkg/api/resource/quantity.go",
           "type": "string"
+        }
+      }
+    },
+    "config-v1alpha1-InstallationsController": {
+      "description": "InstallationsController contains the controller config that reconciles installations.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
         }
       }
     },
@@ -370,6 +479,11 @@
       "default": {},
       "description": "BlueprintStore contains the configuration for the blueprint cache."
     },
+    "controllers": {
+      "$ref": "#/definitions/config-v1alpha1-Controllers",
+      "default": {},
+      "description": "Controllers contains all controller specific configuration."
+    },
     "crdManagement": {
       "$ref": "#/definitions/config-v1alpha1-CrdManagementConfiguration",
       "default": {},
@@ -403,6 +517,7 @@
     }
   },
   "required": [
+    "controllers",
     "registry",
     "blueprintStore"
   ],
