@@ -21,12 +21,13 @@ import (
 // It is meant to be used as a ShouldReconcile hook and might yield unexpected results if used with another hook handle.
 // The function which it takes as an argument is expected to take a time and return the time when the deploy item should be scheduled for the next automatic reconciliation.
 //   It should return nil if continuous reconciliation is not configured for the deploy item.
+// The returned function will panic if the provided deploy item is nil.
 func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time, *lsv1alpha1.DeployItem) (*time.Time, error)) extension.ReconcileExtensionHook {
 	return func(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, hype extension.HookType) (*extension.HookResult, error) {
 		logger := log.WithName("continuousReconcileExtension")
 		logger.V(7).Info("execute")
 		if di == nil {
-			return nil, fmt.Errorf("deploy item must not be nil")
+			panic("deploy item must not be nil")
 		}
 		nextRaw, err := nextReconcile(ctx, di.Status.LastReconcileTime.Time, di)
 		if err != nil {
