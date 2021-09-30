@@ -23,6 +23,18 @@ landscaper:
     componentOverwrites:
       workers: 5
       # cacheSyncTimeout: 2m
+    context:
+      workers: 5
+      # cacheSyncTimeout: 2m
+      config:
+        default:
+          #  The default repositoryContext that will be used if no repositoryContext is defined in an installation
+          #  repositoryContext:
+          #    type: "ociRegistry"
+          #    baseUrl: ""
+          disable: false
+          excludeNamespaces:
+          - kube-system # by default exclude the kube-system namespace
 
   crdManagement:
     deployCrd: true
@@ -34,11 +46,6 @@ landscaper:
     insecureSkipVerify: false
     secrets: {}
 #     <name>: <docker config json>
-
-#  The default repositoryContext that will be used if no repositoryContext is defined in an installation
-#  repositoryContext:
-#    type: "ociRegistry"
-#    baseUrl: ""
 
 #  metrics:
 #    port: 8080
