@@ -29,13 +29,14 @@
 
 #### _Context_
 
-  A context defines the scope in which an Installation runs and all of its data lives.
+  The Landscaper defines 2 different kind of contexts.
+  One context is an actual resource that is referenced by an installation and defines common configuration.
+
+  During the execution of an installation a context defines the scope in which an Installation runs and all of its data lives.
   For every Installation a dedicated context is created and data can only be accessed within the same context.
   Data can be exchanged between contexts via Import and Export declarations.
 
   Since Installations can be nested, the resulting Contexts are nested as well.
-
-  For more information see [here](./Context.md).
 
 #### _DataObject_
 
