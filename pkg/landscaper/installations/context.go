@@ -85,7 +85,9 @@ func GetInstallationContext(ctx context.Context,
 	}, nil
 }
 
-// ExternalContext defines the internal context with additional enhanced context information.
+// ExternalContext is the context defined by the external "Context" resource that
+// is referenced by the installation.
+// The external context is parsed additional information is added to the context.
 type ExternalContext struct {
 	lsv1alpha1.Context
 	// ComponentName defines the unique name of the component containing the resource.

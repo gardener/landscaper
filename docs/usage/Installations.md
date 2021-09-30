@@ -132,9 +132,10 @@ status:
 The context is a configuration resource containing shared configuration for installations.
 This config can contain the repository context, registry pull secrets, etc. . For detailed documentation see [./Context.md](./Context.md).
 
-Installations *MUST* reference a context by its name in `.spec.context` (it is defaulted to the `default` context if not defined).
-The context must be present in the same namespace as the installtion.
-Cross-namespace consumption is not possible.
+Installations reference a context by its name in `.spec.context`.
+If the context reference is not defined, it is defaulted to the `default` context.
+The context must be present in the same namespace as the installation.
+> Note: Cross-namespace consumption is not possible.
 
 The context is automatically passed to subinstallations and deploy items.
 
