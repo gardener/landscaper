@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -26,25 +27,30 @@ func NewDefaulterController(log logr.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
-	config *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
+	config config.ContextControllerConfig) (reconcile.Reconciler, error) {
 	return &defaulterController{
-		log:           log,
-		client:        kubeClient,
-		scheme:        scheme,
-		eventRecorder: eventRecorder,
-		config:        config,
+		log:               log,
+		client:            kubeClient,
+		scheme:            scheme,
+		eventRecorder:     eventRecorder,
+		config:            config,
+		excludeNamespaces: sets.NewString(config.Default.ExcludedNamespaces...),
 	}, nil
 }
 
 type defaulterController struct {
-	log           logr.Logger
-	client        client.Client
-	eventRecorder record.EventRecorder
-	scheme        *runtime.Scheme
-	config        *config.LandscaperConfiguration
+	log               logr.Logger
+	client            client.Client
+	eventRecorder     record.EventRecorder
+	scheme            *runtime.Scheme
+	config            config.ContextControllerConfig
+	excludeNamespaces sets.String
 }
 
 func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if c.excludeNamespaces.Has(req.Name) {
+		return reconcile.Result{}, nil
+	}
 	logger := c.log.WithValues("resource", req.NamespacedName)
 	logger.V(7).Info("reconcile")
 
@@ -64,8 +70,8 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 	// we only want to overwrite the central managed configuration.
 	// manual added configuration should be kept.
 	if _, err := controllerutil.CreateOrPatch(ctx, c.client, defaultCtx, func() error {
-		if c.config.RepositoryContext != nil {
-			defaultCtx.RepositoryContext = c.config.RepositoryContext
+		if c.config.Default.RepositoryContext != nil {
+			defaultCtx.RepositoryContext = c.config.Default.RepositoryContext
 		}
 		return nil
 	}); err != nil {

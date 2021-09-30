@@ -33,6 +33,7 @@ func SetObjectDefaults_LandscaperConfiguration(in *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&in.Controllers.Executions.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&in.Controllers.DeployItems.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&in.Controllers.ComponentOverwrites.CommonControllerConfig)
+	SetDefaults_CommonControllerConfig(&in.Controllers.Contexts.CommonControllerConfig)
 	SetDefaults_BlueprintStore(&in.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&in.CrdManagement)
 	SetObjectDefaults_AgentConfiguration(&in.DeployerManagement.Agent.AgentConfiguration)

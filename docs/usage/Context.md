@@ -31,6 +31,8 @@ registryPullSecrets: # additional pull secrets to access component descriptors a
 Just like kubernetes creates a default service account in every namespace, a default context is created in every namespace.
 The default context can be configured in the landscaper configuration `.controllers.context.config.default` as described in the [example](../../examples/00-Landscaper-Configuration.yaml).
 
+The default context object can also be manually modified as the landscaper controller only reconciles configured defaults.
+
 ## Configuration
 
 The context controller can be configured in the landscaper config `.controllers.context`.

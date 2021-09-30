@@ -19,6 +19,7 @@ type LandscaperConfiguration struct {
 	// Controllers contains all controller specific configuration.
 	Controllers Controllers `json:"controllers"`
 	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
+	// DEPRECATED: use controllers.context.config.default.repositoryContext instead.
 	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
@@ -78,6 +79,8 @@ type Controllers struct {
 	DeployItems DeployItemsController `json:"deployItems"`
 	// ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.
 	ComponentOverwrites ComponentOverwritesController `json:"componentOverwrites"`
+	// Contexts contains the controller config that reconciles context objects.
+	Contexts ContextsController `json:"contexts"`
 }
 
 // InstallationsController contains the controller config that reconciles installations.
@@ -98,6 +101,30 @@ type DeployItemsController struct {
 // ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.
 type ComponentOverwritesController struct {
 	CommonControllerConfig
+}
+
+// ContextsController contains all configuration for the context controller.
+type ContextsController struct {
+	CommonControllerConfig
+	Config ContextControllerConfig `json:"config"`
+}
+
+// ContextControllerConfig contains the context specific configuration.
+type ContextControllerConfig struct {
+	Default ContextControllerDefaultConfig `json:"default"`
+}
+
+// ContextControllerDefaultConfig contains the configuration for the context defaults.
+type ContextControllerDefaultConfig struct {
+	// Disable disables the default controller.
+	// If disabled no default contexts are created.
+	Disable bool `json:"disable"`
+	// ExcludedNamespaces defines a list of namespaces where no default context should be created.
+	// +optional
+	ExcludedNamespaces []string `json:"excludedNamespaces"`
+	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
+	// +optional
+	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
 }
 
 // DeployItemTimeouts contains multiple timeout configurations for deploy items

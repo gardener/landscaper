@@ -15,28 +15,29 @@ import (
 
 // LandscaperConfiguration contains all configuration for the landscaper controllers
 type LandscaperConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta
 	// Controllers contains all controller specific configuration.
-	Controllers Controllers `json:"controllers"`
+	Controllers Controllers
 	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
+	// DEPRECATED: use controllers.context.config.default.repositoryContext instead.
 	// +optional
-	RepositoryContext *cdv2.UnstructuredTypedObject `json:"repositoryContext,omitempty"`
+	RepositoryContext *cdv2.UnstructuredTypedObject
 	// Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.
-	Registry RegistryConfiguration `json:"registry"`
+	Registry RegistryConfiguration
 	// BlueprintStore contains the configuration for the blueprint cache.
-	BlueprintStore BlueprintStore `json:"blueprintStore"`
+	BlueprintStore BlueprintStore
 	// Metrics allows to configure how metrics are exposed
 	//+optional
-	Metrics *MetricsConfiguration `json:"metrics,omitempty"`
+	Metrics *MetricsConfiguration
 	// CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster
 	// +optional
-	CrdManagement CrdManagementConfiguration `json:"crdManagement,omitempty"`
+	CrdManagement CrdManagementConfiguration
 	// DeployerManagement configures the deployer management of the landscaper.
 	// +optional
-	DeployerManagement DeployerManagementConfiguration `json:"deployerManagement,omitempty"`
+	DeployerManagement DeployerManagementConfiguration
 	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
 	// +optional
-	DeployItemTimeouts *DeployItemTimeouts `json:"deployItemTimeouts,omitempty"`
+	DeployItemTimeouts *DeployItemTimeouts
 }
 
 // CommonControllerConfig describes common controller configuration that can be included in
@@ -78,6 +79,8 @@ type Controllers struct {
 	DeployItems DeployItemsController
 	// ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.
 	ComponentOverwrites ComponentOverwritesController
+	// Contexts contains the controller config that reconciles context objects.
+	Contexts ContextsController
 }
 
 // InstallationsController contains the controller config that reconciles installations.
@@ -98,6 +101,30 @@ type DeployItemsController struct {
 // ComponentOverwritesController contains the controller config that reconciles component overwrite configuration objects.
 type ComponentOverwritesController struct {
 	CommonControllerConfig
+}
+
+// ContextsController contains all configuration for the context controller.
+type ContextsController struct {
+	CommonControllerConfig
+	Config ContextControllerConfig
+}
+
+// ContextControllerConfig contains the context specific configuration.
+type ContextControllerConfig struct {
+	Default ContextControllerDefaultConfig
+}
+
+// ContextControllerDefaultConfig contains the configuration for the context defaults.
+type ContextControllerDefaultConfig struct {
+	// Disable disables the default controller.
+	// If disabled no default contexts are created.
+	Disable bool
+	// ExcludedNamespaces defines a list of namespaces where no default context should be created.
+	// +optional
+	ExcludedNamespaces []string
+	// RepositoryContext defines the default repository context that should be used to resolve component descriptors.
+	// +optional
+	RepositoryContext *cdv2.UnstructuredTypedObject
 }
 
 // DeployItemTimeouts contains multiple timeout configurations for deploy items

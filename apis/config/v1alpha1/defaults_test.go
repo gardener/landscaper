@@ -6,8 +6,8 @@ package v1alpha1_test
 
 import (
 	"testing"
-	"time"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -29,28 +29,13 @@ var _ = Describe("Defaults", func() {
 		Expect(cfg.ForceUpdate).To(gstruct.PointTo(Equal(true)))
 	})
 
-	Context("CommonControllerConfig", func() {
-
-		checkCommonConfig := func(cfg *v1alpha1.CommonControllerConfig) {
-			Expect(cfg.Workers).To(Equal(1))
-			Expect(cfg.CacheSyncTimeout).ToNot(BeNil())
-			Expect(cfg.CacheSyncTimeout.Duration).To(Equal(2 * time.Minute))
-		}
-
-		It("should default the common controller config", func() {
-			cfg := &v1alpha1.CommonControllerConfig{}
-			v1alpha1.SetDefaults_CommonControllerConfig(cfg)
-			checkCommonConfig(cfg)
-		})
-
-		It("should default the controllers commonconfig", func() {
-			cfg := &v1alpha1.LandscaperConfiguration{}
-			v1alpha1.SetDefaults_LandscaperConfiguration(cfg)
-			checkCommonConfig(&cfg.Controllers.Installations.CommonControllerConfig)
-			checkCommonConfig(&cfg.Controllers.Executions.CommonControllerConfig)
-			checkCommonConfig(&cfg.Controllers.DeployItems.CommonControllerConfig)
-			checkCommonConfig(&cfg.Controllers.ComponentOverwrites.CommonControllerConfig)
-		})
+	It("should default the repository context in the context controller", func() {
+		repoCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com", ""))
+		cfg := &v1alpha1.LandscaperConfiguration{}
+		cfg.RepositoryContext = &repoCtx
+		v1alpha1.SetDefaults_LandscaperConfiguration(cfg)
+		Expect(cfg.Controllers.Contexts.Config.Default.RepositoryContext).ToNot(BeNil())
+		Expect(cfg.Controllers.Contexts.Config.Default.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
 })

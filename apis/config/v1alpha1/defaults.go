@@ -53,6 +53,12 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_BlueprintStore(&obj.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&obj.CrdManagement)
 
+	if obj.RepositoryContext != nil && obj.Controllers.Context.Config.Default.RepositoryContext == nil {
+		// migrate the repository context to the new structure.
+		// The old location is ignored if a repository context is defined in the new location.
+		obj.Controllers.Context.Config.Default.RepositoryContext = obj.RepositoryContext
+	}
+
 	if obj.DeployerManagement.Disable {
 		obj.DeployerManagement.Agent.Disable = true
 	}

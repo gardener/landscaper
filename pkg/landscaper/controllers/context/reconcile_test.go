@@ -43,8 +43,10 @@ var _ = Describe("Reconcile", func() {
 			testenv.Client,
 			api.Scheme,
 			record.NewFakeRecorder(1024),
-			&config.LandscaperConfiguration{
-				RepositoryContext: repoCtx,
+			config.ContextControllerConfig{
+				Default: config.ContextControllerDefaultConfig{
+					RepositoryContext: repoCtx,
+				},
 			})
 		Expect(err).ToNot(HaveOccurred())
 		state, err = testenv.InitState(context.TODO())
@@ -86,6 +88,32 @@ var _ = Describe("Reconcile", func() {
 		lsCtx = &items.Items[0]
 		Expect(lsCtx.Name).To(Equal(lsv1alpha1.DefaultContextName))
 		Expect(lsCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
+	})
+
+	It("should not create a new default context object in a excluded namespace", func() {
+		ctx := context.Background()
+
+		ctrl, err := contextctrl.NewDefaulterController(
+			logr.Discard(),
+			testenv.Client,
+			api.Scheme,
+			record.NewFakeRecorder(1024),
+			config.ContextControllerConfig{
+				Default: config.ContextControllerDefaultConfig{
+					RepositoryContext:  repoCtx,
+					ExcludedNamespaces: []string{state.Namespace},
+				},
+			})
+		Expect(err).ToNot(HaveOccurred())
+
+		ns := &corev1.Namespace{}
+		ns.Name = state.Namespace
+
+		testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(ns))
+
+		items := &lsv1alpha1.ContextList{}
+		testutils.ExpectNoError(testenv.Client.List(ctx, items, client.InNamespace(state.Namespace)))
+		Expect(items.Items).To(HaveLen(0))
 	})
 
 })
