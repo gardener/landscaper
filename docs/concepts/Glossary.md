@@ -31,7 +31,7 @@
 
   The Landscaper defines 2 different kind of contexts.
 
-  One context is an actual resource that is referenced by an installation and defines common configuration.
+  One context is an actual resource that is referenced by an Installation and defines common configuration.
 
   The other context is a logical object that defines the scope in which an Installation runs and all of its data lives.
   For every Installation a dedicated logical context is created and data can only be accessed within the same context.
