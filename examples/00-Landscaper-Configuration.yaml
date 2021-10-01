@@ -15,17 +15,13 @@ controllers:
   componentOverwrites:
     workers: 5
     # cacheSyncTimeout: 2m
-
-repositoryContext: # define the default repository context for installations
-  type: ociRegistry
-  baseUrl: "myregistry.com/components"
-
-controllers:
   context:
+    workers: 5
+    # cacheSyncTimeout: 2m
     config:
       default:
         disable: false
-        excludeNamespaces: [] # list of namespaces to exclude.
+        excludeNamespaces: [ ] # list of namespaces to exclude.
         repositoryContext: # define the default repository context for installations
           type: ociRegistry
           baseUrl: "myregistry.com/components"

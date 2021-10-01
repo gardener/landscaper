@@ -33,6 +33,7 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_CommonControllerConfig(&obj.Controllers.Executions.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.DeployItems.CommonControllerConfig)
 	SetDefaults_CommonControllerConfig(&obj.Controllers.ComponentOverwrites.CommonControllerConfig)
+	SetDefaults_CommonControllerConfig(&obj.Controllers.Contexts.CommonControllerConfig)
 
 	if len(obj.DeployerManagement.Namespace) == 0 {
 		obj.DeployerManagement.Namespace = "ls-system"
@@ -53,10 +54,10 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	SetDefaults_BlueprintStore(&obj.BlueprintStore)
 	SetDefaults_CrdManagementConfiguration(&obj.CrdManagement)
 
-	if obj.RepositoryContext != nil && obj.Controllers.Context.Config.Default.RepositoryContext == nil {
+	if obj.RepositoryContext != nil && obj.Controllers.Contexts.Config.Default.RepositoryContext == nil {
 		// migrate the repository context to the new structure.
 		// The old location is ignored if a repository context is defined in the new location.
-		obj.Controllers.Context.Config.Default.RepositoryContext = obj.RepositoryContext
+		obj.Controllers.Contexts.Config.Default.RepositoryContext = obj.RepositoryContext
 	}
 
 	if obj.DeployerManagement.Disable {

@@ -10,6 +10,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/apis/config"
 )
 
@@ -17,7 +19,7 @@ import (
 // That defaulterController watches namespaces and creates the default context object in every namespace.
 func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.WithName("Context")
-	if config.Controllers.Context.Config.Default.Disable {
+	if config.Controllers.Contexts.Config.Default.Disable {
 		log.Info("Default Context controller is disabled")
 		return nil
 	}
@@ -27,7 +29,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *con
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		mgr.GetEventRecorderFor("Landscaper"),
-		config.Controllers.Context.Config,
+		config.Controllers.Contexts.Config,
 	)
 	if err != nil {
 		return err
@@ -36,5 +38,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *con
 	return builder.ControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
 		WithLogger(log).
+		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Contexts.CommonControllerConfig)).
 		Complete(a)
 }
