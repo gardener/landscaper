@@ -16,6 +16,7 @@
 - [JSON Schema](./usage/JSONSchema.md)
 - [Component Overwrites](./usage/ComponentOverwrites.md)
 - [Conditional Imports](./usage/ConditionalImports.md)
+- [Context](./usage/Context.md)
 
 ### Deployers
 - [Overview](./deployer)

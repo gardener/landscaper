@@ -68,7 +68,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(lsCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
-	It("should update the default config object if changed", func() {
+	It("should overwrite changes to the default context object", func() {
 		ctx := context.Background()
 		uObj, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.de", ""))
 
@@ -90,7 +90,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(lsCtx.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
-	It("should not create a new default context object in a excluded namespace", func() {
+	It("should not create a new default context object in an excluded namespace", func() {
 		ctx := context.Background()
 
 		ctrl, err := contextctrl.NewDefaulterController(

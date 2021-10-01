@@ -8,7 +8,8 @@ A context can be referenced by installations in the same namespace.
 ## Basic structure
 
 A context object contains the repository context and an optional list of registry pull secrets.
-These registry pull secrets are references to secrets in the same namespace as the context that contains oci registry access credentials.
+These registry pull secrets are references to secrets in the same namespace as the context.
+It is expected that the secrets contain oci registry access credentials.
 These credentials can be used to access component descriptors, blueprints or even deployable artifacts like helm charts or oci images.
 
 ```yaml
