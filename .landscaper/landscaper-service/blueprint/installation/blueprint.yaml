@@ -7,66 +7,75 @@ imports:
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
-  # The "hostingClusterNamespace" is the namespace in the hosting cluster into which the landscaper service is getting installed.
-  # Only one landscaper server per namespace can be installed.
   - name: hostingClusterNamespace
     required: true
     type: data
     schema:
+      description: |
+        The "hostingClusterNamespace" is the namespace in the hosting cluster into which the landscaper service is getting installed.
+        Only one landscaper server per namespace can be installed.
       type: string
 
-  # Specifies whether the "hostingClusterNamespace" is getting deleted before the installation.
   - name: deleteHostingClusterNamespace
     type: data
     schema:
+      description: |
+        Specifies whether the "hostingClusterNamespace" is getting deleted before the installation.
       type: boolean
 
-  # The "virtualClusterNamespace" is the namespace in the virtual cluster into which the landscaper resources are getting installed.
   - name: virtualClusterNamespace
     required: true
     type: data
     schema:
+      description: |
+        The "virtualClusterNamespace" is the namespace in the virtual cluster into which the landscaper resources are getting installed.
       type: string
 
-  # The underlying infrastructure provider of the "hostingCluster" Kubernetes cluster.
-  # Currently, supported values: "gcp", "aws", "alicloud"
   - name: providerType
     type: data
     required: true
     schema:
+      description: |
+        The underlying infrastructure provider of the "hostingCluster" Kubernetes cluster.
+        Currently, supported values: "gcp", "aws", "alicloud"
       type: string
 
-  # The DNS domain at which the landscaper service should be accessible.
-  # Used for certificate generation.
   - name: dnsAccessDomain
     type: data
     required: true
     schema:
+      description: |
+        The DNS domain at which the landscaper service should be accessible.
+        Used for certificate generation.
       type: string
 
-  # The landscaper registry configuration.
   - name: registryConfig
     type: data
     schema:
+      description: |
+        The landscaper registry configuration.
       $ref: "cd://resources/registry-config-definition"
 
-  # The landscaper deployment configuration.
   - name: landscaperConfig
     type: data
     schema:
+      description: |
+        The landscaper deployment configuration.
       $ref: "cd://resources/landscaper-config-definition"
 
 exports:
-  # "landscaperClusterEndpoint" is the API server endpoint at which the landscaper is available.
   - name: landscaperClusterEndpoint
     type: data
     schema:
+      description: |
+        The API server endpoint at which the landscaper is available.
       type: string
 
-  # "landscaperClusterKubeconfig" is the Kubernetes kubeconfig which can be used to connect to the API server (Base64 encoded).
   - name: landscaperClusterKubeconfig
     type: data
     schema:
+      description: |
+        The Kubernetes kubeconfig which can be used to connect to the API server (Base64 encoded).
       type: string
 
 exportExecutions:
