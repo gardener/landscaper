@@ -1,0 +1,26 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: InstallationTemplate
+
+name: landscaper-rbac
+
+blueprint:
+  ref: cd://resources/rbac-blueprint
+
+imports:
+  targets:
+    - name: virtualCluster
+      target: virtualGardenKubeconfig
+  data:
+    - name: virtualClusterNamespace
+      dataRef: virtualClusterNamespace
+    - name: virtualClusterEndpoint
+      dataRef: virtualGardenEndpoint
+
+exports:
+  data:
+    - name: landscaperControllerKubeconfigYaml
+      dataRef: landscaperControllerKubeconfigYaml
+    - name: landscaperWebhooksKubeconfigYaml
+      dataRef: landscaperWebhooksKubeconfigYaml
+    - name: landscaperUserKubeconfigYaml
+      dataRef: landscaperUserKubeconfigYaml
