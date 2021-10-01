@@ -17,7 +17,7 @@ We are also building OCI charts so a specific version of Landscaper can be insta
 
 ```
 export HELM_EXPERIMENTAL_OCI=1
-export LS_VERSION="0.1.0"
+export LS_VERSION="v0.13.0" # use the latest available version
 helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION
 helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION ./charts
 helm install ./charts
