@@ -8,6 +8,22 @@
 
 landscaper:
   verbosity: 2
+
+  controllers:
+    # syncPeriod: 10h
+    installations:
+      workers: 5
+      # cacheSyncTimeout: 2m
+    executions:
+      workers: 5
+      # cacheSyncTimeout: 2m
+    deployItems:
+      workers: 5
+      # cacheSyncTimeout: 2m
+    componentOverwrites:
+      workers: 5
+      # cacheSyncTimeout: 2m
+
   crdManagement:
     deployCrd: true
 #   forceUpdate: true
