@@ -2,6 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
 imports:
+   # The "hostingCluster" specifies the target Kubernetes cluster into which the landscaper service will be installed.
   - name: hostingCluster
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
@@ -10,50 +11,71 @@ imports:
     required: true
     type: data
     schema:
+      description: |
+        The "hostingClusterNamespace" is the namespace in the hosting cluster into which the landscaper service is getting installed.
+        Only one landscaper server per namespace can be installed.
       type: string
 
   - name: deleteHostingClusterNamespace
     type: data
     schema:
+      description: |
+        Specifies whether the "hostingClusterNamespace" is getting deleted before the installation.
       type: boolean
 
   - name: virtualClusterNamespace
     required: true
     type: data
     schema:
+      description: |
+        The "virtualClusterNamespace" is the namespace in the virtual cluster into which the landscaper resources are getting installed.
       type: string
 
   - name: providerType
     type: data
     required: true
     schema:
+      description: |
+        The underlying infrastructure provider of the "hostingCluster" Kubernetes cluster.
+        Currently, supported values: "gcp", "aws", "alicloud"
       type: string
 
   - name: dnsAccessDomain
     type: data
     required: true
     schema:
+      description: |
+        The DNS domain at which the landscaper service should be accessible.
+        Used for certificate generation.
       type: string
 
   - name: registryConfig
     type: data
     schema:
+      description: |
+        The landscaper registry configuration.
       $ref: "cd://resources/registry-config-definition"
 
   - name: landscaperConfig
     type: data
     schema:
+      description: |
+        The landscaper deployment configuration.
       $ref: "cd://resources/landscaper-config-definition"
 
 exports:
   - name: landscaperClusterEndpoint
     type: data
     schema:
+      description: |
+        The API server endpoint at which the landscaper is available.
       type: string
 
   - name: landscaperClusterKubeconfig
     type: data
     schema:
+      description: |
+        The Kubernetes kubeconfig which can be used to connect to the API server (Base64 encoded).
       type: string
 
 exportExecutions:
@@ -65,103 +87,6 @@ exportExecutions:
         landscaperClusterKubeconfig: {{ .values.dataobjects.landscaperUserKubeconfigYaml | b64enc }}
 
 subinstallations:
-  - apiVersion: landscaper.gardener.cloud/v1alpha1
-    kind: InstallationTemplate
-
-    name: virtual-garden
-
-    blueprint:
-      ref: cd://componentReferences/virtual-garden/resources/blueprint
-
-    imports:
-      targets:
-        - name: cluster
-          target: hostingCluster
-      data:
-        - name: importHostingClusterNamespace
-          dataRef: hostingClusterNamespace
-        - name: importProviderType
-          dataRef: providerType
-        - name: importDeleteNamespace
-          dataRef: deleteHostingClusterNamespace
-        - name: importDnsAccessDomain
-          dataRef: dnsAccessDomain
-
-    importDataMappings:
-      hostingCluster:
-        namespace: (( importHostingClusterNamespace ))
-        infrastructureProvider: (( importProviderType ))
-
-      virtualGarden:
-        deleteNamespace: (( importDeleteNamespace ))
-        etcd:
-          storageClassName: (( "landscaper-" importHostingClusterNamespace))
-          handleETCDPersistentVolumes: true
-        kubeAPIServer:
-          replicas: 1
-          dnsAccessDomain: (( importDnsAccessDomain ))
-          gardenerControlplane:
-            validatingWebhookEnabled: true
-            mutatingWebhookEnabled: true
-
-    exports:
-      data:
-        - name: virtualGardenEndpoint
-          dataRef: virtualGardenEndpoint
-      targets:
-        - name: virtualGardenKubeconfig
-          target: virtualGardenKubeconfig
-
-
-  - apiVersion: landscaper.gardener.cloud/v1alpha1
-    kind: InstallationTemplate
-
-    name: landscaper-rbac
-
-    blueprint:
-      ref: cd://resources/rbac-blueprint
-
-    imports:
-      targets:
-        - name: virtualCluster
-          target: virtualGardenKubeconfig
-      data:
-        - name: virtualClusterNamespace
-          dataRef: virtualClusterNamespace
-        - name: virtualClusterEndpoint
-          dataRef: virtualGardenEndpoint
-
-    exports:
-      data:
-        - name: landscaperControllerKubeconfigYaml
-          dataRef: landscaperControllerKubeconfigYaml
-        - name: landscaperWebhooksKubeconfigYaml
-          dataRef: landscaperWebhooksKubeconfigYaml
-        - name: landscaperUserKubeconfigYaml
-          dataRef: landscaperUserKubeconfigYaml
-
-  - apiVersion: landscaper.gardener.cloud/v1alpha1
-    kind: InstallationTemplate
-
-    name: landscaper-deployment
-
-    blueprint:
-      ref: cd://resources/landscaper-blueprint
-
-    imports:
-      targets:
-        - name: hostingCluster
-          target: hostingCluster
-      data:
-        - name: hostingClusterNamespace
-          dataRef: hostingClusterNamespace
-        - name: virtualClusterNamespace
-          dataRef: virtualClusterNamespace
-        - name: landscaperControllerKubeconfigYaml
-          dataRef: landscaperControllerKubeconfigYaml
-        - name: landscaperWebhooksKubeconfigYaml
-          dataRef: landscaperWebhooksKubeconfigYaml
-        - name: registryConfig
-          dataRef: registryConfig
-        - name: landscaperConfig
-          dataRef: landscaperConfig
+  - file: /virtual-garden-subinst.yaml
+  - file: /landscaper-rbac-subinst.yaml
+  - file: /landscaper-deployment-subinst.yaml
