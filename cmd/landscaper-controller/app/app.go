@@ -76,7 +76,10 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         &o.Config.Controllers.SyncPeriod.Duration,
+	}
+
+	if o.Config.Controllers.SyncPeriod != nil {
+		opts.SyncPeriod = &o.Config.Controllers.SyncPeriod.Duration
 	}
 
 	if o.Config.Metrics != nil {
