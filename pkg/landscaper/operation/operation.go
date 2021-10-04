@@ -22,13 +22,13 @@ type RegistriesAccessor interface {
 type Operation struct {
 	log               logr.Logger
 	client            client.Client
-	directReader      client.Reader
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
 	componentRegistry ctf.ComponentResolver
 }
 
 // NewOperation creates a new internal installation Operation object.
+// DEPRECATED: use the Builder instead.
 func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
 	return &Operation{
 		log:           log,
@@ -43,7 +43,6 @@ func (o *Operation) Copy() *Operation {
 	return &Operation{
 		log:               o.log,
 		client:            o.client,
-		directReader:      o.directReader,
 		scheme:            o.scheme,
 		componentRegistry: o.componentRegistry,
 	}
@@ -57,14 +56,6 @@ func (o *Operation) Log() logr.Logger {
 // Client returns a controller runtime client.Registry
 func (o *Operation) Client() client.Client {
 	return o.client
-}
-
-// DirectReader returns a direct readonly api reader.
-func (o *Operation) DirectReader() client.Reader {
-	if o.directReader == nil {
-		return o.client
-	}
-	return o.directReader
 }
 
 // Scheme returns a kubernetes scheme

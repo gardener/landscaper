@@ -253,7 +253,7 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
 		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.DeployExecutionOptions{
 			Imports:              o.Inst.GetImports(),
-			Installation:         o.Inst.Info,
+			Installation:         o.Context().External.InjectComponentDescriptorRef(o.Inst.Info.DeepCopy()),
 			Blueprint:            o.Inst.Blueprint,
 			ComponentDescriptor:  o.ComponentDescriptor,
 			ComponentDescriptors: o.ResolvedComponentDescriptorList,

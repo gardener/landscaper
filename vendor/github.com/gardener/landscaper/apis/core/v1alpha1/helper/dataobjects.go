@@ -76,6 +76,11 @@ func DataObjectSourceFromInstallation(src *lsv1alpha1.Installation) string {
 	return InstallationPrefix + src.GetName()
 }
 
+// DataObjectSourceFromInstallationName returns the data object source for an Installation name.
+func DataObjectSourceFromInstallationName(name string) string {
+	return InstallationPrefix + name
+}
+
 // DataObjectSourceFromExecution returns the data object source for a Execution.
 func DataObjectSourceFromExecution(src *lsv1alpha1.Execution) string {
 	return ExecutionPrefix + src.GetName()

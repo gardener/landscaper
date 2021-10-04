@@ -29,17 +29,19 @@
 
 #### _Context_
 
-  A context defines the scope in which an Installation runs and all of its data lives.
-  For every Installation a dedicated context is created and data can only be accessed within the same context.
+  The Landscaper defines 2 different kind of contexts.
+
+  One context is an actual resource that is referenced by an Installation and defines common configuration.
+
+  The other context is a logical object that defines the scope in which an Installation runs and all of its data lives.
+  For every Installation a dedicated logical context is created and data can only be accessed within the same context.
   Data can be exchanged between contexts via Import and Export declarations.
 
-  Since Installations can be nested, the resulting Contexts are nested as well.
-
-  For more information see [here](./Context.md).
+  Since Installations can be nested, the resulting contexts are nested as well.
 
 #### _DataObject_
 
-  DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#_context_) and provide data to Imports / receive data from Exports. They can be considerd to be the implementation of the data flow in an installation.
+  DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#_context_) and provide data to Imports / receive data from Exports. They can be considered to be the implementation of the data flow in an installation.
 
 #### _Deployer_
 

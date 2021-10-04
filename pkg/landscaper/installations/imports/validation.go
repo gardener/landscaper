@@ -20,10 +20,32 @@ import (
 
 // NewValidator creates new import validator.
 // It validates if all imports of a component are satisfied given a context.
-func NewValidator(op *installations.Operation) *Validator {
+func NewValidator(ctx context.Context, op *installations.Operation) (*Validator, error) {
+	var parent *installations.Installation
+	if op.Context().Parent != nil {
+		var err error
+		parent, err = installations.CreateInternalInstallationWithContext(ctx,
+			op.Context().Parent.Info,
+			op.Client(),
+			op.ComponentsRegistry(),
+			op.Overwriter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Validator{
 		Operation: op,
-		parent:    op.Context().Parent,
+		parent:    parent,
+		siblings:  op.Context().Siblings,
+	}, nil
+}
+
+// NewTestValidator creates a new import validator for tests.
+func NewTestValidator(op *installations.Operation, parent *installations.Installation) *Validator {
+	return &Validator{
+		Operation: op,
+		parent:    parent,
 		siblings:  op.Context().Siblings,
 	}
 }
@@ -80,7 +102,7 @@ func (v *Validator) CheckDependentInstallations(ctx context.Context) (bool, erro
 	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
 	// check if parent has sibling installation dependencies that are not finished yet
-	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation, v.parent)
+	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation.Client(), &v.parent.InstallationBase)
 	if err != nil {
 		v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
@@ -381,7 +403,7 @@ func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *fie
 
 	// todo: check generation of other components in the dependency tree
 	// we expect that no dependent siblings are running
-	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation, sibling)
+	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation.Client(), v.Operation.Context().Name, sibling)
 	if err != nil {
 		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet: %w", fldPath.String(), err)
 	}

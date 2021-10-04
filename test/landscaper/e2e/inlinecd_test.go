@@ -75,6 +75,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 		var err error
 		state, err = testenv.InitResources(ctx, filepath.Join(projectRoot, "examples", "02-inline-cd", "cluster"))
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 		// first the installation controller should run and set the finalizer
 		// afterwards it should again reconcile and deploy the execution

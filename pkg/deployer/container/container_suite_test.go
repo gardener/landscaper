@@ -60,7 +60,10 @@ var _ = Describe("Template", func() {
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
 		var err error
-		mgr, err = manager.New(testenv.Env.Config, manager.Options{Scheme: api.LandscaperScheme})
+		mgr, err = manager.New(testenv.Env.Config, manager.Options{
+			Scheme:             api.LandscaperScheme,
+			MetricsBindAddress: "0",
+		})
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(containerctlr.AddControllerToManager(logr.Discard(), mgr, mgr, containerv1alpha1.Configuration{})).To(Succeed())

@@ -18,6 +18,13 @@ type Overwriter interface {
 	Replace(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error)
 }
 
+// OverwriterFunc describes a simple func that implements the overwriter interface.
+type OverwriterFunc func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error)
+
+func (f OverwriterFunc) Replace(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+	return f(reference)
+}
+
 // Manager is a manager that manages all component overwrites.
 type Manager struct {
 	mux        sync.RWMutex

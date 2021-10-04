@@ -79,6 +79,7 @@ var _ = Describe("Delete", func() {
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/root"])
 			Expect(err).ToNot(HaveOccurred())
@@ -103,6 +104,7 @@ var _ = Describe("Delete", func() {
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/b"])
 			Expect(err).ToNot(HaveOccurred())
@@ -120,6 +122,7 @@ var _ = Describe("Delete", func() {
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test2")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), state.Installations[state.Namespace+"/a"])
 			Expect(err).ToNot(HaveOccurred())
@@ -140,6 +143,7 @@ var _ = Describe("Delete", func() {
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test3")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := &lsv1alpha1.Installation{}
 			inst.Name = "root"
@@ -186,6 +190,7 @@ var _ = Describe("Delete", func() {
 
 			state, err = testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			Expect(installationsctl.AddControllerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, nil, &config.LandscaperConfiguration{})).To(Succeed())
 			go func() {
@@ -203,6 +208,7 @@ var _ = Describe("Delete", func() {
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := state.Installations[state.Namespace+"/a"]
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())

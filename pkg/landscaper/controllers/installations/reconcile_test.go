@@ -7,7 +7,6 @@ package installations_test
 import (
 	"context"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -22,39 +21,11 @@ import (
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("Reconcile", func() {
-
-	Context("HandleComponenReference", func() {
-		It("should default the repository context", func() {
-			type custom struct {
-				cdv2.ObjectType
-				BaseURL string `json:"baseUrl"`
-			}
-
-			repoCtx, err := cdv2.NewUnstructured(&custom{
-				ObjectType: cdv2.ObjectType{
-					Type: "mycustom",
-				},
-				BaseURL: "test",
-			})
-			Expect(err).ToNot(HaveOccurred())
-			c := &installationsctl.Controller{
-				LsConfig: &config.LandscaperConfiguration{
-					RepositoryContext: &repoCtx,
-				},
-			}
-			inst := &lsv1alpha1.Installation{}
-			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{}
-			inst.Spec.ComponentDescriptor.Reference = &lsv1alpha1.ComponentDescriptorReference{}
-
-			Expect(c.HandleComponentReference(inst)).To(Succeed())
-			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object).To(Equal(repoCtx.Object))
-		})
-	})
 
 	Context("PhasePropagation", func() {
 
@@ -96,27 +67,28 @@ var _ = Describe("Reconcile", func() {
 
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test4")
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := state.Installations[state.Namespace+"/root"]
 			exec := state.Executions[state.Namespace+"/subexec"]
 
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 
 			// set execution phase to 'Failed' and check again
 			exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-			utils.ExpectNoError(testenv.Client.Status().Update(ctx, exec))
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ExpectNoError(testenv.Client.Status().Update(ctx, exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseFailed))
 
 			// set execution phase to 'Succeeded' and check again
 			exec.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-			utils.ExpectNoError(testenv.Client.Status().Update(ctx, exec))
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ExpectNoError(testenv.Client.Status().Update(ctx, exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 		})
 
@@ -125,27 +97,28 @@ var _ = Describe("Reconcile", func() {
 
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test4")
-			utils.ExpectNoError(err)
+			testutils.ExpectNoError(err)
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 			inst := state.Installations[state.Namespace+"/root"]
 			subinst := state.Installations[state.Namespace+"/subinst"]
 
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 
 			// set subinstallation phase to 'Failed' and check again
 			subinst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
-			utils.ExpectNoError(testenv.Client.Status().Update(ctx, subinst))
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ExpectNoError(testenv.Client.Status().Update(ctx, subinst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseFailed))
 
 			// set subinstallation phase to 'Succeeded' and check again
 			subinst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-			utils.ExpectNoError(testenv.Client.Status().Update(ctx, subinst))
-			utils.ShouldReconcile(ctx, ctrl, utils.RequestFromObject(inst))
-			utils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			testutils.ExpectNoError(testenv.Client.Status().Update(ctx, subinst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 		})
 

@@ -41,6 +41,7 @@ var _ = Describe("OutdatedImports", func() {
 		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
+		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
@@ -54,18 +55,16 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that imports are outdated if a import from the parent is outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
 
 		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstA
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		val, err := imports.NewValidator(ctx, op)
+		Expect(err).To(Succeed())
 
-		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeTrue())
@@ -73,8 +72,6 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that imports are outdated if a import from another component is outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
 
 		instA := fakeInstallations["test1/a"]
 		instA.Status.ConfigGeneration = "outdated"
@@ -85,10 +82,10 @@ var _ = Describe("OutdatedImports", func() {
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		val, err := imports.NewValidator(ctx, op)
+		Expect(err).To(Succeed())
 
-		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeTrue())
@@ -96,18 +93,16 @@ var _ = Describe("OutdatedImports", func() {
 
 	It("should return that no imports are outdated", func() {
 		ctx := context.Background()
-		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
-		Expect(err).ToNot(HaveOccurred())
 
 		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
 		op.Inst = inInstB
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-		op.Context().Parent = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
+		val, err := imports.NewValidator(ctx, op)
+		Expect(err).To(Succeed())
 
-		val := imports.NewValidator(op)
 		outdated, err := val.OutdatedImports(ctx)
 		Expect(err).To(Succeed())
 		Expect(outdated).To(BeFalse())
@@ -116,7 +111,6 @@ var _ = Describe("OutdatedImports", func() {
 	Context("import from manual provided data import", func() {
 		It("should report an outdated import", func() {
 			ctx := context.Background()
-			defer ctx.Done()
 
 			instRoot := fakeInstallations["test1/root"]
 			instRoot.Status.Imports[0].ConfigGeneration = "1"
@@ -126,10 +120,10 @@ var _ = Describe("OutdatedImports", func() {
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			val, err := imports.NewValidator(ctx, op)
+			Expect(err).To(Succeed())
 
-			val := imports.NewValidator(op)
 			outdated, err := val.OutdatedImports(ctx)
 			Expect(err).To(Succeed())
 			Expect(outdated).To(BeTrue())
@@ -145,10 +139,10 @@ var _ = Describe("OutdatedImports", func() {
 			op.Inst = inInstRoot
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+			val, err := imports.NewValidator(ctx, op)
+			Expect(err).To(Succeed())
 
-			val := imports.NewValidator(op)
 			outdated, err := val.OutdatedImports(ctx)
 			Expect(err).To(Succeed())
 			Expect(outdated).To(BeFalse())

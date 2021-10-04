@@ -6,13 +6,22 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: virtual-cluster
-  generation: 6
 spec:
+
+  context: "default" # defaulted
 
   componentDescriptor:
     ref:
+#      repositoryContext: # optional; should be set in the context.
+#        type: ociRegistry
+#        baseUrl: "example.com"
       componentName: github.com/gardener/virtual-cluster
       version: v1.7.2
+
+#  # additional pull secrets to access component descriptors and blueprints
+#  # is deprecated and should be defined in the context instead.
+#  registryPullSecrets: # additional pull secrets to access component descriptors and blueprints
+#  - name: my-pullsecret
 
   blueprint: # will be read from the component descriptor
     ref:

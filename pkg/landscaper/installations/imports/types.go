@@ -22,8 +22,5 @@ type Validator struct {
 // generate the one imported config
 type Constructor struct {
 	*installations.Operation
-	validator *Validator
-
-	parent   *installations.Installation
 	siblings []*installations.InstallationBase
 }

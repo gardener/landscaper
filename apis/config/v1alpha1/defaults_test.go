@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -50,7 +51,17 @@ var _ = Describe("Defaults", func() {
 			checkCommonConfig(&cfg.Controllers.Executions.CommonControllerConfig)
 			checkCommonConfig(&cfg.Controllers.DeployItems.CommonControllerConfig)
 			checkCommonConfig(&cfg.Controllers.ComponentOverwrites.CommonControllerConfig)
+			checkCommonConfig(&cfg.Controllers.Contexts.CommonControllerConfig)
 		})
+	})
+
+	It("should default the repository context in the context controller", func() {
+		repoCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com", ""))
+		cfg := &v1alpha1.LandscaperConfiguration{}
+		cfg.RepositoryContext = &repoCtx
+		v1alpha1.SetDefaults_LandscaperConfiguration(cfg)
+		Expect(cfg.Controllers.Contexts.Config.Default.RepositoryContext).ToNot(BeNil())
+		Expect(cfg.Controllers.Contexts.Config.Default.RepositoryContext.Raw).To(MatchJSON(repoCtx.Raw))
 	})
 
 })

@@ -8,7 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -16,15 +17,12 @@ import (
 )
 
 // CheckCompletedSiblingDependentsOfParent checks if siblings and siblings of the parent's parents that the parent depends on (imports data) are completed.
-func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installations.Operation, parent *installations.Installation) (bool, error) {
+func CheckCompletedSiblingDependentsOfParent(ctx context.Context, kubeClient client.Client, parent *installations.InstallationBase) (bool, error) {
 	if parent == nil {
 		return true, nil
 	}
-	parentsOperation, err := installations.NewInstallationOperationFromOperation(ctx, op.Operation, parent, op.DefaultRepoContext)
-	if err != nil {
-		return false, fmt.Errorf("unable to create parent operation: %w", err)
-	}
-	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, parentsOperation, &parent.InstallationBase)
+	parentCtxName := installations.GetInstallationContextName(parent.Info)
+	siblingsCompleted, err := CheckCompletedSiblingDependents(ctx, kubeClient, parentCtxName, parent)
 	if err != nil {
 		return false, err
 	}
@@ -33,30 +31,31 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, op *installati
 	}
 
 	// check its own parent
-	parentsParentInst, err := installations.GetParent(ctx, op.Client(), parent.Info)
+	parentsParentInst, err := installations.GetParent(ctx, kubeClient, parent.Info)
 	if err != nil {
-		return false, errors.Wrap(err, "unable to get parent of parent")
+		return false, fmt.Errorf("unable to get parent of parent: %w", err)
 	}
 
 	if parentsParentInst == nil {
 		return true, nil
 	}
-	parentsParent, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), parentsParentInst)
-	if err != nil {
-		return false, err
-	}
-	return CheckCompletedSiblingDependentsOfParent(ctx, parentsOperation, parentsParent)
+	return CheckCompletedSiblingDependentsOfParent(ctx, kubeClient, installations.NewInstallationBase(parentsParentInst))
 }
 
 // CheckCompletedSiblingDependents checks if siblings that the installation depends on (imports data) are completed
-func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Operation,
+func CheckCompletedSiblingDependents(ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
 	inst *installations.InstallationBase) (bool, error) {
 	if inst == nil {
 		return true, nil
 	}
+
+	log := logr.FromContextOrDiscard(ctx)
+
 	// todo: add target support
 	for _, dataImport := range inst.Info.Spec.Imports.Data {
-		sourceRef, err := getImportSource(ctx, op, inst, dataImport)
+		sourceRef, err := getImportSource(ctx, kubeClient, contextName, inst, dataImport)
 		if err != nil {
 			return false, err
 		}
@@ -69,7 +68,7 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 			continue
 		}
 
-		parent, err := installations.GetParent(ctx, op.Client(), inst.Info)
+		parent, err := installations.GetParent(ctx, kubeClient, inst.Info)
 		if err != nil {
 			return false, err
 		}
@@ -79,18 +78,18 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 
 		// we expect that the source ref is always a installation
 		inst := &lsv1alpha1.Installation{}
-		if err := op.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+		if err := kubeClient.Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
 			return false, err
 		}
 
 		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-			op.Log().V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
+			log.V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
 			return false, nil
 		}
 
 		intInst := installations.CreateInternalInstallationBase(inst)
 
-		isCompleted, err := CheckCompletedSiblingDependents(ctx, op, intInst)
+		isCompleted, err := CheckCompletedSiblingDependents(ctx, kubeClient, contextName, intInst)
 		if err != nil {
 			return false, err
 		}
@@ -103,7 +102,10 @@ func CheckCompletedSiblingDependents(ctx context.Context, op *installations.Oper
 }
 
 // getImportSource returns a reference to the owner of a data import.
-func getImportSource(ctx context.Context, op *installations.Operation, inst *installations.InstallationBase,
+func getImportSource(ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
+	inst *installations.InstallationBase,
 	dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
 	status, err := inst.ImportStatus().GetData(dataImport.Name)
 	if err == nil && status.SourceRef != nil {
@@ -111,7 +113,7 @@ func getImportSource(ctx context.Context, op *installations.Operation, inst *ins
 	}
 
 	// we have to get the corresponding installation from the the cluster
-	_, owner, err := installations.GetDataImport(ctx, op.Client(), op.Context().Name, inst, dataImport)
+	_, owner, err := installations.GetDataImport(ctx, kubeClient, contextName, inst, dataImport)
 	if err != nil {
 		return nil, err
 	}

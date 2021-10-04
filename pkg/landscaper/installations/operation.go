@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/api"
@@ -43,40 +45,37 @@ type Operation struct {
 
 	Inst                            *Installation
 	ComponentDescriptor             *cdv2.ComponentDescriptor
+	Overwriter                      componentoverwrites.Overwriter
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Context
 
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
-
-	// default repo context
-	DefaultRepoContext *cdv2.UnstructuredTypedObject
 }
 
-// NewInstallationOperation creates a new installation operation
+// NewInstallationOperation creates a new installation operation.
+// DEPRECATED: use the builder instead.
 func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
-	return NewInstallationOperationFromOperation(ctx, lsoperation.NewOperation(log, c, scheme, recorder).SetComponentsRegistry(cRegistry), inst, nil)
+	return NewOperationBuilder(inst).
+		WithLogger(log).
+		Client(c).
+		Scheme(scheme).
+		WithEventRecorder(recorder).
+		ComponentRegistry(cRegistry).
+		Build(ctx)
 }
 
-// NewInstallationOperationFromOperation creates a new installation operation from an existing common operation
-func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, defaultRepoContext *cdv2.UnstructuredTypedObject) (*Operation, error) {
-	instOp := &Operation{
-		Operation:          op,
-		Inst:               inst,
-		DefaultRepoContext: defaultRepoContext,
-	}
-
-	if err := instOp.ResolveComponentDescriptors(ctx); err != nil {
-		return nil, err
-	}
-	if err := instOp.SetInstallationContext(ctx); err != nil {
-		return nil, err
-	}
-	return instOp, nil
+// NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
+// DEPRECATED: use the builder instead.
+func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.Operation, inst *Installation, _ *cdv2.UnstructuredTypedObject) (*Operation, error) {
+	return NewOperationBuilder(inst).
+		WithOperation(op).
+		Build(ctx)
 }
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.
+// DEPRECATED: only used for tests. use the builder methods instead.
 func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 	cd, blobResolver, err := ResolveComponentDescriptor(ctx, o.ComponentsRegistry(), o.Inst.Info)
 	if err != nil {
@@ -124,6 +123,11 @@ func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
 			ComponentResolver:   o.ComponentsRegistry(),
 		},
 	}
+}
+
+// SetOverwriter sets the component overwriter.
+func (o *Operation) SetOverwriter(ow componentoverwrites.Overwriter) {
+	o.Overwriter = ow
 }
 
 // ListSubinstallations returns a list of all subinstallations of the given installation.

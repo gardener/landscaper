@@ -80,6 +80,63 @@
         }
       }
     },
+    "config-v1alpha1-ContextControllerConfig": {
+      "description": "ContextControllerConfig contains the context specific configuration.",
+      "type": "object",
+      "required": [
+        "default"
+      ],
+      "properties": {
+        "default": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-ContextControllerDefaultConfig"
+        }
+      }
+    },
+    "config-v1alpha1-ContextControllerDefaultConfig": {
+      "description": "ContextControllerDefaultConfig contains the configuration for the context defaults.",
+      "type": "object",
+      "required": [
+        "disable"
+      ],
+      "properties": {
+        "disable": {
+          "description": "Disable disables the default controller. If disabled no default contexts are created.",
+          "type": "boolean",
+          "default": false
+        },
+        "excludedNamespaces": {
+          "description": "ExcludedNamespaces defines a list of namespaces where no default context should be created.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "repositoryContext": {
+          "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        }
+      }
+    },
+    "config-v1alpha1-ContextsController": {
+      "description": "ContextsController contains all configuration for the context controller.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig",
+        "config"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
+        },
+        "config": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-ContextControllerConfig"
+        }
+      }
+    },
     "config-v1alpha1-Controllers": {
       "description": "Controllers contains all configuration for the specific controllers",
       "type": "object",
@@ -88,13 +145,19 @@
         "installations",
         "executions",
         "deployItems",
-        "componentOverwrites"
+        "componentOverwrites",
+        "contexts"
       ],
       "properties": {
         "componentOverwrites": {
           "description": "ComponentOverwrites contains the controller config that reconciles component overwrite configuration objects.",
           "default": {},
           "$ref": "#/definitions/config-v1alpha1-ComponentOverwritesController"
+        },
+        "contexts": {
+          "description": "Contexts contains the controller config that reconciles context objects.",
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-ContextsController"
         },
         "deployItems": {
           "description": "DeployItems contains the controller config that reconciles deploy items.",
@@ -513,7 +576,7 @@
     },
     "repositoryContext": {
       "$ref": "#/definitions/apis-v2-UnstructuredTypedObject",
-      "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors."
+      "description": "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead."
     }
   },
   "required": [

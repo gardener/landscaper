@@ -92,7 +92,7 @@ func CreateTestInstallationResources(op *lsoperation.Operation, cfg TestInstalla
 
 	rootIntInst, err := installations.New(rootInst, rootBlueprint)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	rootInstOp, err := installations.NewInstallationOperationFromOperation(context.TODO(), op, rootIntInst, nil)
+	rootInstOp, err := installations.NewOperationBuilder(rootIntInst).WithOperation(op).Build(context.TODO())
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	return rootInst, rootIntInst, rootBlueprint, rootInstOp

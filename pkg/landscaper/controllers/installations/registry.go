@@ -44,7 +44,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		}
 	}
 
-	// always add c oci client to support unauthenticated requests
+	// always add an oci client to support unauthenticated requests
 	ociConfigFiles := make([]string, 0)
 	if c.LsConfig.Registry.OCI != nil {
 		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles

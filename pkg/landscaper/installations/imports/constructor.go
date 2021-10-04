@@ -23,10 +23,7 @@ import (
 func NewConstructor(op *installations.Operation) *Constructor {
 	return &Constructor{
 		Operation: op,
-		validator: NewValidator(op),
-
-		parent:   op.Context().Parent,
-		siblings: op.Context().Siblings,
+		siblings:  op.Context().Siblings,
 	}
 }
 
@@ -270,8 +267,4 @@ func (c *Constructor) templateDataMappings(
 		values[key] = data
 	}
 	return values, nil
-}
-
-func (c *Constructor) IsRoot() bool {
-	return c.parent == nil
 }

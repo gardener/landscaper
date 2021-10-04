@@ -26,6 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
+	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/pkg/agent"
@@ -75,7 +76,10 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
-		SyncPeriod:         &o.Config.Controllers.SyncPeriod.Duration,
+	}
+
+	if o.Config.Controllers.SyncPeriod != nil {
+		opts.SyncPeriod = &o.Config.Controllers.SyncPeriod.Duration
 	}
 
 	if o.Config.Metrics != nil {
@@ -148,6 +152,10 @@ func (o *Options) run(ctx context.Context) error {
 		o.Config.DeployItemTimeouts.Abort,
 		o.Config.DeployItemTimeouts.ProgressingDefault); err != nil {
 		return fmt.Errorf("unable to setup deployitem controller: %w", err)
+	}
+
+	if err := contextctrl.AddControllerToManager(ctrlLogger, lsMgr, o.Config); err != nil {
+		return fmt.Errorf("unable to setup context controller: %w", err)
 	}
 
 	if !o.Config.DeployerManagement.Disable {

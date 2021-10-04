@@ -36,6 +36,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.BlueprintStore":                                            schema_gardener_landscaper_apis_config_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config.CommonControllerConfig":                                    schema_gardener_landscaper_apis_config_CommonControllerConfig(ref),
 		"github.com/gardener/landscaper/apis/config.ComponentOverwritesController":                             schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref),
+		"github.com/gardener/landscaper/apis/config.ContextControllerConfig":                                   schema_gardener_landscaper_apis_config_ContextControllerConfig(ref),
+		"github.com/gardener/landscaper/apis/config.ContextControllerDefaultConfig":                            schema_gardener_landscaper_apis_config_ContextControllerDefaultConfig(ref),
+		"github.com/gardener/landscaper/apis/config.ContextsController":                                        schema_gardener_landscaper_apis_config_ContextsController(ref),
 		"github.com/gardener/landscaper/apis/config.Controllers":                                               schema_gardener_landscaper_apis_config_Controllers(ref),
 		"github.com/gardener/landscaper/apis/config.CrdManagementConfiguration":                                schema_gardener_landscaper_apis_config_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.DeployItemTimeouts":                                        schema_gardener_landscaper_apis_config_DeployItemTimeouts(ref),
@@ -55,6 +58,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore":                                   schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig":                           schema_landscaper_apis_config_v1alpha1_CommonControllerConfig(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController":                    schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerConfig":                          schema_landscaper_apis_config_v1alpha1_ContextControllerConfig(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerDefaultConfig":                   schema_landscaper_apis_config_v1alpha1_ContextControllerDefaultConfig(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController":                               schema_landscaper_apis_config_v1alpha1_ContextsController(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.Controllers":                                      schema_landscaper_apis_config_v1alpha1_Controllers(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration":                       schema_landscaper_apis_config_v1alpha1_CrdManagementConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts":                               schema_landscaper_apis_config_v1alpha1_DeployItemTimeouts(ref),
@@ -1193,6 +1199,101 @@ func schema_gardener_landscaper_apis_config_ComponentOverwritesController(ref co
 	}
 }
 
+func schema_gardener_landscaper_apis_config_ContextControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextControllerConfig contains the context specific configuration.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Default": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.ContextControllerDefaultConfig"),
+						},
+					},
+				},
+				Required: []string{"Default"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.ContextControllerDefaultConfig"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_ContextControllerDefaultConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextControllerDefaultConfig contains the configuration for the context defaults.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"Disable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disable disables the default controller. If disabled no default contexts are created.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ExcludedNamespaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExcludedNamespaces defines a list of namespaces where no default context should be created.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"RepositoryContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
+							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+						},
+					},
+				},
+				Required: []string{"Disable"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_ContextsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextsController contains all configuration for the context controller.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.CommonControllerConfig"),
+						},
+					},
+					"Config": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config.ContextControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig", "Config"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config.CommonControllerConfig", "github.com/gardener/landscaper/apis/config.ContextControllerConfig"},
+	}
+}
+
 func schema_gardener_landscaper_apis_config_Controllers(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1234,12 +1335,19 @@ func schema_gardener_landscaper_apis_config_Controllers(ref common.ReferenceCall
 							Ref:         ref("github.com/gardener/landscaper/apis/config.ComponentOverwritesController"),
 						},
 					},
+					"Contexts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contexts contains the controller config that reconciles context objects.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config.ContextsController"),
+						},
+					},
 				},
-				Required: []string{"SyncPeriod", "Installations", "Executions", "DeployItems", "ComponentOverwrites"},
+				Required: []string{"SyncPeriod", "Installations", "Executions", "DeployItems", "ComponentOverwrites", "Contexts"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config.DeployItemsController", "github.com/gardener/landscaper/apis/config.ExecutionsController", "github.com/gardener/landscaper/apis/config.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/gardener/landscaper/apis/config.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config.ContextsController", "github.com/gardener/landscaper/apis/config.DeployItemsController", "github.com/gardener/landscaper/apis/config.ExecutionsController", "github.com/gardener/landscaper/apis/config.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1544,79 +1652,71 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 				Description: "LandscaperConfiguration contains all configuration for the landscaper controllers",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"kind": {
+					"TypeMeta": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"),
 						},
 					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"controllers": {
+					"Controllers": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Controllers contains all controller specific configuration.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.Controllers"),
 						},
 					},
-					"repositoryContext": {
+					"RepositoryContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
+							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
-					"registry": {
+					"Registry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Registry configures the landscaper registry to resolve component descriptors, blueprints and other artifacts.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.RegistryConfiguration"),
 						},
 					},
-					"blueprintStore": {
+					"BlueprintStore": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BlueprintStore contains the configuration for the blueprint cache.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.BlueprintStore"),
 						},
 					},
-					"metrics": {
+					"Metrics": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Metrics allows to configure how metrics are exposed",
 							Ref:         ref("github.com/gardener/landscaper/apis/config.MetricsConfiguration"),
 						},
 					},
-					"crdManagement": {
+					"CrdManagement": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CrdManagement configures whether the landscaper controller should deploy the CRDs it needs into the cluster",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.CrdManagementConfiguration"),
 						},
 					},
-					"deployerManagement": {
+					"DeployerManagement": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployerManagement configures the deployer management of the landscaper.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration"),
 						},
 					},
-					"deployItemTimeouts": {
+					"DeployItemTimeouts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItemTimeouts contains configuration for multiple deploy item timeouts",
 							Ref:         ref("github.com/gardener/landscaper/apis/config.DeployItemTimeouts"),
 						},
 					},
 				},
-				Required: []string{"controllers", "registry", "blueprintStore"},
+				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
 	}
 }
 
@@ -1927,6 +2027,101 @@ func schema_landscaper_apis_config_v1alpha1_ComponentOverwritesController(ref co
 	}
 }
 
+func schema_landscaper_apis_config_v1alpha1_ContextControllerConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextControllerConfig contains the context specific configuration.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"default": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerDefaultConfig"),
+						},
+					},
+				},
+				Required: []string{"default"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerDefaultConfig"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_ContextControllerDefaultConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextControllerDefaultConfig contains the configuration for the context defaults.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disable disables the default controller. If disabled no default contexts are created.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"excludedNamespaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExcludedNamespaces defines a list of namespaces where no default context should be created.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"repositoryContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
+							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+						},
+					},
+				},
+				Required: []string{"disable"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_ContextsController(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContextsController contains all configuration for the context controller.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+					"config": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig", "config"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig", "github.com/gardener/landscaper/apis/config/v1alpha1.ContextControllerConfig"},
+	}
+}
+
 func schema_landscaper_apis_config_v1alpha1_Controllers(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1968,12 +2163,19 @@ func schema_landscaper_apis_config_v1alpha1_Controllers(ref common.ReferenceCall
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController"),
 						},
 					},
+					"contexts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contexts contains the controller config that reconciles context objects.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController"),
+						},
+					},
 				},
-				Required: []string{"syncPeriod", "installations", "executions", "deployItems", "componentOverwrites"},
+				Required: []string{"syncPeriod", "installations", "executions", "deployItems", "componentOverwrites", "contexts"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController", "github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController", "github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/gardener/landscaper/apis/config/v1alpha1.ComponentOverwritesController", "github.com/gardener/landscaper/apis/config/v1alpha1.ContextsController", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemsController", "github.com/gardener/landscaper/apis/config/v1alpha1.ExecutionsController", "github.com/gardener/landscaper/apis/config/v1alpha1.InstallationsController", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -2297,7 +2499,7 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 					},
 					"repositoryContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors.",
+							Description: "RepositoryContext defines the default repository context that should be used to resolve component descriptors. DEPRECATED: use controllers.context.config.default.repositoryContext instead.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},

@@ -51,6 +51,7 @@ var _ = Describe("Constructor", func() {
 		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
+		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
@@ -166,7 +167,6 @@ var _ = Describe("Constructor", func() {
 			op.Inst = inInstA
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
-			op.Context().Parent = inInstRoot
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
 			do := &lsv1alpha1.DataObject{}

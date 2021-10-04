@@ -94,6 +94,7 @@ func (o *Options) parseConfigurationFile(ctx context.Context) (*config.Landscape
 	if err != nil {
 		return nil, err
 	}
+	api.ConfigScheme.Default(config)
 
 	return config, nil
 }
