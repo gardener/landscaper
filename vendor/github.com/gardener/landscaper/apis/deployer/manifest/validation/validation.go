@@ -11,6 +11,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation"
 )
 
@@ -21,6 +22,7 @@ func ValidateProviderConfiguration(config *manifestv1alpha2.ProviderConfiguratio
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("deleteTimeout"), config.DeleteTimeout)...)
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("readinessChecks", "timeout"), config.ReadinessChecks.Timeout)...)
 	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath(""), &config.ReadinessChecks)...)
+	allErrs = append(allErrs, crval.ValidateContinuousReconcileSpec(field.NewPath("continuousReconcile"), config.ContinuousReconcile)...)
 	return allErrs.ToAggregate()
 }
 

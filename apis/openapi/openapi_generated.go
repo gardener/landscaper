@@ -7914,11 +7914,17 @@ func schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref common.Ref
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
+					"continuousReconcile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContinuousReconcile contains the schedule for continuous reconciliation.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Manifest", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 

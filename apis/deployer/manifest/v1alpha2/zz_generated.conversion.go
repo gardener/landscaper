@@ -19,6 +19,7 @@ import (
 	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifest "github.com/gardener/landscaper/apis/deployer/manifest"
+	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
@@ -127,6 +128,7 @@ func autoConvert_v1alpha2_ProviderConfiguration_To_manifest_ProviderConfiguratio
 	out.DeleteTimeout = (*core.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
@@ -142,6 +144,7 @@ func autoConvert_manifest_ProviderConfiguration_To_v1alpha2_ProviderConfiguratio
 	out.DeleteTimeout = (*v1alpha1.Duration)(unsafe.Pointer(in.DeleteTimeout))
 	out.Manifests = *(*[]managedresource.Manifest)(unsafe.Pointer(&in.Manifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
