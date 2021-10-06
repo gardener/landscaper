@@ -1,0 +1,16 @@
+imports:
+  testClusters:
+  - metadata:
+      name: "test-cluster-1"
+      namespace: "test"
+    spec:
+      type: "landscaper.gardener.cloud/kubernetes-cluster"
+  - metadata:
+      name: "test-cluster-2"
+      namespace: "test"
+    spec:
+      type: "landscaper.gardener.cloud/kubernetes-cluster"
+
+  testComponent: {}
+
+  testComponents: []
