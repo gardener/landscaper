@@ -4,9 +4,12 @@ go 1.16
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
+	github.com/Microsoft/go-winio v0.5.0 // indirect
+	github.com/Microsoft/hcsshim v0.8.22 // indirect
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.5.5
+	github.com/containerd/containerd v1.5.7
+	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/docker/cli v20.10.5+incompatible
 	github.com/gardener/component-cli v0.29.0
 	github.com/gardener/component-spec/bindings-go v0.0.53
@@ -16,8 +19,9 @@ require (
 	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.5.0
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/google/uuid v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/mandelsoft/spiff v1.5.0
 	github.com/mandelsoft/vfs v0.0.0-20210530103237-5249dc39ce91
 	github.com/onsi/ginkgo v1.16.4
@@ -33,8 +37,13 @@ require (
 	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
+	golang.org/x/net v0.0.0-20211005215030-d2e5035098b3 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.3 // indirect
+	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e // indirect
+	google.golang.org/grpc v1.41.0 // indirect
 	helm.sh/helm/v3 v3.6.1
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1
