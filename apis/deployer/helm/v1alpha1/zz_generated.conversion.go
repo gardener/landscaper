@@ -21,6 +21,7 @@ import (
 	core "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helm "github.com/gardener/landscaper/apis/deployer/helm"
+	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
@@ -223,6 +224,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	out.Values = *(*json.RawMessage)(unsafe.Pointer(&in.Values))
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
@@ -244,6 +246,7 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	out.Values = *(*json.RawMessage)(unsafe.Pointer(&in.Values))
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 

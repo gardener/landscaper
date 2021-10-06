@@ -12,6 +12,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	cr "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
@@ -60,6 +61,10 @@ type ProviderConfiguration struct {
 	// Exports describe the exports from the templated manifests that should be exported by the helm deployer.
 	// +optional
 	Exports *managedresource.Exports `json:"exports,omitempty"`
+
+	// ContinuousReconcile contains the schedule for continuous reconciliation.
+	// +optional
+	ContinuousReconcile *cr.ContinuousReconcileSpec `json:"continuousReconcile,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.

@@ -7462,12 +7462,18 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports"),
 						},
 					},
+					"continuousReconcile": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ContinuousReconcile contains the schedule for continuous reconciliation.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
+						},
+					},
 				},
 				Required: []string{"chart", "name", "namespace"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
