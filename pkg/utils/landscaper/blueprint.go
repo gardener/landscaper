@@ -394,13 +394,13 @@ func validateComponentDescriptorImport(value interface{}, fldPath *field.Path) f
 func validateComponentDescriptorListImport(value interface{}, fldPath *field.Path) field.ErrorList {
 	allErr := field.ErrorList{}
 
-	targetList, ok := value.([]interface{})
+	cdList, ok := value.([]interface{})
 	if !ok {
 		allErr = append(allErr, field.Invalid(fldPath, value, "a component descriptor list is expected to be a list"))
 	}
 
-	for i, targetObj := range targetList {
-		allErr = append(allErr, validateComponentDescriptorImport(targetObj, fldPath.Index(i))...)
+	for i, cdObj := range cdList {
+		allErr = append(allErr, validateComponentDescriptorImport(cdObj, fldPath.Index(i))...)
 	}
 
 	return allErr

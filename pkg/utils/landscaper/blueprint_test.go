@@ -17,11 +17,22 @@ var _ = Describe("Landscaper", func() {
 
 	Context("Render blueprint", func() {
 
-		It("should render a blueprint with a target list import", func() {
+		It("should render a blueprint that imports a target list", func() {
 			blueprintRenderArgs := BlueprintRenderArgs{
 				Fs:                   osfs.New(),
 				ImportValuesFilepath: "./testdata/00-blueprint-with-targetlist/values.yaml",
 				RootDir:              "./testdata/00-blueprint-with-targetlist",
+			}
+
+			_, err := RenderBlueprint(blueprintRenderArgs)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should render a blueprint that imports a component descriptor and a component descriptor list", func() {
+			blueprintRenderArgs := BlueprintRenderArgs{
+				Fs:                   osfs.New(),
+				ImportValuesFilepath: "./testdata/01-blueprint-with-cdlist/values.yaml",
+				RootDir:              "./testdata/01-blueprint-with-cdlist",
 			}
 
 			_, err := RenderBlueprint(blueprintRenderArgs)
