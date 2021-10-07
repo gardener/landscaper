@@ -319,33 +319,91 @@ func ValidateImports(bp *blueprints.Blueprint,
 					fmt.Sprintf("invalid imported value: %s", err.Error())))
 			}
 		case lsv1alpha1.ImportTypeTarget:
-			// import is a target import
-			targetObj, ok := value.(map[string]interface{})
-			if !ok {
-				allErr = append(allErr, field.Invalid(fldPath, value, "a target is expected to be an object"))
-				continue
-			}
-			targetType, _, err := unstructured.NestedString(targetObj, "spec", "type")
-			if err != nil {
-				allErr = append(allErr, field.Invalid(
-					fldPath,
-					value,
-					fmt.Sprintf("unable to get type of target: %s", err.Error())))
-				continue
-			}
-			if targetType != importDef.TargetType {
-				allErr = append(allErr, field.Invalid(
-					fldPath,
-					targetType,
-					fmt.Sprintf("expected target type to be %q but got %q", importDef.TargetType, targetType)))
-				continue
-			}
+			allErr = append(allErr, validateTargetImport(value, importDef.TargetType, fldPath)...)
+
+		case lsv1alpha1.ImportTypeTargetList:
+			allErr = append(allErr, validateTargetListImport(value, importDef.TargetType, fldPath)...)
+
+		case lsv1alpha1.ImportTypeComponentDescriptor:
+			allErr = append(allErr, validateComponentDescriptorImport(value, fldPath)...)
+
+		case lsv1alpha1.ImportTypeComponentDescriptorList:
+			allErr = append(allErr, validateComponentDescriptorListImport(value, fldPath)...)
+
 		default:
 			allErr = append(allErr, field.Invalid(fldPath, string(importDef.Type), "unknown import type"))
 		}
 	}
 
 	return allErr.ToAggregate()
+}
+
+func validateTargetImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {
+	allErr := field.ErrorList{}
+
+	targetObj, ok := value.(map[string]interface{})
+	if !ok {
+		allErr = append(allErr, field.Invalid(fldPath, value, "a target is expected to be an object"))
+		return allErr
+	}
+	targetType, _, err := unstructured.NestedString(targetObj, "spec", "type")
+	if err != nil {
+		allErr = append(allErr, field.Invalid(
+			fldPath,
+			value,
+			fmt.Sprintf("unable to get type of target: %s", err.Error())))
+		return allErr
+	}
+	if targetType != expectedTargetType {
+		allErr = append(allErr, field.Invalid(
+			fldPath,
+			targetType,
+			fmt.Sprintf("expected target type to be %q but got %q", expectedTargetType, targetType)))
+		return allErr
+	}
+
+	return allErr
+}
+
+func validateTargetListImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {
+	allErr := field.ErrorList{}
+
+	targetList, ok := value.([]interface{})
+	if !ok {
+		allErr = append(allErr, field.Invalid(fldPath, value, "a target list is expected to be a list"))
+	}
+
+	for i, targetObj := range targetList {
+		allErr = append(allErr, validateTargetImport(targetObj, expectedTargetType, fldPath.Index(i))...)
+	}
+
+	return allErr
+}
+
+func validateComponentDescriptorImport(value interface{}, fldPath *field.Path) field.ErrorList {
+	allErr := field.ErrorList{}
+	_, ok := value.(map[string]interface{})
+	if !ok {
+		allErr = append(allErr, field.Invalid(fldPath, value, "a component descriptor is expected to be an object"))
+		return allErr
+	}
+
+	return allErr
+}
+
+func validateComponentDescriptorListImport(value interface{}, fldPath *field.Path) field.ErrorList {
+	allErr := field.ErrorList{}
+
+	cdList, ok := value.([]interface{})
+	if !ok {
+		allErr = append(allErr, field.Invalid(fldPath, value, "a component descriptor list is expected to be a list"))
+	}
+
+	for i, cdObj := range cdList {
+		allErr = append(allErr, validateComponentDescriptorImport(cdObj, fldPath.Index(i))...)
+	}
+
+	return allErr
 }
 
 // MergeImports merges all imports of b into a.
