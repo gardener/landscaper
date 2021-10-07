@@ -7,7 +7,7 @@ package core
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lscore "github.com/gardener/landscaper/apis/core"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -38,7 +38,7 @@ type OwnerSpec struct {
 	// DeployerId describes the unique identity of a deployer.
 	DeployerId string `json:"deployerId"`
 	// Targets is a list of targets the referenced deployer is responsible for.
-	Targets []lsv1alpha1.ObjectReference `json:"targets,omitempty"`
+	Targets []lscore.ObjectReference `json:"targets,omitempty"`
 }
 
 // OwnerStatus describes the status for a deployer ownership.

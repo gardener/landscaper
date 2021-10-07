@@ -16,6 +16,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
+	apiscore "github.com/gardener/landscaper/apis/core"
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	core "github.com/gardener/landscaper/apis/deployer/core"
 )
@@ -127,7 +128,7 @@ func Convert_core_OwnerList_To_v1alpha1_OwnerList(in *core.OwnerList, out *Owner
 func autoConvert_v1alpha1_OwnerSpec_To_core_OwnerSpec(in *OwnerSpec, out *core.OwnerSpec, s conversion.Scope) error {
 	out.Type = in.Type
 	out.DeployerId = in.DeployerId
-	out.Targets = *(*[]corev1alpha1.ObjectReference)(unsafe.Pointer(&in.Targets))
+	out.Targets = *(*[]apiscore.ObjectReference)(unsafe.Pointer(&in.Targets))
 	return nil
 }
 

@@ -134,7 +134,7 @@ func ValidateBlueprintExportDefinitions(fldPath *field.Path, exports []core.Expo
 			}
 		} else {
 			// type is not specified, fallback to validation based on specified fields
-			allErrs = append(allErrs, validateExactlyOneOf(defPath, exportDef, "Schema", "TargetType")...)
+			allErrs = append(allErrs, ValidateExactlyOneOf(defPath, exportDef, "Schema", "TargetType")...)
 		}
 
 	}
@@ -235,7 +235,7 @@ func ValidateSubinstallations(fldPath *field.Path, subinstallations []core.Subin
 	for i, subinst := range subinstallations {
 		instPath := fldPath.Index(i)
 
-		errs := validateExactlyOneOf(instPath, subinst, "File", "InstallationTemplate")
+		errs := ValidateExactlyOneOf(instPath, subinst, "File", "InstallationTemplate")
 		allErrs = append(allErrs, errs...)
 		if len(errs) != 0 {
 			continue
@@ -496,7 +496,7 @@ func ValidateInstallationTemplateComponentDescriptorImports(imports []core.Compo
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "DataRef", "List")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "DataRef", "List")...)
 		if imp.ConfigMapRef != nil {
 			allErrs = append(allErrs, field.Forbidden(fldPathIdx.Child("configMapRef"), "only 'dataRef' and 'list' fields may be used in subinstallation templates"))
 		}

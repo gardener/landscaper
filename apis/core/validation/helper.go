@@ -74,11 +74,18 @@ func stringContains(data []string, value string) bool {
 	return false
 }
 
-// validateExactlyOneOf is a helper function that takes a struct and a list of field names and validates that exactly one of
-// the specified fields has a non-nil, non-zero value.
-func validateExactlyOneOf(fldPath *field.Path, input interface{}, configs ...string) field.ErrorList {
+// ValidateExactlyOneOf is a helper function that takes a struct and a list of field names and validates that exactly one of
+// the specified fields has a non-nil, non-zero value. If that's the case, an empty ErrorList will be returned.
+// If the given struct is a nil pointer, this will be treated as all fields being nil/zero and return an error.
+func ValidateExactlyOneOf(fldPath *field.Path, input interface{}, configs ...string) field.ErrorList {
 	setFields := []string{}
 	val := reflect.ValueOf(input)
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			return field.ErrorList{field.Required(fldPath, fmt.Sprintf("exactly one of [%s] must be set (currently set: none)", strings.Join(configs, ", ")))}
+		}
+		val = reflect.Indirect(val)
+	}
 	for i := 0; i < val.NumField(); i++ {
 		f := val.Field(i)
 		fieldName := val.Type().Field(i).Name

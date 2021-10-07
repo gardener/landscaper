@@ -8,6 +8,7 @@ require (
 	github.com/go-openapi/spec v0.19.5
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.4
+	github.com/robfig/cron/v3 v3.0.1
 	k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver v0.21.2
 	k8s.io/apimachinery v0.21.2

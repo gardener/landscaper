@@ -19,6 +19,7 @@ import (
 
 	corev1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mock "github.com/gardener/landscaper/apis/deployer/mock"
+	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 )
 
 func init() {
@@ -78,6 +79,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_mock_ProviderConfiguration(in
 	out.InitialPhase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.InitialPhase))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.Export = (*json.RawMessage)(unsafe.Pointer(in.Export))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 
@@ -91,6 +93,7 @@ func autoConvert_mock_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	out.InitialPhase = (*corev1alpha1.ExecutionPhase)(unsafe.Pointer(in.InitialPhase))
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.Export = (*json.RawMessage)(unsafe.Pointer(in.Export))
+	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
 	return nil
 }
 

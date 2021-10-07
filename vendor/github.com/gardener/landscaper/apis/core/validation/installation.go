@@ -66,7 +66,7 @@ func ValidateInstallationBlueprint(bp core.BlueprintDefinition, fldPath *field.P
 	allErrs := field.ErrorList{}
 
 	// check that either inline blueprint or reference is provided (and not both)
-	allErrs = append(allErrs, validateExactlyOneOf(fldPath.Child("definition"), bp, "Inline", "Reference")...)
+	allErrs = append(allErrs, ValidateExactlyOneOf(fldPath.Child("definition"), bp, "Inline", "Reference")...)
 
 	return allErrs
 }
@@ -77,7 +77,7 @@ func ValidateInstallationComponentDescriptor(cd *core.ComponentDescriptorDefinit
 
 	// check that a ComponentDescriptor - if given - is either inline or ref but not both
 	if cd != nil {
-		allErrs = append(allErrs, validateExactlyOneOf(fldPath.Child("definition"), *cd, "Inline", "Reference")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(fldPath.Child("definition"), *cd, "Inline", "Reference")...)
 	}
 
 	return allErrs
@@ -106,7 +106,7 @@ func ValidateInstallationDataImports(imports []core.DataImport, fldPath *field.P
 	for idx, imp := range imports {
 		impPath := fldPath.Index(idx)
 
-		allErrs = append(allErrs, validateExactlyOneOf(impPath, imp, "DataRef", "SecretRef", "ConfigMapRef")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(impPath, imp, "DataRef", "SecretRef", "ConfigMapRef")...)
 
 		if imp.SecretRef != nil {
 			allErrs = append(allErrs, ValidateSecretReference(*imp.SecretRef, impPath.Child("secretRef"))...)
@@ -138,7 +138,7 @@ func ValidateInstallationTargetImports(imports []core.TargetImport, fldPath *fie
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "Target", "Targets", "TargetListReference")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "Target", "Targets", "TargetListReference")...)
 		if len(imp.Targets) > 0 {
 			for idx2, tg := range imp.Targets {
 				if len(tg) == 0 {
@@ -164,7 +164,7 @@ func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDesc
 		if imp.Name == "" {
 			allErrs = append(allErrs, field.Required(fldPathIdx.Child("name"), "name must not be empty"))
 		}
-		allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx, imp, "Ref", "ConfigMapRef", "SecretRef", "List")...)
+		allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx, imp, "Ref", "ConfigMapRef", "SecretRef", "List")...)
 		if imp.ConfigMapRef != nil {
 			allErrs = append(allErrs, ValidateConfigMapReference(*imp.ConfigMapRef, fldPathIdx.Child("configMapRef"))...)
 		}
@@ -177,7 +177,7 @@ func ValidateInstallationComponentDescriptorImports(imports []core.ComponentDesc
 		if len(imp.List) > 0 {
 			for idx2, cd := range imp.List {
 				fldPathIdx2 := fldPathIdx.Child("list").Index(idx2)
-				allErrs = append(allErrs, validateExactlyOneOf(fldPathIdx2, cd, "Ref", "ConfigMapRef", "SecretRef")...)
+				allErrs = append(allErrs, ValidateExactlyOneOf(fldPathIdx2, cd, "Ref", "ConfigMapRef", "SecretRef")...)
 				if cd.ConfigMapRef != nil {
 					allErrs = append(allErrs, ValidateConfigMapReference(*cd.ConfigMapRef, fldPathIdx2.Child("configMapRef"))...)
 				}
