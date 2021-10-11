@@ -117,6 +117,10 @@ func SetDefaults_BlueprintStore(obj *BlueprintStore) {
 	// PreservedHitsProportion defines the default percent of hits that should be preserved.
 	const PreservedHitsProportion = 0.5
 
+	if len(obj.IndexMethod) == 0 {
+		obj.IndexMethod = ComponentDescriptorIdentityMethod
+	}
+
 	if obj.Size == "0" {
 		// no garbage collection configured ignore all other values
 		return

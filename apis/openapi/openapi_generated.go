@@ -1117,7 +1117,7 @@ func schema_gardener_landscaper_apis_config_BlueprintStore(ref common.ReferenceC
 				Description: "BlueprintStore contains the configuration for the blueprint store.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"path": {
+					"Path": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Path defines the root path where the blueprints are cached.",
 							Default:     "",
@@ -1125,11 +1125,19 @@ func schema_gardener_landscaper_apis_config_BlueprintStore(ref common.ReferenceC
 							Format:      "",
 						},
 					},
-					"disableCache": {
+					"DisableCache": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DisableCache disables the cache and always fetches the blob from the registry. The blueprint is still stored on the filesystem.",
 							Default:     false,
 							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"IndexMethod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IndexMethod describes the method that should be used to index blueprints in the store. If component descriptors and blueprint are immutable (blueprints cannot be updated) use ComponentDescriptorIdentityMethod otherwise use the BlueprintDigestIndex to index by the content hash. Defaults to ComponentDescriptorIdentityMethod",
+							Default:     "",
+							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
@@ -1140,7 +1148,7 @@ func schema_gardener_landscaper_apis_config_BlueprintStore(ref common.ReferenceC
 						},
 					},
 				},
-				Required: []string{"path", "disableCache", "GarbageCollectionConfiguration"},
+				Required: []string{"Path", "DisableCache", "GarbageCollectionConfiguration"},
 			},
 		},
 		Dependencies: []string{
@@ -1958,6 +1966,14 @@ func schema_landscaper_apis_config_v1alpha1_BlueprintStore(ref common.ReferenceC
 							Description: "DisableCache disables the cache and always fetches the blob from the registry. The blueprint is still stored on the filesystem.",
 							Default:     false,
 							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"indexMethod": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IndexMethod describes the method that should be used to index blueprints in the store. If component descriptors and blueprint are immutable (blueprints cannot be updated) use ComponentDescriptorIdentityMethod otherwise use the BlueprintDigestIndex to index by the content hash. Defaults to ComponentDescriptorIdentityMethod",
+							Default:     "",
+							Type:        []string{"string"},
 							Format:      "",
 						},
 					},

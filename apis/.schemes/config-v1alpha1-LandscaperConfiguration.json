@@ -40,6 +40,11 @@
           "type": "boolean",
           "default": false
         },
+        "indexMethod": {
+          "description": "IndexMethod describes the method that should be used to index blueprints in the store. If component descriptors and blueprint are immutable (blueprints cannot be updated) use ComponentDescriptorIdentityMethod otherwise use the BlueprintDigestIndex to index by the content hash. Defaults to ComponentDescriptorIdentityMethod",
+          "type": "string",
+          "default": ""
+        },
         "path": {
           "description": "Path defines the root path where the blueprints are cached.",
           "type": "string",

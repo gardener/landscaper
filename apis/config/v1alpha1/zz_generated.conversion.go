@@ -282,6 +282,7 @@ func Convert_config_AgentConfiguration_To_v1alpha1_AgentConfiguration(in *config
 func autoConvert_v1alpha1_BlueprintStore_To_config_BlueprintStore(in *BlueprintStore, out *config.BlueprintStore, s conversion.Scope) error {
 	out.Path = in.Path
 	out.DisableCache = in.DisableCache
+	out.IndexMethod = config.IndexMethod(in.IndexMethod)
 	if err := Convert_v1alpha1_GarbageCollectionConfiguration_To_config_GarbageCollectionConfiguration(&in.GarbageCollectionConfiguration, &out.GarbageCollectionConfiguration, s); err != nil {
 		return err
 	}
@@ -296,6 +297,7 @@ func Convert_v1alpha1_BlueprintStore_To_config_BlueprintStore(in *BlueprintStore
 func autoConvert_config_BlueprintStore_To_v1alpha1_BlueprintStore(in *config.BlueprintStore, out *BlueprintStore, s conversion.Scope) error {
 	out.Path = in.Path
 	out.DisableCache = in.DisableCache
+	out.IndexMethod = IndexMethod(in.IndexMethod)
 	if err := Convert_config_GarbageCollectionConfiguration_To_v1alpha1_GarbageCollectionConfiguration(&in.GarbageCollectionConfiguration, &out.GarbageCollectionConfiguration, s); err != nil {
 		return err
 	}
