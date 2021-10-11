@@ -62,6 +62,9 @@ func getChartFromArchive(archiveConfig *helmv1alpha1.ArchiveAccess) (*chart.Char
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch helm chart from %q: %w", archiveConfig.Remote.URL, err)
 		}
+		if res.StatusCode < 200 || res.StatusCode > 299 {
+			return nil, fmt.Errorf("unable to fetch helm chart from %q: %s", archiveConfig.Remote.URL, res.Status)
+		}
 		ch, err := chartloader.LoadArchive(res.Body)
 		if err != nil {
 			return nil, fmt.Errorf("unable to load chart from %q: %w", archiveConfig.Remote.URL, err)

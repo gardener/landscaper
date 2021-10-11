@@ -159,6 +159,33 @@ var _ = Describe("GetChart", func() {
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})
 
+		It("should not try to load a chart for non-success http status codes", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			ociClient, err := ociclient.NewClient(logr.Discard())
+			Expect(err).ToNot(HaveOccurred())
+
+			srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(401)
+				body := []byte(http.StatusText(401))
+				_, err := w.Write(body)
+				Expect(err).ToNot(HaveOccurred())
+			}))
+
+			chartAccess := &helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Remote: &helmv1alpha1.RemoteArchiveAccess{
+						URL: srv.URL,
+					},
+				},
+			}
+
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			Expect(chart).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))
+		})
+
 	})
 
 })
