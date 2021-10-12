@@ -52,7 +52,7 @@ name: landscaper-controller-rbac-chart
 relation: local
 access:
   type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-rbac:${VERSION}
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-rbac:${VERSION}
 ...
 ---
 type: helm.io/chart
@@ -60,5 +60,5 @@ name: landscaper-controller-deployment-chart
 relation: local
 access:
   type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller-deployment:${VERSION}
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:${VERSION}
 ...

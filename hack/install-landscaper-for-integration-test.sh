@@ -39,7 +39,7 @@ fi
 
 if ! which helm 1>/dev/null; then
   echo "Helm 3 is not installed, trying to install it..."
-  export DESIRED_VERSION=v3.5.1
+  export DESIRED_VERSION=v3.7.0
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
