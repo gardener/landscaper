@@ -49,8 +49,8 @@ export OCI_REGISTRY="eu.gcr.io" # <-- replace this with the URL of your own OCI 
 export CHART_REF="$OCI_REGISTRY/mychart/reference:my-version" # e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login -u myuser $OCI_REGISTRY
-helm chart save /tmp/ingress-nginx $CHART_REF
-helm chart push $CHART_REF
+helm package /tmp/ingress-nginx $CHART_REF
+helm push $CHART_REF
 ```
 
 ## Step 2: Define the Component Descriptor
