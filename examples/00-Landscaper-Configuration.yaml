@@ -58,3 +58,8 @@ deployerManagement:
 #  pickup: "5m"
 #  abort: "5m"
 #  progressingDefault: "5m"
+
+blueprintStore:
+  path: "" # path to teh blueprint store
+  disable: false # forces the blueprint to be downloaded every time.
+  indexMethod: "BlueprintDigestIndex" # used index method that is used to cache blueprints.
