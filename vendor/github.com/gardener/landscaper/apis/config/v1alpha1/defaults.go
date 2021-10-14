@@ -118,7 +118,7 @@ func SetDefaults_BlueprintStore(obj *BlueprintStore) {
 	const PreservedHitsProportion = 0.5
 
 	if len(obj.IndexMethod) == 0 {
-		obj.IndexMethod = ComponentDescriptorIdentityMethod
+		obj.IndexMethod = BlueprintDigestIndex
 	}
 
 	if obj.Size == "0" {

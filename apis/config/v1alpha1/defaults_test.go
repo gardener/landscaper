@@ -35,7 +35,7 @@ var _ = Describe("Defaults", func() {
 		It("should default index method", func() {
 			cfg := &v1alpha1.BlueprintStore{}
 			v1alpha1.SetDefaults_BlueprintStore(cfg)
-			Expect(cfg.IndexMethod).To(Equal(v1alpha1.ComponentDescriptorIdentityMethod))
+			Expect(cfg.IndexMethod).To(Equal(v1alpha1.BlueprintDigestIndex))
 		})
 
 	})

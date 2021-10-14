@@ -16,8 +16,8 @@ import (
 
 // BlobResolverFunc describes a helper blob resolver that implements the ctf.BlobResolver interface.
 type BlobResolverFunc struct {
-	info func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error)
-	resolve func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error)
+	info       func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error)
+	resolve    func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error)
 	canResolve func(resource cdv2.Resource) bool
 }
 
@@ -57,7 +57,6 @@ func (b BlobResolverFunc) Resolve(ctx context.Context, res cdv2.Resource, writer
 }
 
 var _ ctf.TypedBlobResolver = &BlobResolverFunc{}
-
 
 // ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.

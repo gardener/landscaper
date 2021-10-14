@@ -161,12 +161,6 @@ func (s *Store) Close() error {
 	return nil
 }
 
-// BlueprintID generates a unique blueprint id that can be used a a file/directory name.
-// The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func (s *Store) BlueprintID(cd *cdv2.ComponentDescriptor, resource cdv2.Resource, blobInfo *ctf.BlobInfo) (string, error) {
-	return blueprintID(s.indexMethod, cd, resource, blobInfo)
-}
-
 // Fetch fetches the blueprint from the store or the remote.
 // The blueprint is automatically cached once downloaded from the remote endpoint.
 func (s *Store) Fetch(ctx context.Context,
@@ -182,13 +176,11 @@ func (s *Store) Fetch(ctx context.Context,
 
 	var (
 		blueprintID string
-		blobInfo *ctf.BlobInfo
+		blobInfo    *ctf.BlobInfo
 	)
 	switch s.indexMethod {
 	case config.ComponentDescriptorIdentityMethod:
-		h := sha256.New()
-		_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s", cd.Name, cd.Version, resource.Name, resource.Version)))
-		blueprintID = hex.EncodeToString(h.Sum(nil))
+		blueprintID = blueprintIDFromComponentDescriptor(cd, resource)
 	case config.BlueprintDigestIndex:
 		blobInfo, err = blobResolver.Info(ctx, resource)
 		if err != nil {
@@ -198,7 +190,6 @@ func (s *Store) Fetch(ctx context.Context,
 	default:
 		return nil, fmt.Errorf("unknown blueprint index method %q", s.indexMethod)
 	}
-
 
 	if s.indexMethod == config.BlueprintDigestIndex {
 		// read the digest directly if the digest index is used
@@ -212,7 +203,7 @@ func (s *Store) Fetch(ctx context.Context,
 		return blueprint, nil
 	}
 
-	return  s.Store(ctx, blobResolver, resource, blueprintID, blobInfo)
+	return s.Store(ctx, blobResolver, resource, blueprintID, blobInfo)
 }
 
 // Store stores a blueprint on the given filesystem.
@@ -245,12 +236,38 @@ func (s *Store) Store(ctx context.Context, blobResolver ctf.BlobResolver, resour
 			return nil, fmt.Errorf("unable to get blob info: %w", err)
 		}
 	}
-	mediaType, err := mediatype.Parse(blobInfo.MediaType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse media type: %w", err)
+	if err := FetchAndExtractBlueprint(ctx, s.fs, bpPath, blobResolver, resource, blobInfo); err != nil {
+		return nil, err
 	}
 
-	// store on filesystem
+	size, err := utils.GetSizeOfDirectory(s.fs, bpPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get size of blueprint directory: %w", err)
+	}
+	s.index.Add(blueprintID, size, time.Now())
+	s.updateUsage(size)
+	StoredItems.Inc()
+	defer func() {
+		go s.RunGarbageCollection()
+	}()
+
+	return buildBlueprintFromPath(s.fs, bpPath)
+}
+
+// FetchAndExtractBlueprint fetches a blueprint from a remote blob resolver and extracts the tar to the given path.
+func FetchAndExtractBlueprint(
+	ctx context.Context,
+	fs vfs.FileSystem,
+	bpPath string,
+	blobResolver ctf.BlobResolver,
+	resource cdv2.Resource,
+	blobInfo *ctf.BlobInfo) error {
+
+	mediaType, err := mediatype.Parse(blobInfo.MediaType)
+	if err != nil {
+		return fmt.Errorf("unable to parse media type: %w", err)
+	}
+
 	pr, pw := io.Pipe()
 	defer pw.Close()
 	downloadCtx, cancel := context.WithCancel(ctx)
@@ -272,36 +289,24 @@ func (s *Store) Store(ctx context.Context, blobResolver ctf.BlobResolver, resour
 		gr, err := gzip.NewReader(pr)
 		if err != nil {
 			if err == gzip.ErrHeader {
-				return nil, errors.New("expected a gzip compressed tar")
+				return errors.New("expected a gzip compressed tar")
 			}
-			return nil, err
+			return err
 		}
 		blobReader = gr
 		defer gr.Close()
 	}
 
-	if err := s.fs.Mkdir(bpPath, os.ModePerm); err != nil && !os.IsExist(err) {
-		return nil, fmt.Errorf("unable to create bluprint directory: %w", err)
+	if err := fs.Mkdir(bpPath, os.ModePerm); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("unable to create bluprint directory: %w", err)
 	}
-	if err := tar.ExtractTar(ctx, blobReader, s.fs, tar.ToPath(bpPath), tar.Overwrite(true)); err != nil {
-		return nil, fmt.Errorf("unable to extract blueprint from blob: %w", err)
+	if err := tar.ExtractTar(ctx, blobReader, fs, tar.ToPath(bpPath), tar.Overwrite(true)); err != nil {
+		return fmt.Errorf("unable to extract blueprint from blob: %w", err)
 	}
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return err
 	}
-
-	size, err := utils.GetSizeOfDirectory(s.fs, bpPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get size of blueprint directory: %w", err)
-	}
-	s.index.Add(blueprintID, size, time.Now())
-	s.updateUsage(size)
-	StoredItems.Inc()
-	defer func() {
-		go s.RunGarbageCollection()
-	}()
-
-	return s.buildBlueprint(blueprintID)
+	return nil
 }
 
 // CurrentSize returns the current used storage.
@@ -333,11 +338,12 @@ func (s *Store) Get(_ context.Context, blueprintID string) (*Blueprint, error) {
 		return nil, err
 	}
 	s.index.Hit(blueprintID)
-	return s.buildBlueprint(bpPath)
+	return buildBlueprintFromPath(s.fs, bpPath)
 }
 
-func (s *Store) buildBlueprint(bpID string) (*Blueprint, error) {
-	blueprintBytes, err := vfs.ReadFile(s.fs, filepath.Join(bpID, lsv1alpha1.BlueprintFileName))
+// buildBlueprintFromPath creates a read-only blueprint from an extracted blueprint.
+func buildBlueprintFromPath(fs vfs.FileSystem, bpPath string) (*Blueprint, error) {
+	blueprintBytes, err := vfs.ReadFile(fs, filepath.Join(bpPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
 	}
@@ -345,7 +351,7 @@ func (s *Store) buildBlueprint(bpID string) (*Blueprint, error) {
 	if _, _, err := api.Decoder.Decode(blueprintBytes, nil, blueprint); err != nil {
 		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)
 	}
-	bpFs, err := projectionfs.New(readonlyfs.New(s.fs), bpID)
+	bpFs, err := projectionfs.New(readonlyfs.New(fs), bpPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create blueprint filesystem: %w", err)
 	}
@@ -418,39 +424,17 @@ func (s *Store) RunGarbageCollection() {
 
 // blueprintID generates a unique blueprint id that can be used a a file/directory name.
 // The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func blueprintID(method config.IndexMethod, cd *cdv2.ComponentDescriptor, resource cdv2.Resource, blobInfo *ctf.BlobInfo) (string, error) {
-	switch method {
-	case config.ComponentDescriptorIdentityMethod:
-		h := sha256.New()
-		_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s", cd.Name, cd.Version, resource.Name, resource.Version)))
-		return hex.EncodeToString(h.Sum(nil)), nil
-	case config.BlueprintDigestIndex:
-		if blobInfo == nil {
-			return "", errors.New("blob info has to be defined when blueprint digest index method is used")
-		}
-		return blobInfo.Digest, nil
-	default:
-		return "", fmt.Errorf("unknown blueprint index method %q", method)
-	}
-}
-
-// blueprintID generates a unique blueprint id that can be used a a file/directory name.
-// The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
 func blueprintIDFromComponentDescriptor(cd *cdv2.ComponentDescriptor, resource cdv2.Resource) string {
 	h := sha256.New()
-	_, _ = h.Write(cd.GetEffectiveRepositoryContext().Raw)
+	if cd.GetEffectiveRepositoryContext() != nil {
+		_, _ = h.Write(cd.GetEffectiveRepositoryContext().Raw)
+	}
 	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s",
 		cd.Name,
 		cd.Version,
 		resource.Name,
 		resource.Version)))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-// blueprintID generates a unique blueprint id that can be used a a file/directory name.
-// The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func blueprintIDFromDigest(blobInfo *ctf.BlobInfo) string {
-	return blobInfo.Digest
 }
 
 func blueprintPath(bpID string) string {
