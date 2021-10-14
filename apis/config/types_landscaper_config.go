@@ -226,13 +226,32 @@ type LandscaperAgentConfiguration struct {
 	AgentConfiguration `json:",inline"`
 }
 
+// IndexMethod describes the blueprint store index method
+type IndexMethod string
+
+const (
+	// BlueprintDigestIndex describes a IndexMethod that uses the digest of the blueprint.
+	// This is useful if blueprints and component descriptors are not immutable (e.g. during development)
+	BlueprintDigestIndex IndexMethod = "BlueprintDigestIndex"
+	// ComponentDescriptorIdentityMethod describes a IndexMethod that uses the component descriptor identity.
+	// This means that the blueprint is uniquely identified using the component-descriptors repository, name and version
+	// with the blueprint resource identity.
+	ComponentDescriptorIdentityMethod IndexMethod = "ComponentDescriptorIdentityMethod"
+)
+
 // BlueprintStore contains the configuration for the blueprint store.
 type BlueprintStore struct {
 	// Path defines the root path where the blueprints are cached.
-	Path string `json:"path"`
+	Path string
 	// DisableCache disables the cache and always fetches the blob from the registry.
 	// The blueprint is still stored on the filesystem.
-	DisableCache bool `json:"disableCache"`
+	DisableCache bool
+	// IndexMethod describes the method that should be used to index blueprints in the store.
+	// If component descriptors and blueprint are immutable (blueprints cannot be updated) use ComponentDescriptorIdentityMethod
+	// otherwise use the BlueprintDigestIndex to index by the content hash.
+	// Defaults to ComponentDescriptorIdentityMethod
+	// +optional
+	IndexMethod IndexMethod
 	GarbageCollectionConfiguration
 }
 

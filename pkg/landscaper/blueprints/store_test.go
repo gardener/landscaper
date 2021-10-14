@@ -6,14 +6,19 @@ package blueprints_test
 
 import (
 	"context"
+	"io"
 	"os"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 
@@ -47,7 +52,7 @@ var _ = Describe("Store", func() {
 		res := cdv2.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
-		_, err = store.Get(ctx, cd, res)
+		_, err = store.Get(ctx, "a")
 		Expect(err).To(Equal(blueprints.NotFoundError))
 	})
 
@@ -57,7 +62,7 @@ var _ = Describe("Store", func() {
 		store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
 		Expect(err).ToNot(HaveOccurred())
 
-		data, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+		data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 			Annotations: map[string]string{
 				"test": "val",
 			},
@@ -71,12 +76,124 @@ var _ = Describe("Store", func() {
 		res := cdv2.Resource{}
 		res.Name = "blueprint"
 		res.Version = "0.0.2"
-		_, err = store.Store(ctx, cd, res, data)
+		_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 		Expect(err).ToNot(HaveOccurred())
 
-		bp, err := store.Get(ctx, cd, res)
+		bp, err := store.Get(ctx, "a")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
+	})
+
+	Context("Fetch", func() {
+
+		It("should store and retrieve the stored blueprint", func() {
+			ctx := context.Background()
+			memFs := memoryfs.New()
+			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			Expect(err).ToNot(HaveOccurred())
+
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+				Annotations: map[string]string{
+					"test": "val",
+				},
+			}).BuildResource(false)
+			Expect(err).ToNot(HaveOccurred())
+			defer data.Close()
+
+			cd := &cdv2.ComponentDescriptor{}
+			cd.Name = "example.com/a"
+			cd.Version = "0.0.1"
+			res := cdv2.Resource{}
+			res.Name = "blueprint"
+			res.Version = "0.0.2"
+			res.Type = mediatype.BlueprintType
+			cd.Resources = append(cd.Resources, res)
+			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+
+			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
+		})
+
+		It("should not update the stored blueprint if component descriptor and blueprint are immutable (indexmethod component descriptor)", func() {
+			ctx := context.Background()
+			memFs := memoryfs.New()
+			defaultStoreConfig.IndexMethod = config.ComponentDescriptorIdentityMethod
+			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			Expect(err).ToNot(HaveOccurred())
+
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+				Annotations: map[string]string{
+					"test": "val",
+				},
+			}).BuildResource(false)
+			Expect(err).ToNot(HaveOccurred())
+			defer data.Close()
+
+			cd := &cdv2.ComponentDescriptor{}
+			cd.Name = "example.com/a"
+			cd.Version = "0.0.1"
+			res := cdv2.Resource{}
+			res.Name = "blueprint"
+			res.Version = "0.0.2"
+			res.Type = mediatype.BlueprintType
+			cd.Resources = append(cd.Resources, res)
+			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+
+			data2, blobInfo2, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+				Annotations: map[string]string{
+					"test": "val2",
+				},
+			}).BuildResource(false)
+			Expect(err).ToNot(HaveOccurred())
+			defer data.Close()
+
+			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data2, blobInfo2), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
+		})
+
+		It("should update the stored blueprint if blueprint is indexed by its digest", func() {
+			ctx := context.Background()
+			memFs := memoryfs.New()
+			defaultStoreConfig.IndexMethod = config.BlueprintDigestIndex
+			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			Expect(err).ToNot(HaveOccurred())
+
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+				Annotations: map[string]string{
+					"test": "val",
+				},
+			}).BuildResource(false)
+			Expect(err).ToNot(HaveOccurred())
+			defer data.Close()
+
+			cd := &cdv2.ComponentDescriptor{}
+			cd.Name = "example.com/a"
+			cd.Version = "0.0.1"
+			res := cdv2.Resource{}
+			res.Name = "blueprint"
+			res.Version = "0.0.2"
+			res.Type = mediatype.BlueprintType
+			cd.Resources = append(cd.Resources, res)
+			_, err = store.Fetch(ctx, cd, defaultBlobResolver(data, blobInfo), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+
+			data2, blobInfo2, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+				Annotations: map[string]string{
+					"test": "val2",
+				},
+			}).BuildResource(false)
+			Expect(err).ToNot(HaveOccurred())
+			defer data.Close()
+
+			bp, err := store.Fetch(ctx, cd, defaultBlobResolver(data2, blobInfo2), "blueprint")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val2"))
+		})
+
 	})
 
 	Context("cache", func() {
@@ -87,7 +204,7 @@ var _ = Describe("Store", func() {
 			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
-			data, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val",
 				},
@@ -101,10 +218,10 @@ var _ = Describe("Store", func() {
 			res := cdv2.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			_, err = store.Store(ctx, cd, res, data)
+			_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			_, err = store.Get(ctx, cd, res)
+			_, err = store.Get(ctx, "a")
 			Expect(err).To(Equal(blueprints.NotFoundError))
 		})
 
@@ -115,7 +232,7 @@ var _ = Describe("Store", func() {
 			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
-			data, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val",
 				},
@@ -129,12 +246,12 @@ var _ = Describe("Store", func() {
 			res := cdv2.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			bp, err := store.Store(ctx, cd, res, data)
+			bp, err := store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 
-			data, err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val2",
 				},
@@ -142,7 +259,7 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			bp, err = store.Store(ctx, cd, res, data)
+			bp, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
@@ -155,7 +272,7 @@ var _ = Describe("Store", func() {
 			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
-			data, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val",
 				},
@@ -169,12 +286,12 @@ var _ = Describe("Store", func() {
 			res := cdv2.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			bp, err := store.Store(ctx, cd, res, data)
+			bp, err := store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val"))
 
-			data, err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err = bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val2",
 				},
@@ -182,7 +299,7 @@ var _ = Describe("Store", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer data.Close()
 
-			bp, err = store.Store(ctx, cd, res, data)
+			bp, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test", "val2"))
@@ -199,7 +316,7 @@ var _ = Describe("Store", func() {
 			bpFs := memoryfs.New()
 			// create a dummy data object to fill the cache
 			Expect(vfs.WriteFile(bpFs, "data", make([]byte, 700), os.ModePerm))
-			data, err := bputils.NewBuilder().Fs(bpFs).Blueprint(&lsv1alpha1.Blueprint{
+			data, blobInfo, err := bputils.NewBuilder().Fs(bpFs).Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test": "val",
 				},
@@ -212,14 +329,14 @@ var _ = Describe("Store", func() {
 			res := cdv2.Resource{}
 			res.Name = "blueprint"
 			res.Version = "0.0.2"
-			_, err = store.Store(ctx, cd, res, data)
+			_, err = store.Store(ctx, defaultBlobResolver(data, blobInfo), res, "a", nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data.Close()).To(Succeed())
 
 			bpFs2 := memoryfs.New()
 			// create a dummy data object to fill the cache
 			Expect(vfs.WriteFile(bpFs2, "data", make([]byte, 700), os.ModePerm))
-			data2, err := bputils.NewBuilder().Fs(bpFs2).Blueprint(&lsv1alpha1.Blueprint{
+			data2, blobInfo2, err := bputils.NewBuilder().Fs(bpFs2).Blueprint(&lsv1alpha1.Blueprint{
 				Annotations: map[string]string{
 					"test2": "val",
 				},
@@ -228,7 +345,7 @@ var _ = Describe("Store", func() {
 			res2 := cdv2.Resource{}
 			res2.Name = "blueprint2"
 			res2.Version = "0.0.2"
-			_, err = store.Store(ctx, cd, res2, data2)
+			_, err = store.Store(ctx, defaultBlobResolver(data2, blobInfo2), res, "b", nil)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(data2.Close()).To(Succeed())
 
@@ -237,13 +354,24 @@ var _ = Describe("Store", func() {
 			store.RunGarbageCollection()
 
 			// the first one is gc'ed because it is the oldest entry and the hits of blueprint 1 and blueprint 2 equal
-			bp, err := store.Get(ctx, cd, res2)
+			bp, err := store.Get(ctx, "b")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bp.Info.Annotations).To(HaveKeyWithValue("test2", "val"))
 
-			_, err = store.Get(ctx, cd, res)
+			_, err = store.Get(ctx, "a")
 			Expect(err).To(Equal(blueprints.NotFoundError))
 		})
 	})
 
 })
+
+func defaultBlobResolver(data io.Reader, blobInfo *ctf.BlobInfo) ctf.BlobResolver {
+	return cdutils.NewBlobResolverFunc(func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+		if _, err := io.Copy(writer, data); err != nil {
+			return nil, err
+		}
+		return blobInfo, nil
+	}).WithInfo(func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+		return blobInfo, nil
+	})
+}

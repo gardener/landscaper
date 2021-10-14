@@ -5,11 +5,9 @@
 package blueprints
 
 import (
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -18,9 +16,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/mandelsoft/vfs/pkg/yamlfs"
-	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/gardener/landscaper/apis/mediatype"
 
@@ -84,71 +80,7 @@ func ResolveBlueprintFromBlobResolver(
 	blobResolver ctf.BlobResolver,
 	blueprintName string) (*Blueprint, error) {
 
-	// get blueprint resource from component descriptor
-	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
-	if err != nil {
-		return nil, err
-	}
-
-	if blueprint, err := GetStore().Get(ctx, cd, resource); err == nil {
-		return blueprint, nil
-	}
-	// blueprint was not cached so we need to fetch the blueprint blob and store it in the cache
-
-	blobInfo, err := blobResolver.Info(ctx, resource)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get blob info: %w", err)
-	}
-
-	pr, pw := io.Pipe()
-	// close the writer to unblock any pending io writes
-	defer pw.Close()
-
-	mediaType, err := mediatype.Parse(blobInfo.MediaType)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse media type: %w", err)
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		_, err := blobResolver.Resolve(ctx, resource, utils.NewContextAwareWriter(ctx, pw))
-		if err != nil {
-			if err2 := pw.Close(); err2 != nil {
-				return errorsutil.NewAggregate([]error{err, err2})
-			}
-			return fmt.Errorf("unable to resolve blueprint blob: %w", err)
-		}
-		return pw.Close()
-	})
-
-	var blobReader io.Reader = pr
-	if mediaType.String() == mediatype.MediaTypeGZip || mediaType.IsCompressed(mediatype.GZipCompression) {
-		blobReader, err = gzip.NewReader(pr)
-		if err != nil {
-			if err == gzip.ErrHeader {
-				return nil, errors.New("expected a gzip compressed tar")
-			}
-			return nil, err
-		}
-	}
-	blueprint, err := GetStore().Store(ctx, cd, resource, blobReader)
-	if err != nil {
-		// cancel early to unblock the blob resolver
-		cancel()
-		// close the writer early to unblock any pending io writes
-		_ = pw.Close()
-		if err2 := eg.Wait(); err2 != nil {
-			return nil, errorsutil.NewAggregate([]error{err, err2})
-		}
-		return nil, err
-	}
-	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	return blueprint, nil
+	return GetStore().Fetch(ctx, cd, blobResolver, blueprintName)
 }
 
 // GetBlueprintResourceFromComponentDescriptor returns the blueprint resource from a component descriptor.

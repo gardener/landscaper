@@ -30,6 +30,16 @@ var _ = Describe("Defaults", func() {
 		Expect(cfg.ForceUpdate).To(gstruct.PointTo(Equal(true)))
 	})
 
+	Context("BlueprintStore", func() {
+
+		It("should default index method", func() {
+			cfg := &v1alpha1.BlueprintStore{}
+			v1alpha1.SetDefaults_BlueprintStore(cfg)
+			Expect(cfg.IndexMethod).To(Equal(v1alpha1.BlueprintDigestIndex))
+		})
+
+	})
+
 	Context("CommonControllerConfig", func() {
 
 		checkCommonConfig := func(cfg *v1alpha1.CommonControllerConfig) {

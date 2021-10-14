@@ -8,10 +8,55 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 )
+
+// BlobResolverFunc describes a helper blob resolver that implements the ctf.BlobResolver interface.
+type BlobResolverFunc struct {
+	info       func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error)
+	resolve    func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error)
+	canResolve func(resource cdv2.Resource) bool
+}
+
+// NewBlobResolverFunc creates a new generic blob resolver with a minimal resolve function.
+func NewBlobResolverFunc(resolve func(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error)) *BlobResolverFunc {
+	return &BlobResolverFunc{
+		resolve: resolve,
+	}
+}
+
+func (b *BlobResolverFunc) WithInfo(f func(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error)) *BlobResolverFunc {
+	b.info = f
+	return b
+}
+
+func (b *BlobResolverFunc) WithCanResolve(f func(resource cdv2.Resource) bool) *BlobResolverFunc {
+	b.canResolve = f
+	return b
+}
+
+func (b BlobResolverFunc) CanResolve(resource cdv2.Resource) bool {
+	if b.canResolve == nil {
+		return true
+	}
+	return b.canResolve(resource)
+}
+
+func (b BlobResolverFunc) Info(ctx context.Context, res cdv2.Resource) (*ctf.BlobInfo, error) {
+	if b.info == nil {
+		return b.resolve(ctx, res, nil)
+	}
+	return b.info(ctx, res)
+}
+
+func (b BlobResolverFunc) Resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
+	return b.resolve(ctx, res, writer)
+}
+
+var _ ctf.TypedBlobResolver = &BlobResolverFunc{}
 
 // ResolveToComponentDescriptorList transitively resolves all referenced components of a component descriptor and
 // return a list containing all resolved component descriptors.

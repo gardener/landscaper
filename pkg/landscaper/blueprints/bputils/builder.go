@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 
@@ -56,16 +57,16 @@ func (b *Builder) BuildBlueprint(fs vfs.FileSystem) error {
 }
 
 // BuildResource uses the configured blueprint and builds a (optionally gzipped) tarred blueprint.
-func (b *Builder) BuildResource(compress bool) (io.ReadCloser, error) {
+func (b *Builder) BuildResource(compress bool) (io.ReadCloser, *ctf.BlobInfo, error) {
 	if b.bp == nil {
-		return nil, errors.New("blueprint not set")
+		return nil, nil, errors.New("blueprint not set")
 	}
 
 	if b.fs == nil {
 		b.fs = memoryfs.New()
 	}
 	if err := b.BuildBlueprint(b.fs); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	blueprintInput := input.BlobInput{
@@ -75,15 +76,19 @@ func (b *Builder) BuildResource(compress bool) (io.ReadCloser, error) {
 	}
 	blob, err := blueprintInput.Read(context.TODO(), b.fs, "/")
 	if err != nil {
-		return nil, fmt.Errorf("unable to create blob from in memory filesystem: %w", err)
+		return nil, nil, fmt.Errorf("unable to create blob from in memory filesystem: %w", err)
 	}
-	return blob.Reader, nil
+	return blob.Reader, &ctf.BlobInfo{
+		MediaType: blueprintInput.MediaType,
+		Digest:    blob.Digest,
+		Size:      blob.Size,
+	}, nil
 }
 
 // BuildResourceToFs uses the configured blueprint and builds a (optionally gzipped) tarred blueprint.
 // The resulting resource is written to the given filesystem and path.
 func (b *Builder) BuildResourceToFs(fs vfs.FileSystem, path string, compress bool) error {
-	blob, err := b.BuildResource(compress)
+	blob, _, err := b.BuildResource(compress)
 	if err != nil {
 		return err
 	}

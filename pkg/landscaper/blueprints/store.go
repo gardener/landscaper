@@ -5,6 +5,7 @@
 package blueprints
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -18,12 +19,17 @@ import (
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/resource"
+	errorsutil "k8s.io/apimachinery/pkg/util/errors"
+
+	"github.com/gardener/landscaper/apis/mediatype"
 
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 
@@ -72,11 +78,12 @@ var StoreClosedError = errors.New("STORE_CLOSED")
 //
 // The hash is calculated using the component descriptor and the name of the blueprint.
 type Store struct {
-	log      logr.Logger
-	disabled bool
-	mux      sync.RWMutex
-	index    cache.Index
-	fs       vfs.FileSystem
+	log         logr.Logger
+	disabled    bool
+	mux         sync.RWMutex
+	indexMethod config.IndexMethod
+	index       cache.Index
+	fs          vfs.FileSystem
 
 	size        int64
 	currentSize int64
@@ -113,11 +120,12 @@ func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintSto
 	}
 
 	store := &Store{
-		log:      log,
-		disabled: config.DisableCache,
-		index:    cache.NewIndex(),
-		fs:       fs,
-		gcConfig: config.GarbageCollectionConfiguration,
+		log:         log,
+		disabled:    config.DisableCache,
+		indexMethod: config.IndexMethod,
+		index:       cache.NewIndex(),
+		fs:          fs,
+		gcConfig:    config.GarbageCollectionConfiguration,
 	}
 
 	if config.Size != "0" {
@@ -153,15 +161,62 @@ func (s *Store) Close() error {
 	return nil
 }
 
+// Fetch fetches the blueprint from the store or the remote.
+// The blueprint is automatically cached once downloaded from the remote endpoint.
+func (s *Store) Fetch(ctx context.Context,
+	cd *cdv2.ComponentDescriptor,
+	blobResolver ctf.BlobResolver,
+	blueprintName string) (*Blueprint, error) {
+
+	// get blueprint resource from component descriptor
+	resource, err := GetBlueprintResourceFromComponentDescriptor(cd, blueprintName)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		blueprintID string
+		blobInfo    *ctf.BlobInfo
+	)
+	switch s.indexMethod {
+	case config.ComponentDescriptorIdentityMethod:
+		blueprintID = blueprintIDFromComponentDescriptor(cd, resource)
+	case config.BlueprintDigestIndex:
+		blobInfo, err = blobResolver.Info(ctx, resource)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob info: %w", err)
+		}
+		blueprintID = blobInfo.Digest
+	default:
+		return nil, fmt.Errorf("unknown blueprint index method %q", s.indexMethod)
+	}
+
+	if s.indexMethod == config.BlueprintDigestIndex {
+		// read the digest directly if the digest index is used
+		blobInfo, err = blobResolver.Info(ctx, resource)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob info: %w", err)
+		}
+	}
+
+	if blueprint, err := s.Get(ctx, blueprintID); err == nil {
+		return blueprint, nil
+	}
+
+	return s.Store(ctx, blobResolver, resource, blueprintID, blobInfo)
+}
+
 // Store stores a blueprint on the given filesystem.
 // It is expected that the bpReader contains a tar archive.
-func (s *Store) Store(ctx context.Context, cd *cdv2.ComponentDescriptor, resource cdv2.Resource, bpReader io.Reader) (*Blueprint, error) {
+// The blobInfo is optional and will be fetched from the BlobResolver if not defined.
+func (s *Store) Store(ctx context.Context, blobResolver ctf.BlobResolver, resource cdv2.Resource, blueprintID string, blobInfo *ctf.BlobInfo) (*Blueprint, error) {
 	if s.closed {
 		return nil, StoreClosedError
 	}
-	bpID := blueprintID(cd, resource)
-	bpPath := blueprintPath(bpID)
-	if bp, err := s.Get(ctx, cd, resource); err == nil {
+
+	bpPath := blueprintPath(blueprintID)
+	if bp, err := s.Get(ctx, blueprintID); err == nil {
+		// this should never happen when used with the Fetch method.
 		return bp, nil
 	}
 
@@ -174,25 +229,84 @@ func (s *Store) Store(ctx context.Context, cd *cdv2.ComponentDescriptor, resourc
 		}
 	}
 
-	if err := s.fs.Mkdir(bpPath, os.ModePerm); err != nil && !os.IsExist(err) {
-		return nil, fmt.Errorf("unable to create bluprint directory: %w", err)
+	if blobInfo == nil {
+		var err error
+		blobInfo, err = blobResolver.Info(ctx, resource)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob info: %w", err)
+		}
 	}
-	if err := tar.ExtractTar(ctx, bpReader, s.fs, tar.ToPath(bpPath), tar.Overwrite(true)); err != nil {
-		return nil, fmt.Errorf("unable to extract blueprint from blob: %w", err)
+	if err := FetchAndExtractBlueprint(ctx, s.fs, bpPath, blobResolver, resource, blobInfo); err != nil {
+		return nil, err
 	}
 
 	size, err := utils.GetSizeOfDirectory(s.fs, bpPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get size of blueprint directory: %w", err)
 	}
-	s.index.Add(bpID, size, time.Now())
+	s.index.Add(blueprintID, size, time.Now())
 	s.updateUsage(size)
 	StoredItems.Inc()
 	defer func() {
 		go s.RunGarbageCollection()
 	}()
 
-	return s.buildBlueprint(bpID)
+	return buildBlueprintFromPath(s.fs, bpPath)
+}
+
+// FetchAndExtractBlueprint fetches a blueprint from a remote blob resolver and extracts the tar to the given path.
+func FetchAndExtractBlueprint(
+	ctx context.Context,
+	fs vfs.FileSystem,
+	bpPath string,
+	blobResolver ctf.BlobResolver,
+	resource cdv2.Resource,
+	blobInfo *ctf.BlobInfo) error {
+
+	mediaType, err := mediatype.Parse(blobInfo.MediaType)
+	if err != nil {
+		return fmt.Errorf("unable to parse media type: %w", err)
+	}
+
+	pr, pw := io.Pipe()
+	defer pw.Close()
+	downloadCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	eg, downloadCtx := errgroup.WithContext(downloadCtx)
+	eg.Go(func() error {
+		_, err := blobResolver.Resolve(downloadCtx, resource, utils.NewContextAwareWriter(downloadCtx, pw))
+		if err != nil {
+			if err2 := pw.Close(); err2 != nil {
+				return errorsutil.NewAggregate([]error{err, err2})
+			}
+			return fmt.Errorf("unable to resolve blueprint blob: %w", err)
+		}
+		return pw.Close()
+	})
+
+	var blobReader io.Reader = pr
+	if mediaType.String() == mediatype.MediaTypeGZip || mediaType.IsCompressed(mediatype.GZipCompression) {
+		gr, err := gzip.NewReader(pr)
+		if err != nil {
+			if err == gzip.ErrHeader {
+				return errors.New("expected a gzip compressed tar")
+			}
+			return err
+		}
+		blobReader = gr
+		defer gr.Close()
+	}
+
+	if err := fs.Mkdir(bpPath, os.ModePerm); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("unable to create bluprint directory: %w", err)
+	}
+	if err := tar.ExtractTar(ctx, blobReader, fs, tar.ToPath(bpPath), tar.Overwrite(true)); err != nil {
+		return fmt.Errorf("unable to extract blueprint from blob: %w", err)
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // CurrentSize returns the current used storage.
@@ -207,15 +321,14 @@ func (s *Store) updateUsage(size int64) {
 }
 
 // Get reads the blueprint from the filesystem.
-func (s *Store) Get(_ context.Context, cd *cdv2.ComponentDescriptor, resource cdv2.Resource) (*Blueprint, error) {
+func (s *Store) Get(_ context.Context, blueprintID string) (*Blueprint, error) {
 	if s.closed {
 		return nil, StoreClosedError
 	}
 	if s.disabled {
 		return nil, NotFoundError
 	}
-	bpID := blueprintID(cd, resource)
-	bpPath := blueprintPath(bpID)
+	bpPath := blueprintPath(blueprintID)
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	if _, err := s.fs.Stat(bpPath); err != nil {
@@ -224,12 +337,13 @@ func (s *Store) Get(_ context.Context, cd *cdv2.ComponentDescriptor, resource cd
 		}
 		return nil, err
 	}
-	s.index.Hit(bpID)
-	return s.buildBlueprint(bpPath)
+	s.index.Hit(blueprintID)
+	return buildBlueprintFromPath(s.fs, bpPath)
 }
 
-func (s *Store) buildBlueprint(bpID string) (*Blueprint, error) {
-	blueprintBytes, err := vfs.ReadFile(s.fs, filepath.Join(bpID, lsv1alpha1.BlueprintFileName))
+// buildBlueprintFromPath creates a read-only blueprint from an extracted blueprint.
+func buildBlueprintFromPath(fs vfs.FileSystem, bpPath string) (*Blueprint, error) {
+	blueprintBytes, err := vfs.ReadFile(fs, filepath.Join(bpPath, lsv1alpha1.BlueprintFileName))
 	if err != nil {
 		return nil, fmt.Errorf("unable to read blueprint definition: %w", err)
 	}
@@ -237,7 +351,7 @@ func (s *Store) buildBlueprint(bpID string) (*Blueprint, error) {
 	if _, _, err := api.Decoder.Decode(blueprintBytes, nil, blueprint); err != nil {
 		return nil, fmt.Errorf("unable to decode blueprint definition: %w", err)
 	}
-	bpFs, err := projectionfs.New(readonlyfs.New(s.fs), bpID)
+	bpFs, err := projectionfs.New(readonlyfs.New(fs), bpPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create blueprint filesystem: %w", err)
 	}
@@ -310,9 +424,16 @@ func (s *Store) RunGarbageCollection() {
 
 // blueprintID generates a unique blueprint id that can be used a a file/directory name.
 // The ID is calculated by hashing (sha256) the component descriptor and the blueprint resource.
-func blueprintID(cd *cdv2.ComponentDescriptor, resource cdv2.Resource) string {
+func blueprintIDFromComponentDescriptor(cd *cdv2.ComponentDescriptor, resource cdv2.Resource) string {
 	h := sha256.New()
-	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s", cd.Name, cd.Version, resource.Name, resource.Version)))
+	if cd.GetEffectiveRepositoryContext() != nil {
+		_, _ = h.Write(cd.GetEffectiveRepositoryContext().Raw)
+	}
+	_, _ = h.Write([]byte(fmt.Sprintf("%s-%s-%s-%s",
+		cd.Name,
+		cd.Version,
+		resource.Name,
+		resource.Version)))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
