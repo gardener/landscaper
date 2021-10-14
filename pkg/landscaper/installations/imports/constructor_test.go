@@ -8,9 +8,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gardener/component-spec/bindings-go/codec"
-
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,6 +18,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/codec"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
