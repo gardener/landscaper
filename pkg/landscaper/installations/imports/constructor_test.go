@@ -8,6 +8,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/gardener/component-spec/bindings-go/codec"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -304,12 +306,17 @@ var _ = Describe("Constructor", func() {
 			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cd-from-secret", BeEquivalentTo(secretCDData)))
 
 			// check component descriptor list import
-			Expect(inInstRoot.GetImports()).To(HaveKeyWithValue("cdlist", And(
-				HaveLen(3),
-				ContainElement(cdData),
-				ContainElement(configMapCDData),
-				ContainElement(secretCDData),
-			)))
+			fetchedImports := inInstRoot.GetImports()
+			Expect(fetchedImports).To(HaveKey("cdlist"))
+			Expect(fetchedImports).To(HaveLen(4))
+			Expect(fetchedImports).To(ContainElement(cdData))
+			Expect(fetchedImports).To(ContainElement(configMapCDData))
+			Expect(fetchedImports).To(ContainElement(secretCDData))
+
+			cdListImports := &cdv2.ComponentDescriptorList{}
+			cdListImportsData, err := json.Marshal(fetchedImports["cdlist"])
+			Expect(err).To(BeNil())
+			utils.ExpectNoError(codec.Decode(cdListImportsData, cdListImports))
 		})
 	})
 
