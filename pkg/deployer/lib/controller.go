@@ -207,6 +207,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if err != nil {
 		return reconcile.Result{}, errHdl(ctx, err)
 	}
+	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	if !shouldReconcile {
 		if tmpHookRes != nil && !tmpHookRes.AbortReconcile {
 			// if ShouldReconcile returned false but this was overwritten by the extension hooks, we need to call PrepareReconcile,
@@ -222,7 +223,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 	}
 	logger.Info("reconcile deploy item")
-	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	// reset AbortReconcile, since it could be 'true' at this point, which would wrongly cause an abort after the next hook
 	hookRes.AbortReconcile = false
 
