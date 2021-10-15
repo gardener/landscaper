@@ -9,6 +9,7 @@ For this tutorial, we are going to use the [NGINX ingress controller](https://gi
 For this tutorial, you will need:
 
 - the Helm (v3) commandline tool (see https://helm.sh/docs/intro/install/)
+  - your helm version should be at least `3.7` legacy commands can be found in the details
 - [OPTIONAL] an OCI compatible registry (e.g. GCR or Harbor)
 - a Kubernetes Cluster (better use two different clusters: one which Landscaper runs in and one that NGINX gets installed into)
 
@@ -35,6 +36,28 @@ If you do not have your own OCI registry, you can of course reuse the artifacts 
 
 The current helm deployer only supports helm charts stored in an OCI registry. We therefore have to convert and upload the open source helm chart as an OCI artifact to our registry.
 
+```
+# add open source and nginx helm registries
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
+
+# download the nginx ingress helm chart and extract it to /tmp/nginx-ingress
+helm pull ingress-nginx/ingress-nginx --version 3.29.0 --untar --destination /tmp
+
+# upload the helm chart to an OCI registry
+export OCI_REGISTRY="eu.gcr.io" # <-- replace this with the URL of your own OCI registry
+export CHART_REF_PREFIX="$OCI_REGISTRY/chart-prefix/" # e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts
+export HELM_EXPERIMENTAL_OCI=1
+helm registry login -u myuser $OCI_REGISTRY
+helm package /tmp/ingress-nginx -d /tmp
+helm push /tmp/ingress-nginx-3.29.0.tgz $CHART_REF_PREFIX
+# the helm chart is uploaded as oci artifact to $CHART_REF_PREFIX/chart-name:chart-version" e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0
+```
+
+See details for Helm version < `3.7`.
+<details>
+
 ```shell script
 # add open source and nginx helm registries
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -52,6 +75,8 @@ helm registry login -u myuser $OCI_REGISTRY
 helm package /tmp/ingress-nginx $CHART_REF
 helm push $CHART_REF
 ```
+
+</details>
 
 ## Step 2: Define the Component Descriptor
 
