@@ -23,6 +23,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
@@ -143,6 +144,41 @@ var _ = Describe("Helm Deployer", func() {
 
 		deployment := deploymentList.Items[0]
 		Expect(deployment.Name).To(Equal("ingress-test-ingress-nginx-controller"))
+
+		By("verify continuous reconciliation")
+
+		// add continuous reconcile spec to di
+		providerConfig.ContinuousReconcile = &continuousreconcile.ContinuousReconcileSpec{Every: &lsv1alpha1.Duration{Duration: 1 * time.Hour}}
+		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(state.Client.Update(ctx, di))
+
+		// reconcile once to generate status
+		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		lastReconciled := di.Status.LastReconcileTime
+		testDuration := time.Duration(1 * time.Hour)
+		expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+
+		// check again when closer to the next reconciliation time
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		shortTestDuration := time.Duration(10 * time.Minute)
+		lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
+		di.Status.LastReconcileTime = lastReconciled
+		testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		lstr := di.Status.LastReconcileTime.Time.String()
+		nxtr := recRes.RequeueAfter.String()
+		By("last: " + lstr + " - next: " + nxtr)
+		timeDiff = shortTestDuration - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
 
 		//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		//// Expect that the deploy item gets deleted
