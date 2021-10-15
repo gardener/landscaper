@@ -35,19 +35,36 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("GetChart", func() {
 
-	It("should resolve a chart from public readable helm oci artifact", func() {
-		ctx := context.Background()
-		defer ctx.Done()
-		ociClient, err := ociclient.NewClient(logr.Discard())
-		Expect(err).ToNot(HaveOccurred())
+	Context("FromOCIRegistry", func() {
+		It("should resolve a chart from public readable helm ociClient artifact", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			ociClient, err := ociclient.NewClient(logr.Discard())
+			Expect(err).ToNot(HaveOccurred())
 
-		chartAccess := &helmv1alpha1.Chart{
-			Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
-		}
+			chartAccess := &helmv1alpha1.Chart{
+				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
+			}
 
-		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+		})
+
+		It("should resolve a legacy chart from public readable helm ociClient artifact", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			ociClient, err := ociclient.NewClient(logr.Discard())
+			Expect(err).ToNot(HaveOccurred())
+
+			chartAccess := &helmv1alpha1.Chart{
+				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
+			}
+
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
+		})
 	})
 
 	It("should resolve a chart from a public readable component descriptor", func() {

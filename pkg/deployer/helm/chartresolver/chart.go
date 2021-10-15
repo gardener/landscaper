@@ -81,7 +81,7 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 	ociAccess := cdv2.NewOCIRegistryAccess(ref)
 	access, err := cdv2.NewUnstructured(ociAccess)
 	if err != nil {
-		return nil, fmt.Errorf("unable to construct oci registry access for %q: %w", ref, err)
+		return nil, fmt.Errorf("unable to construct ociClient registry access for %q: %w", ref, err)
 	}
 
 	res := cdv2.Resource{
@@ -106,7 +106,7 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 
 func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ociclient.Client, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
-	// helm specific oci manifest structure
+	// helm specific ociClient manifest structure
 	compResolver, err := componentsregistry.NewOCIRegistryWithOCIClient(log, ociClient, ref.Inline)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build component resolver: %w", err)
