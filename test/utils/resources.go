@@ -18,6 +18,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
@@ -25,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/test/utils/envtest"
 
 	"github.com/gardener/landscaper/pkg/api"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -280,5 +282,47 @@ func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfigura
 		ProviderConfig(configuration).
 		Build()
 	ExpectNoErrorWithOffset(1, err)
+	return di
+}
+
+// ReadAndCreateOrUpdateDeployItem reads a deploy item from the given file and creates or updated the deploy item
+func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Environment, state *envtest.State, diName, file string) *lsv1alpha1.DeployItem {
+	kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+	di := &lsv1alpha1.DeployItem{}
+	ExpectNoError(ReadResourceFromFile(di, file))
+	di.Name = diName
+	di.Namespace = state.Namespace
+	di.Spec.Target = &lsv1alpha1.ObjectReference{
+		Name:      "test-target",
+		Namespace: state.Namespace,
+	}
+
+	// Create Target
+	target, err := CreateOrUpdateTarget(ctx,
+		testenv.Client,
+		di.Spec.Target.Namespace,
+		di.Spec.Target.Name,
+		string(lsv1alpha1.KubernetesClusterTargetType),
+		lsv1alpha1.KubernetesClusterTargetConfig{
+			Kubeconfig: lsv1alpha1.ValueRef{
+				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
+			},
+		},
+	)
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+	gomega.Expect(state.AddResources(target)).To(gomega.Succeed())
+
+	old := &lsv1alpha1.DeployItem{}
+	if err := testenv.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
+		if apierrors.IsNotFound(err) {
+			gomega.Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(gomega.Succeed())
+			return di
+		}
+		ExpectNoError(err)
+	}
+	di.ObjectMeta = old.ObjectMeta
+	ExpectNoError(testenv.Client.Patch(ctx, di, client.MergeFrom(old)))
 	return di
 }

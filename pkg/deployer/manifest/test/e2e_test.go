@@ -15,8 +15,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
@@ -72,7 +70,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -121,7 +119,7 @@ var _ = Describe("Manifest Deployer", func() {
 		defer ctx.Done()
 
 		By("create deploy item")
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -136,7 +134,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 		By("update deploy item")
-		di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
+		di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
@@ -165,7 +163,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
 
 		// First reconcile will add a finalizer
 		_ = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -200,7 +198,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "conrec-test-di", "./testdata/07-di-con-rec.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "conrec-test-di", "./testdata/07-di-con-rec.yaml")
 
 		// reconcile once to generate status
 		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
@@ -232,54 +230,12 @@ var _ = Describe("Manifest Deployer", func() {
 
 })
 
-// ReadAndCreateOrUpdateDeployItem reads a deploy item from the given file and creates or updated the deploy item
-func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Environment, state *envtest.State, diName, file string) *lsv1alpha1.DeployItem {
-	kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
-	Expect(err).ToNot(HaveOccurred())
-
-	di := &lsv1alpha1.DeployItem{}
-	testutil.ExpectNoError(testutil.ReadResourceFromFile(di, file))
-	di.Name = diName
-	di.Namespace = state.Namespace
-	di.Spec.Target = &lsv1alpha1.ObjectReference{
-		Name:      "test-target",
-		Namespace: state.Namespace,
-	}
-
-	// Create Target
-	target, err := testutil.CreateOrUpdateTarget(ctx,
-		testenv.Client,
-		di.Spec.Target.Namespace,
-		di.Spec.Target.Name,
-		string(lsv1alpha1.KubernetesClusterTargetType),
-		lsv1alpha1.KubernetesClusterTargetConfig{
-			Kubeconfig: lsv1alpha1.ValueRef{
-				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
-			},
-		},
-	)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(state.AddResources(target)).To(Succeed())
-
-	old := &lsv1alpha1.DeployItem{}
-	if err := testenv.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
-		if apierrors.IsNotFound(err) {
-			Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(Succeed())
-			return di
-		}
-		testutil.ExpectNoError(err)
-	}
-	di.ObjectMeta = old.ObjectMeta
-	testutil.ExpectNoError(testenv.Client.Patch(ctx, di, client.MergeFrom(old)))
-	return di
-}
-
 func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
 	ctx := context.Background()
 	defer ctx.Done()
 
 	By("create deploy item")
-	di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
+	di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
 
 	// First reconcile will add a finalizer
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -294,7 +250,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 	By("update deploy item")
-	di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
+	di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
