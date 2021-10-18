@@ -74,10 +74,13 @@ var _ = Describe("Validation", func() {
 		ctx := context.Background()
 		inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/root"])
 		Expect(err).ToNot(HaveOccurred())
+		inInstRoot.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		Expect(fakeClient.Update(ctx, inInstRoot.Info)).To(Succeed())
 
 		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
 		Expect(err).ToNot(HaveOccurred())
 		inInstA.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		Expect(fakeClient.Update(ctx, inInstA.Info)).To(Succeed())
 
 		inInstB, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/b"])
 		Expect(err).ToNot(HaveOccurred())
@@ -179,6 +182,22 @@ var _ = Describe("Validation", func() {
 	})
 
 	Context("CheckDependentInstallations", func() {
+		It("should reject when a dependent sibling of a root installation that has not finished yet", func() {
+			ctx := context.Background()
+
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			val := imports.NewTestValidator(op, nil)
+			ok, err := val.CheckDependentInstallations(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
+
 		It("should reject when a dependent sibling of my parent that has not finished yet", func() {
 			ctx := context.Background()
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/a"])

@@ -11,6 +11,8 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -37,6 +39,7 @@ func CheckCompletedSiblingDependentsOfParent(ctx context.Context, kubeClient cli
 	}
 
 	if parentsParentInst == nil {
+		// if the parents parent is nil means that the parent itself is a root installation.
 		return true, nil
 	}
 	return CheckCompletedSiblingDependentsOfParent(ctx, kubeClient, installations.NewInstallationBase(parentsParentInst))
@@ -53,48 +56,82 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 
 	log := logr.FromContextOrDiscard(ctx)
 
-	// todo: add target support
+	checkSource := func(sourceRef *lsv1alpha1.ObjectReference) (isCompleted bool, ignore bool, err error) {
+		if sourceRef == nil {
+			// only possible if the owner is not an installation
+			return false, true, nil
+		}
+		// check if the import is imported from myself or the parent
+		// and continue if so as we have a different check for the parent
+		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.Info) {
+			return false, true, nil
+		}
+
+		parent, err := installations.GetParent(ctx, kubeClient, inst.Info)
+		if err != nil {
+			return false, false, err
+		}
+		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent) {
+			return true, false, nil
+		}
+
+		// we expect that the source ref is always an installation
+		inst := &lsv1alpha1.Installation{}
+		if err := kubeClient.Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+			return false, false, err
+		}
+
+		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+			log.V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
+			return false, false, nil
+		}
+
+		intInst := installations.CreateInternalInstallationBase(inst)
+
+		isCompleted, err = CheckCompletedSiblingDependents(ctx, kubeClient, contextName, intInst)
+		if err != nil {
+			return false, false, err
+		}
+		return
+	}
+
 	for _, dataImport := range inst.Info.Spec.Imports.Data {
 		sourceRef, err := getImportSource(ctx, kubeClient, contextName, inst, dataImport)
 		if err != nil {
 			return false, err
 		}
-		if sourceRef == nil {
-			continue
-		}
-		// check if the import is imported from myself or the parent
-		// and continue if so as we have a different check for the parent
-		if lsv1alpha1helper.ReferenceIsObject(*sourceRef, inst.Info) {
-			continue
-		}
-
-		parent, err := installations.GetParent(ctx, kubeClient, inst.Info)
+		isCompleted, ignore, err := checkSource(sourceRef)
 		if err != nil {
 			return false, err
 		}
-		if parent != nil && lsv1alpha1helper.ReferenceIsObject(*sourceRef, parent) {
+		if ignore {
 			continue
-		}
-
-		// we expect that the source ref is always a installation
-		inst := &lsv1alpha1.Installation{}
-		if err := kubeClient.Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
-			return false, err
-		}
-
-		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-			log.V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
-			return false, nil
-		}
-
-		intInst := installations.CreateInternalInstallationBase(inst)
-
-		isCompleted, err := CheckCompletedSiblingDependents(ctx, kubeClient, contextName, intInst)
-		if err != nil {
-			return false, err
 		}
 		if !isCompleted {
 			return false, nil
+		}
+	}
+
+	for _, targetImport := range inst.Info.Spec.Imports.Targets {
+		sourceRefs, err := getTargetSources(ctx, kubeClient, contextName, inst.Info, targetImport)
+		if err != nil {
+			return false, err
+		}
+		for _, sourceRef := range sourceRefs {
+			if sourceRef == nil {
+				// only possible if the owner is not an installation
+				continue
+			}
+			isCompleted, ignore, err := checkSource(sourceRef)
+			if err != nil {
+				return false, err
+			}
+			if ignore {
+				continue
+			}
+			if !isCompleted {
+				return false, nil
+			}
 		}
 	}
 
@@ -107,12 +144,8 @@ func getImportSource(ctx context.Context,
 	contextName string,
 	inst *installations.InstallationBase,
 	dataImport lsv1alpha1.DataImport) (*lsv1alpha1.ObjectReference, error) {
-	status, err := inst.ImportStatus().GetData(dataImport.Name)
-	if err == nil && status.SourceRef != nil {
-		return status.SourceRef, nil
-	}
 
-	// we have to get the corresponding installation from the the cluster
+	// we have to get the corresponding installation from the cluster
 	_, owner, err := installations.GetDataImport(ctx, kubeClient, contextName, inst, dataImport)
 	if err != nil {
 		return nil, err
@@ -123,4 +156,28 @@ func getImportSource(ctx context.Context,
 		return nil, nil
 	}
 	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
+}
+
+// getTargetSources returns a reference to the owner of all target imports.
+func getTargetSources(ctx context.Context,
+	kubeClient client.Client,
+	contextName string,
+	inst *lsv1alpha1.Installation,
+	targetImport lsv1alpha1.TargetImport) ([]*lsv1alpha1.ObjectReference, error) {
+
+	// we have to get the corresponding installation from the cluster
+	targets, _, err := installations.GetTargets(ctx, kubeClient, contextName, inst, targetImport)
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make([]*lsv1alpha1.ObjectReference, 0)
+	for _, target := range targets {
+		owner := kutil.GetOwner(target.Raw.ObjectMeta)
+		if owner == nil || owner.Kind != "Installation" {
+			continue
+		}
+		refs = append(refs, &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Namespace})
+	}
+	return refs, nil
 }

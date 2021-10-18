@@ -245,7 +245,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst, def.Target)
+		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Target)
 		if err != nil {
 			return nil, err
 		}
@@ -294,10 +294,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst, def.Targets)
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Targets)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
