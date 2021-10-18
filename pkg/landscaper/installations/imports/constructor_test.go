@@ -307,15 +307,20 @@ var _ = Describe("Constructor", func() {
 			// check component descriptor list import
 			fetchedImports := inInstRoot.GetImports()
 			Expect(fetchedImports).To(HaveKey("cdlist"))
-			Expect(fetchedImports).To(HaveLen(4))
-			Expect(fetchedImports).To(ContainElement(cdData))
-			Expect(fetchedImports).To(ContainElement(configMapCDData))
-			Expect(fetchedImports).To(ContainElement(secretCDData))
+			cdListData := fetchedImports["cdlist"].(map[string]interface{})
+			Expect(cdListData).To(HaveKey("components"))
+			componentsData := cdListData["components"]
+
+			Expect(componentsData).To(HaveLen(3))
+			Expect(componentsData).To(ContainElement(cdData))
+			Expect(componentsData).To(ContainElement(configMapCDData))
+			Expect(componentsData).To(ContainElement(secretCDData))
 
 			cdListImports := &cdv2.ComponentDescriptorList{}
-			cdListImportsData, err := json.Marshal(fetchedImports["cdlist"])
+			cdListBytes, err := json.Marshal(cdListData)
 			Expect(err).To(BeNil())
-			utils.ExpectNoError(codec.Decode(cdListImportsData, cdListImports))
+			utils.ExpectNoError(codec.Decode(cdListBytes, cdListImports))
+			Expect(cdListImports.Components).To(HaveLen(3))
 		})
 	})
 

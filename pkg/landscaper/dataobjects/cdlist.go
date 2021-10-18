@@ -29,7 +29,7 @@ func NewComponentDescriptorListWithSize(size int) *ComponentDescriptorList {
 	}
 }
 
-// GetData returns the targets as list of internal go maps.
+// GetData returns the component descriptor list as an internal go map.
 func (cdl *ComponentDescriptorList) GetData() (interface{}, error) {
 	rawCDs := make([]cdv2.ComponentDescriptor, len(cdl.ComponentDescriptors))
 	for i := range cdl.ComponentDescriptors {
