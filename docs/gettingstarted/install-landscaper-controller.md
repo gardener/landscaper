@@ -8,6 +8,8 @@ Landscaper is a Kubernetes controller that reconciles installations of _Componen
 
 Landscaper can easily be installed via [Helm](https://helm.sh/) using the Helm chart in [charts/landscaper](../../charts/landscaper).
 
+:warning: Attention: There were some major changes to `helm`'s OCI features with version `v3.7.0`. This guide uses the new version. If you want to use a version of `helm` older than `v3.7.0`, make sure you have `export HELM_EXPERIMENTAL_OCI=1` set and use `helm chart push`, `helm chart pull`, and `helm chart save` instead of `helm push`, `helm pull`, and `helm package` respectively.
+
 ```
 kubectl create namespace ls-system
 helm install -n ls-system landscaper ./charts/landscaper
@@ -16,10 +18,8 @@ helm install -n ls-system landscaper ./charts/landscaper
 We are also building OCI charts so a specific version of Landscaper can be installed with:
 
 ```
-export HELM_EXPERIMENTAL_OCI=1
 export LS_VERSION="v0.13.0" # use the latest available version
-helm chart pull eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION
-helm chart export eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:$LS_VERSION ./charts
+helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $LS_VERSION
 helm install ./charts
 ```
 

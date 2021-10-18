@@ -7,7 +7,7 @@
 set -e
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
-CHART_NAME=$1
+CHART_REPO=$1
 CHART_PATH=$2
 
 if [[ $EFFECTIVE_VERSION == "" ]]; then
@@ -15,10 +15,10 @@ if [[ $EFFECTIVE_VERSION == "" ]]; then
 fi
 
 if [[ -z "$CHART_PATH" ]]; then
-  echo "CHART_PATH is undefined: create-helm-chat.sh [chart-name] [chart path] "
+  echo "CHART_PATH is undefined: create-helm-chart.sh [chart-repo] [chart path] "
 fi
-if [[ -z "$CHART_NAME" ]]; then
-  echo "CHART_NAME is undefined: create-helm-chat.sh [chart-name] [chart path]"
+if [[ -z "$CHART_REPO" ]]; then
+  echo "CHART_REPO is undefined: create-helm-chart.sh [chart-repo] [chart path]"
 fi
 
 if ! which openssl 1>/dev/null; then
@@ -28,7 +28,7 @@ fi
 
 if ! which helm 1>/dev/null; then
   echo -n "Installing helm... "
-  export DESIRED_VERSION=v3.2.1
+  export DESIRED_VERSION=v3.7.0
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
@@ -39,10 +39,9 @@ if which cli.py 1>/dev/null; then
   helm registry login eu.gcr.io -u _json_key -p "$(cat /tmp/serviceaccount.yaml)"
 fi
 
-echo "> Creating helm chart ${CHART_NAME}:${EFFECTIVE_VERSION} from $CHART_PATH"
+echo "> Creating helm chart from $CHART_PATH with version ${EFFECTIVE_VERSION}"
 
-# update version and appVersion
-sed -i -e "s/^appVersion:.*/appVersion: ${EFFECTIVE_VERSION}/" ${PROJECT_ROOT}/${CHART_PATH}/Chart.yaml
+tempdir=$(mktemp -d)
 
-helm chart save ${PROJECT_ROOT}/${CHART_PATH} ${CHART_NAME}:${EFFECTIVE_VERSION}
-helm chart push ${CHART_NAME}:${EFFECTIVE_VERSION}
+helm package ${PROJECT_ROOT}/${CHART_PATH} --version ${EFFECTIVE_VERSION} --app-version ${EFFECTIVE_VERSION} -d ${tempdir}
+helm push ${tempdir}/* "oci://${CHART_REPO}"

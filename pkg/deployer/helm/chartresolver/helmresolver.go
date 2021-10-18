@@ -6,24 +6,24 @@ package chartresolver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/go-logr/logr"
 )
 
 type HelmChartResolver struct {
-	oci ociclient.Client
+	ociClient ociclient.Client
 }
 
-// Returns a new helm chart resolver.
-// It implements the blob resolver interface so it can resolve component descriptor defined resources.
+// NewHelmResolver returns a new helm chart resolver.
+// It implements the blob resolver interface, so it can resolve component descriptor defined resources.
 func NewHelmResolver(client ociclient.Client) ctf.TypedBlobResolver {
 	return HelmChartResolver{
-		oci: client,
+		ociClient: client,
 	}
 }
 
@@ -48,23 +48,48 @@ func (h HelmChartResolver) resolve(ctx context.Context, res cdv2.Resource, write
 		return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
 
-	manifest, err := h.oci.GetManifest(ctx, ociArtifactAccess.ImageReference)
+	manifest, err := h.ociClient.GetManifest(ctx, ociArtifactAccess.ImageReference)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(manifest.Layers) != 1 {
-		return nil, errors.New("unexpected number of layers")
+	// since helm 3.7 two layers are valid.
+	// one containing the chart and one containing the provenance files.
+	if len(manifest.Layers) > 2 || len(manifest.Layers) == 0 {
+		return nil, fmt.Errorf("expected one or two layers but found %d", len(manifest.Layers))
 	}
 
-	if manifest.Layers[0].MediaType != HelmChartContentLayerMediaType {
-		return nil, errors.New("unexpected media type of content")
-	}
-
-	if writer != nil {
-		if err := h.oci.Fetch(ctx, ociArtifactAccess.ImageReference, manifest.Layers[0], writer); err != nil {
-			return nil, err
+	if chartLayers := ociclient.GetLayerByMediaType(manifest.Layers, ChartLayerMediaType); len(chartLayers) != 0 {
+		if manifest.Config.MediaType != HelmChartConfigMediaType {
+			return nil, fmt.Errorf("unexpected media type of helm config. Expected %s but got %s", HelmChartConfigMediaType, manifest.Config.MediaType)
 		}
+		chartLayer := chartLayers[0]
+		// todo: check verify the signature if a provenance layer is present.
+		if writer != nil {
+			if err := h.ociClient.Fetch(ctx, ociArtifactAccess.ImageReference, chartLayer, writer); err != nil {
+				return nil, err
+			}
+		}
+		return &ctf.BlobInfo{
+			MediaType: ChartLayerMediaType,
+			Digest:    chartLayer.Digest.String(),
+			Size:      chartLayer.Size,
+		}, nil
 	}
-	return nil, nil
+	if legacyChartLayers := ociclient.GetLayerByMediaType(manifest.Layers, LegacyChartLayerMediaType); len(legacyChartLayers) != 0 {
+		logr.FromContextOrDiscard(ctx).Info("LEGACY Helm Chart used", "ref", ociArtifactAccess.ImageReference)
+		chartLayer := legacyChartLayers[0]
+		if writer != nil {
+			if err := h.ociClient.Fetch(ctx, ociArtifactAccess.ImageReference, chartLayer, writer); err != nil {
+				return nil, err
+			}
+		}
+		return &ctf.BlobInfo{
+			MediaType: LegacyChartLayerMediaType,
+			Digest:    chartLayer.Digest.String(),
+			Size:      chartLayer.Size,
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unknown oci artifact of type %s", manifest.Config.MediaType)
 }
