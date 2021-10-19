@@ -14,7 +14,7 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 )
 
-// WithConfiguration applies external oci configuration as internal options.
+// WithConfigurationStruct applies external oci configuration as internal options.
 type WithConfigurationStruct config.OCIConfiguration
 
 func (c *WithConfigurationStruct) ApplyOption(options *ociclient.Options) {

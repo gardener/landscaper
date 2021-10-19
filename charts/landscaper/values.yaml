@@ -28,8 +28,8 @@ global:
       # If not set and create is true, the default will be "landscaper-user"
       name: ""
 
-landscaper:
+#landscaper:
   # landscaper helm chart values
 
-rbac:
+#rbac:
   # rbac helm chart values

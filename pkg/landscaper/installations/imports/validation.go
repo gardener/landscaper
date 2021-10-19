@@ -14,7 +14,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
@@ -48,6 +47,14 @@ func NewTestValidator(op *installations.Operation, parent *installations.Install
 		parent:    parent,
 		siblings:  op.Context().Siblings,
 	}
+}
+
+// getParentBase returns the base installation for the parent
+func (v *Validator) getParentBase() *installations.InstallationBase {
+	if v.parent == nil {
+		return nil
+	}
+	return &v.parent.InstallationBase
 }
 
 // OutdatedImports validates whether a imported data object or target is outdated.
@@ -99,10 +106,33 @@ func (v *Validator) OutdatedImports(ctx context.Context) (bool, error) {
 // It traverses through all dependent siblings and all dependent siblings of its parents.
 func (v *Validator) CheckDependentInstallations(ctx context.Context) (bool, error) {
 	const CheckSiblingDependentsOfParentsReason = "CheckSiblingDependentsOfParents"
+	const CheckSiblingDependentsReason = "CheckSiblingDependents"
 	cond := lsv1alpha1helper.GetOrInitCondition(v.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 
+	if v.IsRoot() {
+		completed, err := CheckCompletedSiblingDependents(ctx,
+			v.Operation.Client(),
+			installations.GetInstallationContextName(v.Inst.Info),
+			&v.Inst.InstallationBase)
+		if err != nil {
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				CheckSiblingDependentsReason,
+				fmt.Sprintf("Check for progressing dependents failed: %s", err.Error())))
+			return false, err
+		}
+
+		if !completed {
+			v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+				CheckSiblingDependentsReason,
+				"Waiting until all progressing dependents are finished"))
+		}
+		return completed, err
+	}
+
 	// check if parent has sibling installation dependencies that are not finished yet
-	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation.Client(), &v.parent.InstallationBase)
+	// we only need to check the parent and not the direct siblings because the
+	// parent MUST be progressing if any of its children is progressing.
+	completed, err := CheckCompletedSiblingDependentsOfParent(ctx, v.Operation.Client(), v.getParentBase())
 	if err != nil {
 		v.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			CheckSiblingDependentsOfParentsReason,
@@ -185,29 +215,13 @@ func (v *Validator) checkDataImportIsOutdated(ctx context.Context, fldPath *fiel
 
 func (v *Validator) checkTargetImportIsOutdated(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImport) (bool, error) {
 	// get deploy item from current context
-	var targets []*dataobjects.Target
+	targets, _, err := installations.GetTargets(ctx, v.Client(), v.Context().Name, inst.Info, targetImport)
+	if err != nil {
+		return false, err
+	}
 	singleTarget := false
 	if len(targetImport.Target) != 0 {
 		singleTarget = true
-		target, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
-		if err != nil {
-			return false, fmt.Errorf("%s: unable to get data object for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		targets = []*dataobjects.Target{target}
-	} else if targetImport.Targets != nil {
-		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Context().Name, inst, targetImport.Targets)
-		if err != nil {
-			return false, fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		targets = tl.Targets
-	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
-		if err != nil {
-			return false, fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		targets = tl.Targets
-	} else {
-		return false, fmt.Errorf("invalid target import '%s': one of target, targets, or targetListRef must be specified", targetImport.Name)
 	}
 
 	for _, t := range targets {
@@ -288,37 +302,12 @@ func (v *Validator) checkDataImportIsSatisfied(ctx context.Context, fldPath *fie
 
 func (v *Validator) checkTargetImportIsSatisfied(ctx context.Context, fldPath *field.Path, inst *installations.Installation, targetImport lsv1alpha1.TargetImport) error {
 	// get deploy item from current context
-	var targets []*dataobjects.Target
-	var targetImportReferences []string
-	if len(targetImport.Target) != 0 {
-		target, err := installations.GetTargetImport(ctx, v.Client(), v.Context().Name, inst, targetImport.Target)
-		if err != nil {
-			return fmt.Errorf("%s: unable to get target for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		targets = []*dataobjects.Target{target}
-		targetImportReferences = []string{targetImport.Target}
-	} else if targetImport.Targets != nil {
-		tl, err := installations.GetTargetListImportByNames(ctx, v.Client(), v.Context().Name, inst, targetImport.Targets)
-		if err != nil {
-			return fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		if len(tl.Targets) != len(targetImport.Targets) {
-			return fmt.Errorf("%s: targetlist size mismatch: %d targets were expected but %d were fetched from the cluster", fldPath.String(), len(targetImport.Targets), len(tl.Targets))
-		}
-		targets = tl.Targets
-		targetImportReferences = targetImport.Targets
-	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := installations.GetTargetListImportBySelector(ctx, v.Client(), v.Context().Name, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
-		if err != nil {
-			return fmt.Errorf("%s: unable to get targetlist for '%s': %w", fldPath.String(), targetImport.Name, err)
-		}
-		targets = tl.Targets
-		targetImportReferences = []string{targetImport.TargetListReference}
-	} else {
-		return fmt.Errorf("invalid target import '%s': one of target, targets, or targetListRef must be specified", targetImport.Name)
+	targets, targetImportReferences, err := installations.GetTargets(ctx, v.Client(), v.Context().Name, inst.Info, targetImport)
+	if err != nil {
+		return err
 	}
 
-	allErrs := []error{}
+	allErrs := make([]error, 0)
 	for i, t := range targets {
 		o := t.Owner
 		var targetImportReference string
@@ -405,10 +394,10 @@ func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *fie
 	// we expect that no dependent siblings are running
 	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation.Client(), v.Operation.Context().Name, sibling)
 	if err != nil {
-		return fmt.Errorf("%s: Unable to check if sibling Installation dependencies are not completed yet: %w", fldPath.String(), err)
+		return fmt.Errorf("%s: Unable to check if sibling Installation %q dependencies are not completed yet: %w", fldPath.String(), sibling.Info.Name, err)
 	}
 	if !isCompleted {
-		return installations.NewNotCompletedDependentsErrorf(nil, "%s: A sibling Installation dependency is not completed yet", fldPath.String())
+		return installations.NewNotCompletedDependentsErrorf(nil, "%s: Sibling Installation %q dependency is not completed yet", fldPath.String(), sibling.Info.Name)
 	}
 
 	return nil

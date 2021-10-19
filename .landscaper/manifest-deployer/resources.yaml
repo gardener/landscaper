@@ -13,7 +13,7 @@ name: manifest-deployer-chart
 relation: local
 access:
   type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/charts/manifest-deployer-controller:${VERSION}
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/manifest-deployer:${VERSION}
 ---
 type: ociImage
 name: manifest-deployer-image

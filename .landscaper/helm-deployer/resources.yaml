@@ -13,7 +13,7 @@ name: helm-deployer-chart
 relation: local
 access:
   type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/charts/helm-deployer-controller:${VERSION}
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/helm-deployer:${VERSION}
 ---
 type: ociImage
 name: helm-deployer-image

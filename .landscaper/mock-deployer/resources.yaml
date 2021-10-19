@@ -13,7 +13,7 @@ name: mock-deployer-chart
 relation: local
 access:
   type: ociRegistry
-  imageReference: eu.gcr.io/gardener-project/landscaper/charts/mock-deployer-controller:${VERSION}
+  imageReference: eu.gcr.io/gardener-project/landscaper/charts/mock-deployer:${VERSION}
 ---
 type: ociImage
 name: mock-deployer-image
