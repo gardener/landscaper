@@ -299,6 +299,22 @@ imports:
       config:
         kubeconfig: |
           apiVersion: ...
+  my-cdlist: # import of a component descriptor list
+    meta:
+      schemaVersion: v2
+    components:
+      - meta:
+          schemaVersion: v2
+        component: 
+          name: component-1
+          version: v1.0.1
+          ...  # same structure as for key "cd"   
+      - meta:
+          schemaVersion: v2
+        component:
+          name: component-2
+          version: v1.0.1
+          ...
 cd:
   meta:
     schemaVersion: v2
@@ -371,6 +387,9 @@ deployExecutions:
           {{ $component := getComponent .cd "name" "my-referenced-component" }} # get a component that is referenced
           {{ $resource := getResource $component "name" "ubuntu" }}
           usesImage: {{ $resource.access.imageReference }} # resolves to ubuntu:0.18.0
+          
+          imageVectorOverwrite: |
+            {{- generateImageOverwrite .cd .imports.my-cdlist | toYaml | nindent 12 }}
 ```
 
 ### ExportExecutions

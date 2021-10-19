@@ -29,17 +29,24 @@ func NewComponentDescriptorListWithSize(size int) *ComponentDescriptorList {
 	}
 }
 
-// GetData returns the targets as list of internal go maps.
-func (cdl *ComponentDescriptorList) GetData() ([]interface{}, error) {
+// GetData returns the component descriptor list as an internal go map.
+func (cdl *ComponentDescriptorList) GetData() (interface{}, error) {
 	rawCDs := make([]cdv2.ComponentDescriptor, len(cdl.ComponentDescriptors))
 	for i := range cdl.ComponentDescriptors {
 		rawCDs[i] = *cdl.ComponentDescriptors[i].Descriptor
 	}
-	raw, err := json.Marshal(rawCDs)
+
+	compDescList := cdv2.ComponentDescriptorList{
+		Metadata: cdv2.Metadata{
+			Version: cdv2.SchemaVersion,
+		},
+		Components: rawCDs,
+	}
+	raw, err := json.Marshal(compDescList)
 	if err != nil {
 		return nil, err
 	}
-	var data []interface{}
+	var data interface{}
 	if err := json.Unmarshal(raw, &data); err != nil {
 		return nil, err
 	}
