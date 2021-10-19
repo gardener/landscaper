@@ -25,3 +25,11 @@ version: v0.1.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 appVersion: v0.13.0
+
+dependencies:
+- name: landscaper-controller
+  version: v0.1.0
+  alias: landscaper
+- name: landscaper-rbac
+  version: v0.1.0
+  alias: rbac
