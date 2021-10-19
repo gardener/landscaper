@@ -233,11 +233,11 @@ func ImportExportTests(f *framework.Framework) {
 			//  cd list import by referencing multiple cd imports
 			cdListImportByCdRefsRaw, ok := providerStatusDef["cdListImportByCdRefs"]
 			Expect(ok).To(BeTrue(), "cdListImportByCdRefs not found in provider status definition")
-			cdListImportByCdRefs := &[]cdv2.ComponentDescriptor{}
+			cdListImportByCdRefs := &cdv2.ComponentDescriptorList{}
 			utils.ExpectNoError(json.Unmarshal(cdListImportByCdRefsRaw, cdListImportByCdRefs))
-			Expect(cdListImportByCdRefs).To(PointTo(HaveLen(2)))
-			Expect(cdListImportByCdRefs).To(PointTo(ContainElement(*secretCD)))
-			Expect(cdListImportByCdRefs).To(PointTo(ContainElement(*cmCD)))
+			Expect(cdListImportByCdRefs.Components).To(PointTo(HaveLen(2)))
+			Expect(cdListImportByCdRefs.Components).To(PointTo(ContainElement(*secretCD)))
+			Expect(cdListImportByCdRefs.Components).To(PointTo(ContainElement(*cmCD)))
 			//  cd list import by referencing a cd list import
 			cdListImportByListRefRaw, ok := providerStatusDef["cdListImportByListRef"]
 			Expect(ok).To(BeTrue(), "cdListImportByListRef not found in provider status definition")
