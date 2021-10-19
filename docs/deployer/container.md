@@ -57,6 +57,10 @@ spec:
     image: <image ref>
     command: ["my command"]
     args:  ["--flag1", "my arg"]
+
+#    continuousReconcile: # configure continuous reconciliation
+#      every: "1h"
+#      cron: cron: "* */1 * * *"
 ```
 
 ### Contract
@@ -103,6 +107,9 @@ When the image with your program is executed, it gets access to particular infor
   
 Again you will find a more detailed explanation of these env variables
 [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
+
+##### Continuous Reconciliation
+For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 

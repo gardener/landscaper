@@ -50,6 +50,10 @@ spec:
 
     updateStrategy: update | patch # optional; defaults to update
 
+#    continuousReconcile: # configure continuous reconciliation
+#      every: "1h"
+#      cron: cron: "* */1 * * *"
+
     # Configuration of the readiness checks for the resources.
     # optional
     readinessChecks:
@@ -161,6 +165,9 @@ The value is taken from a rendered resource and a jsonpath to the value.
 For a complete documention of the availabel jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
 
 :warning: Only unique identifiable resources (_apiVersion_, _kind_, _name_ and _namespace_).
+
+##### Continuous Reconciliation
+For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 
