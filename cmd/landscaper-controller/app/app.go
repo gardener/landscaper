@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
@@ -71,6 +72,12 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *Options) run(ctx context.Context) error {
 	o.Log.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
+
+	configBytes, err := yaml.Marshal(o.Config)
+	if err != nil {
+		return fmt.Errorf("unable to marshal Landscaper config: %w", err)
+	}
+	_, _ = fmt.Fprintln(os.Stderr, string(configBytes))
 
 	opts := manager.Options{
 		LeaderElection:     false,
