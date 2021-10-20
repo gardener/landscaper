@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
@@ -226,6 +227,16 @@ var _ = Describe("Manifest Deployer", func() {
 		By("last: " + lstr + " - next: " + nxtr)
 		timeDiff = shortTestDuration - recRes.RequeueAfter
 		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+
+		// verify that continuous reconciliation can be disabled by annotation
+		if di.Annotations == nil {
+			di.Annotations = make(map[string]string)
+		}
+		di.Annotations[continuousreconcile.ContinuousReconcileActiveAnnotation] = "false"
+		testutil.ExpectNoError(testenv.Client.Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
 	})
 
 })

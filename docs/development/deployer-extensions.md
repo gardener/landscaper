@@ -36,3 +36,5 @@ The first one is done by setting `continuousReconcile.every` to the desired inte
 For better control on when and how often the deploy item is reconciled, it is also possible to provide a cron schedule via `continuousReconcile.cron`. Apart from standard cron specification, some keywords like `@daily` are also supported. Please note that the cron schedule specifies reconciliation at certain times rather than after certain intervals, so unlike for the `every` option, this could cause additional reconciliations directly after regular ones (for example: a cron schedule which will cause a reconciliation every day at 8am will trigger it even if the deploy item has been changed - and thus reconciled - at 7:59am).
 
 Specifying both `every` and `cron` will lead to a validation error (except for the `mock` deploy item, where the config is not validated, here the `cron` will take precedence).
+
+To temporarily disable continuous reconciliation without changing the spec of the deploy item, the annotation `continuousreconcile.extensions.landscaper.gardener.cloud/active: "false"` can be used.

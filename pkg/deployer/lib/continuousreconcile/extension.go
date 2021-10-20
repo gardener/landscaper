@@ -17,6 +17,11 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
+// ContinuousReconcileActiveAnnotation can be used to deactivate continuous reconciliation on a deploy item without changing its spec.
+// Setting it to "false" will suppress continuous reconciliation, even if it is configured for the deploy item otherwise.
+// Setting it to any other value has no effect.
+const ContinuousReconcileActiveAnnotation = "continuousreconcile.extensions.landscaper.gardener.cloud/active"
+
 // ContinuousReconcileExtension returns an extension hook function which can handle continuous reconciliation.
 // It is meant to be used as a ShouldReconcile hook and might yield unexpected results if used with another hook handle.
 // The function which it takes as an argument is expected to take a time and return the time when the deploy item should be scheduled for the next automatic reconciliation.
@@ -29,6 +34,13 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 		if di == nil {
 			panic("deploy item must not be nil")
 		}
+
+		// check for annotation
+		if active, ok := di.Annotations[ContinuousReconcileActiveAnnotation]; ok && active == "false" {
+			logger.V(5).Info("continuous reconciliation disabled by annotation", "annotation", ContinuousReconcileActiveAnnotation)
+			return nil, nil
+		}
+
 		nextRaw, err := nextReconcile(ctx, di.Status.LastReconcileTime.Time, di)
 		if err != nil {
 			return nil, fmt.Errorf("unable to check whether reconciliation is due: %w", err)

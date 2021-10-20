@@ -27,6 +27,7 @@ import (
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
+	continuousreconcileextension "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -179,6 +180,16 @@ var _ = Describe("Helm Deployer", func() {
 		By("last: " + lstr + " - next: " + nxtr)
 		timeDiff = shortTestDuration - recRes.RequeueAfter
 		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+
+		// verify that continuous reconciliation can be disabled by annotation
+		if di.Annotations == nil {
+			di.Annotations = make(map[string]string)
+		}
+		di.Annotations[continuousreconcileextension.ContinuousReconcileActiveAnnotation] = "false"
+		testutil.ExpectNoError(testenv.Client.Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
 
 		//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
 		//// Expect that the deploy item gets deleted
