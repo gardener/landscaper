@@ -150,11 +150,124 @@ var _ = Describe("jsonschema", func() {
 				Config: config,
 			}
 		})
+
 		It("should pass with a schema from a local reference", func() {
 			schemaBytes := []byte(`{ "$ref": "local://mycustom"}`)
 			data := []byte(`"valid"`)
 
 			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		})
+
+		It("should resolve a local schema in a local schema", func() {
+			config = &jsonschema.LoaderConfig{
+				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
+					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
+					"indirect": {RawMessage: []byte(`{ "$ref": "local://mycustom"}`)},
+				},
+			}
+			validator = &jsonschema.Validator{
+				Config: config,
+			}
+			schemaBytes := []byte(`{ "$ref": "local://indirect"}`)
+			data := []byte(`"valid"`)
+
+			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		})
+
+		It("should resolve a local schema in a complex local schema", func() {
+			config = &jsonschema.LoaderConfig{
+				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
+					"resourceRequirements": {RawMessage: []byte(`
+{
+    "type": "object",
+    "properties": {
+      "limits": {
+        "$ref": "local://resourceList"
+      },
+      "requests": {
+        "$ref": "local://resourceList"
+      }
+    }
+  }
+`)},
+					"resourceList": {RawMessage: []byte(`
+{
+    "type": "object",
+    "properties": {
+      "cpu": {
+        "type": "string"
+      },
+      "memory": {
+        "type": "string"
+      }
+    }
+  }
+`)},
+				},
+			}
+			validator = &jsonschema.Validator{
+				Config: config,
+			}
+			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
+			data := []byte(`
+{
+  "limits": {
+    "cpu": "100m",
+    "memory": "1G"
+  }
+}
+`)
+
+			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		})
+
+		It("should resolve a local schema in a complex local schema and correctly validate a invalid schema", func() {
+			config = &jsonschema.LoaderConfig{
+				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
+					"resourceRequirements": {RawMessage: []byte(`
+{
+    "type": "object",
+    "properties": {
+      "limits": {
+        "$ref": "local://resourceList"
+      },
+      "requests": {
+        "$ref": "local://resourceList"
+      }
+    }
+  }
+`)},
+					"resourceList": {RawMessage: []byte(`
+{
+    "type": "object",
+    "properties": {
+      "cpu": {
+        "type": "string"
+      },
+      "memory": {
+        "type": "string"
+      }
+    }
+  }
+`)},
+				},
+			}
+			validator = &jsonschema.Validator{
+				Config: config,
+			}
+			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
+			data := []byte(`
+{
+  "limits": {
+    "cpu": 1,
+    "memory": "1G"
+  }
+}
+`)
+			err := validator.ValidateBytes(schemaBytes, data)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("limits.cpu"))
+			Expect(err.Error()).To(ContainSubstring("Invalid value: 1: Invalid type. Expected: string, given: integer"))
 		})
 
 		It("should fail with a schema from a blueprint file reference", func() {
