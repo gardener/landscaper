@@ -98,7 +98,7 @@ func (c *Constructor) constructImports(
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 			}
 			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, imports[def.Name]); err != nil {
 				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
@@ -126,7 +126,7 @@ func (c *Constructor) constructImports(
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeTarget)
 			}
 
 			var targetType string
@@ -149,7 +149,7 @@ func (c *Constructor) constructImports(
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeTargetList)
 			}
 
 			var targetType string
@@ -178,7 +178,7 @@ func (c *Constructor) constructImports(
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeComponentDescriptor)
 			}
 			continue
 		case lsv1alpha1.ImportTypeComponentDescriptorList:
@@ -193,7 +193,7 @@ func (c *Constructor) constructImports(
 				if def.Required != nil && !*def.Required {
 					continue // don't throw an error if the import is not required
 				}
-				return nil, installations.NewImportNotFoundErrorf(nil, "no import for %s exists", def.Name)
+				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeComponentDescriptorList)
 			}
 			continue
 		default:

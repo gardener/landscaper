@@ -5,6 +5,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -25,10 +26,14 @@ type Options struct {
 
 // AddFlags adds the flags for the deployer management.
 func (o *Options) AddFlags(fs *flag.FlagSet) {
+	defaultDeployers := make([]string, 0)
+	for k := range DefaultDeployerConfiguration {
+		defaultDeployers = append(defaultDeployers, k)
+	}
 	fs.StringVar(&o.Deployers, "deployers", "",
-		`Specify additional Deployers that should be enabled.
+		fmt.Sprintf(`Specify additional Deployers that should be enabled.
 Controllers are specified as a comma separated list of controller names.
-Available Deployers are mock,helm,container.`)
+Available Deployers are %s.`, strings.Join(defaultDeployers, ",")))
 	fs.StringVar(&o.Version, "deployer-version", version.Get().String(),
 		"set the version for the automatically deployed Deployers.")
 	fs.StringVar(&o.DeployersConfigPath, "deployers-config", "", "Specify the path to the deployers-configuration file")
@@ -48,7 +53,7 @@ func (o *Options) Complete() error {
 }
 
 // GetDeployerConfigForDeployer returns the optional configuration for a deployer.
-// If not config is defined a NoConfigError is returned
+// If no config is defined a NoConfigError is returned
 func (o *Options) GetDeployerConfigForDeployer(deployerName string) (DeployerConfiguration, error) {
 	data, ok := o.DeployersConfig.Deployers[deployerName]
 	if !ok {
