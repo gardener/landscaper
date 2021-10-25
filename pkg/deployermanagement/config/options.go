@@ -26,11 +26,9 @@ type Options struct {
 
 // AddFlags adds the flags for the deployer management.
 func (o *Options) AddFlags(fs *flag.FlagSet) {
-	defaultDeployers := make([]string, len(DefaultDeployerConfiguration))
-	i := 0
+	defaultDeployers := make([]string, 0)
 	for k := range DefaultDeployerConfiguration {
-		defaultDeployers[i] = k
-		i++
+		defaultDeployers = append(defaultDeployers, k)
 	}
 	fs.StringVar(&o.Deployers, "deployers", "",
 		fmt.Sprintf(`Specify additional Deployers that should be enabled.
