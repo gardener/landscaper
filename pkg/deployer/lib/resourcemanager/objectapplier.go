@@ -222,7 +222,7 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 
 	mr := &managedresource.ManagedResourceStatus{
 		Policy:   manifest.Policy,
-		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(obj),
+		Resource: *kutil.CoreObjectReferenceFromUnstructuredObject(&currObj),
 	}
 
 	// if fallback policy is set and the resource is already managed by another deployer
@@ -388,7 +388,6 @@ func containsObjectRef(obj corev1.ObjectReference, objects []managedresource.Man
 			if obj.UID == found.UID {
 				return true
 			}
-			continue
 		}
 		// todo: check for conversions .e.g. networking.k8s.io -> apps.k8s.io
 		if found.GetObjectKind().GroupVersionKind().GroupKind() != obj.GetObjectKind().GroupVersionKind().GroupKind() {
