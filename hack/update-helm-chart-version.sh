@@ -16,7 +16,7 @@ elif [[ $EFFECTIVE_VERSION == "" ]]; then
   EFFECTIVE_VERSION=$(cat $PROJECT_ROOT/VERSION)
 fi
 
-CHARTLIST=$(find $CHART_ROOT -maxdepth 2 -type f -name "Chart.yaml")
+CHARTLIST=$(find $CHART_ROOT -maxdepth 10 -type f -name "Chart.yaml")
 
 echo "Updating version and appVersion of Helm Charts to $EFFECTIVE_VERSION"
 
