@@ -13,6 +13,8 @@ cd "$(dirname $0)/.."
 mkdir -p /tm
 /cc/utils/cli.py config attribute --cfg-type kubernetes --cfg-name testmachinery --key kubeconfig > /tm/kubeconfig
 
+VERSION="./hacks/get-version.sh)"
+
 # inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
 # 1) TM can retrieve the needed TestDefinitions (from current HEAD)
 # 2) we will test the actual release docker image instead of a dev image
@@ -22,5 +24,6 @@ mkdir -p /tm
     --testrun-prefix landscaper-e2e- \
     --timeout=3700 \
     --testruns-chart-path=.ci/testruns/integration-test \
-    --set imageTag="$(cat ./VERSION)" \
+    --set imageTag="${VERSION}" \
+    --set version="${VERSION}" \
     --set revision="$(git rev-parse HEAD)"
