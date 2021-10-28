@@ -22,6 +22,11 @@ spec:
   - name: HOST_CLUSTER_CONFIG
     type: env
     value: testmachinery.config
+  {{- if .Values.version }}
+  - name: EFFECTIVE_VERSION
+    type: env
+    value: {{ .Values.version }}
+  {{- end }}
 
   testflow:
   - name: create-cluster

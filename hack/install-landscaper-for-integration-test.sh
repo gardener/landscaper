@@ -43,6 +43,7 @@ if ! which helm 1>/dev/null; then
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
+# in the testmachinery the version should be set by the EFFECTIVE_VERSION
 VERSION="$(${CURRENT_DIR}/get-version.sh)"
 
 if [[ -z "VERSION" ]]; then
