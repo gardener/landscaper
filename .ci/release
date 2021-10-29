@@ -25,3 +25,6 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/la
 
 cd $SOURCE_DIR
 make revendor
+
+# the helm chart versions need to be updated in the release step to reflect the change in the Git repository
+${SOURCE_DIR}/hack/update-helm-chart-version.sh
