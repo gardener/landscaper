@@ -25,5 +25,3 @@ sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/la
 
 cd $SOURCE_DIR
 make revendor
-
-${SOURCE_DIR}/hack/update-helm-chart-version.sh

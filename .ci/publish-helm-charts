@@ -11,6 +11,8 @@ set -o pipefail
 SOURCE_PATH="$(dirname $0)/.."
 CHART_REPO="eu.gcr.io/gardener-project/landscaper/charts/"
 
+${SOURCE_PATH}/hack/update-helm-chart-version.sh
+
 $SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper
 $SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper/charts/rbac
 $SOURCE_PATH/hack/create-helm-chart.sh ${CHART_REPO} charts/landscaper/charts/landscaper
