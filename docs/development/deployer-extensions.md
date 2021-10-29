@@ -20,3 +20,21 @@ The continuous reconcile extension is a hook of type `ShouldReconcile`. To get t
 ##### Required Implementation
 Both functions mentioned above take a function with the signature `func(context.Context, time.Time, *lsv1alpha1.DeployItem) (*time.Time, error)` as argument. The function takes - apart from the context - a time and a pointer to a deploy item and is expected to return the next point in time after the given time when the deploy item should be reconciled again. If there is no such point in time - e.g. because continuous reconciliation is disabled for that deploy item - the function can return `nil`.
 How exactly the function works depends on the deployer. In the mock deployer, it reads the configuration for continuous reconciliation from the given deploy item and then returns the next time that matches the specification, or nil, if this configuration is missing or empty in the deploy item. This is probably the most straight-forward implementation when per-deploy-item configuration is desired.
+
+##### Usage
+The continuous reconcile extension has been added to the `mock`, `helm`, `manifest`, and `container` deployers.
+The configuration is the same for all deployers: add this node to the config of your deploy item
+```yaml
+continuousReconcile:
+  every: "1h" # OR
+  cron: "* */1 * * *"
+```
+In order to enable continuous reconciliation for a deploy item, you have to configure either an interval or a cron schedule.
+
+The first one is done by setting `continuousReconcile.every` to the desired interval. The value is expected to be parseable by `time.ParseDuration`. This method uses the `lastReconcileTime` information from the deploy item status to determine when the last reconciliation happened and requeues the deploy item when this matches or exceeds the configured interval. Please note that `lastReconcileTime` is set at the beginning of the reconciliation process and it is only updated if the reconciliation is not being aborted (which usually happens if nothing has changed since the last one). This means that the extension actually enforces 'full' reconciliations at least once per configured interval, but it will only do so if there hasn't been any regular 'full' reconciliation within the last interval (happens usually if the deploy item or its imports change). Furthermore, if you have long-running deploy items with too short delays between the reconciliations, a deploy item might be re-triggered before having handled the last activation, which could lead to unexpected behaviour. It is recommended to choose the delay large enough so this doesn't happen.
+
+For better control on when and how often the deploy item is reconciled, it is also possible to provide a cron schedule via `continuousReconcile.cron`. Apart from standard cron specification, some keywords like `@daily` are also supported. Please note that the cron schedule specifies reconciliation at certain times rather than after certain intervals, so unlike for the `every` option, this could cause additional reconciliations directly after regular ones (for example: a cron schedule which will cause a reconciliation every day at 8am will trigger it even if the deploy item has been changed - and thus reconciled - at 7:59am).
+
+Specifying both `every` and `cron` will lead to a validation error (except for the `mock` deploy item, where the config is not validated, here the `cron` will take precedence).
+
+To temporarily disable continuous reconciliation without changing the spec of the deploy item, the annotation `continuousreconcile.extensions.landscaper.gardener.cloud/active: "false"` can be used.

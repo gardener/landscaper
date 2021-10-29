@@ -7,6 +7,7 @@ package deployers
 import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/deployers/blueprints"
+	"github.com/gardener/landscaper/test/integration/deployers/continuousreconcile"
 	"github.com/gardener/landscaper/test/integration/deployers/helmcharts"
 	"github.com/gardener/landscaper/test/integration/deployers/management"
 )
@@ -18,4 +19,5 @@ func RegisterTests(f *framework.Framework) {
 	helmcharts.RegisterTests(f)
 	blueprints.RegisterTests(f)
 	management.RegisterTests(f)
+	continuousreconcile.RegisterTests(f)
 }

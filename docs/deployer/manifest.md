@@ -32,6 +32,10 @@ spec:
 
     updateStrategy: update | patch # optional; defaults to update
 
+#    continuousReconcile: # configure continuous reconciliation
+#      every: "1h"
+#      cron: cron: "* */1 * * *"
+
     # Configuration of the readiness checks for the resources.
     # optional
     readinessChecks:
@@ -143,6 +147,9 @@ __Policy__:
 - `fallback`: create, update and delete (only if not already managed by someone else: check for annotation with landscaper identity, deployitem name + namespace)
 - `keep`: create, update
 - `ignore`: forget
+
+##### Continuous Reconciliation
+For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 

@@ -12,6 +12,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation"
 )
 
@@ -22,6 +23,7 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 	allErrs = append(allErrs, ValidateTimeout(field.NewPath("readinessChecks", "timeout"), config.ReadinessChecks.Timeout)...)
 	allErrs = append(allErrs, health.ValidateReadinessCheckConfiguration(field.NewPath("readinessChecks"), &config.ReadinessChecks)...)
 	allErrs = append(allErrs, ValidateChart(field.NewPath("chart"), config.Chart)...)
+	allErrs = append(allErrs, crval.ValidateContinuousReconcileSpec(field.NewPath("continuousReconcile"), config.ContinuousReconcile)...)
 
 	if len(config.Name) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("name"), "must not be empty"))

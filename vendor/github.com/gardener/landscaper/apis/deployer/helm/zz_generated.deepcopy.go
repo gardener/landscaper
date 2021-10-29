@@ -18,6 +18,7 @@ import (
 	config "github.com/gardener/landscaper/apis/config"
 	core "github.com/gardener/landscaper/apis/core"
 	v1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	continuousreconcile "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	managedresource "github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 )
 
@@ -153,6 +154,11 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 	if in.Exports != nil {
 		in, out := &in.Exports, &out.Exports
 		*out = new(managedresource.Exports)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ContinuousReconcile != nil {
+		in, out := &in.ContinuousReconcile, &out.ContinuousReconcile
+		*out = new(continuousreconcile.ContinuousReconcileSpec)
 		(*in).DeepCopyInto(*out)
 	}
 	return

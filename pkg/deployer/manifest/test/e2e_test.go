@@ -15,11 +15,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	"github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
@@ -72,7 +71,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -121,7 +120,7 @@ var _ = Describe("Manifest Deployer", func() {
 		defer ctx.Done()
 
 		By("create deploy item")
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -136,7 +135,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 		By("update deploy item")
-		di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
+		di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
@@ -165,7 +164,7 @@ var _ = Describe("Manifest Deployer", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
 
 		// First reconcile will add a finalizer
 		_ = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -196,56 +195,58 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 	})
 
-})
+	It("should requeue after the correct time if continuous reconciliation is configured", func() {
+		ctx := context.Background()
+		defer ctx.Done()
 
-// ReadAndCreateOrUpdateDeployItem reads a deploy item from the given file and creates or updated the deploy item
-func ReadAndCreateOrUpdateDeployItem(ctx context.Context, testenv *envtest.Environment, state *envtest.State, diName, file string) *lsv1alpha1.DeployItem {
-	kubeconfigBytes, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
-	Expect(err).ToNot(HaveOccurred())
+		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "conrec-test-di", "./testdata/07-di-con-rec.yaml")
 
-	di := &lsv1alpha1.DeployItem{}
-	testutil.ExpectNoError(testutil.ReadResourceFromFile(di, file))
-	di.Name = diName
-	di.Namespace = state.Namespace
-	di.Spec.Target = &lsv1alpha1.ObjectReference{
-		Name:      "test-target",
-		Namespace: state.Namespace,
-	}
-
-	// Create Target
-	target, err := testutil.CreateOrUpdateTarget(ctx,
-		testenv.Client,
-		di.Spec.Target.Namespace,
-		di.Spec.Target.Name,
-		string(lsv1alpha1.KubernetesClusterTargetType),
-		lsv1alpha1.KubernetesClusterTargetConfig{
-			Kubeconfig: lsv1alpha1.ValueRef{
-				StrVal: pointer.StringPtr(string(kubeconfigBytes)),
-			},
-		},
-	)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(state.AddResources(target)).To(Succeed())
-
-	old := &lsv1alpha1.DeployItem{}
-	if err := testenv.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), old); err != nil {
-		if apierrors.IsNotFound(err) {
-			Expect(state.Create(ctx, di, envtest.UpdateStatus(true))).To(Succeed())
-			return di
-		}
+		// reconcile once to generate status
+		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
 		testutil.ExpectNoError(err)
-	}
-	di.ObjectMeta = old.ObjectMeta
-	testutil.ExpectNoError(testenv.Client.Patch(ctx, di, client.MergeFrom(old)))
-	return di
-}
+
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		lastReconciled := di.Status.LastReconcileTime
+		testDuration := time.Duration(1 * time.Hour)
+		expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+
+		// check again when closer to the next reconciliation time
+		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+		shortTestDuration := time.Duration(10 * time.Minute)
+		lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
+		di.Status.LastReconcileTime = lastReconciled
+		testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		lstr := di.Status.LastReconcileTime.Time.String()
+		nxtr := recRes.RequeueAfter.String()
+		By("last: " + lstr + " - next: " + nxtr)
+		timeDiff = shortTestDuration - recRes.RequeueAfter
+		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+
+		// verify that continuous reconciliation can be disabled by annotation
+		if di.Annotations == nil {
+			di.Annotations = make(map[string]string)
+		}
+		di.Annotations[continuousreconcile.ContinuousReconcileActiveAnnotation] = "false"
+		testutil.ExpectNoError(testenv.Client.Update(ctx, di))
+		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		testutil.ExpectNoError(err)
+		Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
+	})
+
+})
 
 func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconcile.Reconciler) {
 	ctx := context.Background()
 	defer ctx.Done()
 
 	By("create deploy item")
-	di := ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
+	di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
 
 	// First reconcile will add a finalizer
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -260,7 +261,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 	By("update deploy item")
-	di = ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
+	di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))

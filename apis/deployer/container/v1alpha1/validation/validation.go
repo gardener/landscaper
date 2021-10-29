@@ -11,6 +11,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/validation"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 )
 
 // ValidateProviderConfiguration validates a container deployer configuration
@@ -24,5 +25,6 @@ func ValidateProviderConfiguration(config *containerv1alpha1.ProviderConfigurati
 		allErrs = append(allErrs, validation.ValidateObjectReference(coreSecretRef, field.NewPath("registryPullSecrets").Index(i))...)
 	}
 
+	allErrs = append(allErrs, crval.ValidateContinuousReconcileSpec(field.NewPath("continuousReconcile"), config.ContinuousReconcile)...)
 	return allErrs.ToAggregate()
 }

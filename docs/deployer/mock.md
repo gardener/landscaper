@@ -34,7 +34,14 @@ spec:
     # Specifies the exported data that will be reconciled into the exportRef.
     export:
       key2: val2
+#    continuousReconcile: # configure continuous reconciliation
+#      every: "1h"
+#      cron: cron: "* */1 * * *"
+
 ```
+
+##### Continuous Reconciliation
+For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 

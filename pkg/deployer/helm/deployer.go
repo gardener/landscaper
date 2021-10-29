@@ -6,6 +6,7 @@ package helm
 
 import (
 	"context"
+	"time"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
@@ -17,7 +18,9 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
@@ -40,13 +43,16 @@ func NewDeployer(log logr.Logger,
 		}
 	}
 
-	return &deployer{
+	dep := &deployer{
 		log:         log,
 		lsClient:    lsKubeClient,
 		hostClient:  hostKubeClient,
 		config:      config,
 		sharedCache: sharedCache,
-	}, nil
+		hooks:       extension.ReconcileExtensionHooks{},
+	}
+	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
+	return dep, nil
 }
 
 type deployer struct {
@@ -103,4 +109,21 @@ func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target 
 
 func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 	return d.hooks
+}
+
+func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
+	helm, err := New(d.log, d.config, d.lsClient, d.hostClient, di, nil, d.sharedCache)
+	if err != nil {
+		return nil, err
+	}
+	if crval.ContinuousReconcileSpecIsEmpty(helm.ProviderConfiguration.ContinuousReconcile) {
+		// no continuous reconciliation configured
+		return nil, nil
+	}
+	schedule, err := cr.Schedule(helm.ProviderConfiguration.ContinuousReconcile)
+	if err != nil {
+		return nil, err
+	}
+	next := schedule.Next(last)
+	return &next, nil
 }

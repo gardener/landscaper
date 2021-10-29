@@ -17,6 +17,11 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
+// ContinuousReconcileActiveAnnotation can be used to deactivate continuous reconciliation on a deploy item without changing its spec.
+// Setting it to "false" will suppress continuous reconciliation, even if it is configured for the deploy item otherwise.
+// Setting it to any other value has no effect.
+const ContinuousReconcileActiveAnnotation = "continuousreconcile.extensions.landscaper.gardener.cloud/active"
+
 // ContinuousReconcileExtension returns an extension hook function which can handle continuous reconciliation.
 // It is meant to be used as a ShouldReconcile hook and might yield unexpected results if used with another hook handle.
 // The function which it takes as an argument is expected to take a time and return the time when the deploy item should be scheduled for the next automatic reconciliation.
@@ -29,6 +34,13 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 		if di == nil {
 			panic("deploy item must not be nil")
 		}
+
+		// check for annotation
+		if active, ok := di.Annotations[ContinuousReconcileActiveAnnotation]; ok && active == "false" {
+			logger.V(5).Info("continuous reconciliation disabled by annotation", "annotation", ContinuousReconcileActiveAnnotation)
+			return nil, nil
+		}
+
 		nextRaw, err := nextReconcile(ctx, di.Status.LastReconcileTime.Time, di)
 		if err != nil {
 			return nil, fmt.Errorf("unable to check whether reconciliation is due: %w", err)
@@ -37,30 +49,33 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 			logger.V(7).Info("no continuous reconcile specified")
 			return nil, nil
 		}
-		next := nextRaw.Round(time.Second)
-		now := time.Now().Round(time.Second)
+		next := nextRaw.Truncate(time.Second) // when the next reconcile is scheduled to happen
+		now := time.Now().Truncate(time.Second)
 		res := &extension.HookResult{}
+
 		if next.After(now) {
 			// reconcile is not yet due
 			// since this is a ShouldReconcile hook, we can set AbortReconcile to false and the deploy item will still be reconciled if necessary (e.g. due to spec changes)
 			res.AbortReconcile = true
 		} else {
-			// reconcile is due
+			// reconcile is (over-)due
 			logger.V(5).Info("reconcile deploy item")
+
+			// compute next reconciliation time based on reconciliation which will happen now
+			nextRaw, err = nextReconcile(ctx, now, di)
+			if err != nil {
+				return nil, fmt.Errorf("unable to compute next reconcile time: %w", err)
+			}
+			if nextRaw == nil {
+				logger.V(7).Info("no further reconcile specified")
+				// return without setting RequeueAfter
+				return res, nil
+			}
+			next = nextRaw.Truncate(time.Second)
 		}
-		nextReconcileTimeRaw, err := nextReconcile(ctx, now, di)
-		if err != nil {
-			return nil, fmt.Errorf("unable to compute next reconcile time: %w", err)
-		}
-		if nextReconcileTimeRaw == nil {
-			logger.V(7).Info("no further reconcile specified")
-			// return without setting RequeueAfter
-			return res, nil
-		}
-		nextReconcileTime := nextReconcileTimeRaw.Round(time.Second)
-		requeueAfter := nextReconcileTime.Sub(now)
-		logger.V(7).Info("requeue deploy item", "nextReconcileTime", nextReconcileTime.Format(time.RFC3339), "nextReconcileAfter", requeueAfter.String())
-		res.ReconcileResult.RequeueAfter = requeueAfter
+
+		res.ReconcileResult.RequeueAfter = next.Sub(now)
+		logger.V(7).Info("requeue deploy item", "nextReconcileTime", next.Format(time.RFC3339), "nextReconcileAfter", res.ReconcileResult.RequeueAfter.String())
 
 		return res, nil
 	}

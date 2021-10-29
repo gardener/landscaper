@@ -6,6 +6,7 @@ package manifest
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -15,7 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
+	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 )
 
@@ -25,12 +28,15 @@ func NewDeployer(log logr.Logger,
 	hostKubeClient client.Client,
 	config manifestv1alpha2.Configuration) (deployerlib.Deployer, error) {
 
-	return &deployer{
+	dep := &deployer{
 		log:        log,
 		lsClient:   lsKubeClient,
 		hostClient: hostKubeClient,
 		config:     config,
-	}, nil
+		hooks:      extension.ReconcileExtensionHooks{},
+	}
+	dep.hooks.RegisterHookSetup(cr.ContinuousReconcileExtensionSetup(dep.NextReconcile))
+	return dep, nil
 }
 
 type deployer struct {
@@ -74,4 +80,21 @@ func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target 
 
 func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 	return d.hooks
+}
+
+func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
+	manifest, err := New(d.log, d.lsClient, d.hostClient, &d.config, di, nil)
+	if err != nil {
+		return nil, err
+	}
+	if crval.ContinuousReconcileSpecIsEmpty(manifest.ProviderConfiguration.ContinuousReconcile) {
+		// no continuous reconciliation configured
+		return nil, nil
+	}
+	schedule, err := cr.Schedule(manifest.ProviderConfiguration.ContinuousReconcile)
+	if err != nil {
+		return nil, err
+	}
+	next := schedule.Next(last)
+	return &next, nil
 }
