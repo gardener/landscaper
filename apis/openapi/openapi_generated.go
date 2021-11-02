@@ -164,6 +164,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":                        schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":                      schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions":                         schema_apis_deployer_container_v1alpha1_DebugOptions(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection":                    schema_apis_deployer_container_v1alpha1_GarbageCollection(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                            schema_apis_deployer_container_v1alpha1_PodStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderConfiguration":                schema_apis_deployer_container_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ProviderStatus":                       schema_apis_deployer_container_v1alpha1_ProviderStatus(ref),
@@ -6691,6 +6692,13 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec"),
 						},
 					},
+					"garbageCollection": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GarbageCollection configures the container deployer garbage collector.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection"),
+						},
+					},
 					"debug": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DebugOptions configure additional debug options.",
@@ -6698,11 +6706,11 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 						},
 					},
 				},
-				Required: []string{"defaultImage", "initContainer", "waitContainer"},
+				Required: []string{"defaultImage", "initContainer", "waitContainer", "garbageCollection"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection"},
 	}
 }
 
@@ -6838,6 +6846,36 @@ func schema_apis_deployer_container_v1alpha1_DebugOptions(ref common.ReferenceCa
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_GarbageCollection(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GarbageCollection defines the container deployer garbage collection configuration.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"disable": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Disable disables the garbage collector and no resources re cleaned up.",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"worker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Worker defines the number of parallel garbage collection routines. Defaults to 5.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"disable", "worker"},
 			},
 		},
 	}

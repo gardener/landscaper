@@ -84,24 +84,30 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			return lserrors.NewWrappedError(err,
 				operationName, "FetchDeployItem", err.Error())
 		}
+		defaultLabels := DefaultLabels(c.Configuration.Identity, c.DeployItem.Name, c.DeployItem.Name, c.DeployItem.Namespace)
 
-		if err := c.SyncConfiguration(ctx); err != nil {
+		if err := c.SyncConfiguration(ctx, defaultLabels); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "SyncConfiguration", err.Error())
 		}
 
-		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx)
+		imagePullSecret, blueprintSecret, componentDescriptorSecret, err := c.parseAndSyncSecrets(ctx, defaultLabels)
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "ParseAndSyncSecrets", err.Error())
 		}
 		// ensure new pod
-		if err := c.ensureServiceAccounts(ctx); err != nil {
+		serviceAccountSecrets, err := EnsureServiceAccounts(ctx, c.directHostClient, c.DeployItem, c.Configuration.Namespace, defaultLabels)
+		if err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "EnsurePodRBAC", err.Error())
 		}
+		c.InitContainerServiceAccountSecret, c.WaitContainerServiceAccountSecret = serviceAccountSecrets.InitContainerServiceAccountSecret, serviceAccountSecrets.WaitContainerServiceAccountSecret
+
 		c.ProviderStatus = &containerv1alpha1.ProviderStatus{}
 		podOpts := PodOptions{
+			DeployerID: c.Configuration.Identity,
+
 			ProviderConfiguration:             c.ProviderConfiguration,
 			InitContainer:                     c.Configuration.InitContainer,
 			WaitContainer:                     c.Configuration.WaitContainer,
@@ -203,7 +209,7 @@ func (c *Container) collectAndSetPodStatus(pod *corev1.Pod) error {
 		return err
 	}
 
-	encStatus, err := EncodeProviderStatus(c.ProviderStatus)
+	encStatus, err := kutil.ConvertToRawExtension(c.ProviderStatus, Scheme)
 	if err != nil {
 		return err
 	}
@@ -394,7 +400,11 @@ const (
 )
 
 // syncSecrets identifies a authSecrets based on a given registry. It then creates or updates a pull secret in a target for the matched authSecret.
-func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference string, keyring *credentials.GeneralOciKeyring) (string, error) {
+func (c *Container) syncSecrets(ctx context.Context,
+	secretName,
+	imageReference string,
+	keyring *credentials.GeneralOciKeyring,
+	defaultLabels map[string]string) (string, error) {
 	authConfig := keyring.Get(imageReference)
 	if authConfig == nil {
 		return "", nil
@@ -433,7 +443,8 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 	authSecret.Namespace = c.Configuration.Namespace
 	authSecret.Type = corev1.SecretTypeDockerConfigJson
 	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, authSecret, func() error {
-		kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
+		InjectDefaultLabels(authSecret, defaultLabels)
+		kutil.SetMetaDataLabel(&authSecret.ObjectMeta, container.ContainerDeployerTypeLabel, "registry-pull-secret")
 		authSecret.Data = map[string][]byte{
 			corev1.DockerConfigJsonKey: targetAuthConfigsJSON,
 		}
@@ -445,7 +456,7 @@ func (c *Container) syncSecrets(ctx context.Context, secretName, imageReference 
 }
 
 // parseAndSyncSecrets parses and synchronizes relevant pull secrets for container image, blueprint & component descriptor secrets from the landscaper and host cluster.
-func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
+func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[string]string) (imagePullSecret, blueprintSecret, componentDescriptorSecret string, erro error) {
 	// find the secrets that match our image, our blueprint and our componentdescriptor
 	ociKeyring := credentials.New()
 
@@ -507,7 +518,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 	}
 
 	var err error
-	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, ociKeyring)
+	imagePullSecret, err = c.syncSecrets(ctx, ImagePullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.ProviderConfiguration.Image, ociKeyring, defaultLabels)
 	if err != nil {
 		erro = fmt.Errorf("unable to obtain and sync image pull secret to host cluster: %w", err)
 		return
@@ -530,7 +541,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 			erro = fmt.Errorf("unable to generate component descriptor oci reference: %w", err)
 			return
 		}
-		componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring)
+		componentDescriptorSecret, err = c.syncSecrets(ctx, ComponentDescriptorPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), cdRef, ociKeyring, defaultLabels)
 		if err != nil {
 			erro = fmt.Errorf("unable to obtain and sync component descriptor secret to host cluster: %w", err)
 			return
@@ -573,7 +584,7 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 			return
 		}
 
-		blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, ociKeyring)
+		blueprintSecret, err = c.syncSecrets(ctx, BluePrintPullSecretName(c.DeployItem.Namespace, c.DeployItem.Name), ociRegistryAccess.ImageReference, ociKeyring, defaultLabels)
 		if err != nil {
 			erro = fmt.Errorf("unable to obtain and sync blueprint pull secret to host cluster: %w", err)
 			return
@@ -584,12 +595,13 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context) (imagePullSecret, b
 }
 
 // SyncConfiguration syncs the provider configuration data as secret to the host cluster.
-func (c *Container) SyncConfiguration(ctx context.Context) error {
+func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[string]string) error {
 	secret := &corev1.Secret{}
 	secret.Name = ConfigurationSecretName(c.DeployItem.Namespace, c.DeployItem.Name)
 	secret.Namespace = c.Configuration.Namespace
 	if _, err := controllerutil.CreateOrUpdate(ctx, c.directHostClient, secret, func() error {
-		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerNameLabel, c.DeployItem.Name)
+		InjectDefaultLabels(secret, defaultLabels)
+		kutil.SetMetaDataLabel(&secret.ObjectMeta, container.ContainerDeployerTypeLabel, "configuration")
 		secret.Data = map[string][]byte{
 			container.ConfigurationFilename: c.DeployItem.Spec.Configuration.Raw,
 		}

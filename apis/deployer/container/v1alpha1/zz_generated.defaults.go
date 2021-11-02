@@ -24,4 +24,5 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 
 func SetObjectDefaults_Configuration(in *Configuration) {
 	SetDefaults_Configuration(in)
+	SetDefaults_GarbageCollection(&in.GarbageCollection)
 }

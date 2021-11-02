@@ -21,4 +21,12 @@ func SetDefaults_Configuration(obj *Configuration) {
 	if len(obj.DefaultImage.Image) == 0 {
 		obj.DefaultImage.Image = "ubuntu:18.04"
 	}
+	SetDefaults_GarbageCollection(&obj.GarbageCollection)
+}
+
+// SetDefaults_GarbageCollection sets the defaults for the container deployer configuration.
+func SetDefaults_GarbageCollection(obj *GarbageCollection) {
+	if obj.Worker <= 0 {
+		obj.Worker = 5
+	}
 }

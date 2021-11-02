@@ -15,7 +15,7 @@ import (
 // The error is ignored.
 // This logger is meant to be used with a testsuite.
 func NewIOLogger(writer io.Writer) logr.Logger {
-	return IOLogger{
+	return &IOLogger{
 		name:   "",
 		writer: writer,
 	}
@@ -24,36 +24,42 @@ func NewIOLogger(writer io.Writer) logr.Logger {
 // IOLogger is a Logger that writes all messages to the given io.Writer.
 // This is a simple implementation so all levels are logged.
 type IOLogger struct {
-	name   string
-	writer io.Writer
+	name          string
+	writer        io.Writer
+	keysAndValues []interface{}
 }
 
 func (l IOLogger) Enabled() bool {
 	return true
 }
 
-func (l IOLogger) Info(msg string, keysAndValues ...interface{}) {
-	fmt.Fprintf(l.writer, "%s: %s - %#v\n", l.name, msg, keysAndValues)
+func (l *IOLogger) Info(msg string, keysAndValues ...interface{}) {
+	fmt.Fprintf(l.writer, "%s: %s - %#v\n", l.name, msg, append(l.keysAndValues, keysAndValues...))
 }
 
-func (l IOLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	fmt.Fprintf(l.writer, "error %s: %s %s - %#v\n", l.name, err.Error(), msg, keysAndValues)
+func (l *IOLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+	fmt.Fprintf(l.writer, "error %s: %s %s - %#v\n", l.name, err.Error(), msg, append(l.keysAndValues, keysAndValues...))
 }
 
-func (l IOLogger) V(level int) logr.Logger {
+func (l *IOLogger) V(level int) logr.Logger {
 	return l
 }
 
-func (l IOLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
-	return l
+func (l *IOLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
+	return &IOLogger{
+		name:          l.name,
+		writer:        l.writer,
+		keysAndValues: append(l.keysAndValues, keysAndValues...),
+	}
 }
 
 func (l IOLogger) WithName(name string) logr.Logger {
-	return IOLogger{
-		name:   name,
-		writer: l.writer,
+	return &IOLogger{
+		name:          name,
+		writer:        l.writer,
+		keysAndValues: l.keysAndValues,
 	}
 }
 
 // Verify that it actually implements the interface
-var _ logr.Logger = IOLogger{}
+var _ logr.Logger = &IOLogger{}

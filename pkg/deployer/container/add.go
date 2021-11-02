@@ -62,8 +62,23 @@ func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, 
 	if err != nil {
 		return err
 	}
-	return ctrl.NewControllerManagedBy(lsMgr).
+
+	if err := ctrl.NewControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(noopPredicate{})).
 		Watches(src, &PodEventHandler{}).
-		Complete(podRec)
+		Complete(podRec); err != nil {
+		return err
+	}
+
+	if config.GarbageCollection.Disable {
+		logger.Info("GarbageCollector disabled")
+		return nil
+	}
+	return NewGarbageCollector(logger.WithName("GarbageCollector"),
+		lsMgr.GetClient(),
+		hostMgr.GetClient(),
+		config.Identity,
+		config.Namespace,
+		config.GarbageCollection).
+		Add(hostMgr, config.DebugOptions != nil && config.DebugOptions.KeepPod)
 }

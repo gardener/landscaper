@@ -18,7 +18,6 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -36,7 +35,7 @@ func NewDeployer(log logr.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	directHostClient client.Client,
-	config containerv1alpha1.Configuration) (deployerlib.Deployer, error) {
+	config containerv1alpha1.Configuration) (*deployer, error) {
 
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {

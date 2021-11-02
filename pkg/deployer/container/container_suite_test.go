@@ -32,6 +32,7 @@ func TestConfig(t *testing.T) {
 
 var (
 	testenv     *envtest.Environment
+	hostTestEnv *envtest.Environment
 	projectRoot = filepath.Join("../../../")
 )
 
@@ -42,10 +43,17 @@ var _ = BeforeSuite(func() {
 
 	_, err = testenv.Start()
 	Expect(err).ToNot(HaveOccurred())
+
+	hostTestEnv, err = envtest.New(projectRoot)
+	Expect(err).ToNot(HaveOccurred())
+
+	_, err = hostTestEnv.Start()
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
 	Expect(testenv.Stop()).ToNot(HaveOccurred())
+	Expect(hostTestEnv.Stop()).ToNot(HaveOccurred())
 })
 
 var _ = Describe("Template", func() {

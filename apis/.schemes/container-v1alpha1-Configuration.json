@@ -88,6 +88,27 @@
         }
       }
     },
+    "container-v1alpha1-GarbageCollection": {
+      "description": "GarbageCollection defines the container deployer garbage collection configuration.",
+      "type": "object",
+      "required": [
+        "disable",
+        "worker"
+      ],
+      "properties": {
+        "disable": {
+          "description": "Disable disables the garbage collector and no resources re cleaned up.",
+          "type": "boolean",
+          "default": false
+        },
+        "worker": {
+          "description": "Worker defines the number of parallel garbage collection routines. Defaults to 5.",
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        }
+      }
+    },
     "core-v1alpha1-ObjectReference": {
       "description": "ObjectReference is the reference to a kubernetes object.",
       "type": "object",
@@ -179,6 +200,11 @@
       "default": {},
       "description": "DefaultImage configures the default images that is used if the DeployItem does not specify one."
     },
+    "garbageCollection": {
+      "$ref": "#/definitions/container-v1alpha1-GarbageCollection",
+      "default": {},
+      "description": "GarbageCollection configures the container deployer garbage collector."
+    },
     "identity": {
       "description": "Identity identity describes the unique identity of the deployer.",
       "type": "string"
@@ -218,7 +244,8 @@
   "required": [
     "defaultImage",
     "initContainer",
-    "waitContainer"
+    "waitContainer",
+    "garbageCollection"
   ],
   "title": "container-v1alpha1-Configuration",
   "type": "object"
