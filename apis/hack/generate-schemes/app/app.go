@@ -20,15 +20,18 @@ import (
 
 // SchemaGenerator generates JSON schemas and Custom Resource Definitions
 type SchemaGenerator struct {
-	exports []string
+	// Exports defines the types for which the schemas shall be generated
+	Exports []string
+
+	// CRDs specifies the custom resource definition which is used for generating the schemas
 	CRDs []lsschema.CustomResourceDefinitions
 }
 
 // NewSchemaGenerator creates a new SchemaGenerator instance
 func NewSchemaGenerator(exports []string, CRDs []lsschema.CustomResourceDefinitions) *SchemaGenerator {
 	schemaGenerator := &SchemaGenerator{
-		exports: exports,
-		CRDs: CRDs,
+		Exports: exports,
+		CRDs:    CRDs,
 	}
 	return schemaGenerator
 }
@@ -50,7 +53,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 		Definitions: openapi.GetOpenAPIDefinitions(refCallback),
 	}
 	for defName, apiDefinition := range jsonGen.Definitions {
-		if !ShouldCreateDefinition(g.exports, defName) {
+		if !ShouldCreateDefinition(g.Exports, defName) {
 			continue
 		}
 		data, err := jsonGen.Generate(defName, apiDefinition)
@@ -59,7 +62,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 		}
 
 		// write file
-		file := filepath.Join(schemaDir, generators.ParsePackageVersionName(defName).String() + ".json")
+		file := filepath.Join(schemaDir, generators.ParsePackageVersionName(defName).String()+".json")
 		if err := ioutil.WriteFile(file, data, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write jsonschema for %q to %q: %w", file, generators.ParsePackageVersionName(defName).String(), err)
 		}
