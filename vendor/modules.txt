@@ -133,6 +133,9 @@ github.com/gardener/landscaper/apis/deployer/utils/readinesschecks/validation
 github.com/gardener/landscaper/apis/errors
 github.com/gardener/landscaper/apis/mediatype
 github.com/gardener/landscaper/apis/schema
+# github.com/gardener/landscaper/crdmanager v0.0.0-00010101000000-000000000000 => ./crdmanager
+## explicit
+github.com/gardener/landscaper/crdmanager/pkg/crdmanager
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-logr/logr v0.4.0
@@ -576,7 +579,6 @@ k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
 # k8s.io/apiextensions-apiserver v0.22.1
-## explicit
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
@@ -843,6 +845,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit
 sigs.k8s.io/yaml
 # github.com/gardener/landscaper/apis => ./apis
+# github.com/gardener/landscaper/crdmanager => ./crdmanager
 # github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
 # github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 # github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
