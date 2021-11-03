@@ -13,6 +13,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	depv1alpha1 "github.com/gardener/landscaper/apis/deployer/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/hack/generate-schemes/app"
+	"github.com/gardener/landscaper/apis/openapi"
 	lsschema "github.com/gardener/landscaper/apis/schema"
 )
 
@@ -44,7 +45,7 @@ func main() {
 	if len(schemaDir) == 0 {
 		log.Fatalln("expected --schema-dir to be set")
 	}
-	schemaGenerator := app.NewSchemaGenerator(Exports, CRDs)
+	schemaGenerator := app.NewSchemaGenerator(Exports, CRDs, openapi.GetOpenAPIDefinitions)
 	if err := schemaGenerator.Run(schemaDir, crdDir); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
