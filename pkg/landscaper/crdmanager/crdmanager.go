@@ -24,5 +24,5 @@ var importedCrdFS embed.FS
 
 // NewCrdManager returns a new instance of the CRDManager
 func NewCrdManager(log logr.Logger, mgr manager.Manager, lsConfig *config.LandscaperConfiguration) (*crdmanager.CRDManager, error) {
-	return crdmanager.NewCrdManager(log, mgr, &lsConfig.CrdManagement, &importedCrdFS, embedFSCrdRootDir)
+	return crdmanager.NewCrdManager(log, mgr, lsConfig.CrdManagement, &importedCrdFS, embedFSCrdRootDir)
 }

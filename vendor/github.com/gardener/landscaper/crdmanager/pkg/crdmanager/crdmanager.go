@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package crdmanager
 
 import (
@@ -25,7 +29,7 @@ import (
 )
 
 const (
-	readerBufferSize = 32
+	parserReadAheadSize = 1024
 )
 
 // CRDManager contains everything required to initialize or update CRDs
@@ -38,7 +42,7 @@ type CRDManager struct {
 }
 
 // NewCrdManager returns a new instance of the CRDManager
-func NewCrdManager(log logr.Logger, mgr manager.Manager, config *config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
+func NewCrdManager(log logr.Logger, mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
 	apiExtensionsScheme := runtime.NewScheme()
 	apiextinstall.Install(apiExtensionsScheme)
 	kubeClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: apiExtensionsScheme})
@@ -51,7 +55,7 @@ func NewCrdManager(log logr.Logger, mgr manager.Manager, config *config.CrdManag
 	}
 
 	return &CRDManager{
-		cfg:          *config,
+		cfg:          config,
 		client:       kubeClient,
 		log:          log,
 		crdRawDataFS: crdRawDataFS,
@@ -78,7 +82,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		err := crdmgr.client.Get(ctx, client.ObjectKey{Name: crd.Name}, existingCrd)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				err := crdmgr.createCrd(ctx, &crd)
+				err := crdmgr.client.Create(ctx, &crd)
 				if err != nil {
 					return err
 				}
@@ -129,10 +133,6 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 	return nil
 }
 
-func (crdmgr *CRDManager) createCrd(ctx context.Context, crd *v1.CustomResourceDefinition) error {
-	return crdmgr.client.Create(ctx, crd)
-}
-
 func (crdmgr *CRDManager) updateCrd(ctx context.Context, currentCrd, updatedCrd *v1.CustomResourceDefinition) error {
 	if !*crdmgr.cfg.ForceUpdate {
 		crdmgr.log.V(1).Info("Force update of CRDs disabled by configuration")
@@ -158,7 +158,7 @@ func (crdmgr *CRDManager) crdsFromDir() ([]v1.CustomResourceDefinition, error) {
 			return nil, fmt.Errorf("failed to read CRD file %q: %w", file.Name(), err)
 		}
 
-		decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), readerBufferSize)
+		decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), parserReadAheadSize)
 		crd := &v1.CustomResourceDefinition{}
 		err = decoder.Decode(crd)
 		if err != nil {
