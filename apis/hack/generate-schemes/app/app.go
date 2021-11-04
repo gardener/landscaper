@@ -10,12 +10,17 @@ import (
 	"strings"
 
 	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
-	"github.com/gardener/landscaper/apis/openapi"
 	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/go-openapi/jsonreference"
 	"github.com/go-openapi/spec"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/kube-openapi/pkg/common"
 	"sigs.k8s.io/yaml"
+)
+
+type (
+	// GetOpenAPIDefinitions is the open api callback to retrieve the definitions
+	GetOpenAPIDefinitions = func(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition
 )
 
 // SchemaGenerator generates JSON schemas and Custom Resource Definitions
@@ -25,13 +30,17 @@ type SchemaGenerator struct {
 
 	// CRDs specifies the custom resource definition which is used for generating the schemas
 	CRDs []lsschema.CustomResourceDefinitions
+
+	// GetOpenAPIDefinitions is a callback to the OpenAPI definitions
+	GetOpenAPIDefinitions GetOpenAPIDefinitions
 }
 
 // NewSchemaGenerator creates a new SchemaGenerator instance
-func NewSchemaGenerator(exports []string, CRDs []lsschema.CustomResourceDefinitions) *SchemaGenerator {
+func NewSchemaGenerator(exports []string, CRDs []lsschema.CustomResourceDefinitions, getOpenAPIDefinitions GetOpenAPIDefinitions) *SchemaGenerator {
 	schemaGenerator := &SchemaGenerator{
 		Exports: exports,
 		CRDs:    CRDs,
+		GetOpenAPIDefinitions: getOpenAPIDefinitions,
 	}
 	return schemaGenerator
 }
@@ -50,7 +59,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 		return spec.Ref{Ref: ref}
 	}
 	jsonGen := &generators.JSONSchemaGenerator{
-		Definitions: openapi.GetOpenAPIDefinitions(refCallback),
+		Definitions: g.GetOpenAPIDefinitions(refCallback),
 	}
 	for defName, apiDefinition := range jsonGen.Definitions {
 		if !ShouldCreateDefinition(g.Exports, defName) {
@@ -74,7 +83,7 @@ func (g *SchemaGenerator) Run(schemaDir, crdDir string) error {
 		log.Println("Skip crd generation")
 		return nil
 	}
-	crdGen := generators.NewCRDGenerator(openapi.GetOpenAPIDefinitions)
+	crdGen := generators.NewCRDGenerator(g.GetOpenAPIDefinitions)
 	for _, crdVersion := range g.CRDs {
 		for _, crdDef := range crdVersion.Definitions {
 			if err := crdGen.Generate(crdVersion.Group, crdVersion.Version, crdDef, crdVersion.OutputDir); err != nil {
