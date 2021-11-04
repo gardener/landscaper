@@ -23,6 +23,12 @@ VERSION=$(cat ${SOURCE_DIR}/VERSION)
 sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
   ${SOURCE_DIR}/go.mod
 
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/crdmanager .*@github.com/gardener/landscaper/crdmanager ${VERSION}@}" \
+  ${SOURCE_DIR}/go.mod
+
+sed -i -e "0,/)/{s@github.com/gardener/landscaper/apis .*@github.com/gardener/landscaper/apis ${VERSION}@}" \
+  ${SOURCE_DIR}/crdmanager/go.mod
+
 cd $SOURCE_DIR
 make revendor
 
