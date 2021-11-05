@@ -98,7 +98,7 @@ component:
   sources: []
   componentReferences: []
 
-  respositoryContext:
+  respositoryContexts:
     - type: ociRegistry
       baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
 
