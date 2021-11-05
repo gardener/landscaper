@@ -66,7 +66,7 @@ var _ = Describe("GarbageCollector", func() {
 		lsState, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
-		gc = containerctlr.NewGarbageCollector(simplelogger.NewIOLogger(GinkgoWriter), testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
+		gc = containerctlr.NewGarbageCollector(simplelogger.NewIOLogger(GinkgoWriter).WithTimestamps(), testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
 			Worker: 1,
 		})
 		Expect(gc.Add(hostMgr, false)).To(Succeed())
@@ -84,9 +84,9 @@ var _ = Describe("GarbageCollector", func() {
 	})
 
 	AfterEach(func() {
-		cancel()
-		Expect(lsState.CleanupState(ctx))
-		Expect(hostState.CleanupState(ctx))
+		defer cancel()
+		Expect(lsState.CleanupState(ctx, envtest.WaitForDeletion(true), envtest.WithRestConfig(testenv.Env.Config))).To(Succeed())
+		Expect(hostState.CleanupState(ctx, envtest.WaitForDeletion(true), envtest.WithRestConfig(hostTestEnv.Env.Config))).To(Succeed())
 	})
 
 	Context("RBAC resources", func() {

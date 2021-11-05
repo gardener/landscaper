@@ -117,6 +117,9 @@ func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Re
 	return reconcile.Func(func(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 		obj := obj.DeepCopyObject().(client.Object)
 		if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				return reconcile.Result{}, nil
+			}
 			gc.log.Error(err, "unable to get resource")
 			return reconcile.Result{}, err
 		}
