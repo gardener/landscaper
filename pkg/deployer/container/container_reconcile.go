@@ -645,20 +645,5 @@ func (c *Container) SyncExport(ctx context.Context) error {
 
 // CleanupPod cleans up a pod that was started with the container deployer.
 func (c *Container) CleanupPod(ctx context.Context, pod *corev1.Pod) error {
-	// only remove the finalizer if we get the status of the pod
-	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
-	if err := c.hostClient.Update(ctx, pod); err != nil {
-		err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
-		return lserrors.NewWrappedError(err,
-			"CleanupPod", "RemoveFinalizer", err.Error())
-	}
-	if c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod {
-		return nil
-	}
-	if err := c.hostClient.Delete(ctx, pod); err != nil {
-		err = fmt.Errorf("unable to delete pod: %w", err)
-		return lserrors.NewWrappedError(err,
-			"CleanupPod", "DeletePod", err.Error())
-	}
-	return nil
+	return CleanupPod(ctx, c.hostClient, pod, c.Configuration.DebugOptions != nil && c.Configuration.DebugOptions.KeepPod)
 }

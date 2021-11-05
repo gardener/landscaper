@@ -6,6 +6,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -14,10 +15,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/apis/deployer/container"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 )
+
+// CleanupPod cleans up a pod that was started with the container deployer.
+func CleanupPod(ctx context.Context, hostClient client.Client, pod *corev1.Pod, keepPod bool) error {
+	// only remove the finalizer if we get the status of the pod
+	controllerutil.RemoveFinalizer(pod, container.ContainerDeployerFinalizer)
+	if err := hostClient.Update(ctx, pod); err != nil {
+		err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
+		return lserrors.NewWrappedError(err,
+			"CleanupPod", "RemoveFinalizer", err.Error())
+	}
+	if keepPod {
+		return nil
+	}
+	if err := hostClient.Delete(ctx, pod); err != nil {
+		err = fmt.Errorf("unable to delete pod: %w", err)
+		return lserrors.NewWrappedError(err,
+			"CleanupPod", "DeletePod", err.Error())
+	}
+	return nil
+}
 
 // CleanupRBAC removes all service accounts, roles and rolebindings that belong to the deploy item
 func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostClient client.Client, hostNamespace string) error {

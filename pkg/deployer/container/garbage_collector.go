@@ -79,7 +79,7 @@ func (gc *GarbageCollector) Add(hostMgr manager.Manager, keepPods bool) error {
 			WithOptions(controller.Options{
 				MaxConcurrentReconciles: gc.config.Worker,
 			}).
-			Complete(gc.genericResourcesCleanup(obj.DeepCopyObject().(client.Object)))
+			Complete(gc.cleanupRBACResources(obj.DeepCopyObject().(client.Object)))
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func (gc *GarbageCollector) Add(hostMgr manager.Manager, keepPods bool) error {
 	return nil
 }
 
-func (gc *GarbageCollector) genericResourcesCleanup(obj client.Object) reconcile.Reconciler {
+func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Reconciler {
 	return reconcile.Func(func(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 		obj := obj.DeepCopyObject().(client.Object)
 		if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
@@ -158,7 +158,7 @@ func (gc *GarbageCollector) cleanupSecret(ctx context.Context, req reconcile.Req
 	return reconcile.Result{}, nil
 }
 
-// cleanupSecret deletes secrets that do not have a parent deploy item anymore.
+// cleanupPod deletes pods that do not have a parent deploy item anymore.
 func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	obj := &corev1.Pod{}
 	if err := gc.hostClient.Get(ctx, req.NamespacedName, obj); err != nil {
@@ -177,13 +177,8 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
-		controllerutil.RemoveFinalizer(obj, container.ContainerDeployerFinalizer)
-		if err := gc.hostClient.Update(ctx, obj); err != nil {
-			err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
-			return reconcile.Result{}, fmt.Errorf("unable to remove finalizer for %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
-		}
-		if err := gc.hostClient.Delete(ctx, obj); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to garbage collect secret %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
+		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
+			return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -203,18 +198,13 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 		return reconcile.Result{}, nil
 	}
 
-	controllerutil.RemoveFinalizer(obj, container.ContainerDeployerFinalizer)
-	if err := gc.hostClient.Update(ctx, obj); err != nil {
-		err = fmt.Errorf("unable to remove finalizer from pod: %w", err)
-		return reconcile.Result{}, fmt.Errorf("unable to remove finalizer for %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
-	}
-	if err := gc.hostClient.Delete(ctx, obj); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to garbage collect secret %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
+	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
 	return reconcile.Result{}, nil
 }
 
-// cleanupLeftoverPods cleans up all completed pods that have not been cleaned up.
+// isLatestPod cleans returns if the current pod is the latest executed pod.
 func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (bool, error) {
 	var (
 		diName      = pod.Labels[container.ContainerDeployerDeployItemNameLabel]

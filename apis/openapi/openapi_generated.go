@@ -6860,7 +6860,7 @@ func schema_apis_deployer_container_v1alpha1_GarbageCollection(ref common.Refere
 				Properties: map[string]spec.Schema{
 					"disable": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Disable disables the garbage collector and no resources re cleaned up.",
+							Description: "Disable disables the garbage collector and the resources clean-up.",
 							Default:     false,
 							Type:        []string{"boolean"},
 							Format:      "",

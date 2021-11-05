@@ -17,7 +17,7 @@ const ContainerDeployerOperationForceCleanupAnnotation = "container.deployer.lan
 // ContainerDeployerFinalizer is the finalizer that is set by the container deployer
 const ContainerDeployerFinalizer = "container.deployer.landscaper.gardener.cloud/finalizer"
 
-// ContainerDeployerIDLabel is the unique id of the deployer manages the deploy item.
+// ContainerDeployerIDLabel is the unique id of the deployer managing the deploy item.
 const ContainerDeployerIDLabel = "container.deployer.landscaper.gardener.cloud/deployer-id"
 
 // ContainerDeployerNameLabel is the name of the label that is used to identify managed pods.

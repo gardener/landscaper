@@ -89,7 +89,7 @@ type ContainerSpec struct {
 
 // GarbageCollection defines the container deployer garbage collection configuration.
 type GarbageCollection struct {
-	// Disable disables the garbage collector and no resources re cleaned up.
+	// Disable disables the garbage collector and the resources clean-up.
 	Disable bool `json:"disable"`
 	// Worker defines the number of parallel garbage collection routines.
 	// Defaults to 5.

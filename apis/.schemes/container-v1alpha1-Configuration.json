@@ -97,7 +97,7 @@
       ],
       "properties": {
         "disable": {
-          "description": "Disable disables the garbage collector and no resources re cleaned up.",
+          "description": "Disable disables the garbage collector and the resources clean-up.",
           "type": "boolean",
           "default": false
         },
