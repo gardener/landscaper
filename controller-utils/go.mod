@@ -5,7 +5,10 @@ go 1.16
 require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/zapr v0.4.0
 	github.com/pkg/errors v0.9.1
+	github.com/spf13/pflag v1.0.5
+	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.1

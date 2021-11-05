@@ -17,7 +17,6 @@ require (
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
-	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.5.0
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0
@@ -36,7 +35,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.uber.org/zap v1.19.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20211005215030-d2e5035098b3 // indirect

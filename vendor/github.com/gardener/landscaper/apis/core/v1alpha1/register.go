@@ -72,7 +72,7 @@ var ResourceDefinition = func() lsschema.CustomResourceDefinitions {
 	return lsschema.CustomResourceDefinitions{
 		Group:     SchemeGroupVersion.Group,
 		Version:   SchemeGroupVersion.Version,
-		OutputDir: "../pkg/landscaper/controller-utils/crdresources",
+		OutputDir: "../pkg/landscaper/crdmanager/crdresources",
 
 		Definitions: []lsschema.CustomResourceDefinition{
 			InstallationDefinition,

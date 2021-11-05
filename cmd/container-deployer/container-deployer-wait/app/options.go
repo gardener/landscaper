@@ -11,7 +11,7 @@ import (
 	flag "github.com/spf13/pflag"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/gardener/landscaper/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 )
 
 type options struct {

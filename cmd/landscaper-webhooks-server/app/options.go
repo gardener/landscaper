@@ -12,7 +12,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
 
