@@ -15,7 +15,7 @@ require (
 	github.com/gardener/component-spec/bindings-go v0.0.53
 	github.com/gardener/image-vector v0.5.0
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
-	github.com/gardener/landscaper/crdmanager v0.0.0-00010101000000-000000000000
+	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/golang/mock v1.5.0
@@ -57,7 +57,7 @@ require (
 
 replace (
 	github.com/gardener/landscaper/apis => ./apis
-	github.com/gardener/landscaper/crdmanager => ./crdmanager
+	github.com/gardener/landscaper/controller-utils => ./controller-utils
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
 	github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0

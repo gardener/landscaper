@@ -31,18 +31,18 @@ install-requirements:
 revendor:
 	@$(REPO_ROOT)/hack/revendor.sh
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/revendor.sh
-	@cd $(REPO_ROOT)/crdmanager && $(REPO_ROOT)/hack/revendor.sh
+	@cd $(REPO_ROOT)/controller-utils && $(REPO_ROOT)/hack/revendor.sh
 	@chmod +x $(REPO_ROOT)/apis/vendor/k8s.io/code-generator/*
 
 .PHONY: format
 format:
-	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack $(REPO_ROOT)/crdmanager/pkg
+	@$(REPO_ROOT)/hack/format.sh $(REPO_ROOT)/apis/config $(REPO_ROOT)/apis/core $(REPO_ROOT)/apis/deployer $(REPO_ROOT)/pkg $(REPO_ROOT)/test $(REPO_ROOT)/cmd $(REPO_ROOT)/hack $(REPO_ROOT)/controller-utils/pkg
 
 .PHONY: check
 check:
 	@$(REPO_ROOT)/hack/check.sh --golangci-lint-config=./.golangci.yaml $(REPO_ROOT)/cmd/... $(REPO_ROOT)/pkg/... $(REPO_ROOT)/test/...
 	@cd $(REPO_ROOT)/apis && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/apis/config/... $(REPO_ROOT)/apis/core/... $(REPO_ROOT)/apis/deployer/...
-	@cd $(REPO_ROOT)/crdmanager && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/crdmanager/pkg/...
+	@cd $(REPO_ROOT)/controller-utils && $(REPO_ROOT)/hack/check.sh --golangci-lint-config=../.golangci.yaml $(REPO_ROOT)/controller-utils/pkg/...
 
 .PHONY: setup-testenv
 setup-testenv:

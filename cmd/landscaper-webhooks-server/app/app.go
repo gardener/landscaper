@@ -25,7 +25,12 @@ import (
 
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	webhookcert "github.com/gardener/landscaper/controller-utils/pkg/webhook"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
+)
+
+const (
+	certSecretName = "landscaper-webhook-cert"
 )
 
 func NewLandscaperWebhooksCommand(ctx context.Context) *cobra.Command {
@@ -129,13 +134,13 @@ func registerWebhooks(ctx context.Context,
 	var err error
 	var dnsNames []string
 	if len(wo.WebhookURL) != 0 {
-		if dnsNames, err = webhook.GetDNSNamesFromURL(wo.WebhookURL); err != nil {
+		if dnsNames, err = webhookcert.GetDNSNamesFromURL(wo.WebhookURL); err != nil {
 			return fmt.Errorf("unable to create webhook certificate configuration: %w", err)
 		}
 	} else {
-		dnsNames = webhook.GeDNSNamesFromNamespacedName(wo.ServiceNamespace, wo.ServiceName)
+		dnsNames = webhookcert.GeDNSNamesFromNamespacedName(wo.ServiceNamespace, wo.ServiceName)
 	}
-	wo.CABundle, err = webhook.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, "landscaper-webhook", dnsNames)
+	wo.CABundle, err = webhookcert.GenerateCertificates(ctx, kubeClient, webhookServer.CertDir, o.webhook.certificatesNamespace, "landscaper-webhook", certSecretName, dnsNames)
 	if err != nil {
 		return fmt.Errorf("unable to generate webhook certificates: %w", err)
 	}
