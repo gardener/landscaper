@@ -247,6 +247,10 @@
           "default": {},
           "$ref": "#/definitions/config-v1alpha1-LandscaperAgentConfiguration"
         },
+        "deployerRepositoryContext": {
+          "description": "DeployerRepositoryContext defines the repository context to fetch the component descriptors for the default deployer (helm, container, manifest). If not set, the default repository context for component descriptors and blueprints is used.",
+          "$ref": "#/definitions/apis-v2-UnstructuredTypedObject"
+        },
         "disable": {
           "description": "Disable disables the landscaper deployer management.",
           "type": "boolean",

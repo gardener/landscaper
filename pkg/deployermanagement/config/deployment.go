@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,13 +23,9 @@ import (
 
 // DeployInternalDeployers automatically deploys configured deployers using the new Deployer registrations.
 func (o *Options) DeployInternalDeployers(ctx context.Context, log logr.Logger, kubeClient client.Client, config *config.LandscaperConfiguration) error {
-	repoCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
-	if err != nil {
-		return fmt.Errorf("unable to parse repository context: %w", err)
-	}
 	commonCompDescRef := &lsv1alpha1.ComponentDescriptorDefinition{
 		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &repoCtx,
+			RepositoryContext: config.DeployerManagement.DeployerRepositoryContext,
 			ComponentName:     "",
 			Version:           o.Version,
 		},
