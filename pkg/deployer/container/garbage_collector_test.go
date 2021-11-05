@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	errors2 "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -283,7 +282,7 @@ var _ = Describe("GarbageCollector", func() {
 			pod.Finalizers = []string{container.ContainerDeployerFinalizer}
 			containerctlr.InjectDefaultLabels(pod, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, pod)).To(Succeed())
-			pod.Status.Phase = corev1.PodSucceeded
+			pod.Status.Phase = corev1.PodPending
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
 			time.Sleep(500 * time.Millisecond) // we need to get a different creation time for pod 2
 
@@ -291,14 +290,14 @@ var _ = Describe("GarbageCollector", func() {
 			pod2.Finalizers = []string{container.ContainerDeployerFinalizer}
 			containerctlr.InjectDefaultLabels(pod2, containerctlr.DefaultLabels("test", "a", di.Name, di.Namespace))
 			Expect(hostState.Create(ctx, pod2)).To(Succeed())
-			pod2.Status.Phase = corev1.PodSucceeded
+			pod2.Status.Phase = corev1.PodPending
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod2))
 
 			// retrigger a reconcile for both pods
-			metav1.SetMetaDataAnnotation(&pod.ObjectMeta, "test", "abc")
-			Expect(hostTestEnv.Client.Update(ctx, pod))
-			metav1.SetMetaDataAnnotation(&pod2.ObjectMeta, "test", "abc")
-			Expect(hostTestEnv.Client.Update(ctx, pod2))
+			pod.Status.Phase = corev1.PodSucceeded
+			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
+			pod2.Status.Phase = corev1.PodSucceeded
+			Expect(hostTestEnv.Client.Status().Update(ctx, pod2))
 
 			Eventually(func() error {
 				err := hostTestEnv.Client.Get(ctx, kutil.ObjectKeyFromObject(pod), &corev1.Pod{})
