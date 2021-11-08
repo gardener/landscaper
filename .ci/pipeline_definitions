@@ -91,7 +91,7 @@ landscaper:
           git_tags:
           - ref_template: 'refs/tags/{VERSION}'
           - ref_template: 'refs/tags/apis/{VERSION}'
-          - ref_template: 'refs/tags/crdmanager/{VERSION}'
+          - ref_template: 'refs/tags/controller-utils/{VERSION}'
       steps:
         integration-test:
           execute:
