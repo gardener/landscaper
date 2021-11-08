@@ -1474,7 +1474,7 @@ func schema_gardener_landscaper_apis_config_DeployerManagementConfiguration(ref 
 					},
 					"deployerRepositoryContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployerRepositoryContext defines the repository context to fetch the component descriptors for the default deployer (helm, container, manifest). If not set, the default repository context for component descriptors and blueprints is used.",
+							Description: "DeployerRepositoryContext defines the repository context to fetch the component descriptors for the default deployer (helm, container, manifest). If not set, the default repository context for component descriptors and blueprints is used. If this is also not set, the open source repository context is used.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},
@@ -2316,7 +2316,7 @@ func schema_landscaper_apis_config_v1alpha1_DeployerManagementConfiguration(ref 
 					},
 					"deployerRepositoryContext": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployerRepositoryContext defines the repository context to fetch the component descriptors for the default deployer (helm, container, manifest). If not set, the default repository context for component descriptors and blueprints is used.",
+							Description: "DeployerRepositoryContext defines the repository context to fetch the component descriptors for the default deployer (helm, container, manifest). If not set, the default repository context for component descriptors and blueprints is used. If this is also not set, the open source repository context is used.",
 							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
 						},
 					},

@@ -10,8 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/yaml"
@@ -93,20 +91,6 @@ func (o *Options) run(ctx context.Context) error {
 
 	if o.Config.Metrics != nil {
 		opts.MetricsBindAddress = fmt.Sprintf(":%d", o.Config.Metrics.Port)
-	}
-
-	if o.Config.DeployerManagement.DeployerRepositoryContext == nil {
-		if o.Config.Controllers.Contexts.Config.Default.RepositoryContext != nil {
-			o.Config.DeployerManagement.DeployerRepositoryContext = o.Config.Controllers.Contexts.Config.Default.RepositoryContext.DeepCopy()
-		} else if o.Config.RepositoryContext != nil {
-			o.Config.DeployerManagement.DeployerRepositoryContext = o.Config.RepositoryContext.DeepCopy()
-		} else {
-			defaultCtx, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
-			if err != nil {
-				return fmt.Errorf("unable to parse default repository context: %w", err)
-			}
-			o.Config.DeployerManagement.DeployerRepositoryContext = &defaultCtx
-		}
 	}
 
 	hostMgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)

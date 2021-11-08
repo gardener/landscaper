@@ -7,6 +7,8 @@ package v1alpha1
 import (
 	"time"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -72,6 +74,18 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	if obj.DeployerManagement.Agent.OCI == nil {
 		obj.DeployerManagement.Agent.OCI = obj.Registry.OCI
 	}
+
+	if obj.DeployerManagement.DeployerRepositoryContext == nil {
+		if obj.Controllers.Contexts.Config.Default.RepositoryContext != nil {
+			obj.DeployerManagement.DeployerRepositoryContext = obj.Controllers.Contexts.Config.Default.RepositoryContext.DeepCopy()
+		} else if obj.RepositoryContext != nil {
+			obj.DeployerManagement.DeployerRepositoryContext = obj.RepositoryContext.DeepCopy()
+		} else {
+			defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+			obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
+		}
+	}
+
 }
 
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
