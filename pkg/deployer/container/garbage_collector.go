@@ -170,7 +170,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	logger := gc.log.WithValues("type", "Pod", "resource", kutil.ObjectKeyFromObject(obj).String())
 
 	if obj.Status.Phase == corev1.PodPending || obj.Status.Phase == corev1.PodRunning || obj.Status.Phase == corev1.PodUnknown {
-		logger.V(9).Info("not garbage collected", "reason", "pod is still running")
+		logger.V(9).Info("not garbage collected", "reason", "pod is still running", "phase", obj.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
@@ -180,6 +180,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
+		logger.V(10).Info("garbage collected", "reason", "deploy item does not exist anymore")
 		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
@@ -204,6 +205,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
+	logger.V(9).Info("garbage collected")
 	return reconcile.Result{}, nil
 }
 
@@ -237,6 +239,11 @@ func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (b
 			latest = p.DeepCopy()
 			continue
 		}
+		if p.CreationTimestamp.Equal(&latest.CreationTimestamp) {
+			// currently only for test debugging.
+			// remove as soon as the test is stable.
+			gc.log.V(12).Info("creation time equals", "currentPod", p.Name, "latest", latest.Name)
+		}
 		if p.CreationTimestamp.After(latest.CreationTimestamp.Time) {
 			latest = p.DeepCopy()
 		}
@@ -256,6 +263,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		Namespace: obj.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel],
 		Name:      obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel],
 	}
+	logger := gc.log.WithValues("deployItem", key.String(), "resource", kutil.ObjectKeyFromObject(obj).String())
 	if err := gc.lsClient.Get(ctx, key, di); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
@@ -263,7 +271,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		// do not cleanup as we are unsure about the state of the deploy item.
 		return false, err
 	}
-	gc.log.V(9).Info("DeployItem still exists", "deployItem", key.String(), "resource", kutil.ObjectKeyFromObject(obj).String())
+	logger.V(9).Info("DeployItem still exists")
 	return false, nil
 }
 
@@ -298,7 +306,7 @@ func (h *ManagedResourcesPredicate) shouldReconcile(object metav1.Object) bool {
 			return false
 		}
 	}
-	logger.V(10).Info("garbage collected", "reason", "deploy item does not exist anymore")
+	logger.V(10).Info("enqueue for garbage collection")
 	return true
 }
 

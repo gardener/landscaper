@@ -48,16 +48,19 @@ var _ = Describe("GarbageCollector", func() {
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
+		logger := simplelogger.NewIOLogger(GinkgoWriter).WithTimestamps()
 		var err error
 		lsMgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
+			Logger:             logger.WithName("lsManager"),
 		})
 		Expect(err).ToNot(HaveOccurred())
 
 		hostMgr, err = manager.New(hostTestEnv.Env.Config, manager.Options{
 			Scheme:             scheme.Scheme,
 			MetricsBindAddress: "0",
+			Logger:             logger.WithName("hostManager"),
 		})
 		Expect(err).ToNot(HaveOccurred())
 
@@ -66,7 +69,7 @@ var _ = Describe("GarbageCollector", func() {
 		lsState, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
-		gc = containerctlr.NewGarbageCollector(simplelogger.NewIOLogger(GinkgoWriter).WithTimestamps(), testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
+		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
 			Worker: 1,
 		})
 		Expect(gc.Add(hostMgr, false)).To(Succeed())
@@ -284,7 +287,7 @@ var _ = Describe("GarbageCollector", func() {
 			Expect(hostState.Create(ctx, pod)).To(Succeed())
 			pod.Status.Phase = corev1.PodPending
 			Expect(hostTestEnv.Client.Status().Update(ctx, pod))
-			time.Sleep(500 * time.Millisecond) // we need to get a different creation time for pod 2
+			time.Sleep(1 * time.Second) // we need to get a different creation time for pod 2
 
 			pod2 := defaultPod(hostState.Namespace, "test2")
 			pod2.Finalizers = []string{container.ContainerDeployerFinalizer}
