@@ -559,6 +559,7 @@ func autoConvert_v1alpha1_DeployerManagementConfiguration_To_config_DeployerMana
 	if err := Convert_v1alpha1_LandscaperAgentConfiguration_To_config_LandscaperAgentConfiguration(&in.Agent, &out.Agent, s); err != nil {
 		return err
 	}
+	out.DeployerRepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.DeployerRepositoryContext))
 	return nil
 }
 
@@ -573,6 +574,7 @@ func autoConvert_config_DeployerManagementConfiguration_To_v1alpha1_DeployerMana
 	if err := Convert_config_LandscaperAgentConfiguration_To_v1alpha1_LandscaperAgentConfiguration(&in.Agent, &out.Agent, s); err != nil {
 		return err
 	}
+	out.DeployerRepositoryContext = (*v2.UnstructuredTypedObject)(unsafe.Pointer(in.DeployerRepositoryContext))
 	return nil
 }
 

@@ -273,6 +273,10 @@ func (in *DeployItemsController) DeepCopy() *DeployItemsController {
 func (in *DeployerManagementConfiguration) DeepCopyInto(out *DeployerManagementConfiguration) {
 	*out = *in
 	in.Agent.DeepCopyInto(&out.Agent)
+	if in.DeployerRepositoryContext != nil {
+		in, out := &in.DeployerRepositoryContext, &out.DeployerRepositoryContext
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

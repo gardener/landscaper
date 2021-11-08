@@ -216,6 +216,10 @@ type DeployerManagementConfiguration struct {
 	Namespace string `json:"namespace"`
 	// Agent contains the landscaper agent configuration.
 	Agent LandscaperAgentConfiguration `json:"agent"`
+	// DeployerRepositoryContext defines the repository context to fetch the component descriptors for the
+	// default deployer (helm, container, manifest). If not set, the open source repository context is used.
+	// +optional
+	DeployerRepositoryContext *cdv2.UnstructuredTypedObject `json:"deployerRepositoryContext,omitempty"`
 }
 
 // LandscaperAgentConfiguration is the landscaper specific agent configuration
