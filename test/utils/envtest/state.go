@@ -6,15 +6,19 @@ package envtest
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -235,6 +239,10 @@ func (s *State) InitResources(ctx context.Context, resourcesPath string) error {
 type CleanupOptions struct {
 	// Timeout defines the timout to wait the cleanup of an object.
 	Timeout *time.Duration
+	// WaitForDeletion waits until all resources all successfully deleted.
+	WaitForDeletion bool
+	// RestConfig specify the rest config which is used to remove the namespace.
+	RestConfig *rest.Config
 }
 
 // ApplyOptions applies all options from create options to the object
@@ -257,6 +265,31 @@ type WithCleanupTimeout time.Duration
 func (s WithCleanupTimeout) ApplyOption(options *CleanupOptions) error {
 	t := time.Duration(s)
 	options.Timeout = &t
+	return nil
+}
+
+// WaitForDeletion configures the cleanup to wait for all resources to be deleted.
+type WaitForDeletion bool
+
+func (s WaitForDeletion) ApplyOption(options *CleanupOptions) error {
+	options.WaitForDeletion = bool(s)
+	return nil
+}
+
+// WithRestConfig configures the rest config
+func WithRestConfig(cfg *rest.Config) WithRestConfigOption {
+	return WithRestConfigOption{
+		RestConfig: cfg,
+	}
+}
+
+// WithRestConfigOption configures the rest config
+type WithRestConfigOption struct {
+	RestConfig *rest.Config
+}
+
+func (s WithRestConfigOption) ApplyOption(options *CleanupOptions) error {
+	options.RestConfig = s.RestConfig
 	return nil
 }
 
@@ -330,7 +363,21 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 
 	ns := &corev1.Namespace{}
 	ns.Name = s.Namespace
-	return c.Delete(ctx, ns)
+	if err := c.Delete(ctx, ns); err != nil {
+		return err
+	}
+	// the ns will never get removed as there is no kcm to clean it up.
+	// So we simply delete it.
+	if options.RestConfig != nil {
+		if err := removeFinalizerFromNamespace(ctx, options.RestConfig, ns); err != nil {
+			return err
+		}
+		if options.WaitForDeletion {
+			return WaitForObjectToBeDeleted(ctx, c, ns, *timeout)
+		}
+	}
+
+	return nil
 }
 
 // CleanupState cleans up a test environment.
@@ -364,16 +411,33 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 
 // WaitForObjectToBeDeleted waits for a object to be deleted.
 func WaitForObjectToBeDeleted(ctx context.Context, c client.Client, obj client.Object, timeout time.Duration) error {
-	return wait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
-		uObj := obj.DeepCopyObject().(client.Object)
+	var (
+		lastErr error
+		uObj    client.Object
+	)
+	err := wait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
+		uObj = obj.DeepCopyObject().(client.Object)
 		if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, uObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
+			lastErr = err
 			return false, nil
 		}
 		return false, nil
 	})
+	if err != nil {
+		if lastErr != nil {
+			return lastErr
+		}
+		// try to print the whole object to debug
+		d, err2 := json.Marshal(uObj)
+		if err2 != nil {
+			return err
+		}
+		return fmt.Errorf("deletion timeout: %s", string(d))
+	}
+	return nil
 }
 
 func removeFinalizer(ctx context.Context, c client.Client, obj client.Object) error {
@@ -392,6 +456,18 @@ func removeFinalizer(ctx context.Context, c client.Client, obj client.Object) er
 			return nil
 		}
 		return fmt.Errorf("unable to remove finalizer from object: %w", err)
+	}
+	return nil
+}
+
+func removeFinalizerFromNamespace(ctx context.Context, restConfig *rest.Config, ns *corev1.Namespace) error {
+	kClient, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return err
+	}
+	ns.SetFinalizers([]string{})
+	if _, err := kClient.CoreV1().Namespaces().Finalize(ctx, ns, v1.UpdateOptions{}); err != nil {
+		return err
 	}
 	return nil
 }

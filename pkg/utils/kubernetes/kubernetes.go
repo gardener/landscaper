@@ -148,7 +148,7 @@ func ObjectKey(name, namespace string) types.NamespacedName {
 }
 
 // ObjectKeyFromObject creates a namespaced name for a given object.
-func ObjectKeyFromObject(obj client.Object) types.NamespacedName {
+func ObjectKeyFromObject(obj metav1.Object) types.NamespacedName {
 	return types.NamespacedName{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),

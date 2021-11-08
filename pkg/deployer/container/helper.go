@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -93,19 +92,4 @@ func DecodeProviderStatus(raw *runtime.RawExtension) (*containerv1alpha1.Provide
 		}
 	}
 	return status, nil
-}
-
-// EncodeProviderStatus encodes a container status to a RawExtension.
-func EncodeProviderStatus(status *containerv1alpha1.ProviderStatus) (*runtime.RawExtension, error) {
-	status.TypeMeta = metav1.TypeMeta{
-		APIVersion: containerv1alpha1.SchemeGroupVersion.String(),
-		Kind:       "ProviderStatus",
-	}
-
-	raw := &runtime.RawExtension{}
-	obj := status.DeepCopyObject()
-	if err := runtime.Convert_runtime_Object_To_runtime_RawExtension(&obj, raw, nil); err != nil {
-		return &runtime.RawExtension{}, err
-	}
-	return raw, nil
 }

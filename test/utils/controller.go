@@ -13,7 +13,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
@@ -128,36 +130,61 @@ func MimicKCMServiceAccount(ctx context.Context, client client.Client, args Mimi
 			if err := client.Get(ctx, kutil.ObjectKey(args.Name, args.Namespace), sa); err != nil {
 				return false, nil
 			}
-
-			secret := &corev1.Secret{}
-			secret.GenerateName = "my-sa-secret-"
-			secret.Namespace = args.Namespace
-			secret.Type = corev1.SecretTypeServiceAccountToken
-			secret.Annotations = map[string]string{
-				corev1.ServiceAccountNameKey: sa.Name,
-			}
-			secret.Data = map[string][]byte{
-				corev1.ServiceAccountTokenKey: []byte(args.Token),
-			}
-			if err := client.Create(ctx, secret); err != nil {
-				if !apierrors.IsAlreadyExists(err) {
-					return false, nil
-				}
-			}
-
-			sa.Secrets = []corev1.ObjectReference{
-				{
-					Kind:       "Secret",
-					Namespace:  secret.Namespace,
-					Name:       secret.Name,
-					UID:        secret.UID,
-					APIVersion: "",
-				},
-			}
-			if err := client.Update(ctx, sa); err != nil {
+			if err := createTokenForServiceAccount(ctx, client, sa, args.Token); err != nil {
 				return false, nil
 			}
 			return true, nil
 		})
 	}()
+}
+
+func createTokenForServiceAccount(ctx context.Context, client client.Client, sa *corev1.ServiceAccount, token string) error {
+	// mimics the kube-controller-manager that creates a secret for the service account
+	secret := &corev1.Secret{}
+	secret.GenerateName = "my-sa-secret-"
+	secret.Namespace = sa.Namespace
+	secret.Type = corev1.SecretTypeServiceAccountToken
+	secret.Annotations = map[string]string{
+		corev1.ServiceAccountNameKey: sa.Name,
+	}
+	secret.Data = map[string][]byte{
+		corev1.ServiceAccountTokenKey: []byte(token),
+	}
+	if err := client.Create(ctx, secret); err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return nil
+		}
+	}
+
+	sa.Secrets = []corev1.ObjectReference{
+		{
+			Kind:       "Secret",
+			Namespace:  secret.Namespace,
+			Name:       secret.Name,
+			UID:        secret.UID,
+			APIVersion: "",
+		},
+	}
+	return client.Update(ctx, sa)
+}
+
+// MimicKCMServiceAccountController is a controller that mimics the service account token creation of the KCM.
+type MimicKCMServiceAccountController struct {
+	client client.Client
+}
+
+func (c *MimicKCMServiceAccountController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	sa := &corev1.ServiceAccount{}
+	if err := c.client.Get(ctx, req.NamespacedName, sa); err != nil {
+		return reconcile.Result{}, err
+	}
+	err := createTokenForServiceAccount(ctx, c.client, sa, "test-token")
+	return reconcile.Result{}, err
+}
+
+// AddMimicKCMServiceAccountControllerToManager adds the mock kcm controller to a manager.
+func AddMimicKCMServiceAccountControllerToManager(mgr manager.Manager) error {
+	return controllerruntime.NewControllerManagedBy(mgr).For(&corev1.ServiceAccount{}).Complete(&MimicKCMServiceAccountController{
+		client: mgr.GetClient(),
+	})
 }

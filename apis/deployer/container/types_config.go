@@ -45,6 +45,9 @@ type Configuration struct {
 	// The sidecar container is responsible to collect the exports and the state of the main container.
 	WaitContainer ContainerSpec `json:"waitContainer"`
 
+	// GarbageCollection configures the container deployer garbage collector.
+	GarbageCollection GarbageCollection `json:"garbageCollection"`
+
 	// DebugOptions configure additional debug options.
 	DebugOptions *DebugOptions `json:"debug,omitempty"`
 }
@@ -82,6 +85,15 @@ type ContainerSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+}
+
+// GarbageCollection defines the container deployer garbage collection configuration.
+type GarbageCollection struct {
+	// Disable disables the garbage collector and the resources clean-up.
+	Disable bool `json:"disable"`
+	// Worker defines the number of parallel garbage collection routines.
+	// Defaults to 5.
+	Worker int `json:"worker"`
 }
 
 // DebugOptions defines optional debug options.
