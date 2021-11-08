@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/crdmanager/pkg/crdmanager"
+	"github.com/gardener/landscaper/controller-utils/pkg/crdmanager"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )

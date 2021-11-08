@@ -19,8 +19,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/logger"
 )
 
 type options struct {

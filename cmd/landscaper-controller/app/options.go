@@ -18,8 +18,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/logger"
 )
 
 // Options describes the options to configure the Landscaper controller.

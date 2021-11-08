@@ -20,8 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/logger"
 
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 )
