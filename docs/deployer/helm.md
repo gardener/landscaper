@@ -117,6 +117,9 @@ spec:
     name: my-release
     # Namespace of the release: helm --namespace
     namespace: default
+    # configure the landscaper to automatically create the release namespace.
+    # Works similar to "helm install --create-namespace"
+    createNamespace: true
     # Values to template the chart
     # optional
     values: {}

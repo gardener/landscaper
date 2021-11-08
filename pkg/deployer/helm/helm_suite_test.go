@@ -9,10 +9,16 @@ import (
 	"encoding/base64"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
@@ -49,7 +55,6 @@ var _ = AfterSuite(func() {
 var _ = Describe("Template", func() {
 	It("should ignore non-kubernetes manifests that are valid yaml", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 
 		kubeconfig, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
@@ -79,4 +84,75 @@ var _ = Describe("Template", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(objects).To(HaveLen(1))
 	})
+
+	Context("Integration", func() {
+
+		var (
+			ctx    context.Context
+			cancel context.CancelFunc
+			state  *envtest.State
+			mgr    manager.Manager
+		)
+
+		BeforeEach(func() {
+			ctx, cancel = context.WithCancel(context.Background())
+			var err error
+			state, err = testenv.InitState(ctx)
+			Expect(err).ToNot(HaveOccurred())
+
+			mgr, err = manager.New(testenv.Env.Config, manager.Options{
+				Scheme:             api.LandscaperScheme,
+				MetricsBindAddress: "0",
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(helm.AddDeployerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
+
+			go func() {
+				Expect(mgr.Start(ctx)).To(Succeed())
+			}()
+		})
+
+		AfterEach(func() {
+			defer cancel()
+			Expect(state.CleanupState(ctx)).To(Succeed())
+		})
+
+		It("should create the release namespace if configured", func() {
+			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, target)).To(Succeed())
+
+			chartBytes, closer := utils.ReadChartFrom("./chartresolver/testdata/testchart")
+			defer closer()
+
+			chartAccess := helmv1alpha1.Chart{
+				Archive: &helmv1alpha1.ArchiveAccess{
+					Raw: base64.StdEncoding.EncodeToString(chartBytes),
+				},
+			}
+
+			helmConfig := &helmv1alpha1.ProviderConfiguration{
+				Name:            "test",
+				Namespace:       "some-namespace",
+				Chart:           chartAccess,
+				CreateNamespace: true,
+			}
+			item, err := helm.NewDeployItemBuilder().
+				Key(state.Namespace, "myitem").
+				ProviderConfig(helmConfig).
+				Target(target.Namespace, target.Name).
+				Build()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Create(ctx, item)).To(Succeed())
+
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, kutil.ObjectKey("some-namespace", ""), &corev1.Namespace{}); err != nil {
+					return err
+				}
+				return nil
+			}, 10*time.Second, 2*time.Second).Should(Succeed(), "additional namespace should be created")
+		})
+
+	})
+
 })

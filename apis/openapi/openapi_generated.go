@@ -7484,6 +7484,14 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Format:      "",
 						},
 					},
+					"createNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CreateNamespace configures the deployer to create the release namespace if not present. The behavior is similar to the \"helm install --create-namespace\"",
+							Default:     false,
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"values": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Values are the values that are used for templating.",
@@ -7518,7 +7526,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 						},
 					},
 				},
-				Required: []string{"chart", "name", "namespace"},
+				Required: []string{"chart", "name", "namespace", "createNamespace"},
 			},
 		},
 		Dependencies: []string{

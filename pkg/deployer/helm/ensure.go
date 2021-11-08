@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -56,6 +57,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		return lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
+
 	// create manifests from objects for the applier
 	manifests := make([]managedresource.Manifest, len(objects))
 	for i, obj := range objects {
@@ -64,6 +66,22 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 			Manifest: obj,
 		}
 	}
+	if h.ProviderConfiguration.CreateNamespace && len(h.ProviderConfiguration.Namespace) != 0 {
+		// add the release namespace as managed resource
+		ns := &corev1.Namespace{}
+		ns.Name = h.ProviderConfiguration.Namespace
+		rawNs, err := kutil.ConvertToRawExtension(ns, scheme.Scheme)
+		if err != nil {
+			return fmt.Errorf("unable to marshal release namespace: %w", err)
+		}
+		nsManifest := managedresource.Manifest{
+			Policy:   managedresource.KeepPolicy,
+			Manifest: rawNs,
+		}
+		// the namespace is ordered by the manifest deployer, so it is automatically created as first resource
+		manifests = append(manifests, nsManifest)
+	}
+
 	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,

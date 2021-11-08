@@ -668,6 +668,11 @@
       "$ref": "#/definitions/utils-continuousreconcile-ContinuousReconcileSpec",
       "description": "ContinuousReconcile contains the schedule for continuous reconciliation."
     },
+    "createNamespace": {
+      "default": false,
+      "description": "CreateNamespace configures the deployer to create the release namespace if not present. The behavior is similar to the \"helm install --create-namespace\"",
+      "type": "boolean"
+    },
     "deleteTimeout": {
       "$ref": "#/definitions/core-v1alpha1-Duration",
       "description": "DeleteTimeout is the time to wait before giving up on a resource to be deleted. Defaults to 180s."
@@ -721,7 +726,8 @@
   "required": [
     "chart",
     "name",
-    "namespace"
+    "namespace",
+    "createNamespace"
   ],
   "title": "helm-v1alpha1-ProviderConfiguration",
   "type": "object"
