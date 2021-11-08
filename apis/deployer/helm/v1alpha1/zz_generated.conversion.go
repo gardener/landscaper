@@ -221,6 +221,7 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	}
 	out.Name = in.Name
 	out.Namespace = in.Namespace
+	out.CreateNamespace = in.CreateNamespace
 	out.Values = *(*json.RawMessage)(unsafe.Pointer(&in.Values))
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
@@ -243,6 +244,7 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	}
 	out.Name = in.Name
 	out.Namespace = in.Namespace
+	out.CreateNamespace = in.CreateNamespace
 	out.Values = *(*json.RawMessage)(unsafe.Pointer(&in.Values))
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))

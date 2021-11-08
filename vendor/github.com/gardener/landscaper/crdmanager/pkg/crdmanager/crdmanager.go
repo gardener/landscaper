@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	parserReadAheadSize = 1024
+	readerBufferSize = 1024
 )
 
 // CRDManager contains everything required to initialize or update CRDs
@@ -158,7 +158,7 @@ func (crdmgr *CRDManager) crdsFromDir() ([]v1.CustomResourceDefinition, error) {
 			return nil, fmt.Errorf("failed to read CRD file %q: %w", file.Name(), err)
 		}
 
-		decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), parserReadAheadSize)
+		decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(data), readerBufferSize)
 		crd := &v1.CustomResourceDefinition{}
 		err = decoder.Decode(crd)
 		if err != nil {

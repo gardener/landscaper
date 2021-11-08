@@ -118,7 +118,6 @@ var _ = Describe("GetChart", func() {
 
 	It("should resolve a chart as base64 encoded file", func() {
 		ctx := context.Background()
-		defer ctx.Done()
 		ociClient, err := ociclient.NewClient(logr.Discard())
 		Expect(err).ToNot(HaveOccurred())
 

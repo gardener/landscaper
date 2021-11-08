@@ -50,6 +50,10 @@ type ProviderConfiguration struct {
 	// Namespace is the release namespace of the chart
 	Namespace string `json:"namespace"`
 
+	// CreateNamespace configures the deployer to create the release namespace if not present.
+	// The behavior is similar to the "helm install --create-namespace"
+	CreateNamespace bool `json:"createNamespace"`
+
 	// Values are the values that are used for templating.
 	Values json.RawMessage `json:"values,omitempty"`
 
