@@ -76,16 +76,9 @@ func SetDefaults_LandscaperConfiguration(obj *LandscaperConfiguration) {
 	}
 
 	if obj.DeployerManagement.DeployerRepositoryContext == nil {
-		if obj.Controllers.Contexts.Config.Default.RepositoryContext != nil {
-			obj.DeployerManagement.DeployerRepositoryContext = obj.Controllers.Contexts.Config.Default.RepositoryContext.DeepCopy()
-		} else if obj.RepositoryContext != nil {
-			obj.DeployerManagement.DeployerRepositoryContext = obj.RepositoryContext.DeepCopy()
-		} else {
-			defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
-			obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
-		}
+		defaultCtx, _ := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("eu.gcr.io/gardener-project/development", ""))
+		obj.DeployerManagement.DeployerRepositoryContext = &defaultCtx
 	}
-
 }
 
 // SetDefaults_CrdManagementConfiguration sets the defaults for the crd management configuration.
