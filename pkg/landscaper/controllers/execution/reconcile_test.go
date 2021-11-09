@@ -82,6 +82,71 @@ var _ = Describe("Reconcile", func() {
 		Expect(apierrors.IsNotFound(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))).To(BeTrue(), "expect the execution to be deleted")
 	})
 
+	Context("Context", func() {
+		It("should pass the context to the deploy item", func() {
+			ctx := context.Background()
+			// first deploy reconcile a simple execution with one deploy item
+			exec := &lsv1alpha1.Execution{}
+			exec.GenerateName = "test-"
+			exec.Namespace = state.Namespace
+			exec.Spec.Context = "test"
+			exec.Spec.DeployItems = []lsv1alpha1.DeployItemTemplate{
+				{
+					Name: "def",
+					Type: "test-type",
+					Configuration: &runtime.RawExtension{
+						Raw: []byte(`
+{
+  "apiVersion": "sometest",
+  "kind": "somekind"
+}
+`),
+					},
+				},
+			}
+			testutils.ExpectNoError(state.Create(ctx, exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+			// expect a deploy item
+			items := &lsv1alpha1.DeployItemList{}
+			testutils.ExpectNoError(testenv.Client.List(ctx, items, client.InNamespace(state.Namespace)))
+			Expect(items.Items).To(HaveLen(1))
+			di := &items.Items[0]
+			Expect(di.Spec.Context).To(Equal("test"))
+		})
+
+		It("should default the context of the deploy item", func() {
+			ctx := context.Background()
+			// first deploy reconcile a simple execution with one deploy item
+			exec := &lsv1alpha1.Execution{}
+			exec.GenerateName = "test-"
+			exec.Namespace = state.Namespace
+			exec.Spec.DeployItems = []lsv1alpha1.DeployItemTemplate{
+				{
+					Name: "def",
+					Type: "test-type",
+					Configuration: &runtime.RawExtension{
+						Raw: []byte(`
+{
+  "apiVersion": "sometest",
+  "kind": "somekind"
+}
+`),
+					},
+				},
+			}
+			testutils.ExpectNoError(state.Create(ctx, exec))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+			// expect a deploy item
+			items := &lsv1alpha1.DeployItemList{}
+			testutils.ExpectNoError(testenv.Client.List(ctx, items, client.InNamespace(state.Namespace)))
+			Expect(items.Items).To(HaveLen(1))
+			di := &items.Items[0]
+			Expect(di.Spec.Context).To(Equal("default"))
+		})
+	})
+
 	It("should adapt the status of the execution if a deploy item changes from Failed to Succeeded and vice versa", func() {
 		ctx := context.Background()
 		// first deploy reconcile a simple execution with one deploy item
