@@ -69,29 +69,29 @@ type deployer struct {
 	hooks            extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
+func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, _ *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace})
-	containerOp, err := New(logger, d.lsClient, d.hostClient, d.directHostClient, d.config, di, d.sharedCache)
+	containerOp, err := New(logger, d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
 	return containerOp.Reconcile(ctx, container.OperationReconcile)
 }
 
-func (d deployer) Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace})
-	containerOp, err := New(logger, d.lsClient, d.hostClient, d.directHostClient, d.config, di, d.sharedCache)
+	containerOp, err := New(logger, d.lsClient, d.hostClient, d.directHostClient, d.config, di, lsCtx, d.sharedCache)
 	if err != nil {
 		return err
 	}
 	return containerOp.Delete(ctx)
 }
 
-func (d *deployer) ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	return d.Reconcile(ctx, di, target)
+func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	return d.Reconcile(ctx, lsCtx, di, target)
 }
 
-func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }
@@ -101,7 +101,8 @@ func (d *deployer) ExtensionHooks() extension.ReconcileExtensionHooks {
 }
 
 func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1alpha1.DeployItem) (*time.Time, error) {
-	containerOp, err := New(d.log, d.lsClient, d.hostClient, d.directHostClient, d.config, di, d.sharedCache)
+	// TODO: parse provider configuration directly and do not init the container helper struct
+	containerOp, err := New(d.log, d.lsClient, d.hostClient, d.directHostClient, d.config, di, nil, d.sharedCache)
 	if err != nil {
 		return nil, err
 	}

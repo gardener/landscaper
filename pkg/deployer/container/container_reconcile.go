@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/gardener/landscaper/pkg/deployer/lib"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	dockerconfig "github.com/docker/cli/cli/config"
@@ -481,7 +483,8 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		}
 	}
 
-	for _, secretRef := range c.ProviderConfiguration.RegistryPullSecrets {
+	secretRefs := append(lib.GetRegistryPullSecretsFromContext(c.Context), c.ProviderConfiguration.RegistryPullSecrets...)
+	for _, secretRef := range secretRefs {
 		secret := &corev1.Secret{}
 
 		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)

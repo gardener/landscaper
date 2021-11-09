@@ -52,7 +52,7 @@ func NewPodReconciler(
 }
 
 func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	deployItem, err := GetAndCheckReconcile(r.log, r.lsClient, r.config)(ctx, req)
+	deployItem, lsCtx, err := GetAndCheckReconcile(r.log, r.lsClient, r.config)(ctx, req)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -60,7 +60,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, r.lsEventRecorder, deployItem)
-	if err := errHdl(ctx, r.diRec.Reconcile(ctx, deployItem, nil)); err != nil {
+	if err := errHdl(ctx, r.diRec.Reconcile(ctx, lsCtx, deployItem, nil)); err != nil {
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil

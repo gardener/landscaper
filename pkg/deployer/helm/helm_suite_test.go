@@ -73,7 +73,10 @@ var _ = Describe("Template", func() {
 		item := &lsv1alpha1.DeployItem{}
 		item.Spec.Configuration = providerConfig
 
-		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, nil)
+		lsCtx := &lsv1alpha1.Context{}
+		lsCtx.Name = lsv1alpha1.DefaultContextName
+		lsCtx.Namespace = item.Namespace
+		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -119,6 +122,7 @@ var _ = Describe("Template", func() {
 		})
 
 		It("should create the release namespace if configured", func() {
+			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, target)).To(Succeed())

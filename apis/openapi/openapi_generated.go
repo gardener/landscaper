@@ -3943,6 +3943,13 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Context defines the current context of the installation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"config": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Configuration contains the deployer type specific configuration.",
@@ -4678,6 +4685,13 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 				Description: "ExecutionSpec defines a execution plan.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
+					"context": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Context defines the current context of the installation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"deployItems": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DeployItems defines all execution items that need to be scheduled.",

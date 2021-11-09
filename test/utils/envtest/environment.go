@@ -104,6 +104,15 @@ func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error
 	}
 	state.Namespace = ns.Name
 
+	/*
+		defaultContext := &lsv1alpha1.Context{}
+		defaultContext.Name = "default"
+		defaultContext.Namespace = state.Namespace
+		if err := c.Create(ctx, defaultContext); err != nil {
+			return nil, err
+		}
+	*/
+
 	return state, nil
 }
 
@@ -232,6 +241,12 @@ func decodeAndAppendLSObject(data []byte, objects []client.Object, state *State)
 		}
 		state.Targets[types.NamespacedName{Name: target.Name, Namespace: target.Namespace}.String()] = target
 		return append(objects, target), nil
+	case ContextGVK.Kind:
+		context := &lsv1alpha1.Context{}
+		if _, _, err := decoder.Decode(data, nil, context); err != nil {
+			return nil, fmt.Errorf("unable to decode file as context: %w", err)
+		}
+		return append(objects, context), nil
 	case SecretGVK.Kind:
 		secret := &corev1.Secret{}
 		if _, _, err := decoder.Decode(data, nil, secret); err != nil {

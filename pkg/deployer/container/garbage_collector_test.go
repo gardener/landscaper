@@ -24,7 +24,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
@@ -69,12 +69,14 @@ var _ = Describe("GarbageCollector", func() {
 		lsState, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, lsState.Namespace)).To(Succeed())
+
 		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
 			Worker: 1,
 		})
 		Expect(gc.Add(hostMgr, false)).To(Succeed())
 
-		Expect(utils.AddMimicKCMServiceAccountControllerToManager(hostMgr)).To(Succeed())
+		Expect(testutils.AddMimicKCMServiceAccountControllerToManager(hostMgr)).To(Succeed())
 
 		go func() {
 			Expect(lsMgr.Start(ctx)).To(Succeed())

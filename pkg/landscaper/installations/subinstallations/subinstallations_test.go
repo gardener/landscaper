@@ -117,6 +117,7 @@ var _ = Describe("SubInstallation", func() {
 			Expect(si.Ensure(ctx)).To(Succeed())
 
 			Expect(resInst.Labels).To(HaveKeyWithValue(lsv1alpha1.EncompassedByLabel, "root"))
+			Expect(resInst.Spec.Context).To(Equal("default"))
 			Expect(resInst.Spec.ComponentDescriptor.Reference).NotTo(BeNil())
 			Expect(resInst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object).To(gstruct.MatchKeys(0, gstruct.Keys{
 				"type":    Equal("ociRegistry"),

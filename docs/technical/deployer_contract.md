@@ -31,7 +31,7 @@ spec:
   type: landscaper.gardener.cloud/kubernetes-manifest
   target:
     name: my-target
-    namespace: default
+  context: "default" # reference to the Context object in the same namespace.
   config:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration

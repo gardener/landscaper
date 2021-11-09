@@ -319,6 +319,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
+		subInst.Spec.Context = inst.Spec.Context
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}
@@ -338,6 +339,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 			ExportDataMappings:  subInstTmpl.ExportDataMappings,
 		}
 
+		o.Scheme().Default(subInst)
 		return nil
 	})
 	if err != nil {
