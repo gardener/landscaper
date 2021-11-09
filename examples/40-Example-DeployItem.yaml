@@ -10,6 +10,11 @@ spec:
 
   type: container | helm | manifest
 
+  target: # optional
+    name: abc
+
+  context: "default"
+
   config:
     apiVersion: mydeplyoer/v1
     kind: ProviderConfiguration

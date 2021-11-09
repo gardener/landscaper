@@ -201,6 +201,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	lsCtx := &lsv1alpha1.Context{}
+	// todo: check for real repository context. Maybe overwritten by installation.
 	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
@@ -318,6 +319,7 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logr.Log
 	}
 	log.V(7).Info("Found target. Checking responsibility")
 	target := &lsv1alpha1.Target{}
+	deployItem.Spec.Target.Namespace = deployItem.Namespace
 	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 		return nil, false, fmt.Errorf("unable to get target for deploy item: %w", err)
 	}

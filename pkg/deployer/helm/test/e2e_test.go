@@ -41,6 +41,7 @@ var _ = Describe("Helm Deployer", func() {
 		var err error
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testutil.CreateExampleDefaultContext(context.TODO(), testenv.Client, state.Namespace)).To(Succeed())
 	})
 
 	AfterEach(func() {

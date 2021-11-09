@@ -193,3 +193,16 @@ func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 	}
 	return nil
 }
+
+// GetRegistryPullSecretsFromContext returns the object references to
+// registry pull secrets defined by the landscaper context.
+func GetRegistryPullSecretsFromContext(lsCtx *lsv1alpha1.Context) []lsv1alpha1.ObjectReference {
+	refs := make([]lsv1alpha1.ObjectReference, len(lsCtx.RegistryPullSecrets))
+	for i, r := range lsCtx.RegistryPullSecrets {
+		refs[i] = lsv1alpha1.ObjectReference{
+			Name:      r.Name,
+			Namespace: lsCtx.Namespace,
+		}
+	}
+	return refs
+}

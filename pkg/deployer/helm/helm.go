@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
 	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,6 +65,7 @@ type Helm struct {
 
 	DeployItem            *lsv1alpha1.DeployItem
 	Target                *lsv1alpha1.Target
+	Context               *lsv1alpha1.Context
 	ProviderConfiguration *helmv1alpha1.ProviderConfiguration
 	ProviderStatus        *helmv1alpha1.ProviderStatus
 	SharedCache           cache.Cache
@@ -80,6 +82,7 @@ func New(log logr.Logger,
 	hostKubeClient client.Client,
 	item *lsv1alpha1.DeployItem,
 	target *lsv1alpha1.Target,
+	lsCtx *lsv1alpha1.Context,
 	sharedCache cache.Cache) (*Helm, error) {
 
 	currOp := "InitHelmOperation"
@@ -111,6 +114,7 @@ func New(log logr.Logger,
 		Configuration:         helmconfig,
 		DeployItem:            item,
 		Target:                target,
+		Context:               lsCtx,
 		ProviderConfiguration: config,
 		ProviderStatus:        status,
 		SharedCache:           sharedCache,
@@ -130,7 +134,13 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	// download chart
 	// todo: do caching of charts
-	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.SharedCache)
+
+	ociClient, err := createOCIClient(ctx,
+		h.log,
+		h.lsKubeClient,
+		append(lib.GetRegistryPullSecretsFromContext(h.Context), h.DeployItem.Spec.RegistryPullSecrets...),
+		h.Configuration,
+		h.SharedCache)
 	if err != nil {
 		return nil, nil, lserrors.NewWrappedError(err,
 			currOp, "BuildOCIClient", err.Error())
@@ -239,9 +249,9 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, item *lsv1alpha1.DeployItem, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
 	// resolve all pull secrets
-	secrets, err := kutil.ResolveSecrets(ctx, client, item.Spec.RegistryPullSecrets)
+	secrets, err := kutil.ResolveSecrets(ctx, client, registryPullSecrets)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +261,11 @@ func createOCIClient(ctx context.Context, log logr.Logger, client client.Client,
 	if config.OCI != nil {
 		ociConfigFiles = config.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.CreateOCIRegistryKeyring(secrets, ociConfigFiles)
+	ociKeyring, err := credentials.NewBuilder(log.WithName("ociKeyring")).
+		WithFS(osfs.New()).
+		FromConfigFiles(ociConfigFiles...).
+		FromPullSecrets(secrets...).
+		Build()
 	if err != nil {
 		return nil, err
 	}

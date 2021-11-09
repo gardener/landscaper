@@ -39,6 +39,7 @@ var _ = Describe("Container Deployer", func() {
 		var err error
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())
+		Expect(testutil.CreateExampleDefaultContext(context.TODO(), testenv.Client, state.Namespace)).To(Succeed())
 
 		deployer, err := containerctlr.NewDeployer(
 			logr.Discard(),
