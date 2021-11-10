@@ -24,7 +24,7 @@ version: v0.1.0
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
-appVersion: v0.15.0
+appVersion: v0.15.2
 
 dependencies:
 - name: landscaper-controller
