@@ -19,7 +19,8 @@ fi
 if ! which component-cli 1>/dev/null; then
   echo -n "component-cli is required to generate the component descriptors"
   echo -n "Trying to installing it..."
-  go get github.com/gardener/component-cli/cmd/component-cli
+  curl -L https://github.com/gardener/component-cli/releases/download/$(curl -s https://api.github.com/repos/gardener/component-cli/releases/latest | jq -r '.tag_name')/componentcli-$(go env GOOS)-$(go env GOARCH).gz | gzip -d > $(go env GOPATH)/bin/component-cli
+  chmod +x $(go env GOPATH)/bin/component-cli
 
   if ! which component-cli 1>/dev/null; then
     echo -n "component-cli was successfully installed but the binary cannot be found"
