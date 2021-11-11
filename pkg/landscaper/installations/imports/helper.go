@@ -11,7 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"

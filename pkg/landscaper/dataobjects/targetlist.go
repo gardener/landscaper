@@ -11,7 +11,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // TargetList is the internal representation of a list of targets.

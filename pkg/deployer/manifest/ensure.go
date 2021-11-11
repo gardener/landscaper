@@ -23,8 +23,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	health "github.com/gardener/landscaper/pkg/deployer/lib/readinesscheck"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 func (m *Manifest) Reconcile(ctx context.Context) error {

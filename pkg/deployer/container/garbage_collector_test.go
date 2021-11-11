@@ -30,7 +30,7 @@ import (
 	"github.com/gardener/landscaper/pkg/api"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 

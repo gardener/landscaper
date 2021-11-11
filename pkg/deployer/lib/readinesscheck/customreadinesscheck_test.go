@@ -17,7 +17,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"github.com/gardener/landscaper/apis/config"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"

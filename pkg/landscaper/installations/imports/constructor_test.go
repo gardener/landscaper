@@ -23,13 +23,13 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )

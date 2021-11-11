@@ -22,7 +22,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/api"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

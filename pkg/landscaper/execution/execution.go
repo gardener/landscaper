@@ -11,10 +11,10 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // Operation contains all execution operations

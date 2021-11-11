@@ -26,8 +26,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // CustomReadinessCheck contains all the data and methods required to kick off a custom readiness check

@@ -25,7 +25,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
-	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
+	mock_client "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
 	"github.com/gardener/landscaper/test/utils"
 )
 

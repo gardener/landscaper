@@ -26,7 +26,7 @@ import (
 
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // ApplyManifests creates or updates all configured manifests.

@@ -30,8 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 )
 

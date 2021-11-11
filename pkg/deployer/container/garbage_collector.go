@@ -28,7 +28,7 @@ import (
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )

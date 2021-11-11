@@ -25,7 +25,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 
 	"github.com/gardener/landscaper/apis/config"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	testutils "github.com/gardener/landscaper/test/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"

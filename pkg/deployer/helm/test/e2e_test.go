@@ -25,10 +25,10 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	continuousreconcileextension "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )

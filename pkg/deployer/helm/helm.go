@@ -36,7 +36,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/helm/chartresolver"
 	"github.com/gardener/landscaper/pkg/utils"
 
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 const (

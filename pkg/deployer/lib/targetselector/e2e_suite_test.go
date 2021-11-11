@@ -16,10 +16,10 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
 	"github.com/gardener/landscaper/pkg/utils"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )

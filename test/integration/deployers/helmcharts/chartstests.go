@@ -19,8 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/selection"
 
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"

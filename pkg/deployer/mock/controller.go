@@ -18,11 +18,11 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
+	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type mock.

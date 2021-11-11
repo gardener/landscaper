@@ -18,7 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
