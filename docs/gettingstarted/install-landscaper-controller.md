@@ -18,9 +18,10 @@ helm install -n ls-system landscaper ./charts/landscaper
 We are also building OCI charts so a specific version of Landscaper can be installed with:
 
 ```
-export LS_VERSION="v0.13.0" # use the latest available version
+export LS_VERSION="v0.15.0" # use the latest available version
 helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $LS_VERSION
-helm install ./charts
+tar -xvf landscaper-v0.15.0.tgz
+helm install -n ls-system landscaper ./landscaper
 ```
 
 Landscaper's Helm chart can be configured with a values file.
