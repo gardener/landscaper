@@ -29,8 +29,8 @@ import (
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 const (

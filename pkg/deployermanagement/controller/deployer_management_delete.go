@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // Delete removes a deployer installation given a deployer registration and a environment.

@@ -27,9 +27,9 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	commonutils "github.com/gardener/landscaper/pkg/utils"

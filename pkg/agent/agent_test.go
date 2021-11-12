@@ -19,9 +19,9 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 var _ = Describe("Agent", func() {

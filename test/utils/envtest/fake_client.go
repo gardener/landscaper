@@ -16,8 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	mock_client "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
 	"github.com/gardener/landscaper/pkg/api"
-	mock_client "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 // NewFakeClientFromPath reads all landscaper related files from the given path adds them to the controller runtime's fake client.

@@ -33,12 +33,12 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	k8smock "github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock"
 	"github.com/gardener/landscaper/pkg/deployer/container"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
-	k8smock "github.com/gardener/landscaper/pkg/utils/kubernetes/mock"
 )
 
 // TestInstallationConfig defines a installation configuration which can be used to create

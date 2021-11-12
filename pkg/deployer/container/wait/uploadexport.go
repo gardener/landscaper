@@ -18,8 +18,8 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
 )
 
 // UploadExport reads the export config from the given path and stores

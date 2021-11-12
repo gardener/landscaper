@@ -136,6 +136,8 @@ github.com/gardener/landscaper/apis/schema
 # github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000 => ./controller-utils
 ## explicit
 github.com/gardener/landscaper/controller-utils/pkg/crdmanager
+github.com/gardener/landscaper/controller-utils/pkg/kubernetes
+github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock
 github.com/gardener/landscaper/controller-utils/pkg/logger
 github.com/gardener/landscaper/controller-utils/pkg/webhook
 github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates

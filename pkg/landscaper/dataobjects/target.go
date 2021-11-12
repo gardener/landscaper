@@ -11,8 +11,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/pkg/utils/kubernetes"
-	kutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // Target is the internal representation of a target.
@@ -33,7 +32,7 @@ func NewFromTarget(target *lsv1alpha1.Target) (*Target, error) {
 	return &Target{
 		Raw:      target,
 		Metadata: GetMetadataFromObject(target, target.Spec.Configuration.RawMessage),
-		Owner:    kubernetes.GetOwner(target.ObjectMeta),
+		Owner:    kutil.GetOwner(target.ObjectMeta),
 	}, nil
 }
 

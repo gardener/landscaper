@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
-	kubernetesutil "github.com/gardener/landscaper/pkg/utils/kubernetes"
+	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
 // WaitUntilMainContainerFinished waits until the main container of the pod has finished.
