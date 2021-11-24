@@ -5,10 +5,9 @@ go 1.16
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/Microsoft/go-winio v0.5.0 // indirect
-	github.com/Microsoft/hcsshim v0.8.22 // indirect
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.5.7
+	github.com/containerd/containerd v1.5.8
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/gardener/component-cli v0.29.0

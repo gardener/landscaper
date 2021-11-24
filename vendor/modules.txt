@@ -11,8 +11,7 @@ github.com/Masterminds/sprig/v3
 ## explicit
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
-# github.com/Microsoft/hcsshim v0.8.22
-## explicit
+# github.com/Microsoft/hcsshim v0.8.23
 github.com/Microsoft/hcsshim/osversion
 # github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 ## explicit
@@ -23,7 +22,7 @@ github.com/beorn7/perks/quantile
 github.com/cespare/xxhash/v2
 # github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af
 ## explicit
-# github.com/containerd/containerd v1.5.7
+# github.com/containerd/containerd v1.5.8
 ## explicit
 github.com/containerd/containerd/archive/compression
 github.com/containerd/containerd/content
