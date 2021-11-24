@@ -72,7 +72,7 @@ kind: Configuration
 identity: {{ .Values.deployer.identity }}
 {{- end }}
 namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
-{{- with .Values.targetSelector }}
+{{- with .Values.deployer.targetSelector }}
 targetSelector:
 {{ toYaml . }}
 {{- end }}
