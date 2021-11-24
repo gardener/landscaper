@@ -52,6 +52,9 @@ const (
 	// DeployerEnvironmentTargetAnnotationName is the default name for the target selector of specific environments.
 	DeployerEnvironmentTargetAnnotationName = "landscaper.gardener.cloud/environment"
 
+	// DeployerOnlyTargetAnnotationName marks a target to be used to deploy only deployers
+	DeployerOnlyTargetAnnotationName = "landscaper.gardener.cloud/deployer-only"
+
 	// NotUseDefaultDeployerAnnotation is the installation annotation that refuses the internal deployer to reconcile
 	// the installation.
 	NotUseDefaultDeployerAnnotation = "landscaper.gardener.cloud/not-internal"

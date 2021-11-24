@@ -179,10 +179,6 @@ func (o *Options) run(ctx context.Context) error {
 							Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
 							Operator: selection.DoesNotExist,
 						},
-						{
-							Key:      lsv1alpha1.NotUseDefaultDeployerAnnotation,
-							Operator: selection.Exists,
-						},
 					},
 				},
 			)

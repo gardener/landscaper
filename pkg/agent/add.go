@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/selection"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,7 +69,17 @@ func AddToManager(ctx context.Context, logger logr.Logger, lsMgr manager.Manager
 	helmConfig.OCI = config.OCI
 	helmConfig.TargetSelector = []lsv1alpha1.TargetSelector{
 		{
-			Targets: []lsv1alpha1.ObjectReference{{Name: config.Name}},
+			Annotations: []lsv1alpha1.Requirement{
+				{
+					Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
+					Operator: selection.Equals,
+					Values:   []string{config.Name},
+				},
+				{
+					Key:      lsv1alpha1.DeployerOnlyTargetAnnotationName,
+					Operator: selection.Exists,
+				},
+			},
 		},
 	}
 	if err := helmctlr.AddDeployerToManager(log, lsMgr, hostMgr, helmConfig); err != nil {

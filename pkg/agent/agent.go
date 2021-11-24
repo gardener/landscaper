@@ -100,6 +100,7 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 
 		env.Spec.HostTarget.Annotations = map[string]string{
 			lsv1alpha1.DeployerEnvironmentTargetAnnotationName: env.Name,
+			lsv1alpha1.DeployerOnlyTargetAnnotationName:        "true",
 		}
 		env.Spec.HostTarget.TargetSpec = target.Spec
 	}
@@ -249,14 +250,15 @@ func (a Agent) TargetSecretName() string {
 func DefaultTargetSelector(envName string) []lsv1alpha1.TargetSelector {
 	return []lsv1alpha1.TargetSelector{
 		{
-			Targets: []lsv1alpha1.ObjectReference{{Name: envName}},
-		},
-		{
 			Annotations: []lsv1alpha1.Requirement{
 				{
 					Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
 					Operator: selection.Equals,
 					Values:   []string{envName},
+				},
+				{
+					Key:      lsv1alpha1.DeployerOnlyTargetAnnotationName,
+					Operator: selection.DoesNotExist,
 				},
 			},
 		},
