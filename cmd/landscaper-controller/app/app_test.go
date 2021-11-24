@@ -6,7 +6,6 @@ package app_test
 
 import (
 	"context"
-	"encoding/json"
 	"path/filepath"
 	"testing"
 	"time"
@@ -122,12 +121,6 @@ var _ = Describe("Landscaper Controller", func() {
 			Expect(reg.Spec.DeployItemTypes).To(ConsistOf(lsv1alpha1.DeployItemType(deployerconfig.HelmDeployerType)))
 			Expect(reg.Spec.InstallationTemplate.ComponentDescriptor.Reference.ComponentName).To(Equal("github.com/gardener/landscaper/helm-deployer"))
 			Expect(reg.Spec.InstallationTemplate.Blueprint.Reference.ResourceName).To(Equal("helm-deployer-blueprint"))
-			Expect(reg.Spec.InstallationTemplate.ImportDataMappings).To(HaveKey("targetSelectors"))
-
-			targetSelectorBytes := reg.Spec.InstallationTemplate.ImportDataMappings["targetSelectors"]
-			var targetSelector []lsv1alpha1.TargetSelector
-			Expect(json.Unmarshal(targetSelectorBytes.RawMessage, &targetSelector)).To(Succeed())
-			Expect(targetSelector).To(HaveLen(1))
 		})
 
 		It("should deploy a mock Deployer registration with custom values", func() {

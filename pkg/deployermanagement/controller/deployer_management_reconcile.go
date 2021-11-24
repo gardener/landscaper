@@ -63,11 +63,13 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 	if registration.Name == "helm" {
 		for i, _ := range envTargetSelectors {
 			nextSelector := &envTargetSelectors[i]
-			nextSelector.Annotations = append(nextSelector.Annotations,
+			nextSelector.Annotations = append(
+				nextSelector.Annotations,
 				lsv1alpha1.Requirement{
 					Key:      lsv1alpha1.DeployerOnlyTargetAnnotationName,
 					Operator: selection.DoesNotExist,
-				})
+				},
+			)
 		}
 	}
 
