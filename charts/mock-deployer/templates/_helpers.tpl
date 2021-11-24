@@ -71,7 +71,7 @@ kind: Configuration
 {{- if .Values.deployer.identity }}
 identity: {{ .Values.deployer.identity }}
 {{- end }}
-{{- with .Values.deployer.targetSelector }}
+{{- with .Values.targetSelector }}
 targetSelector:
 {{ toYaml . }}
 {{- end }}

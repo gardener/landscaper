@@ -91,7 +91,7 @@ oci:
   {{- end }}
   {{- end }}
 {{- end }}
-{{- with .Values.deployer.targetSelector }}
+{{- with .Values.targetSelector }}
 targetSelector:
 {{ toYaml . }}
 {{- end }}
