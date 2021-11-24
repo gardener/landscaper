@@ -34,11 +34,11 @@ deployer:
 #     <name>: <docker config json>
 #  verbosityLevel: 9
 
-# targetSelector:
-# - annotations:
-#   - key:
-#     operator:
-#     value:
+#  targetSelector:
+#  - annotations:
+#    - key:
+#      operator:
+#      value:
 
 replicaCount: 1
 
