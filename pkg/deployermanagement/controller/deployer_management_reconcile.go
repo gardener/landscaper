@@ -61,7 +61,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 	envTargetSelectors := env.Spec.TargetSelectors
 
 	if registration.Name == "helm" {
-		for i, _ := range envTargetSelectors {
+		for i := range envTargetSelectors {
 			nextSelector := &envTargetSelectors[i]
 			nextSelector.Annotations = append(
 				nextSelector.Annotations,
