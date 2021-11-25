@@ -58,11 +58,9 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		return err
 	}
 
-	envTargetSelectors := env.Spec.TargetSelectors
-
-	if registration.Name == "helm" {
-		for i := range envTargetSelectors {
-			nextSelector := &envTargetSelectors[i]
+	envTargetSelectors := []lsv1alpha1.TargetSelector{}
+	for _, nextSelector := range env.Spec.TargetSelectors {
+		if registration.Name == "helm" {
 			nextSelector.Annotations = append(
 				nextSelector.Annotations,
 				lsv1alpha1.Requirement{
@@ -71,6 +69,8 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 				},
 			)
 		}
+
+		envTargetSelectors = append(envTargetSelectors, nextSelector)
 	}
 
 	targetSelectorsBytes, err := json.Marshal(envTargetSelectors)

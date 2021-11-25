@@ -93,9 +93,11 @@ func (a *Agent) EnsureLandscaperResources(ctx context.Context, lsClient, hostCli
 		controllerutil.AddFinalizer(env, lsv1alpha1.LandscaperAgentFinalizer)
 		env.Spec.Namespace = a.config.Namespace
 		env.Spec.LandscaperClusterRestConfig = clusterRestConfig
-		env.Spec.TargetSelectors = a.config.TargetSelectors
-		if env.Spec.TargetSelectors == nil {
+
+		if len(a.config.TargetSelectors) == 0 {
 			env.Spec.TargetSelectors = DefaultTargetSelector(env.Name)
+		} else {
+			env.Spec.TargetSelectors = a.config.TargetSelectors
 		}
 
 		env.Spec.HostTarget.Annotations = map[string]string{
@@ -255,10 +257,6 @@ func DefaultTargetSelector(envName string) []lsv1alpha1.TargetSelector {
 					Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
 					Operator: selection.Equals,
 					Values:   []string{envName},
-				},
-				{
-					Key:      lsv1alpha1.DeployerOnlyTargetAnnotationName,
-					Operator: selection.DoesNotExist,
 				},
 			},
 		},
