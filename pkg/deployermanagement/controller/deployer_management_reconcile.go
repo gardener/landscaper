@@ -53,6 +53,9 @@ func NewDeployerManagement(log logr.Logger, client client.Client, scheme *runtim
 
 // Reconcile reconciles a deployer installation given a deployer registration and a environment.
 func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1alpha1.DeployerRegistration, env *lsv1alpha1.Environment) error {
+	registration = registration.DeepCopy()
+	env = env.DeepCopy()
+
 	inst, err := dm.getInstallation(ctx, registration, env)
 	if err != nil {
 		return err
