@@ -291,13 +291,11 @@ func ValidateImports(bp *blueprints.Blueprint,
 	cd *cdv2.ComponentDescriptor,
 	componentResolver ctf.ComponentResolver) error {
 
-	jsonschemaValidator := &jsonschema.Validator{
-		Config: &jsonschema.LoaderConfig{
-			LocalTypes:          bp.Info.LocalTypes,
-			BlueprintFs:         bp.Fs,
-			ComponentDescriptor: cd,
-			ComponentResolver:   componentResolver,
-		},
+	validatorConfig := &jsonschema.ReferenceContext{
+		LocalTypes:          bp.Info.LocalTypes,
+		BlueprintFs:         bp.Fs,
+		ComponentDescriptor: cd,
+		ComponentResolver:   componentResolver,
 	}
 
 	var allErr field.ErrorList
@@ -312,7 +310,7 @@ func ValidateImports(bp *blueprints.Blueprint,
 		}
 		switch importDef.Type {
 		case lsv1alpha1.ImportTypeData:
-			if err := jsonschemaValidator.ValidateGoStruct(importDef.Schema.RawMessage, value); err != nil {
+			if err := jsonschema.ValidateGoStruct(importDef.Schema.RawMessage, value, validatorConfig); err != nil {
 				allErr = append(allErr, field.Invalid(
 					fldPath,
 					value,

@@ -31,12 +31,6 @@ func TestConfig(t *testing.T) {
 
 var _ = Describe("jsonschema", func() {
 
-	var validator *jsonschema.Validator
-
-	BeforeEach(func() {
-		validator = &jsonschema.Validator{Config: &jsonschema.LoaderConfig{}}
-	})
-
 	Context("schema validation", func() {
 		It("should pass a correct schema", func() {
 			schemaBytes := []byte(`{ "type": "string"}`)
@@ -52,31 +46,28 @@ var _ = Describe("jsonschema", func() {
 		schemaBytes := []byte(`{ "type": "string"}`)
 		data := []byte(`"string"`)
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(Succeed())
 	})
 
 	It("should pass a simple number", func() {
 		schemaBytes := []byte(`{ "type": "number"}`)
 		data := []byte("7")
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(Succeed())
 	})
 
 	It("should forbid a number as string", func() {
 		schemaBytes := []byte(`{ "type": "string"}`)
 		data := []byte("7")
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(HaveOccurred())
 	})
 
 	Context("BlueprintReferenceTemplate", func() {
-		var config *jsonschema.LoaderConfig
+		var config *jsonschema.ReferenceContext
 		BeforeEach(func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				BlueprintFs: memoryfs.New(),
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 		It("should pass with a schema from a blueprint file reference", func() {
@@ -86,7 +77,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should fail with a schema from a blueprint file reference", func() {
@@ -96,21 +87,21 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should fail when the configured blueprint file reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a local definition reference", func() {
 			schemaBytes := []byte(`{ "definitions": { "myschema": { "type": "string" } }, "$ref": "#/definitions/myschema"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a blueprint reference within the schema", func() {
@@ -123,7 +114,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile1" }`)
 			data := []byte(`"abc"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should validate with a definition local reference in a blueprint file reference", func() {
@@ -133,21 +124,18 @@ var _ = Describe("jsonschema", func() {
 			pass := []byte(`"abc"`)
 			fail := []byte(`7`)
 
-			Expect(validator.ValidateBytes(schemaBytes, pass)).To(Succeed())
-			Expect(validator.ValidateBytes(schemaBytes, fail)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, pass, config)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, fail, config)).To(HaveOccurred())
 		})
 	})
 
 	Context("LocalReference", func() {
-		var config *jsonschema.LoaderConfig
+		var config *jsonschema.ReferenceContext
 		BeforeEach(func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 
@@ -155,27 +143,24 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "local://mycustom"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a local schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
 					"indirect": {RawMessage: []byte(`{ "$ref": "local://mycustom"}`)},
 				},
 			}
-			validator = &jsonschema.Validator{
-				Config: config,
-			}
 			schemaBytes := []byte(`{ "$ref": "local://indirect"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a complex local schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"resourceRequirements": {RawMessage: []byte(`
 {
@@ -204,9 +189,6 @@ var _ = Describe("jsonschema", func() {
   }
 `)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
 			data := []byte(`
@@ -218,11 +200,11 @@ var _ = Describe("jsonschema", func() {
 }
 `)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a complex local schema and correctly validate a invalid schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"resourceRequirements": {RawMessage: []byte(`
 {
@@ -252,9 +234,6 @@ var _ = Describe("jsonschema", func() {
 `)},
 				},
 			}
-			validator = &jsonschema.Validator{
-				Config: config,
-			}
 			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
 			data := []byte(`
 {
@@ -264,7 +243,7 @@ var _ = Describe("jsonschema", func() {
   }
 }
 `)
-			err := validator.ValidateBytes(schemaBytes, data)
+			err := jsonschema.ValidateBytes(schemaBytes, data, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("limits.cpu"))
 			Expect(err.Error()).To(ContainSubstring("Invalid value: 1: Invalid type. Expected: string, given: integer"))
@@ -274,44 +253,41 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "local://mycustom"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should fail when the configured blueprint file reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "local://fail"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a local definition reference", func() {
 			schemaBytes := []byte(`{ "definitions": { "myschema": { "type": "string" } }, "$ref": "local://mycustom"}}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should validate a definition local reference in a blueprint file reference", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "definitions": { "myschema": { "type": "string" } } }`)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 			schemaBytes := []byte(`{"$ref": "local://mycustom#/definitions/myschema"}`)
 			pass := []byte(`"abc"`)
 			fail := []byte(`7`)
 
-			Expect(validator.ValidateBytes(schemaBytes, pass)).To(Succeed())
-			Expect(validator.ValidateBytes(schemaBytes, fail)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, pass, config)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, fail, config)).To(HaveOccurred())
 		})
 	})
 
 	Context("ComponentDescriptorReference", func() {
 		var (
-			config *jsonschema.LoaderConfig
+			config *jsonschema.ReferenceContext
 			blobFs vfs.FileSystem
 		)
 		BeforeEach(func() {
@@ -342,13 +318,9 @@ var _ = Describe("jsonschema", func() {
 				Access:   &acc,
 			})
 
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				ComponentDescriptor: cd,
 				ComponentResolver:   compRes,
-			}
-
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 
@@ -356,21 +328,21 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/default"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should fail with a schema from a blueprint file reference", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/default"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should fail when the configured blueprint file reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/fail"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a gzip compressed schema from a component descriptor resource", func() {
@@ -397,7 +369,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/comp"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should throw an error if a wrong media type is used", func() {
@@ -416,7 +388,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/unknown"}`)
 			data := []byte(`"valid"`)
 
-			err = validator.ValidateBytes(schemaBytes, data)
+			err = jsonschema.ValidateBytes(schemaBytes, data, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("unknown media type"))
 		})
