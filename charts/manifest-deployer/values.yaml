@@ -20,11 +20,11 @@ deployer:
   namespace: ""
 #  verbosityLevel: 9
 
-# targetSelector:
-# - annotations:
-#   - key:
-#     operator:
-#     value:
+#  targetSelector:
+#  - annotations:
+#    - key:
+#      operator:
+#      value:
 
 replicaCount: 1
 

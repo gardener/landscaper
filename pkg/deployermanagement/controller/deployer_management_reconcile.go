@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/selection"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -51,12 +53,30 @@ func NewDeployerManagement(log logr.Logger, client client.Client, scheme *runtim
 
 // Reconcile reconciles a deployer installation given a deployer registration and a environment.
 func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1alpha1.DeployerRegistration, env *lsv1alpha1.Environment) error {
+	registration = registration.DeepCopy()
+	env = env.DeepCopy()
+
 	inst, err := dm.getInstallation(ctx, registration, env)
 	if err != nil {
 		return err
 	}
 
-	targetSelectorsBytes, err := json.Marshal(env.Spec.TargetSelectors)
+	envTargetSelectors := []lsv1alpha1.TargetSelector{}
+	for _, selector := range env.Spec.TargetSelectors {
+		if registration.Name == "helm" {
+			selector.Annotations = append(
+				selector.Annotations,
+				lsv1alpha1.Requirement{
+					Key:      lsv1alpha1.DeployerOnlyTargetAnnotationName,
+					Operator: selection.DoesNotExist,
+				},
+			)
+		}
+
+		envTargetSelectors = append(envTargetSelectors, selector)
+	}
+
+	targetSelectorsBytes, err := json.Marshal(envTargetSelectors)
 	if err != nil {
 		return fmt.Errorf("unable to marshal target selectors: %w", err)
 	}
@@ -84,10 +104,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		inst.Spec.ImportDataMappings["releaseName"] = lsv1alpha1.NewAnyJSON([]byte(fmt.Sprintf("%q", FQName(registration, env))))
 		inst.Spec.ImportDataMappings["releaseNamespace"] = lsv1alpha1.NewAnyJSON([]byte(fmt.Sprintf("%q", env.Spec.Namespace)))
 		inst.Spec.ImportDataMappings["identity"] = lsv1alpha1.NewAnyJSON([]byte(fmt.Sprintf("%q", FQName(registration, env))))
-
-		if _, ok := inst.Spec.ImportDataMappings["targetSelectors"]; !ok {
-			inst.Spec.ImportDataMappings["targetSelectors"] = lsv1alpha1.NewAnyJSON(targetSelectorsBytes)
-		}
+		inst.Spec.ImportDataMappings["targetSelectors"] = lsv1alpha1.NewAnyJSON(targetSelectorsBytes)
 
 		return nil
 	})

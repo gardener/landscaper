@@ -166,9 +166,7 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = "deployer"
 		inst.Namespace = state.Namespace
-		inst.Annotations = map[string]string{
-			lsv1alpha1.NotUseDefaultDeployerAnnotation: "true",
-		}
+		inst.Annotations = map[string]string{}
 		inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 			Reference: &lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: &repoCtx,

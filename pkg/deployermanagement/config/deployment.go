@@ -12,7 +12,6 @@ import (
 	"path"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -139,28 +138,7 @@ func (o *Options) deployInternalDeployer(ctx context.Context, log logr.Logger, d
 
 	reg := deployerArg.Registration.DeepCopy()
 	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, reg, func() error {
-		if err := apply(reg, deployerArg); err != nil {
-			return err
-		}
-		if deployerName == "helm" {
-			// create a special target for the helm Deployer to not touch the target that is already handled
-			// by the agent integrated helm Deployer.
-			targetSelectorBytes, err := json.Marshal([]lsv1alpha1.TargetSelector{
-				{
-					Annotations: []lsv1alpha1.Requirement{
-						{
-							Key:      lsv1alpha1.DeployerEnvironmentTargetAnnotationName,
-							Operator: selection.DoesNotExist,
-						},
-					},
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("unable to marshal helm target selector: %w", err)
-			}
-			reg.Spec.InstallationTemplate.ImportDataMappings["targetSelectors"] = lsv1alpha1.NewAnyJSON(targetSelectorBytes)
-		}
-		return nil
+		return apply(reg, deployerArg)
 	}); err != nil {
 		return fmt.Errorf("unable to create Deployer registration for %q: %w", deployerName, err)
 	}

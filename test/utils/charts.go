@@ -51,7 +51,7 @@ func InjectTargetSelectorIntoValues(values *json.RawMessage, targetSelector []ls
 	v := make(map[string]interface{})
 	err := json.Unmarshal(*values, &v)
 	Expect(err).ToNot(HaveOccurred())
-	v["targetSelector"] = targetSelector
+	v["deployer"].(map[string]interface{})["targetSelector"] = targetSelector
 	*values, err = json.Marshal(v)
 	Expect(err).ToNot(HaveOccurred())
 }
