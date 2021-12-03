@@ -448,6 +448,14 @@ func (io *imageOverwrite) findGenericImageResource(ctx context.Context, image Im
 
 func resourceMatchesGenericImage(ctx context.Context, image ImageEntry, res cdv2.Resource) (bool, error) {
 	log := logr.FromContextOrDiscard(ctx)
+
+	// this check should become the only check in the future
+	// all subsequent checks are only intermediate fallbacks
+	extraIdentityRepo, ok := res.GetIdentity()[RepositoryExtraIdentity]
+	if ok && extraIdentityRepo == image.Repository {
+		return true, nil
+	}
+
 	var imageName string
 	_, err := getLabel(res.GetLabels(), NameLabel, &imageName)
 	if err != nil {
