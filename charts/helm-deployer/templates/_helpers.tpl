@@ -56,9 +56,9 @@ Create the name of the service account to use
 */}}
 {{- define "deployer.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "deployer.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "deployer.fullname" .) .Values.serviceAccount.name }}-tmp
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- default "default" .Values.serviceAccount.name }}-tmp
 {{- end }}
 {{- end }}
 

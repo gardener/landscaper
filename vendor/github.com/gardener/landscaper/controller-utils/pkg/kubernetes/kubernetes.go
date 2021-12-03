@@ -606,6 +606,23 @@ func SetRequiredNestedFieldsFromObj(currObj, obj *unstructured.Unstructured) err
 				return err
 			}
 		}
+	case "ServiceAccount":
+		secrets, found, err := unstructured.NestedSlice(obj.Object, "secrets")
+		if err != nil {
+			return err
+		}
+
+		if !found || len(secrets) == 0 {
+			secrets, found, err = unstructured.NestedSlice(currObj.Object, "secrets")
+			if err != nil {
+				return err
+			}
+			if found && len(secrets) > 0 {
+				if err := unstructured.SetNestedSlice(obj.Object, secrets, "secrets"); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	resourceVersion, found, err := unstructured.NestedString(currObj.Object, "metadata", "resourceVersion")
