@@ -52,6 +52,14 @@ rules:
       - update
       - delete
   - apiGroups:
+      - ""
+    resources:
+      - "namespaces"
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - "rbac.authorization.k8s.io"
     resources:
       - "clusterroles"
