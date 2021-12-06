@@ -362,8 +362,8 @@ github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWo
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
 github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui720w+kxuqRs0=
-github.com/gardener/component-cli v0.31.0 h1:M46MiOAEnt8BHyz3de9ULuRpoewgrDgKoyn8rEU75rE=
-github.com/gardener/component-cli v0.31.0/go.mod h1:8nPKm/bS2jEeEu5VefDM+SHfa1TsUP/rUC4TV8xBhfE=
+github.com/gardener/component-cli v0.32.0 h1:xknFX0KL+ouhYMYuZoMZ73ogHvG4r4/lyLB5ct3NP1A=
+github.com/gardener/component-cli v0.32.0/go.mod h1:8nPKm/bS2jEeEu5VefDM+SHfa1TsUP/rUC4TV8xBhfE=
 github.com/gardener/component-spec/bindings-go v0.0.41/go.mod h1:kQFMTWowNAp9tOp6aImQa/NoLzfvX29jN5Qgud9rpQU=
 github.com/gardener/component-spec/bindings-go v0.0.52/go.mod h1:kQFMTWowNAp9tOp6aImQa/NoLzfvX29jN5Qgud9rpQU=
 github.com/gardener/component-spec/bindings-go v0.0.53 h1:9M6YOs8FYDSmGJqNqdCFolo3buuQalJSuUy7X8FIXm4=

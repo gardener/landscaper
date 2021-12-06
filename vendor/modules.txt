@@ -69,7 +69,7 @@ github.com/docker/go-units
 github.com/evanphx/json-patch
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
-# github.com/gardener/component-cli v0.31.0
+# github.com/gardener/component-cli v0.32.0
 ## explicit
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
