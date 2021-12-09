@@ -75,8 +75,9 @@ var _ = Describe("Template", func() {
 
 		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, nil)
 		Expect(err).ToNot(HaveOccurred())
-		files, _, _, err := h.Template(ctx)
+		files, crds, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
+		Expect(crds).To(HaveKey("testchart/crds/crontabs.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/secret.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/note.txt"))
 
