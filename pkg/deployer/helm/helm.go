@@ -119,12 +119,12 @@ func New(log logr.Logger,
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]interface{}, error) {
+func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, error) {
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
 	if err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "GetTargetClient", err.Error())
 	}
 
@@ -132,12 +132,12 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 	// todo: do caching of charts
 	ociClient, err := createOCIClient(ctx, h.log, h.lsKubeClient, h.DeployItem, h.Configuration, h.SharedCache)
 	if err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "BuildOCIClient", err.Error())
 	}
 	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, &h.ProviderConfiguration.Chart)
 	if err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "GetHelmChart", err.Error())
 	}
 
@@ -151,22 +151,27 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]inte
 
 	values := make(map[string]interface{})
 	if err := yaml.Unmarshal(h.ProviderConfiguration.Values, &values); err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	files, err := engine.RenderWithClient(ch, values, restConfig)
 	if err != nil {
-		return nil, nil, lserrors.NewWrappedError(err,
+		return nil, nil, nil, lserrors.NewWrappedError(err,
 			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
-	return files, values, nil
+	crds := map[string]string{}
+	for _, crd := range ch.CRDObjects() {
+		crds[crd.Filename] = string(crd.File.Data[:])
+	}
+
+	return files, crds, values, nil
 }
 
 func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {
