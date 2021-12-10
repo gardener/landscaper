@@ -71,7 +71,7 @@ func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, tar
 	}
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 
-	files, values, err := helm.Template(ctx)
+	files, crds, values, err := helm.Template(ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, tar
 			"ConstructExportFromValues", "", err.Error())
 		return err
 	}
-	return helm.ApplyFiles(ctx, files, exports)
+	return helm.ApplyFiles(ctx, files, crds, exports)
 }
 
 func (d *deployer) Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {

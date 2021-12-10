@@ -11,6 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -34,7 +35,7 @@ import (
 )
 
 // ApplyFiles applies the helm templated files to the target cluster.
-func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports map[string]interface{}) error {
+func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, exports map[string]interface{}) error {
 	currOp := "ApplyFile"
 	_, targetClient, targetClientSet, err := h.TargetClient(ctx)
 	if err != nil {
@@ -57,11 +58,23 @@ func (h *Helm) ApplyFiles(ctx context.Context, files map[string]string, exports 
 		return lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
+	crdObjects, err := kutil.ParseFilesToRawExtension(h.log, crds)
+	if err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "DecodeHelmTemplatedObjects", err.Error())
+	}
 
 	// create manifests from objects for the applier
-	manifests := make([]managedresource.Manifest, len(objects))
-	for i, obj := range objects {
+	crdCount := len(crdObjects)
+	manifests := make([]managedresource.Manifest, len(objects)+crdCount)
+	for i, obj := range crdObjects {
 		manifests[i] = managedresource.Manifest{
+			Policy:   managedresource.ManagePolicy,
+			Manifest: obj,
+		}
+	}
+	for i, obj := range objects {
+		manifests[i+crdCount] = managedresource.Manifest{
 			Policy:   managedresource.ManagePolicy,
 			Manifest: obj,
 		}
@@ -211,7 +224,10 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 		ref := h.ProviderStatus.ManagedResources[i]
 		obj := kutil.ObjectFromCoreObjectReference(&ref.Resource)
 		if err := targetClient.Delete(ctx, obj); err != nil {
-			if apierrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) || apimeta.IsNoMatchError(err) {
+				// This handles two cases:
+				// 1. the resource is already deleted
+				// 2. the resource is a custom resource and its CRD is already deleted (and the resourse itself thus too)
 				continue
 			}
 			return err

@@ -14,10 +14,12 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	apischema "k8s.io/apimachinery/pkg/runtime/schema"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -331,9 +333,18 @@ func (a *ManifestApplier) getApiResource(manifest *Manifest) (metav1.APIResource
 	return metav1.APIResource{}, fmt.Errorf("unable to get apiresource for %s", gvk)
 }
 
+// crdIdentifier generates an identifier string from a GroupVersionKind object
+// The version is ignored in this case, because the information whether the resource is namespaced or not
+// does not depend on it.
+func crdIdentifier(gvk apischema.GroupVersionKind) string {
+	return fmt.Sprintf("%s/%s", gvk.Group, gvk.Kind)
+}
+
 // prepareManifests sorts all manifests.
 func (a *ManifestApplier) prepareManifests() error {
 	a.manifestExecutions = [3][]*Manifest{}
+	crdNamespacedInfo := map[string]bool{}
+	todo := []*Manifest{}
 	for _, obj := range a.manifests {
 		typeMeta := metav1.TypeMeta{}
 		if err := json.Unmarshal(obj.Manifest.Raw, &typeMeta); err != nil {
@@ -349,16 +360,40 @@ func (a *ManifestApplier) prepareManifests() error {
 		// add to specific execution group
 		if kind == "CustomResourceDefinition" {
 			a.manifestExecutions[ExecutionGroupCRD] = append(a.manifestExecutions[ExecutionGroupCRD], manifest)
+			crd := &extv1.CustomResourceDefinition{}
+			if err := json.Unmarshal(obj.Manifest.Raw, crd); err != nil {
+				return fmt.Errorf("unable to parse CRD: %w", err)
+			}
+			id := crdIdentifier(apischema.GroupVersionKind{
+				Group: crd.Spec.Group,
+				Kind:  crd.Spec.Names.Kind,
+			})
+			crdNamespacedInfo[id] = (crd.Spec.Scope == extv1.NamespaceScoped)
 		} else {
-			apiresource, err := a.getApiResource(manifest)
-			if err != nil {
+			// save manifests for later
+			// whether a resource is namespaced or not can only be determined after all CRDs have been evaluated
+			todo = append(todo, manifest)
+		}
+	}
+	for _, manifest := range todo {
+		// check whether the resource is
+		namespaced := false
+		apiresource, err := a.getApiResource(manifest)
+		if err != nil {
+			// check if the resource matches a not-yet-applied CRD
+			ok := false
+			namespaced, ok = crdNamespacedInfo[crdIdentifier(manifest.TypeMeta.GroupVersionKind())]
+			if !ok {
+				// resource not found
 				return err
 			}
-			if apiresource.Namespaced {
-				a.manifestExecutions[ExecutionGroupNamespaced] = append(a.manifestExecutions[ExecutionGroupNamespaced], manifest)
-			} else {
-				a.manifestExecutions[ExecutionGroupClusterwide] = append(a.manifestExecutions[ExecutionGroupClusterwide], manifest)
-			}
+		} else {
+			namespaced = apiresource.Namespaced
+		}
+		if namespaced {
+			a.manifestExecutions[ExecutionGroupNamespaced] = append(a.manifestExecutions[ExecutionGroupNamespaced], manifest)
+		} else {
+			a.manifestExecutions[ExecutionGroupClusterwide] = append(a.manifestExecutions[ExecutionGroupClusterwide], manifest)
 		}
 	}
 
