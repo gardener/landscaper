@@ -15,7 +15,6 @@ What does a 'landscape' consist of? In this context it refers not only to applic
 While tools like Terraform, Helm or native Kubernetes resources work well in their specific problem space, it has been a manual task to connect them so far. Landscaper solves this specific problem and offers a fully-automated installation flow. To do so, it translates blueprints of components into actionable items and employs well-known tools like Helm or Terraform to deploy them. In turn the produced output can be used as input and trigger for a subsequent step - regardless of the tools used underneath. Since implemented as a set of Kubernetes operators, Landscaper uses the concept of reconciliation to enforce a desired state, which also allows for updates to be rolled out smoothly.
 <!-- end -->
 
-**:warning: Landscaper is currently in an alpha state, expect the api to change at any time.**
 
 **Work in progress... partial and unfinished documentation ahead!**
 
