@@ -46,7 +46,7 @@ helm repo update
 helm pull ingress-nginx/ingress-nginx --version 3.29.0 --untar --destination /tmp
 
 # upload the helm chart to an OCI registry
-export OCI_REGISTRY="eu.gcr.io" # <-- replace this with the URL of your own OCI registry
+export OCI_REGISTRY="oci://eu.gcr.io" # <-- replace this with the URL of your own OCI registry, DO NOT FORGET the OCI protocol prefix oci://
 export CHART_REF_PREFIX="$OCI_REGISTRY/chart-prefix/" # e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login -u myuser $OCI_REGISTRY
