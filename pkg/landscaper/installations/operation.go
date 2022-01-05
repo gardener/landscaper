@@ -113,16 +113,19 @@ func (o *Operation) InstallationContextName() string {
 	return o.context.Name
 }
 
-// JSONSchemaValidator returns a jsonschema validator for the current installation and blueprint.
-func (o *Operation) JSONSchemaValidator() *jsonschema.Validator {
-	return &jsonschema.Validator{
-		Config: &jsonschema.LoaderConfig{
-			LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
-			BlueprintFs:         o.Inst.Blueprint.Fs,
-			ComponentDescriptor: o.ComponentDescriptor,
-			ComponentResolver:   o.ComponentsRegistry(),
-		},
+// JSONSchemaValidator returns a jsonschema validator.
+func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, error) {
+	v := jsonschema.NewValidator(&jsonschema.ReferenceContext{
+		LocalTypes:          o.Inst.Blueprint.Info.LocalTypes,
+		BlueprintFs:         o.Inst.Blueprint.Fs,
+		ComponentDescriptor: o.ComponentDescriptor,
+		ComponentResolver:   o.ComponentsRegistry(),
+	})
+	err := v.CompileSchema(schema)
+	if err != nil {
+		return nil, fmt.Errorf("error compiling jsonschema: %w", err)
 	}
+	return v, nil
 }
 
 // SetOverwriter sets the component overwriter.

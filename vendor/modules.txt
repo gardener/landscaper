@@ -69,7 +69,7 @@ github.com/docker/go-units
 github.com/evanphx/json-patch
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
-# github.com/gardener/component-cli v0.29.0
+# github.com/gardener/component-cli v0.32.0
 ## explicit
 github.com/gardener/component-cli/ociclient
 github.com/gardener/component-cli/ociclient/cache
@@ -77,6 +77,7 @@ github.com/gardener/component-cli/ociclient/credentials
 github.com/gardener/component-cli/ociclient/metrics
 github.com/gardener/component-cli/ociclient/mock
 github.com/gardener/component-cli/ociclient/oci
+github.com/gardener/component-cli/ociclient/test/envtest
 github.com/gardener/component-cli/pkg/commands/componentarchive/input
 github.com/gardener/component-cli/pkg/commands/constants
 github.com/gardener/component-cli/pkg/logcontext
@@ -92,7 +93,7 @@ github.com/gardener/component-spec/bindings-go/codec
 github.com/gardener/component-spec/bindings-go/ctf
 github.com/gardener/component-spec/bindings-go/oci
 github.com/gardener/component-spec/bindings-go/utils/selector
-# github.com/gardener/image-vector v0.5.0
+# github.com/gardener/image-vector v0.6.0
 ## explicit
 github.com/gardener/image-vector/pkg
 # github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000 => ./apis
@@ -356,7 +357,6 @@ github.com/spf13/pflag
 # github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f
 github.com/xeipuuv/gojsonpointer
 # github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
-## explicit
 github.com/xeipuuv/gojsonreference
 # github.com/xeipuuv/gojsonschema v1.2.0
 ## explicit

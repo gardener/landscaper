@@ -5,15 +5,20 @@
 package utils
 
 import (
+	"archive/tar"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/spf13/cobra"
@@ -167,4 +172,51 @@ func BytesString(bytes uint64, accuracy int) string {
 	)
 
 	return fmt.Sprintf("%s %s", stringValue, unit)
+}
+
+// WriteFileToTARArchive writes a new file with name=filename and content=contentReader to archiveWriter
+func WriteFileToTARArchive(filename string, contentReader io.Reader, archiveWriter *tar.Writer) error {
+	if filename == "" {
+		return errors.New("filename must not be empty")
+	}
+
+	if contentReader == nil {
+		return errors.New("contentReader must not be nil")
+	}
+
+	if archiveWriter == nil {
+		return errors.New("archiveWriter must not be nil")
+	}
+
+	tempfile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return fmt.Errorf("unable to create tempfile: %w", err)
+	}
+	defer tempfile.Close()
+
+	fsize, err := io.Copy(tempfile, contentReader)
+	if err != nil {
+		return fmt.Errorf("unable to copy content to tempfile: %w", err)
+	}
+
+	if _, err := tempfile.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("unable to seek to beginning of tempfile: %w", err)
+	}
+
+	header := tar.Header{
+		Name:    filename,
+		Size:    int64(fsize),
+		Mode:    0600,
+		ModTime: time.Now(),
+	}
+
+	if err := archiveWriter.WriteHeader(&header); err != nil {
+		return fmt.Errorf("unable to write tar header: %w", err)
+	}
+
+	if _, err := io.Copy(archiveWriter, tempfile); err != nil {
+		return fmt.Errorf("unable to write file to tar archive: %w", err)
+	}
+
+	return nil
 }

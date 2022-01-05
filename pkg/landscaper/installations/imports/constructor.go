@@ -100,7 +100,11 @@ func (c *Constructor) constructImports(
 				}
 				return nil, installations.NewImportNotFoundErrorf(nil, "blueprint defines import %q of type %s, which is not satisfied", def.Name, lsv1alpha1.ImportTypeData)
 			}
-			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, imports[def.Name]); err != nil {
+			validator, err := c.JSONSchemaValidator(def.Schema.RawMessage)
+			if err != nil {
+				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: validator creation failed", defPath.String())
+			}
+			if err := validator.ValidateGoStruct(imports[def.Name]); err != nil {
 				return imports, installations.NewErrorf(installations.SchemaValidationFailed, err, "%s: imported datatype does not have the expected schema", defPath.String())
 			}
 			if len(def.ConditionalImports) > 0 {

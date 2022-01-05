@@ -7,11 +7,16 @@ package jsonschema_test
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -22,7 +27,18 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
+
+	"github.com/gardener/component-cli/ociclient"
+	"github.com/gardener/component-cli/ociclient/cache"
+	testcred "github.com/gardener/component-cli/ociclient/credentials"
+	testreg "github.com/gardener/component-cli/ociclient/test/envtest"
+	cdoci "github.com/gardener/component-spec/bindings-go/oci"
+
+	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 )
+
+const jsonschemaResourceType = "landscaper.gardener.cloud/jsonschema"
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -30,12 +46,6 @@ func TestConfig(t *testing.T) {
 }
 
 var _ = Describe("jsonschema", func() {
-
-	var validator *jsonschema.Validator
-
-	BeforeEach(func() {
-		validator = &jsonschema.Validator{Config: &jsonschema.LoaderConfig{}}
-	})
 
 	Context("schema validation", func() {
 		It("should pass a correct schema", func() {
@@ -52,31 +62,28 @@ var _ = Describe("jsonschema", func() {
 		schemaBytes := []byte(`{ "type": "string"}`)
 		data := []byte(`"string"`)
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(Succeed())
 	})
 
 	It("should pass a simple number", func() {
 		schemaBytes := []byte(`{ "type": "number"}`)
 		data := []byte("7")
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(Succeed())
 	})
 
 	It("should forbid a number as string", func() {
 		schemaBytes := []byte(`{ "type": "string"}`)
 		data := []byte("7")
 
-		Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+		Expect(jsonschema.ValidateBytes(schemaBytes, data, nil)).To(HaveOccurred())
 	})
 
 	Context("BlueprintReferenceTemplate", func() {
-		var config *jsonschema.LoaderConfig
+		var config *jsonschema.ReferenceContext
 		BeforeEach(func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				BlueprintFs: memoryfs.New(),
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 		It("should pass with a schema from a blueprint file reference", func() {
@@ -86,7 +93,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should fail with a schema from a blueprint file reference", func() {
@@ -96,21 +103,21 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should fail when the configured blueprint file reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a local definition reference", func() {
 			schemaBytes := []byte(`{ "definitions": { "myschema": { "type": "string" } }, "$ref": "#/definitions/myschema"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a blueprint reference within the schema", func() {
@@ -123,7 +130,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "blueprint://myfile1" }`)
 			data := []byte(`"abc"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should validate with a definition local reference in a blueprint file reference", func() {
@@ -133,21 +140,18 @@ var _ = Describe("jsonschema", func() {
 			pass := []byte(`"abc"`)
 			fail := []byte(`7`)
 
-			Expect(validator.ValidateBytes(schemaBytes, pass)).To(Succeed())
-			Expect(validator.ValidateBytes(schemaBytes, fail)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, pass, config)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, fail, config)).To(HaveOccurred())
 		})
 	})
 
 	Context("LocalReference", func() {
-		var config *jsonschema.LoaderConfig
+		var config *jsonschema.ReferenceContext
 		BeforeEach(func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 
@@ -155,27 +159,24 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "local://mycustom"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a local schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "type": "string"}`)},
 					"indirect": {RawMessage: []byte(`{ "$ref": "local://mycustom"}`)},
 				},
 			}
-			validator = &jsonschema.Validator{
-				Config: config,
-			}
 			schemaBytes := []byte(`{ "$ref": "local://indirect"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a complex local schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"resourceRequirements": {RawMessage: []byte(`
 {
@@ -204,9 +205,6 @@ var _ = Describe("jsonschema", func() {
   }
 `)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
 			data := []byte(`
@@ -218,11 +216,11 @@ var _ = Describe("jsonschema", func() {
 }
 `)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should resolve a local schema in a complex local schema and correctly validate a invalid schema", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"resourceRequirements": {RawMessage: []byte(`
 {
@@ -252,9 +250,6 @@ var _ = Describe("jsonschema", func() {
 `)},
 				},
 			}
-			validator = &jsonschema.Validator{
-				Config: config,
-			}
 			schemaBytes := []byte(`{ "$ref": "local://resourceRequirements"}`)
 			data := []byte(`
 {
@@ -264,7 +259,7 @@ var _ = Describe("jsonschema", func() {
   }
 }
 `)
-			err := validator.ValidateBytes(schemaBytes, data)
+			err := jsonschema.ValidateBytes(schemaBytes, data, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("limits.cpu"))
 			Expect(err.Error()).To(ContainSubstring("Invalid value: 1: Invalid type. Expected: string, given: integer"))
@@ -274,44 +269,41 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "local://mycustom"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should fail when the configured blueprint file reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "local://fail"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a local definition reference", func() {
 			schemaBytes := []byte(`{ "definitions": { "myschema": { "type": "string" } }, "$ref": "local://mycustom"}}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should validate a definition local reference in a blueprint file reference", func() {
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				LocalTypes: map[string]lsv1alpha1.JSONSchemaDefinition{
 					"mycustom": {RawMessage: []byte(`{ "definitions": { "myschema": { "type": "string" } } }`)},
 				},
-			}
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 			schemaBytes := []byte(`{"$ref": "local://mycustom#/definitions/myschema"}`)
 			pass := []byte(`"abc"`)
 			fail := []byte(`7`)
 
-			Expect(validator.ValidateBytes(schemaBytes, pass)).To(Succeed())
-			Expect(validator.ValidateBytes(schemaBytes, fail)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, pass, config)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, fail, config)).To(HaveOccurred())
 		})
 	})
 
 	Context("ComponentDescriptorReference", func() {
 		var (
-			config *jsonschema.LoaderConfig
+			config *jsonschema.ReferenceContext
 			blobFs vfs.FileSystem
 		)
 		BeforeEach(func() {
@@ -342,13 +334,9 @@ var _ = Describe("jsonschema", func() {
 				Access:   &acc,
 			})
 
-			config = &jsonschema.LoaderConfig{
+			config = &jsonschema.ReferenceContext{
 				ComponentDescriptor: cd,
 				ComponentResolver:   compRes,
-			}
-
-			validator = &jsonschema.Validator{
-				Config: config,
 			}
 		})
 
@@ -356,21 +344,21 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/default"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
-		It("should fail with a schema from a blueprint file reference", func() {
+		It("should fail with a schema from a component descriptor reference", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/default"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
-		It("should fail when the configured blueprint file reference cannot be found", func() {
+		It("should fail when the configured component descriptor reference cannot be found", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/fail"}`)
 			data := []byte("7")
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(HaveOccurred())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(HaveOccurred())
 		})
 
 		It("should pass with a gzip compressed schema from a component descriptor resource", func() {
@@ -397,7 +385,7 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/comp"}`)
 			data := []byte(`"valid"`)
 
-			Expect(validator.ValidateBytes(schemaBytes, data)).To(Succeed())
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
 		})
 
 		It("should throw an error if a wrong media type is used", func() {
@@ -416,11 +404,308 @@ var _ = Describe("jsonschema", func() {
 			schemaBytes := []byte(`{ "$ref": "cd://resources/unknown"}`)
 			data := []byte(`"valid"`)
 
-			err = validator.ValidateBytes(schemaBytes, data)
+			err = jsonschema.ValidateBytes(schemaBytes, data, config)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("unknown media type"))
 		})
 
 	})
 
+	Context("ReferenceResolver", func() {
+
+		It("should not alter references with unknown schemes", func() {
+			schema := []byte(`
+				{
+					"type": "object",
+					"properties": {
+						"foo": {
+							"$ref": "unknown://a/b/c"
+						}
+					}
+				}
+			`)
+			rr := jsonschema.NewReferenceResolver(nil)
+			resolved, err := rr.Resolve(schema)
+			testutils.ExpectNoError(err)
+			var orig interface{}
+			testutils.ExpectNoError(json.Unmarshal(schema, &orig))
+			Expect(resolved).To(BeEquivalentTo(orig))
+		})
+	})
+
+	Context("WithRealRegistry", func() {
+		// tests which require a real (local) registry
+		var (
+			ctx       context.Context
+			testenv   *testreg.Environment
+			ociCache  cache.Cache
+			ociClient ociclient.Client
+		)
+
+		BeforeEach(func() {
+			ctx = context.Background()
+
+			// create test registry
+			testenv = testreg.New(testreg.Options{
+				RegistryBinaryPath: filepath.Join("../../../", "tmp", "test", "registry", "registry"),
+				Stdout:             GinkgoWriter,
+				Stderr:             GinkgoWriter,
+			})
+			testutils.ExpectNoError(testenv.Start(context.Background()))
+			testutils.ExpectNoError(testenv.WaitForRegistryToBeHealthy())
+
+			keyring := testcred.New()
+			testutils.ExpectNoError(keyring.AddAuthConfig(testenv.Addr, testcred.AuthConfig{
+				Username: testenv.BasicAuth.Username,
+				Password: testenv.BasicAuth.Password,
+			}))
+
+			var err error
+			ociCache, err = cache.NewCache(logr.Discard())
+			testutils.ExpectNoError(err)
+			ociClient, err = ociclient.NewClient(logr.Discard(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
+			testutils.ExpectNoError(err)
+		}, 60)
+
+		AfterEach(func() {
+			testutils.ExpectNoError(testenv.Close())
+			ctx.Done()
+		}, 60)
+
+		It("should correctly resolve nested references across components", func() {
+			// create components
+			blobPath := "blobs"
+			baseConfig := &componentConfig{
+				ComponentNameInRegistry:  "example.com/base",
+				ComponentNameInReference: "base",
+				Version:                  "v0.0.1",
+				ReferencedResourceName:   "jsonschemaref",
+			}
+			firstRefConfig := &componentConfig{
+				ComponentNameInRegistry:  "example.com/firstref",
+				ComponentNameInReference: "firstref",
+				Version:                  "v0.0.2",
+				ReferencedResourceName:   "firstjsonschemarefplain",
+			}
+			secondRefConfig := &componentConfig{
+				ComponentNameInRegistry:  "example.com/secondref",
+				ComponentNameInReference: "secondref",
+				Version:                  "v0.0.3",
+				ReferencedResourceName:   "secondjsonschemaref",
+			}
+			/*
+				Short explanation of the setup:
+				There are three components: base, firstRef, secondRef
+				base contains two jsonschemas, a 'final' one and a 'referencing' one, the latter of which references the former one.
+				firstRef contains two jsonschemas, which both reference jsonschemas from base
+					- a simple one, which just references the (referencing) jsonschema from base
+					- a complex one, which is a json object that within references both schemas from base
+				secondRef contains a jsonschema which references the 'simple' jsonschema stored in firstRef
+
+				So, in order to resolve the jsonschema from secondRef, one has to follow the references from secondRef to firstRef,
+				then from firstRef to base and then from base[referencing] to base[final].
+			*/
+
+			// CREATE BASE COMPONENT
+			blobfs := memoryfs.New()
+			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			baseResourceName := "jsonschema"
+
+			cdRes := []cdv2.Resource{
+				createBlobResource(blobfs, baseResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", `
+					{
+						"type": "string"
+					}
+				`),
+				createBlobResource(blobfs, baseConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schemaref.json", fmt.Sprintf(`
+					{
+						"$ref": "cd://resources/%s"
+					}
+				`, baseResourceName)),
+			}
+
+			buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, baseConfig.ComponentNameInRegistry, baseConfig.Version, nil, cdRes, blobfs, ociClient, ociCache)
+
+			// CREATE FIRST REFERENCING COMPONENT
+			blobfs = memoryfs.New()
+			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+			refString := fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseConfig.ReferencedResourceName)
+			complexSchemaResourceName := "firstjsonschemarefcomplex"
+
+			cdRes = []cdv2.Resource{
+				createBlobResource(blobfs, firstRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "plain.json", fmt.Sprintf(`
+					{
+						"$ref": "%s"
+					}
+				`, refString)),
+				createBlobResource(blobfs, complexSchemaResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "complex.json", fmt.Sprintf(`
+					{
+						"type": "object",
+						"properties": {
+							"foo": {
+								"$ref": "%s"
+							},
+							"bar": {
+								"type": "array",
+								"items": {
+									"$ref": "%s"
+								}
+							},
+							"baz": {
+								"type": "number"
+							}
+						}
+					}
+				`, refString, fmt.Sprintf("cd://componentReferences/%s/resources/%s", baseConfig.ComponentNameInReference, baseResourceName))),
+			}
+
+			cdRef := []cdv2.ComponentReference{
+				{
+					Name:          baseConfig.ComponentNameInReference,
+					ComponentName: baseConfig.ComponentNameInRegistry,
+					Version:       baseConfig.Version,
+				},
+			}
+
+			buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, firstRefConfig.ComponentNameInRegistry, firstRefConfig.Version, cdRef, cdRes, blobfs, ociClient, ociCache)
+
+			// CREATE SECOND REFERENCING COMPONENT
+			blobfs = memoryfs.New()
+			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+
+			cdRes = []cdv2.Resource{
+				createBlobResource(blobfs, secondRefConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema2.json", fmt.Sprintf(`
+					{
+						"$ref": "cd://componentReferences/%s/resources/%s"
+					}
+				`, firstRefConfig.ComponentNameInReference, firstRefConfig.ReferencedResourceName)),
+			}
+
+			cdRef = []cdv2.ComponentReference{
+				{
+					Name:          firstRefConfig.ComponentNameInReference,
+					ComponentName: firstRefConfig.ComponentNameInRegistry,
+					Version:       firstRefConfig.Version,
+				},
+			}
+
+			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, secondRefConfig.ComponentNameInRegistry, secondRefConfig.Version, cdRef, cdRes, blobfs, ociClient, ociCache)
+
+			val := jsonschema.NewValidator(&jsonschema.ReferenceContext{
+				ComponentDescriptor: cd,
+				ComponentResolver:   cdoci.NewResolver(ociClient),
+			})
+
+			// this references the jsonschema resource in the secondRef component
+			// it should resolve to {"type": "string"}
+			testutils.ExpectNoError(val.CompileSchema([]byte(fmt.Sprintf(`
+				{
+					"$ref": "cd://resources/%s"
+				}
+			`, secondRefConfig.ReferencedResourceName))))
+
+			pass := []byte(`"abc"`)
+			fail := []byte("7")
+
+			testutils.ExpectNoError(val.ValidateBytes(pass))
+			Expect(val.ValidateBytes(fail)).NotTo(Succeed())
+
+			// verify correct resolution of references nested in json structures
+			// this references the 'complex' jsonschema resource from the firstRef component
+			testutils.ExpectNoError(val.CompileSchema([]byte(fmt.Sprintf(`
+				{
+					"$ref": "cd://componentReferences/%s/resources/%s"
+				}
+			`, firstRefConfig.ComponentNameInReference, complexSchemaResourceName))))
+
+			pass = []byte(`
+				{
+					"foo": "abc",
+					"bar": [
+						"def",
+						"hij"
+					],
+					"baz": 7
+				}
+			`)
+			testutils.ExpectNoError(val.ValidateBytes(pass))
+			Expect(val.ValidateBytes([]byte(`
+				{
+					"foo": "abc",
+					"bar": [
+						"def",
+						7
+					],
+					"baz": 7
+				}
+			`))).NotTo(Succeed())
+		})
+
+	})
+
 })
+
+// a small helper struct to better organize component references
+type componentConfig struct {
+	// how this component is called in the registry
+	ComponentNameInRegistry string
+	// how this component is called in references
+	ComponentNameInReference string
+	// version of this component
+	Version string
+	// how the resource which is referenced from outside is named
+	ReferencedResourceName string
+}
+
+func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, host, name, version string, cdRefs []cdv2.ComponentReference, cdRes []cdv2.Resource, fs vfs.FileSystem, ociClient ociclient.Client, ociCache cache.Cache) *cdv2.ComponentDescriptor {
+	// define component descriptor
+	cd := &cdv2.ComponentDescriptor{}
+
+	cd.Name = name
+	cd.Version = version
+	cd.Provider = cdv2.InternalProvider
+	cd.ComponentReferences = cdRefs
+	cd.Resources = cdRes
+	repoCtx := cdv2.OCIRegistryRepository{
+		ObjectType: cdv2.ObjectType{
+			Type: cdv2.OCIRegistryType,
+		},
+		BaseURL:              fmt.Sprintf("%s/components/", host),
+		ComponentNameMapping: cdv2.OCIRegistryURLPathMapping,
+	}
+	testutils.ExpectNoError(cdv2.InjectRepositoryContext(cd, &repoCtx))
+	testutils.ExpectNoError(fs.MkdirAll("blobs", os.ModePerm))
+
+	testutils.ExpectNoError(cdv2.DefaultComponent(cd))
+
+	ca := ctf.NewComponentArchive(cd, fs)
+	manifest, err := cdoci.NewManifestBuilder(ociCache, ca).Build(ctx)
+	testutils.ExpectNoError(err)
+
+	ref, err := cdoci.OCIRef(repoCtx, cd.Name, cd.Version)
+	testutils.ExpectNoError(err)
+	testutils.ExpectNoError(ociClient.PushManifest(ctx, ref, manifest))
+	return cd
+}
+
+func buildLocalFilesystemResource(name, ttype, mediaType, path string) cdv2.Resource {
+	res := cdv2.Resource{}
+	res.Name = name
+	res.Type = ttype
+	res.Relation = cdv2.LocalRelation
+
+	localFsAccess := cdv2.NewLocalFilesystemBlobAccess(path, mediaType)
+	uAcc, err := cdv2.NewUnstructured(localFsAccess)
+	testutils.ExpectNoError(err)
+	res.Access = &uAcc
+	return res
+}
+
+func createBlobResource(fs vfs.FileSystem, resourceName, resourceType, mediaType, blobPath, fileName, content string) cdv2.Resource {
+	file, err := fs.Create(filepath.Join(blobPath, fileName))
+	testutils.ExpectNoError(err)
+	_, err = file.WriteString(content)
+	utils.ExpectNoError(err)
+	testutils.ExpectNoError(file.Close())
+	return buildLocalFilesystemResource(resourceName, resourceType, mediaType, fileName)
+}

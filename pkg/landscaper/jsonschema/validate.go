@@ -5,55 +5,81 @@
 package jsonschema
 
 import (
+	"errors"
+
 	"github.com/xeipuuv/gojsonschema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type Validator struct {
-	Config *LoaderConfig
+	Context *ReferenceContext
+	Schema  *gojsonschema.Schema
+}
+
+// NewValidator returns a new Validator with the given reference context.
+func NewValidator(context *ReferenceContext) *Validator {
+	return &Validator{
+		Context: context,
+	}
 }
 
 // ValidateSchema validates a jsonschema schema definition.
 func ValidateSchema(schemaBytes []byte) error {
 	_, err := gojsonschema.NewSchemaLoader().Compile(gojsonschema.NewBytesLoader(schemaBytes))
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // ValidateSchemaWithLoader validates a jsonschema schema definition by using the given loader.
 func ValidateSchemaWithLoader(loader gojsonschema.JSONLoader) error {
 	_, err := gojsonschema.NewSchemaLoader().Compile(loader)
+	return err
+}
+
+func ValidateGoStruct(schemaBytes []byte, data interface{}, context *ReferenceContext) error {
+	return validate(schemaBytes, gojsonschema.NewGoLoader(data), context)
+}
+
+func ValidateBytes(schemaBytes []byte, data []byte, context *ReferenceContext) error {
+	return validate(schemaBytes, gojsonschema.NewBytesLoader(data), context)
+}
+
+func validate(schemaBytes []byte, documentLoader gojsonschema.JSONLoader, context *ReferenceContext) error {
+	v := NewValidator(context)
+	err := v.CompileSchema(schemaBytes)
 	if err != nil {
 		return err
 	}
+	return v.validate(documentLoader)
+}
+
+// CompileSchema compiles the given schema and sets it as schema for the validator
+func (v *Validator) CompileSchema(schemaBytes []byte) error {
+	ref := NewReferenceResolver(v.Context)
+	resolved, err := ref.Resolve(schemaBytes)
+	if err != nil {
+		return err
+	}
+	schema, err := gojsonschema.NewSchemaLoader().Compile(gojsonschema.NewGoLoader(resolved))
+	if err != nil {
+		return err
+	}
+	v.Schema = schema
 	return nil
 }
 
-func (v *Validator) ValidateGoStruct(schemaBytes []byte, data interface{}) error {
-	return v.validate(schemaBytes, gojsonschema.NewGoLoader(data))
+func (v *Validator) ValidateGoStruct(data interface{}) error {
+	return v.validate(gojsonschema.NewGoLoader(data))
 }
 
-func (v *Validator) ValidateBytes(schemaBytes []byte, data []byte) error {
-	return v.validate(schemaBytes, gojsonschema.NewBytesLoader(data))
+func (v *Validator) ValidateBytes(data []byte) error {
+	return v.validate(gojsonschema.NewBytesLoader(data))
 }
 
-func (v *Validator) validate(schemaBytes []byte, documentLoader gojsonschema.JSONLoader) error {
-	schemaLoader := gojsonschema.NewBytesLoader(schemaBytes)
-
-	// Wrap default loader if config is defined
-	if v.Config != nil {
-		schemaLoader = NewWrappedLoader(*v.Config, schemaLoader)
+func (v *Validator) validate(documentLoader gojsonschema.JSONLoader) error {
+	if v.Schema == nil {
+		return errors.New("internal error: schema has not been compiled")
 	}
-
-	sl := gojsonschema.NewSchemaLoader()
-	schema, err := sl.Compile(schemaLoader)
-	if err != nil {
-		return err
-	}
-
-	res, err := schema.Validate(documentLoader)
+	res, err := v.Schema.Validate(documentLoader)
 	if err != nil {
 		return err
 	}

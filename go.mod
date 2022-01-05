@@ -10,9 +10,9 @@ require (
 	github.com/containerd/containerd v1.5.8
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/docker/cli v20.10.7+incompatible
-	github.com/gardener/component-cli v0.29.0
+	github.com/gardener/component-cli v0.32.0
 	github.com/gardener/component-spec/bindings-go v0.0.53
-	github.com/gardener/image-vector v0.5.0
+	github.com/gardener/image-vector v0.6.0
 	github.com/gardener/landscaper/apis v0.0.0-00010101000000-000000000000
 	github.com/gardener/landscaper/controller-utils v0.0.0-00010101000000-000000000000
 	github.com/go-logr/logr v0.4.0
@@ -32,7 +32,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616

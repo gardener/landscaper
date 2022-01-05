@@ -92,7 +92,11 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 
 		switch def.Type {
 		case lsv1alpha1.ExportTypeData:
-			if err := c.JSONSchemaValidator().ValidateGoStruct(def.Schema.RawMessage, data); err != nil {
+			validator, err := c.JSONSchemaValidator(def.Schema.RawMessage)
+			if err != nil {
+				return nil, nil, fmt.Errorf("%s: validator creation failed: %s", fldPath.String(), err.Error())
+			}
+			if err := validator.ValidateGoStruct(data); err != nil {
 				return nil, nil, fmt.Errorf("%s: exported data does not satisfy the configured schema: %s", fldPath.String(), err.Error())
 			}
 		case lsv1alpha1.ExportTypeTarget:

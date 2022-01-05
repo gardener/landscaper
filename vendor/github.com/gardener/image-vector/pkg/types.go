@@ -41,7 +41,8 @@ var (
 	RuntimeVersionLabel   = Label("runtime-version")
 	ImagesLabel           = Label("images")
 
-	TagExtraIdentity = ExtraIdentityKey("tag")
+	TagExtraIdentity        = ExtraIdentityKey("tag")
+	RepositoryExtraIdentity = ExtraIdentityKey("repository")
 )
 
 // GardenerCIOriginalRefLabel describes the lable of the gardener ci that is used to identify the original ref of a resource.
