@@ -40,17 +40,17 @@ type ReferenceContext struct {
 	ComponentResolver ctf.ComponentResolver
 }
 
-type referenceResolver struct {
+type ReferenceResolver struct {
 	*ReferenceContext
 }
 
-func NewReferenceResolver(refCtx *ReferenceContext) *referenceResolver {
-	return &referenceResolver{refCtx}
+func NewReferenceResolver(refCtx *ReferenceContext) *ReferenceResolver {
+	return &ReferenceResolver{refCtx}
 }
 
 // Resolve walks through the given json schema and recursively resolves all references which use one of
 // the "local", "blueprint", or "cd" schemes.
-func (rr *referenceResolver) Resolve(schemaBytes []byte) (interface{}, error) {
+func (rr *ReferenceResolver) Resolve(schemaBytes []byte) (interface{}, error) {
 	data, err := decodeJSON(schemaBytes)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (rr *referenceResolver) Resolve(schemaBytes []byte) (interface{}, error) {
 	return rr.resolve(data, field.NewPath(""))
 }
 
-func (rr *referenceResolver) resolve(data interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolve(data interface{}, currentPath *field.Path) (interface{}, error) {
 	switch typedData := data.(type) {
 	case map[string]interface{}:
 		return rr.resolveMap(typedData, currentPath)
@@ -69,7 +69,7 @@ func (rr *referenceResolver) resolve(data interface{}, currentPath *field.Path) 
 }
 
 // resolveMap is a helper function which can recursively resolve a map
-func (rr *referenceResolver) resolveMap(data map[string]interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveMap(data map[string]interface{}, currentPath *field.Path) (interface{}, error) {
 	isRef, uri, err := checkForReference(data, currentPath)
 	if err != nil {
 		return err, nil
@@ -119,7 +119,7 @@ func checkForReference(data map[string]interface{}, currentPath *field.Path) (bo
 }
 
 // resolveList is a helper function which can recursively resolve a list
-func (rr *referenceResolver) resolveList(data []interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveList(data []interface{}, currentPath *field.Path) (interface{}, error) {
 	resList := make([]interface{}, len(data))
 	for i, e := range data {
 		sub, err := rr.resolve(e, currentPath.Index(i))
@@ -132,7 +132,7 @@ func (rr *referenceResolver) resolveList(data []interface{}, currentPath *field.
 }
 
 // resolveReference resolves a reference
-func (rr *referenceResolver) resolveReference(s string, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveReference(s string, currentPath *field.Path) (interface{}, error) {
 	uri, err := url.Parse(s)
 	if err != nil {
 		return nil, fmt.Errorf("invalid url: %w", err)
@@ -153,7 +153,7 @@ func (rr *referenceResolver) resolveReference(s string, currentPath *field.Path)
 	}, nil
 }
 
-func (rr *referenceResolver) handleLocalReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleLocalReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
 	if len(uri.Path) != 0 {
 		return nil, errors.New("a path is not supported for local resources")
 	}
@@ -172,7 +172,7 @@ func (rr *referenceResolver) handleLocalReference(uri *url.URL, currentPath *fie
 	return resolveFragment(uri, res)
 }
 
-func (rr *referenceResolver) handleBlueprintReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleBlueprintReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
 	if rr.BlueprintFs == nil {
 		return nil, errors.New("no filesystem defined to read a local schema")
 	}
@@ -192,7 +192,7 @@ func (rr *referenceResolver) handleBlueprintReference(uri *url.URL, currentPath 
 	return resolveFragment(uri, res)
 }
 
-func (rr *referenceResolver) handleComponentDescriptorReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
 	if rr.ComponentDescriptor == nil {
 		return nil, errors.New("no component descriptor defined to resolve the ref")
 	}
