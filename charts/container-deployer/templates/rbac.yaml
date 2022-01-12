@@ -15,7 +15,6 @@ rules:
   resources:
   - deployitems
   - deployitems/status
-  - contexts
   verbs:
   - get
   - watch
@@ -26,6 +25,7 @@ rules:
   - landscaper.gardener.cloud
   resources:
   - targets
+  - contexts
   verbs:
   - get
   - watch
