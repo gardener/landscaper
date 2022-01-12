@@ -140,9 +140,6 @@ func (rr *ReferenceResolver) resolveReference(s string, currentPath *field.Path,
 	if err != nil {
 		return nil, fmt.Errorf("invalid url: %w", err)
 	}
-	if rr == nil || rr.ReferenceContext == nil {
-		return nil, fmt.Errorf("reference resolver/context must not be nil when resolving references")
-	}
 	refID := absoluteRef(rr.ComponentDescriptor, s)
 	if alreadyResolved.contains(refID) {
 		return nil, fmt.Errorf("cyclic references detected: reference %q from component %s:%s is part of a cycle", s, rr.ComponentDescriptor.Name, rr.ComponentDescriptor.Version)
