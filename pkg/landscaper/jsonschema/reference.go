@@ -40,36 +40,39 @@ type ReferenceContext struct {
 	ComponentResolver ctf.ComponentResolver
 }
 
-type referenceResolver struct {
+type ReferenceResolver struct {
 	*ReferenceContext
 }
 
-func NewReferenceResolver(refCtx *ReferenceContext) *referenceResolver {
-	return &referenceResolver{refCtx}
+func NewReferenceResolver(refCtx *ReferenceContext) *ReferenceResolver {
+	if refCtx == nil {
+		refCtx = &ReferenceContext{}
+	}
+	return &ReferenceResolver{refCtx}
 }
 
 // Resolve walks through the given json schema and recursively resolves all references which use one of
 // the "local", "blueprint", or "cd" schemes.
-func (rr *referenceResolver) Resolve(schemaBytes []byte) (interface{}, error) {
+func (rr *ReferenceResolver) Resolve(schemaBytes []byte) (interface{}, error) {
 	data, err := decodeJSON(schemaBytes)
 	if err != nil {
 		return nil, err
 	}
-	return rr.resolve(data, field.NewPath(""))
+	return rr.resolve(data, field.NewPath(""), nil)
 }
 
-func (rr *referenceResolver) resolve(data interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolve(data interface{}, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	switch typedData := data.(type) {
 	case map[string]interface{}:
-		return rr.resolveMap(typedData, currentPath)
+		return rr.resolveMap(typedData, currentPath, newStringSet(alreadyResolved))
 	case []interface{}:
-		return rr.resolveList(typedData, currentPath)
+		return rr.resolveList(typedData, currentPath, newStringSet(alreadyResolved))
 	}
 	return data, nil
 }
 
 // resolveMap is a helper function which can recursively resolve a map
-func (rr *referenceResolver) resolveMap(data map[string]interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveMap(data map[string]interface{}, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	isRef, uri, err := checkForReference(data, currentPath)
 	if err != nil {
 		return err, nil
@@ -77,7 +80,7 @@ func (rr *referenceResolver) resolveMap(data map[string]interface{}, currentPath
 
 	if isRef {
 		// current map is a reference
-		sub, err := rr.resolveReference(uri, currentPath)
+		sub, err := rr.resolveReference(uri, currentPath, alreadyResolved)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving reference at %s: %w", currentPath.Child(gojsonschema.KEY_REF).String(), err)
 		}
@@ -93,7 +96,7 @@ func (rr *referenceResolver) resolveMap(data map[string]interface{}, currentPath
 			// map contains a reference
 			return nil, fmt.Errorf("invalid reference at %s: there are no other fields allowed next to %q", subPath.String(), gojsonschema.KEY_REF)
 		}
-		sub, err := rr.resolve(v, subPath)
+		sub, err := rr.resolve(v, subPath, alreadyResolved)
 		if err != nil {
 			return nil, err
 		}
@@ -119,10 +122,10 @@ func checkForReference(data map[string]interface{}, currentPath *field.Path) (bo
 }
 
 // resolveList is a helper function which can recursively resolve a list
-func (rr *referenceResolver) resolveList(data []interface{}, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveList(data []interface{}, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	resList := make([]interface{}, len(data))
 	for i, e := range data {
-		sub, err := rr.resolve(e, currentPath.Index(i))
+		sub, err := rr.resolve(e, currentPath.Index(i), alreadyResolved)
 		if err != nil {
 			return nil, err
 		}
@@ -132,18 +135,23 @@ func (rr *referenceResolver) resolveList(data []interface{}, currentPath *field.
 }
 
 // resolveReference resolves a reference
-func (rr *referenceResolver) resolveReference(s string, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) resolveReference(s string, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	uri, err := url.Parse(s)
 	if err != nil {
 		return nil, fmt.Errorf("invalid url: %w", err)
 	}
+	refID := absoluteRef(rr.ComponentDescriptor, s)
+	if alreadyResolved.contains(refID) {
+		return nil, fmt.Errorf("cyclic references detected: reference %q from component %s:%s is part of a cycle", s, rr.ComponentDescriptor.Name, rr.ComponentDescriptor.Version)
+	}
+	alreadyResolved.add(refID)
 	switch uri.Scheme {
 	case "local":
-		return rr.handleLocalReference(uri, currentPath)
+		return rr.handleLocalReference(uri, currentPath, alreadyResolved)
 	case "blueprint":
-		return rr.handleBlueprintReference(uri, currentPath)
+		return rr.handleBlueprintReference(uri, currentPath, alreadyResolved)
 	case "cd":
-		return rr.handleComponentDescriptorReference(uri, currentPath)
+		return rr.handleComponentDescriptorReference(uri, currentPath, alreadyResolved)
 	}
 
 	// unknown reference scheme
@@ -153,7 +161,7 @@ func (rr *referenceResolver) resolveReference(s string, currentPath *field.Path)
 	}, nil
 }
 
-func (rr *referenceResolver) handleLocalReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleLocalReference(uri *url.URL, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	if len(uri.Path) != 0 {
 		return nil, errors.New("a path is not supported for local resources")
 	}
@@ -165,14 +173,14 @@ func (rr *referenceResolver) handleLocalReference(uri *url.URL, currentPath *fie
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling json into go struct: %w", err)
 	}
-	res, err := rr.resolve(data, currentPath)
+	res, err := rr.resolve(data, currentPath, alreadyResolved)
 	if err != nil {
 		return nil, err
 	}
 	return resolveFragment(uri, res)
 }
 
-func (rr *referenceResolver) handleBlueprintReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleBlueprintReference(uri *url.URL, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	if rr.BlueprintFs == nil {
 		return nil, errors.New("no filesystem defined to read a local schema")
 	}
@@ -185,14 +193,14 @@ func (rr *referenceResolver) handleBlueprintReference(uri *url.URL, currentPath 
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling json into go struct: %w", err)
 	}
-	res, err := rr.resolve(data, currentPath)
+	res, err := rr.resolve(data, currentPath, alreadyResolved)
 	if err != nil {
 		return nil, err
 	}
 	return resolveFragment(uri, res)
 }
 
-func (rr *referenceResolver) handleComponentDescriptorReference(uri *url.URL, currentPath *field.Path) (interface{}, error) {
+func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, currentPath *field.Path, alreadyResolved stringSet) (interface{}, error) {
 	if rr.ComponentDescriptor == nil {
 		return nil, errors.New("no component descriptor defined to resolve the ref")
 	}
@@ -254,7 +262,7 @@ func (rr *referenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 		BlueprintFs:         nil,
 		ComponentDescriptor: cd,
 		ComponentResolver:   rr.ComponentResolver,
-	}).resolve(data, currentPath)
+	}).resolve(data, currentPath, alreadyResolved)
 	if err != nil {
 		return nil, err
 	}
@@ -295,4 +303,33 @@ func resolveFragment(uri *url.URL, data interface{}) (interface{}, error) {
 		path = path.Child(f)
 	}
 	return current, nil
+}
+
+// auxiliary type
+type stringSet map[string]struct{}
+
+func (s stringSet) contains(key string) bool {
+	_, ok := s[key]
+	return ok
+}
+
+func (s stringSet) add(key string) {
+	s[key] = struct{}{}
+}
+
+// absoluteRef prefixes a given refstring with name and version of the component descriptor where it came from
+// this transforms the relative references into an absolute identifier
+func absoluteRef(cd *cdv2.ComponentDescriptor, ref string) string {
+	if cd == nil {
+		return ref
+	}
+	return fmt.Sprintf("%s:%s::%s", cd.Name, cd.Version, ref)
+}
+
+func newStringSet(old stringSet) stringSet {
+	res := stringSet{}
+	for k := range old {
+		res.add(k)
+	}
+	return res
 }

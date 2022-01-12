@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -639,6 +640,105 @@ var _ = Describe("jsonschema", func() {
 					"baz": 7
 				}
 			`))).NotTo(Succeed())
+		})
+
+		It("should detect cyclic references", func() {
+			blobPath := "blobs"
+			blobfs := memoryfs.New()
+			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+
+			cycleConfig := &componentConfig{
+				ComponentNameInRegistry:  "example.com/cyclicref",
+				ComponentNameInReference: "cyclicref",
+				Version:                  "v0.0.1",
+				ReferencedResourceName:   "jsonschema",
+			}
+			relaySchemeResourceName := "relay"
+			falsePositiveResourceName := "identical"
+
+			// create referenced component
+			cdRes := []cdv2.Resource{
+				createBlobResource(blobfs, cycleConfig.ReferencedResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema.json", fmt.Sprintf(`
+					{
+						"$ref": "cd://resources/%s"
+					}
+				`, cycleConfig.ReferencedResourceName)),
+				createBlobResource(blobfs, falsePositiveResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema2.json", `
+					{
+						"type": "string"
+					}
+				`),
+				createBlobResource(blobfs, relaySchemeResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema3.json", fmt.Sprintf(`
+					{
+						"$ref": "cd://resources/%s"
+					}
+				`, falsePositiveResourceName)),
+			}
+
+			buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, cycleConfig.ComponentNameInRegistry, cycleConfig.Version, nil, cdRes, blobfs, ociClient, ociCache)
+
+			// create source component
+			blobfs = memoryfs.New()
+			utils.ExpectNoError(blobfs.MkdirAll(blobPath, os.ModePerm))
+
+			cdRef := []cdv2.ComponentReference{
+				{
+					Name:          cycleConfig.ComponentNameInReference,
+					ComponentName: cycleConfig.ComponentNameInRegistry,
+					Version:       cycleConfig.Version,
+				},
+			}
+
+			cdResSource := []cdv2.Resource{
+				createBlobResource(blobfs, falsePositiveResourceName, jsonschemaResourceType, mediatype.JSONSchemaArtifactsMediaTypeV1, blobPath, "schema3.json", fmt.Sprintf(`
+					{
+						"$ref": "cd://componentReferences/%s/resources/%s"
+					}
+				`, cycleConfig.ComponentNameInReference, relaySchemeResourceName)),
+			}
+
+			cd := buildAndUploadComponentDescriptorWithArtifacts(ctx, testenv.Addr, "example.com/testcd", "v0.0.0", cdRef, cdResSource, blobfs, ociClient, ociCache)
+
+			val := jsonschema.NewValidator(&jsonschema.ReferenceContext{
+				ComponentDescriptor: cd,
+				ComponentResolver:   cdoci.NewResolver(ociClient),
+			})
+
+			By("Test for false positives in cycle detection")
+			/*
+				Cycle detection works by checking whether a specific reference has already been resolved in the current run (which would indicate a cycle).
+				A false positive could occur if a local reference A is resolved, which leads to a new reference into another component descriptor,
+				where another reference B is found, which is identical to A. Both A and B look like "cd://resources/my_resource", but since they come from
+				different CDs, both references actually refer to different jsonschemas and this is not a cycle and should not be detected as one.
+			*/
+			Expect(val.CompileSchema([]byte(fmt.Sprintf(`
+				{
+					"$ref": "cd://resources/%s"
+				}
+			`, falsePositiveResourceName)))).To(Succeed(), "false positive in cycle detection")
+
+			By("Test for reference cycle detection")
+			// this is somewhat ugly, since
+			// 1. waiting for a timeout is not the best way to check for undetected cycles
+			// 2. if this test fails, the looping function cannot be aborted and will continue to run until all goroutines are killed at the end of the test
+			timeoutSeconds := 1
+			ch := make(chan error, 1)
+			go func() {
+				err := val.CompileSchema([]byte(fmt.Sprintf(`
+					{
+						"$ref": "cd://componentReferences/%s/resources/%s"
+					}
+				`, cycleConfig.ComponentNameInReference, cycleConfig.ReferencedResourceName)))
+				ch <- err
+			}()
+			select {
+			case err := <-ch:
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("cycle"))
+			case <-time.After(time.Duration(timeoutSeconds) * time.Second):
+				Fail(fmt.Sprintf("cyclic reference detection did not abort the fuction within %d seconds", timeoutSeconds), 0)
+			}
+
 		})
 
 	})
