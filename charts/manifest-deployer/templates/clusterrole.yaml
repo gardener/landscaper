@@ -15,6 +15,7 @@ rules:
   resources:
   - deployitems
   - deployitems/status
+  - contexts
   verbs:
   - get
   - watch
