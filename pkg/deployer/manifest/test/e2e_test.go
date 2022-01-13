@@ -73,10 +73,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
-		defaultContext := &lsv1alpha1.Context{}
-		defaultContext.Name = lsv1alpha1.DefaultContextName
-		defaultContext.Namespace = state.Namespace
-		testutil.ExpectNoError(state.Create(ctx, defaultContext))
+		testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -127,10 +124,7 @@ var _ = Describe("Manifest Deployer", func() {
 		By("create deploy item")
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
 
-		defaultContext := &lsv1alpha1.Context{}
-		defaultContext.Name = lsv1alpha1.DefaultContextName
-		defaultContext.Namespace = state.Namespace
-		testutil.ExpectNoError(state.Create(ctx, defaultContext))
+		testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)
 
 		// First reconcile will add a finalizer
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -176,10 +170,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
 
-		defaultContext := &lsv1alpha1.Context{}
-		defaultContext.Name = lsv1alpha1.DefaultContextName
-		defaultContext.Namespace = state.Namespace
-		testutil.ExpectNoError(state.Create(ctx, defaultContext))
+		testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)
 
 		// First reconcile will add a finalizer
 		_ = testutil.ShouldNotReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -216,10 +207,7 @@ var _ = Describe("Manifest Deployer", func() {
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "conrec-test-di", "./testdata/07-di-con-rec.yaml")
 
-		defaultContext := &lsv1alpha1.Context{}
-		defaultContext.Name = lsv1alpha1.DefaultContextName
-		defaultContext.Namespace = state.Namespace
-		testutil.ExpectNoError(state.Create(ctx, defaultContext))
+		testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)
 
 		// reconcile once to generate status
 		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
@@ -268,10 +256,7 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 	By("create deploy item")
 	di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
 
-	defaultContext := &lsv1alpha1.Context{}
-	defaultContext.Name = lsv1alpha1.DefaultContextName
-	defaultContext.Namespace = state.Namespace
-	testutil.ExpectNoError(state.Create(ctx, defaultContext))
+	testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)
 
 	// First reconcile will add a finalizer
 	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
