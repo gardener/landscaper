@@ -103,16 +103,6 @@ func InitStateWithNamespace(ctx context.Context, c client.Client) (*State, error
 		return nil, err
 	}
 	state.Namespace = ns.Name
-
-	/*
-		defaultContext := &lsv1alpha1.Context{}
-		defaultContext.Name = "default"
-		defaultContext.Namespace = state.Namespace
-		if err := c.Create(ctx, defaultContext); err != nil {
-			return nil, err
-		}
-	*/
-
 	return state, nil
 }
 
