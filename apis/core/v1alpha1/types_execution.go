@@ -103,7 +103,7 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
-	// Context defines the current context of the installation.
+	// Context defines the current context of the execution.
 	// +optional
 	Context string `json:"context,omitempty"`
 
