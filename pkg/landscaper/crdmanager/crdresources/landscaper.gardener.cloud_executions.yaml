@@ -33,7 +33,7 @@ spec:
             description: Spec defines a execution and its items
             properties:
               context:
-                description: Context defines the current context of the installation.
+                description: Context defines the current context of the execution.
                 type: string
               deployItems:
                 description: DeployItems defines all execution items that need to
