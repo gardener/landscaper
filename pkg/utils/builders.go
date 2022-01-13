@@ -25,6 +25,7 @@ type DeployItemBuilder struct {
 	ProviderConfiguration runtime.Object
 	target                *lsv1alpha1.ObjectReference
 	annotations           map[string]string
+	Context               string
 }
 
 // NewDeployItemBuilder creates a new deploy item builder
@@ -110,6 +111,13 @@ func (b *DeployItemBuilder) AddAnnotation(key, val string) *DeployItemBuilder {
 	return b
 }
 
+// WithContext sets the Landscaper Context to use for the deployitem.
+// If not set explicitly, the default context will be used.
+func (b *DeployItemBuilder) WithContext(name string) *DeployItemBuilder {
+	b.Context = name
+	return b
+}
+
 // Build creates the deploy items using the given options.
 func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	b.applyDefaults()
@@ -126,6 +134,7 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	di.Spec.Type = lsv1alpha1.DeployItemType(b.Type)
 	di.Spec.Target = b.target
 	di.Spec.Configuration = ext
+	di.Spec.Context = b.Context
 
 	if b.ObjectKey != nil {
 		di.Namespace = b.ObjectKey.Namespace
@@ -134,6 +143,11 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	if b.annotations != nil {
 		di.SetAnnotations(b.annotations)
 	}
+
+	if len(di.Spec.Context) == 0 {
+		di.Spec.Context = lsv1alpha1.DefaultContextName
+	}
+
 	return di, nil
 }
 

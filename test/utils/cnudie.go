@@ -42,7 +42,9 @@ func CreateDefaultContext(ctx context.Context, kubeClient client.Client, repoCtx
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = ns
 		if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, lsCtx, func() error {
-			lsCtx.RepositoryContext = MakeRepositoryContext(repoCtx)
+			if repoCtx != nil {
+				lsCtx.RepositoryContext = MakeRepositoryContext(repoCtx)
+			}
 			return nil
 		}); err != nil {
 			return err

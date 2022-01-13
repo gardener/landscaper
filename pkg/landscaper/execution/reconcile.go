@@ -166,6 +166,8 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
+		item.DeployItem.Spec.Context = o.exec.Spec.Context
+		o.Scheme().Default(item.DeployItem)
 		return controllerutil.SetControllerReference(o.exec, item.DeployItem, o.Scheme())
 	}); err != nil {
 		return err

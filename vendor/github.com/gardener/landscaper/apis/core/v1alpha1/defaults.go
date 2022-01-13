@@ -138,3 +138,19 @@ func SetDefaults_Installation(obj *Installation) {
 		}
 	}
 }
+
+// SetDefaults_Execution sets default values for Execution objects
+func SetDefaults_Execution(obj *Execution) {
+	// default the repository context to "default"
+	if len(obj.Spec.Context) == 0 {
+		obj.Spec.Context = DefaultContextName
+	}
+}
+
+// SetDefaults_DeployItem sets default values for DeployItem objects
+func SetDefaults_DeployItem(obj *DeployItem) {
+	// default the repository context to "default"
+	if len(obj.Spec.Context) == 0 {
+		obj.Spec.Context = DefaultContextName
+	}
+}

@@ -103,6 +103,10 @@ type Execution struct {
 
 // ExecutionSpec defines a execution plan.
 type ExecutionSpec struct {
+	// Context defines the current context of the execution.
+	// +optional
+	Context string `json:"context,omitempty"`
+
 	// DeployItems defines all execution items that need to be scheduled.
 	DeployItems DeployItemTemplateList `json:"deployItems,omitempty"`
 

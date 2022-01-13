@@ -25,6 +25,7 @@ rules:
   - landscaper.gardener.cloud
   resources:
   - targets
+  - contexts
   verbs:
   - get
   - watch

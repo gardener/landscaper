@@ -81,6 +81,11 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, di))
 
+		defaultContext := &lsv1alpha1.Context{}
+		defaultContext.Name = lsv1alpha1.DefaultContextName
+		defaultContext.Namespace = state.Namespace
+		testutils.ExpectNoError(state.Create(ctx, defaultContext))
+
 		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{

@@ -47,7 +47,7 @@ type deployer struct {
 	hooks      extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
 	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
@@ -56,7 +56,7 @@ func (d *deployer) Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, tar
 	return manifest.Reconcile(ctx)
 }
 
-func (d deployer) Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
 	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
@@ -65,15 +65,15 @@ func (d deployer) Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target 
 	return manifest.Delete(ctx)
 }
 
-func (d *deployer) ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	if err := d.Reconcile(ctx, di, target); err != nil {
+func (d *deployer) ForceReconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	if err := d.Reconcile(ctx, lsCtx, di, target); err != nil {
 		return err
 	}
 	delete(di.Annotations, lsv1alpha1.OperationAnnotation)
 	return nil
 }
 
-func (d *deployer) Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Abort(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	d.log.Info("abort is not yet implemented")
 	return nil
 }

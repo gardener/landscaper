@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+
 	"github.com/gardener/landscaper/pkg/version"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -34,14 +36,14 @@ import (
 // Deployer defines a controller that acts upon deploy items.
 type Deployer interface {
 	// Reconcile the deploy item.
-	Reconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
+	Reconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Delete the deploy item.
-	Delete(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
+	Delete(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// ForceReconcile the deploy item.
 	// Keep in mind that the force deletion annotation must be removed by the Deployer.
-	ForceReconcile(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
+	ForceReconcile(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// Abort the deploy item progress.
-	Abort(ctx context.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
+	Abort(ctx context.Context, lsContext *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error
 	// ExtensionHooks returns all registered extension hooks.
 	ExtensionHooks() extension.ReconcileExtensionHooks
 }
@@ -169,6 +171,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, err
 	}
+	c.lsScheme.Default(di)
 
 	errHdl := HandleErrorFunc(logger, c.lsClient, c.lsEventRecorder, di)
 
@@ -195,6 +198,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
 	if hookRes.AbortReconcile {
 		return returnAndLogReconcileResult(logger, *hookRes), nil
+	}
+
+	lsCtx := &lsv1alpha1.Context{}
+	// todo: check for real repository context. Maybe overwritten by installation.
+	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
 	logger.V(3).Info("check deploy item reconciliation")
@@ -246,7 +255,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if hookRes.AbortReconcile {
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
-		if err := errHdl(ctx, c.deployer.Abort(ctx, di, target)); err != nil {
+		if err := errHdl(ctx, c.deployer.Abort(ctx, lsCtx, di, target)); err != nil {
 			return reconcile.Result{}, err
 		}
 	case lsv1alpha1.ForceReconcileOperation:
@@ -259,7 +268,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if hookRes.AbortReconcile {
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
-		if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, di, target)); err != nil {
+		if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, lsCtx, di, target)); err != nil {
 			return reconcile.Result{}, err
 		}
 	default:
@@ -274,7 +283,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			if hookRes.AbortReconcile {
 				return returnAndLogReconcileResult(logger, *hookRes), nil
 			}
-			if err := errHdl(ctx, c.delete(ctx, di, target)); err != nil {
+			if err := errHdl(ctx, c.delete(ctx, lsCtx, di, target)); err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
@@ -288,7 +297,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			if hookRes.AbortReconcile {
 				return returnAndLogReconcileResult(logger, *hookRes), nil
 			}
-			if err := errHdl(ctx, c.reconcile(ctx, di, target)); err != nil {
+			if err := errHdl(ctx, c.reconcile(ctx, lsCtx, di, target)); err != nil {
 				return reconcile.Result{}, err
 			}
 		}
@@ -310,6 +319,7 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logr.Log
 	}
 	log.V(7).Info("Found target. Checking responsibility")
 	target := &lsv1alpha1.Target{}
+	deployItem.Spec.Target.Namespace = deployItem.Namespace
 	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 		return nil, false, fmt.Errorf("unable to get target for deploy item: %w", err)
 	}
@@ -343,7 +353,7 @@ func returnAndLogReconcileResult(logger logr.Logger, result extension.HookResult
 	return result.ReconcileResult
 }
 
-func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := c.lsClient.Update(ctx, deployItem); err != nil {
@@ -352,11 +362,11 @@ func (c *controller) reconcile(ctx context.Context, deployItem *lsv1alpha1.Deplo
 		}
 	}
 
-	return c.deployer.Reconcile(ctx, deployItem, target)
+	return c.deployer.Reconcile(ctx, lsCtx, deployItem, target)
 }
 
-func (c *controller) delete(ctx context.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	if err := c.deployer.Delete(ctx, deployItem, target); err != nil {
+func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+	if err := c.deployer.Delete(ctx, lsCtx, deployItem, target); err != nil {
 		return err
 	}
 	if controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {

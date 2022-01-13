@@ -54,6 +54,7 @@ type Container struct {
 	Configuration    containerv1alpha1.Configuration
 
 	DeployItem            *lsv1alpha1.DeployItem
+	Context               *lsv1alpha1.Context
 	ProviderStatus        *containerv1alpha1.ProviderStatus
 	ProviderConfiguration *containerv1alpha1.ProviderConfiguration
 
@@ -70,6 +71,7 @@ func New(log logr.Logger,
 	directHostClient client.Client,
 	config containerv1alpha1.Configuration,
 	item *lsv1alpha1.DeployItem,
+	lsCtx *lsv1alpha1.Context,
 	sharedCache cache.Cache) (*Container, error) {
 	providerConfig := &containerv1alpha1.ProviderConfiguration{}
 	decoder := api.NewDecoder(Scheme)
@@ -98,6 +100,7 @@ func New(log logr.Logger,
 		directHostClient:      directHostClient,
 		Configuration:         config,
 		DeployItem:            item,
+		Context:               lsCtx,
 		ProviderStatus:        status,
 		ProviderConfiguration: providerConfig,
 		sharedCache:           sharedCache,

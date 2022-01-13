@@ -279,6 +279,11 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 				Verbs:     []string{"get", "watch", "list", "update", "patch"},
 			},
 			{
+				APIGroups: []string{lsv1alpha1.SchemeGroupVersion.Group},
+				Resources: []string{"contexts"},
+				Verbs:     []string{"get", "watch", "list"},
+			},
+			{
 				APIGroups: []string{corev1.SchemeGroupVersion.Group},
 				Resources: []string{"events"},
 				Verbs:     []string{"create", "get", "watch", "patch", "update"},

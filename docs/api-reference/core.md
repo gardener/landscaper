@@ -476,6 +476,18 @@ It is also used by the deployers to determine the ownernship.</p>
 </tr>
 <tr>
 <td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the deployitem.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>config</code></br>
 <em>
 <a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
@@ -803,6 +815,18 @@ ExecutionSpec
 <br/>
 <br/>
 <table>
+<tr>
+<td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the execution.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>deployItems</code></br>
@@ -2340,6 +2364,18 @@ It is also used by the deployers to determine the ownernship.</p>
 </tr>
 <tr>
 <td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the deployitem.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>config</code></br>
 <em>
 <a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension">
@@ -3026,6 +3062,18 @@ string
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>context</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context defines the current context of the execution.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>deployItems</code></br>

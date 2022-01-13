@@ -79,6 +79,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Namespace = inst.Info.Namespace
 	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
 	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
+		exec.Spec.Context = inst.Info.Spec.Context
 		exec.Spec.DeployItems = executions
 
 		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
@@ -90,6 +91,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		if err := controllerutil.SetControllerReference(inst.Info, exec, api.LandscaperScheme); err != nil {
 			return err
 		}
+		o.Scheme().Default(exec)
 		return nil
 	}); err != nil {
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
