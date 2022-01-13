@@ -3071,7 +3071,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Context defines the current context of the installation.</p>
+<p>Context defines the current context of the execution.</p>
 </td>
 </tr>
 <tr>
