@@ -41,7 +41,7 @@ spec:
                 x-kubernetes-embedded-resource: true
                 x-kubernetes-preserve-unknown-fields: true
               context:
-                description: Context defines the current context of the installation.
+                description: Context defines the current context of the deployitem.
                 type: string
               registryPullSecrets:
                 description: 'RegistryPullSecrets defines a list of registry credentials
