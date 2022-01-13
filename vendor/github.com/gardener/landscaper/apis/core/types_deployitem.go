@@ -46,7 +46,7 @@ type DeployItemSpec struct {
 	// It is also used by the deployers to determine the ownernship.
 	// +optional
 	Target *ObjectReference `json:"target,omitempty"`
-	// Context defines the current context of the installation.
+	// Context defines the current context of the deployitem.
 	// +optional
 	Context string `json:"context,omitempty"`
 	// Configuration contains the deployer type specific configuration.
