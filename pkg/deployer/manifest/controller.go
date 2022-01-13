@@ -47,7 +47,7 @@ type deployer struct {
 	hooks      extension.ReconcileExtensionHooks
 }
 
-func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d *deployer) Reconcile(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
 	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
@@ -56,7 +56,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 	return manifest.Reconcile(ctx)
 }
 
-func (d deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
+func (d deployer) Delete(ctx context.Context, _ *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	logger := d.log.WithValues("resource", types.NamespacedName{Name: di.Name, Namespace: di.Namespace}.String())
 	manifest, err := New(logger, d.lsClient, d.hostClient, &d.config, di, target)
 	if err != nil {
