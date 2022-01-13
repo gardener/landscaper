@@ -5,6 +5,7 @@
 package landscaper
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -42,6 +43,9 @@ type BlueprintRenderArgs struct {
 	Imports *Imports
 	// ComponentDescriptorFilepath describes the path to the component descriptor.
 	ComponentDescriptorFilepath string
+	// ComponentDescriptor is the component descriptor of the blueprint to be rendered.
+	// +optional
+	ComponentDescriptor *cdv2.ComponentDescriptor
 	// ComponentDescriptorList is a list of component descriptors that should be the transitive component references of the original component descriptor.
 	ComponentDescriptorList *cdv2.ComponentDescriptorList
 	// ComponentResolver implements a component descriptor resolver.
@@ -123,7 +127,9 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 	}
 
 	var cd *cdv2.ComponentDescriptor
-	if len(args.ComponentDescriptorFilepath) != 0 {
+	if args.ComponentDescriptor != nil {
+		cd = args.ComponentDescriptor
+	} else if len(args.ComponentDescriptorFilepath) != 0 {
 		cd = &cdv2.ComponentDescriptor{}
 		data, err := vfs.ReadFile(args.Fs, args.ComponentDescriptorFilepath)
 		if err != nil {
@@ -176,7 +182,8 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		imports,
 		cd,
 		args.ComponentDescriptorList,
-		inst)
+		inst,
+		args.ComponentResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -205,10 +212,20 @@ func RenderBlueprintDeployItems(
 	imports Imports,
 	cd *cdv2.ComponentDescriptor,
 	cdList *cdv2.ComponentDescriptorList,
-	inst *lsv1alpha1.Installation) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+	inst *lsv1alpha1.Installation,
+	componentResolver ctf.ComponentResolver) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+
+	var blobResolver ctf.BlobResolver
+	if cd != nil && componentResolver != nil {
+		var err error
+		_, blobResolver, err = componentResolver.ResolveWithBlobResolver(context.Background(), cd.GetEffectiveRepositoryContext(), cd.GetName(), cd.GetVersion())
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to get blob resolver: %w", err)
+		}
+	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	deployItemTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).
+	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler), spiff.New(templateStateHandler)).
 		TemplateDeployExecutions(template.DeployExecutionOptions{
 			Imports:              imports.Imports,
 			Blueprint:            blueprint,
