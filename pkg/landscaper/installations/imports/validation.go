@@ -390,7 +390,6 @@ func (v *Validator) checkStateForSiblingExport(ctx context.Context, fldPath *fie
 		return installations.NewNotCompletedDependentsErrorf(nil, "%s: Sibling Installation has to be completed to get exports", fldPath.String())
 	}
 
-	// todo: check generation of other components in the dependency tree
 	// we expect that no dependent siblings are running
 	isCompleted, err := CheckCompletedSiblingDependents(ctx, v.Operation.Client(), v.Operation.Context().Name, sibling)
 	if err != nil {

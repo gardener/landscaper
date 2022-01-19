@@ -86,6 +86,11 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 			return false, false, nil
 		}
 
+		if inst.Generation != inst.Status.ObservedGeneration {
+			log.V(3).Info("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
+			return false, false, nil
+		}
+
 		intInst := installations.CreateInternalInstallationBase(inst)
 
 		isCompleted, err = CheckCompletedSiblingDependents(ctx, kubeClient, contextName, intInst)
