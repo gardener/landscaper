@@ -425,21 +425,29 @@ func GetReferenceFromComponentDescriptorDefinition(cdDef *lsv1alpha1.ComponentDe
 }
 
 // ByteMapToRawMessageMap converts a map of bytes to a map of json.RawMessages
-func ByteMapToRawMessageMap(m map[string][]byte) map[string]json.RawMessage {
+func ByteMapToRawMessageMap(m map[string][]byte) (map[string]json.RawMessage, error) {
 	n := make(map[string]json.RawMessage, len(m))
 	for key, val := range m {
-		n[key] = json.RawMessage(val)
+		jsonVal, err := yaml.ToJSON(val)
+		if err != nil {
+			return nil, err
+		}
+		n[key] = json.RawMessage(jsonVal)
 	}
-	return n
+	return n, nil
 }
 
 // StringMapToRawMessageMap converts a map of strings to a map of json.RawMessages
-func StringMapToRawMessageMap(m map[string]string) map[string]json.RawMessage {
+func StringMapToRawMessageMap(m map[string]string) (map[string]json.RawMessage, error) {
 	n := make(map[string]json.RawMessage, len(m))
 	for key, val := range m {
-		n[key] = json.RawMessage(val)
+		jsonVal, err := yaml.ToJSON([]byte(val))
+		if err != nil {
+			return nil, err
+		}
+		n[key] = json.RawMessage(jsonVal)
 	}
-	return n
+	return n, nil
 }
 
 // ResolveSecretReference is an auxiliary function that fetches the content of a secret as specified by the given SecretReference
@@ -451,9 +459,10 @@ func ResolveSecretReference(ctx context.Context, kubeClient client.Client, secre
 	}
 	completeData := secret.Data
 	var (
-		data []byte
-		ok   bool
-		err  error
+		data   []byte
+		ok     bool
+		rawMap map[string]json.RawMessage
+		err    error
 	)
 	if len(secretRef.Key) != 0 {
 		data, ok = secret.Data[secretRef.Key]
@@ -462,7 +471,11 @@ func ResolveSecretReference(ctx context.Context, kubeClient client.Client, secre
 		}
 	} else {
 		// use the whole secret as map
-		data, err = json.Marshal(ByteMapToRawMessageMap(secret.Data))
+		rawMap, err = ByteMapToRawMessageMap(secret.Data)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("unable to convert secret data to raw message map: %w", err)
+		}
+		data, err = json.Marshal(rawMap)
 		if err != nil {
 			return nil, nil, 0, fmt.Errorf("unable to marshal secret data as map: %w", err)
 		}
@@ -487,9 +500,10 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 		completeData[k] = []byte(v)
 	}
 	var (
-		data  []byte
-		sdata string
-		err   error
+		data   []byte
+		sdata  string
+		rawMap map[string]json.RawMessage
+		err    error
 	)
 	keyFound := len(configMapRef.Key) == 0
 	if cm.Data != nil {
@@ -498,7 +512,11 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 			data = []byte(sdata)
 		} else {
 			// use whole configmap as json object
-			data, err = json.Marshal(StringMapToRawMessageMap(cm.Data))
+			rawMap, err := StringMapToRawMessageMap(cm.Data)
+			if err != nil {
+				return nil, nil, 0, fmt.Errorf("unable to convert configmap data to raw message map: %w", err)
+			}
+			data, err = json.Marshal(rawMap)
 			if err != nil {
 				return nil, nil, 0, fmt.Errorf("unable to marshal configmap data as map: %w", err)
 			}
@@ -509,7 +527,11 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 			data, keyFound = cm.BinaryData[configMapRef.Key]
 		} else {
 			// use whole configmap as json object
-			data, err = json.Marshal(ByteMapToRawMessageMap(cm.BinaryData))
+			rawMap, err = ByteMapToRawMessageMap(cm.BinaryData)
+			if err != nil {
+				return nil, nil, 0, fmt.Errorf("unable to convert configmap data to raw message map: %w", err)
+			}
+			data, err = json.Marshal(rawMap)
 			if err != nil {
 				return nil, nil, 0, fmt.Errorf("unable to marshal configmap data as map: %w", err)
 			}
