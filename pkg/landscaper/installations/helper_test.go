@@ -170,7 +170,11 @@ var _ = Describe("helper", func() {
 			cm.Name = "test-cm"
 			cm.Namespace = "default"
 			cm.Data = map[string]string{
-				"key1": "\"val1\"",
+				"key1": `"val1"`,
+				"key2": `val2`,
+				"key3": `["a", "b", "c"]`,
+				"key4": `true`,
+				"key5": `{"x": {"y": "z"}}`,
 			}
 			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
 
@@ -186,8 +190,54 @@ var _ = Describe("helper", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
-			Expect(do.Data).To(Equal(map[string]interface{}{
-				"key1": "val1",
+
+			Expect(do.Data).To(HaveKeyWithValue("key1", "val1"))
+			Expect(do.Data).To(HaveKeyWithValue("key2", "val2"))
+			Expect(do.Data).To(HaveKeyWithValue("key3", []interface{}{"a", "b", "c"}))
+			Expect(do.Data).To(HaveKeyWithValue("key4", true))
+			Expect(do.Data).To(HaveKeyWithValue("key5", map[string]interface{}{
+				"x": map[string]interface{}{
+					"y": "z",
+				},
+			}))
+		})
+
+		It("should get an import from the binary data of whole configmap as object", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+			cm := &corev1.ConfigMap{}
+			cm.Name = "test-cm"
+			cm.Namespace = "default"
+			cm.BinaryData = map[string][]byte{
+				"key1": []byte(`"val1"`),
+				"key2": []byte(`val2`),
+				"key3": []byte(`["a", "b", "c"]`),
+				"key4": []byte(`true`),
+				"key5": []byte(`{"x": {"y": "z"}}`),
+			}
+			Expect(kubeClient.Create(ctx, cm)).To(Succeed())
+
+			do, owner, err := installations.GetDataImport(ctx, kubeClient, "", &installations.InstallationBase{}, lsv1alpha1.DataImport{
+				Name: "imp",
+				ConfigMapRef: &lsv1alpha1.ConfigMapReference{
+					ObjectReference: lsv1alpha1.ObjectReference{
+						Name:      cm.Name,
+						Namespace: cm.Namespace,
+					},
+					Key: "",
+				},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(owner).To(BeNil())
+
+			Expect(do.Data).To(HaveKeyWithValue("key1", "val1"))
+			Expect(do.Data).To(HaveKeyWithValue("key2", "val2"))
+			Expect(do.Data).To(HaveKeyWithValue("key3", []interface{}{"a", "b", "c"}))
+			Expect(do.Data).To(HaveKeyWithValue("key4", true))
+			Expect(do.Data).To(HaveKeyWithValue("key5", map[string]interface{}{
+				"x": map[string]interface{}{
+					"y": "z",
+				},
 			}))
 		})
 
@@ -248,7 +298,11 @@ var _ = Describe("helper", func() {
 			secret.Name = "test-secret"
 			secret.Namespace = "default"
 			secret.Data = map[string][]byte{
-				"key1": []byte("\"val1\""),
+				"key1": []byte(`"val1"`),
+				"key2": []byte(`val2`),
+				"key3": []byte(`["a", "b", "c"]`),
+				"key4": []byte(`true`),
+				"key5": []byte(`{"x": {"y": "z"}}`),
 			}
 			Expect(kubeClient.Create(ctx, secret)).To(Succeed())
 
@@ -264,8 +318,15 @@ var _ = Describe("helper", func() {
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(owner).To(BeNil())
-			Expect(do.Data).To(Equal(map[string]interface{}{
-				"key1": "val1",
+
+			Expect(do.Data).To(HaveKeyWithValue("key1", "val1"))
+			Expect(do.Data).To(HaveKeyWithValue("key2", "val2"))
+			Expect(do.Data).To(HaveKeyWithValue("key3", []interface{}{"a", "b", "c"}))
+			Expect(do.Data).To(HaveKeyWithValue("key4", true))
+			Expect(do.Data).To(HaveKeyWithValue("key5", map[string]interface{}{
+				"x": map[string]interface{}{
+					"y": "z",
+				},
 			}))
 		})
 
