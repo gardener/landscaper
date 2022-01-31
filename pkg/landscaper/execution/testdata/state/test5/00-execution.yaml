@@ -27,3 +27,6 @@ status:
       name: di-a
       namespace: test5
       observedGeneration: 2
+  execGenerations:
+  - name: a
+    observedGeneration: 2
