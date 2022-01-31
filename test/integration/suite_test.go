@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/integration/core"
 	"github.com/gardener/landscaper/test/integration/deployers"
+	"github.com/gardener/landscaper/test/integration/executions"
 	"github.com/gardener/landscaper/test/integration/tutorial"
 	"github.com/gardener/landscaper/test/integration/webhook"
 )
@@ -58,6 +59,7 @@ func TestConfig(t *testing.T) {
 	deployers.RegisterTests(f)
 	deployitems.RegisterTests(f)
 	installations.RegisterTests(f)
+	executions.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()
