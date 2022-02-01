@@ -3036,6 +3036,47 @@ string
 <p>
 <p>ErrorCode is a string alias.</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">ExecutionGeneration
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
+</p>
+<p>
+<p>ExecutionGeneration links a deployitem to the generation of the execution when it was applied.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the deployitem this generation refers to.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>observedGeneration</code></br>
+<em>
+int64
+</em>
+</td>
+<td>
+<p>ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionPhase">ExecutionPhase
 (<code>string</code> alias)</p></h3>
 <p>
@@ -3203,8 +3244,22 @@ only used for operation purpose.</p>
 </td>
 <td>
 <em>(Optional)</em>
-<p>DeployItemReferences contain the state of all deploy items.
-The observed generation is here the generation of the Execution not the DeployItem.</p>
+<p>DeployItemReferences contain the state of all deploy items.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>execGenerations</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">
+[]ExecutionGeneration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
+So in this case, the observedGeneration refers to the executions generation.</p>
 </td>
 </tr>
 </tbody>

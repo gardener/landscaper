@@ -84,8 +84,19 @@ type ExecutionStatus struct {
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
 
 	// DeployItemReferences contain the state of all deploy items.
-	// The observed generation is here the generation of the Execution not the DeployItem.
 	DeployItemReferences []VersionedNamedObjectReference `json:"deployItemRefs,omitempty"`
+
+	// ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
+	// So in this case, the observedGeneration refers to the executions generation.
+	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
+}
+
+// ExecutionGeneration links a deployitem to the generation of the execution when it was applied.
+type ExecutionGeneration struct {
+	// Name is the name of the deployitem this generation refers to.
+	Name string `json:"name"`
+	// ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.
+	ObservedGeneration int64 `json:"observedGeneration"`
 }
 
 // DeployItemTemplateList is a list of deploy item templates

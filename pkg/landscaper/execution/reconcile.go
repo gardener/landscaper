@@ -31,6 +31,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	op := "Reconcile"
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+	logger := o.Log().WithValues("operation", "reconcile", "resource", kutil.ObjectKeyFromObject(o.exec).String())
 
 	managedItems, err := o.listManagedDeployItems(ctx)
 	if err != nil {
@@ -44,15 +45,19 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	var phase lsv1alpha1.ExecutionPhase
 	for _, item := range executionItems {
 		if item.DeployItem != nil {
-			// get last applied status from own status
-			var lastAppliedGeneration int64
-			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
-				lastAppliedGeneration = ref.Reference.ObservedGeneration
+			dlogger := logger.WithValues("deployitem", item.Info.Name)
+			gen := o.getGenerations(item)
+
+			deployItemUpToDate := gen.IsUpToDate()
+
+			if gen.HasExecutionBeenModified() {
+				dlogger.V(7).Info("execution has been changed since deployitem has last been applied", "executionGenerationInExecution", gen.ExecutionGenerationInExecution, "executionGenerationInDeployItem", gen.ExecutionGenerationInDeployItem)
+			}
+			if gen.HasDeployItemBeenModified() {
+				dlogger.V(7).Info("deployitem has been modified since the execution has last seen it", "deployItemGeneration", gen.DeployItemGenerationInDeployItem, "lastSeenGeneration", gen.DeployItemGenerationInExecution)
 			}
 
-			deployItemLastAppliedUpToDate := lastAppliedGeneration == item.DeployItem.GetGeneration()
-
-			if deployItemLastAppliedUpToDate && !o.forceReconcile {
+			if deployItemUpToDate && !o.forceReconcile {
 				phase = lsv1alpha1helper.CombinedExecutionPhase(phase, item.DeployItem.Status.Phase)
 				deployItemStatusUpToDate := item.DeployItem.Status.ObservedGeneration == item.DeployItem.GetGeneration()
 
@@ -72,37 +77,49 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 						"DeployItemFailed",
 						fmt.Sprintf("DeployItem %s (%s) has not been picked up by a Deployer", item.Info.Name, item.DeployItem.Name),
 					)
+					dlogger.V(7).Info("deployitem in pickup timeout, aborting reconcile")
 					return nil
 				}
 
+				// deployitem is running - either in a non-final phase, or its observedGeneration doesn't match its generation
 				if !lsv1alpha1helper.IsCompletedExecutionPhase(item.DeployItem.Status.Phase) || !deployItemStatusUpToDate {
 					o.EventRecorder().Eventf(o.exec, corev1.EventTypeNormal,
 						"DeployItemCompleted",
-						"deploy item %s not triggered because it already exists and is not completed", item.Info.Name,
+						"deployitem %s not triggered because it already exists and is not completed", item.Info.Name,
 					)
-					o.Log().V(5).Info("deploy item not triggered because already existing and not completed", "name", item.Info.Name)
+					dlogger.V(7).Info("deployitem not triggered because already existing and not completed")
 					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 					phase = lsv1alpha1.ExecutionPhaseProgressing
 					continue
 				}
 
-				if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lastAppliedGeneration == o.exec.Generation {
-					// TODO: check if need to wait for other deploy items to finish
-					o.exec.Status.ObservedGeneration = o.exec.Generation
-					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-					o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
-						lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-							"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
-					o.exec.Status.LastError = lserrors.UpdatedError(
-						o.exec.Status.LastError,
-						"DeployItemReconcile",
-						"DeployItemFailed",
-						fmt.Sprintf("reconciliation of deploy item %q failed", item.DeployItem.Name),
-					)
-					return nil
-				}
+				// the deployitem up-to-date
+				if deployItemUpToDate {
 
-				if lastAppliedGeneration == o.exec.Generation {
+					// deployitem is failed => set execution to failed
+					if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+						// TODO: check if need to wait for other deployitems to finish
+						o.exec.Status.ObservedGeneration = o.exec.Generation
+						o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+						o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+							lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+								"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
+						o.exec.Status.LastError = lserrors.UpdatedError(
+							o.exec.Status.LastError,
+							"DeployItemReconcile",
+							"DeployItemFailed",
+							fmt.Sprintf("reconciliation of deployitem %q failed", item.DeployItem.Name),
+						)
+						dlogger.V(7).Info("deployitem failed, aborting reconcile")
+						return nil
+					}
+
+					// the deployitem is
+					// - up-to-date
+					// - in a final state
+					// - not failed
+					// => nothing to do with the deployitem
+					dlogger.V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
 					continue
 				}
 			}
@@ -111,16 +128,16 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 		if err != nil {
 			return lserrors.NewWrappedError(err,
 				"CheckReconcilable",
-				fmt.Sprintf("check if deploy item %q is able to be reconciled", item.DeployItem.Name),
+				fmt.Sprintf("check if deployitem %q is able to be reconciled", item.DeployItem.Name),
 				err.Error(),
 			)
 		}
 		if !runnable {
-			o.Log().V(5).Info("deploy item not runnable", "name", item.Info.Name)
+			o.Log().V(5).Info("deployitem not runnable", "name", item.Info.Name)
 			continue
 		}
 		if err := o.deployOrTrigger(ctx, item); err != nil {
-			msg := fmt.Sprintf("error while creating deploy item %q", item.Info.Name)
+			msg := fmt.Sprintf("error while creating deployitem %q", item.Info.Name)
 			if item.DeployItem != nil {
 				msg = fmt.Sprintf("error while triggering deployitem %s", item.DeployItem.Name)
 			}
@@ -154,7 +171,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-// deployOrTrigger creates a new deploy item or triggers it if it already exists.
+// deployOrTrigger creates a new deployitem or triggers it if it already exists.
 func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) error {
 	if item.DeployItem == nil {
 		item.DeployItem = &lsv1alpha1.DeployItem{}
@@ -181,11 +198,15 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 
 	old := o.exec.DeepCopy()
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
+	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	return o.Client().Status().Patch(ctx, o.exec, client.MergeFrom(old))
+	if err := o.Client().Status().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
+		return fmt.Errorf("unable to patch deployitem status: %w", err)
+	}
+	return nil
 }
 
-// collectAndUpdateExports loads all exports of all deploy items and
+// collectAndUpdateExports loads all exports of all deployitems and
 // persists them in a data object in the cluster.
 // It also updates the export reference of the execution.
 func (o *Operation) collectAndUpdateExports(ctx context.Context, items []executionItem) error {
@@ -201,7 +222,7 @@ func (o *Operation) collectAndUpdateExports(ctx context.Context, items []executi
 	return o.CreateOrUpdateExportReference(ctx, values)
 }
 
-// addExports loads the exports of a deploy item and adds it to the given values.
+// addExports loads the exports of a deployitem and adds it to the given values.
 func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem) (map[string]interface{}, error) {
 	if item.Status.ExportReference == nil {
 		return nil, nil
@@ -217,7 +238,7 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 	return data, nil
 }
 
-// checkRunnable checks whether all deploy items a given deploy item depends on have been successfully executed.
+// checkRunnable checks whether all deployitems a given deployitem depends on have been successfully executed.
 func (o *Operation) checkRunnable(ctx context.Context, item executionItem, items []executionItem) (bool, error) {
 	if len(item.Info.DependsOn) == 0 {
 		return true, nil
@@ -230,28 +251,89 @@ func (o *Operation) checkRunnable(ctx context.Context, item executionItem, items
 				continue
 			}
 			found = true
-			if exec.DeployItem == nil { // dependent deploy item has never run
+			if exec.DeployItem == nil { // dependent deployitem has never run
 				return false, nil
 			}
-			var lastAppliedGeneration int64
-			// TODO: check generation increment or reconcile annotation
-			if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, exec.Info.Name); ok {
-				lastAppliedGeneration = ref.Reference.ObservedGeneration
-			}
-			if o.exec.Generation != lastAppliedGeneration { // dependent deploy item not up-to-date
+			gen := o.getGenerations(exec)
+			if !gen.IsUpToDate() { // dependent deployitem not up-to-date
 				return false, nil
 			}
-			if exec.DeployItem.Status.ObservedGeneration != exec.DeployItem.Generation { // dependent deploy item status not up-to-date
+			if exec.DeployItem.Status.ObservedGeneration != exec.DeployItem.Generation { // dependent deployitem status not up-to-date
 				return false, nil
 			}
-			if exec.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded { // dependent deploy item not finished
+			if exec.DeployItem.Status.Phase != lsv1alpha1.ExecutionPhaseSucceeded { // dependent deployitem not finished
 				return false, nil
 			}
 			break
 		}
 		if !found {
-			return false, fmt.Errorf("dependent deploy item '%s' not found", dep)
+			return false, fmt.Errorf("dependent deployitem '%s' not found", dep)
 		}
 	}
 	return true, nil
+}
+
+// generations is a helper struct to store generation and observedGeneration values for an execution and one of its deployitems
+type generations struct {
+	// ExecutionGenerationInExecution is metadata.generation of the execution.
+	ExecutionGenerationInExecution int64
+	// ExecutionGenerationInDeployItem is the generation which the execution had when it last applied the deployitem. It is stored in the execution status.
+	ExecutionGenerationInDeployItem int64
+	// is the generation which the deployitem had when the execution last updated it. It is stored in the execution status.
+	DeployItemGenerationInExecution int64
+	// DeployItemGenerationInDeployItem is metadata.generation of the deployitem.
+	DeployItemGenerationInDeployItem int64
+}
+
+// IsUpToDate returns whether the deployitem is up-to-date.
+// It will return true if both hasExecutionBeenModified() and hasDeployItemBeenModified() return false, and false otherwise.
+func (g generations) IsUpToDate() bool {
+	return !(g.HasExecutionBeenModified() || g.HasDeployItemBeenModified())
+}
+
+// HasExecutionBeenModified returns true if the execution has been modified since the deployitem has last been updated, and false otherwise.
+func (g generations) HasExecutionBeenModified() bool {
+	return g.ExecutionGenerationInExecution != g.ExecutionGenerationInDeployItem
+}
+
+// HasDeployItemBeenModified returns true if the deployitem has been modified since the execution last updated it, and false otherwise.
+func (g generations) HasDeployItemBeenModified() bool {
+	return g.DeployItemGenerationInDeployItem != g.DeployItemGenerationInExecution
+}
+
+// getGenerations returns a generations struct containing the generations and observedGenerations for the execution and the given deployitem
+func (o *Operation) getGenerations(item executionItem) generations {
+	var lastSeenGeneration int64
+	if ref, ok := lsv1alpha1helper.GetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, item.Info.Name); ok {
+		lastSeenGeneration = ref.Reference.ObservedGeneration
+	}
+	var lastAppliedGeneration int64
+	if expGen, ok := getExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name); ok {
+		lastAppliedGeneration = expGen.ObservedGeneration
+	}
+	return generations{
+		ExecutionGenerationInExecution:   o.exec.GetGeneration(),
+		ExecutionGenerationInDeployItem:  lastAppliedGeneration,
+		DeployItemGenerationInExecution:  lastSeenGeneration,
+		DeployItemGenerationInDeployItem: item.DeployItem.GetGeneration(),
+	}
+}
+
+func getExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name string) (lsv1alpha1.ExecutionGeneration, bool) {
+	for _, ref := range objects {
+		if ref.Name == name {
+			return ref, true
+		}
+	}
+	return lsv1alpha1.ExecutionGeneration{}, false
+}
+
+func setExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name string, gen int64) []lsv1alpha1.ExecutionGeneration {
+	for i, ref := range objects {
+		if ref.Name == name {
+			objects[i].ObservedGeneration = gen
+			return objects
+		}
+	}
+	return append(objects, lsv1alpha1.ExecutionGeneration{Name: name, ObservedGeneration: gen})
 }

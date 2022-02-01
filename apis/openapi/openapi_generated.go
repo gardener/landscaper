@@ -116,6 +116,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.EnvironmentSpec":                                    schema_landscaper_apis_core_v1alpha1_EnvironmentSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Error":                                              schema_landscaper_apis_core_v1alpha1_Error(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Execution":                                          schema_landscaper_apis_core_v1alpha1_Execution(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration":                                schema_landscaper_apis_core_v1alpha1_ExecutionGeneration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionList":                                      schema_landscaper_apis_core_v1alpha1_ExecutionList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionSpec":                                      schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionStatus":                                    schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref),
@@ -3945,7 +3946,7 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemSpec(ref common.ReferenceCal
 					},
 					"context": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Context defines the current context of the installation.",
+							Description: "Context defines the current context of the deployitem.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4629,6 +4630,36 @@ func schema_landscaper_apis_core_v1alpha1_Execution(ref common.ReferenceCallback
 	}
 }
 
+func schema_landscaper_apis_core_v1alpha1_ExecutionGeneration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExecutionGeneration links a deployitem to the generation of the execution when it was applied.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the deployitem this generation refers to.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration stores the generation which the execution had when it last applied the referenced deployitem.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+				Required: []string{"name", "observedGeneration"},
+			},
+		},
+	}
+}
+
 func schema_landscaper_apis_core_v1alpha1_ExecutionList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4687,7 +4718,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 				Properties: map[string]spec.Schema{
 					"context": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Context defines the current context of the installation.",
+							Description: "Context defines the current context of the execution.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4778,7 +4809,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 					},
 					"deployItemRefs": {
 						SchemaProps: spec.SchemaProps{
-							Description: "DeployItemReferences contain the state of all deploy items. The observed generation is here the generation of the Execution not the DeployItem.",
+							Description: "DeployItemReferences contain the state of all deploy items.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -4790,11 +4821,25 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"execGenerations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem. So in this case, the observedGeneration refers to the executions generation.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Condition", "github.com/gardener/landscaper/apis/core/v1alpha1.Error", "github.com/gardener/landscaper/apis/core/v1alpha1.ExecutionGeneration", "github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference", "github.com/gardener/landscaper/apis/core/v1alpha1.VersionedNamedObjectReference"},
 	}
 }
 

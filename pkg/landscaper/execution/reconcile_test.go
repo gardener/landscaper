@@ -137,7 +137,7 @@ var _ = Describe("Reconcile", func() {
 			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
 		})
 
-		It("should not set the status of the execution to failed if a deployitem failed but the generation is outdated", func() {
+		It("should not set the status of the execution to failed if a deployitem failed but the deployitem generation is outdated", func() {
 			ctx := context.Background()
 			exec := fakeExecutions["test5/exec-1"]
 			eOp := execution.NewOperation(op, exec, false)
@@ -150,6 +150,42 @@ var _ = Describe("Reconcile", func() {
 			err := eOp.Reconcile(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		})
+
+		It("should not set the status of the execution to failed if a deployitem failed but the execution has since been updated", func() {
+			ctx := context.Background()
+			exec := fakeExecutions["test5/exec-1"]
+			eOp := execution.NewOperation(op, exec, false)
+
+			deployItemA := fakeDeployItems["test5/di-a"]
+			deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
+
+			old := exec.DeepCopy()
+			exec.Status.ExecutionGenerations[0].ObservedGeneration = exec.Generation - 1
+			Expect(fakeClient.Status().Patch(ctx, exec, client.MergeFrom(old))).ToNot(HaveOccurred())
+
+			err := eOp.Reconcile(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(exec.Status.Phase).ToNot(Equal(lsv1alpha1.ExecutionPhaseFailed))
+		})
+
+		It("should not set the status of the execution to failed if a deployitem failed but the deployitem has been modified", func() {
+			ctx := context.Background()
+			exec := fakeExecutions["test5/exec-1"]
+			eOp := execution.NewOperation(op, exec, false)
+
+			deployItemA := fakeDeployItems["test5/di-a"]
+			deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+			Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
+
+			old := exec.DeepCopy()
+			exec.Status.DeployItemReferences[0].Reference.ObservedGeneration = exec.Status.DeployItemReferences[0].Reference.ObservedGeneration - 1
+			Expect(fakeClient.Status().Patch(ctx, exec, client.MergeFrom(old))).ToNot(HaveOccurred())
+
+			err := eOp.Reconcile(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(exec.Status.Phase).ToNot(Equal(lsv1alpha1.ExecutionPhaseFailed))
 		})
 
 		It("should set the status of the execution to failed if a deployitem failed due to an pickup timeout and its generation is outdated", func() {
@@ -185,7 +221,7 @@ var _ = Describe("Reconcile", func() {
 		})
 	})
 
-	It("should not deploy new items if a execution failed", func() {
+	It("should not deploy new items if an execution failed", func() {
 		ctx := context.Background()
 		exec := fakeExecutions["test2/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)

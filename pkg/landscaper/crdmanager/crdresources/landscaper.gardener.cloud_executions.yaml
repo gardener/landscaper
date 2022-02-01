@@ -153,8 +153,7 @@ spec:
                 type: array
               deployItemRefs:
                 description: DeployItemReferences contain the state of all deploy
-                  items. The observed generation is here the generation of the Execution
-                  not the DeployItem.
+                  items.
                 items:
                   description: VersionedNamedObjectReference is a named reference
                     to a object with its last observed resource generation. This struct
@@ -184,6 +183,28 @@ spec:
                   required:
                   - name
                   - ref
+                  type: object
+                type: array
+              execGenerations:
+                description: ExecutionGenerations stores which generation the execution
+                  had when it last applied a specific deployitem. So in this case,
+                  the observedGeneration refers to the executions generation.
+                items:
+                  description: ExecutionGeneration links a deployitem to the generation
+                    of the execution when it was applied.
+                  properties:
+                    name:
+                      description: Name is the name of the deployitem this generation
+                        refers to.
+                      type: string
+                    observedGeneration:
+                      description: ObservedGeneration stores the generation which
+                        the execution had when it last applied the referenced deployitem.
+                      format: int64
+                      type: integer
+                  required:
+                  - name
+                  - observedGeneration
                   type: object
                 type: array
               exportRef:

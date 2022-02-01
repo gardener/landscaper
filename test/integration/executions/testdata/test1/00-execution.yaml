@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: exec-1
+spec:
+
+  deployItems:
+  - name: a
+    type: landscaper.gardener.cloud/mock
+    config:
+      apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+      kind: ProviderConfiguration
+      providerStatus:
+        apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderStatus
+        key: foo
