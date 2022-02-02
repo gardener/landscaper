@@ -1,6 +1,6 @@
 ---
 name: Enhancement Request
-about: Suggest an enhancement to the Gardener project
+about: Suggest an enhancement to the Landscaper project
 labels: kind/enhancement
 
 ---

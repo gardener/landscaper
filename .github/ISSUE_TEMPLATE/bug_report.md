@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug encountered while operating Gardener
+about: Report a bug encountered while operating Landscaper
 labels: kind/bug
 
 ---
