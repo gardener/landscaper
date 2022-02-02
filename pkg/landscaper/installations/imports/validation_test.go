@@ -215,6 +215,29 @@ var _ = Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ok).To(BeFalse())
 		})
+
+		It("should reject when a dependent sibling of a root installation is finished but not up-to-date", func() {
+			ctx := context.Background()
+
+			inInstDep, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root-dep"])
+			Expect(err).ToNot(HaveOccurred())
+			inInstDep.Info.Status.ObservedGeneration = -1
+			inInstDep.Info.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+			Expect(fakeClient.Status().Update(ctx, inInstDep.Info)).ToNot(HaveOccurred())
+			Expect(inInstDep.Info.Generation).ToNot(Equal(inInstDep.Info.Status.ObservedGeneration))
+
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test3/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
+
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			val := imports.NewTestValidator(op, nil)
+			ok, err := val.CheckDependentInstallations(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ok).To(BeFalse())
+		})
 	})
 
 	Context("Targets", func() {
