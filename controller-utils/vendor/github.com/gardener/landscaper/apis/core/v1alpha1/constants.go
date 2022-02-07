@@ -31,6 +31,10 @@ const (
 	// AbortTimestampAnnotation is used to recognize timeouts in deployitems
 	AbortTimestampAnnotation = "landscaper.gardener.cloud/abort-time"
 
+	// IgnoreAnnotation can be used to stop reconciliation for landscaper resources.
+	// Will only have an effect if set to 'true'.
+	IgnoreAnnotation = "landscaper.gardener.cloud/ignore"
+
 	// Labels
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.

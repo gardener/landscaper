@@ -99,6 +99,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, err
 	}
+
+	// don't reconcile if ignore annotation is set and installation is not currently running
+	if lsv1alpha1helper.HasIgnoreAnnotation(inst.ObjectMeta) && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+		logger.V(7).Info("skipping reconcile due to ignore annotation")
+		return reconcile.Result{}, nil
+	}
+
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
 	errHdl := HandleErrorFunc(logger, c.Client(), c.EventRecorder(), inst)

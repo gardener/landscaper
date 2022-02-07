@@ -58,6 +58,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
+	// don't reconcile if ignore annotation is set and execution is not currently running
+	if lsv1alpha1helper.HasIgnoreAnnotation(exec.ObjectMeta) && lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
+		logger.V(7).Info("skipping reconcile due to ignore annotation")
+		return reconcile.Result{}, nil
+	}
+
 	errHdl := HandleErrorFunc(logger, c.client, c.eventRecorder, exec)
 
 	if err := HandleAnnotationsAndGeneration(ctx, logger, c.client, exec); err != nil {

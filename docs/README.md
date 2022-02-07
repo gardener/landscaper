@@ -17,6 +17,7 @@
 - [Component Overwrites](./usage/ComponentOverwrites.md)
 - [Conditional Imports](./usage/ConditionalImports.md)
 - [Context](./usage/Context.md)
+- [Controlling the Landscaper via annotations](./usage/Annotations.md)
 
 ### Deployers
 - [Overview](./deployer)
