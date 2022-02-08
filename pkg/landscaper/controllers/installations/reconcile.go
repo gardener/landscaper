@@ -75,7 +75,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	if eligibleToUpdate {
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
 		// need to return and not continue with export validation
-		return c.Update(ctx, instOp)
+		return c.Update(ctx, instOp, false)
 	}
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
@@ -115,7 +115,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	}
 
 	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := c.Update(ctx, instOp); err != nil {
+	if err := c.Update(ctx, instOp, true); err != nil {
 		return err
 	}
 
@@ -152,7 +152,7 @@ func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Ope
 }
 
 // Update redeploys subinstallations and deploy items.
-func (c *Controller) Update(ctx context.Context, op *installations.Operation) error {
+func (c *Controller) Update(ctx context.Context, op *installations.Operation, forced bool) error {
 	currOp := "Validate"
 	inst := op.Inst
 
@@ -184,6 +184,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation) er
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 
 	subinstallation := subinstallations.New(op)
+	subinstallation.Forced = forced
 	if err := subinstallation.Ensure(ctx); err != nil {
 		return err
 	}

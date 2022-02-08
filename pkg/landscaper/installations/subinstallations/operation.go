@@ -9,11 +9,13 @@ import "github.com/gardener/landscaper/pkg/landscaper/installations"
 // Operation contains all subinstallation operations
 type Operation struct {
 	*installations.Operation
+	Forced bool
 }
 
 // New creates a new subinstallation operation
 func New(op *installations.Operation) *Operation {
 	return &Operation{
 		Operation: op,
+		Forced:    false,
 	}
 }

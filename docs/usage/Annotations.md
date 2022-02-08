@@ -15,19 +15,23 @@ Please note that the effects which an annotation has on a deployitem depend on t
 #### Effect on Installations
 
 **reconcile**
-The installation will be queued for reconciliation just as if someone had changed its `spec`. The operation annotation will be removed during the reconciliation.
+The installation will be queued for reconciliation. This is the standard way of triggering an installation without changing its spec. Note that the landscaper checks whether the installation is up-to-date, so setting this annotation will not necessarily result in redeploying the executions and subinstallations. 
+The operation annotation is removed during the reconciliation.
 
 **force-reconcile**
-TODO
+This enforces a redeployment of executions and subinstallations. The checks, whether any of them is still progressing or the installation's imports are outdated, are skipped.
+In order to fix potentially broken executions of subinstallations, the force-reconcile annotation will be propagated to the subinstallations.
+The operation annotation is removed during the force-reconciliation.
 
 **abort**
-TODO
+If the abort operation annotation is set, a reconcile will be stopped before checking whether the installation needs to be updated.
+The abort operation annotation is not removed automatically.
 
 
 #### Effect on Executions
 
 **reconcile**
-Equivalent to the effect on installations.
+TODO
 
 **force-reconcile**
 TODO
@@ -39,7 +43,7 @@ TODO
 #### Effect on DeployItems
 
 **reconcile**
-Equivalent to the effect on installations.
+TODO
 
 **force-reconcile**
 TODO

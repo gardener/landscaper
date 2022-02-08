@@ -157,6 +157,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
 }
 
+// initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
+// It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
