@@ -21,7 +21,7 @@ The operation annotation is removed during the reconciliation.
 **force-reconcile**
 This enforces a redeployment of executions and subinstallations. The checks, whether any of them is still progressing or the installation's imports are outdated, are skipped.
 In order to fix potentially broken executions of subinstallations, the force-reconcile annotation will be propagated to the subinstallations.
-The operation annotation is removed during the force-reconciliation.
+The operation annotation is removed during the reconciliation.
 
 **abort**
 If the abort operation annotation is set, a reconcile will be stopped before checking whether the installation needs to be updated.
@@ -31,25 +31,32 @@ The abort operation annotation is not removed automatically.
 #### Effect on Executions
 
 **reconcile**
-TODO
+When the landscaper finds a reconcile operation annotation on an execution, it will set its phase to `Init`. This will trigger a standard reconciliation.
+The operation annotation is removed during the reconciliation.
 
 **force-reconcile**
-TODO
+The force-reconcile annotation will also set the phase to `Init`, but it causes the landscaper to skip the checks whether the deployitems are up-to-date and they will be redeployed in every case.
+This will not (re)deploy deployitems which depend on another deployitem that is not finished and up-to-date.
+The operation annotation is removed during the reconciliation.
 
 **abort**
-TODO
+The abort operation is not implemented for executions. As executions are just an intermediate helper struct to deploy deployitems, there is no need for them to be aborted anyway.
+If any of the deployitems finishes with a non-`Succeeded` phase, deployitems which depend on it won't be deployed, so it is possible to interrupt the flow of the deployitems by aborting the one which is currently running.
 
 
 #### Effect on DeployItems
 
 **reconcile**
-TODO
+The reconcile operation annotation causes the landscaper to set the deployitem's phase to `Init`, which will trigger a standard reconciliation.
+The operation annotation is removed during the reconciliation.
 
 **force-reconcile**
-TODO
+The force-reconcile operation annotation behaves similarly to the reconcile operation annotation, but it will call the deployer's `ForceReconcile` method instead of the `Reconcile` one. How both methods differ depends on the deployer implementation.
+The operation annotation is removed during the reconciliation.
 
 **abort**
-TODO
+The deployer's `Abort` method will be called. The effect depends on the deployer implementation.
+The abort operation annotation is not removed automatically.
 
 
 ## Ignore Annotation
@@ -61,4 +68,4 @@ TODO
 #### Effect on Installations/Executions/DeployItems
 
 The effect of this annotation is the same for all landscaper resources: the respective resource will not be reconciled by the landscaper, even if its spec changed or the operation annotation says otherwise. Only resources in a final phase are affected, to interrupt a running installation/execution/deployitem, the `landscaper.gardener.cloud/operation=abort` annotation has to be used.
-Please note that as long as an update of a resource is blocked from reconciliation by this annotation, all other landscaper resources which are waiting for the update (because they depend on the resource) won't be able to be reconciled either and will be stuck in the `PendingDependencies` phase.
+Please note that as long as an update of a resource is blocked from reconciliation by this annotation, all other landscaper resources which are waiting for the update (because they depend on the resource) won't be able to be reconciled either and will be stuck.

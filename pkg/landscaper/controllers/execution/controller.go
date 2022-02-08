@@ -108,11 +108,14 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 // Returns: an error, if updating the execution failed, nil otherwise
 func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c client.Client, exec *lsv1alpha1.Execution) error {
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
-	if hasReconcileAnnotation || exec.Status.ObservedGeneration != exec.Generation {
+	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+	if hasReconcileAnnotation || hasForceReconcileAnnotation || exec.Status.ObservedGeneration != exec.Generation {
 		// reconcile necessary due to one of
 		// - reconcile annotation
+		// - force-reconcile annotation
 		// - outdated generation
-		log.V(5).Info("reconcile required, setting observed generation and phase", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
+		opAnn := lsv1alpha1helper.GetOperation(exec.ObjectMeta)
+		log.V(5).Info("reconcile required, setting observed generation and phase", "operationAnnotation", opAnn, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
 		exec.Status.ObservedGeneration = exec.Generation
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
@@ -132,18 +135,6 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		log.V(7).Info("successfully updated metadata")
 	}
 
-	// also reset the phase when the force reconcile annotation is present.
-	// Otherwise we would never bbe able to leave a final phase
-	if lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		if lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-			exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
-			log.V(7).Info("updating status")
-			if err := c.Status().Update(ctx, exec); err != nil {
-				return err
-			}
-			log.V(7).Info("successfully updated status")
-		}
-	}
 	return nil
 }
 

@@ -275,6 +275,11 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if hookRes.AbortReconcile {
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
+		logger.V(5).Info("removing reconcile annotation")
+		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.lsClient.Update(ctx, di); err != nil {
+			return reconcile.Result{}, err
+		}
 		if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, lsCtx, di, target)); err != nil {
 			return reconcile.Result{}, err
 		}
