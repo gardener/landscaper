@@ -522,6 +522,13 @@ func (in *Context) DeepCopyInto(out *Context) {
 		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
+	if in.Configurations != nil {
+		in, out := &in.Configurations, &out.Configurations
+		*out = make(map[string]AnyJSON, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
+		}
+	}
 	return
 }
 

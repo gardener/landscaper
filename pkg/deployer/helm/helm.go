@@ -11,6 +11,10 @@ import (
 	"errors"
 	"fmt"
 
+	"helm.sh/helm/v3/pkg/chart"
+
+	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
+
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -123,13 +127,12 @@ func New(log logr.Logger,
 
 // Template loads the specified helm chart
 // and templates it with the given values.
-func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, error) {
+func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]string, map[string]interface{}, *chart.Chart, error) {
 	currOp := "TemplateChart"
 
 	restConfig, _, _, err := h.TargetClient(ctx)
 	if err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "GetTargetClient", err.Error())
+		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetTargetClient", err.Error())
 	}
 
 	// download chart
@@ -142,13 +145,18 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		h.Configuration,
 		h.SharedCache)
 	if err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "BuildOCIClient", err.Error())
+		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "BuildOCIClient", err.Error())
 	}
-	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, &h.ProviderConfiguration.Chart)
+
+	helmChartRepoClient, err := helmchartrepo.NewHelmChartRepoClient(h.log, h.Context)
 	if err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "GetHelmChart", err.Error())
+		return nil, nil, nil, nil, err
+	}
+
+	ch, err := chartresolver.GetChart(ctx, h.log.WithName("chartresolver"), ociClient, helmChartRepoClient,
+		&h.ProviderConfiguration.Chart)
+	if err != nil {
+		return nil, nil, nil, nil, lserrors.NewWrappedError(err, currOp, "GetHelmChart", err.Error())
 	}
 
 	//template chart
@@ -161,19 +169,19 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 
 	values := make(map[string]interface{})
 	if err := yaml.Unmarshal(h.ProviderConfiguration.Values, &values); err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		return nil, nil, nil, nil, lserrors.NewWrappedError(
+			err, currOp, "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 	values, err = chartutil.ToRenderValues(ch, values, options, nil)
 	if err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		return nil, nil, nil, nil, lserrors.NewWrappedError(
+			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	files, err := engine.RenderWithClient(ch, values, restConfig)
 	if err != nil {
-		return nil, nil, nil, lserrors.NewWrappedError(err,
-			currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		return nil, nil, nil, nil, lserrors.NewWrappedError(
+			err, currOp, "RenderHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
 	}
 
 	crds := map[string]string{}
@@ -181,7 +189,7 @@ func (h *Helm) Template(ctx context.Context) (map[string]string, map[string]stri
 		crds[crd.Filename] = string(crd.File.Data[:])
 	}
 
-	return files, crds, values, nil
+	return files, crds, values, ch, nil
 }
 
 func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, kubernetes.Interface, error) {

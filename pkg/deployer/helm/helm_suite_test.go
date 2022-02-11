@@ -78,7 +78,7 @@ var _ = Describe("Template", func() {
 		lsCtx.Namespace = item.Namespace
 		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
-		files, crds, _, err := h.Template(ctx)
+		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(crds).To(HaveKey("testchart/crds/crontabs.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/secret.yaml"))

@@ -9,6 +9,12 @@ import (
 	"fmt"
 	"strings"
 
+	"helm.sh/helm/v3/pkg/chart"
+
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -35,12 +41,14 @@ import (
 )
 
 // ApplyFiles applies the helm templated files to the target cluster.
-func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, exports map[string]interface{}) error {
+func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, exports map[string]interface{},
+	ch *chart.Chart, values map[string]interface{}) error {
+
 	currOp := "ApplyFile"
+
 	_, targetClient, targetClientSet, err := h.TargetClient(ctx)
 	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "TargetClusterClient", err.Error())
+		return lserrors.NewWrappedError(err, currOp, "TargetClusterClient", err.Error())
 	}
 
 	if h.ProviderStatus == nil {
@@ -53,14 +61,99 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 	}
 
+	manifests, err := h.createManifests(ctx, currOp, files, crds)
+	if err != nil {
+		return err
+	}
+
+	var (
+		managedResourceStatusList managedresource.ManagedResourceStatusList
+		deployErr                 error
+	)
+
+	if !h.ProviderConfiguration.HelmDeployment {
+		var applier *resourcemanager.ManifestApplier
+		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
+		managedResourceStatusList = applier.GetManagedResourcesStatus()
+	} else {
+		// apply helm
+		// convert manifests in ManagedResourceStatusList
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, values,
+			h.TargetRestConfig, targetClientSet, h.log)
+		deployErr = realHelmDeployer.Deploy(ctx)
+		if deployErr == nil {
+			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx, manifests)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
+	if deployErr != nil {
+		var err error
+		h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
+		if err != nil {
+			h.log.Error(err, "unable to encode status")
+		}
+		return deployErr
+	}
+
+	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
+	if err != nil {
+		return lserrors.NewWrappedError(err, currOp, "ProviderStatus", err.Error())
+	}
+
+	if err := h.lsKubeClient.Status().Update(ctx, h.DeployItem); err != nil {
+		return lserrors.NewWrappedError(err, currOp, "UpdateStatus", err.Error())
+	}
+
+	if err := h.checkResourcesReady(ctx, targetClient); err != nil {
+		return err
+	}
+
+	if err := h.readExportValues(ctx, currOp, targetClient, managedResourceStatusList, exports); err != nil {
+		return err
+	}
+
+	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	h.DeployItem.Status.LastError = nil
+
+	return nil
+}
+
+func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
+	manifests []managedresource.Manifest) (*resourcemanager.ManifestApplier, error) {
+	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
+		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
+		KubeClient:       targetClient,
+		Clientset:        targetClientSet,
+		DefaultNamespace: h.ProviderConfiguration.Namespace,
+		DeployItemName:   h.DeployItem.Name,
+		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
+		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
+		Manifests:        manifests,
+		ManagedResources: h.ProviderStatus.ManagedResources,
+		Labels: map[string]string{
+			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
+		},
+	})
+
+	err := applier.Apply(ctx)
+	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
+
+	return applier, err
+}
+
+func (h *Helm) createManifests(_ context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
 	objects, err := kutil.ParseFilesToRawExtension(h.log, files)
 	if err != nil {
-		return lserrors.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
 	crdObjects, err := kutil.ParseFilesToRawExtension(h.log, crds)
 	if err != nil {
-		return lserrors.NewWrappedError(err,
+		return nil, lserrors.NewWrappedError(err,
 			currOp, "DecodeHelmTemplatedObjects", err.Error())
 	}
 
@@ -79,13 +172,14 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 			Manifest: obj,
 		}
 	}
+
 	if h.ProviderConfiguration.CreateNamespace && len(h.ProviderConfiguration.Namespace) != 0 {
 		// add the release namespace as managed resource
 		ns := &corev1.Namespace{}
 		ns.Name = h.ProviderConfiguration.Namespace
 		rawNs, err := kutil.ConvertToRawExtension(ns, scheme.Scheme)
 		if err != nil {
-			return fmt.Errorf("unable to marshal release namespace: %w", err)
+			return nil, fmt.Errorf("unable to marshal release namespace: %w", err)
 		}
 		nsManifest := managedresource.Manifest{
 			Policy:   managedresource.KeepPolicy,
@@ -95,76 +189,11 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		manifests = append(manifests, nsManifest)
 	}
 
-	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
-		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
-		KubeClient:       targetClient,
-		Clientset:        targetClientSet,
-		DefaultNamespace: h.ProviderConfiguration.Namespace,
-		DeployItemName:   h.DeployItem.Name,
-		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
-		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
-		Manifests:        manifests,
-		ManagedResources: h.ProviderStatus.ManagedResources,
-		Labels: map[string]string{
-			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
-		},
-	})
-
-	err = applier.Apply(ctx)
-	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
-	if err != nil {
-		var err2 error
-		h.DeployItem.Status.ProviderStatus, err2 = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
-		if err2 != nil {
-			h.log.Error(err, "unable to encode status")
-		}
-		return err
-	}
-
-	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "ProviderStatus", err.Error())
-	}
-	if err := h.lsKubeClient.Status().Update(ctx, h.DeployItem); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "UpdateStatus", err.Error())
-	}
-
-	err = h.CheckResourcesReady(ctx, targetClient)
-	if err != nil {
-		return err
-	}
-
-	exportDefinition := &managedresource.Exports{}
-	if h.ProviderConfiguration.Exports != nil {
-		exportDefinition = h.ProviderConfiguration.Exports
-	}
-	if len(h.ProviderConfiguration.ExportsFromManifests) != 0 {
-		exportDefinition.Exports = append(exportDefinition.Exports, h.ProviderConfiguration.ExportsFromManifests...)
-	}
-	if len(exportDefinition.Exports) != 0 {
-		opts := resourcemanager.ExporterOptions{
-			KubeClient: targetClient,
-			Objects:    applier.GetManagedResourcesStatus(),
-		}
-		if h.Configuration.Export.DefaultTimeout != nil {
-			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration
-		}
-		resourceExports, err := resourcemanager.NewExporter(h.log, opts).
-			Export(ctx, exportDefinition)
-		if err != nil {
-			return lserrors.NewWrappedError(err,
-				currOp, "ReadExportValues", err.Error())
-		}
-		exports = utils.MergeMaps(exports, resourceExports)
-	}
-
-	return deployerlib.CreateOrUpdateExport(ctx, h.lsKubeClient, h.DeployItem, exports)
+	return manifests, nil
 }
 
-// CheckResourcesReady checks if the managed resources are Ready/Healthy.
-func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) error {
+// checkResourcesReady checks if the managed resources are Ready/Healthy.
+func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client) error {
 
 	if !h.ProviderConfiguration.ReadinessChecks.DisableDefault {
 		defaultReadinessCheck := health.DefaultReadinessCheck{
@@ -199,13 +228,53 @@ func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) er
 		}
 	}
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	h.DeployItem.Status.LastError = nil
+	return nil
+}
+
+func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient client.Client,
+	managedResourceStatusList managedresource.ManagedResourceStatusList, exports map[string]interface{}) error {
+
+	exportDefinition := &managedresource.Exports{}
+	if h.ProviderConfiguration.Exports != nil {
+		exportDefinition = h.ProviderConfiguration.Exports
+	}
+	if len(h.ProviderConfiguration.ExportsFromManifests) != 0 {
+		exportDefinition.Exports = append(exportDefinition.Exports, h.ProviderConfiguration.ExportsFromManifests...)
+	}
+	if len(exportDefinition.Exports) != 0 {
+		opts := resourcemanager.ExporterOptions{
+			KubeClient: targetClient,
+			Objects:    managedResourceStatusList,
+		}
+		if h.Configuration.Export.DefaultTimeout != nil {
+			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration
+		}
+		resourceExports, err := resourcemanager.NewExporter(h.log, opts).
+			Export(ctx, exportDefinition)
+		if err != nil {
+			return lserrors.NewWrappedError(err,
+				currOp, "ReadExportValues", err.Error())
+		}
+		exports = utils.MergeMaps(exports, resourceExports)
+	}
+
+	if err := deployerlib.CreateOrUpdateExport(ctx, h.lsKubeClient, h.DeployItem, exports); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // DeleteFiles deletes the managed resources from the target cluster.
 func (h *Helm) DeleteFiles(ctx context.Context) error {
+	if !h.ProviderConfiguration.HelmDeployment {
+		return h.deleteManifests(ctx)
+	} else {
+		return h.deleteManifestsWithRealHelmDeployer(ctx)
+	}
+}
+
+func (h *Helm) deleteManifests(ctx context.Context) error {
 	h.log.Info("Deleting files")
 	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
@@ -237,6 +306,33 @@ func (h *Helm) DeleteFiles(ctx context.Context) error {
 
 	if len(nonCompletedResources) != 0 {
 		return fmt.Errorf("waiting for the deletion of %q to be completed", strings.Join(nonCompletedResources, ","))
+	}
+
+	// remove finalizer
+	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
+	return h.lsKubeClient.Update(ctx, h.DeployItem)
+}
+
+func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
+	h.log.Info("Deleting files with real helm deployer")
+	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
+
+	if h.ProviderStatus == nil {
+		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
+		return h.lsKubeClient.Update(ctx, h.DeployItem)
+	}
+
+	_, _, targetClientSet, err := h.TargetClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration, nil,
+		h.TargetRestConfig, targetClientSet, h.log)
+
+	err = realHelmDeployer.Undeploy(ctx)
+	if err == nil {
+		return err
 	}
 
 	// remove finalizer
