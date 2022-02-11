@@ -251,10 +251,9 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return returnAndLogReconcileResult(logger, *hookRes), nil
 	}
 
-	switch lsv1alpha1.Operation(lsv1alpha1helper.GetOperation(di.ObjectMeta)) {
-	case lsv1alpha1.AbortOperation:
-		logger.V(5).Info("handle deploy item abort")
-		tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeAbortHook)
+	if !di.DeletionTimestamp.IsZero() {
+		logger.V(5).Info("handle deploy item deletion")
+		tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeDeleteHook)
 		if err != nil {
 			return reconcile.Result{}, errHdl(ctx, err)
 		}
@@ -262,32 +261,14 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if hookRes.AbortReconcile {
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
-		if err := errHdl(ctx, c.deployer.Abort(ctx, lsCtx, di, target)); err != nil {
+		if err := errHdl(ctx, c.delete(ctx, lsCtx, di, target)); err != nil {
 			return reconcile.Result{}, err
 		}
-	case lsv1alpha1.ForceReconcileOperation:
-		logger.V(5).Info("handle deploy item force-reconcile")
-		tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeForceReconcileHook)
-		if err != nil {
-			return reconcile.Result{}, errHdl(ctx, err)
-		}
-		hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
-		if hookRes.AbortReconcile {
-			return returnAndLogReconcileResult(logger, *hookRes), nil
-		}
-		logger.V(5).Info("removing reconcile annotation")
-		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.lsClient.Update(ctx, di); err != nil {
-			return reconcile.Result{}, err
-		}
-		if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, lsCtx, di, target)); err != nil {
-			return reconcile.Result{}, err
-		}
-	default:
-
-		if !di.DeletionTimestamp.IsZero() {
-			logger.V(5).Info("handle deploy item deletion")
-			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeDeleteHook)
+	} else {
+		switch lsv1alpha1.Operation(lsv1alpha1helper.GetOperation(di.ObjectMeta)) {
+		case lsv1alpha1.AbortOperation:
+			logger.V(5).Info("handle deploy item abort")
+			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeAbortHook)
 			if err != nil {
 				return reconcile.Result{}, errHdl(ctx, err)
 			}
@@ -295,10 +276,28 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			if hookRes.AbortReconcile {
 				return returnAndLogReconcileResult(logger, *hookRes), nil
 			}
-			if err := errHdl(ctx, c.delete(ctx, lsCtx, di, target)); err != nil {
+			if err := errHdl(ctx, c.deployer.Abort(ctx, lsCtx, di, target)); err != nil {
 				return reconcile.Result{}, err
 			}
-		} else {
+		case lsv1alpha1.ForceReconcileOperation:
+			logger.V(5).Info("handle deploy item force-reconcile")
+			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeForceReconcileHook)
+			if err != nil {
+				return reconcile.Result{}, errHdl(ctx, err)
+			}
+			hookRes = extension.AggregateHookResults(hookRes, tmpHookRes)
+			if hookRes.AbortReconcile {
+				return returnAndLogReconcileResult(logger, *hookRes), nil
+			}
+			logger.V(5).Info("removing reconcile annotation")
+			delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
+			if err := c.lsClient.Update(ctx, di); err != nil {
+				return reconcile.Result{}, err
+			}
+			if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, lsCtx, di, target)); err != nil {
+				return reconcile.Result{}, err
+			}
+		default:
 			// default reconcile
 			logger.V(7).Info("handle deploy item reconcile")
 			tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeReconcileHook)
@@ -313,7 +312,6 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 				return reconcile.Result{}, err
 			}
 		}
-
 	}
 
 	tmpHookRes, err = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.EndHook)

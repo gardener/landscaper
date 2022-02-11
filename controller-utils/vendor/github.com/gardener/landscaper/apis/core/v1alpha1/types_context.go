@@ -65,4 +65,8 @@ type Context struct {
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
 	RegistryPullSecrets []corev1.LocalObjectReference `json:"registryPullSecrets,omitempty"`
+	// Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
+	// The key should use a dns-like syntax to express the purpose and avoid conflicts.
+	// +optional
+	Configurations map[string]AnyJSON `json:"configurations,omitempty"`
 }
