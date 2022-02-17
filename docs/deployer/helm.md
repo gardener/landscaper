@@ -42,8 +42,6 @@ spec:
         resourceName: my-helm-chart
       archive:
         raw: "" # base64 encoded helm chart tar.gz
-        remote:
-          url: "https://my-domain/maychart.tar.gz"
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
