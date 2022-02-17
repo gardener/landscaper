@@ -7,9 +7,9 @@ package subinstallations
 import (
 	"context"
 	"fmt"
+	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -318,7 +318,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
+	_, err = kubernetes.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
 		subInst.Spec.Context = inst.Spec.Context
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
