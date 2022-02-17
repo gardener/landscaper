@@ -6,8 +6,9 @@ package subinstallations_test
 
 import (
 	"context"
-
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	"github.com/gardener/landscaper/test/utils/envtest"
 	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
@@ -27,7 +28,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils"
 )
 
@@ -41,6 +41,10 @@ var _ = Describe("SubInstallation", func() {
 		fakeCompRepo     ctf.ComponentResolver
 
 		defaultTestConfig *utils.TestInstallationConfig
+
+		state             *envtest.State
+		fakeClient		  client.Client
+		fakeInstallations map[string]*lsv1alpha1.Installation
 	)
 
 	BeforeEach(func() {
@@ -50,10 +54,28 @@ var _ = Describe("SubInstallation", func() {
 		mockStatusWriter = k8smock.NewMockStatusWriter(ctrl)
 		mockClient.EXPECT().Status().AnyTimes().Return(mockStatusWriter)
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata")
+
+
+
+
+		state, err = testenv.InitResources(context.Background(), "./testdata/state")
+		Expect(err).ToNot(HaveOccurred())
+		fakeClient = testenv.Client
+		fakeInstallations = state.Installations
+
+		Expect(utils.CreateExampleDefaultContext(context.TODO(), testenv.Client, "test1", "test2")).To(Succeed())
+
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(logr.Discard(), mockClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+		//op = lsoperation.NewOperation(logr.Discard(), mockClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+		op, err = lsoperation.NewBuilder().
+			                  WithLogger(logr.Discard()).
+			                  Client(fakeClient).Scheme(api.LandscaperScheme).
+			                  WithEventRecorder(record.NewFakeRecorder(1024)).
+			                  ComponentRegistry(fakeCompRepo).
+			                  Build(context.Background())
+		Expect(err).ToNot(HaveOccurred())
 
 		defaultTestConfig = &utils.TestInstallationConfig{
 			MockClient:                   mockClient,
@@ -62,14 +84,15 @@ var _ = Describe("SubInstallation", func() {
 			RemoteBlueprintComponentName: "example.com/root",
 			RemoteBlueprintResourceName:  "root",
 			RemoteBlueprintVersion:       "1.0.0",
-			BlueprintFilePath:            "./testdata/01-root/blueprint-root1.yaml",
-			BlueprintContentPath:         "./testdata/01-root",
-			RemoteBlueprintBaseURL:       "./testdata",
+			BlueprintFilePath:            "./testdata/registry/01-root/blueprint-root1.yaml",
+			BlueprintContentPath:         "./testdata/registry/01-root",
+			RemoteBlueprintBaseURL:       "./testdata/registry",
 		}
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
+		Expect(testenv.CleanupState(context.Background(), state)).To(Succeed())
 	})
 
 	Context("Create subinstallations", func() {
@@ -77,24 +100,69 @@ var _ = Describe("SubInstallation", func() {
 		It("should not create any installations if no subinstallation definitions are defined", func() {
 			ctx := context.Background()
 			defer ctx.Done()
-			mockClient.EXPECT().List(ctx, gomock.AssignableToTypeOf(&lsv1alpha1.InstallationList{}), gomock.Any()).
-				Return(nil).Times(2) // once for the operation and once in the ensure.
-			mockStatusWriter.EXPECT().Update(ctx, gomock.Any()).Times(1).Return(nil).Do(
-				func(ctx context.Context, inst *lsv1alpha1.Installation) {
-					Expect(len(inst.Status.Conditions)).To(Equal(1))
-					Expect(inst.Status.Conditions[0].Type).To(Equal(lsv1alpha1.EnsureSubInstallationsCondition))
-					Expect(inst.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))
-				},
-			)
+
+			inst := fakeInstallations["test1/root"]
+			Expect(inst).ToNot(BeNil())
 
 			blue := blueprints.New(&lsv1alpha1.Blueprint{}, memoryfs.New())
-			inst, err := installations.New(&lsv1alpha1.Installation{}, blue)
+			instRoot, err := installations.New(inst, blue)
 			Expect(err).ToNot(HaveOccurred())
-			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inst, nil)
+			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).Build(ctx)
 			Expect(err).ToNot(HaveOccurred())
 
-			si := subinstallations.New(instOp)
+			si := subinstallations.New(rootInstOp)
 			Expect(si.Ensure(ctx)).To(Succeed())
+
+			err = fakeClient.Get(ctx, client.ObjectKeyFromObject(inst), inst)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inst.Status.Conditions).To(HaveLen(1))
+			Expect(inst.Status.Conditions[0].Type).To(Equal(lsv1alpha1.EnsureSubInstallationsCondition))
+			Expect(inst.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))
+		})
+
+		It("should create one installation if a subinstallation is defined", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			inst := fakeInstallations["test2/root"]
+			Expect(inst).ToNot(BeNil())
+			instRoot, err := installations.CreateInternalInstallationWithContext(ctx, inst, fakeClient, op.ComponentsRegistry(), nil)
+			Expect(err).ToNot(HaveOccurred())
+			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).Build(ctx)
+			Expect(err).ToNot(HaveOccurred())
+
+			si := subinstallations.New(rootInstOp)
+			Expect(si.Ensure(ctx)).To(Succeed())
+
+			err = fakeClient.Get(ctx, client.ObjectKeyFromObject(inst), inst)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(inst.Status.Conditions).To(HaveLen(1))
+			Expect(inst.Status.Conditions[0].Type).To(Equal(lsv1alpha1.EnsureSubInstallationsCondition))
+			Expect(inst.Status.Conditions[0].Status).To(Equal(lsv1alpha1.ConditionTrue))
+			Expect(inst.Status.InstallationReferences).To(HaveLen(1))
+			Expect(inst.Status.InstallationReferences[0].Name).To(Equal("def-1"))
+			Expect(inst.Status.InstallationReferences[0].Reference.Name).To(HavePrefix("def-1-"))
+			Expect(inst.Status.InstallationReferences[0].Reference.Namespace).To(Equal("test2"))
+
+			subinst := &lsv1alpha1.Installation{}
+			err = fakeClient.Get(ctx, types.NamespacedName{Name: inst.Status.InstallationReferences[0].Reference.Name, Namespace: inst.Status.InstallationReferences[0].Reference.Namespace}, subinst)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(subinst.Spec.Context).To(Equal("default"))
+
+			Expect(subinst.Spec.Imports.Data).To(HaveLen(1))
+			Expect(subinst.Spec.Imports.Data[0].Name).To(Equal("a"))
+			Expect(subinst.Spec.Imports.Data[0].DataRef).To(Equal("b"))
+
+			Expect(subinst.Spec.Exports.Data).To(HaveLen(1))
+			Expect(subinst.Spec.Exports.Data[0].Name).To(Equal("c"))
+			Expect(subinst.Spec.Exports.Data[0].DataRef).To(Equal("d"))
+
+			Expect(subinst.Spec.ComponentDescriptor.Reference.ComponentName).To(Equal("example.com/root"))
+			Expect(subinst.Spec.ComponentDescriptor.Reference.Version).To(Equal("1.0.0"))
+
+			Expect(subinst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object["baseUrl"]).To(Equal("./testdata/registry"))
+			Expect(subinst.Spec.ComponentDescriptor.Reference.RepositoryContext.Object["type"]).To(Equal("ociRegistry"))
 		})
 
 		It("should create one installation if a subinstallation is defined", func() {

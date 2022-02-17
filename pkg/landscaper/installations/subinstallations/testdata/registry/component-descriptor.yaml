@@ -13,27 +13,25 @@ component:
 
   repositoryContexts:
   - type: ociRegistry
-    baseUrl: "./testdata"
+    baseUrl: "./testdata/registry"
 
   sources: []
   componentReferences: []
 
   resources:
-  - name: root
+  - name: root-1
     type: blueprint
     version: 1.0.0
     relation: local
     access:
-      type: local
-  - name: def1
+      type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+      filename: root-1
+  - name: def-1
     type: blueprint
     version: 1.0.0
     relation: local
     access:
-      type: local
-  - name: def2
-    type: blueprint
-    version: 1.0.0
-    relation: local
-    access:
-      type: local
+      type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+      filename: def-1

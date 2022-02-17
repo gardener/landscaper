@@ -2,7 +2,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 
 annotations:
-  local/name: root
+  local/name: root-1
   local/version: 1.0.0
 
 imports:
@@ -12,4 +12,19 @@ imports:
       type: string
 
 subinstallations:
-  - file: ./def1.yaml
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: def-1
+
+    blueprint:
+      ref: cd://resources/def-1
+
+    imports:
+      data:
+        - name: a
+          dataRef: b
+    exports:
+      data:
+        - name: c
+          dataRef: d

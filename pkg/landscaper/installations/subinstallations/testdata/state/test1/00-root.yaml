@@ -1,0 +1,5 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: test1
