@@ -168,6 +168,10 @@ func (s *State) InitResourcesWithClient(ctx context.Context, c client.Client, re
 		return err
 	}
 
+	if len(resources) == 0 {
+		return nil
+	}
+
 	resourcesChan := make(chan client.Object, len(resources))
 
 	for _, obj := range resources {
