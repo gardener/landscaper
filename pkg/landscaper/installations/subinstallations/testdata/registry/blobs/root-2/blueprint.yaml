@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: root
+  local/version: 1.0.0
+
+imports:
+- name: b
+  type: data
+  schema:
+    type: string
+
+subinstallationExecutions:
+- name: default
+  type: GoTemplate
+  template: |
+    subinstallations:
+    - apiVersion: landscaper.gardener.cloud/v1alpha1
+      kind: InstallationTemplate
+      name: def1
+      blueprint:
+        ref: cd://resources/def1
+      imports:
+        data:
+        - name: a
+          dataRef: b
+      exports:
+        data:
+        - name: c
+          dataRef: d

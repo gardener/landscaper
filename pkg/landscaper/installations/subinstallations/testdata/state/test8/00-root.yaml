@@ -1,0 +1,25 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: test7
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      componentName: example.com/root
+      version: 1.0.0
+
+  blueprint:
+    ref:
+      resourceName: root-1
+
+status:
+  InstallationReferences:
+    name: def-1
+    reference:
+      name: invalid
+      namespace: test7
