@@ -5,7 +5,7 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: InstallationTemplate
 
-name: def2
+name: def-2
 
 blueprint:
-  ref: cd://resources/def2
+  ref: cd://resources/def-2

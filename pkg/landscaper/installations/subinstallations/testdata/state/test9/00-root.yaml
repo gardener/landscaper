@@ -6,7 +6,7 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: root
-  namespace: test3
+  namespace: test9
 spec:
 
   componentDescriptor:
@@ -19,4 +19,11 @@ spec:
 
   blueprint:
     ref:
-      resourceName: root-2
+      resourceName: root-1
+
+status:
+  installationRefs:
+    - name: def-1
+      ref:
+        name: def-1
+        namespace: test9

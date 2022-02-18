@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,5 +16,27 @@ imports:
     type: string
 
 subinstallations:
-- file: ./def1.yaml
-- file: ./def2.yaml
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: def-1
+
+    blueprint:
+      ref: cd://resources/def-1
+
+    imports:
+      data:
+        - name: a
+          dataRef: b
+    exports:
+      data:
+        - name: c
+          dataRef: d
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: def-2
+
+    blueprint:
+      ref: cd://resources/def-2
