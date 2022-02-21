@@ -118,6 +118,9 @@ func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.Installat
 		for _, exp := range tmpl.Exports.Data {
 			dataExports[exp.DataRef] = tmpl.Name
 		}
+		for exp := range tmpl.ExportDataMappings {
+			dataExports[exp] = tmpl.Name
+		}
 		for _, exp := range tmpl.Exports.Targets {
 			targetExports[exp.Target] = tmpl.Name
 		}
