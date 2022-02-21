@@ -91,6 +91,11 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 			return false, false, nil
 		}
 
+		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+			log.V(3).Info("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
+			return false, false, nil
+		}
+
 		intInst := installations.CreateInternalInstallationBase(inst)
 
 		isCompleted, err = CheckCompletedSiblingDependents(ctx, kubeClient, contextName, intInst)
