@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 apiVersion: landscaper.gardener.cloud/v1alpha1
-kind: Blueprint
+kind: InstallationTemplate
 
-annotations:
-  local/name: root
-  local/version: 1.0.0
+name: def-2
+
+blueprint:
+  ref: cd://resources/def-2

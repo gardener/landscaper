@@ -7,9 +7,9 @@ package subinstallations
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
@@ -17,6 +17,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
 	"github.com/gardener/landscaper/apis/core/validation"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -318,7 +320,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = controllerruntime.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
+	_, err = kubernetes.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
 		subInst.Spec.Context = inst.Spec.Context
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
@@ -351,11 +353,26 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, errors.Wrapf(err, "unable to create installation for %s", subInstTmpl.Name)
 	}
 
-	// add newly created installation to state
-	inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(subInstTmpl.Name, subInst))
-	// todo: erevaluate if we really need that call
-	if err := o.Client().Status().Update(ctx, inst); err != nil {
-		return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
+	oldStatus := inst.Status.DeepCopy()
+	// update or create installation reference
+	var installationReference *lsv1alpha1.NamedObjectReference = nil
+	for _, ref := range inst.Status.InstallationReferences {
+		if ref.Name == subInstTmpl.Name {
+			ref.Reference.Name = subInst.Name
+			ref.Reference.Namespace = subInst.Namespace
+			installationReference = &ref
+			break
+		}
+	}
+
+	if installationReference == nil {
+		inst.Status.InstallationReferences = append(inst.Status.InstallationReferences, lsv1alpha1helper.NewInstallationReferenceState(subInstTmpl.Name, subInst))
+	}
+
+	if !reflect.DeepEqual(oldStatus, inst.Status) {
+		if err := o.Client().Status().Update(ctx, inst); err != nil {
+			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
+		}
 	}
 
 	return subInst, nil
