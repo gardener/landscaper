@@ -41,11 +41,14 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 	deployerInfo lsv1alpha1.DeployerInformation) error {
 	changedMeta := false
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
-	if hasReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
+	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+	if hasReconcileAnnotation || hasForceReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
 		// reconcile necessary due to one of
 		// - reconcile annotation
+		// - force-reconcile annotation
 		// - outdated generation
-		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "reconcileAnnotation", hasReconcileAnnotation, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
+		opAnn := lsv1alpha1helper.GetOperation(di.ObjectMeta)
+		log.V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "operationAnnotation", opAnn, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
 		if err := PrepareReconcile(ctx, log, kubeClient, di, deployerInfo); err != nil {
 			return err
 		}

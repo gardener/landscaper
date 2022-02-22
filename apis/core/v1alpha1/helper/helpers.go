@@ -306,3 +306,11 @@ func CombinedExecutionPhase(phases ...v1alpha1.ExecutionPhase) v1alpha1.Executio
 	}
 	return v1alpha1.ExecutionPhase(CombinedInstallationPhase(intPhases...))
 }
+
+// HasIgnoreAnnotation returns true only if the given object
+// has the 'landscaper.gardener.cloud/ignore' annotation
+// and its value is 'true'.
+func HasIgnoreAnnotation(obj metav1.ObjectMeta) bool {
+	v, ok := obj.GetAnnotations()[v1alpha1.IgnoreAnnotation]
+	return ok && v == "true"
+}

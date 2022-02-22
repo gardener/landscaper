@@ -99,6 +99,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 		return reconcile.Result{}, err
 	}
+
+	// don't reconcile if ignore annotation is set and installation is not currently running
+	if lsv1alpha1helper.HasIgnoreAnnotation(inst.ObjectMeta) && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+		logger.V(7).Info("skipping reconcile due to ignore annotation")
+		return reconcile.Result{}, nil
+	}
+
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
 	errHdl := HandleErrorFunc(logger, c.Client(), c.EventRecorder(), inst)
@@ -150,6 +157,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
 }
 
+// initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
+// It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()

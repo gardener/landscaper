@@ -328,6 +328,10 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		subInst.Annotations = map[string]string{
 			lsv1alpha1.SubinstallationNameAnnotation: subInstTmpl.Name,
 		}
+		if o.Forced {
+			// propagate force-reconcile annotation to subinstallations
+			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+		}
 		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
