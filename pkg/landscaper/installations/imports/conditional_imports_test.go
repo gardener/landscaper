@@ -76,7 +76,7 @@ var _ = Describe("ConditionalImports", func() {
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		Expect(imports.NewConstructor(op).Construct(ctx, conInst)).To(Succeed())
+		Expect(imports.NewConstructor(op).Construct(ctx, nil)).To(Succeed())
 		// create subinstallation
 		utils.ExpectNoError(subInstOp.Ensure(ctx))
 		Expect(conInst.Info.Status.InstallationReferences).NotTo(BeEmpty())
@@ -127,7 +127,7 @@ var _ = Describe("ConditionalImports", func() {
 		subInstOp := subinstallations.New(instOp)
 		// satisfy imports
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		Expect(imports.NewConstructor(op).Construct(ctx, conInst)).To(Succeed())
+		Expect(imports.NewConstructor(op).Construct(ctx, nil)).To(Succeed())
 		// create subinstallation
 		utils.ExpectNoError(subInstOp.Ensure(ctx))
 		Expect(conInst.Info.Status.InstallationReferences).NotTo(BeEmpty())
@@ -177,7 +177,7 @@ var _ = Describe("ConditionalImports", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 		// satisfy imports
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		err = imports.NewConstructor(op).Construct(ctx, conInst)
+		err = imports.NewConstructor(op).Construct(ctx, nil)
 		parsedErr, ok := err.(*installations.Error)
 		Expect(ok).To(BeTrue(), "error should be of type installations.Error")
 		Expect(parsedErr).To(PointTo(MatchFields(IgnoreExtras, Fields{

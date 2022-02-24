@@ -27,43 +27,66 @@ func NewConstructor(op *installations.Operation) *Constructor {
 	}
 }
 
+// Imports is a helper struct to pass around the loaded imports.
+type Imports struct {
+	DataObjects              map[string]*dataobjects.DataObject
+	Targets                  map[string]*dataobjects.Target
+	TargetLists              map[string]*dataobjects.TargetList
+	ComponentDescriptors     map[string]*dataobjects.ComponentDescriptor
+	ComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList
+}
+
+// LoadImports loads all imports from the cluster (or wherever).
+func (c *Constructor) LoadImports(ctx context.Context) (*Imports, error) {
+	imps := &Imports{}
+	var err error
+
+	imps.DataObjects, err = c.GetImportedDataObjects(ctx) // returns a map mapping logical names to data objects
+	if err != nil {
+		return nil, err
+	}
+	imps.Targets, err = c.GetImportedTargets(ctx) // returns a map mapping logical names to targets
+	if err != nil {
+		return nil, err
+	}
+	imps.TargetLists, err = c.GetImportedTargetLists(ctx) // returns a map mapping logical names to target lists
+	if err != nil {
+		return nil, err
+	}
+	imps.ComponentDescriptors, err = c.GetImportedComponentDescriptors(ctx) // returns a map mapping logical names to component descriptors
+	if err != nil {
+		return nil, err
+	}
+	imps.ComponentDescriptorLists, err = c.GetImportedComponentDescriptorLists(ctx) // returns a map mapping logical names to lists of component descriptors
+	if err != nil {
+		return nil, err
+	}
+	return imps, nil
+}
+
 // Construct loads all imported data from the data sources (either installations or the landscape config)
 // and creates the imported configuration.
 // The imported data is added to installation resource.
-func (c *Constructor) Construct(ctx context.Context, inst *installations.Installation) error {
-	var (
-		fldPath = field.NewPath(inst.Info.Name)
-	)
+func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
+	inst := c.Inst
+	fldPath := field.NewPath(inst.Info.Name)
 
-	// read imports and construct internal templating imports
-	importedDataObjects, err := c.GetImportedDataObjects(ctx) // returns a map mapping logical names to data objects
-	if err != nil {
-		return err
-	}
-	importedTargets, err := c.GetImportedTargets(ctx) // returns a map mapping logical names to targets
-	if err != nil {
-		return err
-	}
-	importedTargetLists, err := c.GetImportedTargetLists(ctx) // returns a map mapping logical names to target lists
-	if err != nil {
-		return err
-	}
-	importedComponentDescriptors, err := c.GetImportedComponentDescriptors(ctx) // returns a map mapping logical names to component descriptors
-	if err != nil {
-		return err
-	}
-	importedComponentDescriptorLists, err := c.GetImportedComponentDescriptorLists(ctx) // returns a map mapping logical names to lists of component descriptors
-	if err != nil {
-		return err
+	// if imports are not given, load them
+	if imps == nil {
+		var err error
+		imps, err = c.LoadImports(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
-	templatedDataMappings, err := c.templateDataMappings(fldPath, importedDataObjects, importedTargets, importedTargetLists, importedComponentDescriptors, importedComponentDescriptorLists) // returns a map mapping logical names to data content
+	templatedDataMappings, err := c.templateDataMappings(fldPath, imps.DataObjects, imps.Targets, imps.TargetLists, imps.ComponentDescriptors, imps.ComponentDescriptorLists) // returns a map mapping logical names to data content
 	if err != nil {
 		return err
 	}
 
 	// add additional imports and targets
-	imports, err := c.constructImports(inst.Blueprint.Info.Imports, importedDataObjects, importedTargets, importedTargetLists, importedComponentDescriptors, importedComponentDescriptorLists, templatedDataMappings, fldPath)
+	imports, err := c.constructImports(inst.Blueprint.Info.Imports, imps.DataObjects, imps.Targets, imps.TargetLists, imps.ComponentDescriptors, imps.ComponentDescriptorLists, templatedDataMappings, fldPath)
 	if err != nil {
 		return err
 	}
