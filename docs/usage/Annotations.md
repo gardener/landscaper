@@ -7,6 +7,7 @@ Please note that the effects which an annotation has on a deployitem depend on t
 ## Operation Annotation
 
 **Annotation:** `landscaper.gardener.cloud/operation`
+
 **Accepted values:**
   - `reconcile`
   - `force-reconcile`
@@ -62,6 +63,7 @@ The abort operation annotation is not removed automatically.
 ## Ignore Annotation
 
 **Annotation:** `landscaper.gardener.cloud/ignore`
+
 **Accepted values:**
   - `true`
 
