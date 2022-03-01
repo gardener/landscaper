@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ComponentDescriptorList is the internal representation of a list of targets.
@@ -51,4 +53,38 @@ func (cdl *ComponentDescriptorList) GetData() (interface{}, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+// Imported interface
+
+func (cdl *ComponentDescriptorList) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeComponentDescriptorList
+}
+
+func (cdl *ComponentDescriptorList) IsListTypeImport() bool {
+	return true
+}
+
+func (cdl *ComponentDescriptorList) GetInClusterObject() client.Object {
+	return nil
+}
+func (cdl *ComponentDescriptorList) GetInClusterObjects() []client.Object {
+	// component descriptors are not represented as in-cluster landscaper objects
+	return nil
+}
+
+func (cdl *ComponentDescriptorList) ComputeConfigGeneration() string {
+	return ""
+}
+
+func (cdl *ComponentDescriptorList) GetListItems() []ImportedBase {
+	res := make([]ImportedBase, len(cdl.ComponentDescriptors))
+	for i := range cdl.ComponentDescriptors {
+		res[i] = cdl.ComponentDescriptors[i]
+	}
+	return res
+}
+
+func (cdl *ComponentDescriptorList) GetImportReference() string {
+	return ""
 }

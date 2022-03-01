@@ -36,6 +36,32 @@ type Imports struct {
 	ComponentDescriptorLists map[string]*dataobjects.ComponentDescriptorList
 }
 
+func (imps *Imports) All() []*dataobjects.Imported {
+	res := make([]*dataobjects.Imported, 0, imps.Size())
+	for impName, elem := range imps.DataObjects {
+		res = append(res, dataobjects.NewImported(impName, elem))
+	}
+	for impName, elem := range imps.Targets {
+		res = append(res, dataobjects.NewImported(impName, elem))
+	}
+	for impName, elem := range imps.TargetLists {
+		res = append(res, dataobjects.NewImported(impName, elem))
+	}
+	for impName, elem := range imps.ComponentDescriptors {
+		res = append(res, dataobjects.NewImported(impName, elem))
+	}
+	for impName, elem := range imps.ComponentDescriptorLists {
+		res = append(res, dataobjects.NewImported(impName, elem))
+	}
+
+	return res
+}
+
+// Size returns the total amount of imports.
+func (imps *Imports) Size() int {
+	return len(imps.DataObjects) + len(imps.Targets) + len(imps.TargetLists) + len(imps.ComponentDescriptors) + len(imps.ComponentDescriptorLists)
+}
+
 // LoadImports loads all imports from the cluster (or wherever).
 func (c *Constructor) LoadImports(ctx context.Context) (*Imports, error) {
 	imps := &Imports{}

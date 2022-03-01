@@ -9,6 +9,7 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -79,4 +80,36 @@ func (cd *ComponentDescriptor) SetConfigMapReference(cmr *lsv1alpha1.ConfigMapRe
 func (cd *ComponentDescriptor) SetDescriptor(raw *cdv2.ComponentDescriptor) *ComponentDescriptor {
 	cd.Descriptor = raw
 	return cd
+}
+
+// Imported interface
+
+func (cd *ComponentDescriptor) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeComponentDescriptor
+}
+
+func (cd *ComponentDescriptor) IsListTypeImport() bool {
+	return false
+}
+
+func (cd *ComponentDescriptor) GetInClusterObject() client.Object {
+	// component descriptors are not represented as in-cluster landscaper objects
+	return nil
+}
+func (cd *ComponentDescriptor) GetInClusterObjects() []client.Object {
+	return nil
+}
+
+func (cd *ComponentDescriptor) ComputeConfigGeneration() string {
+	return ""
+}
+
+func (cd *ComponentDescriptor) GetListItems() []ImportedBase {
+	return nil
+}
+
+func (cd *ComponentDescriptor) GetImportReference() string {
+	// component descriptors cannot be exported
+	// and references to parent imports are resolved and replaced during subinstallation rendering
+	return ""
 }

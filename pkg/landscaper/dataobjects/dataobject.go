@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -192,4 +193,33 @@ func (do DataObject) Apply(raw *lsv1alpha1.DataObject) error {
 	do.Metadata.Hash = generateHash(raw.Data.RawMessage)
 	SetMetadataFromObject(raw, do.Metadata)
 	return nil
+}
+
+// Imported interface
+
+func (do *DataObject) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeData
+}
+
+func (do *DataObject) IsListTypeImport() bool {
+	return false
+}
+
+func (do *DataObject) GetInClusterObject() client.Object {
+	return do.Raw
+}
+func (do *DataObject) GetInClusterObjects() []client.Object {
+	return nil
+}
+
+func (do *DataObject) ComputeConfigGeneration() string {
+	return do.Metadata.Hash
+}
+
+func (do *DataObject) GetListItems() []ImportedBase {
+	return nil
+}
+
+func (do *DataObject) GetImportReference() string {
+	return do.Metadata.Key
 }

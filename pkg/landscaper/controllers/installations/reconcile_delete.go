@@ -15,6 +15,7 @@ import (
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
@@ -38,7 +39,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		if err != nil {
 			return err
 		}
-		if err := c.Update(ctx, instOp, false); err != nil {
+		if err := c.Update(ctx, instOp, false, nil); err != nil {
 			return err
 		}
 		if err := DeleteExecutionAndSubinstallations(ctx, instOp); err != nil {
@@ -100,15 +101,24 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 	}
 	instOp.CurrentOperation = "Deletion"
 
-	eligibleToUpdate, err := c.eligibleToUpdate(ctx, instOp)
+	rh := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	updateRequired, err := rh.UpdateRequired()
 	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currentOperation, "EligibleForUpdate", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "UpdateRequired", err.Error())
 	}
-	if eligibleToUpdate {
+	// TODO: Do we have to check for installations we depend on here?
+
+	if updateRequired {
 		log.V(2).Info("installation outdated. Updating before deletion.")
+		if err := rh.ImportsSatisfied(); err != nil {
+			return err
+		}
+		imps, err := rh.GetImports()
+		if err != nil {
+			return err
+		}
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := c.Update(ctx, instOp, false); err != nil {
+		if err := c.Update(ctx, instOp, false, imps); err != nil {
 			return err
 		}
 	}

@@ -497,9 +497,9 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// TriggerDependants triggers all installations that depend on the current installation.
+// TriggerDependents triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
-func (o *Operation) TriggerDependants(ctx context.Context) error {
+func (o *Operation) TriggerDependents(ctx context.Context) error {
 	for _, sibling := range o.Context().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
 			continue

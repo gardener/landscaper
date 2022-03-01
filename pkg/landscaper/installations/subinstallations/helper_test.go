@@ -29,7 +29,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"c": nil,
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
 			for k, v := range computedDeps {
 				Expect(v).To(BeEmpty(), "entry %q has non-empty dependency list", k)
 			}
@@ -42,7 +42,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
 			Expect(impRels).To(HaveLen(1))
 			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_data")))
@@ -53,7 +53,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
-			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
 			Expect(impRels).To(HaveLen(1))
 			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_target")))
@@ -64,7 +64,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mappingDependency))
-			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
 			Expect(impRels).To(HaveLen(1))
 			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_mapping")))

@@ -17,6 +17,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 )
 
@@ -67,22 +68,29 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 	instOp.CurrentOperation = currentOperation
 
-	// check if the spec has changed
-	eligibleToUpdate, err := c.eligibleToUpdate(ctx, instOp)
+	rh := reconcilehelper.NewReconcileHelper(ctx, instOp)
+
+	// check if a reconcile is required due to changed spec or imports
+	updateRequired, err := rh.UpdateRequired()
 	if err != nil {
-		return instOp.NewError(err, "EligibleForUpdate", err.Error())
+		return err
 	}
-	if eligibleToUpdate {
+	if updateRequired {
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		// need to return and not continue with export validation
-		return c.Update(ctx, instOp, false)
+		// check whether the installation can be updated
+		err := rh.UpdateAllowed()
+		if err != nil {
+			return err
+		}
+
+		imps, err := rh.GetImports()
+		if err != nil {
+			return err
+		}
+		return c.Update(ctx, instOp, false, imps)
 	}
 
-	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
-		inst.Status.Phase = combinedState
-		return nil
-	}
-
+	// no update required, continue with exports
 	instOp.CurrentOperation = "Completing"
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
 	if err != nil {
@@ -99,7 +107,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is c must, maybe track what we already successfully triggered
 	// maybe we also need to increase the generation manually to signal c new config version
-	if err := instOp.TriggerDependants(ctx); err != nil {
+	if err := instOp.TriggerDependents(ctx); err != nil {
 		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
 		return instOp.NewError(err, "TriggerDependents", err.Error())
 	}
@@ -115,7 +123,17 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	}
 
 	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	if err := c.Update(ctx, instOp, true); err != nil {
+	rh := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	// it is only checked whether the imports are satisfied,
+	// the check whether installations this one depends on are succeeded is skipped
+	if err := rh.ImportsSatisfied(); err != nil {
+		return err
+	}
+	imps, err := rh.GetImports()
+	if err != nil {
+		return err
+	}
+	if err := c.Update(ctx, instOp, true, imps); err != nil {
 		return err
 	}
 
@@ -129,49 +147,13 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	return nil
 }
 
-// eligibleToUpdate checks whether the subinstallations and deploy items should be updated.
-// The check succeeds if the installation's generation has changed or the imported deploy item versions have changed.
-func (c *Controller) eligibleToUpdate(ctx context.Context, op *installations.Operation) (bool, error) {
-	if op.Inst.Info.Generation != op.Inst.Info.Status.ObservedGeneration {
-		return true, nil
-	}
-
-	validator, err := imports.NewValidator(ctx, op)
-	if err != nil {
-		return false, err
-	}
-	run, err := validator.OutdatedImports(ctx)
-	if err != nil {
-		return run, err
-	}
-	if !run {
-		return false, nil
-	}
-
-	return validator.CheckDependentInstallations(ctx)
-}
-
 // Update redeploys subinstallations and deploy items.
-func (c *Controller) Update(ctx context.Context, op *installations.Operation, forced bool) error {
-	currOp := "Validate"
+func (c *Controller) Update(ctx context.Context, op *installations.Operation, forced bool, imps *imports.Imports) error {
 	inst := op.Inst
-
-	val, err := imports.NewValidator(ctx, op)
-	if err != nil {
-		err = fmt.Errorf("unable to init import validator: %w", err)
-		return lserrors.NewWrappedError(err,
-			currOp, "ImportsSatisfied", err.Error())
-	}
-	if err := val.ImportsSatisfied(ctx, inst); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "ImportsSatisfied", err.Error())
-	}
-
-	currOp = "Reconcile"
-	// as all imports are satisfied we can collect and merge all imports
-	// and then start the executions
+	currOp := "Reconcile"
+	// collect and merge all imports and start the Executions
 	constructor := imports.NewConstructor(op)
-	if err := constructor.Construct(ctx, inst); err != nil {
+	if err := constructor.Construct(ctx, imps); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "ConstructImports", err.Error())
 	}

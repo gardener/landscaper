@@ -604,7 +604,7 @@ func HandleSubComponentPhaseChanges(
 
 		if cp == lsv1alpha1.ComponentPhaseSucceeded {
 			// trigger dependent installations
-			err = instOp.TriggerDependants(ctx)
+			err = instOp.TriggerDependents(ctx)
 			if err != nil {
 				return instOp.NewError(err, "TriggerDependants", err.Error())
 			}
