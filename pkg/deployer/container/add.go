@@ -47,7 +47,7 @@ func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, 
 		ctrlLogger.WithName("PodReconciler"),
 		lsMgr.GetClient(),
 		hostMgr.GetClient(),
-		lsMgr.GetEventRecorderFor("Lanscaper"),
+		lsMgr.GetEventRecorderFor("Landscaper"),
 		config,
 		deployer)
 
