@@ -194,7 +194,7 @@ var _ = Describe("Context", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should overwrite a repository context", func() {
+		It("should overwrite a repository context (old overwriter)", func() {
 			ctx := context.Background()
 			state, err := testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
@@ -227,7 +227,7 @@ var _ = Describe("Context", func() {
 			Expect(extCtx.RepositoryContext).To(Equal(repoCtx))
 		})
 
-		It("should overwrite a repository context defined by the external context", func() {
+		It("should overwrite a repository context defined by the external context (old overwriter)", func() {
 			ctx := context.Background()
 			state, err := testenv.InitState(ctx)
 			Expect(err).ToNot(HaveOccurred())
@@ -258,6 +258,98 @@ var _ = Describe("Context", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(inst.Spec.ComponentDescriptor.Reference.RepositoryContext).To(Equal(repoCtx))
 			Expect(extCtx.RepositoryContext).To(Equal(repoCtx))
+		})
+
+		It("should overwrite a repository context", func() {
+			ctx := context.Background()
+			state, err := testenv.InitState(ctx)
+			Expect(err).ToNot(HaveOccurred())
+
+			lsCtx := &lsv1alpha1.Context{
+				RepositoryContext: testutils.ExampleRepositoryContext(),
+			}
+			lsCtx.Name = "test"
+			lsCtx.Namespace = state.Namespace
+			Expect(state.Create(ctx, lsCtx)).To(Succeed())
+
+			inst := &lsv1alpha1.Installation{}
+			inst.Namespace = state.Namespace
+			inst.Spec.Context = "test"
+			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
+				Reference: &lsv1alpha1.ComponentDescriptorReference{
+					RepositoryContext: testutils.ExampleRepositoryContext(),
+				},
+			}
+
+			repoCtx := testutils.DefaultRepositoryContext("test.com")
+
+			// create component version overwrite
+			cvo := &lsv1alpha1.ComponentVersionOverwrites{
+				Overwrites: lsv1alpha1.ComponentVersionOverwriteList{
+					{
+						Source: lsv1alpha1.ComponentVersionOverwriteReference{
+							RepositoryContext: inst.Spec.ComponentDescriptor.Reference.RepositoryContext,
+						},
+						Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+							RepositoryContext: repoCtx,
+						},
+					},
+				},
+			}
+			cvo.Name = inst.Spec.Context
+			cvo.Namespace = state.Namespace
+			Expect(state.Create(ctx, cvo)).To(Succeed())
+
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
+			Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())
+		})
+
+		It("should overwrite a repository context defined by the external context", func() {
+			ctx := context.Background()
+			state, err := testenv.InitState(ctx)
+			Expect(err).ToNot(HaveOccurred())
+
+			lsCtx := &lsv1alpha1.Context{
+				RepositoryContext: testutils.ExampleRepositoryContext(),
+			}
+			lsCtx.Name = "test"
+			lsCtx.Namespace = state.Namespace
+			Expect(state.Create(ctx, lsCtx)).To(Succeed())
+
+			inst := &lsv1alpha1.Installation{}
+			inst.Namespace = state.Namespace
+			inst.Spec.Context = "test"
+			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
+				Reference: &lsv1alpha1.ComponentDescriptorReference{
+					ComponentName: "abc",
+				},
+			}
+
+			repoCtx := testutils.DefaultRepositoryContext("test.com")
+
+			// create component version overwrite
+			cvo := &lsv1alpha1.ComponentVersionOverwrites{
+				Overwrites: lsv1alpha1.ComponentVersionOverwriteList{
+					{
+						Source: lsv1alpha1.ComponentVersionOverwriteReference{
+							RepositoryContext: lsCtx.RepositoryContext,
+						},
+						Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+							RepositoryContext: repoCtx,
+						},
+					},
+				},
+			}
+			cvo.Name = inst.Spec.Context
+			cvo.Namespace = state.Namespace
+			Expect(state.Create(ctx, cvo)).To(Succeed())
+
+			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, nil)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cdv2.UnstructuredTypesEqual(inst.Spec.ComponentDescriptor.Reference.RepositoryContext, repoCtx)).To(BeTrue())
+			Expect(cdv2.UnstructuredTypesEqual(extCtx.RepositoryContext, repoCtx)).To(BeTrue())
 		})
 	})
 
@@ -317,12 +409,12 @@ var _ = Describe("Context", func() {
 			lsCtx := &lsv1alpha1.Context{
 				RepositoryContext: testutils.ExampleRepositoryContext(),
 			}
-			_, err := installations.ApplyComponentOverwrite(nil, nil, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(nil, nil, nil, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
 		})
 
-		It("should overwrite a repository context", func() {
+		It("should overwrite a repository context (old overwriter)", func() {
 			repoCtx := testutils.DefaultRepositoryContext("test.com")
 			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
 				reference.RepositoryContext = repoCtx
@@ -335,7 +427,40 @@ var _ = Describe("Context", func() {
 			lsCtx := &lsv1alpha1.Context{
 				RepositoryContext: testutils.ExampleRepositoryContext(),
 			}
-			_, err := installations.ApplyComponentOverwrite(nil, ow, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(nil, ow, nil, lsCtx, ref)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(ref.RepositoryContext).To(Equal(repoCtx))
+			Expect(lsCtx.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
+		})
+
+		It("should overwrite a repository context", func() {
+			repoCtxOld := testutils.DefaultRepositoryContext("test.com")
+			repoCtx := testutils.DefaultRepositoryContext("foo.bar")
+			// keep old overwriter to ensure that ApplyComponentOverwrite prioritizes the new one
+			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+				reference.RepositoryContext = repoCtxOld
+				return true, nil
+			})
+
+			ref := &lsv1alpha1.ComponentDescriptorReference{
+				RepositoryContext: testutils.ExampleRepositoryContext(),
+			}
+			lsCtx := &lsv1alpha1.Context{
+				RepositoryContext: testutils.ExampleRepositoryContext(),
+			}
+
+			sub := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+				{
+					Source: lsv1alpha1.ComponentVersionOverwriteReference{
+						RepositoryContext: ref.RepositoryContext,
+					},
+					Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+						RepositoryContext: repoCtx,
+					},
+				},
+			})
+
+			_, err := installations.ApplyComponentOverwrite(nil, ow, sub, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(repoCtx))
 			Expect(lsCtx.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))

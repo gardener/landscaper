@@ -91,6 +91,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwriteReference":                        schema_landscaper_apis_core_v1alpha1_ComponentOverwriteReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrites":                                schema_landscaper_apis_core_v1alpha1_ComponentOverwrites(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwritesList":                            schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite":                          schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference":                 schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites":                         schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrites(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwritesList":                     schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwritesList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Condition":                                          schema_landscaper_apis_core_v1alpha1_Condition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ConfigMapReference":                                 schema_landscaper_apis_core_v1alpha1_ConfigMapReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Context":                                            schema_landscaper_apis_core_v1alpha1_Context(ref),
@@ -3392,6 +3396,171 @@ func schema_landscaper_apis_core_v1alpha1_ComponentOverwritesList(ref common.Ref
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentOverwrites", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrite(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentVersionOverwrite defines an overwrite for a specific component and/or version of a component.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"component": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Source defines the component that should be replaced.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"),
+						},
+					},
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Substitution defines the replacement target for the component or version.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"),
+						},
+					},
+				},
+				Required: []string{"component", "target"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwriteReference"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwriteReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentVersionOverwriteReference defines a component reference by",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"repositoryContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RepositoryContext defines the context of the component repository to resolve blueprints.",
+							Ref:         ref("github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"),
+						},
+					},
+					"componentName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ComponentName defines the unique of the component containing the resource.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Version defines the version of the component.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwrites(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentVersionOverwrites are resources that can hold any kind json or yaml data.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"overwrites": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Overwrites defines a list of component overwrites",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrite", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_ComponentVersionOverwritesList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ComponentVersionOverwritesList contains a list of ComponentVersionOverwrites",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.ComponentVersionOverwrites", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 

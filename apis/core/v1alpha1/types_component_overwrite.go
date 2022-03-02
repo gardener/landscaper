@@ -24,7 +24,7 @@ type ComponentOverwritesList struct {
 var ComponentOverwritesDefinition = lsschema.CustomResourceDefinition{
 	Names: lsschema.CustomResourceDefinitionNames{
 		Plural:   "componentoverwrites",
-		Singular: "componentoverwrites",
+		Singular: "componentoverwrite",
 		ShortNames: []string{
 			"compoverwrite",
 			"co",
