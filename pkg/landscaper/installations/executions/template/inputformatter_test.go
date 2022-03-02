@@ -71,7 +71,7 @@ var _ = Describe("TemplateInputFormatter", func() {
 		f := template.NewTemplateInputFormatter(i, false)
 		formatted := f.Format("")
 
-		r, err := regexp.Compile("large: >gzip>base64> (\\S+)")
+		r, err := regexp.Compile(`large: >gzip>base64> (\S+)`)
 		Expect(err).NotTo(HaveOccurred())
 
 		m := r.FindStringSubmatch(formatted)

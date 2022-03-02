@@ -40,11 +40,13 @@ var _ = Describe("TemplateDeployExecutions", func() {
 	Context("GoTemplate", func() {
 		testdataDir := filepath.Join("./testdata", "gotemplate")
 		runTestSuite(testdataDir, sharedTestdataDir)
+		runTestSuiteGoTemplate(testdataDir, sharedTestdataDir)
 	})
 
 	Context("Spiff", func() {
 		testdataDir := filepath.Join("./testdata", "spifftemplate")
 		runTestSuite(testdataDir, sharedTestdataDir)
+		runTestSuiteSpiff(testdataDir, sharedTestdataDir)
 	})
 
 })
@@ -353,6 +355,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 					Info: blue,
 				},
 			})
+
 			Expect(err).ToNot(HaveOccurred())
 
 			state := map[string]string{
@@ -360,7 +363,7 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			}
 			stateBytes, err := json.Marshal(state)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(stateHandler.Store(context.TODO(), exec[0].Name, stateBytes)).To(Succeed())
+			Expect(stateHandler.Store(context.TODO(), "deploy"+exec[0].Name, stateBytes)).To(Succeed())
 			_, err = op.TemplateDeployExecutions(template.DeployExecutionOptions{
 				Imports: map[string]interface{}{"version": "0.0.2"},
 				Blueprint: &blueprints.Blueprint{
@@ -553,6 +556,147 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res).To(HaveLen(1))
 			Expect(res).To(HaveKeyWithValue("image", "my-custom-image:0.0.0"))
+		})
+	})
+}
+
+func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
+	var stateHandler template.GenericStateHandler
+
+	BeforeEach(func() {
+		stateHandler = template.NewMemoryStateHandler()
+	})
+
+	Context("TemplateErrors", func() {
+		It("should format a deploy execution error message", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			blue.Imports = lsv1alpha1.ImportDefinitionList{
+				{
+					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
+						Name: "config",
+					},
+					Type: "object",
+				},
+			}
+			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
+
+			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{}
+			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+
+			res, err := op.TemplateDeployExecutions(template.DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor:  cd,
+				ComponentDescriptors: &cdv2.ComponentDescriptorList{},
+				Imports: map[string]interface{}{
+					"config": map[string]interface{}{
+						"verbosity": 10,
+						"memory": map[string]interface{}{
+							"min": 128,
+							"max": 1024,
+						},
+						"cert": "abcdef1234567",
+						"image": map[string]interface{}{
+							"name":    "test",
+							"version": "0.0.1",
+						},
+					},
+				},
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(res).To(BeNil())
+
+			errstr := err.Error()
+			Expect(errstr).To(ContainSubstring("template source:\n"))
+			Expect(errstr).To(ContainSubstring("0:   type: manifest\n1:   config:\n2:     apiVersion: example.test/v1\n3:     kind: Configuration\n4:     verbosity:\n"))
+			Expect(errstr).To(ContainSubstring("5:       {{ .imports.config.invalid }}\n                    \u02c6≈≈≈≈≈≈≈\n"))
+			Expect(errstr).To(ContainSubstring("6:     memory:\n7:       min: {{ .imports.config.memory.min }}\n8:       max: {{ .imports.config.memory.max }}\n9:     cert:\n10:       {{ .imports.config.cert }}\n"))
+
+			Expect(errstr).To(ContainSubstring("imports:"))
+			Expect(errstr).To(ContainSubstring("{\"config\":{\"cert\":\"[...] (string)\",\"image\":{\"name\":\"[...] (string)\",\"version\":\"[...] (string)\"},\"memory\":{\"max\":\"[...] (int)\",\"min\":\"[...] (int)\"},\"verbosity\":\"[...] (int)\"}}"))
+
+			Expect(errstr).To(ContainSubstring("cd:"))
+			Expect(errstr).To(ContainSubstring("components:"))
+			Expect(errstr).To(ContainSubstring("state:"))
+		})
+	})
+}
+
+func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
+	var stateHandler template.GenericStateHandler
+
+	BeforeEach(func() {
+		stateHandler = template.NewMemoryStateHandler()
+	})
+
+	Context("TemplateErrors", func() {
+		It("should format a deploy execution error message", func() {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			exec := make([]lsv1alpha1.TemplateExecutor, 0)
+			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
+
+			blue := &lsv1alpha1.Blueprint{}
+			blue.DeployExecutions = exec
+			blue.Imports = lsv1alpha1.ImportDefinitionList{
+				{
+					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
+						Name: "config",
+					},
+					Type: "object",
+				},
+			}
+			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
+
+			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
+			Expect(err).ToNot(HaveOccurred())
+			cd := &cdv2.ComponentDescriptor{}
+			Expect(yaml.Unmarshal(cdRaw, cd)).ToNot(HaveOccurred())
+			Expect(cdv2.DefaultComponent(cd)).To(Succeed())
+
+			res, err := op.TemplateDeployExecutions(template.DeployExecutionOptions{
+				Blueprint: &blueprints.Blueprint{
+					Info: blue,
+				},
+				ComponentDescriptor:  cd,
+				ComponentDescriptors: &cdv2.ComponentDescriptorList{},
+				Imports: map[string]interface{}{
+					"config": map[string]interface{}{
+						"verbosity": 10,
+						"memory": map[string]interface{}{
+							"min": 128,
+							"max": 1024,
+						},
+						"cert": "abcdef1234567",
+						"image": map[string]interface{}{
+							"name":    "test",
+							"version": "0.0.1",
+						},
+					},
+				},
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(res).To(BeNil())
+
+			errstr := err.Error()
+
+			Expect(errstr).To(ContainSubstring("imports:"))
+			Expect(errstr).To(ContainSubstring("{\"config\":{\"cert\":\"[...] (string)\",\"image\":{\"name\":\"[...] (string)\",\"version\":\"[...] (string)\"},\"memory\":{\"max\":\"[...] (int)\",\"min\":\"[...] (int)\"},\"verbosity\":\"[...] (int)\"}}"))
+
+			Expect(errstr).To(ContainSubstring("cd:"))
+			Expect(errstr).To(ContainSubstring("components:"))
 		})
 	})
 }

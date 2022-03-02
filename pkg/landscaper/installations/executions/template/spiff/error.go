@@ -1,69 +1,51 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package spiff
 
 import (
-	"encoding/json"
-	"fmt"
-	"reflect"
 	"strings"
+
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 )
 
-type TemplaterError struct {
-	templateName string
-	inputData map[string]interface{}
-	err error
+// TemplateError wraps a spiff templating error and adds more human-readable information.
+type TemplateError struct {
+	err            error
+	inputFormatter *template.TemplateInputFormatter
+
+	message string
 }
 
-func (e *TemplaterError) FormatParseError() error {
-	return nil
-}
-
-func (e *TemplaterError) FormatExecuteError() error {
-	errorMessage := strings.Builder{}
-	errorMessage.WriteString(e.err.Error())
-	errorMessage.WriteString("\n\ntemplate input:\n")
-	errorMessage.WriteString(e.formatInput())
-	return fmt.Errorf("%s", errorMessage.String())
-}
-
-func sanitize(root map[string]interface{}) {
-	for k, v := range root {
-		child, ok := v.(map[string]interface{})
-		if ok {
-			sanitize(child)
-		} else {
-			root[k] = fmt.Sprintf("[...] (%s)", reflect.TypeOf(v).String())
-		}
+// TemplateErrorBuilder creates a new TemplateError.
+func TemplateErrorBuilder(err error) *TemplateError {
+	return &TemplateError{
+		err: err,
 	}
 }
 
-func (e *TemplaterError) formatInput() string {
-	if e.inputData == nil {
-		return ""
+// WithInputFormatter adds a template input formatter to the error.
+func (e *TemplateError) WithInputFormatter(inputFormatter *template.TemplateInputFormatter) *TemplateError {
+	e.inputFormatter = inputFormatter
+	return e
+}
+
+// Build builds the error message.
+func (e *TemplateError) Build() *TemplateError {
+	builder := strings.Builder{}
+	builder.WriteString(e.err.Error())
+
+	if e.inputFormatter != nil {
+		builder.WriteString("\ntemplate input:\n")
+		builder.WriteString(e.inputFormatter.Format("\t"))
 	}
 
-	formatted := strings.Builder{}
+	e.message = builder.String()
+	return e
+}
 
-	for k, e := range e.inputData {
-		if k == "imports" {
-			source, ok := e.(map[string]interface{})
-			if ok {
-				sanitized := make(map[string]interface{})
-				for k, v := range source {
-					sanitized[k] = v
-				}
-				sanitize(sanitized)
-				e = sanitized
-			}
-		}
-
-		marshaled, err := json.Marshal(e)
-
-		if err != nil {
-			marshaled = []byte("")
-		}
-
-		formatted.WriteString(fmt.Sprintf("\t%s: %s\n", k, string(marshaled)))
-	}
-
-	return formatted.String()
+// Error returns the error message.
+func (e *TemplateError) Error() string {
+	return e.message
 }

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -23,6 +24,10 @@ const (
 	// Beyond the maximum depth the values are getting truncated.
 	removeValuesMaxDepth = 10
 )
+
+func init() {
+	gob.Register(map[string]interface{}{})
+}
 
 // The TemplateInputFormatter formats the input parameter of a template in a human-readable format.
 type TemplateInputFormatter struct {
@@ -53,9 +58,8 @@ func (f *TemplateInputFormatter) Format(prefix string) string {
 	var (
 		err       error
 		marshaled []byte
+		formatted strings.Builder
 	)
-
-	formatted := strings.Builder{}
 
 	for k, v := range f.inputData {
 		// If the current key is contained in the list of sensitive keys, all values in each sub-tree will be removed.
@@ -93,7 +97,6 @@ func (f *TemplateInputFormatter) Format(prefix string) string {
 	return formatted.String()
 }
 
-
 // removeValue removes the value of the input parameter.
 // If the input is a map, all leaf values are removed until a certain depth.
 // When the maximum depth is reached, the current leaf of the map will be truncated.
@@ -112,8 +115,8 @@ func removeValue(val interface{}, depth uint) interface{} {
 
 // compressAndEncode compresses the input string with gzip and encodes the output with base64.
 func compressAndEncode(input string) string {
-	buf := new(bytes.Buffer)
-	writer := gzip.NewWriter(buf)
+	var buf bytes.Buffer
+	writer := gzip.NewWriter(&buf)
 
 	_, err := writer.Write([]byte(input))
 	if err != nil {
@@ -131,13 +134,19 @@ func compressAndEncode(input string) string {
 
 // deepCopyMap deep copies a map.
 func deepCopyMap(in map[string]interface{}) (map[string]interface{}, error) {
-	b, err := json.Marshal(in)
+	var (
+		buf  bytes.Buffer
+		copy map[string]interface{}
+	)
+
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(in)
 	if err != nil {
 		return nil, err
 	}
 
-	var copy map[string]interface{}
-	err = json.Unmarshal(b, &copy)
+	decoder := gob.NewDecoder(&buf)
+	err = decoder.Decode(&copy)
 	if err != nil {
 		return nil, err
 	}
