@@ -47,12 +47,12 @@ type Operation struct {
 	Overwriter                      componentoverwrites.Overwriter
 	BlobResolver                    ctf.BlobResolver
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
-	context                         Context
+	context                         Scope
 
 	targetLists map[string]*dataobjects.TargetExtensionList
 	targets     map[string]*dataobjects.TargetExtension
 
-	// CurrentOperation is the name of the current operation that is used for the error erporting
+	// CurrentOperation is the name of the current operation that is used for the error reporting
 	CurrentOperation string
 }
 
@@ -88,7 +88,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext)
+	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext, o.Overwriter)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 }
 
 // Context returns the context of the operated installation
-func (o *Operation) Context() *Context {
+func (o *Operation) Context() *Scope {
 	return &o.context
 }
 

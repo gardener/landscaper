@@ -29,7 +29,7 @@ type OperationBuilder struct {
 	blobResolver                    ctf.BlobResolver
 	resolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	overwriter                      componentoverwrites.Overwriter
-	context                         *Context
+	context                         *Scope
 }
 
 // NewOperationBuilder creates a new operation builder.
@@ -80,7 +80,7 @@ func (b *OperationBuilder) WithOverwriter(ow componentoverwrites.Overwriter) *Op
 
 // WithContext sets an optional context.
 // This value will be calculated during the build if not set.
-func (b *OperationBuilder) WithContext(ctx *Context) *OperationBuilder {
+func (b *OperationBuilder) WithContext(ctx *Scope) *OperationBuilder {
 	b.context = ctx
 	return b
 }
@@ -150,6 +150,10 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	instOp.context = *b.context
 
+	if instOp.Overwriter == nil {
+		instOp.Overwriter = instOp.Context().External.Overwriter
+	}
+
 	if instOp.ComponentDescriptor == nil {
 		cdRef := instOp.Context().External.ComponentDescriptorRef()
 		if cdRef == nil {
@@ -183,7 +187,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	if instOp.ResolvedComponentDescriptorList == nil {
 		var err error
-		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext)
+		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext, instOp.Overwriter)
 		if err != nil {
 			return nil, err
 		}

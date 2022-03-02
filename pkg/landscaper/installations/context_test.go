@@ -216,9 +216,9 @@ var _ = Describe("Context", func() {
 			}
 
 			repoCtx := testutils.DefaultRepositoryContext("test.com")
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 				reference.RepositoryContext = repoCtx
-				return true, nil
+				return true
 			})
 
 			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, ow)
@@ -249,9 +249,9 @@ var _ = Describe("Context", func() {
 			}
 
 			repoCtx := testutils.DefaultRepositoryContext("test.com")
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 				reference.RepositoryContext = repoCtx
-				return true, nil
+				return true
 			})
 
 			extCtx, err := installations.GetExternalContext(ctx, testenv.Client, inst, ow)
@@ -416,9 +416,9 @@ var _ = Describe("Context", func() {
 
 		It("should overwrite a repository context (old overwriter)", func() {
 			repoCtx := testutils.DefaultRepositoryContext("test.com")
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 				reference.RepositoryContext = repoCtx
-				return true, nil
+				return true
 			})
 
 			ref := &lsv1alpha1.ComponentDescriptorReference{
@@ -437,9 +437,9 @@ var _ = Describe("Context", func() {
 			repoCtxOld := testutils.DefaultRepositoryContext("test.com")
 			repoCtx := testutils.DefaultRepositoryContext("foo.bar")
 			// keep old overwriter to ensure that ApplyComponentOverwrite prioritizes the new one
-			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+			ow := componentoverwrites.OverwriterFunc(func(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 				reference.RepositoryContext = repoCtxOld
-				return true, nil
+				return true
 			})
 
 			ref := &lsv1alpha1.ComponentDescriptorReference{

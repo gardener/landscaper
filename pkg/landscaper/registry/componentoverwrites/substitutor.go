@@ -10,11 +10,9 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-var _ Substitutor = &SubstitutionManager{}
-
-// Substitutor is an interface to replace parts of a component descriptor reference with the corresponding parts from its overwrites.
-type Substitutor interface {
-	Substitute(reference *lsv1alpha1.ComponentDescriptorReference) bool
+// Overwriter is a interface that implements a component reference replace method.
+type Overwriter interface {
+	Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool
 }
 
 // SubstitutionManager handles overwrites and implements the Substitutor interface.
@@ -61,7 +59,7 @@ func mergeCDReference(mergeRef *lsv1alpha1.ComponentVersionOverwriteReference, o
 	}
 }
 
-func (sm *SubstitutionManager) Substitute(ref *lsv1alpha1.ComponentDescriptorReference) bool {
+func (sm *SubstitutionManager) Replace(ref *lsv1alpha1.ComponentDescriptorReference) bool {
 	merge := &lsv1alpha1.ComponentDescriptorReference{}
 	changed := false
 	for _, subs := range sm.Substitutions {

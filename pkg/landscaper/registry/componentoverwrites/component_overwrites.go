@@ -13,15 +13,10 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
-// Overwriter is a interface that implements a component reference replace method.
-type Overwriter interface {
-	Replace(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error)
-}
-
 // OverwriterFunc describes a simple func that implements the overwriter interface.
-type OverwriterFunc func(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error)
+type OverwriterFunc func(reference *lsv1alpha1.ComponentDescriptorReference) bool
 
-func (f OverwriterFunc) Replace(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+func (f OverwriterFunc) Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 	return f(reference)
 }
 
@@ -32,6 +27,7 @@ type Manager struct {
 }
 
 // New creates a new component overwrite manager.
+// DEPRECATED, use NewSubstitutionManager instead.
 func New() *Manager {
 	return &Manager{
 		overwrites: map[string]lsv1alpha1.ComponentOverwrite{},
@@ -39,19 +35,19 @@ func New() *Manager {
 }
 
 // Replace replaces a component version and target if defined.
-func (m *Manager) Replace(reference *lsv1alpha1.ComponentDescriptorReference) (bool, error) {
+func (m *Manager) Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 	entry, ok := m.overwrites[reference.ComponentName]
 	if !ok {
-		return false, nil
+		return false
 	}
 
 	if len(entry.Component.Version) != 0 && entry.Component.Version != reference.Version {
-		return false, nil
+		return false
 	}
 	if entry.Component.RepositoryContext != nil && !cdv2.UnstructuredTypesEqual(entry.Component.RepositoryContext, reference.RepositoryContext) {
-		return false, nil
+		return false
 	}
 	if entry.Target.RepositoryContext != nil {
 		reference.RepositoryContext = entry.Target.RepositoryContext
@@ -62,7 +58,7 @@ func (m *Manager) Replace(reference *lsv1alpha1.ComponentDescriptorReference) (b
 	if len(entry.Target.Version) != 0 {
 		reference.Version = entry.Target.Version
 	}
-	return true, nil
+	return true
 }
 
 // Add adds or updates a component overwrite.

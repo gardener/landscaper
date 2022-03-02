@@ -21,9 +21,9 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-// Context contains the visible installations of a specific installation.
+// Scope contains the visible installations of a specific installation.
 // This context is later used to validate and get import data
-type Context struct {
+type Scope struct {
 	// Name is the name of the current installation's context.
 	// By default, it is the source name of the parent.
 	Name string
@@ -54,7 +54,7 @@ func (o *Operation) SetInstallationContext(ctx context.Context) error {
 func GetInstallationContext(ctx context.Context,
 	kubeClient client.Client,
 	inst *lsv1alpha1.Installation,
-	overwriter componentoverwrites.Overwriter) (*Context, error) {
+	overwriter componentoverwrites.Overwriter) (*Scope, error) {
 	parentInst, siblingInstallations, err := GetParentAndSiblings(ctx, kubeClient, inst)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func GetInstallationContext(ctx context.Context,
 		ctxName = lsv1alpha1helper.DataObjectSourceFromInstallation(parentInst)
 	}
 
-	return &Context{
+	return &Scope{
 		Name:   ctxName,
 		Parent: CreateInternalInstallationBase(parentInst),
 		// siblings are all encompassed installation of the parent installation
@@ -98,6 +98,8 @@ type ExternalContext struct {
 	ComponentName string
 	// ComponentVersion defines the version of the component.
 	ComponentVersion string
+	// Overwriter is the component version overwriter used for this installation.
+	Overwriter componentoverwrites.Overwriter
 }
 
 // ComponentDescriptorRef returns the component descriptor reference for the current installation
@@ -218,18 +220,20 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		}
 	}
 
+	var substitutor componentoverwrites.Overwriter
+	if cvo != nil {
+		substitutor = componentoverwrites.NewSubstitutionManager(cvo.Overwrites)
+	}
+
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
 	if cdRef == nil {
 		// no component descriptor is configured
 		return ExternalContext{
-			Context: *lsCtx,
+			Context:    *lsCtx,
+			Overwriter: substitutor,
 		}, nil
 	}
 
-	var substitutor componentoverwrites.Substitutor
-	if cvo != nil {
-		substitutor = componentoverwrites.NewSubstitutionManager(cvo.Overwrites)
-	}
 	cond, err := ApplyComponentOverwrite(inst, overwriter, substitutor, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
@@ -246,12 +250,13 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		Context:          *lsCtx,
 		ComponentName:    cdRef.ComponentName,
 		ComponentVersion: cdRef.Version,
+		Overwriter:       substitutor,
 	}, nil
 }
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
 // The overwriter can be nil
-func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, newOverwriter componentoverwrites.Substitutor, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, newOverwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
 	if cdRef == nil {
 		return nil, nil
 	}
@@ -270,21 +275,17 @@ func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter component
 	}
 
 	oldRef := cdRef.DeepCopy()
-	overwritten := false
+	var ow componentoverwrites.Overwriter
 
 	if newOverwriter != nil {
 		// new way of overwriting
-		overwritten = newOverwriter.Substitute(cdRef)
+		ow = newOverwriter
 	} else {
 		// old way of overwriting
-		var err error
-		overwritten, err = overwriter.Replace(cdRef)
-		if err != nil {
-			return nil, lserrors.NewWrappedError(err,
-				"HandleComponentReference", "OverwriteComponentReference", err.Error())
-		}
+		ow = overwriter
 	}
 
+	overwritten := ow.Replace(cdRef)
 	if overwritten {
 		diff := componentoverwrites.ReferenceDiff(oldRef, cdRef)
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,

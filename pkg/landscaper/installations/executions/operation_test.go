@@ -74,7 +74,7 @@ var _ = Describe("Execution Operation", func() {
 		err = json.Unmarshal(repositoryContext.Raw, &repositoryContext.Object)
 		Expect(err).ToNot(HaveOccurred())
 
-		lsCtx := &installations.Context{
+		lsCtx := &installations.Scope{
 			Name:     "default",
 			Parent:   nil,
 			Siblings: nil,
