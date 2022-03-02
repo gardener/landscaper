@@ -59,7 +59,6 @@ func mergeCDReference(mergeRef *lsv1alpha1.ComponentVersionOverwriteReference, o
 	if mergeRef.RepositoryContext != nil {
 		obj.RepositoryContext = mergeRef.RepositoryContext
 	}
-	return
 }
 
 func (sm *SubstitutionManager) Substitute(ref *lsv1alpha1.ComponentDescriptorReference) bool {
