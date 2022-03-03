@@ -1,0 +1,49 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: github.com/gardener/landscaper/landscaper-service
+  version: v0.20.0
+
+  provider: internal
+
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: "example.com"
+
+  componentReferences:
+    - componentName: github.com/gardener/landscaper
+      name: landscaper
+      version: v0.20.0
+    - componentName: github.com/gardener/virtual-garden
+      name: virtual-garden
+      version: v0.1.0-dev-8ca2fc6eb9521ca2522763090d97e728899b6069
+
+  resources:
+    - type: landscaper.gardener.cloud/jsonschema
+      name: registry-config-definition
+      relation: local
+      version: v0.20.0
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+        filename: registry-configuration/schema.json
+
+    - type: landscaper.gardener.cloud/jsonschema
+      name: landscaper-config-definition
+      relation: local
+      version: v0.20.0
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.jsonschema.layer.v1.json
+        filename: landscaper-configuration/schema.json
+
+    - type: helm.io/chart
+      name: landscaper-controller-deployment-chart
+      relation: local
+      version: v0.20.0
+      access:
+        type: ociRegistry
+        imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:v0.20.0
+
+  sources: []
