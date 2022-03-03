@@ -94,15 +94,20 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		if m.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration
 		}
-		exports, err := resourcemanager.NewExporter(m.log, opts).
-			Export(ctx, m.ProviderConfiguration.Exports)
+		exporter := resourcemanager.NewExporter(m.log, opts)
+		exports, err := exporter.Export(ctx, m.ProviderConfiguration.Exports)
 		if err != nil {
-			return lserrors.NewWrappedError(err,
-				currOp, "ReadExportValues", err.Error())
+			return lserrors.NewWrappedError(err, currOp, "ReadExportValues", err.Error())
 		}
 
-		return deployerlib.CreateOrUpdateExport(ctx, m.lsKubeClient, m.DeployItem, exports)
+		if err := deployerlib.CreateOrUpdateExport(ctx, m.lsKubeClient, m.DeployItem, exports); err != nil {
+			return err
+		}
 	}
+
+	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	m.DeployItem.Status.LastError = nil
+
 	return nil
 }
 
@@ -143,8 +148,6 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 		}
 	}
 
-	m.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	m.DeployItem.Status.LastError = nil
 	return nil
 }
 
