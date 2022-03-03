@@ -22,14 +22,22 @@ import (
 
 // Templater describes the spiff template implementation for execution templater.
 type Templater struct {
-	state template.GenericStateHandler
+	state          template.GenericStateHandler
+	inputFormatter *template.TemplateInputFormatter
 }
 
 // New creates a new spiff execution templater.
 func New(state template.GenericStateHandler) *Templater {
 	return &Templater{
-		state: state,
+		state:          state,
+		inputFormatter: template.NewTemplateInputFormatter(false, "imports", "values", "state"),
 	}
+}
+
+// WithInputFormatter ads a custom input formatter to this templater used for error messages.
+func (t *Templater) WithInputFormatter(inputFormatter *template.TemplateInputFormatter) *Templater {
+	t.inputFormatter = inputFormatter
+	return t
 }
 
 func (t Templater) Type() lsv1alpha1.TemplateType {
@@ -64,7 +72,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	res, err := spiff.Cascade(rawTemplate, nil, stateNode)
 	if err != nil {
 		cascadeError := TemplateErrorBuilder(err).
-			WithInputFormatter(template.NewTemplateInputFormatter(values, false)).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, cascadeError
 	}
@@ -106,7 +114,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	res, err := spiff.Cascade(rawTemplate, nil, stateNode)
 	if err != nil {
 		cascadeError := TemplateErrorBuilder(err).
-			WithInputFormatter(template.NewTemplateInputFormatter(values, false, "imports")).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, cascadeError
 	}
@@ -148,7 +156,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	res, err := spiff.Cascade(rawTemplate, nil, stateNode)
 	if err != nil {
 		cascadeError := TemplateErrorBuilder(err).
-			WithInputFormatter(template.NewTemplateInputFormatter(values, false, "imports", "values")).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, cascadeError
 	}

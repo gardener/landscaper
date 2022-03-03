@@ -28,9 +28,9 @@ const (
 type TemplateError struct {
 	err            error
 	source         *string
+	input          map[string]interface{}
 	inputFormatter *template.TemplateInputFormatter
-
-	message string
+	message        string
 }
 
 // TemplateErrorBuilder creates a new TemplateError.
@@ -47,8 +47,9 @@ func (e *TemplateError) WithSource(source *string) *TemplateError {
 	return e
 }
 
-// WithInputFormatter adds a template input formatter to the error.
-func (e *TemplateError) WithInputFormatter(inputFormatter *template.TemplateInputFormatter) *TemplateError {
+// WithInput adds the template input with a formatter to the error.
+func (e *TemplateError) WithInput(input map[string]interface{}, inputFormatter *template.TemplateInputFormatter) *TemplateError {
+	e.input = input
 	e.inputFormatter = inputFormatter
 	return e
 }
@@ -63,9 +64,9 @@ func (e *TemplateError) Build() *TemplateError {
 		builder.WriteString(e.formatSource())
 	}
 
-	if e.inputFormatter != nil {
+	if e.input != nil && e.inputFormatter != nil {
 		builder.WriteString("\ntemplate input:\n")
-		builder.WriteString(e.inputFormatter.Format("\t"))
+		builder.WriteString(e.inputFormatter.Format(e.input, "\t"))
 	}
 
 	e.message = builder.String()

@@ -31,7 +31,6 @@ func init() {
 
 // The TemplateInputFormatter formats the input parameter of a template in a human-readable format.
 type TemplateInputFormatter struct {
-	inputData     map[string]interface{}
 	prettyPrint   bool
 	sensitiveKeys sets.String
 }
@@ -40,9 +39,8 @@ type TemplateInputFormatter struct {
 // When prettyPrint is set to true, the json output will be formatted with easier readable indentation.
 // The parameter sensitiveKeys can contain template input keys which may contain sensitive data.
 // When such a key is encountered during formatting, the values of the respective key will be removed.
-func NewTemplateInputFormatter(inputData map[string]interface{}, prettyPrint bool, sensitiveKeys ...string) *TemplateInputFormatter {
+func NewTemplateInputFormatter(prettyPrint bool, sensitiveKeys ...string) *TemplateInputFormatter {
 	return &TemplateInputFormatter{
-		inputData:     inputData,
 		prettyPrint:   prettyPrint,
 		sensitiveKeys: sets.NewString(sensitiveKeys...),
 	}
@@ -50,8 +48,8 @@ func NewTemplateInputFormatter(inputData map[string]interface{}, prettyPrint boo
 
 // Format formats the template input into a string value.
 // The given prefix is prepended to each line of the formatted output.
-func (f *TemplateInputFormatter) Format(prefix string) string {
-	if f.inputData == nil {
+func (f *TemplateInputFormatter) Format(input map[string]interface{}, prefix string) string {
+	if input == nil {
 		return ""
 	}
 
@@ -61,7 +59,7 @@ func (f *TemplateInputFormatter) Format(prefix string) string {
 		formatted strings.Builder
 	)
 
-	for k, v := range f.inputData {
+	for k, v := range input {
 		// If the current key is contained in the list of sensitive keys, all values in each sub-tree will be removed.
 		if f.sensitiveKeys.Has(k) {
 			source, ok := v.(map[string]interface{})
@@ -87,8 +85,7 @@ func (f *TemplateInputFormatter) Format(prefix string) string {
 
 		// compress values if pretty print is not enabled and the length exceeds the threshold.
 		if !f.prettyPrint && len(marshaled) > compressThresholdBytes {
-			encoded := compressAndEncode(string(marshaled))
-			formatted.WriteString(fmt.Sprintf("%s%s: >gzip>base64> %s\n", prefix, k, encoded))
+			formatted.WriteString(fmt.Sprintf("%s%s: >gzip>base64> %s\n", prefix, k, compressAndEncode(string(marshaled))))
 		} else {
 			formatted.WriteString(fmt.Sprintf("%s%s: %s\n", prefix, k, string(marshaled)))
 		}

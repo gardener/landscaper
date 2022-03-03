@@ -24,16 +24,24 @@ import (
 
 // Templater is the go template implementation for landscaper templating.
 type Templater struct {
-	blobResolver ctf.BlobResolver
-	state        lstmpl.GenericStateHandler
+	blobResolver   ctf.BlobResolver
+	state          lstmpl.GenericStateHandler
+	inputFormatter *lstmpl.TemplateInputFormatter
 }
 
 // New creates a new go template execution templater.
 func New(blobResolver ctf.BlobResolver, state lstmpl.GenericStateHandler) *Templater {
 	return &Templater{
-		blobResolver: blobResolver,
-		state:        state,
+		blobResolver:   blobResolver,
+		state:          state,
+		inputFormatter: lstmpl.NewTemplateInputFormatter(false, "imports", "values", "state"),
 	}
+}
+
+// WithInputFormatter ads a custom input formatter to this templater used for error messages.
+func (t *Templater) WithInputFormatter(inputFormatter *lstmpl.TemplateInputFormatter) *Templater {
+	t.inputFormatter = inputFormatter
+	return t
 }
 
 // StateTemplateResult describes the result of go templating.
@@ -76,7 +84,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {
 		executeError := TemplateErrorBuilder(err).WithSource(&rawTemplate).
-			WithInputFormatter(lstmpl.NewTemplateInputFormatter(values, false, "state")).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, executeError
 	}
@@ -118,7 +126,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {
 		executeError := TemplateErrorBuilder(err).WithSource(&rawTemplate).
-			WithInputFormatter(lstmpl.NewTemplateInputFormatter(values, false, "imports")).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, executeError
 	}
@@ -161,7 +169,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	data := bytes.NewBuffer([]byte{})
 	if err := tmpl.Execute(data, values); err != nil {
 		executeError := TemplateErrorBuilder(err).WithSource(&rawTemplate).
-			WithInputFormatter(lstmpl.NewTemplateInputFormatter(values, false, "imports", "values")).
+			WithInput(values, t.inputFormatter).
 			Build()
 		return nil, executeError
 	}

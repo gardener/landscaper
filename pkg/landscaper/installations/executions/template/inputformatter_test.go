@@ -30,8 +30,8 @@ var _ = Describe("TemplateInputFormatter", func() {
 			"myint":    42,
 		}
 
-		f := template.NewTemplateInputFormatter(i, false)
-		formatted := f.Format("\t")
+		f := template.NewTemplateInputFormatter(false)
+		formatted := f.Format(i, "\t")
 		Expect(formatted).To(ContainSubstring("\tmyobj: {\"myvar\":\"inner\"}\n"))
 		Expect(formatted).To(ContainSubstring("\tmystring: \"val\"\n"))
 		Expect(formatted).To(ContainSubstring("\tmyint: 42\n"))
@@ -46,8 +46,8 @@ var _ = Describe("TemplateInputFormatter", func() {
 			"myint":    42,
 		}
 
-		f := template.NewTemplateInputFormatter(i, false, "myobj", "myint")
-		formatted := f.Format("\t")
+		f := template.NewTemplateInputFormatter(false, "myobj", "myint")
+		formatted := f.Format(i, "\t")
 		Expect(formatted).To(ContainSubstring("\tmyobj: {\"myvar\":\"[...] (string)\"}\n"))
 		Expect(formatted).To(ContainSubstring("\tmystring: \"val\"\n"))
 		Expect(formatted).To(ContainSubstring("\tmyint: \"[...] (int)\"\n"))
@@ -68,8 +68,8 @@ var _ = Describe("TemplateInputFormatter", func() {
 		i := map[string]interface{}{
 			"large": large,
 		}
-		f := template.NewTemplateInputFormatter(i, false)
-		formatted := f.Format("")
+		f := template.NewTemplateInputFormatter(false)
+		formatted := f.Format(i, "")
 
 		r, err := regexp.Compile(`large: >gzip>base64> (\S+)`)
 		Expect(err).NotTo(HaveOccurred())
@@ -100,8 +100,8 @@ var _ = Describe("TemplateInputFormatter", func() {
 			"myint":    42,
 		}
 
-		f := template.NewTemplateInputFormatter(i, true)
-		formatted := f.Format("\t")
+		f := template.NewTemplateInputFormatter(true)
+		formatted := f.Format(i, "\t")
 		Expect(formatted).To(ContainSubstring("\tmyobj: {\n\t  \"myvar\": \"inner\"\n\t}\n"))
 	})
 })
