@@ -225,7 +225,8 @@ func RenderBlueprintDeployItems(
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler), spiff.New(templateStateHandler)).
+	formatter := template.NewTemplateInputFormatter(true)
+	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateDeployExecutions(template.DeployExecutionOptions{
 			Imports:              imports.Imports,
 			Blueprint:            blueprint,
@@ -264,7 +265,8 @@ func RenderBlueprintSubInstallations(
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).
+	formatter := template.NewTemplateInputFormatter(true)
+	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateSubinstallationExecutions(template.DeployExecutionOptions{
 			Imports:              imports.Imports,
 			Blueprint:            blueprint,
