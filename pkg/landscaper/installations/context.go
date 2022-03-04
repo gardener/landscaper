@@ -220,9 +220,8 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		}
 	}
 
-	var substitutor componentoverwrites.Overwriter
 	if cvo != nil {
-		substitutor = componentoverwrites.NewSubstitutionManager(cvo.Overwrites)
+		overwriter = componentoverwrites.NewSubstitutions(cvo.Overwrites)
 	}
 
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
@@ -230,11 +229,11 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		// no component descriptor is configured
 		return ExternalContext{
 			Context:    *lsCtx,
-			Overwriter: substitutor,
+			Overwriter: overwriter,
 		}, nil
 	}
 
-	cond, err := ApplyComponentOverwrite(inst, overwriter, substitutor, lsCtx, cdRef)
+	cond, err := ApplyComponentOverwrite(inst, overwriter, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
 			"Context", "OverwriteComponentReference", err.Error())
@@ -250,13 +249,13 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		Context:          *lsCtx,
 		ComponentName:    cdRef.ComponentName,
 		ComponentVersion: cdRef.Version,
-		Overwriter:       substitutor,
+		Overwriter:       overwriter,
 	}, nil
 }
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
 // The overwriter can be nil
-func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, newOverwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
 	if cdRef == nil {
 		return nil, nil
 	}
@@ -265,7 +264,7 @@ func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter component
 		cdRef.RepositoryContext = lsCtx.RepositoryContext
 	}
 
-	if overwriter == nil && newOverwriter == nil {
+	if overwriter == nil {
 		return nil, nil
 	}
 
@@ -275,17 +274,8 @@ func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter component
 	}
 
 	oldRef := cdRef.DeepCopy()
-	var ow componentoverwrites.Overwriter
 
-	if newOverwriter != nil {
-		// new way of overwriting
-		ow = newOverwriter
-	} else {
-		// old way of overwriting
-		ow = overwriter
-	}
-
-	overwritten := ow.Replace(cdRef)
+	overwritten := overwriter.Replace(cdRef)
 	if overwritten {
 		diff := componentoverwrites.ReferenceDiff(oldRef, cdRef)
 		cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,

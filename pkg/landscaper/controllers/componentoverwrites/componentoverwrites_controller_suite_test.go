@@ -87,7 +87,7 @@ var _ = Describe("Reconcile", func() {
 
 		ref := &lsv1alpha1.ComponentDescriptorReference{}
 		ref.ComponentName = "my-comp"
-		ov := mgr.Replace(ref)
+		ov := mgr.GetOverwriter().Replace(ref)
 		Expect(ov).To(BeTrue())
 	})
 

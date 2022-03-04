@@ -38,7 +38,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 	Context("Matcher", func() {
 
 		It("should not match if the component name is different", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						ComponentName: "different.example.com",
@@ -50,7 +50,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should not match if the version is different", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						Version: "v0.1.0",
@@ -62,7 +62,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should not match if the repository context is different", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						RepositoryContext: testutils.DefaultRepositoryContext("different.com"),
@@ -74,7 +74,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should not match if the name fits but the version differs", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						ComponentName: cdRef.ComponentName,
@@ -87,7 +87,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should match with only the component name given", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						ComponentName: cdRef.ComponentName,
@@ -99,7 +99,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should match with only the version given", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						Version: cdRef.Version,
@@ -111,7 +111,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should match with only the repository context given", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						RepositoryContext: cdRef.RepositoryContext.DeepCopy(),
@@ -123,7 +123,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should match with name and version given", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						ComponentName: cdRef.ComponentName,
@@ -136,7 +136,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should match with name, version and repository context given", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{
 						ComponentName:     cdRef.ComponentName,
@@ -154,7 +154,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 	Context("Overwriter", func() {
 
 		It("should replace only the name if only the name is specified in replacement ref", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{},
 					Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
@@ -171,7 +171,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 		})
 
 		It("should replace only the version if only the version is specified in replacement ref", func() {
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{},
 					Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
@@ -189,7 +189,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 
 		It("should replace only the repository context if only the repository context is specified in replacement ref", func() {
 			repoCtx := testutils.DefaultRepositoryContext("foo.bar.com")
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{},
 					Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
@@ -207,7 +207,7 @@ var _ = Describe("ComponentVersionOverwrites", func() {
 
 		It("should replace everything if everything is specified in replacement ref", func() {
 			repoCtx := testutils.DefaultRepositoryContext("foo.bar.com")
-			subs := componentoverwrites.NewSubstitutionManager([]lsv1alpha1.ComponentVersionOverwrite{
+			subs := componentoverwrites.NewSubstitutions([]lsv1alpha1.ComponentVersionOverwrite{
 				{
 					Source: lsv1alpha1.ComponentVersionOverwriteReference{},
 					Substitution: lsv1alpha1.ComponentVersionOverwriteReference{

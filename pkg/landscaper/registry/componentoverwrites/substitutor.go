@@ -15,13 +15,13 @@ type Overwriter interface {
 	Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool
 }
 
-// SubstitutionManager handles overwrites and implements the Substitutor interface.
-type SubstitutionManager struct {
+// Substitutions handles overwrites and implements the Substitutor interface.
+type Substitutions struct {
 	Substitutions []lsv1alpha1.ComponentVersionOverwrite
 }
 
-func NewSubstitutionManager(subs []lsv1alpha1.ComponentVersionOverwrite) *SubstitutionManager {
-	return &SubstitutionManager{
+func NewSubstitutions(subs []lsv1alpha1.ComponentVersionOverwrite) *Substitutions {
+	return &Substitutions{
 		Substitutions: subs,
 	}
 }
@@ -59,13 +59,16 @@ func mergeCDReference(mergeRef *lsv1alpha1.ComponentVersionOverwriteReference, o
 	}
 }
 
-func (sm *SubstitutionManager) Replace(ref *lsv1alpha1.ComponentDescriptorReference) bool {
+func (sm *Substitutions) Replace(ref *lsv1alpha1.ComponentDescriptorReference) bool {
 	merge := &lsv1alpha1.ComponentDescriptorReference{}
 	changed := false
 	for _, subs := range sm.Substitutions {
 		if matches(&subs.Source, ref) {
 			changed = true
 			mergeCDReference(&subs.Substitution, merge)
+			if merge.RepositoryContext != nil && len(merge.ComponentName) != 0 && len(merge.Version) != 0 {
+				break
+			}
 		}
 	}
 	if !changed {

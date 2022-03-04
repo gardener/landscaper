@@ -36,14 +36,20 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	co := &lsv1alpha1.ComponentOverwrites{}
 	if err := con.client.Get(ctx, req.NamespacedName, co); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info("reconciled object not found, deleting from manager")
+			con.mgr.Delete(req.Name)
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
-	for _, overwrite := range co.Overwrites {
-		con.mgr.Add(overwrite)
+	if !co.DeletionTimestamp.IsZero() {
+		logger.Info("deleting from manager")
+		con.mgr.Delete(co.Name)
+	} else {
+		logger.Info("updating to manager")
+		con.mgr.Add(co)
 	}
+
 	return reconcile.Result{}, nil
 }

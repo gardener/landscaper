@@ -44,7 +44,7 @@ func NewController(logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
-	overwriter componentoverwrites.Overwriter,
+	overwriter *componentoverwrites.Manager,
 	lsConfig *config.LandscaperConfiguration) (reconcile.Reconciler, error) {
 
 	ctrl := &Controller{
@@ -83,7 +83,7 @@ type Controller struct {
 	log                 logging.Logger
 	LsConfig            *config.LandscaperConfiguration
 	SharedCache         cache.Cache
-	ComponentOverwriter componentoverwrites.Overwriter
+	ComponentOverwriter *componentoverwrites.Manager
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -162,8 +162,9 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
+	ow := c.ComponentOverwriter.GetOverwriter()
 
-	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
+	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst, ow)
 	if err != nil {
 		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
@@ -188,7 +189,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 		return nil, lserrors.NewWrappedError(err,
 			currOp, "InitInstallationOperation", err.Error())
 	}
-	instOp.SetOverwriter(c.ComponentOverwriter)
+	instOp.SetOverwriter(ow)
 	return instOp, nil
 }
 

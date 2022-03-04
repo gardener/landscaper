@@ -6,7 +6,10 @@ package componentoverwrites
 
 import (
 	"fmt"
+	"sort"
 	"sync"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 
@@ -23,49 +26,82 @@ func (f OverwriterFunc) Replace(reference *lsv1alpha1.ComponentDescriptorReferen
 // Manager is a manager that manages all component overwrites.
 type Manager struct {
 	mux        sync.RWMutex
-	overwrites map[string]lsv1alpha1.ComponentOverwrite
+	overwrites map[string]*EvaluatedOverwrites
+	effective  *Substitutions
+}
+
+type EvaluatedOverwrites struct {
+	timestamp     metav1.Time
+	substitutions *Substitutions
+}
+
+func NewClusterSubstitutions(subs []lsv1alpha1.ComponentOverwrite) *Substitutions {
+	newSubs := make([]lsv1alpha1.ComponentVersionOverwrite, len(subs))
+	for i, s := range subs {
+		newSubs[i] = lsv1alpha1.ComponentVersionOverwrite{
+			Source: lsv1alpha1.ComponentVersionOverwriteReference{
+				RepositoryContext: s.Component.RepositoryContext,
+				ComponentName:     s.Component.ComponentName,
+				Version:           s.Component.Version,
+			},
+			Substitution: lsv1alpha1.ComponentVersionOverwriteReference{
+				RepositoryContext: s.Target.RepositoryContext,
+				ComponentName:     s.Target.ComponentName,
+				Version:           s.Target.Version,
+			},
+		}
+	}
+	return NewSubstitutions(newSubs)
 }
 
 // New creates a new component overwrite manager.
 // DEPRECATED, use NewSubstitutionManager instead.
 func New() *Manager {
 	return &Manager{
-		overwrites: map[string]lsv1alpha1.ComponentOverwrite{},
+		overwrites: map[string]*EvaluatedOverwrites{},
+		effective:  NewSubstitutions(nil),
 	}
 }
 
 // Replace replaces a component version and target if defined.
-func (m *Manager) Replace(reference *lsv1alpha1.ComponentDescriptorReference) bool {
+func (m *Manager) GetOverwriter() Overwriter {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
-	entry, ok := m.overwrites[reference.ComponentName]
-	if !ok {
-		return false
-	}
-
-	if len(entry.Component.Version) != 0 && entry.Component.Version != reference.Version {
-		return false
-	}
-	if entry.Component.RepositoryContext != nil && !cdv2.UnstructuredTypesEqual(entry.Component.RepositoryContext, reference.RepositoryContext) {
-		return false
-	}
-	if entry.Target.RepositoryContext != nil {
-		reference.RepositoryContext = entry.Target.RepositoryContext
-	}
-	if len(entry.Target.ComponentName) != 0 {
-		reference.ComponentName = entry.Target.ComponentName
-	}
-	if len(entry.Target.Version) != 0 {
-		reference.Version = entry.Target.Version
-	}
-	return true
+	return m.effective
 }
 
 // Add adds or updates a component overwrite.
-func (m *Manager) Add(overwrite lsv1alpha1.ComponentOverwrite) {
+func (m *Manager) Add(overwrites *lsv1alpha1.ComponentOverwrites) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
-	m.overwrites[overwrite.Component.ComponentName] = overwrite
+	m.overwrites[overwrites.Name] = &EvaluatedOverwrites{
+		timestamp:     overwrites.CreationTimestamp,
+		substitutions: NewClusterSubstitutions(overwrites.Overwrites),
+	}
+	m.merge()
+}
+
+func (m *Manager) Delete(name string) {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	delete(m.overwrites, name)
+	m.merge()
+}
+
+func (m *Manager) merge() {
+	sorted := make([]*EvaluatedOverwrites, len(m.overwrites))
+	i := 0
+	for _, v := range m.overwrites {
+		sorted[i] = v
+		i++
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[j].timestamp.Before(&sorted[i].timestamp)
+	})
+	m.effective = NewSubstitutions(nil)
+	for _, elem := range sorted {
+		m.effective.Substitutions = append(m.effective.Substitutions, elem.substitutions.Substitutions...)
+	}
 }
 
 // ReferenceDiff returns a human readable diff for two refs

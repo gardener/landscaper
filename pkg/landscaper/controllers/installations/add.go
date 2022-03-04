@@ -21,7 +21,7 @@ import (
 )
 
 // AddControllerToManager register the installation Controller in a manager.
-func AddControllerToManager(logger logging.Logger, mgr manager.Manager, overwriter componentoverwrites.Overwriter, config *config.LandscaperConfiguration) error {
+func AddControllerToManager(logger logging.Logger, mgr manager.Manager, overwriter *componentoverwrites.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.Reconciles("installation", "Installation")
 	a, err := NewController(
 		log,
