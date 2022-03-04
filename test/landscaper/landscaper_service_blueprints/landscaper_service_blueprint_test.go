@@ -1,14 +1,11 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package landscaper_service_blueprints_test
 
 import (
 	"context"
-	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/landscaper/pkg/deployer/helm"
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
-	testutils "github.com/gardener/landscaper/test/utils"
-	"github.com/go-logr/logr"
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,6 +13,15 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/go-logr/logr"
+	"github.com/mandelsoft/vfs/pkg/osfs"
+
+	"github.com/gardener/landscaper/pkg/deployer/helm"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
+	testutils "github.com/gardener/landscaper/test/utils"
 )
 
 func TestConfig(t *testing.T) {
@@ -23,12 +29,15 @@ func TestConfig(t *testing.T) {
 	RunSpecs(t, "Landscaper Service Blueprint Test Suite")
 }
 
-type Empty struct {
+const (
+	projectRoot = "../../../"
+	testData = "testdata"
+)
 
+var filesToCopy = map[string]string{
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"): filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
 }
-
-const projectRoot = "../../../"
-const testData = "testdata"
 
 func copyFile(source, dest string) error {
 	srcFile, err := os.Open(source)
@@ -54,8 +63,13 @@ func copyFile(source, dest string) error {
 var _ = Describe("Blueprint", func() {
 
 	var (
-		registry componentsregistry.TypedRegistry
+		registry   componentsregistry.TypedRegistry
 		repository *componentsregistry.LocalRepository
+		landscaperServiceCD *cdv2.ComponentDescriptor
+		landscaperCD *cdv2.ComponentDescriptor
+		virtualGardenCD *cdv2.ComponentDescriptor
+		cdList cdv2.ComponentDescriptorList
+		repositoryContext cdv2.UnstructuredTypedObject
 	)
 
 	BeforeSuite(func() {
@@ -64,40 +78,56 @@ var _ = Describe("Blueprint", func() {
 		Expect(err).ToNot(HaveOccurred())
 		repository = componentsregistry.NewLocalRepository("./testdata/registry")
 
-		err = copyFile(filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"), filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"))
-		Expect(err).ToNot(HaveOccurred())
-		err = copyFile(filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"), filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"))
-		Expect(err).ToNot(HaveOccurred())
-	})
+		for source, dest := range filesToCopy {
+			err = copyFile(source, dest)
+			Expect(err).ToNot(HaveOccurred())
+		}
 
-	AfterSuite(func() {
-		os.Remove(filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"))
-		os.Remove(filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"))
-	})
-
-	It("landscaper", func() {
-		landscaperServiceCD, err := registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
+		landscaperServiceCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(landscaperServiceCD).ToNot(BeNil())
 
-		landscaperCD, err := registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper", "v0.20.0")
+		landscaperCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper", "v0.20.0")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(landscaperCD).ToNot(BeNil())
 
-		cdList := &v2.ComponentDescriptorList{
-			Components: []v2.ComponentDescriptor{
-				*landscaperCD,
-			},
+		virtualGardenCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/virtual-garden", "v0.1.0")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(landscaperCD).ToNot(BeNil())
+
+		cdList.Components = []cdv2.ComponentDescriptor{
+			*landscaperCD,
+			*virtualGardenCD,
 		}
 
+		repoCtx := &cdv2.OCIRegistryRepository{
+			ObjectType: cdv2.ObjectType{
+				Type: registry.Type(),
+			},
+			BaseURL:  filepath.Join(testData, "registry"),
+		}
+
+		repositoryContext, err = cdv2.NewUnstructured(repoCtx)
+		Expect(err).ToNot(HaveOccurred())
+
+	})
+
+	AfterSuite(func() {
+		for _, dest := range filesToCopy {
+			os.Remove(dest)
+		}
+	})
+
+	It("landscaper", func() {
 		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
-			Fs:      osfs.New(),
-			RootDir: filepath.Join(projectRoot, ".landscaper/landscaper-service"),
-			ComponentDescriptor: landscaperServiceCD,
-			ComponentDescriptorList: cdList,
-			ComponentResolver: registry,
-			BlueprintPath: filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper"),
-			ImportValuesFilepath: filepath.Join(testData, "imports.yaml"),
+			Fs:                      osfs.New(),
+			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
+			ComponentDescriptor:     landscaperServiceCD,
+			ComponentDescriptorList: &cdList,
+			ComponentResolver:       registry,
+			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper"),
+			ImportValuesFilepath:    filepath.Join(testData, "imports-landscaper.yaml"),
+			RepositoryContext: &repositoryContext,
 		})
 		testutils.ExpectNoError(err)
 		Expect(out.DeployItems).To(HaveLen(1))
@@ -105,5 +135,37 @@ var _ = Describe("Blueprint", func() {
 
 		di := out.DeployItems[0]
 		Expect(di.Spec.Type).To(Equal(helm.Type))
+	})
+
+	It("rbac", func() {
+		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
+			Fs:                      osfs.New(),
+			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
+			ComponentDescriptor:     landscaperServiceCD,
+			ComponentDescriptorList: &cdList,
+			ComponentResolver:       registry,
+			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac"),
+			ImportValuesFilepath:    filepath.Join(testData, "imports-rbac.yaml"),
+		})
+		testutils.ExpectNoError(err)
+		Expect(out.DeployItems).To(HaveLen(1))
+		Expect(out.Installations).To(HaveLen(0))
+
+		di := out.DeployItems[0]
+		Expect(di.Spec.Type).To(Equal(helm.Type))
+	})
+
+	It("installation", func() {
+		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
+			Fs:                      osfs.New(),
+			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
+			ComponentDescriptor:     landscaperServiceCD,
+			ComponentDescriptorList: &cdList,
+			ComponentResolver:       registry,
+			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/installation"),
+			ImportValuesFilepath:    filepath.Join(testData, "imports-installation.yaml"),
+		})
+		testutils.ExpectNoError(err)
+		Expect(out.Installations).To(HaveLen(3))
 	})
 })

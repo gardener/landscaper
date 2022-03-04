@@ -17,7 +17,7 @@ component:
       version: v0.20.0
     - componentName: github.com/gardener/virtual-garden
       name: virtual-garden
-      version: v0.1.0-dev-8ca2fc6eb9521ca2522763090d97e728899b6069
+      version: v0.1.0
 
   resources:
     - type: landscaper.gardener.cloud/jsonschema
@@ -45,5 +45,31 @@ component:
       access:
         type: ociRegistry
         imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-controller:v0.20.0
+
+    - type: helm.io/chart
+      name: landscaper-controller-rbac-chart
+      relation: local
+      version: v0.20.0
+      access:
+        type: ociRegistry
+        imageReference: eu.gcr.io/gardener-project/landscaper/charts/landscaper-rbac:v0.20.0
+
+    - name: rbac-blueprint
+      type: blueprint
+      version: v0.20.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: rbac-blueprint
+
+    - name: landscaper-blueprint
+      type: blueprint
+      version: v0.20.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: landscaper-blueprint
 
   sources: []

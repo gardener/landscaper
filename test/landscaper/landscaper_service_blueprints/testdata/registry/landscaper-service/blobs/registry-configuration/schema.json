@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "github.com/gardener/landscaper/landscaper-service/definitions/registry-configuration",
+  "title": "Registry Configuration",
+  "description": "Describes the Landscaper OCI registry configuration.",
+  "type": "object",
+  "properties": {
+    "cache": {
+      "$ref": "#definitions/cache"
+    },
+    "allowPlainHttpRegistries": {
+      "type": "boolean"
+    },
+    "insecureSkipVerify": {
+      "type": "boolean"
+    },
+    "secrets": {
+      "$ref": "#definitions/secrets"
+    }
+  },
+  "definitions": {
+    "cache":{
+      "properties": {
+        "useInMemoryOverlay": {
+          "type": "boolean"
+        }
+      }
+    },
+    "secrets": {
+      "properties": {
+        "additionalProperties": {
+          "$ref": "#definitions/secret"
+        }
+      }
+    },
+    "secret": {
+      "properties": {
+        "type": {}
+      }
+    }
+  }
+}
