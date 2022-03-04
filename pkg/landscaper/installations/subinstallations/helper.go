@@ -7,6 +7,7 @@ package subinstallations
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
@@ -21,8 +22,10 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 )
 
@@ -111,7 +114,7 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 // It checks for every import of every subinstallation, whether that import is exported from another subinstallation.
 // The resulting map contains one entry for every given subinstallation template, mapping that templates name to the
 // set of templates (by name) it depends on.
-func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.InstallationTemplate) map[string]sets.String {
+func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.InstallationTemplate) (map[string]sets.String, utils.ImportRelationships) {
 	dataExports := map[string]string{}
 	targetExports := map[string]string{}
 	for _, tmpl := range installationTmpl {
@@ -127,6 +130,7 @@ func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.Installat
 	}
 
 	deps := map[string]sets.String{}
+	impRels := utils.ImportRelationships{}
 	for _, tmpl := range installationTmpl {
 		tmp := sets.NewString()
 		for _, imp := range tmpl.Imports.Data {
@@ -140,6 +144,7 @@ func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.Installat
 				// this is already checked by validation, no need to verify it here
 				continue
 			}
+			impRels.Add(source, tmpl.Name, imp.DataRef)
 			tmp.Insert(source)
 		}
 		for _, imp := range tmpl.Imports.Targets {
@@ -159,12 +164,13 @@ func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.Installat
 					// this is already checked by validation, no need to verify it here
 					continue
 				}
+				impRels.Add(source, tmpl.Name, t)
 				tmp.Insert(source)
 			}
 		}
 		deps[tmpl.Name] = tmp
 	}
-	return deps
+	return deps, impRels
 }
 
 // OrderInstallationTemplates takes a list of installation templates and orders them according to their dependencies (as computed by ComputeSubinstallationDependencies).
@@ -176,7 +182,7 @@ func OrderInstallationTemplates(installationTmpl []*lsv1alpha1.InstallationTempl
 	// while 'done' is a set to efficiently check whether a specific installation template is already scheduled.
 	ordered := []*lsv1alpha1.InstallationTemplate{}
 	done := sets.NewString()
-	dependencies := ComputeSubinstallationDependencies(installationTmpl)
+	dependencies, impRels := ComputeSubinstallationDependencies(installationTmpl)
 	// repeat until either
 	// - all items from installationTmpl have been transferred to ordered (we are finished)
 	// - no new items have been scheduled during the last run
@@ -214,8 +220,16 @@ func OrderInstallationTemplates(installationTmpl []*lsv1alpha1.InstallationTempl
 		}
 	}
 	if len(done) != len(installationTmpl) || len(ordered) != len(installationTmpl) { // these comparisons should be equivalent, just checking both to be sure ...
-		// TODO: give more information on cyclic dependency
-		return nil, fmt.Errorf("cyclic dependency detected")
+		// cyclic dependencies detected
+		// identify installation templates which are part of the cycle
+		missing := sets.NewString()
+		for _, tmpl := range installationTmpl {
+			if !done.Has(tmpl.Name) {
+				missing.Insert(tmpl.Name)
+			}
+		}
+		cycles := utils.DetermineCyclicDependencyDetails(missing, dependencies, impRels)
+		return nil, newSubinstallationCyclicDependencyError("EnsureNestedInstallations", cycles)
 	}
 	return ordered, nil
 }
@@ -307,4 +321,18 @@ func getInstallationTemplate(installationTmpl []*lsv1alpha1.InstallationTemplate
 		}
 	}
 	return nil, false
+}
+
+func newSubinstallationCyclicDependencyError(operation string, cycles []*utils.DependencyCycle) *lserrors.Error {
+	var sb strings.Builder
+	sb.WriteString("The following cyclic dependencies have been found in the nested installation templates: ")
+	for i, c := range cycles {
+		sb.WriteString("{")
+		sb.WriteString(c.String())
+		sb.WriteString("}")
+		if i < len(cycles)-1 {
+			sb.WriteString(", ")
+		}
+	}
+	return lserrors.NewError(operation, "OrderNestedInstallationTemplates", sb.String(), lsv1alpha1.ErrorCyclicDependencies)
 }

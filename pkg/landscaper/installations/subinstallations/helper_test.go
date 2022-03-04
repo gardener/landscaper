@@ -11,9 +11,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 var _ = Describe("SubinstallationsHelper", func() {
@@ -27,10 +29,11 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"c": nil,
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
 			for k, v := range computedDeps {
 				Expect(v).To(BeEmpty(), "entry %q has non-empty dependency list", k)
 			}
+			Expect(impRels).To(BeEmpty())
 		})
 
 		It("should correctly detect data dependencies", func() {
@@ -39,8 +42,10 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(dataDependency))
-			computedDeps := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
+			Expect(impRels).To(HaveLen(1))
+			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_data")))
 		})
 		It("should correctly detect target dependencies", func() {
 			deps := map[string][]string{
@@ -48,8 +53,10 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
-			computedDeps := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
+			Expect(impRels).To(HaveLen(1))
+			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_target")))
 		})
 		It("should correctly detect dependencies defined in exportDataMappings", func() {
 			deps := map[string][]string{
@@ -57,8 +64,10 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": {"a"},
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mappingDependency))
-			computedDeps := subinstallations.ComputeSubinstallationDependencies(tmpls)
+			computedDeps, impRels := subinstallations.ComputeSubinstallationDependencies(tmpls)
 			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
+			Expect(impRels).To(HaveLen(1))
+			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_mapping")))
 		})
 
 	})
@@ -148,11 +157,11 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"d": {"c"},
 				"e": {"d"},
 			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mappingDependency))
+			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mixedDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
 			_, err := subinstallations.OrderInstallationTemplates(tmpls)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("cyclic dependency detected"))
+			Expect(err.Error()).To(Equal("Op: \"EnsureNestedInstallations\" - Reason: \"OrderNestedInstallationTemplates\" - Message: \"The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_data]-> c}\""))
 		})
 
 	})

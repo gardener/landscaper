@@ -155,6 +155,8 @@ const (
 	ErrorReadinessCheckTimeout ErrorCode = "ERR_READINESS_CHECK_TIMEOUT"
 	// ErrorTimeout indicates that an operation timed out.
 	ErrorTimeout ErrorCode = "ERR_TIMEOUT"
+	// ErrorCyclicDependencies indicates that there are cyclic dependencies between multiple installations/deployitems.
+	ErrorCyclicDependencies ErrorCode = "ERR_CYCLIC_DEPENDENCIES"
 )
 
 // UnrecoverableErrorCodes defines unrecoverable error codes
@@ -163,6 +165,7 @@ var UnrecoverableErrorCodes = []ErrorCode{
 	ErrorInternalProblem,
 	ErrorReadinessCheckTimeout,
 	ErrorTimeout,
+	ErrorCyclicDependencies,
 }
 
 // Condition holds the information about the state of a resource.
