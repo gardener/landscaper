@@ -50,6 +50,9 @@ type BlueprintRenderArgs struct {
 	ComponentDescriptorList *cdv2.ComponentDescriptorList
 	// ComponentResolver implements a component descriptor resolver.
 	ComponentResolver ctf.ComponentResolver
+	// RepositoryContext specifies a repository context that will override the repository context of the component descriptors.
+	// +optional
+	RepositoryContext *cdv2.UnstructuredTypedObject
 
 	// RootDir describes a directory that is used to default the other filepaths.
 	// The blueprint is expected to have the following structure
@@ -175,6 +178,10 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 			repoCtx := cd.GetEffectiveRepositoryContext()
 			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = repoCtx
 		}
+	}
+
+	if args.RepositoryContext != nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = args.RepositoryContext
 	}
 
 	deployItems, deployItemsState, err := RenderBlueprintDeployItems(
