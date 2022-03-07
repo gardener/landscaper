@@ -12,16 +12,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var _ ImportedBase = &ComponentDescriptorList{}
+
 // ComponentDescriptorList is the internal representation of a list of targets.
 type ComponentDescriptorList struct {
 	ComponentDescriptors []*ComponentDescriptor
+	Def                  *lsv1alpha1.ComponentDescriptorImport
 }
 
 // NewComponentDescriptorList creates a new internal component descriptor list.
 func NewComponentDescriptorList() *ComponentDescriptorList {
-	return &ComponentDescriptorList{
-		ComponentDescriptors: []*ComponentDescriptor{},
-	}
+	return NewComponentDescriptorListWithSize(0)
 }
 
 // NewComponentDescriptorListWithSize creates a new internal component descriptor list with a given size.
@@ -87,4 +88,8 @@ func (cdl *ComponentDescriptorList) GetListItems() []ImportedBase {
 
 func (cdl *ComponentDescriptorList) GetImportReference() string {
 	return ""
+}
+
+func (cdl *ComponentDescriptorList) GetImportDefinition() interface{} {
+	return cdl.Def
 }

@@ -14,6 +14,8 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+var _ ImportedBase = &ComponentDescriptor{}
+
 type CDReferenceType string
 
 const RegistryReference = CDReferenceType("registry")
@@ -29,6 +31,7 @@ type ComponentDescriptor struct {
 	ConfigMapRef *lsv1alpha1.ConfigMapReference
 	Descriptor   *cdv2.ComponentDescriptor
 	Owner        *metav1.OwnerReference
+	Def          *lsv1alpha1.ComponentDescriptorImport
 }
 
 // NewComponentDescriptor creates a new internal component descriptor.
@@ -112,4 +115,8 @@ func (cd *ComponentDescriptor) GetImportReference() string {
 	// component descriptors cannot be exported
 	// and references to parent imports are resolved and replaced during subinstallation rendering
 	return ""
+}
+
+func (cd *ComponentDescriptor) GetImportDefinition() interface{} {
+	return cd.Def
 }

@@ -18,6 +18,8 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 )
 
+var _ ImportedBase = &DataObject{}
+
 // DataObject is the internal representation of a data object.
 type DataObject struct {
 	Raw  *lsv1alpha1.DataObject
@@ -25,6 +27,7 @@ type DataObject struct {
 
 	FieldValue *lsv1alpha1.FieldValueDefinition
 	Metadata   Metadata
+	Def        *lsv1alpha1.DataImport
 }
 
 // Metadata describes the metadata of a data object.
@@ -222,4 +225,8 @@ func (do *DataObject) GetListItems() []ImportedBase {
 
 func (do *DataObject) GetImportReference() string {
 	return do.Metadata.Key
+}
+
+func (do *DataObject) GetImportDefinition() interface{} {
+	return do.Def
 }

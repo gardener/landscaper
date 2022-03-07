@@ -32,6 +32,7 @@ type ReconcileHelper struct {
 	*installations.Operation
 	ctx                context.Context
 	parent             *installations.Installation                // parent installation or nil in case of a root installation
+	importStatus       *installations.ImportStatus                // we need to store the 'old' import status, as it is overwritten during import loading
 	siblings           map[string]*installations.InstallationBase // all installations in the same namespace with the same parent, mapped by their names for faster lookup
 	dependedOnSiblings sets.String                                // set of sibling installation names which this installation depends on, including transitive dependencies
 	state              lsutils.Requirements                       // helper struct to keep track of which information has already been gathered
@@ -43,6 +44,23 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) *Recon
 		ctx:       ctx,
 		Operation: op,
 		state:     lsutils.NewRequirements(),
+	}
+
+	// copy import status
+	// This is somewhat ugly, maybe we can somehow refactor the updating of the import status out of the import loading methods?
+	rh.importStatus = &installations.ImportStatus{
+		Data:                make(map[string]*lsv1alpha1.ImportStatus, len(rh.Inst.ImportStatus().Data)),
+		Target:              make(map[string]*lsv1alpha1.ImportStatus, len(rh.Inst.ImportStatus().Target)),
+		ComponentDescriptor: make(map[string]*lsv1alpha1.ImportStatus, len(rh.Inst.ImportStatus().ComponentDescriptor)),
+	}
+	for k, v := range rh.Inst.ImportStatus().Data {
+		rh.importStatus.Data[k] = v.DeepCopy()
+	}
+	for k, v := range rh.Inst.ImportStatus().Target {
+		rh.importStatus.Target[k] = v.DeepCopy()
+	}
+	for k, v := range rh.Inst.ImportStatus().ComponentDescriptor {
+		rh.importStatus.ComponentDescriptor[k] = v.DeepCopy()
 	}
 
 	rh.state.Register(parentRequirement, rh.fetchParent)
@@ -419,17 +437,17 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 	var configGens map[string]string
 	switch imp.GetImportType() {
 	case lsv1alpha1.ImportTypeData:
-		importStatus, err = rh.Inst.ImportStatus().GetData(imp.GetImportName())
+		importStatus, err = rh.importStatus.GetData(imp.GetImportName())
 		if err == nil {
 			configGen = importStatus.ConfigGeneration
 		}
 	case lsv1alpha1.ImportTypeTarget:
-		importStatus, err = rh.Inst.ImportStatus().GetTarget(imp.GetImportName())
+		importStatus, err = rh.importStatus.GetTarget(imp.GetImportName())
 		if err == nil {
 			configGen = importStatus.ConfigGeneration
 		}
 	case lsv1alpha1.ImportTypeTargetList:
-		importStatus, err = rh.Inst.ImportStatus().GetTarget(imp.GetImportName())
+		importStatus, err = rh.importStatus.GetTarget(imp.GetImportName())
 		if err == nil {
 			configGens = map[string]string{}
 			for _, ts := range importStatus.Targets {

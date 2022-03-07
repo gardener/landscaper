@@ -28,6 +28,9 @@ type ImportedBase interface {
 	GetListItems() []ImportedBase
 	// GetImportReference returns the (non-hashed) name under which the imported object was exported. It is implemented for single-type imports only.
 	GetImportReference() string
+	// GetImportDefinition returns the import definition which caused this import.
+	// Unfortunately, there is no common interface for import definitions, so it can only return interface{}.
+	GetImportDefinition() interface{}
 }
 
 type Imported struct {

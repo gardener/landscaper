@@ -16,12 +16,15 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
+var _ ImportedBase = &Target{}
+
 // Target is the internal representation of a target.
 type Target struct {
 	Raw        *lsv1alpha1.Target
 	FieldValue *lsv1alpha1.FieldValueDefinition
 	Metadata   Metadata
 	Owner      *metav1.OwnerReference
+	Def        *lsv1alpha1.TargetImport
 }
 
 // NewTarget creates a new internal target.
@@ -146,4 +149,8 @@ func (t *Target) GetListItems() []ImportedBase {
 
 func (t *Target) GetImportReference() string {
 	return t.Metadata.Key
+}
+
+func (t *Target) GetImportDefinition() interface{} {
+	return t.Def
 }
