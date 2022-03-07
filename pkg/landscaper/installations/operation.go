@@ -120,6 +120,7 @@ func (o *Operation) JSONSchemaValidator(schema []byte) (*jsonschema.Validator, e
 		BlueprintFs:         o.Inst.Blueprint.Fs,
 		ComponentDescriptor: o.ComponentDescriptor,
 		ComponentResolver:   o.ComponentsRegistry(),
+		RepositoryContext:   o.context.External.RepositoryContext,
 	})
 	err := v.CompileSchema(schema)
 	if err != nil {

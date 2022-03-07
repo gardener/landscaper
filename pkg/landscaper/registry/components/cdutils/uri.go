@@ -163,6 +163,12 @@ func (u *URI) GetComponent(cd *cdv2.ComponentDescriptor, compResolver ctf.Compon
 // GetResource resolves to a resource specified by the URI.
 // It also returns the resource kind.
 func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
+	return u.GetResourceWithRepositoryContext(cd, compResolver, cd.GetEffectiveRepositoryContext())
+}
+
+// GetResourceWithRepositoryContext resolves to a resource specified by the URI with the given repository context.
+// It also returns the resource kind.
+func (u *URI) GetResourceWithRepositoryContext(cd *cdv2.ComponentDescriptor, compResolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) (*cdv2.ComponentDescriptor, cdv2.Resource, error) {
 	var (
 		ctx       = context.Background()
 		component = cd
@@ -178,7 +184,7 @@ func (u *URI) GetResource(cd *cdv2.ComponentDescriptor, compResolver ctf.Compone
 			}
 
 			ref := refs[0]
-			component, err = compResolver.Resolve(ctx, cd.GetEffectiveRepositoryContext(), ref.ComponentName, ref.Version)
+			component, err = compResolver.Resolve(ctx, repositoryContext, ref.ComponentName, ref.Version)
 			if err != nil {
 				return nil, cdv2.Resource{}, fmt.Errorf("component %s cannot be found", elem.Value)
 			}
