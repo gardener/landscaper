@@ -206,6 +206,10 @@ func (dc *DependencyCycle) Equal(other *DependencyCycle) bool {
 				}
 			}
 		}
+	} else {
+		if other.IsClosed() {
+			return false
+		}
 	}
 	if dc.origin.name != otherOrigin.name {
 		// no matching origin found, cycles cannot be equal
