@@ -283,7 +283,13 @@ func (o *Operation) createOrUpdateSubinstallations(ctx context.Context,
 		return nil
 	}
 
-	for _, subInstTmpl := range installationTmpl {
+	// order subinstallations according to their dependencies
+	orderedSubinstallationTemplates, err := OrderInstallationTemplates(installationTmpl)
+	if err != nil {
+		return fmt.Errorf("unable to compute order for subinstallations: %w", err)
+	}
+
+	for _, subInstTmpl := range orderedSubinstallationTemplates {
 		subInst := subInstallations[subInstTmpl.Name]
 		_, err := o.createOrUpdateNewInstallation(ctx, o.Inst.Info, subInstTmpl, subInst)
 		if err != nil {
