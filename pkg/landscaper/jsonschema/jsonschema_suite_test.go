@@ -144,6 +144,16 @@ var _ = Describe("jsonschema", func() {
 			Expect(jsonschema.ValidateBytes(schemaBytes, pass, config)).To(Succeed())
 			Expect(jsonschema.ValidateBytes(schemaBytes, fail, config)).To(HaveOccurred())
 		})
+
+		It("should pass with a schema from a blueprint file reference and additional metadata", func() {
+			localSchema := []byte(`{ "type": "string"}`)
+			Expect(vfs.WriteFile(config.BlueprintFs, "myfile", localSchema, os.ModePerm)).To(Succeed())
+
+			schemaBytes := []byte(`{ "title": "My Schema", "$ref": "blueprint://myfile", "description": "this is a schema"}`)
+			data := []byte(`"valid"`)
+
+			Expect(jsonschema.ValidateBytes(schemaBytes, data, config)).To(Succeed())
+		})
 	})
 
 	Context("LocalReference", func() {

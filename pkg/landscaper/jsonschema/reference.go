@@ -95,10 +95,6 @@ func (rr *ReferenceResolver) resolveMap(data map[string]interface{}, currentPath
 	res := map[string]interface{}{}
 	for k, v := range data {
 		subPath := currentPath.Child(k)
-		if k == gojsonschema.KEY_REF {
-			// map contains a reference
-			return nil, fmt.Errorf("invalid reference at %s: there are no other fields allowed next to %q", subPath.String(), gojsonschema.KEY_REF)
-		}
 		sub, err := rr.resolve(v, subPath, alreadyResolved)
 		if err != nil {
 			return nil, err
@@ -113,7 +109,7 @@ func (rr *ReferenceResolver) resolveMap(data map[string]interface{}, currentPath
 // Otherwise, it returns false and an empty string.
 func checkForReference(data map[string]interface{}, currentPath *field.Path) (bool, string, error) {
 	value, ok := data[gojsonschema.KEY_REF]
-	if len(data) != 1 || !ok {
+	if !ok {
 		// no reference
 		return false, "", nil
 	}
