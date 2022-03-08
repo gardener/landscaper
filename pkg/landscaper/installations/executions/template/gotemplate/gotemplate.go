@@ -59,6 +59,8 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	cdList *cdv2.ComponentDescriptorList,
 	values map[string]interface{}) (*lstmpl.SubinstallationExecutorOutput, error) {
 
+	const templateName = "subinstallation execution"
+
 	rawTemplate, err := getTemplateFromExecution(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -71,7 +73,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
 
-	tmpl, err := gotmpl.New("execution").
+	tmpl, err := gotmpl.New(templateName).
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, cd, cdList, t.blobResolver)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
@@ -88,6 +90,11 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 			Build()
 		return nil, executeError
 	}
+
+	if err := CreateErrorIfContainsNoValue(data.String(), templateName, values, t.inputFormatter); err != nil {
+		return nil, err
+	}
+
 	if err := t.storeDeployExecutionState(ctx, tmplExec, data.Bytes()); err != nil {
 		return nil, fmt.Errorf("unable to store state: %w", err)
 	}
@@ -101,6 +108,9 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 // TemplateDeployExecutions is the GoTemplate executor for a deploy execution.
 func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint,
 	descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*lstmpl.DeployExecutorOutput, error) {
+
+	const templateName = "deploy execution"
+
 	rawTemplate, err := getTemplateFromExecution(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -113,7 +123,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
 
-	tmpl, err := gotmpl.New("execution").
+	tmpl, err := gotmpl.New(templateName).
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, descriptor, cdList, t.blobResolver)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
@@ -130,6 +140,11 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 			Build()
 		return nil, executeError
 	}
+
+	if err := CreateErrorIfContainsNoValue(data.String(), templateName, values, t.inputFormatter); err != nil {
+		return nil, err
+	}
+
 	if err := t.storeDeployExecutionState(ctx, tmplExec, data.Bytes()); err != nil {
 		return nil, fmt.Errorf("unable to store state: %w", err)
 	}
@@ -141,6 +156,9 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 }
 
 func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) (*lstmpl.ExportExecutorOutput, error) {
+
+	const templateName = "export execution"
+
 	rawTemplate, err := getTemplateFromExecution(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -153,7 +171,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
 
-	tmpl, err := gotmpl.New("execution").
+	tmpl, err := gotmpl.New(templateName).
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, nil, nil, t.blobResolver)).
 		Option("missingkey=zero").
 		Parse(rawTemplate)
@@ -173,6 +191,11 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 			Build()
 		return nil, executeError
 	}
+
+	if err := CreateErrorIfContainsNoValue(data.String(), templateName, values, t.inputFormatter); err != nil {
+		return nil, err
+	}
+
 	if err := t.storeExportExecutionState(ctx, tmplExec, data.Bytes()); err != nil {
 		return nil, fmt.Errorf("unable to store state: %w", err)
 	}

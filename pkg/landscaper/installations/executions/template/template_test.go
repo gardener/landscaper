@@ -561,29 +561,18 @@ func runTestSuite(testdataDir, sharedTestdataDir string) {
 }
 
 func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
-	var stateHandler template.GenericStateHandler
+	var (
+		stateHandler template.GenericStateHandler
 
-	BeforeEach(func() {
-		stateHandler = template.NewMemoryStateHandler()
-	})
-
-	Context("TemplateErrors", func() {
-		It("should format a deploy execution error message", func() {
-			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
+		executeTemplate = func(templateFile string, imports map[string]interface{}) ([]lsv1alpha1.DeployItemTemplate, error) {
+			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, templateFile))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
 			Expect(yaml.Unmarshal(tmpl, &exec)).ToNot(HaveOccurred())
 
 			blue := &lsv1alpha1.Blueprint{}
 			blue.DeployExecutions = exec
-			blue.Imports = lsv1alpha1.ImportDefinitionList{
-				{
-					FieldValueDefinition: lsv1alpha1.FieldValueDefinition{
-						Name: "config",
-					},
-					Type: "object",
-				},
-			}
+
 			op := template.New(gotemplate.New(nil, stateHandler), spiff.New(stateHandler))
 
 			cdRaw, err := ioutil.ReadFile(filepath.Join(sharedTestdataDir, "component-descriptor-12.yaml"))
@@ -598,18 +587,30 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 				},
 				ComponentDescriptor:  cd,
 				ComponentDescriptors: &cdv2.ComponentDescriptorList{},
-				Imports: map[string]interface{}{
-					"config": map[string]interface{}{
-						"verbosity": 10,
-						"memory": map[string]interface{}{
-							"min": 128,
-							"max": 1024,
-						},
-						"cert": "abcdef1234567",
-						"image": map[string]interface{}{
-							"name":    "test",
-							"version": "0.0.1",
-						},
+				Imports:              imports,
+			})
+
+			return res, err
+		}
+	)
+
+	BeforeEach(func() {
+		stateHandler = template.NewMemoryStateHandler()
+	})
+
+	Context("Error Messages", func() {
+		It("should handle template execution errors", func() {
+			res, err := executeTemplate("template-22.yaml", map[string]interface{}{
+				"config": map[string]interface{}{
+					"verbosity": 10,
+					"memory": map[string]interface{}{
+						"min": 128,
+						"max": 1024,
+					},
+					"cert": "abcdef1234567",
+					"image": map[string]interface{}{
+						"name":    "test",
+						"version": "0.0.1",
 					},
 				},
 			})
@@ -618,17 +619,115 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 			Expect(res).To(BeNil())
 
 			errstr := err.Error()
-			Expect(errstr).To(ContainSubstring("template source:\n"))
-			Expect(errstr).To(ContainSubstring("0:   type: manifest\n1:   config:\n2:     apiVersion: example.test/v1\n3:     kind: Configuration\n4:     verbosity:\n"))
-			Expect(errstr).To(ContainSubstring("5:       {{ .imports.config.invalid }}\n                    \u02c6≈≈≈≈≈≈≈\n"))
-			Expect(errstr).To(ContainSubstring("6:     memory:\n7:       min: {{ .imports.config.memory.min }}\n8:       max: {{ .imports.config.memory.max }}\n9:     cert:\n10:       {{ .imports.config.cert }}\n"))
+
+			Expect(errstr).To(ContainSubstring(`template source:
+2:    - name: init
+3:      type: manifest
+4:      config:
+5:        apiVersion: example.test/v1
+6:        kind: Configuration
+7:        verbosity: {{ .invalid.verbosity }}
+                                ˆ≈≈≈≈≈≈≈
+8:        memory:
+9:          min: {{ .imports.config.memory.min }}
+10:         max: {{ .imports.config.memory.max }}
+11:       cert:
+12:         {{ .imports.config.cert }}`))
+
+			Expect(errstr).To(ContainSubstring(`imports: {"config":{"cert":"[...] (string)","image":{"name":"[...] (string)","version":"[...] (string)"},"memory":{"max":"[...] (int)","min":"[...] (int)"},"verbosity":"[...] (int)"}}`))
+			Expect(errstr).To(ContainSubstring("cd:"))
+			Expect(errstr).To(ContainSubstring("components:"))
+			Expect(errstr).To(ContainSubstring("state:"))
+		})
+
+		It("should handle empty values", func() {
+			res, err := executeTemplate("template-23.yaml", map[string]interface{}{
+				"config": map[string]interface{}{
+					"memory": map[string]interface{}{
+						"min": 128,
+					},
+					"cert": "abcdef1234567",
+					"image": map[string]interface{}{
+						"name":    "test",
+						"version": "0.0.1",
+					},
+				},
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(res).To(BeNil())
+
+			errstr := err.Error()
+			Expect(errstr).To(ContainSubstring(`template execution contains fields with "no value":`))
+
+			Expect(errstr).To(ContainSubstring(`line 7:15
+2:    - name: init
+3:      type: manifest
+4:      config:
+5:        apiVersion: example.test/v1
+6:        kind: Configuration
+7:        verbosity: <no value>
+                     ˆ≈≈≈≈≈≈≈
+8:        memory:
+9:          min: 128
+10:         max: <no value>
+11:       cert:
+12:         abcdef1234567
+
+line 10:11
+5:        apiVersion: example.test/v1
+6:        kind: Configuration
+7:        verbosity: <no value>
+8:        memory:
+9:          min: 128
+10:         max: <no value>
+                 ˆ≈≈≈≈≈≈≈
+11:       cert:
+12:         abcdef1234567
+13:       image: test:0.0.1
+14:   `))
 
 			Expect(errstr).To(ContainSubstring("imports:"))
-			Expect(errstr).To(ContainSubstring("{\"config\":{\"cert\":\"[...] (string)\",\"image\":{\"name\":\"[...] (string)\",\"version\":\"[...] (string)\"},\"memory\":{\"max\":\"[...] (int)\",\"min\":\"[...] (int)\"},\"verbosity\":\"[...] (int)\"}}"))
+			Expect(errstr).To(ContainSubstring(`{"config":{"cert":"[...] (string)","image":{"name":"[...] (string)","version":"[...] (string)"},"memory":{"min":"[...] (int)"}}}`))
 
 			Expect(errstr).To(ContainSubstring("cd:"))
 			Expect(errstr).To(ContainSubstring("components:"))
 			Expect(errstr).To(ContainSubstring("state:"))
+		})
+
+		It("should handle template parsing errors", func() {
+			res, err := executeTemplate("template-24.yaml", map[string]interface{}{
+				"config": map[string]interface{}{
+					"verbosity": 10,
+					"memory": map[string]interface{}{
+						"min": 128,
+						"max": 1024,
+					},
+					"cert": "abcdef1234567",
+					"image": map[string]interface{}{
+						"name":    "test",
+						"version": "0.0.1",
+					},
+				},
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(res).To(BeNil())
+
+			errstr := err.Error()
+			Expect(errstr).To(ContainSubstring(`template source:
+3:      type: manifest
+4:      config:
+5:        apiVersion: example.test/v1
+6:        kind: Configuration
+7:        memory:
+8:          min: {{ .imports.config.memory.min }
+      ˆ≈≈≈≈≈≈≈
+9:          max: {{ .imports.config.memory.max }}
+10:       cert:
+11:         {{ .imports.config.cert }}
+12:       image: {{ ( print .imports.config.image.name ":" .imports.config.image.version ) }}
+13:   `))
 		})
 	})
 }
@@ -640,8 +739,8 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 		stateHandler = template.NewMemoryStateHandler()
 	})
 
-	Context("TemplateErrors", func() {
-		It("should format a deploy execution error message", func() {
+	Context("Error Messages", func() {
+		It("should handle template execution errors", func() {
 			tmpl, err := ioutil.ReadFile(filepath.Join(testdataDir, "template-22.yaml"))
 			Expect(err).ToNot(HaveOccurred())
 			exec := make([]lsv1alpha1.TemplateExecutor, 0)
@@ -693,7 +792,7 @@ func runTestSuiteSpiff(testdataDir, sharedTestdataDir string) {
 			errstr := err.Error()
 
 			Expect(errstr).To(ContainSubstring("imports:"))
-			Expect(errstr).To(ContainSubstring("{\"config\":{\"cert\":\"[...] (string)\",\"image\":{\"name\":\"[...] (string)\",\"version\":\"[...] (string)\"},\"memory\":{\"max\":\"[...] (int)\",\"min\":\"[...] (int)\"},\"verbosity\":\"[...] (int)\"}}"))
+			Expect(errstr).To(ContainSubstring(`{"config":{"cert":"[...] (string)","image":{"name":"[...] (string)","version":"[...] (string)"},"memory":{"max":"[...] (int)","min":"[...] (int)"},"verbosity":"[...] (int)"}}`))
 
 			Expect(errstr).To(ContainSubstring("cd:"))
 			Expect(errstr).To(ContainSubstring("components:"))

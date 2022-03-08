@@ -5,7 +5,6 @@
 package gotemplate
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,13 +14,6 @@ import (
 
 var (
 	errorLineColumnRegexp = regexp.MustCompile("(?m):([0-9]+)(:([0-9]+))?:")
-)
-
-const (
-	// sourceCodePrepend the number of lines before the error line that are printed.
-	sourceCodePrepend = 5
-	// sourceCodeAppend the number of lines after the error line that are printed.
-	sourceCodeAppend = 5
 )
 
 // TemplateError wraps a go templating error and adds more human-readable information.
@@ -79,19 +71,10 @@ func (e *TemplateError) Error() string {
 }
 
 // formatSource extracts the significant template source code that was the reason of the template error.
-// The error line and column will be highlighted and looks like this:
-// 14:     updateStrategy: patch
-// 15:
-// 16:     name: test
-// 17:     namespace: {{ .imports.namaspace }}
-//                              ˆ≈≈≈≈≈≈≈
-// 18:
-// 19:     exportsFromManifests:
-// 20:     - key: ingressClass
 func (e *TemplateError) formatSource() string {
 	var (
-		err                                                    error
-		errorLine, errorColumn, sourceStartLine, sourceEndLine int
+		err                    error
+		errorLine, errorColumn int
 	)
 
 	errStr := e.err.Error()
@@ -109,7 +92,6 @@ func (e *TemplateError) formatSource() string {
 		if err != nil {
 			return ""
 		}
-		errorLine -= 1
 	}
 	if len(m) >= 4 {
 		// error column
@@ -119,34 +101,6 @@ func (e *TemplateError) formatSource() string {
 		}
 	}
 
-	lines := strings.Split(*e.source, "\n")
-
-	// calculate the starting line of the source code
-	sourceStartLine = errorLine - sourceCodePrepend
-	if sourceStartLine < 0 {
-		sourceStartLine = 0
-
-	}
-
-	errorLine -= sourceStartLine
-	lines = lines[sourceStartLine:]
-
-	// calculate the ending line of the source code
-	sourceEndLine = errorLine + sourceCodeAppend + 1
-	if sourceEndLine > len(lines) {
-		sourceEndLine = len(lines)
-	}
-
-	lines = lines[:sourceEndLine]
-
-	for i, line := range lines {
-		prefix := fmt.Sprintf("%d: ", i)
-		formatted.WriteString(fmt.Sprintf("%s%s\n", prefix, line))
-
-		if i == errorLine {
-			formatted.WriteString(fmt.Sprintf("%s\u02c6≈≈≈≈≈≈≈\n", strings.Repeat(" ", errorColumn+len(prefix))))
-		}
-	}
-
+	formatted.WriteString(CreateSourceSnippet(errorLine, errorColumn, strings.Split(*e.source, "\n")))
 	return formatted.String()
 }

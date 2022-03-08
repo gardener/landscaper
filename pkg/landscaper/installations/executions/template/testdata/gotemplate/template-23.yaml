@@ -11,7 +11,7 @@
       config:
         apiVersion: example.test/v1
         kind: Configuration
-        verbosity: {{ .invalid.verbosity }}
+        verbosity: {{ .imports.config.verbosity }}
         memory:
           min: {{ .imports.config.memory.min }}
           max: {{ .imports.config.memory.max }}
