@@ -73,7 +73,7 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 
 	tmpl, err := gotmpl.New("execution").
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, cd, cdList, t.blobResolver)).
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
 		parseError := TemplateErrorBuilder(err).WithSource(&rawTemplate).Build()
@@ -115,7 +115,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 
 	tmpl, err := gotmpl.New("execution").
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, descriptor, cdList, t.blobResolver)).
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
 		parseError := TemplateErrorBuilder(err).WithSource(&rawTemplate).Build()
@@ -155,7 +155,7 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 
 	tmpl, err := gotmpl.New("execution").
 		Funcs(LandscaperSprigFuncMap()).Funcs(LandscaperTplFuncMap(blueprint.Fs, nil, nil, t.blobResolver)).
-		Option("missingkey=error").
+		Option("missingkey=zero").
 		Parse(rawTemplate)
 	if err != nil {
 		parseError := TemplateErrorBuilder(err).WithSource(&rawTemplate).Build()
