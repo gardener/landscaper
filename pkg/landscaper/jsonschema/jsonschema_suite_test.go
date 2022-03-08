@@ -743,6 +743,69 @@ var _ = Describe("jsonschema", func() {
 
 	})
 
+	Context("WithLocalRegistry", func() {
+
+		var (
+			registry          componentsregistry.TypedRegistry
+			repository        *componentsregistry.LocalRepository
+			cd                *cdv2.ComponentDescriptor
+			repositoryContext cdv2.UnstructuredTypedObject
+		)
+
+		BeforeEach(func() {
+			var err error
+
+			registry, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
+			Expect(err).ToNot(HaveOccurred())
+
+			repository = componentsregistry.NewLocalRepository("./testdata/registry")
+
+			cd, err = registry.Resolve(context.Background(), repository, "example.com/root", "v0.1.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(cd).ToNot(BeNil())
+
+			repoCtx := &cdv2.OCIRegistryRepository{
+				ObjectType: cdv2.ObjectType{
+					Type: registry.Type(),
+				},
+				BaseURL: "./testdata/registry",
+			}
+
+			repositoryContext.SetType(registry.Type())
+			repoCtxRaw, err := json.Marshal(repoCtx)
+			Expect(err).ToNot(HaveOccurred())
+			repositoryContext.Raw = repoCtxRaw
+		})
+
+		It("should resolve with explicit repository context", func() {
+			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
+				ComponentDescriptor: cd,
+				ComponentResolver:   registry,
+				RepositoryContext:   &repositoryContext,
+			})
+
+			resolved, err := referenceResolver.Resolve([]byte(`
+			{
+				"$ref": "cd://componentReferences/ref-1/resources/resourcesschema"
+			}`))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(resolved).ToNot(BeNil())
+		})
+
+		It("should not resolve without explicit repository context", func() {
+			referenceResolver := jsonschema.NewReferenceResolver(&jsonschema.ReferenceContext{
+				ComponentDescriptor: cd,
+				ComponentResolver:   registry,
+			})
+
+			resolved, err := referenceResolver.Resolve([]byte(`
+			{
+				"$ref": "cd://componentReferences/ref-1/resources/resourcesschema"
+			}`))
+			Expect(err).To(HaveOccurred())
+			Expect(resolved).To(BeNil())
+		})
+	})
 })
 
 // a small helper struct to better organize component references

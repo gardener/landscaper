@@ -1,0 +1,21 @@
+meta:
+  schemaVersion: v2
+
+component:
+  name: example.com/root
+  version: v0.1.0
+
+  provider: internal
+
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: "example.com"
+
+  componentReferences:
+    - componentName: example.com/ref-1
+      name: ref-1
+      version: v0.1.0
+
+  sources: []
+  resources: []
+
