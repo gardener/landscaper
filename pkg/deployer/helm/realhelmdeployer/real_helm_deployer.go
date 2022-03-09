@@ -101,17 +101,10 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context) (*release.Release
 		return nil, err
 	}
 
-	installConfig, err := newInstallConfiguration(nil)
-	if err != nil {
-		return nil, err
-	}
-
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = c.releaseName
 	install.Namespace = c.defaultNamespace
 	install.CreateNamespace = true
-	install.Atomic = installConfig.Atomic
-	install.Timeout = installConfig.Timeout.Duration
 
 	c.log.V(1).Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
 
@@ -136,16 +129,9 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context) (*release.Release
 		return nil, err
 	}
 
-	upgradeConfig, err := newUpgradeConfiguration(nil)
-	if err != nil {
-		return nil, err
-	}
-
 	upgrade := action.NewUpgrade(actionConfig)
 	upgrade.Namespace = c.defaultNamespace
 	upgrade.MaxHistory = 10
-	upgrade.Atomic = upgradeConfig.Atomic
-	upgrade.Timeout = upgradeConfig.Timeout.Duration
 
 	c.log.V(1).Info(fmt.Sprintf("upgrading helm chart release %s", c.releaseName))
 
@@ -175,14 +161,7 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 		return err
 	}
 
-	uninstallConfig, err := newUninstallConfiguration(nil)
-	if err != nil {
-		return err
-	}
-
 	uninstall := action.NewUninstall(actionConfig)
-	uninstall.KeepHistory = false
-	uninstall.Timeout = uninstallConfig.Timeout.Duration
 
 	_, err = uninstall.Run(c.releaseName)
 	if err != nil {

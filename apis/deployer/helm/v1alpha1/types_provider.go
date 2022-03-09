@@ -130,31 +130,6 @@ type RemoteArchiveAccess struct {
 	URL string `json:"url,omitempty"`
 }
 
-// HelmDeploymentConfiguration defines settings for a helm deployment.
-type HelmDeploymentConfiguration struct {
-	Install   map[string]lsv1alpha1.AnyJSON `json:"install,omitempty"`
-	Upgrade   map[string]lsv1alpha1.AnyJSON `json:"upgrade,omitempty"`
-	Uninstall map[string]lsv1alpha1.AnyJSON `json:"uninstall,omitempty"`
-}
-
-// HelmInstallConfiguration defines settings for a helm install operation.
-type HelmInstallConfiguration struct {
-	Atomic bool `json:"atomic,omitempty"`
-	// Timeout is the timeout for the operation in minutes.
-	// +optional
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-}
-
-// HelmUpgradeConfiguration defines settings for a helm upgrade operation.
-type HelmUpgradeConfiguration = HelmInstallConfiguration
-
-// HelmUninstallConfiguration defines settings for a helm uninstall operation.
-type HelmUninstallConfiguration struct {
-	// Timeout is the timeout for the operation in minutes.
-	// +optional
-	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderStatus is the helm provider specific status
