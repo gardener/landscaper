@@ -8,15 +8,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 )
 
-// Validator is a struct that contains everything to
-// validate if all imports of a installation are satisfied.
-type Validator struct {
-	*installations.Operation
-
-	parent   *installations.Installation
-	siblings []*installations.InstallationBase
-}
-
 // Constructor is a struct that contains all values
 // that are needed to load all imported data and
 // generate the one imported config

@@ -48,7 +48,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		// and an 'empty' installation is Succeeded by default
 		combinedState = lsv1alpha1.ComponentPhaseSucceeded
 	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		log.V(2).Info("Waiting for all deploy items and subinstallations to be completed")
+		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
 	}
@@ -88,6 +88,11 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 			return err
 		}
 		return c.Update(ctx, instOp, false, imps)
+	}
+
+	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
+		inst.Status.Phase = combinedState
+		return nil
 	}
 
 	// no update required, continue with exports

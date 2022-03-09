@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 var _ ImportedBase = &ComponentDescriptorList{}
