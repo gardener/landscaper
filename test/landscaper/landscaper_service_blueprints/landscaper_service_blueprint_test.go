@@ -31,12 +31,12 @@ func TestConfig(t *testing.T) {
 
 const (
 	projectRoot = "../../../"
-	testData = "testdata"
+	testData    = "testdata"
 )
 
 var filesToCopy = map[string]string{
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"): filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"):   filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
 }
 
 func copyFile(source, dest string) error {
@@ -63,13 +63,13 @@ func copyFile(source, dest string) error {
 var _ = Describe("Blueprint", func() {
 
 	var (
-		registry   componentsregistry.TypedRegistry
-		repository *componentsregistry.LocalRepository
+		registry            componentsregistry.TypedRegistry
+		repository          *componentsregistry.LocalRepository
 		landscaperServiceCD *cdv2.ComponentDescriptor
-		landscaperCD *cdv2.ComponentDescriptor
-		virtualGardenCD *cdv2.ComponentDescriptor
-		cdList cdv2.ComponentDescriptorList
-		repositoryContext cdv2.UnstructuredTypedObject
+		landscaperCD        *cdv2.ComponentDescriptor
+		virtualGardenCD     *cdv2.ComponentDescriptor
+		cdList              cdv2.ComponentDescriptorList
+		repositoryContext   cdv2.UnstructuredTypedObject
 	)
 
 	BeforeSuite(func() {
@@ -104,7 +104,7 @@ var _ = Describe("Blueprint", func() {
 			ObjectType: cdv2.ObjectType{
 				Type: registry.Type(),
 			},
-			BaseURL:  filepath.Join(testData, "registry"),
+			BaseURL: filepath.Join(testData, "registry"),
 		}
 
 		repositoryContext, err = cdv2.NewUnstructured(repoCtx)
@@ -127,7 +127,7 @@ var _ = Describe("Blueprint", func() {
 			ComponentResolver:       registry,
 			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper"),
 			ImportValuesFilepath:    filepath.Join(testData, "imports-landscaper.yaml"),
-			RepositoryContext: &repositoryContext,
+			RepositoryContext:       &repositoryContext,
 		})
 		testutils.ExpectNoError(err)
 		Expect(out.DeployItems).To(HaveLen(1))
