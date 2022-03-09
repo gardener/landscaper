@@ -658,7 +658,7 @@ func runTestSuiteGoTemplate(testdataDir, sharedTestdataDir string) {
 			Expect(res).To(BeNil())
 
 			errstr := err.Error()
-			Expect(errstr).To(ContainSubstring(`template execution contains fields with "no value":`))
+			Expect(errstr).To(ContainSubstring(`template "deploy execution" contains fields with "no value":`))
 
 			Expect(errstr).To(ContainSubstring(`line 7:15
 2:    - name: init
