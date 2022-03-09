@@ -6,6 +6,7 @@ package landscaper_service_blueprints_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -46,6 +47,11 @@ func copyFile(source, dest string) error {
 	}
 	defer srcFile.Close()
 
+	err = os.MkdirAll(filepath.Dir(dest), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	dstFile, err := os.Create(dest)
 	if err != nil {
 		return err
@@ -74,6 +80,9 @@ var _ = Describe("Blueprint", func() {
 
 	BeforeSuite(func() {
 		var err error
+		ctx := context.Background()
+		defer ctx.Done()
+
 		registry, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 		repository = componentsregistry.NewLocalRepository("./testdata/registry")
@@ -83,19 +92,20 @@ var _ = Describe("Blueprint", func() {
 			Expect(err).ToNot(HaveOccurred())
 		}
 
-		landscaperServiceCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
+		landscaperServiceCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper/landscaper-service", "v0.20.0")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(landscaperServiceCD).ToNot(BeNil())
 
-		landscaperCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/landscaper", "v0.20.0")
+		landscaperCD, err = registry.Resolve(ctx, repository, "github.com/gardener/landscaper", "v0.20.0")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(landscaperCD).ToNot(BeNil())
 
-		virtualGardenCD, err = registry.Resolve(context.Background(), repository, "github.com/gardener/virtual-garden", "v0.1.0")
+		virtualGardenCD, err = registry.Resolve(ctx, repository, "github.com/gardener/virtual-garden", "v0.1.0")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(landscaperCD).ToNot(BeNil())
 
 		cdList.Components = []cdv2.ComponentDescriptor{
+			*landscaperServiceCD,
 			*landscaperCD,
 			*virtualGardenCD,
 		}
@@ -107,14 +117,14 @@ var _ = Describe("Blueprint", func() {
 			BaseURL: filepath.Join(testData, "registry"),
 		}
 
-		repositoryContext, err = cdv2.NewUnstructured(repoCtx)
+		repositoryContext.ObjectType = repoCtx.ObjectType
+		repositoryContext.Raw, err = json.Marshal(repoCtx)
 		Expect(err).ToNot(HaveOccurred())
-
 	})
 
 	AfterSuite(func() {
 		for _, dest := range filesToCopy {
-			os.Remove(dest)
+			os.WriteFile(dest, []byte("{}"), 0644)
 		}
 	})
 
@@ -146,6 +156,7 @@ var _ = Describe("Blueprint", func() {
 			ComponentResolver:       registry,
 			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac"),
 			ImportValuesFilepath:    filepath.Join(testData, "imports-rbac.yaml"),
+			RepositoryContext:       &repositoryContext,
 		})
 		testutils.ExpectNoError(err)
 		Expect(out.DeployItems).To(HaveLen(1))
@@ -164,6 +175,7 @@ var _ = Describe("Blueprint", func() {
 			ComponentResolver:       registry,
 			BlueprintPath:           filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/installation"),
 			ImportValuesFilepath:    filepath.Join(testData, "imports-installation.yaml"),
+			RepositoryContext:       &repositoryContext,
 		})
 		testutils.ExpectNoError(err)
 		Expect(out.Installations).To(HaveLen(3))
