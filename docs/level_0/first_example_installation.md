@@ -58,7 +58,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/first-example
-      version: v0.1.0
+      version: v0.1.3
 
   blueprint:
     ref:

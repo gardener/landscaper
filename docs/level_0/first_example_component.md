@@ -23,7 +23,7 @@ deployItems:
     kind: ProviderConfiguration
 
     chart:
-      ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0"           # (4)
+      ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17"           # (4)
 
     updateStrategy: patch
 
@@ -110,20 +110,20 @@ component:
   resources:
     - type: blueprint
       name: first-example-blueprint
-      version: v0.1.0
+      version: v0.1.3
       relation: local
       access:
         type: ociRegistry
-        imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/first-example:v0.1.0
+        imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/first-example:v0.1.3
     - type: helm.io/chart
       name: nginx-chart
-      version: 0.1.0
+      version: 4.0.17
       relation: external
       access:
-        imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
+        imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
         type: ociRegistry
   sources: []
-  version: v0.1.0
+  version: v0.1.3
 meta:
   schemaVersion: v2
 ```

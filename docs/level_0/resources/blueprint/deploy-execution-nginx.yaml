@@ -9,7 +9,7 @@ deployItems:
     kind: ProviderConfiguration
 
     chart:
-      ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0
+      ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
 
     updateStrategy: patch
 
