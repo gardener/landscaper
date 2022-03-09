@@ -1,0 +1,63 @@
+imports:
+  hostingCluster:
+    metadata:
+      name: test-cluster
+      namespace: default
+    spec:
+      type: landscaper.gardener.cloud/kubernetes-cluster
+      config:
+        kubeconfig: |
+          apiVersion: v1
+          kind: Config
+          clusters:
+            - name: test
+              cluster:
+                server: 'https://api.test.local'
+                certificate-authority-data: >-
+                  askadsklasoijasdlm
+          contexts:
+            - name: test
+              context:
+                cluster: test
+                user: testuser
+          current-context: test
+          users:
+            - name: testuser
+              user:
+                token: >-
+                  abcdefghij
+
+  hostingClusterNamespace: "default"
+  virtualClusterNamespace: "default"
+  landscaperControllerKubeconfigYaml: "{}"
+  landscaperWebhooksKubeconfigYaml: "{}"
+
+  registryConfig:
+    cache:
+      useInMemoryOverlay: false
+    allowPlainHttpRegistries: false
+    insecureSkipVerify: false
+    secrets: {}
+
+  landscaperConfig:
+    landscaper:
+      verbosity: 2
+      replicas: 1
+      resources: {}
+    webhooksServer:
+      replicas: 1
+      servicePort: 9443
+    deployers:
+      - container
+      - helm
+      - manifest
+    deployersConfig:
+      helm:
+        resources: {}
+      container:
+        verbosity: 10
+        replicas: 1
+        resources: {}
+      manifest:
+        resources: {}
+

@@ -185,7 +185,8 @@ func fetchComponentDescriptor(
 		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", string(cdRef.RepositoryContext.Raw), cdRef.ComponentName, cdRef.Version, err)
 	}
 
-	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd)
+	// TODO: Is "cdRef.RepositoryContext" the correct repository context?
+	resolvedComponents, err := cdutils.ResolveToComponentDescriptorList(ctx, resolver, *cd, cdRef.RepositoryContext)
 	if err != nil {
 		return errors.Wrapf(err, "unable to resolve component descriptor references for ref %#v", providerConfig.Blueprint)
 	}

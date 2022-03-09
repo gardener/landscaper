@@ -10,16 +10,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
-
-	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
-	"github.com/gardener/landscaper/test/utils/envtest"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -27,7 +27,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
 var _ = Describe("SubInstallation", func() {
@@ -42,7 +44,25 @@ var _ = Describe("SubInstallation", func() {
 		createSubInstallationsOperation = func(ctx context.Context, installation *lsv1alpha1.Installation) *subinstallations.Operation {
 			instRoot, err := installations.CreateInternalInstallationWithContext(ctx, installation, fakeClient, op.ComponentsRegistry(), nil)
 			Expect(err).ToNot(HaveOccurred())
-			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).Build(ctx)
+
+			repoCtx := &cdv2.OCIRegistryRepository{
+				ObjectType: cdv2.ObjectType{
+					Type: componentsregistry.LocalRepositoryType,
+				},
+				BaseURL: "./testdata/registry",
+			}
+
+			repoCtxRaw, err := json.Marshal(repoCtx)
+			Expect(err).ToNot(HaveOccurred())
+
+			lsCtx, err := installations.GetInstallationContext(ctx, fakeClient, installation, nil)
+			Expect(err).ToNot(HaveOccurred())
+			lsCtx.External.Context.RepositoryContext = &cdv2.UnstructuredTypedObject{
+				ObjectType: repoCtx.ObjectType,
+				Raw: repoCtxRaw,
+			}
+
+			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).WithContext(lsCtx).Build(ctx)
 			Expect(err).ToNot(HaveOccurred())
 			return subinstallations.New(rootInstOp)
 		}
@@ -98,7 +118,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeClient = testenv.Client
 		fakeInstallations = state.Installations
 
-		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10")).To(Succeed())
+		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11")).To(Succeed())
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -237,6 +257,18 @@ var _ = Describe("SubInstallation", func() {
 				Reference: lsv1alpha1.ObjectReference{
 					Name:      "def-1",
 					Namespace: "test8"},
+			})
+		})
+
+		It("should install subinstallation that references blueprint in a component reference", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			_, _ = expectSubInstallationsSucceed(ctx, "test11", "root", lsv1alpha1.NamedObjectReference{
+				Name: "def-1",
+				Reference: lsv1alpha1.ObjectReference{
+					Name:      "def-1",
+					Namespace: "test11"},
 			})
 		})
 

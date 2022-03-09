@@ -50,6 +50,8 @@ type BlueprintRenderArgs struct {
 	ComponentDescriptorList *cdv2.ComponentDescriptorList
 	// ComponentResolver implements a component descriptor resolver.
 	ComponentResolver ctf.ComponentResolver
+	//
+	RepositoryContext *cdv2.UnstructuredTypedObject
 
 	// RootDir describes a directory that is used to default the other filepaths.
 	// The blueprint is expected to have the following structure
@@ -149,7 +151,7 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		return nil, fmt.Errorf("unable to read blueprint from %q: %w", args.BlueprintPath, err)
 	}
 
-	if err := ValidateImports(blueprint, &imports, cd, args.ComponentResolver); err != nil {
+	if err := ValidateImports(blueprint, &imports, cd, args.ComponentResolver, args.RepositoryContext); err != nil {
 		return nil, err
 	}
 
@@ -177,13 +179,18 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		}
 	}
 
+	if args.RepositoryContext != nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = args.RepositoryContext
+	}
+
 	deployItems, deployItemsState, err := RenderBlueprintDeployItems(
 		blueprint,
 		imports,
 		cd,
 		args.ComponentDescriptorList,
 		inst,
-		args.ComponentResolver)
+		args.ComponentResolver,
+		args.RepositoryContext)
 	if err != nil {
 		return nil, err
 	}
@@ -194,6 +201,7 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		cd,
 		args.ComponentDescriptorList,
 		args.ComponentResolver,
+		args.RepositoryContext,
 		inst)
 	if err != nil {
 		return nil, err
@@ -213,12 +221,16 @@ func RenderBlueprintDeployItems(
 	cd *cdv2.ComponentDescriptor,
 	cdList *cdv2.ComponentDescriptorList,
 	inst *lsv1alpha1.Installation,
-	componentResolver ctf.ComponentResolver) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+	componentResolver ctf.ComponentResolver,
+	repositoryContext *cdv2.UnstructuredTypedObject) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
 
 	var blobResolver ctf.BlobResolver
 	if cd != nil && componentResolver != nil {
 		var err error
-		_, blobResolver, err = componentResolver.ResolveWithBlobResolver(context.Background(), cd.GetEffectiveRepositoryContext(), cd.GetName(), cd.GetVersion())
+		if repositoryContext == nil {
+			repositoryContext = cd.GetEffectiveRepositoryContext()
+		}
+		_, blobResolver, err = componentResolver.ResolveWithBlobResolver(context.Background(), repositoryContext, cd.GetName(), cd.GetVersion())
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blob resolver: %w", err)
 		}
@@ -256,6 +268,7 @@ func RenderBlueprintSubInstallations(
 	cd *cdv2.ComponentDescriptor,
 	cdList *cdv2.ComponentDescriptorList,
 	compResolver ctf.ComponentResolver,
+	repositoryContext *cdv2.UnstructuredTypedObject,
 	inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, map[string][]byte, error) {
 
 	installationTemplates, err := blueprint.GetSubinstallations()
@@ -287,11 +300,15 @@ func RenderBlueprintSubInstallations(
 			Exports:            subInstTmpl.Exports,
 			ExportDataMappings: subInstTmpl.ExportDataMappings,
 		}
+		if repositoryContext == nil {
+			repositoryContext = cd.GetEffectiveRepositoryContext()
+		}
 		subBlueprint, _, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(
 			inst,
 			subInstTmpl,
 			cd,
-			compResolver)
+			compResolver,
+			repositoryContext)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
@@ -306,13 +323,15 @@ func RenderBlueprintSubInstallations(
 func ValidateImports(bp *blueprints.Blueprint,
 	imports *Imports,
 	cd *cdv2.ComponentDescriptor,
-	componentResolver ctf.ComponentResolver) error {
+	componentResolver ctf.ComponentResolver,
+	repositoryContext *cdv2.UnstructuredTypedObject) error {
 
 	validatorConfig := &jsonschema.ReferenceContext{
 		LocalTypes:          bp.Info.LocalTypes,
 		BlueprintFs:         bp.Fs,
 		ComponentDescriptor: cd,
 		ComponentResolver:   componentResolver,
+		RepositoryContext:   repositoryContext,
 	}
 
 	var allErr field.ErrorList

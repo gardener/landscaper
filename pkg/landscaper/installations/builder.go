@@ -191,7 +191,7 @@ func (b *OperationBuilder) Build(ctx context.Context) (*Operation, error) {
 	}
 	if instOp.ResolvedComponentDescriptorList == nil {
 		var err error
-		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor)
+		resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, instOp.ComponentsRegistry(), *instOp.ComponentDescriptor, instOp.Context().External.RepositoryContext)
 		if err != nil {
 			return nil, err
 		}
