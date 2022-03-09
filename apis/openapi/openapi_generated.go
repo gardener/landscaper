@@ -3575,26 +3575,11 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							},
 						},
 					},
-					"configurations": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Configurations contains arbitrary configuration information for dedicated purposes given by a string key. The key should use a dns-like syntax to express the purpose and avoid conflicts.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 

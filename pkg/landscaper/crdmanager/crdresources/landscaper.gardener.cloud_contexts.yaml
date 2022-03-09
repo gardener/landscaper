@@ -25,15 +25,6 @@ spec:
           itself or secrets to access the oci artifacts. But it can also contain deployer
           specific config.
         properties:
-          configurations:
-            additionalProperties:
-              description: AnyJSON enhances the json.RawMessages with a dedicated
-                openapi definition so that all it is correctly generated
-              x-kubernetes-preserve-unknown-fields: true
-            description: Configurations contains arbitrary configuration information
-              for dedicated purposes given by a string key. The key should use a dns-like
-              syntax to express the purpose and avoid conflicts.
-            type: object
           registryPullSecrets:
             description: 'RegistryPullSecrets defines a list of registry credentials
               that are used to pull blueprints, component descriptors and jsonschemas

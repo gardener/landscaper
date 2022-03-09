@@ -327,21 +327,6 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>configurations</code></br>
-<em>
-<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
-map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
-The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DataObject">DataObject
@@ -1304,7 +1289,6 @@ AnyJSON
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.BlueprintStaticDataSource">BlueprintStaticDataSource</a>, 
