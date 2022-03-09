@@ -422,7 +422,6 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
-	out.HelmDeployment = in.HelmDeployment
 	out.HelmDeploymentConfig = (*helm.HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
 	return nil
 }
@@ -447,7 +446,6 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
-	out.HelmDeployment = in.HelmDeployment
 	out.HelmDeploymentConfig = (*HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
 	return nil
 }

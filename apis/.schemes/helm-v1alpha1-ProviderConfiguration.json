@@ -745,10 +745,6 @@
       },
       "type": "array"
     },
-    "helmDeployment": {
-      "description": "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.",
-      "type": "boolean"
-    },
     "helmDeploymentConfig": {
       "$ref": "#/definitions/helm-v1alpha1-HelmDeploymentConfiguration",
       "description": "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true."

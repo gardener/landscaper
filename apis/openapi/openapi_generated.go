@@ -7810,13 +7810,6 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
 						},
 					},
-					"helmDeployment": {
-						SchemaProps: spec.SchemaProps{
-							Description: "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
 					"helmDeploymentConfig": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.",

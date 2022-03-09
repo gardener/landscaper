@@ -13,8 +13,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/gardener/landscaper/pkg/deployer/helm/realhelmdeployer"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -71,23 +69,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		deployErr                 error
 	)
 
-	if !h.ProviderConfiguration.HelmDeployment {
-		var applier *resourcemanager.ManifestApplier
-		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
-		managedResourceStatusList = applier.GetManagedResourcesStatus()
-	} else {
-		// apply helm
-		// convert manifests in ManagedResourceStatusList
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, values,
-			h.TargetRestConfig, targetClientSet, h.log)
-		deployErr = realHelmDeployer.Deploy(ctx)
-		if deployErr == nil {
-			managedResourceStatusList, err = realHelmDeployer.GetManagedResourcesStatus(ctx, manifests)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	var applier *resourcemanager.ManifestApplier
+	applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
+	managedResourceStatusList = applier.GetManagedResourcesStatus()
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
 	if deployErr != nil {
@@ -267,11 +251,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 
 // DeleteFiles deletes the managed resources from the target cluster.
 func (h *Helm) DeleteFiles(ctx context.Context) error {
-	if !h.ProviderConfiguration.HelmDeployment {
-		return h.deleteManifests(ctx)
-	} else {
-		return h.deleteManifestsWithRealHelmDeployer(ctx)
-	}
+	return h.deleteManifests(ctx)
 }
 
 func (h *Helm) deleteManifests(ctx context.Context) error {
@@ -306,33 +286,6 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 
 	if len(nonCompletedResources) != 0 {
 		return fmt.Errorf("waiting for the deletion of %q to be completed", strings.Join(nonCompletedResources, ","))
-	}
-
-	// remove finalizer
-	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return h.lsKubeClient.Update(ctx, h.DeployItem)
-}
-
-func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
-	h.log.Info("Deleting files with real helm deployer")
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
-
-	if h.ProviderStatus == nil {
-		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return h.lsKubeClient.Update(ctx, h.DeployItem)
-	}
-
-	_, _, targetClientSet, err := h.TargetClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration, nil,
-		h.TargetRestConfig, targetClientSet, h.log)
-
-	err = realHelmDeployer.Undeploy(ctx)
-	if err == nil {
-		return err
 	}
 
 	// remove finalizer
