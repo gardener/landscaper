@@ -484,7 +484,7 @@ func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobje
 		// we cannot validate if there is no owner
 		return nil
 	}
-	if owner.Name == rh.parent.Info.Name {
+	if rh.parent != nil && owner.Name == rh.parent.Info.Name {
 		// import comes from parent, verify that parent actually imports it
 		if err := rh.checkStateForParentImport(impPath, imp.GetImportReference()); err != nil {
 			return err
