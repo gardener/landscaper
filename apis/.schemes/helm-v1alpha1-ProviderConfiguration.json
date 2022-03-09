@@ -314,16 +314,6 @@
         }
       }
     },
-    "core-v1alpha1-AnyJSON": {
-      "description": "AnyJSON enhances the json.RawMessages with a dedicated openapi definition so that all it is correctly generated",
-      "type": [
-        "object",
-        "string",
-        "number",
-        "array",
-        "boolean"
-      ]
-    },
     "core-v1alpha1-ComponentDescriptorReference": {
       "description": "ComponentDescriptorReference is the reference to a component descriptor. given an optional context.",
       "type": "object",
@@ -431,33 +421,6 @@
         },
         "helmChartVersion": {
           "type": "string"
-        }
-      }
-    },
-    "helm-v1alpha1-HelmDeploymentConfiguration": {
-      "description": "HelmDeploymentConfiguration defines settings for a helm deployment.",
-      "type": "object",
-      "properties": {
-        "install": {
-          "type": "object",
-          "additionalProperties": {
-            "default": {},
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
-          }
-        },
-        "uninstall": {
-          "type": "object",
-          "additionalProperties": {
-            "default": {},
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
-          }
-        },
-        "upgrade": {
-          "type": "object",
-          "additionalProperties": {
-            "default": {},
-            "$ref": "#/definitions/core-v1alpha1-AnyJSON"
-          }
         }
       }
     },
@@ -744,10 +707,6 @@
         "default": {}
       },
       "type": "array"
-    },
-    "helmDeploymentConfig": {
-      "$ref": "#/definitions/helm-v1alpha1-HelmDeploymentConfiguration",
-      "description": "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true."
     },
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",

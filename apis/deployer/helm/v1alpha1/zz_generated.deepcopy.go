@@ -297,11 +297,6 @@ func (in *ProviderConfiguration) DeepCopyInto(out *ProviderConfiguration) {
 		*out = new(continuousreconcile.ContinuousReconcileSpec)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.HelmDeploymentConfig != nil {
-		in, out := &in.HelmDeploymentConfig, &out.HelmDeploymentConfig
-		*out = new(HelmDeploymentConfiguration)
-		(*in).DeepCopyInto(*out)
-	}
 	return
 }
 

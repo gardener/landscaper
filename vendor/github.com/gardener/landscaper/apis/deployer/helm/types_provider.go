@@ -73,10 +73,6 @@ type ProviderConfiguration struct {
 	// ContinuousReconcile contains the schedule for continuous reconciliation.
 	// +optional
 	ContinuousReconcile *cr.ContinuousReconcileSpec `json:"continuousReconcile,omitempty"`
-
-	// HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.
-	// +optional
-	HelmDeploymentConfig *HelmDeploymentConfiguration `json:"helmDeploymentConfig,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.

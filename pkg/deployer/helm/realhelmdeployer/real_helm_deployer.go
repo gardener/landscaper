@@ -24,9 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -38,7 +36,6 @@ type RealHelmDeployer struct {
 	decoder            runtime.Decoder
 	releaseName        string
 	defaultNamespace   string
-	helmConfig         *helmv1alpha1.HelmDeploymentConfiguration
 	values             map[string]interface{}
 	targetRestConfig   *rest.Config
 	apiResourceHandler *resourcemanager.ApiResourceHandler
@@ -48,17 +45,7 @@ type RealHelmDeployer struct {
 func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, values map[string]interface{},
 	targetRestConfig *rest.Config, clientset kubernetes.Interface, log logr.Logger) *RealHelmDeployer {
 
-	return &RealHelmDeployer{
-		chart:              ch,
-		decoder:            serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
-		releaseName:        providerConfig.Name,
-		defaultNamespace:   providerConfig.Namespace,
-		helmConfig:         providerConfig.HelmDeploymentConfig,
-		values:             values,
-		targetRestConfig:   targetRestConfig,
-		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
-		log:                log,
-	}
+	return nil
 }
 
 func (c *RealHelmDeployer) Deploy(ctx context.Context) error {
@@ -114,7 +101,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context) (*release.Release
 		return nil, err
 	}
 
-	installConfig, err := newInstallConfiguration(c.helmConfig)
+	installConfig, err := newInstallConfiguration(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +136,7 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context) (*release.Release
 		return nil, err
 	}
 
-	upgradeConfig, err := newUpgradeConfiguration(c.helmConfig)
+	upgradeConfig, err := newUpgradeConfiguration(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +175,7 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 		return err
 	}
 
-	uninstallConfig, err := newUninstallConfiguration(c.helmConfig)
+	uninstallConfig, err := newUninstallConfiguration(nil)
 	if err != nil {
 		return err
 	}
