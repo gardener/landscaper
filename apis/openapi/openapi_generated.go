@@ -174,12 +174,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerSpec":                                 schema_apis_deployer_core_v1alpha1_OwnerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerStatus":                               schema_apis_deployer_core_v1alpha1_OwnerStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess":                             schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref),
-		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth":                                      schema_apis_deployer_helm_v1alpha1_Auth(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                                     schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration":                       schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo":                             schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref),
-		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepoCredentials":                  schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderStatus":                            schema_apis_deployer_helm_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":                       schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
@@ -7372,40 +7370,6 @@ func schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref common.ReferenceCallba
 	}
 }
 
-func schema_apis_deployer_helm_v1alpha1_Auth(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Auth contains authentication info for one helm chart repo",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"url": {
-						SchemaProps: spec.SchemaProps{
-							Description: "URL contains URL of helm chart repo",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"customCAData": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CustomCAData allows you to add a custom CA, which is useful if your server speaks HTTPS with a self- signed certificate. The added certificate must be in PEM format and base64 encoded.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"authHeader": {
-						SchemaProps: spec.SchemaProps{
-							Description: "AuthHeader contains the value that will be set in the \"Authorization\" header when fetching the Chart, e.g. \"Basic dX...3dvcmQ=\".",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -7558,34 +7522,6 @@ func schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref common.ReferenceCallba
 				},
 			},
 		},
-	}
-}
-
-func schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "HelmChartRepoCredentials contains the credentials to access hepl chart repos",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"auths": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth"},
 	}
 }
 

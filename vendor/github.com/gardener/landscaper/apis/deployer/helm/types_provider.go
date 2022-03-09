@@ -141,21 +141,3 @@ type ProviderStatus struct {
 	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
 	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
 }
-
-// HelmChartRepoCredentials contains the credentials to access hepl chart repos
-type HelmChartRepoCredentials struct {
-	Auths []Auth `json:"auths,omitempty"`
-}
-
-// Auth contains authentication info for one helm chart repo
-type Auth struct {
-	// URL contains URL of helm chart repo
-	URL string `json:"url,omitempty"`
-	// CustomCAData allows you to add a custom CA, which is useful if your server speaks HTTPS with a self-
-	// signed certificate. The added certificate must be in PEM format and base64 encoded.
-	// +optional
-	CustomCAData string `json:"customCAData,omitempty"`
-	// AuthHeader contains the value that will be set in the "Authorization" header when fetching the Chart, e.g.
-	// "Basic dX...3dvcmQ=".
-	AuthHeader string `json:"authHeader,omitempty"`
-}
