@@ -6,15 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
-	"strings"
-
-	"helm.sh/helm/v3/pkg/repo"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
-	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/pkg/deployer/helm/shared"
 )
 
@@ -43,40 +38,8 @@ func (h *HelmChartRepoResolver) Info(ctx context.Context, res cdv2.Resource) (*c
 	return h.Resolve(ctx, res, nil)
 }
 
-func (h *HelmChartRepoResolver) ResolveHelmChart(ctx context.Context, helmChartRepo *v1alpha1.HelmChartRepo, writer io.Writer) (*ctf.BlobInfo, error) {
-	if helmChartRepo.HelmChartRepoUrl == "" {
-		return nil, errors.New("no helm chart repo url provided")
-	}
-
-	helmChartRepoUrl := normalizeUrl(helmChartRepo.HelmChartRepoUrl) + "/index.yaml"
-
-	repoCatalog, err := h.helmChartRepoClient.fetchRepoCatalog(ctx, helmChartRepoUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	chartURL, err := h.findChartInRepoCatalog(repoCatalog, helmChartRepoUrl, helmChartRepo.HelmChartName, helmChartRepo.HelmChartVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	chartBytes, err := h.helmChartRepoClient.fetchChart(ctx, chartURL)
-	if err != nil {
-		return nil, err
-	}
-
-	if writer != nil {
-		_, err := writer.Write(chartBytes)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &ctf.BlobInfo{
-		MediaType: "",
-		Digest:    "",
-		Size:      int64(len(chartBytes)),
-	}, nil
+func (h *HelmChartRepoResolver) ResolveHelmChart(_ context.Context, _ io.Writer) (*ctf.BlobInfo, error) {
+	return nil, errors.New("no helm chart repo data provided")
 }
 
 func (h *HelmChartRepoResolver) Resolve(ctx context.Context, res cdv2.Resource, writer io.Writer) (*ctf.BlobInfo, error) {
@@ -86,33 +49,5 @@ func (h *HelmChartRepoResolver) Resolve(ctx context.Context, res cdv2.Resource, 
 		return nil, fmt.Errorf("unable to decode access to type '%s': %w", res.Access.GetType(), err)
 	}
 
-	return h.ResolveHelmChart(ctx, &helmChartRepoAccess.HelmChartRepo, writer)
-}
-
-// findChartInRepoIndex returns the URL of a chart given a Helm repository and its name and version
-func (h *HelmChartRepoResolver) findChartInRepoCatalog(repoCatalog *repo.IndexFile, repoURL, chartName, chartVersion string) (string, error) {
-	errMsg := fmt.Sprintf("chart %q", chartName)
-	if chartVersion != "" {
-		errMsg = fmt.Sprintf("%s version %q", errMsg, chartVersion)
-	}
-	cv, err := repoCatalog.Get(chartName, chartVersion)
-	if err != nil {
-		return "", fmt.Errorf("%s not found in repository", errMsg)
-	}
-	if len(cv.URLs) == 0 {
-		return "", fmt.Errorf("%s has no downloadable URLs", errMsg)
-	}
-	return h.resolveChartURL(repoURL, cv.URLs[0])
-}
-
-func (h *HelmChartRepoResolver) resolveChartURL(index, chartName string) (string, error) {
-	indexURL, err := url.Parse(strings.TrimSpace(index))
-	if err != nil {
-		return "", fmt.Errorf("could not parse chart url: %w", err)
-	}
-	chartURL, err := indexURL.Parse(strings.TrimSpace(chartName))
-	if err != nil {
-		return "", fmt.Errorf("could not parse chart url: %w", err)
-	}
-	return chartURL.String(), nil
+	return h.ResolveHelmChart(ctx, writer)
 }

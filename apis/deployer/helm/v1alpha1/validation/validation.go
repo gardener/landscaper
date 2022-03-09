@@ -72,8 +72,8 @@ func ValidateProviderConfiguration(config *helmv1alpha1.ProviderConfiguration) e
 // ValidateChart validates the access methods for a chart
 func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorList {
 	allErrs := field.ErrorList{}
-	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil && chart.HelmChartRepo == nil {
-		subPath := fldPath.Child("ref", "archive", "fromResource", "helmChartRepo")
+	if len(chart.Ref) == 0 && chart.Archive == nil && chart.FromResource == nil {
+		subPath := fldPath.Child("ref", "archive", "fromResource")
 		err := field.Required(subPath, "must not be empty")
 		return append(allErrs, err)
 	}
@@ -82,8 +82,6 @@ func ValidateChart(fldPath *field.Path, chart helmv1alpha1.Chart) field.ErrorLis
 		allErrs = append(allErrs, ValidateArchive(fldPath.Child("archive"), chart.Archive)...)
 	} else if chart.FromResource != nil {
 		allErrs = append(allErrs, ValidateFromResource(fldPath.Child("fromResource"), chart.FromResource)...)
-	} else if chart.HelmChartRepo != nil {
-		allErrs = append(allErrs, ValidateHelmChartRepo(fldPath.Child("helmChartRepo"), chart.HelmChartRepo)...)
 	}
 
 	return allErrs
@@ -132,25 +130,6 @@ func ValidateFromResource(fldPath *field.Path, resourceRef *helmv1alpha1.RemoteC
 		if len(resourceRef.Reference.Version) == 0 {
 			allErrs = append(allErrs, field.Required(fldPath.Child("version"), "must not be empty"))
 		}
-	}
-
-	return allErrs
-}
-
-// ValidateHelmChartRepo validates the helm chart repo access for a helm chart.
-func ValidateHelmChartRepo(fldPath *field.Path, helmChartRepo *helmv1alpha1.HelmChartRepo) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	if len(helmChartRepo.HelmChartRepoUrl) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("helmChartRepoUrl"), "must not be empty"))
-	}
-
-	if len(helmChartRepo.HelmChartName) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("helmChartName"), "must not be empty"))
-	}
-
-	if len(helmChartRepo.HelmChartVersion) == 0 {
-		allErrs = append(allErrs, field.Required(fldPath.Child("helmChartVersion"), "must not be empty"))
 	}
 
 	return allErrs

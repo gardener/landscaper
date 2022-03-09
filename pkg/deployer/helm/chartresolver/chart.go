@@ -45,10 +45,6 @@ func GetChart(ctx context.Context, log logr.Logger, ociClient ociclient.Client,
 		return getChartFromResource(ctx, log, ociClient, helmChartRepoClient, chartConfig.FromResource)
 	}
 
-	if chartConfig.HelmChartRepo != nil {
-		return getChartFromHelmChartRepo(ctx, log, helmChartRepoClient, chartConfig.HelmChartRepo)
-	}
-
 	return nil, NoChartDefinedError
 }
 
@@ -154,24 +150,6 @@ func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ocicli
 	var buf bytes.Buffer
 	if _, err := blobResolver.Resolve(ctx, res, &buf); err != nil {
 		return nil, fmt.Errorf("unable to resolve chart from resource %q: %w", ref.ResourceName, err)
-	}
-
-	ch, err := chartloader.LoadArchive(&buf)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load chart from archive: %w", err)
-	}
-	return ch, err
-}
-
-func getChartFromHelmChartRepo(ctx context.Context, log logr.Logger, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
-	ref *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
-
-	resolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)
-	var buf bytes.Buffer
-
-	if _, err := resolver.ResolveHelmChart(ctx, ref, &buf); err != nil {
-		return nil, fmt.Errorf("unable to resolve chart %q with version %q from helm chart repo %q: %w",
-			ref.HelmChartName, ref.HelmChartVersion, ref.HelmChartRepoUrl, err)
 	}
 
 	ch, err := chartloader.LoadArchive(&buf)

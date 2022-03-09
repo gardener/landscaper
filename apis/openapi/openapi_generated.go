@@ -177,7 +177,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                                     schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration":                       schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref),
-		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo":                             schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderStatus":                            schema_apis_deployer_helm_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":                       schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
@@ -7396,17 +7395,11 @@ func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) comm
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess"),
 						},
 					},
-					"helmChartRepo": {
-						SchemaProps: spec.SchemaProps{
-							Description: "HelmChartRepo defines a reference to a chart in a helm chart repo.",
-							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo"),
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference"},
 	}
 }
 
@@ -7491,37 +7484,6 @@ func schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref common.Reference
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
-	}
-}
-
-func schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "HelmChartRepo defines a reference to a chart in a helm chart repo",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"helmChartRepoUrl": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"helmChartName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"helmChartVersion": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 

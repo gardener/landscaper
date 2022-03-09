@@ -399,27 +399,8 @@
           "description": "FromResource fetches the chart based on the resource's access method. The resource is defined as part of a component descriptor which is necessary to also handle local artifacts.",
           "$ref": "#/definitions/helm-v1alpha1-RemoteChartReference"
         },
-        "helmChartRepo": {
-          "description": "HelmChartRepo defines a reference to a chart in a helm chart repo.",
-          "$ref": "#/definitions/helm-v1alpha1-HelmChartRepo"
-        },
         "ref": {
           "description": "Ref defines the reference to a helm chart in a oci repository.",
-          "type": "string"
-        }
-      }
-    },
-    "helm-v1alpha1-HelmChartRepo": {
-      "description": "HelmChartRepo defines a reference to a chart in a helm chart repo",
-      "type": "object",
-      "properties": {
-        "helmChartName": {
-          "type": "string"
-        },
-        "helmChartRepoUrl": {
-          "type": "string"
-        },
-        "helmChartVersion": {
           "type": "string"
         }
       }

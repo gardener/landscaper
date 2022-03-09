@@ -94,16 +94,6 @@ type Chart struct {
 	// Archive defines a compressed tarred helm chart as base64 encoded string.
 	// +optional
 	Archive *ArchiveAccess `json:"archive,omitempty"`
-	// HelmChartRepo defines a reference to a chart in a helm chart repo.
-	// +optional
-	HelmChartRepo *HelmChartRepo `json:"helmChartRepo,omitempty"`
-}
-
-// HelmChartRepo defines a reference to a chart in a helm chart repo
-type HelmChartRepo struct {
-	HelmChartRepoUrl string `json:"helmChartRepoUrl,omitempty"`
-	HelmChartName    string `json:"helmChartName,omitempty"`
-	HelmChartVersion string `json:"helmChartVersion,omitempty"`
 }
 
 // RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor
