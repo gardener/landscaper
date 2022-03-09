@@ -148,7 +148,7 @@ func (t *Target) GetListItems() []ImportedBase {
 }
 
 func (t *Target) GetImportReference() string {
-	return t.Metadata.Key
+	return t.Def.Target
 }
 
 func (t *Target) GetImportDefinition() interface{} {

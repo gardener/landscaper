@@ -53,7 +53,7 @@ var _ = Describe("OutdatedImports", func() {
 		}
 	})
 
-	FIt("should return that imports are outdated if a import from the parent is outdated", func() {
+	It("should return that imports are outdated if a import from the parent is outdated", func() {
 		ctx := context.Background()
 
 		inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])

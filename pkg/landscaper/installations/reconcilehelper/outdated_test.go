@@ -41,7 +41,7 @@ var _ = Describe("OutdatedImports", func() {
 		fakeClient, state, err = envtest.NewFakeClientFromPath("../imports/testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
-		createDefaultContextsForNamespace(fakeClient)
+		createDefaultContextsForNamespaces(fakeClient)
 		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")

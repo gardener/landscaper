@@ -12,6 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// This is the attempt to create a common interface for all imports to not always have big switch-case-statements when working with them.
+// Unfortunately, the different imports behave quite differently, most notable are the differences between imports referring to a single object
+// (single-type imports) and imports referring to multiple objects (list-type imports), which is why there are multiple methods which
+// are only implemented for either type and calling them on a 'wrong' import will return a dummy value.
 type ImportedBase interface {
 	GetImportType() lsv1alpha1.ImportType
 	// IsListTypeImport returns true if the import refers (or could refer) to multiple in-cluster objects.

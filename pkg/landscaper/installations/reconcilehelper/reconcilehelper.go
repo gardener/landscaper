@@ -90,13 +90,10 @@ func (rh *ReconcileHelper) UpdateRequired() (bool, error) {
 
 // UpdateAllowed returns an error if the installation cannot be updated due to dependencies or unfulfilled imports.
 func (rh *ReconcileHelper) UpdateAllowed() error {
-	updateAllowed, msg, err := rh.InstallationsDependingOnReady()
+	err := rh.InstallationsDependingOnReady()
 	if err != nil {
-		return rh.NewError(err, "InstallationsDependingOnReady", err.Error())
-	}
-	if !updateAllowed {
 		// at least one of the installations the current one depends on is not succeeded or has pending changes
-		return installations.NewNotCompletedDependentsErrorf(nil, "not all installations which is depended on are succeeded: %s", msg)
+		return installations.NewNotCompletedDependentsErrorf(err, "not all installations which is depended on are ready: %s", err.Error())
 	}
 	err = rh.ImportsSatisfied()
 	return err
@@ -104,10 +101,12 @@ func (rh *ReconcileHelper) UpdateAllowed() error {
 
 // InstUpToDate returns true if the observedGeneration in the installation status matches the current generation of the installation
 func (rh *ReconcileHelper) InstUpToDate() bool {
-	return rh.Inst.Info.ObjectMeta.Generation != rh.Inst.Info.Status.ObservedGeneration
+	return rh.Inst.Info.ObjectMeta.Generation == rh.Inst.Info.Status.ObservedGeneration
 }
 
-// ImportsUpToDate returns true if there are no generation changes in neither the imported object nor its owning installation
+// ImportsUpToDate returns true if the export configGeneration of each import is equal to the configGeneration in the import status
+// meaning that the imports have not been updated since they have last been imported.
+// It does not check whether the exporting installation is up-to-date.
 func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 	if err := rh.state.Require(importsRequirement, parentRequirement, siblingsRequirement); err != nil {
 		return false, err
@@ -197,34 +196,38 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 // - in phase 'Succeeded'
 // - up-to-date (observedGeneration == generation)
 // - not queued for reconciliation (no 'landscaper.gardener.cloud/operation' annotation with value 'reconcile' or 'forceReconcile')
-// Returns a true if all siblings which is depended on are ready. If false is returned an no error occurred, the second return value
-// contains a message with details on the blocking installation.
-func (rh *ReconcileHelper) InstallationsDependingOnReady() (bool, string, error) {
-	if err := rh.state.Require(dependencyRequirement); err != nil {
-		return false, "", err
+// Returns an error if any of these requirements is not fulfilled.
+// Additionally, an error is returned if the installation has a parent and it is not progressing.
+func (rh *ReconcileHelper) InstallationsDependingOnReady() error {
+	if err := rh.state.Require(parentRequirement, dependencyRequirement); err != nil {
+		return err
+	}
+
+	if rh.parent != nil && !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
+		return installations.NewNotCompletedDependentsErrorf(nil, "parent installation %q is not progressing", kutil.ObjectKeyFromObject(rh.parent.Info).String())
 	}
 
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
 	for dep := range rh.dependedOnSiblings {
 		inst := rh.siblings[dep]
 		if inst == nil {
-			return false, "", fmt.Errorf("internal error: sibling %q is nil", dep)
+			return fmt.Errorf("internal error: sibling %q is nil", dep)
 		}
 
 		if inst.Info.Status.Phase != lsv1alpha1.ComponentPhaseSucceeded {
-			return false, fmt.Sprintf("depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inst.Info).String()), nil
+			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inst.Info).String())
 		}
 
 		if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
-			return false, fmt.Sprintf("depending on installation %q which is not up-to-date", kutil.ObjectKeyFromObject(inst.Info).String()), nil
+			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not up-to-date", kutil.ObjectKeyFromObject(inst.Info).String())
 		}
 
 		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-			return false, fmt.Sprintf("depending on installation %q which has (force-)reconcile annotation", kutil.ObjectKeyFromObject(inst.Info).String()), nil
+			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which has (force-)reconcile annotation", kutil.ObjectKeyFromObject(inst.Info).String())
 		}
 	}
 
-	return true, "", nil
+	return nil
 }
 
 // ImportsSatisfied returns an error if an import of the installation is not satisfied.
@@ -375,20 +378,28 @@ func (rh *ReconcileHelper) fetchDependencies() error {
 
 	// compute dependencies
 	deps, _ := subinstallations.ComputeInstallationDependencies(insts)
-	// search for current installation
-	var curDeps sets.String
-	for name, dependencies := range deps {
-		if name == rh.Inst.Info.Name {
-			curDeps = dependencies
-			break
+	queue := []string{rh.Inst.Info.Name}
+	for len(queue) > 0 {
+		// pop first element from queue
+		elem := queue[0]
+		queue = queue[1:]
+
+		// fetch dependencies for element
+		curDeps, ok := deps[elem]
+		if !ok {
+			// should not happen
+			return fmt.Errorf("internal error: installation %q not found in dependency graph", elem)
+		}
+		for d := range curDeps {
+			if !rh.dependedOnSiblings.Has(d) {
+				// add sibling to list of depended on siblings
+				rh.dependedOnSiblings.Insert(d)
+				// queue sibling to fetch transitive dependencies
+				queue = append(queue, d)
+			}
 		}
 	}
-	if curDeps == nil {
-		// should not happen
-		return fmt.Errorf("internal error: current installation not found in dependency graph")
-	}
 
-	rh.dependedOnSiblings = curDeps
 	return nil
 }
 
@@ -512,12 +523,12 @@ func (rh *ReconcileHelper) checkStateForSiblingExport(fldPath *field.Path, sibli
 	}
 	sib, ok := rh.siblings[siblingRef.Name]
 	if !ok {
-		return fmt.Errorf("%s: installation %s is not a sibling", fldPath.String(), siblingRef.Name)
+		return installations.NewImportNotSatisfiedErrorf(nil, "%s: installation %s is not a sibling", fldPath.String(), siblingRef.Name)
 	}
 	if len(importRef) == 0 {
 		// import comes from a sibling export, but has no import reference value
 		// this should not happen
-		return fmt.Errorf("%s: internal error: no import reference for sibling import", fldPath.String())
+		return installations.NewImportNotSatisfiedErrorf(nil, "%s: internal error: no import reference for sibling import", fldPath.String())
 	}
 
 	// search in the sibling for the export mapping where importmap.from == exportmap.to

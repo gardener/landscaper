@@ -224,7 +224,7 @@ func (do *DataObject) GetListItems() []ImportedBase {
 }
 
 func (do *DataObject) GetImportReference() string {
-	return do.Metadata.Key
+	return do.Def.DataRef
 }
 
 func (do *DataObject) GetImportDefinition() interface{} {
