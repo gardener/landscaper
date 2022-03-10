@@ -114,19 +114,15 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		},
 	})
 
-	deployErr := applier.Apply(ctx)
+	err = applier.Apply(ctx)
 	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
-
-	managedResourceStatusList := applier.GetManagedResourcesStatus()
-
-	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
-	if deployErr != nil {
-		var err error
-		h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
-		if err != nil {
+	if err != nil {
+		var err2 error
+		h.DeployItem.Status.ProviderStatus, err2 = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
+		if err2 != nil {
 			h.log.Error(err, "unable to encode status")
 		}
-		return deployErr
+		return err
 	}
 
 	h.DeployItem.Status.ProviderStatus, err = kutil.ConvertToRawExtension(h.ProviderStatus, HelmScheme)
@@ -142,6 +138,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
+	managedResourceStatusList := applier.GetManagedResourcesStatus()
 	if err := h.readExportValues(ctx, currOp, targetClient, managedResourceStatusList, exports); err != nil {
 		return err
 	}
