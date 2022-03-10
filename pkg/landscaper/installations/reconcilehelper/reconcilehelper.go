@@ -480,8 +480,8 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 
 func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobjects.Imported) error {
 	owner := imp.GetOwnerReference()
-	if owner == nil {
-		// we cannot validate if there is no owner
+	if owner == nil || owner.Kind != "Installation" {
+		// we cannot validate if there is no owner or the owner is not an installation
 		return nil
 	}
 	if rh.parent != nil && owner.Name == rh.parent.Info.Name {
