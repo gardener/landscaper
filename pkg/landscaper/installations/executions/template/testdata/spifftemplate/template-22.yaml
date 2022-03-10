@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+- name: one
+  type: Spiff
+  template:
+    deployItems:
+    - name: init
+      type: manifest
+      config:
+        apiVersion: example.test/v1
+        kind: Configuration
+        verbosity:
+          (( imports.config.invalid ))
+        memory:
+          min: (( imports.config.memory.min ))
+          max: (( imports.config.memory.max ))
+        cert:
+          (( imports.config.cert ))
+        image:
+          (( imports.config.image.name ":" imports.config.image.version ))
