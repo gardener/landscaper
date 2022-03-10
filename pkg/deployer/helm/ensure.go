@@ -11,8 +11,6 @@ import (
 
 	"helm.sh/helm/v3/pkg/chart"
 
-	"k8s.io/client-go/kubernetes"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -101,14 +99,25 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		manifests = append(manifests, nsManifest)
 	}
 
-	var (
-		managedResourceStatusList managedresource.ManagedResourceStatusList
-		deployErr                 error
-	)
+	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
+		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
+		KubeClient:       targetClient,
+		Clientset:        targetClientSet,
+		DefaultNamespace: h.ProviderConfiguration.Namespace,
+		DeployItemName:   h.DeployItem.Name,
+		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
+		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
+		Manifests:        manifests,
+		ManagedResources: h.ProviderStatus.ManagedResources,
+		Labels: map[string]string{
+			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
+		},
+	})
 
-	var applier *resourcemanager.ManifestApplier
-	applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
-	managedResourceStatusList = applier.GetManagedResourcesStatus()
+	deployErr := applier.Apply(ctx)
+	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
+
+	managedResourceStatusList := applier.GetManagedResourcesStatus()
 
 	// common error handling for deploy errors (h.applyManifests / realHelmDeployer.Deploy)
 	if deployErr != nil {
@@ -141,29 +150,6 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 	h.DeployItem.Status.LastError = nil
 
 	return nil
-}
-
-func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
-	manifests []managedresource.Manifest) (*resourcemanager.ManifestApplier, error) {
-	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
-		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
-		KubeClient:       targetClient,
-		Clientset:        targetClientSet,
-		DefaultNamespace: h.ProviderConfiguration.Namespace,
-		DeployItemName:   h.DeployItem.Name,
-		DeleteTimeout:    h.ProviderConfiguration.DeleteTimeout.Duration,
-		UpdateStrategy:   manifestv1alpha2.UpdateStrategy(h.ProviderConfiguration.UpdateStrategy),
-		Manifests:        manifests,
-		ManagedResources: h.ProviderStatus.ManagedResources,
-		Labels: map[string]string{
-			helmv1alpha1.ManagedDeployItemLabel: h.DeployItem.Name,
-		},
-	})
-
-	err := applier.Apply(ctx)
-	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
-
-	return applier, err
 }
 
 // checkResourcesReady checks if the managed resources are Ready/Healthy.
