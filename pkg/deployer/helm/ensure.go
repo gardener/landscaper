@@ -59,9 +59,46 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		}
 	}
 
-	manifests, err := h.createManifests(ctx, currOp, files, crds)
+	objects, err := kutil.ParseFilesToRawExtension(h.log, files)
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err,
+			currOp, "DecodeHelmTemplatedObjects", err.Error())
+	}
+	crdObjects, err := kutil.ParseFilesToRawExtension(h.log, crds)
+	if err != nil {
+		return lserrors.NewWrappedError(err,
+			currOp, "DecodeHelmTemplatedObjects", err.Error())
+	}
+
+	// create manifests from objects for the applier
+	crdCount := len(crdObjects)
+	manifests := make([]managedresource.Manifest, len(objects)+crdCount)
+	for i, obj := range crdObjects {
+		manifests[i] = managedresource.Manifest{
+			Policy:   managedresource.ManagePolicy,
+			Manifest: obj,
+		}
+	}
+	for i, obj := range objects {
+		manifests[i+crdCount] = managedresource.Manifest{
+			Policy:   managedresource.ManagePolicy,
+			Manifest: obj,
+		}
+	}
+	if h.ProviderConfiguration.CreateNamespace && len(h.ProviderConfiguration.Namespace) != 0 {
+		// add the release namespace as managed resource
+		ns := &corev1.Namespace{}
+		ns.Name = h.ProviderConfiguration.Namespace
+		rawNs, err := kutil.ConvertToRawExtension(ns, scheme.Scheme)
+		if err != nil {
+			return fmt.Errorf("unable to marshal release namespace: %w", err)
+		}
+		nsManifest := managedresource.Manifest{
+			Policy:   managedresource.KeepPolicy,
+			Manifest: rawNs,
+		}
+		// the namespace is ordered by the manifest deployer, so it is automatically created as first resource
+		manifests = append(manifests, nsManifest)
 	}
 
 	var (
@@ -127,53 +164,6 @@ func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, t
 	h.ProviderStatus.ManagedResources = applier.GetManagedResourcesStatus()
 
 	return applier, err
-}
-
-func (h *Helm) createManifests(_ context.Context, currOp string, files, crds map[string]string) ([]managedresource.Manifest, error) {
-	objects, err := kutil.ParseFilesToRawExtension(h.log, files)
-	if err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "DecodeHelmTemplatedObjects", err.Error())
-	}
-	crdObjects, err := kutil.ParseFilesToRawExtension(h.log, crds)
-	if err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "DecodeHelmTemplatedObjects", err.Error())
-	}
-
-	// create manifests from objects for the applier
-	crdCount := len(crdObjects)
-	manifests := make([]managedresource.Manifest, len(objects)+crdCount)
-	for i, obj := range crdObjects {
-		manifests[i] = managedresource.Manifest{
-			Policy:   managedresource.ManagePolicy,
-			Manifest: obj,
-		}
-	}
-	for i, obj := range objects {
-		manifests[i+crdCount] = managedresource.Manifest{
-			Policy:   managedresource.ManagePolicy,
-			Manifest: obj,
-		}
-	}
-
-	if h.ProviderConfiguration.CreateNamespace && len(h.ProviderConfiguration.Namespace) != 0 {
-		// add the release namespace as managed resource
-		ns := &corev1.Namespace{}
-		ns.Name = h.ProviderConfiguration.Namespace
-		rawNs, err := kutil.ConvertToRawExtension(ns, scheme.Scheme)
-		if err != nil {
-			return nil, fmt.Errorf("unable to marshal release namespace: %w", err)
-		}
-		nsManifest := managedresource.Manifest{
-			Policy:   managedresource.KeepPolicy,
-			Manifest: rawNs,
-		}
-		// the namespace is ordered by the manifest deployer, so it is automatically created as first resource
-		manifests = append(manifests, nsManifest)
-	}
-
-	return manifests, nil
 }
 
 // checkResourcesReady checks if the managed resources are Ready/Healthy.
