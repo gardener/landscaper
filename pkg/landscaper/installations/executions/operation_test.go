@@ -89,7 +89,9 @@ var _ = Describe("Execution Operation", func() {
 		}
 
 		inst := testInstallations["test1/root"]
+		Expect(inst).ToNot(BeNil())
 		intBlueprint, err := blueprints.Resolve(ctx, componentResolver, lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
+		Expect(err).ToNot(HaveOccurred())
 
 		internalInst, err := installations.New(inst, intBlueprint)
 		Expect(err).ToNot(HaveOccurred())
