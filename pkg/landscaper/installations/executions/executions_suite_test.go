@@ -32,4 +32,3 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	Expect(testenv.Stop()).ToNot(HaveOccurred())
 })
-

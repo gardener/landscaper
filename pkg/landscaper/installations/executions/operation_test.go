@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
@@ -24,14 +25,13 @@ import (
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
-
 var _ = Describe("Execution Operation", func() {
 	var (
-		componentResolver  componentsregistry.TypedRegistry
+		componentResolver componentsregistry.TypedRegistry
 		state             *envtest.State
-		kClient        client.Client
+		kClient           client.Client
 		testInstallations map[string]*lsv1alpha1.Installation
-		cd *cdv2.ComponentDescriptor
+		cd                *cdv2.ComponentDescriptor
 	)
 
 	BeforeEach(func() {
@@ -80,8 +80,8 @@ var _ = Describe("Execution Operation", func() {
 			Parent:   nil,
 			Siblings: nil,
 			External: installations.ExternalContext{
-				Context:          lsv1alpha1.Context{
-					RepositoryContext:   &repositoryContext,
+				Context: lsv1alpha1.Context{
+					RepositoryContext: &repositoryContext,
 				},
 				ComponentName:    "example.com/root",
 				ComponentVersion: "v1.0.0",

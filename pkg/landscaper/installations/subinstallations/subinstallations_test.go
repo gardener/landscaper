@@ -59,7 +59,7 @@ var _ = Describe("SubInstallation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			lsCtx.External.Context.RepositoryContext = &cdv2.UnstructuredTypedObject{
 				ObjectType: repoCtx.ObjectType,
-				Raw: repoCtxRaw,
+				Raw:        repoCtxRaw,
 			}
 
 			rootInstOp, err := installations.NewOperationBuilder(instRoot).WithOperation(op).WithContext(lsCtx).Build(ctx)
