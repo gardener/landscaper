@@ -50,7 +50,8 @@ type BlueprintRenderArgs struct {
 	ComponentDescriptorList *cdv2.ComponentDescriptorList
 	// ComponentResolver implements a component descriptor resolver.
 	ComponentResolver ctf.ComponentResolver
-	//
+	// RepositoryContext can be used to overwrite the default repository context of the component descriptor.
+	// +optional
 	RepositoryContext *cdv2.UnstructuredTypedObject
 
 	// RootDir describes a directory that is used to default the other filepaths.
