@@ -5,7 +5,7 @@
 - name: one
   type: GoTemplate
   template: |
-    {{ $version := (default "0.0.1" .state.version ) }}
+    {{ $version := ( dig "version" "0.0.1" .state ) }}
     state:
       version: {{ $version }}
     deployItems:

@@ -50,6 +50,9 @@ type BlueprintRenderArgs struct {
 	ComponentDescriptorList *cdv2.ComponentDescriptorList
 	// ComponentResolver implements a component descriptor resolver.
 	ComponentResolver ctf.ComponentResolver
+	// RepositoryContext specifies a repository context that will override the repository context of the component descriptors.
+	// +optional
+	RepositoryContext *cdv2.UnstructuredTypedObject
 
 	// RootDir describes a directory that is used to default the other filepaths.
 	// The blueprint is expected to have the following structure
@@ -177,6 +180,10 @@ func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
 		}
 	}
 
+	if args.RepositoryContext != nil {
+		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = args.RepositoryContext
+	}
+
 	deployItems, deployItemsState, err := RenderBlueprintDeployItems(
 		blueprint,
 		imports,
@@ -225,7 +232,8 @@ func RenderBlueprintDeployItems(
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler), spiff.New(templateStateHandler)).
+	formatter := template.NewTemplateInputFormatter(true)
+	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateDeployExecutions(template.DeployExecutionOptions{
 			Imports:              imports.Imports,
 			Blueprint:            blueprint,
@@ -264,7 +272,8 @@ func RenderBlueprintSubInstallations(
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
-	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler), spiff.New(templateStateHandler)).
+	formatter := template.NewTemplateInputFormatter(true)
+	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateSubinstallationExecutions(template.DeployExecutionOptions{
 			Imports:              imports.Imports,
 			Blueprint:            blueprint,
