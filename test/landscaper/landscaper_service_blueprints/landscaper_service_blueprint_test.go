@@ -124,7 +124,7 @@ var _ = Describe("Landscaper Service Component", func() {
 
 	AfterSuite(func() {
 		for _, dest := range filesToCopy {
-			os.WriteFile(dest, []byte("{}"), 0644)
+			_ = os.WriteFile(dest, []byte("{}"), 0644)
 		}
 	})
 
