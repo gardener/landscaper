@@ -66,7 +66,7 @@ func copyFile(source, dest string) error {
 	return nil
 }
 
-var _ = Describe("Blueprint", func() {
+var _ = Describe("Landscaper Service Component", func() {
 
 	var (
 		registry            componentsregistry.TypedRegistry
@@ -128,7 +128,7 @@ var _ = Describe("Blueprint", func() {
 		}
 	})
 
-	It("landscaper", func() {
+	It("should install the landscaper blueprint", func() {
 		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
 			Fs:                      osfs.New(),
 			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
@@ -147,7 +147,7 @@ var _ = Describe("Blueprint", func() {
 		Expect(di.Spec.Type).To(Equal(helm.Type))
 	})
 
-	It("rbac", func() {
+	It("should install the rbac blueprint", func() {
 		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
 			Fs:                      osfs.New(),
 			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
@@ -166,7 +166,7 @@ var _ = Describe("Blueprint", func() {
 		Expect(di.Spec.Type).To(Equal(helm.Type))
 	})
 
-	It("installation", func() {
+	It("should install the installation blueprint", func() {
 		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
 			Fs:                      osfs.New(),
 			RootDir:                 filepath.Join(projectRoot, ".landscaper/landscaper-service"),
