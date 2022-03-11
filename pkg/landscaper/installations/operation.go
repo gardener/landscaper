@@ -204,7 +204,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = do.Metadata.Hash
+			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if owner != nil && owner.Kind == "Installation" {
@@ -257,7 +257,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = strconv.Itoa(int(target.Raw.Generation))
+			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
 		)
 		if owner != nil && owner.Kind == "Installation" {

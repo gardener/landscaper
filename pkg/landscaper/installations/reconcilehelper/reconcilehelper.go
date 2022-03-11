@@ -517,7 +517,6 @@ func (rh *ReconcileHelper) checkStateForParentImport(fldPath *field.Path, import
 // checkStateForSiblingExport returns an error if
 // - the given object reference doesn't belong to a sibling
 // - the sibling is not exporting the given value
-// - the exporting sibling is not succeeded
 func (rh *ReconcileHelper) checkStateForSiblingExport(fldPath *field.Path, siblingRef *metav1.OwnerReference, importRef string, importType lsv1alpha1.ImportType) error {
 	if siblingRef == nil {
 		return nil

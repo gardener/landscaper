@@ -216,7 +216,10 @@ func (do *DataObject) GetInClusterObjects() []client.Object {
 }
 
 func (do *DataObject) ComputeConfigGeneration() string {
-	return do.Metadata.Hash
+	if len(do.Metadata.Hash) != 0 {
+		return do.Metadata.Hash
+	}
+	return generateHash(do.Raw.Data.RawMessage)
 }
 
 func (do *DataObject) GetListItems() []ImportedBase {
