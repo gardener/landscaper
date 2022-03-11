@@ -8,8 +8,8 @@ import "github.com/gardener/landscaper/test/framework"
 
 // RegisterTests registers all tests of the package
 func RegisterTests(f *framework.Framework) {
-	NginxIngressTest(f)
+	//NginxIngressTest(f)
 	SimpleImport(f)
-	AggregatedBlueprint(f)
-	ExternalJSONSchemaTest(f)
+	//AggregatedBlueprint(f)
+	//ExternalJSONSchemaTest(f)
 }
