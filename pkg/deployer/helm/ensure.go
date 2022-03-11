@@ -160,7 +160,15 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		exports = utils.MergeMaps(exports, resourceExports)
 	}
 
-	return deployerlib.CreateOrUpdateExport(ctx, h.lsKubeClient, h.DeployItem, exports)
+	err = deployerlib.CreateOrUpdateExport(ctx, h.lsKubeClient, h.DeployItem, exports)
+	if err != nil {
+		return err
+	}
+
+	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	h.DeployItem.Status.LastError = nil
+
+	return nil
 }
 
 // CheckResourcesReady checks if the managed resources are Ready/Healthy.
@@ -199,8 +207,6 @@ func (h *Helm) CheckResourcesReady(ctx context.Context, client client.Client) er
 		}
 	}
 
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	h.DeployItem.Status.LastError = nil
 	return nil
 }
 
