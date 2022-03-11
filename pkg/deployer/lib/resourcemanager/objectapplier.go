@@ -61,7 +61,6 @@ type ManifestApplier struct {
 	log              logr.Logger
 	decoder          runtime.Decoder
 	kubeClient       client.Client
-	clientset        kubernetes.Interface
 	defaultNamespace string
 
 	deployItemName   string
@@ -79,8 +78,7 @@ type ManifestApplier struct {
 	// Currently the fist list can be max 3 whereas the first group contains all CRD's.
 	// The second group contains all clusterwide resources and teh third one contains all namespaced resources.
 	manifestExecutions [3][]*Manifest
-	// apiresources is internal cache for api resources where the key is the GroupVersionKind string.
-	apiresources map[string]metav1.APIResource
+	apiResourceHandler *ApiResourceHandler
 }
 
 const (
@@ -101,19 +99,17 @@ type Manifest struct {
 // NewManifestApplier creates a new manifest deployer
 func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestApplier {
 	return &ManifestApplier{
-		log:              log,
-		decoder:          opts.Decoder,
-		kubeClient:       opts.KubeClient,
-		clientset:        opts.Clientset,
-		defaultNamespace: opts.DefaultNamespace,
-		deployItemName:   opts.DeployItemName,
-		deleteTimeout:    opts.DeleteTimeout,
-		updateStrategy:   opts.UpdateStrategy,
-		manifests:        opts.Manifests,
-		managedResources: opts.ManagedResources,
-		labels:           opts.Labels,
-
-		apiresources: make(map[string]metav1.APIResource),
+		log:                log,
+		decoder:            opts.Decoder,
+		kubeClient:         opts.KubeClient,
+		defaultNamespace:   opts.DefaultNamespace,
+		deployItemName:     opts.DeployItemName,
+		deleteTimeout:      opts.DeleteTimeout,
+		updateStrategy:     opts.UpdateStrategy,
+		manifests:          opts.Manifests,
+		managedResources:   opts.ManagedResources,
+		labels:             opts.Labels,
+		apiResourceHandler: CreateApiResourceHandler(opts.Clientset),
 	}
 }
 
@@ -194,7 +190,7 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 	if len(a.defaultNamespace) != 0 && len(obj.GetNamespace()) == 0 {
 		// need to default the namespace if it is not given, as some helmcharts
 		// do not use ".Release.Namespace" and depend on the helm/kubectl defaulting.
-		apiresource, err := a.getApiResource(manifest)
+		apiresource, err := a.apiResourceHandler.GetApiResource(manifest)
 		if err != nil {
 			return nil, err
 		}
@@ -312,27 +308,6 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 	return apimacherrors.NewAggregate(allErrs)
 }
 
-func (a *ManifestApplier) getApiResource(manifest *Manifest) (metav1.APIResource, error) {
-	gvk := manifest.TypeMeta.GetObjectKind().GroupVersionKind().String()
-	if res, ok := a.apiresources[gvk]; ok {
-		return res, nil
-	}
-
-	groupVersion := manifest.TypeMeta.GetObjectKind().GroupVersionKind().GroupVersion().String()
-	kind := manifest.TypeMeta.GetObjectKind().GroupVersionKind().Kind
-	apiresourceList, err := a.clientset.Discovery().ServerResourcesForGroupVersion(groupVersion)
-	if err != nil {
-		return metav1.APIResource{}, fmt.Errorf("unable to get api resources for %s: %w", groupVersion, err)
-	}
-
-	for _, apiresource := range apiresourceList.APIResources {
-		if apiresource.Kind == kind {
-			return apiresource, nil
-		}
-	}
-	return metav1.APIResource{}, fmt.Errorf("unable to get apiresource for %s", gvk)
-}
-
 // crdIdentifier generates an identifier string from a GroupVersionKind object
 // The version is ignored in this case, because the information whether the resource is namespaced or not
 // does not depend on it.
@@ -378,7 +353,7 @@ func (a *ManifestApplier) prepareManifests() error {
 	for _, manifest := range todo {
 		// check whether the resource is
 		namespaced := false
-		apiresource, err := a.getApiResource(manifest)
+		apiresource, err := a.apiResourceHandler.GetApiResource(manifest)
 		if err != nil {
 			// check if the resource matches a not-yet-applied CRD
 			ok := false

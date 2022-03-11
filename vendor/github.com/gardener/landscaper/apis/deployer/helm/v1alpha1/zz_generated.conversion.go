@@ -42,6 +42,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*Auth)(nil), (*helm.Auth)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Auth_To_helm_Auth(a.(*Auth), b.(*helm.Auth), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.Auth)(nil), (*Auth)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_Auth_To_v1alpha1_Auth(a.(*helm.Auth), b.(*Auth), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*Chart)(nil), (*helm.Chart)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_Chart_To_helm_Chart(a.(*Chart), b.(*helm.Chart), scope)
 	}); err != nil {
@@ -69,6 +79,56 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*helm.ExportConfiguration)(nil), (*ExportConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_helm_ExportConfiguration_To_v1alpha1_ExportConfiguration(a.(*helm.ExportConfiguration), b.(*ExportConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HelmChartRepo)(nil), (*helm.HelmChartRepo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_HelmChartRepo_To_helm_HelmChartRepo(a.(*HelmChartRepo), b.(*helm.HelmChartRepo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.HelmChartRepo)(nil), (*HelmChartRepo)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_HelmChartRepo_To_v1alpha1_HelmChartRepo(a.(*helm.HelmChartRepo), b.(*HelmChartRepo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HelmChartRepoCredentials)(nil), (*helm.HelmChartRepoCredentials)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_HelmChartRepoCredentials_To_helm_HelmChartRepoCredentials(a.(*HelmChartRepoCredentials), b.(*helm.HelmChartRepoCredentials), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.HelmChartRepoCredentials)(nil), (*HelmChartRepoCredentials)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_HelmChartRepoCredentials_To_v1alpha1_HelmChartRepoCredentials(a.(*helm.HelmChartRepoCredentials), b.(*HelmChartRepoCredentials), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HelmDeploymentConfiguration)(nil), (*helm.HelmDeploymentConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_HelmDeploymentConfiguration_To_helm_HelmDeploymentConfiguration(a.(*HelmDeploymentConfiguration), b.(*helm.HelmDeploymentConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.HelmDeploymentConfiguration)(nil), (*HelmDeploymentConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfiguration(a.(*helm.HelmDeploymentConfiguration), b.(*HelmDeploymentConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HelmInstallConfiguration)(nil), (*helm.HelmInstallConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(a.(*HelmInstallConfiguration), b.(*helm.HelmInstallConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.HelmInstallConfiguration)(nil), (*HelmInstallConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(a.(*helm.HelmInstallConfiguration), b.(*HelmInstallConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HelmUninstallConfiguration)(nil), (*helm.HelmUninstallConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_HelmUninstallConfiguration_To_helm_HelmUninstallConfiguration(a.(*HelmUninstallConfiguration), b.(*helm.HelmUninstallConfiguration), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*helm.HelmUninstallConfiguration)(nil), (*HelmUninstallConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfiguration(a.(*helm.HelmUninstallConfiguration), b.(*HelmUninstallConfiguration), scope)
 	}); err != nil {
 		return err
 	}
@@ -137,10 +197,35 @@ func Convert_helm_ArchiveAccess_To_v1alpha1_ArchiveAccess(in *helm.ArchiveAccess
 	return autoConvert_helm_ArchiveAccess_To_v1alpha1_ArchiveAccess(in, out, s)
 }
 
+func autoConvert_v1alpha1_Auth_To_helm_Auth(in *Auth, out *helm.Auth, s conversion.Scope) error {
+	out.URL = in.URL
+	out.CustomCAData = in.CustomCAData
+	out.AuthHeader = in.AuthHeader
+	return nil
+}
+
+// Convert_v1alpha1_Auth_To_helm_Auth is an autogenerated conversion function.
+func Convert_v1alpha1_Auth_To_helm_Auth(in *Auth, out *helm.Auth, s conversion.Scope) error {
+	return autoConvert_v1alpha1_Auth_To_helm_Auth(in, out, s)
+}
+
+func autoConvert_helm_Auth_To_v1alpha1_Auth(in *helm.Auth, out *Auth, s conversion.Scope) error {
+	out.URL = in.URL
+	out.CustomCAData = in.CustomCAData
+	out.AuthHeader = in.AuthHeader
+	return nil
+}
+
+// Convert_helm_Auth_To_v1alpha1_Auth is an autogenerated conversion function.
+func Convert_helm_Auth_To_v1alpha1_Auth(in *helm.Auth, out *Auth, s conversion.Scope) error {
+	return autoConvert_helm_Auth_To_v1alpha1_Auth(in, out, s)
+}
+
 func autoConvert_v1alpha1_Chart_To_helm_Chart(in *Chart, out *helm.Chart, s conversion.Scope) error {
 	out.Ref = in.Ref
 	out.FromResource = (*helm.RemoteChartReference)(unsafe.Pointer(in.FromResource))
 	out.Archive = (*helm.ArchiveAccess)(unsafe.Pointer(in.Archive))
+	out.HelmChartRepo = (*helm.HelmChartRepo)(unsafe.Pointer(in.HelmChartRepo))
 	return nil
 }
 
@@ -153,6 +238,7 @@ func autoConvert_helm_Chart_To_v1alpha1_Chart(in *helm.Chart, out *Chart, s conv
 	out.Ref = in.Ref
 	out.FromResource = (*RemoteChartReference)(unsafe.Pointer(in.FromResource))
 	out.Archive = (*ArchiveAccess)(unsafe.Pointer(in.Archive))
+	out.HelmChartRepo = (*HelmChartRepo)(unsafe.Pointer(in.HelmChartRepo))
 	return nil
 }
 
@@ -211,6 +297,116 @@ func Convert_helm_ExportConfiguration_To_v1alpha1_ExportConfiguration(in *helm.E
 	return autoConvert_helm_ExportConfiguration_To_v1alpha1_ExportConfiguration(in, out, s)
 }
 
+func autoConvert_v1alpha1_HelmChartRepo_To_helm_HelmChartRepo(in *HelmChartRepo, out *helm.HelmChartRepo, s conversion.Scope) error {
+	out.HelmChartRepoUrl = in.HelmChartRepoUrl
+	out.HelmChartName = in.HelmChartName
+	out.HelmChartVersion = in.HelmChartVersion
+	return nil
+}
+
+// Convert_v1alpha1_HelmChartRepo_To_helm_HelmChartRepo is an autogenerated conversion function.
+func Convert_v1alpha1_HelmChartRepo_To_helm_HelmChartRepo(in *HelmChartRepo, out *helm.HelmChartRepo, s conversion.Scope) error {
+	return autoConvert_v1alpha1_HelmChartRepo_To_helm_HelmChartRepo(in, out, s)
+}
+
+func autoConvert_helm_HelmChartRepo_To_v1alpha1_HelmChartRepo(in *helm.HelmChartRepo, out *HelmChartRepo, s conversion.Scope) error {
+	out.HelmChartRepoUrl = in.HelmChartRepoUrl
+	out.HelmChartName = in.HelmChartName
+	out.HelmChartVersion = in.HelmChartVersion
+	return nil
+}
+
+// Convert_helm_HelmChartRepo_To_v1alpha1_HelmChartRepo is an autogenerated conversion function.
+func Convert_helm_HelmChartRepo_To_v1alpha1_HelmChartRepo(in *helm.HelmChartRepo, out *HelmChartRepo, s conversion.Scope) error {
+	return autoConvert_helm_HelmChartRepo_To_v1alpha1_HelmChartRepo(in, out, s)
+}
+
+func autoConvert_v1alpha1_HelmChartRepoCredentials_To_helm_HelmChartRepoCredentials(in *HelmChartRepoCredentials, out *helm.HelmChartRepoCredentials, s conversion.Scope) error {
+	out.Auths = *(*[]helm.Auth)(unsafe.Pointer(&in.Auths))
+	return nil
+}
+
+// Convert_v1alpha1_HelmChartRepoCredentials_To_helm_HelmChartRepoCredentials is an autogenerated conversion function.
+func Convert_v1alpha1_HelmChartRepoCredentials_To_helm_HelmChartRepoCredentials(in *HelmChartRepoCredentials, out *helm.HelmChartRepoCredentials, s conversion.Scope) error {
+	return autoConvert_v1alpha1_HelmChartRepoCredentials_To_helm_HelmChartRepoCredentials(in, out, s)
+}
+
+func autoConvert_helm_HelmChartRepoCredentials_To_v1alpha1_HelmChartRepoCredentials(in *helm.HelmChartRepoCredentials, out *HelmChartRepoCredentials, s conversion.Scope) error {
+	out.Auths = *(*[]Auth)(unsafe.Pointer(&in.Auths))
+	return nil
+}
+
+// Convert_helm_HelmChartRepoCredentials_To_v1alpha1_HelmChartRepoCredentials is an autogenerated conversion function.
+func Convert_helm_HelmChartRepoCredentials_To_v1alpha1_HelmChartRepoCredentials(in *helm.HelmChartRepoCredentials, out *HelmChartRepoCredentials, s conversion.Scope) error {
+	return autoConvert_helm_HelmChartRepoCredentials_To_v1alpha1_HelmChartRepoCredentials(in, out, s)
+}
+
+func autoConvert_v1alpha1_HelmDeploymentConfiguration_To_helm_HelmDeploymentConfiguration(in *HelmDeploymentConfiguration, out *helm.HelmDeploymentConfiguration, s conversion.Scope) error {
+	out.Install = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Install))
+	out.Upgrade = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Upgrade))
+	out.Uninstall = *(*map[string]core.AnyJSON)(unsafe.Pointer(&in.Uninstall))
+	return nil
+}
+
+// Convert_v1alpha1_HelmDeploymentConfiguration_To_helm_HelmDeploymentConfiguration is an autogenerated conversion function.
+func Convert_v1alpha1_HelmDeploymentConfiguration_To_helm_HelmDeploymentConfiguration(in *HelmDeploymentConfiguration, out *helm.HelmDeploymentConfiguration, s conversion.Scope) error {
+	return autoConvert_v1alpha1_HelmDeploymentConfiguration_To_helm_HelmDeploymentConfiguration(in, out, s)
+}
+
+func autoConvert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfiguration(in *helm.HelmDeploymentConfiguration, out *HelmDeploymentConfiguration, s conversion.Scope) error {
+	out.Install = *(*map[string]corev1alpha1.AnyJSON)(unsafe.Pointer(&in.Install))
+	out.Upgrade = *(*map[string]corev1alpha1.AnyJSON)(unsafe.Pointer(&in.Upgrade))
+	out.Uninstall = *(*map[string]corev1alpha1.AnyJSON)(unsafe.Pointer(&in.Uninstall))
+	return nil
+}
+
+// Convert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfiguration is an autogenerated conversion function.
+func Convert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfiguration(in *helm.HelmDeploymentConfiguration, out *HelmDeploymentConfiguration, s conversion.Scope) error {
+	return autoConvert_helm_HelmDeploymentConfiguration_To_v1alpha1_HelmDeploymentConfiguration(in, out, s)
+}
+
+func autoConvert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(in *HelmInstallConfiguration, out *helm.HelmInstallConfiguration, s conversion.Scope) error {
+	out.Atomic = in.Atomic
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+	return nil
+}
+
+// Convert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration is an autogenerated conversion function.
+func Convert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(in *HelmInstallConfiguration, out *helm.HelmInstallConfiguration, s conversion.Scope) error {
+	return autoConvert_v1alpha1_HelmInstallConfiguration_To_helm_HelmInstallConfiguration(in, out, s)
+}
+
+func autoConvert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(in *helm.HelmInstallConfiguration, out *HelmInstallConfiguration, s conversion.Scope) error {
+	out.Atomic = in.Atomic
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+	return nil
+}
+
+// Convert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration is an autogenerated conversion function.
+func Convert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(in *helm.HelmInstallConfiguration, out *HelmInstallConfiguration, s conversion.Scope) error {
+	return autoConvert_helm_HelmInstallConfiguration_To_v1alpha1_HelmInstallConfiguration(in, out, s)
+}
+
+func autoConvert_v1alpha1_HelmUninstallConfiguration_To_helm_HelmUninstallConfiguration(in *HelmUninstallConfiguration, out *helm.HelmUninstallConfiguration, s conversion.Scope) error {
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+	return nil
+}
+
+// Convert_v1alpha1_HelmUninstallConfiguration_To_helm_HelmUninstallConfiguration is an autogenerated conversion function.
+func Convert_v1alpha1_HelmUninstallConfiguration_To_helm_HelmUninstallConfiguration(in *HelmUninstallConfiguration, out *helm.HelmUninstallConfiguration, s conversion.Scope) error {
+	return autoConvert_v1alpha1_HelmUninstallConfiguration_To_helm_HelmUninstallConfiguration(in, out, s)
+}
+
+func autoConvert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfiguration(in *helm.HelmUninstallConfiguration, out *HelmUninstallConfiguration, s conversion.Scope) error {
+	out.Timeout = (*corev1alpha1.Duration)(unsafe.Pointer(in.Timeout))
+	return nil
+}
+
+// Convert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfiguration is an autogenerated conversion function.
+func Convert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfiguration(in *helm.HelmUninstallConfiguration, out *HelmUninstallConfiguration, s conversion.Scope) error {
+	return autoConvert_helm_HelmUninstallConfiguration_To_v1alpha1_HelmUninstallConfiguration(in, out, s)
+}
+
 func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in *ProviderConfiguration, out *helm.ProviderConfiguration, s conversion.Scope) error {
 	out.Kubeconfig = in.Kubeconfig
 	out.UpdateStrategy = helm.UpdateStrategy(in.UpdateStrategy)
@@ -226,6 +422,8 @@ func autoConvert_v1alpha1_ProviderConfiguration_To_helm_ProviderConfiguration(in
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
+	out.HelmDeployment = in.HelmDeployment
+	out.HelmDeploymentConfig = (*helm.HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
 	return nil
 }
 
@@ -249,6 +447,8 @@ func autoConvert_helm_ProviderConfiguration_To_v1alpha1_ProviderConfiguration(in
 	out.ExportsFromManifests = *(*[]managedresource.Export)(unsafe.Pointer(&in.ExportsFromManifests))
 	out.Exports = (*managedresource.Exports)(unsafe.Pointer(in.Exports))
 	out.ContinuousReconcile = (*continuousreconcile.ContinuousReconcileSpec)(unsafe.Pointer(in.ContinuousReconcile))
+	out.HelmDeployment = in.HelmDeployment
+	out.HelmDeploymentConfig = (*HelmDeploymentConfiguration)(unsafe.Pointer(in.HelmDeploymentConfig))
 	return nil
 }
 

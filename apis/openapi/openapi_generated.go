@@ -174,9 +174,15 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerSpec":                                 schema_apis_deployer_core_v1alpha1_OwnerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/core/v1alpha1.OwnerStatus":                               schema_apis_deployer_core_v1alpha1_OwnerStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess":                             schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth":                                      schema_apis_deployer_helm_v1alpha1_Auth(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                                     schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration":                       schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo":                             schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepoCredentials":                  schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration":               schema_apis_deployer_helm_v1alpha1_HelmDeploymentConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmInstallConfiguration":                  schema_apis_deployer_helm_v1alpha1_HelmInstallConfiguration(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmUninstallConfiguration":                schema_apis_deployer_helm_v1alpha1_HelmUninstallConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderConfiguration":                     schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ProviderStatus":                            schema_apis_deployer_helm_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":                       schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
@@ -3575,11 +3581,26 @@ func schema_landscaper_apis_core_v1alpha1_Context(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"configurations": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configurations contains arbitrary configuration information for dedicated purposes given by a string key. The key should use a dns-like syntax to express the purpose and avoid conflicts.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -7354,6 +7375,40 @@ func schema_apis_deployer_helm_v1alpha1_ArchiveAccess(ref common.ReferenceCallba
 	}
 }
 
+func schema_apis_deployer_helm_v1alpha1_Auth(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Auth contains authentication info for one helm chart repo",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL contains URL of helm chart repo",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"customCAData": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CustomCAData allows you to add a custom CA, which is useful if your server speaks HTTPS with a self- signed certificate. The added certificate must be in PEM format and base64 encoded.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"authHeader": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AuthHeader contains the value that will be set in the \"Authorization\" header when fetching the Chart, e.g. \"Basic dX...3dvcmQ=\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -7380,11 +7435,17 @@ func schema_apis_deployer_helm_v1alpha1_Chart(ref common.ReferenceCallback) comm
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess"),
 						},
 					},
+					"helmChartRepo": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmChartRepo defines a reference to a chart in a helm chart repo.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference"},
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ArchiveAccess", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference"},
 	}
 }
 
@@ -7461,6 +7522,170 @@ func schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref common.Reference
 					"defaultTimeout": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DefaultTimeout configures the default timeout for all exports without a explicit export timeout defined.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HelmChartRepo defines a reference to a chart in a helm chart repo",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"helmChartRepoUrl": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"helmChartName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"helmChartVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HelmChartRepoCredentials contains the credentials to access hepl chart repos",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"auths": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HelmDeploymentConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HelmDeploymentConfiguration defines settings for a helm deployment.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"install": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+									},
+								},
+							},
+						},
+					},
+					"upgrade": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+									},
+								},
+							},
+						},
+					},
+					"uninstall": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HelmInstallConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HelmUpgradeConfiguration defines settings for a helm upgrade operation.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"atomic": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the timeout for the operation in minutes.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_HelmUninstallConfiguration(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HelmUninstallConfiguration defines settings for a helm uninstall operation.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Timeout is the timeout for the operation in minutes.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Duration"),
 						},
 					},
@@ -7585,12 +7810,25 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec"),
 						},
 					},
+					"helmDeployment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"helmDeploymentConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.",
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration"),
+						},
+					},
 				},
 				Required: []string{"chart", "name", "namespace", "createNamespace"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Duration", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmDeploymentConfiguration", "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile.ContinuousReconcileSpec", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Export", "github.com/gardener/landscaper/apis/deployer/utils/managedresource.Exports", "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks.ReadinessCheckConfiguration"},
 	}
 }
 
