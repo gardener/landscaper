@@ -415,8 +415,6 @@ func (rh *ReconcileHelper) getOwnerGeneration(owner *metav1.OwnerReference) (str
 	ref := lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: rh.Inst.Info.Namespace}
 
 	if lsv1alpha1helper.ReferenceIsObject(ref, rh.Inst.Info) {
-		// this would mean that the installation itself owns the dataobject it is importing
-		// not sure how this could happen, but let's keep the check ...
 		return rh.Inst.Info.Status.ConfigGeneration, nil
 	}
 
@@ -482,6 +480,10 @@ func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobje
 	owner := imp.GetOwnerReference()
 	if owner == nil || owner.Kind != "Installation" {
 		// we cannot validate if there is no owner or the owner is not an installation
+		return nil
+	}
+	if owner.Name == rh.Inst.Info.Name {
+		// nothing to do if the import is owned by the importing installation
 		return nil
 	}
 	if rh.parent != nil && owner.Name == rh.parent.Info.Name {
