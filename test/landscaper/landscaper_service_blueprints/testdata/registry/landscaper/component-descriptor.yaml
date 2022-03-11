@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+meta:
+  schemaVersion: v2
+
+component:
+  name: github.com/gardener/landscaper
+  version: v0.20.0
+  provider: internal
+
+  repositoryContexts:
+    - type: ociRegistry
+      baseUrl: "example.com"
+
+  componentReferences: []
+  resources:
+    - type: ociImage
+      name: landscaper-controller
+      relation: local
+      version: v0.20.0
+      access:
+        imageReference: eu.gcr.io/gardener-project/landscaper/landscaper-controller:v0.20.0
+        type: ociRegistry
+
+    - type: ociImage
+      name: landscaper-webhooks-server
+      relation: local
+      version: v0.20.0
+      access:
+        imageReference: eu.gcr.io/gardener-project/landscaper/landscaper-webhooks-server:v0.20.0
+        type: ociRegistry
+
+  sources: []

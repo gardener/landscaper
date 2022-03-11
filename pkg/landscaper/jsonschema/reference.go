@@ -214,7 +214,7 @@ func (rr *ReferenceResolver) handleComponentDescriptorReference(uri *url.URL, cu
 	if repositoryContext == nil {
 		repositoryContext = rr.ComponentDescriptor.GetEffectiveRepositoryContext()
 	}
-	cd, res, err := cdUri.GetResourceWithRepositoryContext(rr.ComponentDescriptor, rr.ComponentResolver, repositoryContext)
+	cd, res, err := cdUri.GetResource(rr.ComponentDescriptor, rr.ComponentResolver, repositoryContext)
 	if err != nil {
 		return nil, err
 	}

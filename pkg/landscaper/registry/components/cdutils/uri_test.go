@@ -54,7 +54,7 @@ var _ = Describe("URI", func() {
 		cd.Resources = testResources
 		uri, err := cdutils.ParseURI("cd://resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, nil)
+		kind, res, err := uri.Get(cd, nil, cd.GetEffectiveRepositoryContext())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources[0]))
@@ -64,12 +64,12 @@ var _ = Describe("URI", func() {
 		cd.Resources = testResources
 		uri, err := cdutils.ParseURI("cd://resources/r3")
 		Expect(err).ToNot(HaveOccurred())
-		_, _, err = uri.Get(cd, nil)
+		_, _, err = uri.Get(cd, nil, cd.GetEffectiveRepositoryContext())
 		Expect(err).To(HaveOccurred())
 
 		uri, err = cdutils.ParseURI("cd://fail/r1")
 		Expect(err).ToNot(HaveOccurred())
-		_, _, err = uri.Get(cd, nil)
+		_, _, err = uri.Get(cd, nil, cd.GetEffectiveRepositoryContext())
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -100,7 +100,7 @@ var _ = Describe("URI", func() {
 		Expect(err).ToNot(HaveOccurred())
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, compResolver)
+		kind, res, err := uri.Get(cd, compResolver, cd.GetEffectiveRepositoryContext())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ComponentResourceKind))
 		Expect(res).To(Equal(&comp1))
@@ -133,7 +133,7 @@ var _ = Describe("URI", func() {
 		Expect(err).ToNot(HaveOccurred())
 		uri, err := cdutils.ParseURI("cd://componentReferences/comp1/resources/r1")
 		Expect(err).ToNot(HaveOccurred())
-		kind, res, err := uri.Get(cd, compResolver)
+		kind, res, err := uri.Get(cd, compResolver, cd.GetEffectiveRepositoryContext())
 		Expect(err).ToNot(HaveOccurred())
 		Expect(kind).To(Equal(lsv1alpha1.ResourceKind))
 		Expect(res).To(Equal(testResources[0]))

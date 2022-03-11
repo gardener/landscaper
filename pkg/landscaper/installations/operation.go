@@ -85,7 +85,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 		return nil
 	}
 
-	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd)
+	resolvedCD, err := cdutils.ResolveToComponentDescriptorList(ctx, o.ComponentsRegistry(), *cd, o.Context().External.RepositoryContext)
 	if err != nil {
 		return err
 	}

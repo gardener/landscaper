@@ -16,7 +16,11 @@ component:
     baseUrl: "./testdata/registry"
 
   sources: []
-  componentReferences: []
+
+  componentReferences:
+    - componentName: example.com/external
+      name: external
+      version: 1.0.0
 
   resources:
   - name: root-1
@@ -59,6 +63,14 @@ component:
       type: localFilesystemBlob
       mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
       filename: root-5
+  - name: root-6
+    type: blueprint
+    version: 1.0.0
+    relation: local
+    access:
+      type: localFilesystemBlob
+      mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+      filename: root-6
   - name: def-1
     type: blueprint
     version: 1.0.0

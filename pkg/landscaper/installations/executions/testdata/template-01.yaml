@@ -1,0 +1,17 @@
+- name: one
+  type: GoTemplate
+  template: |
+    deployItems:
+    - name: mycontainer
+      type: landscaper.gardener.cloud/container
+      config:
+        apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+        {{- $image := getResource .cd "name" "virtual-garden-container-deployer" }}
+        image: {{ $image.access.imageReference }}
+        args: []
+        command: []
+        importValues:
+              {{ toJson .imports | indent 6 }}
+        componentDescriptor:
+              {{ toJson .componentDescriptorDef | indent 6 }}
