@@ -116,6 +116,9 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return err
 	}
 
+	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
+	h.DeployItem.Status.LastError = nil
+
 	return nil
 }
 
@@ -224,9 +227,6 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client) er
 			}
 		}
 	}
-
-	h.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
-	h.DeployItem.Status.LastError = nil
 
 	return nil
 }

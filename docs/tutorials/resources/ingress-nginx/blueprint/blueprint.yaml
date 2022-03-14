@@ -37,6 +37,8 @@ deployExecutions:
           {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
           ref: {{ $resource.access.imageReference }}
 
+        helmDeployment: true
+
         updateStrategy: patch
 
         name: test
