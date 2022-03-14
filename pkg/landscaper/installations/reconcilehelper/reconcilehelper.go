@@ -138,12 +138,6 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 		if !imp.IsListTypeImport() {
 			// handle non-list-type imports
 
-			if len(storedConfigGen) == 0 {
-				// this happens if no import status for the import has been found
-				// which indicates that this import has not been imported before
-				return returnAndSetCondition(false), nil
-			}
-
 			owner := imp.GetOwnerReference()
 			var configGen string
 			if ownerReferenceIsInstallation(owner) {
@@ -156,22 +150,20 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 				// owner is not an installation, compute alternative config generation
 				configGen = imp.ComputeConfigGeneration()
 			}
-			if len(configGen) != 0 && configGen != storedConfigGen {
+			if configGen != storedConfigGen {
 				// something has changed since last imported
 				return returnAndSetCondition(false), nil
 			}
 		} else {
 			// handle list-type imports
 
-			if storedConfigGens == nil {
-				// this happens if no import status for the import has been found
-				// which indicates that this import has not been imported before
-				return returnAndSetCondition(false), nil
-			}
-
 			owners := imp.GetOwnerReferences()
 			for objectName, owner := range owners {
 				var configGen string
+				storedConfigGen = ""
+				if storedConfigGens != nil {
+					storedConfigGen = storedConfigGens[objectName]
+				}
 				if ownerReferenceIsInstallation(owner) {
 					// owner is an installation, get configGeneration from its status
 					configGen, err = rh.getOwnerGeneration(owner)
@@ -182,7 +174,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 					// owner is not an installation, compute alternative config generation
 					configGen = imp.ComputeConfigGenerationForItem(objectName)
 				}
-				if len(configGen) != 0 && configGen != storedConfigGen {
+				if configGen != storedConfigGen {
 					// something has changed since last imported
 					return returnAndSetCondition(false), nil
 				}
