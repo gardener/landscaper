@@ -227,7 +227,7 @@ subinstallations:
 
 Upload the blueprint artifact to the registry:
 ```shell script
-landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.2.0 docs/tutorials/resources/aggregated/blueprint
+landscaper-cli blueprints push eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.2.2 docs/tutorials/resources/aggregated/blueprint
 ```
 
 #### Create the ComponentDescriptor
@@ -246,7 +246,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/simple-aggregated
-  version: v0.2.0
+  version: v0.2.2
 
   provider: internal
 
@@ -257,16 +257,16 @@ component:
   resources:
   - type: blueprint
     name: simple-aggregated
-    version: v0.2.0
+    version: v0.2.2
     relation: local
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.2.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/simple-aggregated:v0.2.2
 
   componentReferences:
   - name: ingress
     componentName: github.com/gardener/landscaper/ingress-nginx
-    version: v0.3.0
+    version: v0.3.2
   - name: server
     componentName: github.com/gardener/landscaper/echo-server
     version: v0.2.0
@@ -299,7 +299,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/my-project/comp
       componentName: github.com/gardener/landscaper/simple-aggregated
-      version: v0.2.0
+      version: v0.2.2
 
   blueprint:
     ref:
