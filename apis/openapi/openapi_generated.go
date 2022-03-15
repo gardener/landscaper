@@ -7812,7 +7812,7 @@ func schema_apis_deployer_helm_v1alpha1_ProviderConfiguration(ref common.Referen
 					},
 					"helmDeployment": {
 						SchemaProps: spec.SchemaProps{
-							Description: "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.",
+							Description: "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating. Default is true.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

@@ -73,8 +73,9 @@ type ProviderConfiguration struct {
 	ContinuousReconcile *cr.ContinuousReconcileSpec `json:"continuousReconcile,omitempty"`
 
 	// HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.
+	// Default is true.
 	// +optional
-	HelmDeployment bool `json:"helmDeployment,omitempty"`
+	HelmDeployment *bool `json:"helmDeployment,omitempty"`
 
 	// HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.
 	// +optional

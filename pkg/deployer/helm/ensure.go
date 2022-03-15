@@ -71,7 +71,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		deployErr                 error
 	)
 
-	if !h.ProviderConfiguration.HelmDeployment {
+	if h.ProviderConfiguration.HelmDeployment != nil && !(*h.ProviderConfiguration.HelmDeployment) {
 		var applier *resourcemanager.ManifestApplier
 		applier, deployErr = h.applyManifests(ctx, targetClient, targetClientSet, manifests)
 		managedResourceStatusList = applier.GetManagedResourcesStatus()
@@ -267,7 +267,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 
 // DeleteFiles deletes the managed resources from the target cluster.
 func (h *Helm) DeleteFiles(ctx context.Context) error {
-	if !h.ProviderConfiguration.HelmDeployment {
+	if h.ProviderConfiguration.HelmDeployment != nil && !(*h.ProviderConfiguration.HelmDeployment) {
 		return h.deleteManifests(ctx)
 	} else {
 		return h.deleteManifestsWithRealHelmDeployer(ctx)
