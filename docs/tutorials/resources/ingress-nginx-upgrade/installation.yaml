@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: my-ingress
+spec:
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: ociRegistry
+        baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
+      componentName: github.com/gardener/landscaper/ingress-nginx
+      version: v0.3.3
+
+  blueprint:
+    ref:
+      resourceName: ingress-nginx-blueprint
+
+  imports:
+    targets:
+    - name: cluster
+      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
+      target: "#my-cluster"
+    data:
+    - name: namespace
+      configMapRef:
+        key: "namespace"
+        name: "my-imports" # name of the configmap;
+        # namespace: default # the namespace will be defaulted to the namespace of the installation.
+
+  exports:
+    data:
+    - name: ingressClass
+      dataRef: "myIngressClass"
