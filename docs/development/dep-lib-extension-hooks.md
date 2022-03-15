@@ -57,10 +57,14 @@ In order to understand how to modify the default reconciliation flow, let's have
 3. **Handle deployer contract** - This includes removing certain annotations and checking whether the deploy item has been changed since the last reconcile. Notably, if the deploy item has been changed, its `LastReconcileTime` timestamp will be set and its `Phase` will be set to `Init` at this point.
 4. **Should reconcile check** - This check evaluates the outcome of step 3 - if the deploy item is in a final state (`Succeeded` or `Failed`), the reconcile will be aborted.
 5. Exactly one of the following will be executed, depending on annotations and the state of the deploy item. All of these behave similarly in that they basically just call the respective deployer-specific method.
-5.a **Abort** - If the deploy item has the abort annotation, it will be aborted. Please note that this differs from _aborting the reconciliation_ as mentioned above, because in this case, not the reconciliation is aborted, but the _processing of the deploy item_.
-5.b **Force-Reconcile** - If the deploy item has the force-reconcile annotation, the corresponding method of the deployer will be called.
-5.c **Deletion** - If the deletion timestamp on the deploy item exists, the deployer's `Delete` method will be called.
-5.d **Reconcile** - Otherwise, the deployer's `Reconcile` method will be called.
+
+	5.a **Abort** - If the deploy item has the abort annotation, it will be aborted. Please note that this differs from _aborting the reconciliation_ as mentioned above, because in this case, not the reconciliation is aborted, but the _processing of the deploy item_.
+
+	5.b **Force-Reconcile** - If the deploy item has the force-reconcile annotation, the corresponding method of the deployer will be called.
+
+	5.c **Deletion** - If the deletion timestamp on the deploy item exists, the deployer's `Delete` method will be called.
+
+	5.d **Reconcile** - Otherwise, the deployer's `Reconcile` method will be called.
 
 
 ## Hook Types
