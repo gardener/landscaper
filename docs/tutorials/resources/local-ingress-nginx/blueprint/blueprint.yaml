@@ -34,6 +34,8 @@ deployExecutions:
     {{ toYaml .componentDescriptorDef | indent 8 }}
             resourceName: ingress-nginx-chart
 
+        helmDeployment: true
+
         updateStrategy: patch
 
         name: test

@@ -4,7 +4,7 @@
 
 # This version number is parsed by hack/upload-tutorial-resources.sh - it is not part of any official blueprint
 #
-# TUTORIAL_BLUEPRINT_VERSION: v0.3.1
+# TUTORIAL_BLUEPRINT_VERSION: v0.3.2
 
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
@@ -36,6 +36,8 @@ deployExecutions:
         chart:
           {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
           ref: {{ $resource.access.imageReference }}
+
+        helmDeployment: true
 
         updateStrategy: patch
 

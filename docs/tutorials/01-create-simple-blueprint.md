@@ -1,6 +1,6 @@
 # Tutorial 01: Developing a simple Blueprint
 
-This tutorial describes the basics of developing Blueprints. It covers the whole manual workflow from wrtting the Blueprint together with a Component Descriptor and storing them in a remote OCI repository.
+This tutorial describes the basics of developing Blueprints. It covers the whole manual workflow from writing the Blueprint together with a Component Descriptor and storing them in a remote OCI repository.
 
 For this tutorial, we are going to use the [NGINX ingress controller](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx) as the example application which will get deployed via its upstream helm chart.
 
@@ -43,7 +43,7 @@ helm repo add stable https://charts.helm.sh/stable
 helm repo update
 
 # download the nginx ingress helm chart and extract it to /tmp/nginx-ingress
-helm pull ingress-nginx/ingress-nginx --version 3.29.0 --untar --destination /tmp
+helm pull ingress-nginx/ingress-nginx --version 4.0.17 --untar --destination /tmp
 
 # upload the helm chart to an OCI registry
 export OCI_REGISTRY="oci://eu.gcr.io" # <-- replace this with the URL of your own OCI registry, DO NOT FORGET the OCI protocol prefix oci://
@@ -51,8 +51,8 @@ export CHART_REF_PREFIX="$OCI_REGISTRY/chart-prefix/" # e.g. eu.gcr.io/gardener-
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login -u myuser $OCI_REGISTRY
 helm package /tmp/ingress-nginx -d /tmp
-helm push /tmp/ingress-nginx-3.29.0.tgz $CHART_REF_PREFIX
-# the helm chart is uploaded as oci artifact to $CHART_REF_PREFIX/chart-name:chart-version" e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0
+helm push /tmp/ingress-nginx-4.0.17.tgz $CHART_REF_PREFIX
+# the helm chart is uploaded as oci artifact to $CHART_REF_PREFIX/chart-name:chart-version" e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
 ```
 
 See details for Helm version < `3.7`.
@@ -65,11 +65,11 @@ helm repo add stable https://charts.helm.sh/stable
 helm repo update
 
 # download the nginx ingress helm chart and extract it to /tmp/nginx-ingress
-helm pull ingress-nginx/ingress-nginx --version 3.29.0 --untar --destination /tmp
+helm pull ingress-nginx/ingress-nginx --version 4.0.17 --untar --destination /tmp
 
 # upload the helm chart to an OCI registry
 export OCI_REGISTRY="eu.gcr.io" # <-- replace this with the URL of your own OCI registry
-export CHART_REF="$OCI_REGISTRY/mychart/reference:my-version" # e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
+export CHART_REF="$OCI_REGISTRY/mychart/reference:my-version" # e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
 export HELM_EXPERIMENTAL_OCI=1
 helm registry login -u myuser $OCI_REGISTRY
 helm package /tmp/ingress-nginx $CHART_REF
@@ -82,7 +82,7 @@ helm push $CHART_REF
 
 A Component Descriptor contains references and locations to all _resources_ that are used by Landscaper to deploy and install an application. In this example, the only kind of _resources_ is a `helm` chart (that of the nginx-ingress controller that we uploaded to an OCI registry in the previous step) but it could also be `oci images` or even `node modules`.
 
-If a Helm chart is referenced through a component descriptor, the version of the chart in the component descriptor should match the version of the chart itself. Since we are using version v3.29.0 of the _ingress-nginx_ Helm chart in this tutorial, the component descriptor references it accordingly.
+If a Helm chart is referenced through a component descriptor, the version of the chart in the component descriptor should match the version of the chart itself. Since we are using version 4.0.17 of the _ingress-nginx_ Helm chart in this tutorial, the component descriptor references it accordingly.
 
 For more information about the component descriptor and the usage of the different fields, refer to the [component descriptor documentation](https://github.com/gardener/component-spec).
 
@@ -105,11 +105,11 @@ component:
   resources:
   - type: helm
     name: ingress-nginx-chart
-    version: v3.29.0
+    version: 4.0.17
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
+      imageReference: eu.gcr.io.gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
 ```
 
 ## Step 3: Create a Blueprint
@@ -340,7 +340,7 @@ spec:
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     chart:
-      ref: eu.gcr.io/myproject/charts/nginx-ingress:v3.29.0
+      ref: eu.gcr.io/myproject/charts/nginx-ingress:4.0.17
     exportsFromManifests:
     - jsonPath: .Values.controller.ingressClass
       key: ingressClass
@@ -386,7 +386,7 @@ meta:
 
 component:
   name: github.com/gardener/landscaper/ingress-nginx
-  version: v0.3.0
+  version: v0.3.2
 
   provider: internal
   sources: []
@@ -399,11 +399,11 @@ component:
   resources:  
   - type: helm
     name: ingress-nginx-chart
-    version: v3.29.0
+    version: 4.0.17
     relation: external
     access:
       type: ociRegistry
-      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
+      imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
   - type: blueprint
     name: ingress-nginx-blueprint
     relation: local
@@ -424,7 +424,7 @@ landscaper-cli component-cli ca remote push <path to directory with component-de
 landscaper-cli component-cli ca remote push ./docs/tutorials/resources/ingress-nginx
 ```
 
-Once the upload succeeds, the Component Descriptor should be accessible at `eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/ingress-nginx/v0.3.0` in the registry.
+Once the upload succeeds, the Component Descriptor should be accessible at `eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/ingress-nginx/v0.3.2` in the registry.
 
 ## Step 6: Installation
 
@@ -483,7 +483,7 @@ componentDescriptor:
       type: ociRegistry
       baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
     componentName: github.com/gardener/landscaper/ingress-nginx
-    version: v0.3.0
+    version: v0.3.2
 ```
 
 __Blueprint__: Once the Component Descriptor is given, the Blueprint artifact in the component descriptor is specified by its resource with the unique name `ingress-nginx-blueprint`.
@@ -544,7 +544,7 @@ spec:
         type: ociRegistry
         baseUrl: eu.gcr.io/gardener-project/landscaper/tutorials/components
       componentName: github.com/gardener/landscaper/ingress-nginx
-      version: v0.3.0
+      version: v0.3.2
 
   blueprint:
     ref:
@@ -600,7 +600,7 @@ spec:
   - config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       chart:
-        ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
+        ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
       exportsFromManifests:
       - jsonPath: .Values.controller.ingressClass
         key: ingressClass
@@ -640,7 +640,7 @@ spec:
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     chart:
-      ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0
+      ref: eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
     exportsFromManifests:
     - jsonPath: .Values.controller.ingressClass
       key: ingressClass
