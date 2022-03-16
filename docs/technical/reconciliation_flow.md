@@ -76,6 +76,7 @@ This is the default reconciliation logic.
             - in phase `Succeeded`
             - up-to-date (`.status.observedGeneration` == `.metadata.generation`)
             - not queued for reconciliation by the reconcile or force-reconcile operation annotation
+          - if the installation has a parent installation, the parent has to be in phase `Progressing`
           - all imports need to be satisfied, which means they have to
             - exist
             - be imported by the parent or be exported by a sibling, if they are owned by an installation
