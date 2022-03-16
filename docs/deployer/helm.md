@@ -2,7 +2,7 @@
 
 The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. There are two
 alternative working modes of the helm deployer. One renders a given helm chart and deploys the resulting manifest into 
-a cluster. The other deploys a helm chart with [helm 3](https://helm.sh/). 
+a cluster. The other deploys a helm chart with [helm 3](https://helm.sh/). The second case is the default.
 
 By default, the helm deployer checks the health of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
 
@@ -11,10 +11,10 @@ By default, the helm deployer checks the health of the deployed resources. See [
 - [Provider Status](#status)
 - [Deployer Configuration](#deployer-configuration)
 
-### Provider Configuration
+## Provider Configuration
 
-This sections describes the provider specific configuration. The following example defines a deployment which just 
-renders the manifests with helm and deploys them. 
+This sections describes the provider specific configuration. The following example defines a deployment which deploys
+a helm chart with helm 3. 
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -45,6 +45,17 @@ spec:
         resourceName: my-helm-chart
       archive:
         raw: "" # base64 encoded helm chart tar.gz
+
+    # settings for the different helm 3 operations 
+    helmDeploymentConfig:
+      install: # see  https://helm.sh/docs/helm/helm_install/#options
+        atomic: true
+        timeout: 10m
+      upgrade: # see https://helm.sh/docs/helm/helm_upgrade/#options
+        atomic: true
+        timeout: 10m
+      uninstall: # see https://helm.sh/docs/helm/helm_uninstall/#options
+        timeout: 15m
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
@@ -170,9 +181,10 @@ For a complete documentation of the available jsonPath see here (https://kuberne
 
 :warning: Only unique identifiable resources (_apiVersion_, _kind_, _name_ and _namespace_).
 
-If you want to deploy the chart with helm 3 you just need to add the field `helmDeployment: true` to the provider 
-configuration as shown in the following example. A complete example could be found 
-[here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/real-helm-deployment).
+## Manifest-Only Deployment
+
+If you want to deploy the chart not with helm 3 but only apply the manifests you just need to add the field 
+`helmDeployment: false` to the provider configuration as shown in the following example. 
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -193,35 +205,9 @@ spec:
     chart:
       ...
 
-    # specifies that helm 3 is used to deploy the chart
-    helmDeployment: true
-    
-    # settings for the different helm 3 operations
-    helmDeploymentConfig:
-      install:
-        atomic: true
-        timeout: 10m
-      upgrade:
-        atomic: true
-        timeout: 10m
-      uninstall:
-        timeout: 15m
-    ...
+    # specifies that only the rendered manifests are applied
+    helmDeployment: false
 ```
-
-For the deployment with helm 3 you could specify an optional `helmDeploymentConfig` where you could specify 
-the following settings for the install, upgrade and uninstall command:
-
-- `atomic`
-- `timeout`
-
-You find more information about these setting here:
-
-- https://helm.sh/docs/helm/helm_install/#options
-- https://helm.sh/docs/helm/helm_upgrade/#options
-- https://helm.sh/docs/helm/helm_uninstall/#options
-
-In the future further options of helm 3 will be supported.
 
 ##### Continuous Reconciliation
 For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
@@ -404,4 +390,7 @@ CR.
 
 You find a complete example [here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/helm-repo-protected).
 
+## Examples
 
+Other example could be found
+[here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer).

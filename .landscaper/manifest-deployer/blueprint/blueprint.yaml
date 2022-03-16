@@ -64,6 +64,7 @@ deployExecutions:
         updateStrategy: update
         name: {{ .imports.releaseName }}
         namespace: {{ .imports.releaseNamespace }}
+        helmDeployment: false
         chart:
           {{ $resource := getResource .cd "name" "manifest-deployer-chart" }}
           ref: {{ $resource.access.imageReference }}

@@ -43,6 +43,7 @@ var _ = Describe("Blueprint", func() {
   "chart": {
     "ref": "eu.gcr.io/gardener-project/landscaper/charts/container-deployer-controller:v0.5.3"
   },
+  "helmDeployment": false,
   "kind": "ProviderConfiguration",
   "name": "landscaper-container-deployer",
   "namespace": "container-deployer",
@@ -104,6 +105,7 @@ var _ = Describe("Blueprint", func() {
   "chart": {
     "ref": "eu.gcr.io/gardener-project/landscaper/charts/helm-deployer-controller:v0.5.3"
   },
+  "helmDeployment": false,
   "kind": "ProviderConfiguration",
   "name": "landscaper-helm-deployer",
   "namespace": "helm-deployer",
@@ -145,6 +147,7 @@ var _ = Describe("Blueprint", func() {
   "chart": {
     "ref": "eu.gcr.io/gardener-project/landscaper/charts/manifest-deployer-controller:v0.5.3"
   },
+  "helmDeployment": false,
   "kind": "ProviderConfiguration",
   "name": "landscaper-manifest-deployer",
   "namespace": "manifest-deployer",
@@ -186,6 +189,7 @@ var _ = Describe("Blueprint", func() {
   "chart": {
     "ref": "eu.gcr.io/gardener-project/landscaper/charts/mock-deployer-controller:v0.5.3"
   },
+  "helmDeployment": false,
   "kind": "ProviderConfiguration",
   "name": "landscaper-mock-deployer",
   "namespace": "mock-deployer",

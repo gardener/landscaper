@@ -746,7 +746,7 @@
       "type": "array"
     },
     "helmDeployment": {
-      "description": "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.",
+      "description": "HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating. Default is true.",
       "type": "boolean"
     },
     "helmDeploymentConfig": {
