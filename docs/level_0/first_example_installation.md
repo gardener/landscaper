@@ -92,5 +92,8 @@ NAME   PHASE        CONFIGGEN    EXECUTION   AGE
 demo   Succeeded                             2m
 ```
 
+If there is already another ingress controller installed on the target cluster, the installation might fail due to a 
+conflict.
+
 If you want to know how the component of this example is created go to the [first example component](./first_example_component.md) page. 
 If you want to know more about the concepts go to the [basic concepts](./basic_concepts.md) page.
