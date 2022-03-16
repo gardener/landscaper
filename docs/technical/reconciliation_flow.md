@@ -12,8 +12,9 @@ Please note that errors can occur in most of the steps for various reasons. To n
   - The arrow means that another flow is started. It usually corresponds to a method call in the code. If not described otherwise, the current flow will continue after the subroutine has returned. The description of the step provides more information on which flow is started.
 - ✔️
   - The check mark stands for 'action' and means that in this step, the most important part of the reconciliation flow is performed. The exact meaning depends on the type of resource which is being reconciled. For example, during the installation reconcile, the most important action would be the creation/update/deletion of the nested installations and executions. This is what the reconciliation is actually supposed to do, everything else around it is just there to ensure that this happens under the correct conditions.
-- 🚫
+<!--- 🚫
   - This symbol represents a potential error. If it is attached to a step together with some description, it means that this step could result in an error and the description gives further information on how the error looks like. As stated above, please note that this is only used to mark *some* of the potential errors, not *all* of them. Even steps without this symbol can abort the reconciliation with an error. For this reason, errors are not marked as potential outcome for checks (in combination with ❔) or on top-level steps which are split up in smaller ones.
+-->
 
 ## Installations
 
@@ -159,9 +160,11 @@ This reconciliation flow is executed if the installation has a deletion timestam
 
     See step 1.2 for a description (except for the propagation of the force-reconcile operation annotation).
 
-
+<!--
 ## Executions
 
+### Core Reconciliation Logic
+-->
 
 ## DeployItems
 
@@ -173,17 +176,17 @@ For a detailed description of the different timeouts, please have a look at [Dep
 
 ### Core Reconciliation Logic
 
-1. Check for pickup timeout
+1. Check for pickup timeout ❔↪🚪
 
     If a pickup timeout is configured, it is checked whether it occurred and the deployitem status is updated if it was changed.
 
-2. Check for aborting timeout
+2. Check for aborting timeout ❔↪🚪
 
     If an aborting timeout is configured, it is checked whether it occurred and the deployitem status is updated if it was changed.
 
     The annotations of the deployitem are updated too, if they changed.
 
-3. Check for progressing timeout
+3. Check for progressing timeout ❔↪
 
     If a progressing timeout is configured, it is checked whether it occurred. There is a default, which is configurable in the landscaper config, and a field in the deployitem spec, which takes precedence over the default, if set. 
 
@@ -198,17 +201,17 @@ For a detailed description of the different timeouts, please have a look at [Dep
 
 This is the flow for detecting pickup timeouts.
 
-1. Check if already timed out
+1. Check if already timed out ❔🚪
 
     If the deployitem is already failed with a pickup timeout, there is nothing to do.
 
-2. Check for reconcile timestamp annotation
+2. Check for reconcile timestamp annotation ❔🚪
 
     If the deployitem doesn't have a reconcile timestamp annotation, there is nothing to do.
 
     The reconcile timestamp annotation is set by the execution controller when the deployitems are created/updated.
 
-3. Check for timeout
+3. Check for timeout ❔
 
     If the period between the time of the timestamp and the current time is equal or greater than the specified timeout duration, a pickup timeout occurred:
     
@@ -225,15 +228,15 @@ This is the flow for detecting pickup timeouts.
 
 This is the flow for detecting aborting timeouts.
 
-1. Check if already timed out
+1. Check if already timed out ❔🚪
 
     If the deployitem is already failed with an aborting timeout, there is nothing to do.
 
-2. Check for abort timestamp and phase
+2. Check for abort timestamp and phase ❔🚪
 
     If the deployitem doesn't have an abort timestamp or is in a final phase, there is nothing to do.
 
-3. Check for timeout
+3. Check for timeout ❔
 
     If the period between the time of the timestamp and the current time is equal or greater than the specified timeout duration, an aborting timeout occurred:
     
@@ -250,11 +253,11 @@ This is the flow for detecting aborting timeouts.
 
 This is the flow for detecting progressing timeouts.
 
-1. Check if timeout is possible
+1. Check if timeout is possible ❔🚪
 
     If the last reconcile time in the deployitem status is empty - indicating that the deployitem has never been picked up by a deployer before - or the deployitem is in a final phase, there is nothing to do.
 
-2. Check for timeout
+2. Check for timeout ❔🚪
 
     If the period between the time of the last reconcile timestamp and the current time is equal or greater than the specified timeout duration, a progressing timeout occurred:
     
