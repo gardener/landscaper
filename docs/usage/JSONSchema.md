@@ -22,7 +22,7 @@ The type can be used in other schemas by using the `$ref` property with `local:/
 
 _Example_:
 
-```
+```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Blueprint
 

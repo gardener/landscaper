@@ -35,8 +35,8 @@ repositoryContext:
 registryPullSecrets: # additional pull secrets to access component descriptors and blueprints
 - name: my-pullsecret
 
-configurations: 
-  yourKey: yourInfo
+configurations:
+  config.mydeployer.mydomain.org: ... # custom configuration, not evaluated by landscaper
 ```
 
 The repository context is usually the location where the component descriptors are stored in an OCI registry. For the 
