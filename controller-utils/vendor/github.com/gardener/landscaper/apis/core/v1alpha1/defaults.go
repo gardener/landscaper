@@ -5,6 +5,9 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 )
@@ -47,6 +50,11 @@ func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
 		} else if len(imp.TargetType) != 0 {
 			imp.Type = ImportTypeTarget
 		}
+		if imp.Type == ImportTypeTarget {
+			if len(imp.TargetType) != 0 && !strings.Contains(imp.TargetType, "/") {
+				imp.TargetType = fmt.Sprintf("%s/%s", LandscaperDomain, imp.TargetType)
+			}
+		}
 	}
 }
 
@@ -69,6 +77,11 @@ func SetDefaults_DefinitionExport(exports *ExportDefinitionList) {
 			exp.Type = ExportTypeData
 		} else if len(exp.TargetType) != 0 {
 			exp.Type = ExportTypeTarget
+		}
+		if exp.Type == ExportTypeTarget {
+			if len(exp.TargetType) != 0 && !strings.Contains(exp.TargetType, "/") {
+				exp.TargetType = fmt.Sprintf("%s/%s", LandscaperDomain, exp.TargetType)
+			}
 		}
 	}
 }
