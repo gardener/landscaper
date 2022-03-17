@@ -6,7 +6,8 @@ package imports_test
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -26,7 +27,9 @@ func TestConfig(t *testing.T) {
 func createDefaultContextsForNamespace(kubeClient client.Client) {
 	// create default repo for all namespaces
 	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
-	for i := 1; i <= 11; i++ {
-		Expect(testutils.CreateDefaultContext(context.TODO(), kubeClient, repoCtx, fmt.Sprintf("test%d", i))).To(Succeed())
+	list, err := os.ReadDir("./testdata/state")
+	Expect(err).To(Succeed())
+	for _, d := range list {
+		Expect(testutils.CreateDefaultContext(context.TODO(), kubeClient, repoCtx, filepath.Base(d.Name()))).To(Succeed())
 	}
 }

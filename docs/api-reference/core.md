@@ -118,6 +118,21 @@ ImportDefinitionList
 </tr>
 <tr>
 <td>
+<code>importExecutions</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.TemplateExecutor">
+[]TemplateExecutor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ImportExecutions defines the templating executors that are sequentially executed by the landscaper.
+The templates must return a list of errors</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>exports</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ExportDefinitionList">

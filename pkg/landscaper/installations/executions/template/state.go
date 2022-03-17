@@ -91,7 +91,7 @@ func (s KubernetesStateHandler) get(ctx context.Context, secretName string) (*co
 }
 
 func (s KubernetesStateHandler) secretName(name string) string {
-	doName := fmt.Sprintf("%s/%s", s.Inst.Namespace, name)
+	doName := fmt.Sprintf("%s/%s", s.Inst.Name, name)
 	h := sha1.New()
 	_, _ = h.Write([]byte(doName))
 	// we need base32 encoding as some base64 (even url safe base64) characters are not supported by k8s

@@ -117,6 +117,9 @@ func (c *Constructor) Construct(ctx context.Context, imps *Imports) error {
 		return err
 	}
 
+	c.SetTargetImports(imps.Targets)
+	c.SetTargetListImports(imps.TargetLists)
+
 	inst.SetImports(imports)
 	return nil
 }

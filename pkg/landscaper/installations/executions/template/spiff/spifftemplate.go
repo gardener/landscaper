@@ -91,6 +91,41 @@ func (t *Templater) TemplateSubinstallationExecutions(tmplExec lsv1alpha1.Templa
 	return output, nil
 }
 
+func (t *Templater) TemplateImportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.ImportExecutorOutput, error) {
+	rawTemplate, err := t.templateNode(tmplExec, blueprint)
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.Background()
+	defer ctx.Done()
+
+	functions := spiffing.NewFunctions()
+	LandscaperSpiffFuncs(functions, descriptor, cdList)
+
+	spiff, err := spiffing.New().WithFunctions(functions).WithFileSystem(blueprint.Fs).WithValues(values)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
+	}
+
+	res, err := spiff.Cascade(rawTemplate, nil)
+	if err != nil {
+		cascadeError := TemplateErrorBuilder(err).
+			WithInput(values, t.inputFormatter).
+			Build()
+		return nil, cascadeError
+	}
+
+	data, err := spiffyaml.Marshal(res)
+	if err != nil {
+		return nil, err
+	}
+	output := &template.ImportExecutorOutput{}
+	if err := yaml.Unmarshal(data, output); err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
 func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.DeployExecutorOutput, error) {
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
@@ -133,7 +168,7 @@ func (t *Templater) TemplateDeployExecutions(tmplExec lsv1alpha1.TemplateExecuto
 	return output, nil
 }
 
-func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, exports interface{}) (*template.ExportExecutorOutput, error) {
+func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecutor, blueprint *blueprints.Blueprint, descriptor *cdv2.ComponentDescriptor, cdList *cdv2.ComponentDescriptorList, values map[string]interface{}) (*template.ExportExecutorOutput, error) {
 	rawTemplate, err := t.templateNode(tmplExec, blueprint)
 	if err != nil {
 		return nil, err
@@ -145,10 +180,10 @@ func (t *Templater) TemplateExportExecutions(tmplExec lsv1alpha1.TemplateExecuto
 		return nil, fmt.Errorf("unable to load state: %w", err)
 	}
 
-	values := map[string]interface{}{
-		"values": exports,
-	}
-	spiff, err := spiffing.New().WithFileSystem(blueprint.Fs).WithValues(values)
+	functions := spiffing.NewFunctions()
+	LandscaperSpiffFuncs(functions, descriptor, cdList)
+
+	spiff, err := spiffing.New().WithFunctions(functions).WithFileSystem(blueprint.Fs).WithValues(values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}

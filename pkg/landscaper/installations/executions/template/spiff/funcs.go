@@ -179,7 +179,10 @@ func parseOCIReference(arguments []interface{}, binding dynaml.Binding) (interfa
 	if len(arguments) > 1 {
 		return info.Error("Too many arguments for parseOCIReference. Expected 1 reference.")
 	}
-	ref := arguments[0].(string)
+	ref, ok := arguments[0].(string)
+	if !ok {
+		return info.Error("Invalid argument: string expected")
+	}
 	data, err := yaml.Marshal(template.ParseOCIReference(ref))
 	if err != nil {
 		return info.Error(err.Error())

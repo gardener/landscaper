@@ -64,6 +64,11 @@ type Blueprint struct {
 	// +optional
 	Imports ImportDefinitionList `json:"imports,omitempty"`
 
+	// ImportExecutions defines the templating executors that are sequentially executed by the landscaper.
+	// The templates must return a list of errors
+	// +optional
+	ImportExecutions []TemplateExecutor `json:"importExecutions,omitempty"`
+
 	// Exports define the exported values of the definition and its sub-definitions
 	// +optional
 	Exports ExportDefinitionList `json:"exports,omitempty"`

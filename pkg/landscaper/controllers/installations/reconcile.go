@@ -98,6 +98,16 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 
 	// no update required, continue with exports
+	// construct imports so that they are available for export templating
+	imps, err := rh.GetImports()
+	if err != nil {
+		return instOp.NewError(err, "GetImportsForExports", err.Error())
+	}
+	impCon := imports.NewConstructor(instOp)
+	err = impCon.Construct(ctx, imps)
+	if err != nil {
+		return instOp.NewError(err, "ConstructImportsForExports", err.Error())
+	}
 	instOp.CurrentOperation = "Completing"
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
 	if err != nil {
@@ -112,8 +122,8 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	inst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
 
 	// as all exports are validated, lets trigger dependant components
-	// todo: check if this is c must, maybe track what we already successfully triggered
-	// maybe we also need to increase the generation manually to signal c new config version
+	// todo: check if this is a must, maybe track what we already successfully triggered
+	// maybe we also need to increase the generation manually to signal a new config version
 	if err := instOp.TriggerDependents(ctx); err != nil {
 		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
 		return instOp.NewError(err, "TriggerDependents", err.Error())

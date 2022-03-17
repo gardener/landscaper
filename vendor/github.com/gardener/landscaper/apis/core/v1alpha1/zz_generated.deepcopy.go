@@ -64,6 +64,13 @@ func (in *Blueprint) DeepCopyInto(out *Blueprint) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ImportExecutions != nil {
+		in, out := &in.ImportExecutions, &out.ImportExecutions
+		*out = make([]TemplateExecutor, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Exports != nil {
 		in, out := &in.Exports, &out.Exports
 		*out = make(ExportDefinitionList, len(*in))
