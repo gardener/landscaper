@@ -39,7 +39,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		if err != nil {
 			return err
 		}
-		if err := c.Update(ctx, instOp, false, nil); err != nil {
+		if err := c.Update(ctx, instOp, nil); err != nil {
 			return err
 		}
 		if err := DeleteExecutionAndSubinstallations(ctx, instOp); err != nil {
@@ -118,7 +118,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 			return err
 		}
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := c.Update(ctx, instOp, false, imps); err != nil {
+		if err := c.Update(ctx, instOp, imps); err != nil {
 			return err
 		}
 	}
