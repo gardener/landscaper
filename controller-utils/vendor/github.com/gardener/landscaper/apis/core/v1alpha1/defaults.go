@@ -37,20 +37,18 @@ func SetDefaults_DefinitionImport(imports *ImportDefinitionList) {
 			imp.Required = pointer.BoolPtr(true)
 		}
 		SetDefaults_DefinitionImport(&imp.ConditionalImports)
-		if len(imp.Type) != 0 {
-			// type is already set
-			continue
-		}
 		if imp.Schema != nil && len(imp.TargetType) != 0 {
 			// definition is invalid
 			continue
 		}
-		if imp.Schema != nil {
-			imp.Type = ImportTypeData
-		} else if len(imp.TargetType) != 0 {
-			imp.Type = ImportTypeTarget
+		if len(imp.Type) == 0 {
+			if imp.Schema != nil {
+				imp.Type = ImportTypeData
+			} else if len(imp.TargetType) != 0 {
+				imp.Type = ImportTypeTarget
+			}
 		}
-		if imp.Type == ImportTypeTarget {
+		if imp.Type == ImportTypeTarget || imp.Type == ImportTypeTargetList {
 			if len(imp.TargetType) != 0 && !strings.Contains(imp.TargetType, "/") {
 				imp.TargetType = fmt.Sprintf("%s/%s", LandscaperDomain, imp.TargetType)
 			}
@@ -65,18 +63,16 @@ func SetDefaults_DefinitionExport(exports *ExportDefinitionList) {
 	}
 	for i := 0; i < len(*exports); i++ {
 		exp := &(*exports)[i]
-		if len(exp.Type) != 0 {
-			// type is already set
-			continue
-		}
 		if exp.Schema != nil && len(exp.TargetType) != 0 {
 			// definition is invalid
 			continue
 		}
-		if exp.Schema != nil {
-			exp.Type = ExportTypeData
-		} else if len(exp.TargetType) != 0 {
-			exp.Type = ExportTypeTarget
+		if len(exp.Type) == 0 {
+			if exp.Schema != nil {
+				exp.Type = ExportTypeData
+			} else if len(exp.TargetType) != 0 {
+				exp.Type = ExportTypeTarget
+			}
 		}
 		if exp.Type == ExportTypeTarget {
 			if len(exp.TargetType) != 0 && !strings.Contains(exp.TargetType, "/") {
