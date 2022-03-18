@@ -45,5 +45,8 @@ echo "> Creating helm chart from $CHART_PATH with version ${EFFECTIVE_VERSION}"
 
 tempdir=$(mktemp -d)
 
+echo -n "Packaging helm chart"
 helm package ${PROJECT_ROOT}/${CHART_PATH} --version ${EFFECTIVE_VERSION} --app-version ${EFFECTIVE_VERSION} -d ${tempdir}
+
+echo -n "Pushing helm chart"
 helm push ${tempdir}/* "oci://${CHART_REPO}"
