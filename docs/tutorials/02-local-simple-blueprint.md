@@ -177,6 +177,8 @@ deployExecutions:
     deployItems:
     - name: deploy
       type: landscaper.gardener.cloud/helm
+      target:
+        import: cluster
       # ...
       config:
         apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1

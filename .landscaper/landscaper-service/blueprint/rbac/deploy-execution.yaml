@@ -2,8 +2,7 @@ deployItems:
   - name: landscaper-rbac
     type: landscaper.gardener.cloud/helm
     target:
-      name: {{ .imports.virtualCluster.metadata.name }}
-      namespace: {{ .imports.virtualCluster.metadata.namespace }}
+      import: virtualCluster
     config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration

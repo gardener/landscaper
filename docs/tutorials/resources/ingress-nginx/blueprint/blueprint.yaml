@@ -27,8 +27,7 @@ deployExecutions:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target:
-        name: {{ .imports.cluster.metadata.name }}
-        namespace: {{ .imports.cluster.metadata.namespace }}
+        import: cluster
       config:
         apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
         kind: ProviderConfiguration

@@ -661,8 +661,7 @@ deployExecutions:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target:
-        name: {{ .imports.cluster.metadata.name }} # will resolve to "dev-cluster"
-        namespace: {{ .imports.cluster.metadata.namespace  }} # will resolve to "default"
+        import: cluster # will be replaced with a reference to the in-cluster target object the referenced import refers to
       config:
         apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
         kind: ProviderConfiguration
@@ -693,8 +692,7 @@ deployExecutions:
     - name: deploy
       type: landscaper.gardener.cloud/helm
       target:
-        name: {{ .imports.cluster.metadata.name }} # will resolve to "dev-cluster"
-        namespace: {{ .imports.cluster.metadata.namespace  }} # will resolve to "default"
+        import: cluster
       config:
         apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
         kind: ProviderConfiguration

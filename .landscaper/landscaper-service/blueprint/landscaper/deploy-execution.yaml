@@ -2,8 +2,7 @@ deployItems:
   - name: landscaper
     type: landscaper.gardener.cloud/helm
     target:
-      name: {{ .imports.hostingCluster.metadata.name }}
-      namespace: {{ .imports.hostingCluster.metadata.namespace }}
+      import: hostingCluster
     config:
       apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
       kind: ProviderConfiguration
