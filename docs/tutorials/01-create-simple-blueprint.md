@@ -505,14 +505,11 @@ blueprint:
 
 __Imports__: The Blueprint requires a _Target_ import of type `landscaper.gardener.cloud/kubernetes-cluster` and a data import for the namespace. This means that the target `my-target-cluster` and the configmap we created before need to be connected to the Blueprints import in the Installation.
 
-:warning: The "#" has to be used to reference the previously created target. Otherwise, Landscaper would try to import the target from another component's export.
-
 ```yaml
 imports:
   targets:
   - name: cluster
-    # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-    target: "#my-target-cluster"
+    target: "my-target-cluster"
   data:
   - name: namespace # name of the import in the blueprint
     configMapRef:
@@ -561,8 +558,7 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-target-cluster"
+      target: "my-target-cluster"
     data:
     - name: namespace # name of the import in the blueprint
       configMapRef:

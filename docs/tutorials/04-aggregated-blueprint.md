@@ -308,8 +308,7 @@ spec:
   imports:
     targets:
     - name: aggCluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-cluster"
+      target: "my-cluster"
     data:
     - name: aggNamespace
       configMapRef:

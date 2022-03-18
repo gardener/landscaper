@@ -21,8 +21,7 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-cluster"
+      target: "my-cluster"
     data:
     - name: namespace
       configMapRef:

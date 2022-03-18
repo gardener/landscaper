@@ -373,8 +373,7 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-target-cluster" in the same namespace
-      target: "#my-target-cluster"
+      target: "my-target-cluster"
     data:
     - name: ingressClass
       configMapRef:

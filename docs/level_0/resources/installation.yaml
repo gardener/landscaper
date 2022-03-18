@@ -19,4 +19,4 @@ spec:
   imports:
     targets:
       - name: target-cluster
-        target: "#my-cluster"
+        target: "my-cluster"

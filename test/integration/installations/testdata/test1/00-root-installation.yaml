@@ -36,12 +36,12 @@ spec:
         name: "my-secret"
     targets:
     - name: targetImp
-      target: "#my-target"
+      target: "my-target"
     - name: targetListImp
       targets:
-      - "#my-target"
-      - "#my-target"
-      - "#my-target"
+      - "my-target"
+      - "my-target"
+      - "my-target"
     - name: emptyTargetListImp
       targets: []
     componentDescriptors:
