@@ -32,6 +32,8 @@ if ! which helm 1>/dev/null; then
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
+echo -n "Helm version: $(helm version)"
+
 export HELM_EXPERIMENTAL_OCI=1
 
 if which cli.py 1>/dev/null; then
