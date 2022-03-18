@@ -54,7 +54,7 @@ func New(op *installations.Operation) *ExecutionOperation {
 	}
 }
 
-func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
+func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst *installations.Installation) (core.DeployItemTemplateList, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
@@ -74,11 +74,11 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
-		return fmt.Errorf("unable to template executions: %w", err)
+		return nil, fmt.Errorf("unable to template executions: %w", err)
 	}
 
 	if len(executions) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// map deployitem specifications into templates for executions
@@ -95,10 +95,10 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 				// targetlist import reference
 				ti := o.GetTargetListImport(elem.Target.Import)
 				if ti == nil {
-					return o.deployItemSpecificationError(cond, elem.Name, "targetlist import %q not found", elem.Target.Import)
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "targetlist import %q not found", elem.Target.Import)
 				}
 				if *elem.Target.Index < 0 || *elem.Target.Index >= len(ti.Targets) {
-					return o.deployItemSpecificationError(cond, elem.Name, "index %d out of bounds", *elem.Target.Index)
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "index %d out of bounds", *elem.Target.Index)
 				}
 				rawTarget := ti.Targets[*elem.Target.Index].Raw
 				target.Name = rawTarget.Name
@@ -107,13 +107,13 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 				// single target import reference
 				t := o.GetTargetImport(elem.Target.Import)
 				if t == nil {
-					return o.deployItemSpecificationError(cond, elem.Name, "target import %q not found", elem.Target.Import)
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "target import %q not found", elem.Target.Import)
 				}
 				rawTarget := t.Raw
 				target.Name = rawTarget.Name
 				target.Namespace = rawTarget.Namespace
 			} else if len(elem.Target.Name) == 0 {
-				return o.deployItemSpecificationError(cond, elem.Name, "empty target reference")
+				return nil, o.deployItemSpecificationError(cond, elem.Name, "empty target reference")
 			}
 		}
 
@@ -131,8 +131,19 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		err2 := fmt.Errorf("error validating deployitem templates: %w", err)
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, err2.Error()))
-		return err2
+		return nil, err2
 	}
+
+	return execTemplates, nil
+}
+
+func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
+	execTemplates, err := o.RenderDeployItemTemplates(ctx, inst)
+	if execTemplates == nil || err != nil {
+		return err
+	}
+
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.Info.Name

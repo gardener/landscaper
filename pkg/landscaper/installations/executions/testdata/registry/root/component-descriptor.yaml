@@ -11,6 +11,7 @@ component:
       baseUrl: "example.com"
 
   componentReferences: []
+  sources: []
 
   resources:
     - name: root-1
@@ -28,5 +29,43 @@ component:
       access:
         type: ociRegistry
         imageReference: example.com/image:v1.0.0
-
-  sources: []
+    - name: root-target-import
+      type: blueprint
+      version: v1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: root-target-import
+    - name: import-index-wrong
+      type: blueprint
+      version: v1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: root-target-import-error/import-index-wrong
+    - name: import-not-exist
+      type: blueprint
+      version: v1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: root-target-import-error/import-not-exist
+    - name: import-wrong-type-1
+      type: blueprint
+      version: v1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: root-target-import-error/import-wrong-type-1
+    - name: import-wrong-type-2
+      type: blueprint
+      version: v1.0.0
+      relation: local
+      access:
+        type: localFilesystemBlob
+        mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+        filename: root-target-import-error/import-wrong-type-2
