@@ -16,7 +16,7 @@ mkdir -p /tm
 VERSION="$(./hack/get-version.sh)"
 
 echo -n "Updating helm chart version"
-${SOURCE_PATH}/hack/update-helm-chart-version.sh
+./hack/update-helm-chart-version.sh
 
 # inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
 # 1) TM can retrieve the needed TestDefinitions (from current HEAD)
