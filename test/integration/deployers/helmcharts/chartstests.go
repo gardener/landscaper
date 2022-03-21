@@ -119,6 +119,11 @@ func deployDeployItemAndWaitForSuccess(
 	utils.ExpectNoError(state.Create(ctx, target))
 
 	By("Creating the DeployItem")
+
+	filepath.Join(chartDir, "Chart.yaml")
+	chartYaml := utils.ReadValuesFromFile(filepath.Join(chartDir, "Chart.yaml"))
+	By("Chart.yaml: " + string(chartYaml))
+
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, di))
 	By("Waiting for the DeployItem to succeed")
