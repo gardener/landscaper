@@ -7,6 +7,7 @@ package helmcharts
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -119,10 +120,8 @@ func deployDeployItemAndWaitForSuccess(
 	utils.ExpectNoError(state.Create(ctx, target))
 
 	By("Creating the DeployItem")
-
-	filepath.Join(chartDir, "Chart.yaml")
 	chartYaml := utils.ReadValuesFromFile(filepath.Join(chartDir, "Chart.yaml"))
-	By("Chart.yaml: " + string(chartYaml))
+	fmt.Fprintf(GinkgoWriter, "Chart: %s", chartYaml)
 
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, di))
