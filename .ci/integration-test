@@ -15,9 +15,6 @@ mkdir -p /tm
 
 VERSION="$(./hack/get-version.sh)"
 
-echo -n "Updating helm chart version"
-./hack/update-helm-chart-version.sh
-
 # inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
 # 1) TM can retrieve the needed TestDefinitions (from current HEAD)
 # 2) we will test the actual release docker image instead of a dev image
