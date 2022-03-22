@@ -15,9 +15,9 @@ mkdir -p /tm
 /cc/utils/cli.py config attribute --cfg-type kubernetes --cfg-name testmachinery --key kubeconfig > /tm/kubeconfig
 
 echo -n "Updating helm chart version"
-${SOURCE_PATH}/hack/update-helm-chart-version.sh
+./hack/update-helm-chart-version.sh
 
-VERSION="$(${SOURCE_PATH}/hack/get-version.sh)"
+VERSION="$(./hack/get-version.sh)"
 echo -n "Starting testmachinery for landscaper version ${VERSION}"
 
 # inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
