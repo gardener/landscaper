@@ -14,6 +14,7 @@ mkdir -p /tm
 /cc/utils/cli.py config attribute --cfg-type kubernetes --cfg-name testmachinery --key kubeconfig > /tm/kubeconfig
 
 VERSION="$(./hack/get-version.sh)"
+echo -n "Starting testmachinery for landscaper version ${VERSION}"
 
 # inject the release image tag (content of the VERSION file) as well as the current HEAD commit sha, so that
 # 1) TM can retrieve the needed TestDefinitions (from current HEAD)
