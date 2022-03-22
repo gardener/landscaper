@@ -21,5 +21,6 @@ CHARTLIST=$(find $CHART_ROOT -maxdepth 10 -type f -name "Chart.yaml")
 echo "Updating version and appVersion of Helm Charts to $EFFECTIVE_VERSION"
 
 for chart in $CHARTLIST; do
+    echo "Updating chart ${chart} with version ${EFFECTIVE_VERSION}"
     sed -i -e "s/^appVersion:.*/appVersion: ${EFFECTIVE_VERSION}/" $chart
 done
