@@ -87,3 +87,20 @@ The abort operation annotation is not removed automatically.
 
 The effect of this annotation is the same for all landscaper resources: the respective resource will not be reconciled by the landscaper, even if its spec changed or the operation annotation says otherwise. Only resources in a non-final phase are affected, to interrupt a running installation/execution/deployitem, the `landscaper.gardener.cloud/operation: abort` annotation has to be used. The phases `Succeeded`, `Failed`, and `Aborted` are considered to be final.
 Please note that as long as an update of a resource is blocked from reconciliation by this annotation, all other landscaper resources which are waiting for the update (because they depend on the resource) won't be able to be reconciled either and will be stuck.
+
+## Delete-Without-Uninstall Annotation
+
+**Annotation:** `landscaper.gardener.cloud/delete-without-uninstall`
+
+**Accepted values:**
+- `true`
+
+#### Effect on Installations/Executions/DeployItems
+
+If the annotation `landscaper.gardener.cloud/delete-without-uninstall: "true"` has been added to an installation, then
+afterwards a deletion of the installation has the following effect:
+
+- the installation, its subinstallations, executions, and deployitems will be deleted,
+- the installed artifacts on the target clusters will not be deleted.
+
+Note that you have to add the annotation **before** you delete the installation.

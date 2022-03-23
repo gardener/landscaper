@@ -61,11 +61,11 @@ func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.De
 func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
 	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
 	managed := sets.NewInt()
-	for i, exec := range o.exec.Spec.DeployItems {
+	for i, di := range o.exec.Spec.DeployItems {
 		execItem := executionItem{
-			Info: *exec.DeepCopy(),
+			Info: *di.DeepCopy(),
 		}
-		if j, found := getDeployItemIndexByManagedName(items, exec.Name); found {
+		if j, found := getDeployItemIndexByManagedName(items, di.Name); found {
 			managed.Insert(j)
 			execItem.DeployItem = items[j].DeepCopy()
 		}

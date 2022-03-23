@@ -9,6 +9,10 @@ import (
 	"errors"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -159,6 +163,14 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 		return true, nil
 	}
 
+	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) {
+		metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+		if err := kubeClient.Update(ctx, exec); err != nil {
+			return false, fmt.Errorf("unable to add delete-without-uninstall annotation to execution %s: %w",
+				exec.Name, err)
+		}
+	}
+
 	if exec.DeletionTimestamp.IsZero() {
 		if err := kubeClient.Delete(ctx, exec); err != nil {
 			return false, err
@@ -175,8 +187,8 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 	return false, nil
 }
 
-func deleteSubInstallations(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (bool, error) {
-	subInsts, err := installations.ListSubinstallations(ctx, kubeClient, inst)
+func deleteSubInstallations(ctx context.Context, kubeClient client.Client, parentInst *lsv1alpha1.Installation) (bool, error) {
+	subInsts, err := installations.ListSubinstallations(ctx, kubeClient, parentInst)
 	if err != nil {
 		return false, err
 	}
@@ -184,21 +196,48 @@ func deleteSubInstallations(ctx context.Context, kubeClient client.Client, inst 
 		return true, nil
 	}
 
-	for _, inst := range subInsts {
-		if inst.DeletionTimestamp.IsZero() {
-			if err := kubeClient.Delete(ctx, inst); err != nil {
+	if err := propagateDeleteWithoutUninstallAnnotation(ctx, kubeClient, parentInst, subInsts); err != nil {
+		return false, err
+	}
+
+	for _, subInst := range subInsts {
+		if subInst.DeletionTimestamp.IsZero() {
+			if err := kubeClient.Delete(ctx, subInst); err != nil {
 				return false, err
 			}
 		}
-		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-			if err := kubeClient.Update(ctx, inst); err != nil {
-				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", inst.Name, err)
+
+		if lsv1alpha1helper.HasOperation(parentInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
+			if err := kubeClient.Update(ctx, subInst); err != nil {
+				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", subInst.Name, err)
 			}
 		}
 	}
 
 	return false, nil
+}
+
+func propagateDeleteWithoutUninstallAnnotation(ctx context.Context, kubeClient client.Client, parentInst *lsv1alpha1.Installation, subInsts []*lsv1alpha1.Installation) error {
+	op := "PropagateDeleteWithoutUninstallAnnotationToSubInstallation"
+
+	if !lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(parentInst.ObjectMeta) {
+		return nil
+	}
+
+	for _, subInst := range subInsts {
+		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+		if err := kubeClient.Update(ctx, subInst); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+
+			msg := fmt.Sprintf("unable to update subinstallation %s: %s", subInst.Name, err.Error())
+			return lserrors.NewWrappedError(err, op, "Update", msg)
+		}
+	}
+
+	return nil
 }
 
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.

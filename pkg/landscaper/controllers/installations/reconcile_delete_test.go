@@ -168,6 +168,33 @@ var _ = Describe("Delete", func() {
 			Expect(ok).To(BeTrue())
 			Expect(ann).To(Equal(string(lsv1alpha1.ForceReconcileOperation)))
 		})
+
+		It("should propagate the delete-without-uninstall annotation to an execution", func() {
+			ctx := context.Background()
+
+			var err error
+			state, err = testenv.InitResources(ctx, "./testdata/state/test3")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			inst := &lsv1alpha1.Installation{}
+			inst.Name = "root"
+			inst.Namespace = state.Namespace
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+			testutils.ExpectNoError(testenv.Client.Update(ctx, inst))
+			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+			exec := &lsv1alpha1.Execution{}
+			exec.Name = "root"
+			exec.Namespace = state.Namespace
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
+			Expect(exec.DeletionTimestamp).ToNot(BeNil())
+			ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
+			Expect(ok).To(BeTrue())
+			Expect(ann).To(Equal("true"))
+		})
 	})
 
 	Context("Controller", func() {
