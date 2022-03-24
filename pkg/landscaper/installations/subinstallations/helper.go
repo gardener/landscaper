@@ -93,10 +93,9 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 		}
 
 		if cdDef.Inline == nil {
-			latestRepoCtx := subInstCompDesc.GetEffectiveRepositoryContext()
 			cdDef = &lsv1alpha1.ComponentDescriptorDefinition{
 				Reference: &lsv1alpha1.ComponentDescriptorReference{
-					RepositoryContext: latestRepoCtx,
+					RepositoryContext: repositoryContext,
 					ComponentName:     subInstCompDesc.Name,
 					Version:           subInstCompDesc.Version,
 				},
