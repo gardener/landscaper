@@ -7,15 +7,17 @@ package landscaper_service_blueprints_test
 import (
 	"context"
 	"encoding/json"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	"io"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"testing"
+
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,13 +43,13 @@ const (
 )
 
 var filesToCopy = map[string]string{
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"):   filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper/blueprint.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-blueprint/blueprint.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/landscaper-configuration.json"):   filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/definition/registry-configuration.json"):     filepath.Join(testData, "registry/landscaper-service/blobs/registry-configuration/schema.json"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper/blueprint.yaml"):        filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-blueprint/blueprint.yaml"),
 	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper/deploy-execution.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/landscaper-blueprint/deploy-execution.yaml"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/blueprint.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/blueprint.yaml"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/deploy-execution.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/deploy-execution.yaml"),
-	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/export-execution.yaml"): filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/export-execution.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/blueprint.yaml"):              filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/blueprint.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/deploy-execution.yaml"):       filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/deploy-execution.yaml"),
+	filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac/export-execution.yaml"):       filepath.Join(testData, "registry/landscaper-service/blobs/rbac-blueprint/export-execution.yaml"),
 }
 
 func copyFile(source, dest string) error {
@@ -79,6 +81,7 @@ func copyFile(source, dest string) error {
 func GetBlueprint(path string) *blueprints.Blueprint {
 	fs := osfs.New()
 	blueprintsFs, err := projectionfs.New(fs, path)
+	Expect(err).ToNot(HaveOccurred())
 	blueprint, err := blueprints.NewFromFs(blueprintsFs)
 	Expect(err).ToNot(HaveOccurred())
 	return blueprint
@@ -162,8 +165,8 @@ var _ = Describe("Landscaper Service Component", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
 		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
 			ComponentDescriptor: landscaperServiceCD,
-			Installation:  &lsv1alpha1.Installation{},
-			Blueprint: GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper")),
+			Installation:        &lsv1alpha1.Installation{},
+			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper")),
 		}, GetImports(filepath.Join(testData, "imports-landscaper.yaml")))
 
 		testutils.ExpectNoError(err)
@@ -178,8 +181,8 @@ var _ = Describe("Landscaper Service Component", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
 		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
 			ComponentDescriptor: landscaperServiceCD,
-			Installation:  &lsv1alpha1.Installation{},
-			Blueprint: GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac")),
+			Installation:        &lsv1alpha1.Installation{},
+			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac")),
 		}, GetImports(filepath.Join(testData, "imports-rbac.yaml")))
 
 		testutils.ExpectNoError(err)
@@ -194,8 +197,8 @@ var _ = Describe("Landscaper Service Component", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
 		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
 			ComponentDescriptor: landscaperServiceCD,
-			Installation:  &lsv1alpha1.Installation{},
-			Blueprint: GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/installation")),
+			Installation:        &lsv1alpha1.Installation{},
+			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/installation")),
 		}, GetImports(filepath.Join(testData, "imports-installation.yaml")))
 
 		testutils.ExpectNoError(err)

@@ -5,14 +5,16 @@
 package deployer_blueprints_test
 
 import (
+	"path/filepath"
+	"testing"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
-	"testing"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
@@ -36,6 +38,7 @@ func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallatio
 	Expect(err).ToNot(HaveOccurred())
 
 	blueprintsFs, err := projectionfs.New(overlayFs, "blueprint")
+	Expect(err).ToNot(HaveOccurred())
 	blueprint, err := blueprints.NewFromFs(blueprintsFs)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -56,7 +59,7 @@ func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallatio
 
 	renderer := lsutils.NewBlueprintRenderer(&cdv2.ComponentDescriptorList{}, nil, nil)
 
-	out, err:= renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
+	out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
 		ComponentDescriptor: &cd,
 		Installation:        &lsv1alpha1.Installation{},
 		Blueprint:           blueprint,

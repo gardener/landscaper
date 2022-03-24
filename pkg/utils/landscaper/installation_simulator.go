@@ -3,20 +3,22 @@ package landscaper
 import (
 	"bytes"
 	"fmt"
+	"path"
+	"regexp"
+	gotmpl "text/template"
+
 	"github.com/Masterminds/sprig/v3"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"github.com/mandelsoft/spiff/spiffing"
+	spiffyaml "github.com/mandelsoft/spiff/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
-	"github.com/mandelsoft/spiff/spiffing"
-	spiffyaml "github.com/mandelsoft/spiff/yaml"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path"
-	"regexp"
-	"sigs.k8s.io/yaml"
-	gotmpl "text/template"
 )
 
 const (
@@ -24,7 +26,7 @@ const (
 )
 
 type InstallationPath struct {
-	name string
+	name   string
 	parent *InstallationPath
 }
 
@@ -87,7 +89,7 @@ func (c emptySimulatorCallbacks) OnExports(_ string, _ map[string]interface{})  
 
 type Exports struct {
 	DataObjects map[string]interface{}
-	Targets map[string]interface{}
+	Targets     map[string]interface{}
 }
 
 type InstallationSimulator struct {
@@ -97,9 +99,9 @@ type InstallationSimulator struct {
 }
 
 func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
-	                          resolver ctf.ComponentResolver,
-							  repositoryContext *cdv2.UnstructuredTypedObject,
-							  exportTemplates ExportTemplates) (*InstallationSimulator, error) {
+	resolver ctf.ComponentResolver,
+	repositoryContext *cdv2.UnstructuredTypedObject,
+	exportTemplates ExportTemplates) (*InstallationSimulator, error) {
 
 	for _, template := range exportTemplates.DeployItemExports {
 		var err error
@@ -292,10 +294,10 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				continue
 			}
 			if exportTemplate.SelectorRegexp.MatchString(path.Join(installationPath, deployItem.Name)) {
-				templateInput := map[string]interface{} {
-					"imports": imports,
+				templateInput := map[string]interface{}{
+					"imports":          imports,
 					"installationPath": installationPath,
-					"templateName": exportTemplate.Name,
+					"templateName":     exportTemplate.Name,
 				}
 
 				tmpl, err := gotmpl.New(exportTemplate.Name).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(exportTemplate.Template)
@@ -372,7 +374,7 @@ func mergeMaps(a, b map[string]interface{}) {
 func convertTargetSpecToTarget(name, namespace string, spec interface{}) (map[string]interface{}, error) {
 	target := lsv1alpha1.Target{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
 			Namespace: namespace,
 		},
 	}

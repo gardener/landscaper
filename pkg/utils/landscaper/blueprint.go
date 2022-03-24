@@ -3,8 +3,12 @@ package landscaper
 import (
 	"context"
 	"fmt"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
@@ -15,12 +19,10 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 type BlueprintRenderer struct {
-	cdList *cdv2.ComponentDescriptorList
+	cdList            *cdv2.ComponentDescriptorList
 	componentResolver ctf.ComponentResolver
 	repositoryContext *cdv2.UnstructuredTypedObject
 }
@@ -85,7 +87,7 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *RenderIn
 func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
 	var (
 		blobResolver ctf.BlobResolver
-		ctx context.Context
+		ctx          context.Context
 	)
 
 	ctx = context.Background()
@@ -99,7 +101,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installat
 		}
 	}
 
-	values := map[string]interface{} {
+	values := map[string]interface{}{
 		"deployitems": deployItemsExports,
 		"dataobjects": installationDataImports,
 		"targets":     installationTargetImports,
@@ -120,7 +122,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installat
 func (r *BlueprintRenderer) renderDeployItems(input *RenderInput, imports map[string]interface{}) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
 	var (
 		blobResolver ctf.BlobResolver
-		ctx context.Context
+		ctx          context.Context
 	)
 
 	ctx = context.Background()
@@ -233,7 +235,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports m
 
 		cd, err := r.componentResolver.Resolve(ctx, r.getRepositoryContext(&RenderInput{
 			ComponentDescriptor: input.ComponentDescriptor,
-			Installation: subInst,
+			Installation:        subInst,
 		}), subComponentName, subComponentVersion)
 		if err != nil {
 			return nil, nil, err
@@ -301,7 +303,7 @@ func (r *BlueprintRenderer) getRepositoryContext(input *RenderInput) *cdv2.Unstr
 	}
 
 	if input.Installation != nil && input.Installation.Spec.ComponentDescriptor != nil {
-		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil{
+		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
 			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext
 		}
 		if input.Installation.Spec.ComponentDescriptor.Inline != nil {

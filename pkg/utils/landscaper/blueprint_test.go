@@ -1,11 +1,13 @@
 package landscaper
 
 import (
-	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"testing"
+
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
-	"testing"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
@@ -20,6 +22,7 @@ func TestConfig(t *testing.T) {
 func GetBlueprint(path string) *blueprints.Blueprint {
 	fs := osfs.New()
 	blueprintsFs, err := projectionfs.New(fs, path)
+	Expect(err).ToNot(HaveOccurred())
 	blueprint, err := blueprints.NewFromFs(blueprintsFs)
 	Expect(err).ToNot(HaveOccurred())
 	return blueprint
@@ -45,8 +48,8 @@ var _ = Describe("Landscaper", func() {
 			renderer := NewBlueprintRenderer(nil, nil, nil)
 			_, err := renderer.RenderDeployItemsAndSubInstallations(&RenderInput{
 				ComponentDescriptor: nil,
-				Installation:  nil,
-				Blueprint: GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
+				Installation:        nil,
+				Blueprint:           GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
 			}, GetImports("./testdata/00-blueprint-with-targetlist/values.yaml"))
 
 			Expect(err).ToNot(HaveOccurred())
@@ -56,8 +59,8 @@ var _ = Describe("Landscaper", func() {
 			renderer := NewBlueprintRenderer(nil, nil, nil)
 			_, err := renderer.RenderDeployItemsAndSubInstallations(&RenderInput{
 				ComponentDescriptor: nil,
-				Installation:  nil,
-				Blueprint: GetBlueprint("./testdata/01-blueprint-with-cdlist/blueprint"),
+				Installation:        nil,
+				Blueprint:           GetBlueprint("./testdata/01-blueprint-with-cdlist/blueprint"),
 			}, GetImports("./testdata/01-blueprint-with-cdlist/values.yaml"))
 
 			Expect(err).ToNot(HaveOccurred())
