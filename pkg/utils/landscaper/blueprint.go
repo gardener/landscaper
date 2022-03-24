@@ -15,8 +15,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -43,18 +41,6 @@ type RenderedDeployItemsSubInstallations struct {
 	InstallationTemplateState map[string][]byte
 }
 
-func ReadBlueprint(path string, fs vfs.FileSystem) (*blueprints.Blueprint, error) {
-	bpFs, err := projectionfs.New(fs, path)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create blueprint fs for %q: %w", path, err)
-	}
-	blueprint, err := blueprints.NewFromFs(bpFs)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read blueprint from %q: %w", path, err)
-	}
-	return blueprint, nil
-}
-
 func NewBlueprintRenderer(cdList *cdv2.ComponentDescriptorList, resolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) *BlueprintRenderer {
 	renderer := &BlueprintRenderer{
 		cdList:            cdList,
@@ -65,6 +51,14 @@ func NewBlueprintRenderer(cdList *cdv2.ComponentDescriptorList, resolver ctf.Com
 }
 
 func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *RenderInput, imports map[string]interface{}) (*RenderedDeployItemsSubInstallations, error) {
+	if input == nil {
+		return nil, fmt.Errorf("input may not be nil")
+	}
+
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
+	}
+
 	if err := r.validateImports(input, imports); err != nil {
 		return nil, err
 	}
@@ -97,7 +91,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installat
 	ctx = context.Background()
 	defer ctx.Done()
 
-	if input != nil && r.componentResolver != nil {
+	if r.componentResolver != nil {
 		var err error
 		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
 		if err != nil {
@@ -306,7 +300,7 @@ func (r *BlueprintRenderer) getRepositoryContext(input *RenderInput) *cdv2.Unstr
 		return r.repositoryContext
 	}
 
-	if input.Installation.Spec.ComponentDescriptor != nil {
+	if input.Installation != nil && input.Installation.Spec.ComponentDescriptor != nil {
 		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil{
 			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext
 		}
@@ -315,7 +309,11 @@ func (r *BlueprintRenderer) getRepositoryContext(input *RenderInput) *cdv2.Unstr
 		}
 	}
 
-	return input.ComponentDescriptor.GetEffectiveRepositoryContext()
+	if input.ComponentDescriptor != nil {
+		return input.ComponentDescriptor.GetEffectiveRepositoryContext()
+	}
+
+	return nil
 }
 
 func validateTargetImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {

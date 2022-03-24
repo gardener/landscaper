@@ -196,7 +196,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		}
 
 		// execute import data mappings
-		err = s.handleDataMappings(subInstallationPath, subInstallation.Spec.ImportDataMappings, subInstDataObjectImports)
+		err = s.handleDataMappings(subInstallationPath, subInstallation.Spec.ImportDataMappings, subInstDataObjectImports, subInstDataObjectImports)
 		if err != nil {
 			return nil, err
 		}
@@ -250,7 +250,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 	}
 
 	// execute export data mappings
-	err = s.handleDataMappings(pathString, ctx.Installation.Spec.ExportDataMappings, currInstallationExports.DataObjects)
+	err = s.handleDataMappings(pathString, ctx.Installation.Spec.ExportDataMappings, dataObjectsCurrentInstAndSiblings, currInstallationExports.DataObjects)
 	if err != nil {
 		return nil, err
 	}
@@ -336,8 +336,8 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 	return exportsByDeployItem, nil
 }
 
-func (s *InstallationSimulator) handleDataMappings(installationPath string, dataMappings map[string]lsv1alpha1.AnyJSON, values map[string]interface{}) error {
-	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(values)
+func (s *InstallationSimulator) handleDataMappings(installationPath string, dataMappings map[string]lsv1alpha1.AnyJSON, input, output map[string]interface{}) error {
+	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(input)
 	if err != nil {
 		return fmt.Errorf("unable to init spiff templater for installation %s: %w", installationPath, err)
 	}
@@ -358,7 +358,7 @@ func (s *InstallationSimulator) handleDataMappings(installationPath string, data
 		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
 			return fmt.Errorf("unable to unmarshal templated import mapping %s for installation %s: %w", key, installationPath, err)
 		}
-		values[key] = data
+		output[key] = data
 	}
 	return nil
 }
