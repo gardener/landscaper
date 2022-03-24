@@ -95,7 +95,7 @@ func CreateInternalInstallation(ctx context.Context, compResolver ctf.ComponentR
 		return nil, nil
 	}
 	cdRef := GetReferenceFromComponentDescriptorDefinition(inst.Spec.ComponentDescriptor)
-	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint)
+	blue, err := blueprints.Resolve(ctx, compResolver, cdRef, inst.Spec.Blueprint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}
@@ -116,7 +116,7 @@ func CreateInternalInstallationWithContext(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint)
+	blue, err := blueprints.Resolve(ctx, compResolver, lsCtx.ComponentDescriptorRef(), inst.Spec.Blueprint, lsCtx.RepositoryContext)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve blueprint for %s/%s: %w", inst.Namespace, inst.Name, err)
 	}

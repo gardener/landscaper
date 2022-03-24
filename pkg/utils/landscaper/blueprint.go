@@ -216,7 +216,12 @@ func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports m
 		subInst.Spec.Blueprint = *subBlueprintDef
 		subInst.Spec.ComponentDescriptor = subCd
 
-		subBlueprint, err := blueprints.Resolve(ctx, r.componentResolver, subCd.Reference, *subBlueprintDef)
+		subInstRepositoryContext := r.getRepositoryContext(&RenderInput{
+			ComponentDescriptor: input.ComponentDescriptor,
+			Installation:        subInst,
+		})
+
+		subBlueprint, err := blueprints.Resolve(ctx, r.componentResolver, subCd.Reference, *subBlueprintDef, subInstRepositoryContext)
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to resolve blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
@@ -233,10 +238,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports m
 			subComponentVersion = subInst.Spec.ComponentDescriptor.Inline.Version
 		}
 
-		cd, err := r.componentResolver.Resolve(ctx, r.getRepositoryContext(&RenderInput{
-			ComponentDescriptor: input.ComponentDescriptor,
-			Installation:        subInst,
-		}), subComponentName, subComponentVersion)
+		cd, err := r.componentResolver.Resolve(ctx, subInstRepositoryContext, subComponentName, subComponentVersion)
 		if err != nil {
 			return nil, nil, err
 		}

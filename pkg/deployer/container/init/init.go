@@ -141,7 +141,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 			return fmt.Errorf("unable to create projection filesystem for path %s: %w", opts.ContentDirPath, err)
 		}
 
-		bp, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint)
+		bp, err := blueprints.Resolve(ctx, cdResolver, cdReference, *providerConfig.Blueprint, nil)
 		if err != nil {
 			return fmt.Errorf("unable to resolve blueprint and component descriptor: %w", err)
 		}

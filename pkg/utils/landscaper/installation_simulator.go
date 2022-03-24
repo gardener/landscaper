@@ -74,8 +74,10 @@ type DeployItemExportTemplate struct {
 
 type InstallationSimulatorCallbacks interface {
 	OnInstallation(path string, installation *lsv1alpha1.Installation)
+	OnInstallationTemplateState(path string, state map[string][]byte)
 	OnImports(path string, imports map[string]interface{})
 	OnDeployItem(path string, deployItem *lsv1alpha1.DeployItem)
+	OnDeployItemTemplateState(path string, state map[string][]byte)
 	OnExports(path string, exports map[string]interface{})
 }
 
@@ -83,8 +85,10 @@ type emptySimulatorCallbacks struct {
 }
 
 func (c emptySimulatorCallbacks) OnInstallation(_ string, _ *lsv1alpha1.Installation) {}
+func (c emptySimulatorCallbacks) OnInstallationTemplateState(_ string, _ map[string][]byte) {}
 func (c emptySimulatorCallbacks) OnImports(_ string, _ map[string]interface{})        {}
 func (c emptySimulatorCallbacks) OnDeployItem(_ string, _ *lsv1alpha1.DeployItem)     {}
+func (c emptySimulatorCallbacks) OnDeployItemTemplateState(_ string, _ map[string][]byte) {}
 func (c emptySimulatorCallbacks) OnExports(_ string, _ map[string]interface{})        {}
 
 type Exports struct {
@@ -156,6 +160,10 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 	renderedDeployItemsAndSubInst, err := s.blueprintRenderer.RenderDeployItemsAndSubInstallations(ctx, imports)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render deploy items and subinstallations %q: %w", pathString, err)
+	}
+
+	if len(renderedDeployItemsAndSubInst.InstallationTemplateState) > 0 {
+		s.callbacks.OnInstallationTemplateState(pathString, renderedDeployItemsAndSubInst.InstallationTemplateState)
 	}
 
 	exportsByDeployItem, err := s.handleDeployItems(pathString, renderedDeployItemsAndSubInst, imports)
@@ -286,6 +294,10 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, imports map[string]interface{}) (map[string]interface{}, error) {
 	exportsByDeployItem := make(map[string]interface{})
 
+	if len(renderedDeployItems.DeployItemTemplateState) > 0 {
+		s.callbacks.OnDeployItemTemplateState(installationPath, renderedDeployItems.DeployItemTemplateState)
+	}
+
 	for _, deployItem := range renderedDeployItems.DeployItems {
 		s.callbacks.OnDeployItem(installationPath, deployItem)
 
@@ -298,6 +310,8 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 					"imports":          imports,
 					"installationPath": installationPath,
 					"templateName":     exportTemplate.Name,
+					"deployItem":       deployItem,
+					"state":			renderedDeployItems.DeployItemTemplateState,
 				}
 
 				tmpl, err := gotmpl.New(exportTemplate.Name).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(exportTemplate.Template)
