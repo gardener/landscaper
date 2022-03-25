@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package landscaper
 
 import (
@@ -22,14 +26,19 @@ import (
 )
 
 const (
+	// rootInstallationName is the name of the dummy root installation
 	rootInstallationName = "root"
 )
 
+// InstallationPath defines elements in an installation, subinstallation chain
 type InstallationPath struct {
-	name   string
+	// name is the name of the current installation in the path
+	name string
+	// parent is the parent installation of the current path element.
 	parent *InstallationPath
 }
 
+// NewInstallationPath creates a new installation path with the root installation named after given name.
 func NewInstallationPath(name string) *InstallationPath {
 	return &InstallationPath{
 		name:   name,
@@ -37,6 +46,7 @@ func NewInstallationPath(name string) *InstallationPath {
 	}
 }
 
+// Child creates a new child installation element with the given name.
 func (p *InstallationPath) Child(name string) *InstallationPath {
 	return &InstallationPath{
 		name:   name,
@@ -44,6 +54,8 @@ func (p *InstallationPath) Child(name string) *InstallationPath {
 	}
 }
 
+// String converts the installation path into a file system path representation,
+// starting at the root installation.
 func (p *InstallationPath) String() string {
 	var elems []string
 
@@ -60,48 +72,81 @@ func (p *InstallationPath) String() string {
 	return path.Join(elems...)
 }
 
+// ExportTemplates contains a list of deploy item export templates.
 type ExportTemplates struct {
+	// DeployItemExports is a list of export templates that are matched with deploy items of installations.
 	DeployItemExports []*DeployItemExportTemplate `json:"deployItems"`
 }
 
+// DeployItemExportTemplate contains a template definition that is executed once the selector matches the installation path and deploy item name.
+// The template has to output a valid yaml structure that contains a map under the key "exports".
+// Input parameters for the template are:
+// "imports": the installation imports
+//	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
+//	"templateName": the user specified name of this template
+//	"deployItem": the complete deploy item structure
+//	"state": contains the calculated deploy items state
 type DeployItemExportTemplate struct {
-	Name     string `json:"name"`
+	// Name is the name of the deploy item export template.
+	Name string `json:"name"`
+	// Selector is a regular expression that must match the installation path and deploy item name.
+	// Example: "root/installationA/.*/myDeployItem.*
 	Selector string `json:"selector"`
+	// Template contains the go template that must output a valid yaml structure containing a key "exports" of type map.
 	Template string `json:"template"`
 
+	// SelectorRegexp is the compiled regular expression of the selector.
 	SelectorRegexp *regexp.Regexp `json:"-"`
 }
 
+// InstallationSimulatorCallbacks are called when installations, deploy items, imports, exports or state elements are found
+// during the simulation run.
 type InstallationSimulatorCallbacks interface {
+	// OnInstallation is called when a new installation was found.
 	OnInstallation(path string, installation *lsv1alpha1.Installation)
+	// OnInstallationTemplateState is called when a new installation template state was found.
 	OnInstallationTemplateState(path string, state map[string][]byte)
+	// OnImports is called when imports of an installation are found.
 	OnImports(path string, imports map[string]interface{})
+	// OnDeployItem is called when a new deploy item was found.
 	OnDeployItem(path string, deployItem *lsv1alpha1.DeployItem)
+	// OnDeployItemTemplateState is called when a new deploy item tepmplate state was found.
 	OnDeployItemTemplateState(path string, state map[string][]byte)
+	// OnExports is called when exports of an installation are found.
 	OnExports(path string, exports map[string]interface{})
 }
 
+// emptySimulatorCallbacks are empty simulator callbacks that are used when no user defined callbacks are set.
 type emptySimulatorCallbacks struct {
 }
 
-func (c emptySimulatorCallbacks) OnInstallation(_ string, _ *lsv1alpha1.Installation) {}
+func (c emptySimulatorCallbacks) OnInstallation(_ string, _ *lsv1alpha1.Installation)       {}
 func (c emptySimulatorCallbacks) OnInstallationTemplateState(_ string, _ map[string][]byte) {}
-func (c emptySimulatorCallbacks) OnImports(_ string, _ map[string]interface{})        {}
-func (c emptySimulatorCallbacks) OnDeployItem(_ string, _ *lsv1alpha1.DeployItem)     {}
-func (c emptySimulatorCallbacks) OnDeployItemTemplateState(_ string, _ map[string][]byte) {}
-func (c emptySimulatorCallbacks) OnExports(_ string, _ map[string]interface{})        {}
+func (c emptySimulatorCallbacks) OnImports(_ string, _ map[string]interface{})              {}
+func (c emptySimulatorCallbacks) OnDeployItem(_ string, _ *lsv1alpha1.DeployItem)           {}
+func (c emptySimulatorCallbacks) OnDeployItemTemplateState(_ string, _ map[string][]byte)   {}
+func (c emptySimulatorCallbacks) OnExports(_ string, _ map[string]interface{})              {}
 
+// Exports contains data objects and targets exported by an installation.
 type Exports struct {
+	// DataObjects contains data object exports.
 	DataObjects map[string]interface{}
-	Targets     map[string]interface{}
+	// Targets contains target exports.
+	Targets map[string]interface{}
 }
 
+// InstallationSimulator simulations the landscaper handling of installations with its deploy items and subinstallations.
+// The exports of deploy items are simulated via user defined ExportTemplates.
 type InstallationSimulator struct {
+	// blueprintRenderer is used to render blueprints of installations.
 	blueprintRenderer *BlueprintRenderer
-	exportTemplates   ExportTemplates
-	callbacks         InstallationSimulatorCallbacks
+	// exportTemplates contains the user defined export templates.
+	exportTemplates ExportTemplates
+	// callbacks contains the user callbacks.
+	callbacks InstallationSimulatorCallbacks
 }
 
+// NewInstallationSimulator creates a new installation simulator.
 func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
 	resolver ctf.ComponentResolver,
 	repositoryContext *cdv2.UnstructuredTypedObject,
@@ -122,11 +167,13 @@ func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
 	}, nil
 }
 
+// SetCallbacks sets user defined simulator callbacks.
 func (s *InstallationSimulator) SetCallbacks(callbacks InstallationSimulatorCallbacks) *InstallationSimulator {
 	s.callbacks = callbacks
 	return s
 }
 
+// Run starts the simulation for the given component descriptor, blueprint and imports and returns the calculated exports.
 func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, imports map[string]interface{}) (*Exports, error) {
 	ctx := &RenderInput{
 		ComponentDescriptor: cd,
@@ -141,6 +188,7 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 	return s.executeInstallation(ctx, nil, imports, imports)
 }
 
+// executeInstallation calculates the exports of the current installation and calls itself recursively for its subinstallations.
 func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*Exports, error) {
 	if installationPath == nil {
 		installationPath = NewInstallationPath(ctx.Installation.Name)
@@ -189,6 +237,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 
 		subInstallationPath := path.Join(pathString, subInstallation.Name)
 
+		// data object imports
 		for _, dataImport := range subInstallation.Installation.Spec.Imports.Data {
 			v, ok := dataObjectsCurrentInstAndSiblings[dataImport.DataRef]
 			if !ok {
@@ -197,6 +246,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 			subInstDataObjectImports[dataImport.Name] = v
 		}
 
+		// target imports
 		for _, targetImport := range subInstallation.Installation.Spec.Imports.Targets {
 			v, ok := targetsCurrentInstAndSiblings[targetImport.Target]
 			if !ok {
@@ -233,6 +283,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		Targets:     make(map[string]interface{}),
 	}
 
+	// collect all data objects that are exported by the current installation via export definition
 	for _, dataExport := range ctx.Installation.Spec.Exports.Data {
 		v, ok := dataObjectsCurrentInstAndSiblings[dataExport.DataRef]
 		if ok {
@@ -244,6 +295,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		}
 	}
 
+	// collect all targets that are exported by the current installation via export definition
 	for _, targetExport := range ctx.Installation.Spec.Exports.Targets {
 		v, ok := targetsCurrentInstAndSiblings[targetExport.Target]
 		if ok {
@@ -251,6 +303,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		}
 		v, ok = renderedExports[targetExport.Target]
 		if ok {
+			// the rendered target exports need to converted to a landscaper installation resource
 			target, err := convertTargetSpecToTarget(targetExport.Name, "default", v)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert target export %s of installation %s to landscaper target type: %w", targetExport.Name, pathString, err)
@@ -265,10 +318,13 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		return nil, err
 	}
 
+	// copy all data object and target exports into a single map which can be used in the exports callback
 	dataObjectAndTargetExports := make(map[string]interface{})
 	mergeMaps(dataObjectAndTargetExports, currInstallationExports.DataObjects)
 	mergeMaps(dataObjectAndTargetExports, currInstallationExports.Targets)
 
+	// When the current installation is the "root" installation, there are no exports specified in the installation resource.
+	// In that case all exports defined in the root installation blueprint will be exported.
 	if pathString == rootInstallationName {
 		for _, export := range ctx.Blueprint.Info.Exports {
 			v, ok := renderedExports[export.Name]
@@ -291,6 +347,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 	return &currInstallationExports, nil
 }
 
+// handleDeployItems handles the export calculation of the deploy items defined for an installation.
 func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, imports map[string]interface{}) (map[string]interface{}, error) {
 	exportsByDeployItem := make(map[string]interface{})
 
@@ -311,7 +368,7 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 					"installationPath": installationPath,
 					"templateName":     exportTemplate.Name,
 					"deployItem":       deployItem,
-					"state":			renderedDeployItems.DeployItemTemplateState,
+					"state":            renderedDeployItems.DeployItemTemplateState,
 				}
 
 				tmpl, err := gotmpl.New(exportTemplate.Name).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(exportTemplate.Template)
@@ -352,6 +409,7 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 	return exportsByDeployItem, nil
 }
 
+// handleDataMappings executes a spiff data mapping template, mapping the input values to output values.
 func (s *InstallationSimulator) handleDataMappings(installationPath string, dataMappings map[string]lsv1alpha1.AnyJSON, input, output map[string]interface{}) error {
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(input)
 	if err != nil {
@@ -379,12 +437,14 @@ func (s *InstallationSimulator) handleDataMappings(installationPath string, data
 	return nil
 }
 
+// mergeMaps copies all elements of b into a.
 func mergeMaps(a, b map[string]interface{}) {
 	for key, val := range b {
 		a[key] = val
 	}
 }
 
+// convertTargetSpecToTarget converts a target spec map into a landscaper target type.
 func convertTargetSpecToTarget(name, namespace string, spec interface{}) (map[string]interface{}, error) {
 	target := lsv1alpha1.Target{
 		ObjectMeta: metav1.ObjectMeta{
