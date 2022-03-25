@@ -85,6 +85,8 @@ type ExportTemplates struct {
 //	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
 //	"templateName": the user specified name of this template
 //	"deployItem": the complete deploy item structure
+//  "cd": the component descriptor
+//  "components": the component descriptor list
 //	"state": contains the calculated deploy items state
 type DeployItemExportTemplate struct {
 	// Name is the name of the deploy item export template.
@@ -127,13 +129,19 @@ func (c emptySimulatorCallbacks) OnDeployItem(_ string, _ *lsv1alpha1.DeployItem
 func (c emptySimulatorCallbacks) OnDeployItemTemplateState(_ string, _ map[string][]byte)   {}
 func (c emptySimulatorCallbacks) OnExports(_ string, _ map[string]interface{})              {}
 
-// Exports contains data objects and targets exported by an installation.
+// Exports contains exported data objects and targets.
 type Exports struct {
 	// DataObjects contains data object exports.
 	DataObjects map[string]interface{}
 	// Targets contains target exports.
 	Targets map[string]interface{}
 }
+
+// InstallationExports contains data exported by an installation.
+type InstallationExports Exports
+
+// BlueprintExports contains data exported by a blueprint.
+type BlueprintExports Exports
 
 // InstallationSimulator simulations the landscaper handling of installations with its deploy items and subinstallations.
 // The exports of deploy items are simulated via user defined ExportTemplates.
@@ -175,7 +183,7 @@ func (s *InstallationSimulator) SetCallbacks(callbacks InstallationSimulatorCall
 }
 
 // Run starts the simulation for the given component descriptor, blueprint and imports and returns the calculated exports.
-func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, imports map[string]interface{}) (*Exports, error) {
+func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, dataImports, targetImports map[string]interface{}) (*BlueprintExports, error) {
 	ctx := &ResolvedInstallation{
 		ComponentDescriptor: cd,
 		Installation: &lsv1alpha1.Installation{
@@ -186,11 +194,12 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 		Blueprint: blueprint,
 	}
 
-	return s.executeInstallation(ctx, nil, imports, imports)
+	_, exports, err := s.executeInstallation(ctx, nil, dataImports, targetImports)
+	return exports, err
 }
 
 // executeInstallation calculates the exports of the current installation and calls itself recursively for its subinstallations.
-func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*Exports, error) {
+func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*InstallationExports, *BlueprintExports, error) {
 	if installationPath == nil {
 		installationPath = NewInstallationPath(ctx.Installation.Name)
 	} else {
@@ -208,16 +217,16 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 
 	renderedDeployItemsAndSubInst, err := s.blueprintRenderer.RenderDeployItemsAndSubInstallations(ctx, imports)
 	if err != nil {
-		return nil, fmt.Errorf("failed to render deploy items and subinstallations %q: %w", pathString, err)
+		return nil, nil, fmt.Errorf("failed to render deploy items and subinstallations %q: %w", pathString, err)
 	}
 
 	if len(renderedDeployItemsAndSubInst.InstallationTemplateState) > 0 {
 		s.callbacks.OnInstallationTemplateState(pathString, renderedDeployItemsAndSubInst.InstallationTemplateState)
 	}
 
-	exportsByDeployItem, err := s.handleDeployItems(pathString, renderedDeployItemsAndSubInst, imports)
+	exportsByDeployItem, err := s.handleDeployItems(pathString, renderedDeployItemsAndSubInst, ctx.ComponentDescriptor, imports)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// contains the data objects available for this installation and all of its siblings
@@ -242,7 +251,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		for _, dataImport := range subInstallation.Installation.Spec.Imports.Data {
 			v, ok := dataObjectsCurrentInstAndSiblings[dataImport.DataRef]
 			if !ok {
-				return nil, fmt.Errorf("unable to find data import %s for installation %s", dataImport.DataRef, subInstallationPath)
+				return nil, nil, fmt.Errorf("unable to find data import %s for installation %s", dataImport.DataRef, subInstallationPath)
 			}
 			subInstDataObjectImports[dataImport.Name] = v
 		}
@@ -251,21 +260,21 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		for _, targetImport := range subInstallation.Installation.Spec.Imports.Targets {
 			v, ok := targetsCurrentInstAndSiblings[targetImport.Target]
 			if !ok {
-				return nil, fmt.Errorf("unable to find target import %s for installation %s", targetImport.Target, subInstallationPath)
+				return nil, nil, fmt.Errorf("unable to find target import %s for installation %s", targetImport.Target, subInstallationPath)
 			}
 			subInstTargetImports[targetImport.Name] = v
 		}
 
 		// execute import data mappings
-		err = s.handleDataMappings(subInstallationPath, subInstallation.Spec.ImportDataMappings, subInstDataObjectImports, subInstDataObjectImports)
+		err = s.handleDataMappings(subInstallationPath, subInstallation.Spec.ImportDataMappings, subInstDataObjectImports)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// render the sub-installation
-		subInstExports, err := s.executeInstallation(&subInstallation, installationPath, subInstDataObjectImports, subInstTargetImports)
+		subInstExports, _, err := s.executeInstallation(&subInstallation, installationPath, subInstDataObjectImports, subInstTargetImports)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// make the exports available for this installation and its siblings
@@ -276,10 +285,10 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	// render export executions
 	renderedExports, err := s.blueprintRenderer.RenderExportExecutions(ctx, dataObjectsCurrentInstAndSiblings, targetsCurrentInstAndSiblings, exportsByDeployItem)
 	if err != nil {
-		return nil, fmt.Errorf("failed to render exports for installation %s: %w", pathString, err)
+		return nil, nil, fmt.Errorf("failed to render exports for installation %s: %w", pathString, err)
 	}
 
-	currInstallationExports := Exports{
+	currInstallationExports := InstallationExports{
 		DataObjects: make(map[string]interface{}),
 		Targets:     make(map[string]interface{}),
 	}
@@ -307,49 +316,63 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 			// the rendered target exports need to converted to a landscaper installation resource
 			target, err := convertTargetSpecToTarget(targetExport.Name, "default", v)
 			if err != nil {
-				return nil, fmt.Errorf("failed to convert target export %s of installation %s to landscaper target type: %w", targetExport.Name, pathString, err)
+				return nil, nil, fmt.Errorf("failed to convert target export %s of installation %s to landscaper target type: %w", targetExport.Name, pathString, err)
 			}
 			currInstallationExports.Targets[targetExport.Name] = target
 		}
 	}
 
 	// execute export data mappings
-	err = s.handleDataMappings(pathString, ctx.Installation.Spec.ExportDataMappings, dataObjectsCurrentInstAndSiblings, currInstallationExports.DataObjects)
+	err = s.handleDataMappings(pathString, ctx.Installation.Spec.ExportDataMappings, currInstallationExports.DataObjects)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	// copy all data object and target exports into a single map which can be used in the exports callback
-	dataObjectAndTargetExports := make(map[string]interface{})
-	mergeMaps(dataObjectAndTargetExports, currInstallationExports.DataObjects)
-	mergeMaps(dataObjectAndTargetExports, currInstallationExports.Targets)
+	currBlueprintExports := BlueprintExports{
+		DataObjects: make(map[string]interface{}),
+		Targets:     make(map[string]interface{}),
+	}
 
-	// When the current installation is the "root" installation, there are no exports specified in the installation resource.
-	// In that case all exports defined in the root installation blueprint will be exported.
-	if pathString == rootInstallationName {
-		for _, export := range ctx.Blueprint.Info.Exports {
-			v, ok := renderedExports[export.Name]
+	// collect all blueprint data object and target exports
+	for _, export := range ctx.Blueprint.Info.Exports {
+		if export.Type == lsv1alpha1.ExportTypeData {
+			// data objec
+			v, ok := dataObjectsCurrentInstAndSiblings[export.Name]
 			if ok {
-				dataObjectAndTargetExports[export.Name] = v
+				currBlueprintExports.DataObjects[export.Name] = v
 			}
-			v, ok = dataObjectsCurrentInstAndSiblings[export.Name]
+			v, ok = renderedExports[export.Name]
 			if ok {
-				dataObjectAndTargetExports[export.Name] = v
+				currBlueprintExports.DataObjects[export.Name] = v
 			}
-			v, ok = targetsCurrentInstAndSiblings[export.Name]
+		} else {
+			// target
+			v, ok := targetsCurrentInstAndSiblings[export.Name]
 			if ok {
-				dataObjectAndTargetExports[export.Name] = v
+				currBlueprintExports.Targets[export.Name] = v
 			}
 		}
 	}
 
+	// copy all data object and target exports into a single map which can be used in the exports callback
+	dataObjectAndTargetExports := make(map[string]interface{})
+	// When the current installation is the "root" installation, there are no exports specified in the installation resource.
+	// In that case all exports defined in the root installation blueprint will be exported.
+	if pathString == rootInstallationName {
+		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.DataObjects)
+		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.Targets)
+	} else {
+		mergeMaps(dataObjectAndTargetExports, currInstallationExports.DataObjects)
+		mergeMaps(dataObjectAndTargetExports, currInstallationExports.Targets)
+	}
+
 	s.callbacks.OnExports(pathString, dataObjectAndTargetExports)
 
-	return &currInstallationExports, nil
+	return &currInstallationExports, &currBlueprintExports, nil
 }
 
 // handleDeployItems handles the export calculation of the deploy items defined for an installation.
-func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, imports map[string]interface{}) (map[string]interface{}, error) {
+func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, cd *cdv2.ComponentDescriptor, imports map[string]interface{}) (map[string]interface{}, error) {
 	exportsByDeployItem := make(map[string]interface{})
 
 	if len(renderedDeployItems.DeployItemTemplateState) > 0 {
@@ -364,13 +387,31 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				continue
 			}
 			if exportTemplate.SelectorRegexp.MatchString(path.Join(installationPath, deployItem.Name)) {
+
 				templateInput := map[string]interface{}{
 					"imports":          imports,
 					"installationPath": installationPath,
 					"templateName":     exportTemplate.Name,
-					"deployItem":       deployItem,
 					"state":            renderedDeployItems.DeployItemTemplateState,
 				}
+
+				deployItemEncoded, err := encodeTemplateInput(deployItem)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encode deploy item %s: %w", deployItem.Name, err)
+				}
+				templateInput["deployItem"] = deployItemEncoded
+
+				cdEncoded, err := encodeTemplateInput(cd)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encode component descriptor for deploy item %s: %w", deployItem.Name, err)
+				}
+				templateInput["cd"] = cdEncoded
+
+				componentsEncoded, err := encodeTemplateInput(s.blueprintRenderer.cdList)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encode component descriptor list for deploy item %s: %w", deployItem.Name, err)
+				}
+				templateInput["components"] = componentsEncoded
 
 				tmpl, err := gotmpl.New(exportTemplate.Name).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(exportTemplate.Template)
 				if err != nil {
@@ -379,7 +420,7 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				}
 
 				data := bytes.NewBuffer([]byte{})
-				if err := tmpl.Execute(data, imports); err != nil {
+				if err := tmpl.Execute(data, templateInput); err != nil {
 					executeError := gotemplate.TemplateErrorBuilder(err).WithSource(&exportTemplate.Template).
 						WithInput(templateInput, template.NewTemplateInputFormatter(true)).
 						Build()
@@ -411,7 +452,9 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 }
 
 // handleDataMappings executes a spiff data mapping template, mapping the input values to output values.
-func (s *InstallationSimulator) handleDataMappings(installationPath string, dataMappings map[string]lsv1alpha1.AnyJSON, input, output map[string]interface{}) error {
+func (s *InstallationSimulator) handleDataMappings(installationPath string, dataMappings map[string]lsv1alpha1.AnyJSON, values map[string]interface{}) error {
+	input := make(map[string]interface{})
+	mergeMaps(input, values)
 	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(input)
 	if err != nil {
 		return fmt.Errorf("unable to init spiff templater for installation %s: %w", installationPath, err)
@@ -419,21 +462,21 @@ func (s *InstallationSimulator) handleDataMappings(installationPath string, data
 	for key, dataMapping := range dataMappings {
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)
 		if err != nil {
-			return fmt.Errorf("unable to parse import mapping %s for installation %s: %w", key, installationPath, err)
+			return fmt.Errorf("unable to parse data mapping %s for installation %s: %w", key, installationPath, err)
 		}
 		res, err := spiff.Cascade(tmpl, nil)
 		if err != nil {
-			return fmt.Errorf("unable to template import mapping %s for installation %s: %w", key, installationPath, err)
+			return fmt.Errorf("unable to template data mapping %s for installation %s: %w", key, installationPath, err)
 		}
 		dataBytes, err := spiffyaml.Marshal(res)
 		if err != nil {
-			return fmt.Errorf("unable to marshal templated import mapping %s for installation %s: %w", key, installationPath, err)
+			return fmt.Errorf("unable to marshal templated data mapping %s for installation %s: %w", key, installationPath, err)
 		}
 		var data interface{}
 		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
-			return fmt.Errorf("unable to unmarshal templated import mapping %s for installation %s: %w", key, installationPath, err)
+			return fmt.Errorf("unable to unmarshal templated data mapping %s for installation %s: %w", key, installationPath, err)
 		}
-		output[key] = data
+		values[key] = data
 	}
 	return nil
 }
@@ -464,4 +507,17 @@ func convertTargetSpecToTarget(name, namespace string, spec interface{}) (map[st
 	}
 	unmarshalled["spec"] = spec
 	return unmarshalled, nil
+}
+
+func encodeTemplateInput(in interface{}) (map[string]interface{}, error) {
+	raw, err := yaml.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+	var encoded map[string]interface{}
+	err = yaml.Unmarshal(raw, &encoded)
+	if err != nil {
+		return nil, err
+	}
+	return encoded, nil
 }
