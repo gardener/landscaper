@@ -147,6 +147,7 @@ type InstallationSimulator struct {
 }
 
 // NewInstallationSimulator creates a new installation simulator.
+// The repositoryContext parameter is optional and can be set to nil.
 func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
 	resolver ctf.ComponentResolver,
 	repositoryContext *cdv2.UnstructuredTypedObject,
@@ -175,7 +176,7 @@ func (s *InstallationSimulator) SetCallbacks(callbacks InstallationSimulatorCall
 
 // Run starts the simulation for the given component descriptor, blueprint and imports and returns the calculated exports.
 func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blueprints.Blueprint, imports map[string]interface{}) (*Exports, error) {
-	ctx := &RenderInput{
+	ctx := &ResolvedInstallation{
 		ComponentDescriptor: cd,
 		Installation: &lsv1alpha1.Installation{
 			ObjectMeta: metav1.ObjectMeta{
@@ -189,7 +190,7 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 }
 
 // executeInstallation calculates the exports of the current installation and calls itself recursively for its subinstallations.
-func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*Exports, error) {
+func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, installationPath *InstallationPath, dataImports, targetImports map[string]interface{}) (*Exports, error) {
 	if installationPath == nil {
 		installationPath = NewInstallationPath(ctx.Installation.Name)
 	} else {
@@ -262,7 +263,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *RenderInput, installati
 		}
 
 		// render the sub-installation
-		subInstExports, err := s.executeInstallation((*RenderInput)(&subInstallation), installationPath, subInstDataObjectImports, subInstTargetImports)
+		subInstExports, err := s.executeInstallation(&subInstallation, installationPath, subInstDataObjectImports, subInstTargetImports)
 		if err != nil {
 			return nil, err
 		}

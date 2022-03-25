@@ -1,23 +1,17 @@
-package landscaper
+package landscaper_test
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
+	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
-
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
-
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Landscaper utils Test Suite")
-}
 
 func GetBlueprint(path string) *blueprints.Blueprint {
 	fs := osfs.New()
@@ -45,8 +39,8 @@ var _ = Describe("Landscaper", func() {
 	Context("Render blueprint", func() {
 
 		It("should render a blueprint that imports a target list", func() {
-			renderer := NewBlueprintRenderer(nil, nil, nil)
-			_, err := renderer.RenderDeployItemsAndSubInstallations(&RenderInput{
+			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
+			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 				ComponentDescriptor: nil,
 				Installation:        nil,
 				Blueprint:           GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
@@ -56,8 +50,8 @@ var _ = Describe("Landscaper", func() {
 		})
 
 		It("should render a blueprint that imports a component descriptor and a component descriptor list", func() {
-			renderer := NewBlueprintRenderer(nil, nil, nil)
-			_, err := renderer.RenderDeployItemsAndSubInstallations(&RenderInput{
+			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
+			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 				ComponentDescriptor: nil,
 				Installation:        nil,
 				Blueprint:           GetBlueprint("./testdata/01-blueprint-with-cdlist/blueprint"),

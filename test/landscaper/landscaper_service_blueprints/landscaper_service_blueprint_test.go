@@ -163,7 +163,7 @@ var _ = Describe("Landscaper Service Component", func() {
 
 	It("should install the landscaper blueprint", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
-		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
+		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 			ComponentDescriptor: landscaperServiceCD,
 			Installation:        &lsv1alpha1.Installation{},
 			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/landscaper")),
@@ -179,7 +179,7 @@ var _ = Describe("Landscaper Service Component", func() {
 
 	It("should install the rbac blueprint", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
-		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
+		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 			ComponentDescriptor: landscaperServiceCD,
 			Installation:        &lsv1alpha1.Installation{},
 			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/rbac")),
@@ -195,7 +195,7 @@ var _ = Describe("Landscaper Service Component", func() {
 
 	It("should install the installation blueprint", func() {
 		renderer := lsutils.NewBlueprintRenderer(&cdList, registry, &repositoryContext)
-		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
+		out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 			ComponentDescriptor: landscaperServiceCD,
 			Installation:        &lsv1alpha1.Installation{},
 			Blueprint:           GetBlueprint(filepath.Join(projectRoot, ".landscaper/landscaper-service/blueprint/installation")),

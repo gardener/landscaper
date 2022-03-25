@@ -59,7 +59,7 @@ func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallatio
 
 	renderer := lsutils.NewBlueprintRenderer(&cdv2.ComponentDescriptorList{}, nil, nil)
 
-	out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.RenderInput{
+	out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
 		ComponentDescriptor: &cd,
 		Installation:        &lsv1alpha1.Installation{},
 		Blueprint:           blueprint,

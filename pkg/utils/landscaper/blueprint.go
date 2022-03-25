@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package landscaper
 
 import (
@@ -21,28 +25,36 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 )
 
+// BlueprintRenderer is able to render a blueprint with given import values or exports for export templates.
 type BlueprintRenderer struct {
-	cdList            *cdv2.ComponentDescriptorList
+	// cdList is the list of local component descriptors available to the renderer.
+	cdList *cdv2.ComponentDescriptorList
+	// componentResolver is used to resolve component descriptors.
 	componentResolver ctf.ComponentResolver
+	// repositoryContext is an optional repository context used to overwrite the effective repository context of component descriptors.
 	repositoryContext *cdv2.UnstructuredTypedObject
 }
 
-type rendererTupleType struct {
+// ResolvedInstallation contains a tuple of component descriptor, installation and blueprint.
+type ResolvedInstallation struct {
 	*cdv2.ComponentDescriptor
 	*lsv1alpha1.Installation
 	*blueprints.Blueprint
 }
 
-type ResolvedInstallation rendererTupleType
-type RenderInput rendererTupleType
-
+// RenderedDeployItemsSubInstallations contains a list of rendered deployitems, deployitem state, installations and installation state.
 type RenderedDeployItemsSubInstallations struct {
-	DeployItems               []*lsv1alpha1.DeployItem
-	DeployItemTemplateState   map[string][]byte
-	Installations             []ResolvedInstallation
+	// DeployItems contains the list of rendered deployitems.
+	DeployItems []*lsv1alpha1.DeployItem
+	// DeployItemTemplateState contains the rendered state of the deployitems templates.
+	DeployItemTemplateState map[string][]byte
+	// Installations contains the rendered installations.
+	Installations []ResolvedInstallation
+	// InstallationTemplateState contains the rendered state of the installation templates.
 	InstallationTemplateState map[string][]byte
 }
 
+// NewBlueprintRenderer creates a new blueprint renderer. The arguments are optional and may be nil.
 func NewBlueprintRenderer(cdList *cdv2.ComponentDescriptorList, resolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) *BlueprintRenderer {
 	renderer := &BlueprintRenderer{
 		cdList:            cdList,
@@ -52,9 +64,11 @@ func NewBlueprintRenderer(cdList *cdv2.ComponentDescriptorList, resolver ctf.Com
 	return renderer
 }
 
-func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *RenderInput, imports map[string]interface{}) (*RenderedDeployItemsSubInstallations, error) {
+// RenderDeployItemsAndSubInstallations renders deploy items and subinstallations of a given blueprint using the given imports.
+// The import values are validated with the JSON schemas defined in the blueprint.
+func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *ResolvedInstallation, imports map[string]interface{}) (*RenderedDeployItemsSubInstallations, error) {
 	if input == nil {
-		return nil, fmt.Errorf("input may not be nil")
+		return nil, fmt.Errorf("render input may not be nil")
 	}
 
 	if input.Blueprint == nil {
@@ -84,11 +98,20 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *RenderIn
 	return renderOut, nil
 }
 
-func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
+// RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.
+func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
 	var (
 		blobResolver ctf.BlobResolver
 		ctx          context.Context
 	)
+
+	if input == nil {
+		return nil, fmt.Errorf("render input may not be nil")
+	}
+
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
+	}
 
 	ctx = context.Background()
 	defer ctx.Done()
@@ -119,7 +142,8 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *RenderInput, installat
 	return exports, nil
 }
 
-func (r *BlueprintRenderer) renderDeployItems(input *RenderInput, imports map[string]interface{}) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+// renderDeployItems renders deploy items.
+func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, imports map[string]interface{}) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
 	var (
 		blobResolver ctf.BlobResolver
 		ctx          context.Context
@@ -163,7 +187,8 @@ func (r *BlueprintRenderer) renderDeployItems(input *RenderInput, imports map[st
 	return deployItems, templateStateHandler, nil
 }
 
-func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports map[string]interface{}) ([]ResolvedInstallation, map[string][]byte, error) {
+// renderSubInstallations renders subinstallations.
+func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, imports map[string]interface{}) ([]ResolvedInstallation, map[string][]byte, error) {
 	ctx := context.Background()
 	defer ctx.Done()
 
@@ -216,7 +241,7 @@ func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports m
 		subInst.Spec.Blueprint = *subBlueprintDef
 		subInst.Spec.ComponentDescriptor = subCd
 
-		subInstRepositoryContext := r.getRepositoryContext(&RenderInput{
+		subInstRepositoryContext := r.getRepositoryContext(&ResolvedInstallation{
 			ComponentDescriptor: input.ComponentDescriptor,
 			Installation:        subInst,
 		})
@@ -251,7 +276,8 @@ func (r *BlueprintRenderer) renderSubInstallations(input *RenderInput, imports m
 	return subInstallations, templateStateHandler, nil
 }
 
-func (r *BlueprintRenderer) validateImports(input *RenderInput, imports map[string]interface{}) error {
+// validateImports validates the imports with the JSON schemas defined in the blueprint
+func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports map[string]interface{}) error {
 
 	validatorConfig := &jsonschema.ReferenceContext{
 		LocalTypes:          input.Blueprint.Info.LocalTypes,
@@ -299,7 +325,12 @@ func (r *BlueprintRenderer) validateImports(input *RenderInput, imports map[stri
 	return allErr.ToAggregate()
 }
 
-func (r *BlueprintRenderer) getRepositoryContext(input *RenderInput) *cdv2.UnstructuredTypedObject {
+// getRepositoryContext retrieves the correct repository context.
+// The priority is as following:
+// 1. explicitly user defined repository context
+// 2. repository context defined in the installation
+// 3. effective repository context defined in the component descriptor.
+func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) *cdv2.UnstructuredTypedObject {
 	if r.repositoryContext != nil {
 		return r.repositoryContext
 	}
