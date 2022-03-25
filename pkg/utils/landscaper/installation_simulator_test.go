@@ -7,6 +7,7 @@ package landscaper_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"path"
 
 	. "github.com/onsi/ginkgo"
@@ -25,6 +26,39 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
 
+type TestSimulatorCallbacks struct {
+	installations     map[string]*lsv1alpha1.Installation
+	installationState map[string]map[string][]byte
+	deployItems       map[string]*lsv1alpha1.DeployItem
+	deployItemsState  map[string]map[string][]byte
+	imports           map[string]interface{}
+	exports           map[string]interface{}
+}
+
+func (c *TestSimulatorCallbacks) OnInstallation(path string, installation *lsv1alpha1.Installation) {
+	c.installations[path] = installation
+}
+
+func (c *TestSimulatorCallbacks) OnInstallationTemplateState(path string, state map[string][]byte) {
+	c.installationState[path] = state
+}
+
+func (c *TestSimulatorCallbacks) OnImports(path string, imports map[string]interface{}) {
+	c.imports[path] = imports
+}
+
+func (c *TestSimulatorCallbacks) OnDeployItem(path string, deployItem *lsv1alpha1.DeployItem) {
+	c.deployItems[fmt.Sprintf("%s/%s", path, deployItem.Name)] = deployItem
+}
+
+func (c *TestSimulatorCallbacks) OnDeployItemTemplateState(path string, state map[string][]byte) {
+	c.deployItemsState[path] = state
+}
+
+func (c *TestSimulatorCallbacks) OnExports(path string, exports map[string]interface{}) {
+	c.exports[path] = exports
+}
+
 var _ = Describe("Installation Simulator", func() {
 	var (
 		testDataDir       = "./testdata/02-subinstallations"
@@ -34,6 +68,14 @@ var _ = Describe("Installation Simulator", func() {
 		cdList            cdv2.ComponentDescriptorList
 		repositoryContext cdv2.UnstructuredTypedObject
 		exportTemplates   lsutils.ExportTemplates
+		callbacks         = &TestSimulatorCallbacks{
+			installations:     make(map[string]*lsv1alpha1.Installation),
+			installationState: make(map[string]map[string][]byte),
+			deployItems:       make(map[string]*lsv1alpha1.DeployItem),
+			deployItemsState:  make(map[string]map[string][]byte),
+			imports:           make(map[string]interface{}),
+			exports:           make(map[string]interface{}),
+		}
 	)
 
 	BeforeEach(func() {
@@ -102,6 +144,7 @@ exports:
 	It("should simulate an installation with subinstallations", func() {
 		simulator, err := lsutils.NewInstallationSimulator(&cdList, registry, &repositoryContext, exportTemplates)
 		Expect(err).ToNot(HaveOccurred())
+		simulator.SetCallbacks(callbacks)
 
 		fs := osfs.New()
 		blueprintsFs, err := projectionfs.New(fs, path.Join(testDataDir, "root/blobs/blueprint"))
@@ -144,5 +187,18 @@ exports:
 		Expect(exports.DataObjects).To(HaveKey("export-root-b"))
 		Expect(exports.DataObjects["export-root-a"]).To(Equal("subinst-a-deploy"))
 		Expect(exports.DataObjects["export-root-b"]).To(Equal("example.com/componentb"))
+
+		Expect(callbacks.installations).To(HaveLen(3))
+		Expect(callbacks.installations).To(HaveKey("root"))
+		Expect(callbacks.installations).To(HaveKey("root/subinst-a"))
+		Expect(callbacks.installations).To(HaveKey("root/subinst-b"))
+		Expect(callbacks.installations["root/subinst-a"].Name).To(Equal("subinst-a"))
+		Expect(callbacks.installations["root/subinst-b"].Name).To(Equal("subinst-b"))
+
+		Expect(callbacks.deployItems).To(HaveLen(2))
+		Expect(callbacks.deployItems).To(HaveKey("root/subinst-a/subinst-a-deploy"))
+		Expect(callbacks.deployItems).To(HaveKey("root/subinst-b/subinst-b-deploy"))
+		Expect(callbacks.deployItems["root/subinst-a/subinst-a-deploy"].Name).To(Equal("subinst-a-deploy"))
+		Expect(callbacks.deployItems["root/subinst-b/subinst-b-deploy"].Name).To(Equal("subinst-b-deploy"))
 	})
 })

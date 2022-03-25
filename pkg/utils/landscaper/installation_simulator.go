@@ -112,7 +112,7 @@ type InstallationSimulatorCallbacks interface {
 	OnImports(path string, imports map[string]interface{})
 	// OnDeployItem is called when a new deploy item was found.
 	OnDeployItem(path string, deployItem *lsv1alpha1.DeployItem)
-	// OnDeployItemTemplateState is called when a new deploy item tepmplate state was found.
+	// OnDeployItemTemplateState is called when a new deploy item template state was found.
 	OnDeployItemTemplateState(path string, state map[string][]byte)
 	// OnExports is called when exports of an installation are found.
 	OnExports(path string, exports map[string]interface{})

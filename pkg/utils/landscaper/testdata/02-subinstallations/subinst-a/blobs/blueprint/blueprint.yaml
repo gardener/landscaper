@@ -41,6 +41,8 @@ deployExecutions:
   - name: deploy-execution
     type: GoTemplate
     template: |
+      state:
+        statekey: stateval
       deployItems:
         - name: subinst-a-deploy
           type: landscaper.gardener.cloud/mock
