@@ -341,7 +341,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	// collect all blueprint data object and target exports
 	for _, export := range ctx.Blueprint.Info.Exports {
 		if export.Type == lsv1alpha1.ExportTypeData {
-			// data objec
+			// data object
 			v, ok := dataObjectsCurrentInstAndSiblings[export.Name]
 			if ok {
 				currBlueprintExports.DataObjects[export.Name] = v
