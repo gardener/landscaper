@@ -66,6 +66,7 @@ var _ = Describe("Installation Simulator", func() {
 		repository        *componentsregistry.LocalRepository
 		cd                *cdv2.ComponentDescriptor
 		cdList            cdv2.ComponentDescriptorList
+		blueprint         *blueprints.Blueprint
 		repositoryContext cdv2.UnstructuredTypedObject
 		exportTemplates   lsutils.ExportTemplates
 		callbacks         = &TestSimulatorCallbacks{
@@ -105,6 +106,13 @@ var _ = Describe("Installation Simulator", func() {
 			*componentA,
 			*componentB,
 		}
+
+		fs := osfs.New()
+		blueprintsFs, err := projectionfs.New(fs, path.Join(testDataDir, "root/blobs/blueprint"))
+		Expect(err).ToNot(HaveOccurred())
+
+		blueprint, err = blueprints.NewFromFs(blueprintsFs)
+		Expect(err).ToNot(HaveOccurred())
 
 		repoCtx := &cdv2.OCIRegistryRepository{
 			ObjectType: cdv2.ObjectType{
@@ -146,13 +154,6 @@ exports:
 		Expect(err).ToNot(HaveOccurred())
 		simulator.SetCallbacks(callbacks)
 
-		fs := osfs.New()
-		blueprintsFs, err := projectionfs.New(fs, path.Join(testDataDir, "root/blobs/blueprint"))
-		Expect(err).ToNot(HaveOccurred())
-
-		blue, err := blueprints.NewFromFs(blueprintsFs)
-		Expect(err).ToNot(HaveOccurred())
-
 		cluster := lsv1alpha1.Target{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "cluster",
@@ -179,7 +180,7 @@ exports:
 			"cluster": clusterMap,
 		}
 
-		exports, err := simulator.Run(cd, blue, dataImports, targetImports)
+		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
 		Expect(exports.DataObjects).To(HaveLen(2))
@@ -200,5 +201,40 @@ exports:
 		Expect(callbacks.deployItems).To(HaveKey("root/subinst-b/subinst-b-deploy"))
 		Expect(callbacks.deployItems["root/subinst-a/subinst-a-deploy"].Name).To(Equal("subinst-a-deploy"))
 		Expect(callbacks.deployItems["root/subinst-b/subinst-b-deploy"].Name).To(Equal("subinst-b-deploy"))
+
+		Expect(callbacks.imports).To(HaveLen(3))
+		Expect(callbacks.imports).To(HaveKey("root"))
+		Expect(callbacks.imports).To(HaveKey("root/subinst-a"))
+		Expect(callbacks.imports).To(HaveKey("root/subinst-b"))
+
+		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-a"))
+		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-b"))
+		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("cluster"))
+
+		Expect(callbacks.imports["root/subinst-b"]).To(HaveKey("subinst-b-param-a"))
+		Expect(callbacks.imports["root/subinst-b"]).To(HaveKey("subinst-b-param-b"))
+		Expect(callbacks.imports["root/subinst-b"]).To(HaveKey("cluster"))
+		Expect(callbacks.imports["root/subinst-b"]).ToNot(HaveKey("subinst-a-param-a"))
+		Expect(callbacks.imports["root/subinst-b"]).ToNot(HaveKey("subinst-a-param-b"))
+
+		Expect(callbacks.imports["root/subinst-b"].(map[string]interface{})["subinst-b-param-b"]).To(Equal("example.com/componenta"))
+
+		Expect(callbacks.exports).To(HaveLen(3))
+		Expect(callbacks.exports).To(HaveKey("root"))
+		Expect(callbacks.exports).To(HaveKey("root/subinst-a"))
+		Expect(callbacks.exports).To(HaveKey("root/subinst-b"))
+
+		Expect(callbacks.exports["root/subinst-a"]).To(HaveKey("subinst-a-export-a"))
+		Expect(callbacks.exports["root/subinst-a"]).To(HaveKey("subinst-a-export-b"))
+
+		Expect(callbacks.exports["root/subinst-b"]).To(HaveKey("subinst-b-export-a"))
+		Expect(callbacks.exports["root/subinst-b"]).To(HaveKey("subinst-b-export-b"))
+		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-a"))
+		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-b"))
+
+		Expect(callbacks.deployItemsState).To(HaveLen(1))
+		Expect(callbacks.deployItemsState).To(HaveKey("root/subinst-a"))
+		Expect(callbacks.deployItemsState["root/subinst-a"]).To(HaveKey("deploydeploy-execution"))
+		Expect(callbacks.deployItemsState["root/subinst-a"]["deploydeploy-execution"]).To(ContainSubstring("stateval"))
 	})
 })
