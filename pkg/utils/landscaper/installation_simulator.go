@@ -26,8 +26,10 @@ import (
 )
 
 const (
-	// rootInstallationName is the name of the dummy root installation
+	// rootInstallationName is the name of the auto-generated root installation
 	rootInstallationName = "root"
+	// rootInstallationAnnotation identifies the auto-generated root installation
+	rootInstallationAnnotation = "landscaper.gardener.cloud/simulator-root-installation"
 )
 
 // InstallationPath defines elements in an installation, subinstallation chain
@@ -189,6 +191,9 @@ func (s *InstallationSimulator) Run(cd *cdv2.ComponentDescriptor, blueprint *blu
 		Installation: &lsv1alpha1.Installation{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: rootInstallationName,
+				Annotations: map[string]string{
+					rootInstallationAnnotation: rootInstallationName,
+				},
 			},
 		},
 		Blueprint: blueprint,
@@ -358,7 +363,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	dataObjectAndTargetExports := make(map[string]interface{})
 	// When the current installation is the "root" installation, there are no exports specified in the installation resource.
 	// In that case all exports defined in the root installation blueprint will be exported.
-	if pathString == rootInstallationName {
+	if _, ok := ctx.Installation.Annotations[rootInstallationAnnotation]; ok {
 		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.DataObjects)
 		mergeMaps(dataObjectAndTargetExports, currBlueprintExports.Targets)
 	} else {
