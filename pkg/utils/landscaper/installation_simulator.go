@@ -77,26 +77,38 @@ func (p *InstallationPath) String() string {
 // ExportTemplates contains a list of deploy item export templates.
 type ExportTemplates struct {
 	// DeployItemExports is a list of export templates that are matched with deploy items of installations.
-	DeployItemExports []*DeployItemExportTemplate `json:"deployItems"`
+	// The template has to output a valid yaml structure that contains a map under the key "exports".
+	// Input parameters for the template are:
+	// "imports": the installation imports
+	//	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
+	//	"templateName": the user specified name of this template
+	//	"deployItem": the complete deploy item structure
+	//  "cd": the component descriptor
+	//  "components": the component descriptor list
+	DeployItemExports []*ExportTemplate `json:"deployItems"`
+	// InstallationExports is a list of export templates that are matched with installations.
+	// The template has to output a valid yaml structure that contains a map under the key "dataExports" and the key "targetExports".
+	// Input parameters for the template are:
+	// "imports": the installation imports
+	//	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
+	//	"templateName": the user specified name of this template
+	//	"installation": the complete installation structure
+	//  "cd": the component descriptor
+	//  "components": the component descriptor list
+	//	"state": contains the calculated installation state
+	InstallationExports []*ExportTemplate `json:"installations"`
 }
 
-// DeployItemExportTemplate contains a template definition that is executed once the selector matches the installation path and deploy item name.
-// The template has to output a valid yaml structure that contains a map under the key "exports".
-// Input parameters for the template are:
-// "imports": the installation imports
-//	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
-//	"templateName": the user specified name of this template
-//	"deployItem": the complete deploy item structure
-//  "cd": the component descriptor
-//  "components": the component descriptor list
-//	"state": contains the calculated deploy items state
-type DeployItemExportTemplate struct {
-	// Name is the name of the deploy item export template.
+// ExportTemplate contains a template definition that is executed once the selector matches.
+type ExportTemplate struct {
+	// Name is the name of the export template.
 	Name string `json:"name"`
-	// Selector is a regular expression that must match the installation path and deploy item name.
+	// Selector; for deploy items: is a regular expression that must match the installation path and deploy item name.
 	// Example: "root/installationA/.*/myDeployItem.*
+	// for installations: is a regular expression that must match the installation path
+	// Example: ".*/installationA"
 	Selector string `json:"selector"`
-	// Template contains the go template that must output a valid yaml structure containing a key "exports" of type map.
+	// Template contains the go template that must output a valid yaml structure.
 	Template string `json:"template"`
 
 	// SelectorRegexp is the compiled regular expression of the selector.
@@ -168,6 +180,14 @@ func NewInstallationSimulator(cdList *cdv2.ComponentDescriptorList,
 		template.SelectorRegexp, err = regexp.Compile(template.Selector)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile deploy item export selector %s: %w", template.Name, err)
+		}
+	}
+
+	for _, template := range exportTemplates.InstallationExports {
+		var err error
+		template.SelectorRegexp, err = regexp.Compile(template.Selector)
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile installation export selector %s: %w", template.Name, err)
 		}
 	}
 
@@ -277,7 +297,8 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 		}
 
 		// render the sub-installation
-		subInstExports, _, err := s.executeInstallation(&subInstallation, installationPath, subInstDataObjectImports, subInstTargetImports)
+		// subInstExports, _, err := s.executeInstallation(&subInstallation, installationPath, subInstDataObjectImports, subInstTargetImports)
+		subInstExports, err := s.handleSubInstallation(installationPath, &subInstallation, subInstDataObjectImports, subInstTargetImports)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -385,6 +406,86 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	return &currInstallationExports, &currBlueprintExports, nil
 }
 
+// handleSubInstallation tries to find an installation export template for the given subinstallation.
+// If no matching installation export template was found, the subinstallation is being executed.
+func (s *InstallationSimulator) handleSubInstallation(installationPath *InstallationPath, subInstallation *ResolvedInstallation, dataImports, targetImports map[string]interface{}) (*InstallationExports, error) {
+	subInstallationPath := installationPath.Child(subInstallation.Installation.Name)
+	subInstallationPathString := subInstallationPath.String()
+
+	for _, installationTemplate := range s.exportTemplates.InstallationExports {
+		if installationTemplate.SelectorRegexp == nil {
+			continue
+		}
+
+		if installationTemplate.SelectorRegexp.MatchString(subInstallationPathString) {
+			imports := make(map[string]interface{})
+			mergeMaps(imports, dataImports)
+			mergeMaps(imports, targetImports)
+
+			s.callbacks.OnInstallation(subInstallationPathString, subInstallation.Installation)
+			s.callbacks.OnImports(subInstallationPathString, imports)
+
+			templateInput := map[string]interface{}{
+				"imports":          imports,
+				"installationPath": subInstallationPathString,
+			}
+
+			installationEncoded, err := encodeTemplateInput(subInstallation.Installation)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode instalation %s: %w", subInstallationPathString, err)
+			}
+			templateInput["installation"] = installationEncoded
+
+			cdEncoded, err := encodeTemplateInput(subInstallation.ComponentDescriptor)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode component descriptor for installation %s: %w", subInstallationPathString, err)
+			}
+			templateInput["cd"] = cdEncoded
+
+			componentsEncoded, err := encodeTemplateInput(s.blueprintRenderer.cdList)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode component descriptor list for installation %s: %w", subInstallationPathString, err)
+			}
+			templateInput["components"] = componentsEncoded
+
+			out, err := executeTemplate(installationTemplate.Name, installationTemplate.Template, templateInput)
+			if err != nil {
+				return nil, err
+			}
+
+			exports := InstallationExports{}
+
+			dataExports, ok := out["dataExports"]
+			if !ok {
+				return nil, fmt.Errorf("template output of export template %s has no data export key", installationTemplate.Name)
+			}
+			exports.DataObjects, ok = dataExports.(map[string]interface{})
+			if !ok {
+				exports.DataObjects = make(map[string]interface{})
+			}
+
+			targetExports, ok := out["targetExports"]
+			if !ok {
+				return nil, fmt.Errorf("template output of export template %s has no target export key", installationTemplate.Name)
+			}
+			exports.Targets, ok = targetExports.(map[string]interface{})
+			if !ok {
+				exports.Targets = make(map[string]interface{})
+			}
+
+			dataObjectAndTargetExports := make(map[string]interface{})
+			mergeMaps(dataObjectAndTargetExports, exports.DataObjects)
+			mergeMaps(dataObjectAndTargetExports, exports.Targets)
+			s.callbacks.OnExports(subInstallationPathString, dataObjectAndTargetExports)
+
+			return &exports, nil
+		}
+	}
+
+	subInstExports, _, err := s.executeInstallation(subInstallation, installationPath, dataImports, targetImports)
+	return subInstExports, err
+}
+
 // handleDeployItems handles the export calculation of the deploy items defined for an installation.
 func (s *InstallationSimulator) handleDeployItems(installationPath string, renderedDeployItems *RenderedDeployItemsSubInstallations, cd *cdv2.ComponentDescriptor, imports map[string]interface{}) (map[string]interface{}, error) {
 	exportsByDeployItem := make(map[string]interface{})
@@ -427,28 +528,11 @@ func (s *InstallationSimulator) handleDeployItems(installationPath string, rende
 				}
 				templateInput["components"] = componentsEncoded
 
-				tmpl, err := gotmpl.New(exportTemplate.Name).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(exportTemplate.Template)
+				out, err := executeTemplate(exportTemplate.Name, exportTemplate.Template, templateInput)
 				if err != nil {
-					parseError := gotemplate.TemplateErrorBuilder(err).WithSource(&exportTemplate.Template).Build()
-					return nil, parseError
-				}
-
-				data := bytes.NewBuffer([]byte{})
-				if err := tmpl.Execute(data, templateInput); err != nil {
-					executeError := gotemplate.TemplateErrorBuilder(err).WithSource(&exportTemplate.Template).
-						WithInput(templateInput, template.NewTemplateInputFormatter(true)).
-						Build()
-					return nil, executeError
-				}
-
-				if err := gotemplate.CreateErrorIfContainsNoValue(data.String(), exportTemplate.Name, templateInput, template.NewTemplateInputFormatter(true)); err != nil {
 					return nil, err
 				}
 
-				var out map[string]interface{}
-				if err := yaml.Unmarshal(data.Bytes(), &out); err != nil {
-					return nil, fmt.Errorf("failed to unmarshal output of export template %s: %w", exportTemplate.Name, err)
-				}
 				exports, ok := out["exports"]
 				if !ok {
 					return nil, fmt.Errorf("template output of export template %s has no export key", exportTemplate.Name)
@@ -500,6 +584,34 @@ func mergeMaps(a, b map[string]interface{}) {
 	for key, val := range b {
 		a[key] = val
 	}
+}
+
+// executeTemplate executes a go template with the given input parameters.
+func executeTemplate(templateName, templateSource string, input map[string]interface{}) (map[string]interface{}, error) {
+	tmpl, err := gotmpl.New(templateName).Funcs(gotmpl.FuncMap(sprig.FuncMap())).Option("missingkey=zero").Parse(templateSource)
+	if err != nil {
+		parseError := gotemplate.TemplateErrorBuilder(err).WithSource(&templateSource).Build()
+		return nil, parseError
+	}
+
+	data := bytes.NewBuffer([]byte{})
+	if err := tmpl.Execute(data, input); err != nil {
+		executeError := gotemplate.TemplateErrorBuilder(err).WithSource(&templateSource).
+			WithInput(input, template.NewTemplateInputFormatter(true)).
+			Build()
+		return nil, executeError
+	}
+
+	if err := gotemplate.CreateErrorIfContainsNoValue(data.String(), templateName, input, template.NewTemplateInputFormatter(true)); err != nil {
+		return nil, err
+	}
+
+	var out map[string]interface{}
+	if err := yaml.Unmarshal(data.Bytes(), &out); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal output of export template %s: %w", templateName, err)
+	}
+
+	return out, nil
 }
 
 // convertTargetSpecToTarget converts a target spec map into a landscaper target type.

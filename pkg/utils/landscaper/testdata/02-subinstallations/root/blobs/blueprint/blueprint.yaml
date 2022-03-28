@@ -29,6 +29,11 @@ exports:
     schema:
       type: string
 
+  - name: export-root-c
+    type: data
+    schema:
+      type: string
+
   - name: export-root-target
     type: target
     targetType: landscaper.gardener.cloud/kubernetes-cluster
@@ -40,6 +45,7 @@ exportExecutions:
       exports:
         export-root-a: {{ index .values "dataobjects" "export-subinst-a" "val-a" }}
         export-root-b: {{ index .values "dataobjects" "subinst-b-export-b" }}
+        export-root-c: {{ index .values "dataobjects" "subinst-c-export" }}
         export-root-target:
           type: {{ index .values "targets" "subinst-b-export-target" "spec" "type" }}
           config:
@@ -118,3 +124,17 @@ subinstallations:
       export-subinst-b:
         val-a: (( subinst-b-export-a ))
         val-b: (( subinst-b-export-b ))
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: subinst-c
+
+    blueprint:
+      ref: cd://componentReferences/component-c/resources/blueprint
+
+    exports:
+      data:
+        - name: subinst-c-export
+          dataRef: subinst-c-export
+

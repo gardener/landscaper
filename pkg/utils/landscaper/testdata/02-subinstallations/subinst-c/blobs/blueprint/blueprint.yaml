@@ -1,0 +1,8 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+exports:
+  - name: subinst-c-export
+    type: data
+    schema:
+      type: string

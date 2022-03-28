@@ -125,7 +125,7 @@ var _ = Describe("Installation Simulator", func() {
 		repositoryContext.Raw, err = json.Marshal(repoCtx)
 		Expect(err).ToNot(HaveOccurred())
 
-		exportTemplates.DeployItemExports = []*lsutils.DeployItemExportTemplate{
+		exportTemplates.DeployItemExports = []*lsutils.ExportTemplate{
 			{
 				Name:     "subinst-a-deploy",
 				Selector: ".*/subinst-a-deploy",
@@ -145,6 +145,18 @@ exports:
   subinst-b-export-b: {{ .cd.component.name }}
 `,
 				SelectorRegexp: nil,
+			},
+		}
+
+		exportTemplates.InstallationExports = []*lsutils.ExportTemplate{
+			{
+				Name:     "subinst-c",
+				Selector: ".*/subinst-c",
+				Template: `
+dataExports:
+  subinst-c-export: {{ .installation.metadata.name }}
+targetExports: []
+`,
 			},
 		}
 	})
@@ -184,11 +196,13 @@ exports:
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
 
-		Expect(exports.DataObjects).To(HaveLen(2))
+		Expect(exports.DataObjects).To(HaveLen(3))
 		Expect(exports.DataObjects).To(HaveKey("export-root-a"))
 		Expect(exports.DataObjects).To(HaveKey("export-root-b"))
+		Expect(exports.DataObjects).To(HaveKey("export-root-c"))
 		Expect(exports.DataObjects["export-root-a"]).To(Equal("subinst-a-deploy"))
 		Expect(exports.DataObjects["export-root-b"]).To(Equal("example.com/componentb"))
+		Expect(exports.DataObjects["export-root-c"]).To(Equal("subinst-c"))
 
 		Expect(exports.Targets).To(HaveLen(1))
 		Expect(exports.Targets).To(HaveKey("export-root-target"))
@@ -200,12 +214,14 @@ exports:
 		Expect(target.Spec.Type).To(Equal(lsv1alpha1.KubernetesClusterTargetType))
 		Expect(target.Spec.Configuration).ToNot(BeNil())
 
-		Expect(callbacks.installations).To(HaveLen(3))
+		Expect(callbacks.installations).To(HaveLen(4))
 		Expect(callbacks.installations).To(HaveKey("root"))
 		Expect(callbacks.installations).To(HaveKey("root/subinst-a"))
 		Expect(callbacks.installations).To(HaveKey("root/subinst-b"))
+		Expect(callbacks.installations).To(HaveKey("root/subinst-c"))
 		Expect(callbacks.installations["root/subinst-a"].Name).To(Equal("subinst-a"))
 		Expect(callbacks.installations["root/subinst-b"].Name).To(Equal("subinst-b"))
+		Expect(callbacks.installations["root/subinst-c"].Name).To(Equal("subinst-c"))
 
 		Expect(callbacks.deployItems).To(HaveLen(2))
 		Expect(callbacks.deployItems).To(HaveKey("root/subinst-a/subinst-a-deploy"))
@@ -213,10 +229,11 @@ exports:
 		Expect(callbacks.deployItems["root/subinst-a/subinst-a-deploy"].Name).To(Equal("subinst-a-deploy"))
 		Expect(callbacks.deployItems["root/subinst-b/subinst-b-deploy"].Name).To(Equal("subinst-b-deploy"))
 
-		Expect(callbacks.imports).To(HaveLen(3))
+		Expect(callbacks.imports).To(HaveLen(4))
 		Expect(callbacks.imports).To(HaveKey("root"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-a"))
 		Expect(callbacks.imports).To(HaveKey("root/subinst-b"))
+		Expect(callbacks.imports).To(HaveKey("root/subinst-c"))
 
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-a"))
 		Expect(callbacks.imports["root/subinst-a"]).To(HaveKey("subinst-a-param-b"))
@@ -230,10 +247,11 @@ exports:
 
 		Expect(callbacks.imports["root/subinst-b"].(map[string]interface{})["subinst-b-param-b"]).To(Equal("example.com/componenta"))
 
-		Expect(callbacks.exports).To(HaveLen(3))
+		Expect(callbacks.exports).To(HaveLen(4))
 		Expect(callbacks.exports).To(HaveKey("root"))
 		Expect(callbacks.exports).To(HaveKey("root/subinst-a"))
 		Expect(callbacks.exports).To(HaveKey("root/subinst-b"))
+		Expect(callbacks.exports).To(HaveKey("root/subinst-c"))
 
 		Expect(callbacks.exports["root/subinst-a"]).To(HaveKey("subinst-a-export-a"))
 		Expect(callbacks.exports["root/subinst-a"]).To(HaveKey("subinst-a-export-b"))
@@ -243,6 +261,8 @@ exports:
 		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-a"))
 		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-b"))
 		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-target"))
+
+		Expect(callbacks.exports["root/subinst-c"]).To(HaveKey("subinst-c-export"))
 
 		Expect(callbacks.deployItemsState).To(HaveLen(1))
 		Expect(callbacks.deployItemsState).To(HaveKey("root/subinst-a"))
