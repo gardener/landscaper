@@ -356,6 +356,15 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 			if ok {
 				currBlueprintExports.Targets[export.Name] = v
 			}
+			v, ok = renderedExports[export.Name]
+			if ok {
+				// the rendered target exports need to converted to a landscaper installation resource
+				target, err := convertTargetSpecToTarget(export.Name, "default", v)
+				if err != nil {
+					return nil, nil, fmt.Errorf("failed to convert target export %s of installation %s to landscaper target type: %w", export.Name, pathString, err)
+				}
+				currBlueprintExports.Targets[export.Name] = target
+			}
 		}
 	}
 

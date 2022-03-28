@@ -29,6 +29,10 @@ exports:
     schema:
       type: string
 
+  - name: export-root-target
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
 exportExecutions:
   - name: export
     type: GoTemplate
@@ -36,6 +40,11 @@ exportExecutions:
       exports:
         export-root-a: {{ index .values "dataobjects" "export-subinst-a" "val-a" }}
         export-root-b: {{ index .values "dataobjects" "subinst-b-export-b" }}
+        export-root-target:
+          type: {{ index .values "targets" "subinst-b-export-target" "spec" "type" }}
+          config:
+            kubeconfig: |
+      {{ index .values "targets" "subinst-b-export-target" "spec" "config" "kubeconfig" | indent 8 }}
 
 subinstallations:
   - apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -100,6 +109,10 @@ subinstallations:
           dataRef: subinst-a-export-a
         - name: subinst-b-export-b
           dataRef: subinst-b-export-b
+
+      targets:
+        - name: subinst-b-export-target
+          target: subinst-b-export-target
 
     exportDataMappings:
       export-subinst-b:

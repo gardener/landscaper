@@ -183,11 +183,22 @@ exports:
 		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exports).ToNot(BeNil())
+
 		Expect(exports.DataObjects).To(HaveLen(2))
 		Expect(exports.DataObjects).To(HaveKey("export-root-a"))
 		Expect(exports.DataObjects).To(HaveKey("export-root-b"))
 		Expect(exports.DataObjects["export-root-a"]).To(Equal("subinst-a-deploy"))
 		Expect(exports.DataObjects["export-root-b"]).To(Equal("example.com/componentb"))
+
+		Expect(exports.Targets).To(HaveLen(1))
+		Expect(exports.Targets).To(HaveKey("export-root-target"))
+		marshalledTarget, err := json.Marshal(exports.Targets["export-root-target"])
+		Expect(err).ToNot(HaveOccurred())
+		target := &lsv1alpha1.Target{}
+		err = json.Unmarshal(marshalledTarget, target)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(target.Spec.Type).To(Equal(lsv1alpha1.KubernetesClusterTargetType))
+		Expect(target.Spec.Configuration).ToNot(BeNil())
 
 		Expect(callbacks.installations).To(HaveLen(3))
 		Expect(callbacks.installations).To(HaveKey("root"))
@@ -231,6 +242,7 @@ exports:
 		Expect(callbacks.exports["root/subinst-b"]).To(HaveKey("subinst-b-export-b"))
 		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-a"))
 		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-b"))
+		Expect(callbacks.exports["root/subinst-b"]).ToNot(HaveKey("subinst-a-export-target"))
 
 		Expect(callbacks.deployItemsState).To(HaveLen(1))
 		Expect(callbacks.deployItemsState).To(HaveKey("root/subinst-a"))

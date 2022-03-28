@@ -29,6 +29,10 @@ exports:
     schema:
       type: string
 
+  - name: subinst-b-export-target
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
 exportExecutions:
   - name: export
     type: GoTemplate
@@ -36,6 +40,29 @@ exportExecutions:
       exports:
        subinst-b-export-a: {{ index .values "deployitems" "subinst-b-deploy" "subinst-b-export-a" }}
        subinst-b-export-b: {{ index .values "deployitems" "subinst-b-deploy" "subinst-b-export-b" }}
+       subinst-b-export-target:
+         type: landscaper.gardener.cloud/kubernetes-cluster
+         config:
+           kubeconfig: |
+             apiVersion: v1
+             kind: Config
+             clusters:
+               - name: test
+                 cluster:
+                   server: 'https://api.test.local'
+                   certificate-authority-data: >-
+                     askadsklasoijasdlm
+             contexts:
+               - name: test
+                 context:
+                   cluster: test
+                   user: testuser
+             current-context: test
+             users:
+               - name: testuser
+                 user:
+                   token: >-
+                     abcdefghij
 
 deployExecutions:
   - name: deploy-execution
