@@ -283,11 +283,39 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 
 		// target imports
 		for _, targetImport := range subInstallation.Installation.Spec.Imports.Targets {
-			v, ok := targetsCurrentInstAndSiblings[targetImport.Target]
-			if !ok {
-				return nil, nil, fmt.Errorf("unable to find target import %s for installation %s", targetImport.Target, subInstallationPath)
+			var (
+				ok     bool
+				target interface{}
+			)
+
+			if len(targetImport.Target) > 0 {
+				// single target
+				target, ok = targetsCurrentInstAndSiblings[targetImport.Target]
+				if !ok {
+					return nil, nil, fmt.Errorf("unable to find target import %s for installation %s", targetImport.Target, subInstallationPath)
+				}
+			} else if len(targetImport.Targets) > 0 {
+				// target list
+				targetList := make([]interface{}, 0, len(targetImport.Targets))
+				for _, t := range targetImport.Targets {
+					target, ok = targetsCurrentInstAndSiblings[t]
+					if !ok {
+						return nil, nil, fmt.Errorf("unable to find target list import %s for installation %s", t, subInstallationPath)
+					}
+					targetList = append(targetList, target)
+				}
+				target = targetList
+			} else if len(targetImport.TargetListReference) > 0 {
+				// target list reference
+				target, ok = targetsCurrentInstAndSiblings[targetImport.TargetListReference]
+				if !ok {
+					return nil, nil, fmt.Errorf("unable to find target list reference import %s for installation %s", targetImport.TargetListReference, subInstallationPath)
+				}
+			} else {
+				return nil, nil, fmt.Errorf("either target, targets or targetListRef must be specified for import %s for installation %s", targetImport.Name, subInstallationPath)
 			}
-			subInstTargetImports[targetImport.Name] = v
+
+			subInstTargetImports[targetImport.Name] = target
 		}
 
 		// execute import data mappings

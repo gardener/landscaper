@@ -177,10 +177,20 @@ targetExports: []
 			},
 		}
 
+		clusterList := []lsv1alpha1.Target{
+			cluster,
+		}
+
 		marshaled, err := yaml.Marshal(cluster)
 		Expect(err).ToNot(HaveOccurred())
 		var clusterMap map[string]interface{}
 		err = yaml.Unmarshal(marshaled, &clusterMap)
+		Expect(err).ToNot(HaveOccurred())
+
+		marshaled, err = yaml.Marshal(clusterList)
+		Expect(err).ToNot(HaveOccurred())
+		var clusterListMap []interface{}
+		err = yaml.Unmarshal(marshaled, &clusterListMap)
 		Expect(err).ToNot(HaveOccurred())
 
 		dataImports := map[string]interface{}{
@@ -189,7 +199,8 @@ targetExports: []
 		}
 
 		targetImports := map[string]interface{}{
-			"cluster": clusterMap,
+			"cluster":  clusterMap,
+			"clusters": clusterListMap,
 		}
 
 		exports, err := simulator.Run(cd, blueprint, dataImports, targetImports)
@@ -246,6 +257,16 @@ targetExports: []
 		Expect(callbacks.imports["root/subinst-b"]).ToNot(HaveKey("subinst-a-param-b"))
 
 		Expect(callbacks.imports["root/subinst-b"].(map[string]interface{})["subinst-b-param-b"]).To(Equal("example.com/componenta"))
+
+		Expect(callbacks.imports["root/subinst-c"]).To(HaveKey("clusters-a"))
+		clustersImport, ok := callbacks.imports["root/subinst-c"].(map[string]interface{})["clusters-a"].([]interface{})
+		Expect(ok).To(BeTrue())
+		Expect(clustersImport).To(HaveLen(1))
+
+		Expect(callbacks.imports["root/subinst-c"]).To(HaveKey("clusters-b"))
+		clustersImport, ok = callbacks.imports["root/subinst-c"].(map[string]interface{})["clusters-b"].([]interface{})
+		Expect(ok).To(BeTrue())
+		Expect(clustersImport).To(HaveLen(1))
 
 		Expect(callbacks.exports).To(HaveLen(4))
 		Expect(callbacks.exports).To(HaveKey("root"))

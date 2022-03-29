@@ -6,6 +6,10 @@ imports:
     required: true
     targetType: landscaper.gardener.cloud/kubernetes-cluster
 
+  - name: clusters
+    type: targetList
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
   - name: root-param-a
     required: true
     type: data
@@ -132,6 +136,14 @@ subinstallations:
 
     blueprint:
       ref: cd://componentReferences/component-c/resources/blueprint
+
+    imports:
+      targets:
+        - name: clusters-a
+          targets:
+            - cluster
+        - name: clusters-b
+          targetListRef: clusters
 
     exports:
       data:
