@@ -20,6 +20,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -42,10 +43,12 @@ var _ = Describe("DeployItemExecutions", func() {
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
+		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		imps, err := rh.GetImports()
+		Expect(err).ToNot(HaveOccurred())
+		Expect(rh.ImportsSatisfied()).To(Succeed())
 		c := imports.NewConstructor(op)
-		Expect(c.Construct(ctx, inInstRoot)).To(Succeed())
-		val := imports.NewTestValidator(op, inInstRoot)
-		Expect(val.ImportsSatisfied(ctx, inInstRoot)).To(Succeed())
+		Expect(c.Construct(ctx, imps)).To(Succeed())
 		return ctx, inInstRoot
 	}
 
