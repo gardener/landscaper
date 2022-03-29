@@ -140,7 +140,7 @@ func (t *Target) GetInClusterObjects() []client.Object {
 }
 
 func (t *Target) ComputeConfigGeneration() string {
-	return strconv.Itoa(int(t.GetInClusterObject().GetGeneration()))
+	return strconv.FormatInt(t.GetInClusterObject().GetGeneration(), 10)
 }
 
 func (t *Target) GetListItems() []ImportedBase {

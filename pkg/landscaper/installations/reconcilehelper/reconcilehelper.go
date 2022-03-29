@@ -94,7 +94,7 @@ func (rh *ReconcileHelper) UpdateAllowed() error {
 	err := rh.InstallationsDependingOnReady()
 	if err != nil {
 		// at least one of the installations the current one depends on is not succeeded or has pending changes
-		return installations.NewNotCompletedDependentsErrorf(err, "not all installations which is depended on are ready: %s", err.Error())
+		return installations.NewNotCompletedDependentsErrorf(err, "not all installations which are depended on are ready: %s", err.Error())
 	}
 	err = rh.ImportsSatisfied()
 	return err
@@ -185,7 +185,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 	return returnAndSetCondition(true), nil
 }
 
-// InstallationsDependingOnReady returns true if all installations the current one depends on are
+// InstallationsDependingOnReady returns nil if all installations the current one depends on are
 // - in phase 'Succeeded'
 // - up-to-date (observedGeneration == generation)
 // - not queued for reconciliation (no 'landscaper.gardener.cloud/operation' annotation with value 'reconcile' or 'forceReconcile')
@@ -428,7 +428,7 @@ func ownerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
 	return owner != nil && owner.Kind == "Installation"
 }
 
-// getConfigGenerationsFromImportStatus the config generation(s) for the given import
+// getConfigGenerationsFromImportStatus gets the config generation(s) for the given import
 // If the import is a list-type import, the second argument will contain a mapping from the in-cluster object names to their respective config generations.
 // Otherwise, the first argument will contain the config generation.
 // The 'unused' return value will be set to its default value.
