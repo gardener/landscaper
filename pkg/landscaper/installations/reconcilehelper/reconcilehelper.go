@@ -468,6 +468,10 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 	return configGen, configGens, nil
 }
 
+// checkStateForImport verifies that the given import is valid by performing some checks on the owner of the imported object:
+// - if the import comes from the parent, it is verified that the parent is 'Progressing' and actually imports the import
+// - if the import is owned by an installation which is neither the current one nor its parent, it is verified that
+//   the exporting installation is actually exporting this value and is a sibling of the current installation.
 func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobjects.Imported) error {
 	owner := imp.GetOwnerReference()
 	if owner == nil || owner.Kind != "Installation" {

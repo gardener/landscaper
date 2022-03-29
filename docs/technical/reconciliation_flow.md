@@ -12,9 +12,6 @@ Please note that errors can occur in most of the steps for various reasons. To n
   - The arrow means that another flow is started. It usually corresponds to a method call in the code. If not described otherwise, the current flow will continue after the subroutine has returned. The description of the step provides more information on which flow is started.
 - ✔️
   - The check mark stands for 'action' and means that in this step, the most important part of the reconciliation flow is performed. The exact meaning depends on the type of resource which is being reconciled. For example, during the installation reconcile, the most important action would be the creation/update/deletion of the nested installations and executions. This is what the reconciliation is actually supposed to do, everything else around it is just there to ensure that this happens under the correct conditions.
-<!--- 🚫
-  - This symbol represents a potential error. If it is attached to a step together with some description, it means that this step could result in an error and the description gives further information on how the error looks like. As stated above, please note that this is only used to mark *some* of the potential errors, not *all* of them. Even steps without this symbol can abort the reconciliation with an error. For this reason, errors are not marked as potential outcome for checks (in combination with ❔) or on top-level steps which are split up in smaller ones.
--->
 
 ## Installations
 
@@ -161,11 +158,6 @@ This reconciliation flow is executed if the installation has a deletion timestam
 
     See step 1.2 for a description (except for the propagation of the force-reconcile operation annotation).
 
-<!--
-## Executions
-
-### Core Reconciliation Logic
--->
 
 ## DeployItems
 
