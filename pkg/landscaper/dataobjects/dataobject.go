@@ -10,12 +10,15 @@ import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 )
+
+var _ ImportedBase = &DataObject{}
 
 // DataObject is the internal representation of a data object.
 type DataObject struct {
@@ -24,6 +27,7 @@ type DataObject struct {
 
 	FieldValue *lsv1alpha1.FieldValueDefinition
 	Metadata   Metadata
+	Def        *lsv1alpha1.DataImport
 }
 
 // Metadata describes the metadata of a data object.
@@ -192,4 +196,40 @@ func (do DataObject) Apply(raw *lsv1alpha1.DataObject) error {
 	do.Metadata.Hash = generateHash(raw.Data.RawMessage)
 	SetMetadataFromObject(raw, do.Metadata)
 	return nil
+}
+
+// Imported interface
+
+func (do *DataObject) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeData
+}
+
+func (do *DataObject) IsListTypeImport() bool {
+	return false
+}
+
+func (do *DataObject) GetInClusterObject() client.Object {
+	return do.Raw
+}
+func (do *DataObject) GetInClusterObjects() []client.Object {
+	return nil
+}
+
+func (do *DataObject) ComputeConfigGeneration() string {
+	if len(do.Metadata.Hash) != 0 {
+		return do.Metadata.Hash
+	}
+	return generateHash(do.Raw.Data.RawMessage)
+}
+
+func (do *DataObject) GetListItems() []ImportedBase {
+	return nil
+}
+
+func (do *DataObject) GetImportReference() string {
+	return do.Def.DataRef
+}
+
+func (do *DataObject) GetImportDefinition() interface{} {
+	return do.Def
 }

@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package imports_test
+package reconcilehelper_test
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func TestConfig(t *testing.T) {
 	RunSpecs(t, "Installations Imports Test Suite")
 }
 
-func createDefaultContextsForNamespace(kubeClient client.Client) {
+func createDefaultContextsForNamespaces(kubeClient client.Client) {
 	// create default repo for all namespaces
 	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
 	for i := 1; i <= 11; i++ {

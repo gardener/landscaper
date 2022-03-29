@@ -8,18 +8,22 @@ import (
 	"encoding/json"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
+
+var _ ImportedBase = &ComponentDescriptorList{}
 
 // ComponentDescriptorList is the internal representation of a list of targets.
 type ComponentDescriptorList struct {
 	ComponentDescriptors []*ComponentDescriptor
+	Def                  *lsv1alpha1.ComponentDescriptorImport
 }
 
 // NewComponentDescriptorList creates a new internal component descriptor list.
 func NewComponentDescriptorList() *ComponentDescriptorList {
-	return &ComponentDescriptorList{
-		ComponentDescriptors: []*ComponentDescriptor{},
-	}
+	return NewComponentDescriptorListWithSize(0)
 }
 
 // NewComponentDescriptorListWithSize creates a new internal component descriptor list with a given size.
@@ -51,4 +55,42 @@ func (cdl *ComponentDescriptorList) GetData() (interface{}, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+// Imported interface
+
+func (cdl *ComponentDescriptorList) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeComponentDescriptorList
+}
+
+func (cdl *ComponentDescriptorList) IsListTypeImport() bool {
+	return true
+}
+
+func (cdl *ComponentDescriptorList) GetInClusterObject() client.Object {
+	return nil
+}
+func (cdl *ComponentDescriptorList) GetInClusterObjects() []client.Object {
+	// component descriptors are not represented as in-cluster landscaper objects
+	return nil
+}
+
+func (cdl *ComponentDescriptorList) ComputeConfigGeneration() string {
+	return ""
+}
+
+func (cdl *ComponentDescriptorList) GetListItems() []ImportedBase {
+	res := make([]ImportedBase, len(cdl.ComponentDescriptors))
+	for i := range cdl.ComponentDescriptors {
+		res[i] = cdl.ComponentDescriptors[i]
+	}
+	return res
+}
+
+func (cdl *ComponentDescriptorList) GetImportReference() string {
+	return ""
+}
+
+func (cdl *ComponentDescriptorList) GetImportDefinition() interface{} {
+	return cdl.Def
 }

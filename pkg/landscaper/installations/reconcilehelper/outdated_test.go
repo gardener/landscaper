@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package imports_test
+package reconcilehelper_test
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
+	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -38,10 +38,10 @@ var _ = Describe("OutdatedImports", func() {
 			err   error
 			state *envtest.State
 		)
-		fakeClient, state, err = envtest.NewFakeClientFromPath("./testdata/state")
+		fakeClient, state, err = envtest.NewFakeClientFromPath("../imports/testdata/state")
 		Expect(err).ToNot(HaveOccurred())
 
-		createDefaultContextsForNamespace(fakeClient)
+		createDefaultContextsForNamespaces(fakeClient)
 		fakeInstallations = state.Installations
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
@@ -62,12 +62,11 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		val, err := imports.NewValidator(ctx, op)
-		Expect(err).To(Succeed())
 
-		outdated, err := val.OutdatedImports(ctx)
+		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
-		Expect(outdated).To(BeTrue())
+		Expect(upToDate).To(BeFalse())
 	})
 
 	It("should return that imports are outdated if a import from another component is outdated", func() {
@@ -83,12 +82,11 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		val, err := imports.NewValidator(ctx, op)
-		Expect(err).To(Succeed())
 
-		outdated, err := val.OutdatedImports(ctx)
+		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
-		Expect(outdated).To(BeTrue())
+		Expect(upToDate).To(BeFalse())
 	})
 
 	It("should return that no imports are outdated", func() {
@@ -100,12 +98,11 @@ var _ = Describe("OutdatedImports", func() {
 		Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
-		val, err := imports.NewValidator(ctx, op)
-		Expect(err).To(Succeed())
 
-		outdated, err := val.OutdatedImports(ctx)
+		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
-		Expect(outdated).To(BeFalse())
+		Expect(upToDate).To(BeTrue())
 	})
 
 	Context("import from manual provided data import", func() {
@@ -121,12 +118,11 @@ var _ = Describe("OutdatedImports", func() {
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-			val, err := imports.NewValidator(ctx, op)
-			Expect(err).To(Succeed())
 
-			outdated, err := val.OutdatedImports(ctx)
+			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			upToDate, err := rh.ImportsUpToDate()
 			Expect(err).To(Succeed())
-			Expect(outdated).To(BeTrue())
+			Expect(upToDate).To(BeFalse())
 		})
 
 		It("should return that no imports are outdated", func() {
@@ -140,12 +136,11 @@ var _ = Describe("OutdatedImports", func() {
 			Expect(op.ResolveComponentDescriptors(ctx)).To(Succeed())
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
-			val, err := imports.NewValidator(ctx, op)
-			Expect(err).To(Succeed())
 
-			outdated, err := val.OutdatedImports(ctx)
+			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			upToDate, err := rh.ImportsUpToDate()
 			Expect(err).To(Succeed())
-			Expect(outdated).To(BeFalse())
+			Expect(upToDate).To(BeTrue())
 		})
 	})
 

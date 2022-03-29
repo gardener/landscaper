@@ -204,7 +204,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = do.Metadata.Hash
+			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
 		if owner != nil && owner.Kind == "Installation" {
@@ -249,7 +249,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Target)
+		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +257,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = strconv.Itoa(int(target.Raw.Generation))
+			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
 		)
 		if owner != nil && owner.Kind == "Installation" {
@@ -298,10 +298,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Targets)
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -497,9 +497,9 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// TriggerDependants triggers all installations that depend on the current installation.
+// TriggerDependents triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
-func (o *Operation) TriggerDependants(ctx context.Context) error {
+func (o *Operation) TriggerDependents(ctx context.Context) error {
 	for _, sibling := range o.Context().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
 			continue
