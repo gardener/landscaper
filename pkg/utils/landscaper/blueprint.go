@@ -116,7 +116,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, 
 	ctx = context.Background()
 	defer ctx.Done()
 
-	if r.componentResolver != nil {
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
 		var err error
 		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
 		if err != nil {
@@ -152,7 +152,7 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 	ctx = context.Background()
 	defer ctx.Done()
 
-	if input != nil && r.componentResolver != nil {
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
 		var err error
 		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
 		if err != nil {
