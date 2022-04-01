@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/go-logr/logr"
@@ -81,7 +83,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		return fmt.Errorf("unable to marshal target selectors: %w", err)
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, dm.client, inst, func() error {
+	_, err = read_write_layer.CreateOrUpdateCoreInstallation(ctx, dm.client, inst, func() error {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
 		inst.Spec.ComponentDescriptor = registration.Spec.InstallationTemplate.ComponentDescriptor
 		inst.Spec.Blueprint = registration.Spec.InstallationTemplate.Blueprint
@@ -124,7 +126,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	registration *lsv1alpha1.DeployerRegistration,
 	env *lsv1alpha1.Environment) (*lsv1alpha1.Installation, error) {
 	installations := &lsv1alpha1.InstallationList{}
-	if err := dm.client.List(ctx, installations,
+	if err := read_write_layer.ListInstallations(ctx, dm.client, installations,
 		client.InNamespace(dm.config.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
@@ -248,7 +250,7 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 		return err
 	}
 	controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
-	if err := dm.client.Update(ctx, inst); err != nil {
+	if err := read_write_layer.UpdateInstallation(ctx, dm.client, inst); err != nil {
 		return fmt.Errorf("unable to remove finalizer: %w", err)
 	}
 	return nil

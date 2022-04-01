@@ -22,6 +22,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 var (
@@ -39,7 +40,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		if err != nil {
 			return err
 		}
-		if err := c.Update(ctx, instOp, nil); err != nil {
+		if err := c.UpdateSubInstsAndExecs(ctx, instOp, nil); err != nil {
 			return err
 		}
 		if err := DeleteExecutionAndSubinstallations(ctx, instOp); err != nil {
@@ -48,7 +49,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 
 		log.V(7).Info("remove force reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.Client().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, c.Client(), inst); err != nil {
 			return instOp.NewError(err, "RemoveOperationAnnotation", "Unable to remove operation annotation")
 		}
 		return nil
@@ -83,7 +84,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 	// Then we can simply skip the deletion.
 	if (len(execPhase) + len(subPhase)) == 0 {
 		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		return c.Client().Update(ctx, inst)
+		return read_write_layer.UpdateInstallation(ctx, c.Client(), inst)
 	}
 
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subPhase, lsv1alpha1.ComponentInstallationPhase(execPhase))
@@ -118,7 +119,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 			return err
 		}
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
-		if err := c.Update(ctx, instOp, imps); err != nil {
+		if err := c.UpdateSubInstsAndExecs(ctx, instOp, imps); err != nil {
 			return err
 		}
 	}
@@ -147,7 +148,7 @@ func DeleteExecutionAndSubinstallations(ctx context.Context, op *installations.O
 	}
 
 	controllerutil.RemoveFinalizer(op.Inst.Info, lsv1alpha1.LandscaperFinalizer)
-	return op.Client().Update(ctx, op.Inst.Info)
+	return read_write_layer.UpdateInstallation(ctx, op.Client(), op.Inst.Info)
 }
 
 func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (bool, error) {
@@ -160,7 +161,7 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 	}
 
 	if exec.DeletionTimestamp.IsZero() {
-		if err := kubeClient.Delete(ctx, exec); err != nil {
+		if err := read_write_layer.DeleteExecution(ctx, kubeClient, exec); err != nil {
 			return false, err
 		}
 	}
@@ -168,7 +169,7 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 	// add force reconcile annotation if present
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-		if err := kubeClient.Update(ctx, exec); err != nil {
+		if err := read_write_layer.UpdateExecution(ctx, kubeClient, exec); err != nil {
 			return false, fmt.Errorf("unable to add force reconcile label")
 		}
 	}
@@ -186,13 +187,13 @@ func deleteSubInstallations(ctx context.Context, kubeClient client.Client, inst 
 
 	for _, inst := range subInsts {
 		if inst.DeletionTimestamp.IsZero() {
-			if err := kubeClient.Delete(ctx, inst); err != nil {
+			if err := read_write_layer.DeleteInstallation(ctx, kubeClient, inst); err != nil {
 				return false, err
 			}
 		}
 		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-			if err := kubeClient.Update(ctx, inst); err != nil {
+			if err := read_write_layer.UpdateInstallation(ctx, kubeClient, inst); err != nil {
 				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", inst.Name, err)
 			}
 		}

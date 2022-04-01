@@ -8,8 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
@@ -150,7 +151,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	if o.forceReconcile {
 		old := o.exec.DeepCopy()
 		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := o.Client().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
+		if err := read_write_layer.PatchExecution(ctx, o.Client(), o.exec, old); err != nil {
 			o.EventRecorder().Event(o.exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
 			return lserrors.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
 		}
@@ -180,7 +181,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	}
 	item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
 
-	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), item.DeployItem, func() error {
+	if _, err := read_write_layer.CreateOrUpdateDeployItem(ctx, o.Client(), item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
@@ -200,7 +201,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	if err := o.Client().Status().Patch(ctx, o.exec, client.MergeFrom(old)); err != nil {
+	if err := read_write_layer.PatchExecution(ctx, o.Client(), o.exec, old); err != nil {
 		return fmt.Errorf("unable to patch deployitem status: %w", err)
 	}
 	return nil

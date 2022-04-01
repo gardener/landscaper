@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -18,7 +20,7 @@ import (
 )
 
 // Delete handles the delete flow for a execution
-func (o *Operation) Delete(ctx context.Context) error {
+func (o *Operation) DeleteExec(ctx context.Context) error {
 	op := "Deletion"
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
@@ -38,7 +40,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 		allDeleted = false
 
 		if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(item, executionItems) {
-			if err := o.Client().Delete(ctx, item.DeployItem); err != nil {
+			if err := read_write_layer.DeleteDeployItem(ctx, o.Client(), item.DeployItem); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return lserrors.NewWrappedError(err,
 						"DeleteDeployItem",
@@ -61,7 +63,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return lserrors.NewErrorOrNil(o.Client().Update(ctx, o.exec), op, "RemoveFinalizer")
+	return lserrors.NewErrorOrNil(read_write_layer.UpdateExecutionStatus(ctx, o.Client(), o.exec), op, "RemoveFinalizer")
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.

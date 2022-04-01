@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
@@ -566,7 +568,7 @@ func HandleSubComponentPhaseChanges(
 	phases := []lsv1alpha1.ComponentInstallationPhase{}
 	if execRef != nil {
 		exec := &lsv1alpha1.Execution{}
-		err := kubeClient.Get(ctx, execRef.NamespacedName(), exec)
+		err := read_write_layer.GetExecution(ctx, kubeClient, execRef.NamespacedName(), exec)
 		if err != nil {
 			return fmt.Errorf("error getting execution for installation %s/%s: %w", inst.Namespace, inst.Name, err)
 		}

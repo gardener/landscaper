@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -137,5 +139,5 @@ func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, l
 	}
 
 	controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-	return lsClient.Update(ctx, deployItem)
+	return read_write_layer.UpdateDeployItem(ctx, lsClient, deployItem)
 }

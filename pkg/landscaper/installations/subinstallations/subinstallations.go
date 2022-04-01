@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -17,8 +19,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
 	"github.com/gardener/landscaper/apis/core/validation"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,12 +31,12 @@ import (
 func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation, operation lsv1alpha1.Operation) error {
 	for _, instRef := range inst.Status.InstallationReferences {
 		subInst := &lsv1alpha1.Installation{}
-		if err := o.Client().Get(ctx, instRef.Reference.NamespacedName(), subInst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, o.Client(), instRef.Reference.NamespacedName(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 
 		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(operation))
-		if err := o.Client().Update(ctx, subInst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, o.Client(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to update sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 	}
@@ -228,7 +228,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 
 		// delete installation
 		o.Log().V(3).Info("delete orphaned installation", "name", subInst.Name)
-		if err := o.Client().Delete(ctx, subInst); err != nil {
+		if err := read_write_layer.DeleteInstallation(ctx, o.Client(), subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -327,7 +327,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = kubernetes.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
+	_, err = read_write_layer.CreateOrUpdateInstallation(ctx, o.Client(), subInst, func() error {
 		subInst.Spec.Context = inst.Spec.Context
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
@@ -377,7 +377,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	if !reflect.DeepEqual(oldStatus, inst.Status) {
-		if err := o.Client().Status().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallationStatus(ctx, o.Client().Status(), inst); err != nil {
 			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
 		}
 	}

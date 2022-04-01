@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
@@ -56,7 +57,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: remove annotation
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseAborted
-		if err := c.Client().Status().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallationStatus(ctx, c.Client().Status(), inst); err != nil {
 			return err
 		}
 		return nil
@@ -87,7 +88,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		if err != nil {
 			return err
 		}
-		return c.Update(ctx, instOp, imps)
+		return c.UpdateSubInstsAndExecs(ctx, instOp, imps)
 	}
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
@@ -138,12 +139,12 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	if err != nil {
 		return err
 	}
-	if err := c.Update(ctx, instOp, imps); err != nil {
+	if err := c.UpdateSubInstsAndExecs(ctx, instOp, imps); err != nil {
 		return err
 	}
 
 	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := c.Client().Update(ctx, instOp.Inst.Info); err != nil {
+	if err := read_write_layer.UpdateInstallation(ctx, c.Client(), instOp.Inst.Info); err != nil {
 		return err
 	}
 
@@ -153,7 +154,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 }
 
 // Update redeploys subinstallations and deploy items.
-func (c *Controller) Update(ctx context.Context, op *installations.Operation, imps *imports.Imports) error {
+func (c *Controller) UpdateSubInstsAndExecs(ctx context.Context, op *installations.Operation, imps *imports.Imports) error {
 	inst := op.Inst
 	currOp := "Reconcile"
 	// collect and merge all imports and start the Executions

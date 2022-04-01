@@ -23,6 +23,7 @@ import (
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // NewController creates a new deploy item controller that handles timeouts
@@ -70,7 +71,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	logger.V(7).Info("reconcile")
 
 	di := &lsv1alpha1.DeployItem{}
-	if err := con.c.Get(ctx, req.NamespacedName, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -90,7 +91,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, err
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := con.c.Status().Update(ctx, di); err != nil {
+			if err := read_write_layer.UpdateDeployItemStatus(ctx, con.c.Status(), di); err != nil {
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
 			}
@@ -112,7 +113,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := con.c.Status().Update(ctx, di); err != nil {
+			if err := read_write_layer.UpdateDeployItemStatus(ctx, con.c.Status(), di); err != nil {
 				// we might need to expose this as event on the deploy item
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
@@ -121,7 +122,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, nil
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := con.c.Update(ctx, di); err != nil {
+			if err := read_write_layer.UpdateDeployItem(ctx, con.c, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}
@@ -142,7 +143,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := con.c.Update(ctx, di); err != nil {
+			if err := read_write_layer.UpdateDeployItem(ctx, con.c, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}

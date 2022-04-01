@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -77,7 +79,7 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 
 		// we expect that the source ref is always an installation
 		inst := &lsv1alpha1.Installation{}
-		if err := kubeClient.Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, sourceRef.NamespacedName(), inst); err != nil {
 			return false, false, err
 		}
 

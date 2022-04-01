@@ -7,6 +7,8 @@ package executions
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -37,7 +39,7 @@ func CombinedPhase(ctx context.Context, kubeClient client.Client, inst *lsv1alph
 // GetExportedValues returns the exported values of the execution
 func (o *ExecutionOperation) GetExportedValues(ctx context.Context, inst *installations.Installation) (*dataobjects.DataObject, error) {
 	exec := &lsv1alpha1.Execution{}
-	if err := o.Client().Get(ctx, kutil.ObjectKey(inst.Info.Name, inst.Info.Namespace), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, o.Client(), kutil.ObjectKey(inst.Info.Name, inst.Info.Namespace), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}

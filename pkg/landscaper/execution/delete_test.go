@@ -52,7 +52,7 @@ var _ = Describe("Delete", func() {
 		exec := fakeExecutions["test3/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
-		err := eOp.Delete(ctx)
+		err := eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 	})
@@ -63,7 +63,7 @@ var _ = Describe("Delete", func() {
 		exec := fakeExecutions["test1/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
-		err := eOp.Delete(ctx)
+		err := eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(0))
 	})
@@ -74,7 +74,7 @@ var _ = Describe("Delete", func() {
 		exec := fakeExecutions["test3/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
-		err := eOp.Delete(ctx)
+		err := eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 
@@ -87,7 +87,7 @@ var _ = Describe("Delete", func() {
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-a", Namespace: "test3"}, item)
 		Expect(err).ToNot(HaveOccurred())
 
-		err = eOp.Delete(ctx)
+		err = eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 
@@ -96,7 +96,7 @@ var _ = Describe("Delete", func() {
 		Expect(err).To(HaveOccurred())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
-		err = eOp.Delete(ctx)
+		err = eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(0))
 	})
@@ -112,7 +112,7 @@ var _ = Describe("Delete", func() {
 		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
 		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
 
-		err := eOp.Delete(ctx)
+		err := eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 
@@ -138,7 +138,7 @@ var _ = Describe("Delete", func() {
 		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
 		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
 
-		err := eOp.Delete(ctx)
+		err := eOp.DeleteExec(ctx)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))

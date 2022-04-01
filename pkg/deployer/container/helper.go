@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +32,7 @@ func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config contai
 		logger.V(7).Info("Reconcile deploy item")
 
 		deployItem := &lsv1alpha1.DeployItem{}
-		if err := lsClient.Get(ctx, req.NamespacedName, deployItem); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
 			if apierrors.IsNotFound(err) {
 				logger.V(5).Info(err.Error())
 				return nil, nil, nil

@@ -26,6 +26,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
@@ -50,7 +51,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	logger.V(5).Info("reconcile")
 
 	exec := &lsv1alpha1.Execution{}
-	if err := c.client.Get(ctx, req.NamespacedName, exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -91,13 +92,13 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		if err := c.client.Update(ctx, exec); err != nil {
+		if err := read_write_layer.UpdateExecution(ctx, c.client, exec); err != nil {
 			return lserrors.NewError("Reconcile", "AddFinalizer", err.Error())
 		}
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {
-		return op.Delete(ctx)
+		return op.DeleteExec(ctx)
 	}
 
 	return op.Reconcile(ctx)
@@ -120,7 +121,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
 		log.V(7).Info("updating status")
-		if err := c.Status().Update(ctx, exec); err != nil {
+		if err := read_write_layer.UpdateExecutionStatus(ctx, c.Status(), exec); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated status")
@@ -129,7 +130,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		log.V(5).Info("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 		log.V(7).Info("updating metadata")
-		if err := c.Update(ctx, exec); err != nil {
+		if err := read_write_layer.UpdateExecution(ctx, c, exec); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")
@@ -160,7 +161,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, exec.Status) {
-			if err2 := client.Status().Update(ctx, exec); err2 != nil {
+			if err2 := read_write_layer.UpdateExecutionStatus(ctx, client.Status(), exec); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {
