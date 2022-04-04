@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +38,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err2 := client.Status().Update(ctx, deployItem); err2 != nil {
+			if err2 := read_write_layer.UpdateDeployItemStatus(ctx, client.Status(), deployItem); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

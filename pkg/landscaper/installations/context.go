@@ -16,6 +16,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // Context contains the visible installations of a specific installation.
@@ -174,7 +175,7 @@ func GetParent(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.I
 	// get the parent by owner reference
 	parentName := GetParentInstallationName(inst)
 	parent := &lsv1alpha1.Installation{}
-	if err := kubeClient.Get(ctx, client.ObjectKey{Name: parentName, Namespace: inst.Namespace}, parent); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, kubeClient, client.ObjectKey{Name: parentName, Namespace: inst.Namespace}, parent); err != nil {
 		return nil, err
 	}
 	return parent, nil

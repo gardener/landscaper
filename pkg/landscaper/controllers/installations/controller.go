@@ -28,6 +28,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -92,7 +93,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
-	if err := c.Client().Get(ctx, req.NamespacedName, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
 			c.Log().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -112,7 +113,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := c.Client().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, c.Client(), inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -125,7 +126,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// remove the reconcile annotation if it exists
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.Client().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, c.Client(), inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
@@ -217,7 +218,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, inst.Status) {
-			if err2 := client.Status().Update(ctx, inst); err2 != nil {
+			if err2 := read_write_layer.UpdateInstallationStatus(ctx, client.Status(), inst); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

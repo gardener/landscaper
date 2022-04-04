@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/reconcilehelper"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
@@ -56,7 +57,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: remove annotation
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseAborted
-		if err := c.Client().Status().Update(ctx, inst); err != nil {
+		if err := read_write_layer.UpdateInstallationStatus(ctx, c.Client().Status(), inst); err != nil {
 			return err
 		}
 		return nil
@@ -143,7 +144,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	}
 
 	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := c.Client().Update(ctx, instOp.Inst.Info); err != nil {
+	if err := read_write_layer.UpdateInstallation(ctx, c.Client(), instOp.Inst.Info); err != nil {
 		return err
 	}
 

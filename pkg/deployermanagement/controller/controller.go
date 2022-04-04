@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -243,7 +245,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := con.client.Get(ctx, req.NamespacedName, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil

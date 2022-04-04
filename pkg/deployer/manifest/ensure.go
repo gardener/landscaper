@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -77,7 +79,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		return lserrors.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
-	if err := m.lsKubeClient.Status().Update(ctx, m.DeployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, m.lsKubeClient.Status(), m.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}
@@ -157,7 +159,7 @@ func (m *Manifest) Delete(ctx context.Context) error {
 
 	if m.ProviderStatus == nil || len(m.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return m.lsKubeClient.Update(ctx, m.DeployItem)
+		return read_write_layer.UpdateDeployItem(ctx, m.lsKubeClient, m.DeployItem)
 	}
 
 	_, kubeClient, _, err := m.TargetClient(ctx)
@@ -189,5 +191,5 @@ func (m *Manifest) Delete(ctx context.Context) error {
 		return errors.New("not all items are deleted")
 	}
 	controllerutil.RemoveFinalizer(m.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return m.lsKubeClient.Update(ctx, m.DeployItem)
+	return read_write_layer.UpdateDeployItem(ctx, m.lsKubeClient, m.DeployItem)
 }

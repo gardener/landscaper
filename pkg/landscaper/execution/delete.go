@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -58,7 +60,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return lserrors.NewErrorOrNil(o.Client().Update(ctx, o.exec), op, "RemoveFinalizer")
+	return lserrors.NewErrorOrNil(read_write_layer.UpdateExecution(ctx, o.Client(), o.exec), op, "RemoveFinalizer")
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
@@ -89,7 +91,7 @@ func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executi
 	}
 
 	if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(*item, executionItems) {
-		if err := o.Client().Delete(ctx, item.DeployItem); err != nil {
+		if err := read_write_layer.DeleteDeployItem(ctx, o.Client(), item.DeployItem); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return false, lserrors.NewWrappedError(err,
 					"DeleteDeployItem",
@@ -120,7 +122,7 @@ func (o *Operation) propagateDeleteWithoutUninstallAnnotation(ctx context.Contex
 
 	for _, di := range deployItems {
 		metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-		if err := o.Client().Update(ctx, &di); err != nil {
+		if err := read_write_layer.UpdateDeployItem(ctx, o.Client(), &di); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

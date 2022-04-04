@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -66,7 +68,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 
 	if changedMeta {
 		log.V(7).Info("updating metadata")
-		if err := kubeClient.Update(ctx, di); err != nil {
+		if err := read_write_layer.UpdateDeployItem(ctx, kubeClient, di); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")
@@ -88,7 +90,7 @@ func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Cl
 	}
 
 	log.V(7).Info("updating status")
-	if err := kubeClient.Status().Update(ctx, di); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, kubeClient.Status(), di); err != nil {
 		return err
 	}
 	log.V(7).Info("successfully updated status")
@@ -190,7 +192,7 @@ func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 		Namespace: secret.Namespace,
 	}
 
-	if err := kubeClient.Status().Update(ctx, deployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, kubeClient.Status(), deployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "Update DeployItem", err.Error())
 	}
