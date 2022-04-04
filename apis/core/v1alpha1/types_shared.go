@@ -328,3 +328,11 @@ func (r VersionedResourceReference) ObjectMeta() cdv2.ObjectMeta {
 		Version: r.Version,
 	}
 }
+
+type HistoryItem struct {
+	UpdateTime metav1.Time `json:"updateTime,omitempty"`
+	WriteID    WriteID     `json:"writeID,omitempty"`
+	Phase      string      `json:"phase,omitempty"`
+}
+
+type WriteID string

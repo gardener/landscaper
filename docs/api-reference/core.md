@@ -2566,6 +2566,20 @@ ObjectReference
 <p>ExportReference is the reference to the object that contains the exported values.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>history</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.HistoryItem">
+[]HistoryItem
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>History contains information about the last status updates.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate
@@ -3278,6 +3292,20 @@ only used for operation purpose.</p>
 So in this case, the observedGeneration refers to the executions generation.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>history</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.HistoryItem">
+[]HistoryItem
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>History contains information about the last status updates.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExportDefinition">ExportDefinition
@@ -3389,6 +3417,60 @@ string
 <td>
 <em>(Optional)</em>
 <p>TargetType defines the type of the imported target.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.HistoryItem">HistoryItem
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>updateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>writeID</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.WriteID">
+WriteID
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>phase</code></br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -4056,6 +4138,20 @@ ObjectReference
 </td>
 <td>
 <p>ExecutionReference is the reference to the execution that schedules the templated execution items.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>history</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.HistoryItem">
+[]HistoryItem
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>History contains information about the last status updates.</p>
 </td>
 </tr>
 </tbody>
@@ -5357,4 +5453,12 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.WriteID">WriteID
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.HistoryItem">HistoryItem</a>)
+</p>
+<p>
+</p>
 <hr/>

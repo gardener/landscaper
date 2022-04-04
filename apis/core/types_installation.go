@@ -108,6 +108,10 @@ type InstallationStatus struct {
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
+
+	// History contains information about the last status updates.
+	// +optional
+	History []HistoryItem `json:"history,omitempty"`
 }
 
 // InstallationImports defines import of data objects and targets.

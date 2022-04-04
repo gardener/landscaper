@@ -97,6 +97,10 @@ type DeployItemStatus struct {
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
+
+	// History contains information about the last status updates.
+	// +optional
+	History []HistoryItem `json:"history,omitempty"`
 }
 
 // DeployerInformation holds additional information about the deployer that

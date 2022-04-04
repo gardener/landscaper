@@ -89,6 +89,10 @@ type ExecutionStatus struct {
 	// ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
 	// So in this case, the observedGeneration refers to the executions generation.
 	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
+
+	// History contains information about the last status updates.
+	// +optional
+	History []HistoryItem `json:"history,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

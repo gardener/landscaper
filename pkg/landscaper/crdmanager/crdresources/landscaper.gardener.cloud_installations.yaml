@@ -756,6 +756,22 @@ spec:
                 required:
                 - name
                 type: object
+              history:
+                description: History contains information about the last status updates.
+                items:
+                  properties:
+                    phase:
+                      type: string
+                    updateTime:
+                      description: Time is a wrapper around time.Time which supports
+                        correct marshaling to YAML and JSON.  Wrappers are provided
+                        for many of the factory methods that the time package offers.
+                      format: date-time
+                      type: string
+                    writeID:
+                      type: string
+                  type: object
+                type: array
               imports:
                 description: Imports contain the state of the imported values.
                 items:
