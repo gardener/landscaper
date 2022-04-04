@@ -39,7 +39,7 @@ func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReco
 func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.ExecutionPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	o.exec.Status.Phase = phase
 	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions, updatedConditions...)
-	if err := read_write_layer.UpdateExecutionStatus(ctx, o.Client().Status(), o.exec); err != nil {
+	if err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000032, o.Client().Status(), o.exec); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}

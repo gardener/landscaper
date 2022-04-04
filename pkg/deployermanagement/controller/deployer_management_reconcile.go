@@ -83,7 +83,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		return fmt.Errorf("unable to marshal target selectors: %w", err)
 	}
 
-	_, err = read_write_layer.CreateOrUpdateCoreInstallation(ctx, dm.client, inst, func() error {
+	_, err = read_write_layer.CreateOrUpdateCoreInstallation(ctx, read_write_layer.W000002, dm.client, inst, func() error {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
 		inst.Spec.ComponentDescriptor = registration.Spec.InstallationTemplate.ComponentDescriptor
 		inst.Spec.Blueprint = registration.Spec.InstallationTemplate.Blueprint
@@ -250,7 +250,7 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 		return err
 	}
 	controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
-	if err := read_write_layer.UpdateInstallation(ctx, dm.client, inst); err != nil {
+	if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000013, dm.client, inst); err != nil {
 		return fmt.Errorf("unable to remove finalizer: %w", err)
 	}
 	return nil

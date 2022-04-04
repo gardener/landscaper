@@ -36,7 +36,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 	}
 
 	// trigger deletion
-	if err := read_write_layer.DeleteInstallation(ctx, dm.client, inst); err != nil {
+	if err := read_write_layer.DeleteInstallation(ctx, read_write_layer.W000020, dm.client, inst); err != nil {
 		return fmt.Errorf("unable to delete client: %w", err)
 	}
 	// wait for installation deletion.

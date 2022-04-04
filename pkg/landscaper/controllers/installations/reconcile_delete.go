@@ -53,7 +53,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 
 		log.V(7).Info("remove force reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := read_write_layer.UpdateInstallation(ctx, c.Client(), inst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000003, c.Client(), inst); err != nil {
 			return instOp.NewError(err, "RemoveOperationAnnotation", "Unable to remove operation annotation")
 		}
 		return nil
@@ -88,7 +88,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 	// Then we can simply skip the deletion.
 	if (len(execPhase) + len(subPhase)) == 0 {
 		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		return read_write_layer.UpdateInstallation(ctx, c.Client(), inst)
+		return read_write_layer.UpdateInstallation(ctx, read_write_layer.W000004, c.Client(), inst)
 	}
 
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subPhase, lsv1alpha1.ComponentInstallationPhase(execPhase))
@@ -152,7 +152,7 @@ func DeleteExecutionAndSubinstallations(ctx context.Context, op *installations.O
 	}
 
 	controllerutil.RemoveFinalizer(op.Inst.Info, lsv1alpha1.LandscaperFinalizer)
-	return read_write_layer.UpdateInstallation(ctx, op.Client(), op.Inst.Info)
+	return read_write_layer.UpdateInstallation(ctx, read_write_layer.W000008, op.Client(), op.Inst.Info)
 }
 
 func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (bool, error) {
@@ -166,14 +166,14 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) {
 		metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-		if err := read_write_layer.UpdateExecution(ctx, kubeClient, exec); err != nil {
+		if err := read_write_layer.UpdateExecution(ctx, read_write_layer.W000024, kubeClient, exec); err != nil {
 			return false, fmt.Errorf("unable to add delete-without-uninstall annotation to execution %s: %w",
 				exec.Name, err)
 		}
 	}
 
 	if exec.DeletionTimestamp.IsZero() {
-		if err := read_write_layer.DeleteExecution(ctx, kubeClient, exec); err != nil {
+		if err := read_write_layer.DeleteExecution(ctx, read_write_layer.W000035, kubeClient, exec); err != nil {
 			return false, err
 		}
 	}
@@ -181,7 +181,7 @@ func deleteExecution(ctx context.Context, kubeClient client.Client, inst *lsv1al
 	// add force reconcile annotation if present
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-		if err := read_write_layer.UpdateExecution(ctx, kubeClient, exec); err != nil {
+		if err := read_write_layer.UpdateExecution(ctx, read_write_layer.W000023, kubeClient, exec); err != nil {
 			return false, fmt.Errorf("unable to add force reconcile label")
 		}
 	}
@@ -203,14 +203,14 @@ func deleteSubInstallations(ctx context.Context, kubeClient client.Client, paren
 
 	for _, subInst := range subInsts {
 		if subInst.DeletionTimestamp.IsZero() {
-			if err := read_write_layer.DeleteInstallation(ctx, kubeClient, subInst); err != nil {
+			if err := read_write_layer.DeleteInstallation(ctx, read_write_layer.W000019, kubeClient, subInst); err != nil {
 				return false, err
 			}
 		}
 
 		if lsv1alpha1helper.HasOperation(parentInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-			if err := read_write_layer.UpdateInstallation(ctx, kubeClient, subInst); err != nil {
+			if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000005, kubeClient, subInst); err != nil {
 				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", subInst.Name, err)
 			}
 		}
@@ -228,7 +228,7 @@ func propagateDeleteWithoutUninstallAnnotation(ctx context.Context, kubeClient c
 
 	for _, subInst := range subInsts {
 		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-		if err := read_write_layer.UpdateInstallation(ctx, kubeClient, subInst); err != nil {
+		if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000006, kubeClient, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
