@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Read Write Layer", func() {
 
-	Context("History", func() {
+	Context("Status History", func() {
 
 		It("should init the installation history", func() {
 			inst := &lsv1alpha1.Installation{}
@@ -66,6 +66,78 @@ var _ = Describe("Read Write Layer", func() {
 			Expect(di.Status.History).To(HaveLen(maxHistoryLenth))
 			Expect(di.Status.History[maxHistoryLenth-2].WriteID).To(Equal(W000001))
 			Expect(di.Status.History[maxHistoryLenth-1].WriteID).To(Equal(W000002))
+		})
+	})
+
+	Context("History", func() {
+
+		It("should init the history annotation of an installation", func() {
+			inst := &lsv1alpha1.Installation{}
+			Expect(addHistoryItemToInstallation(W000001, inst)).To(Succeed())
+			Expect(addHistoryItemToInstallation(W000002, inst)).To(Succeed())
+			Expect(addHistoryItemToInstallation(W000003, inst)).To(Succeed())
+			history, err := getHistoryAnnotation(&inst.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(3))
+		})
+
+		It("should cut the history annotation of an installation", func() {
+			inst := &lsv1alpha1.Installation{}
+			for i := 0; i < maxHistoryLenth+5; i++ {
+				Expect(addHistoryItemToInstallation(W000001, inst)).To(Succeed())
+			}
+			Expect(addHistoryItemToInstallation(W000002, inst)).To(Succeed())
+			history, err := getHistoryAnnotation(&inst.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(maxHistoryLenth))
+			Expect(history[maxHistoryLenth-2].WriteID).To(Equal(W000001))
+			Expect(history[maxHistoryLenth-1].WriteID).To(Equal(W000002))
+		})
+
+		It("should init the history annotation of an execution", func() {
+			exec := &lsv1alpha1.Execution{}
+			Expect(addHistoryItemToExecution(W000001, exec)).To(Succeed())
+			Expect(addHistoryItemToExecution(W000002, exec)).To(Succeed())
+			Expect(addHistoryItemToExecution(W000003, exec)).To(Succeed())
+			history, err := getHistoryAnnotation(&exec.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(3))
+		})
+
+		It("should cut the history annotation of an execution", func() {
+			exec := &lsv1alpha1.Execution{}
+			for i := 0; i < maxHistoryLenth+5; i++ {
+				Expect(addHistoryItemToExecution(W000001, exec)).To(Succeed())
+			}
+			Expect(addHistoryItemToExecution(W000002, exec)).To(Succeed())
+			history, err := getHistoryAnnotation(&exec.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(maxHistoryLenth))
+			Expect(history[maxHistoryLenth-2].WriteID).To(Equal(W000001))
+			Expect(history[maxHistoryLenth-1].WriteID).To(Equal(W000002))
+		})
+
+		It("should init the history annotation of a deployitem", func() {
+			exec := &lsv1alpha1.Execution{}
+			Expect(addHistoryItemToExecution(W000001, exec)).To(Succeed())
+			Expect(addHistoryItemToExecution(W000002, exec)).To(Succeed())
+			Expect(addHistoryItemToExecution(W000003, exec)).To(Succeed())
+			history, err := getHistoryAnnotation(&exec.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(3))
+		})
+
+		It("should cut the history annotation of a deployitem", func() {
+			di := &lsv1alpha1.DeployItem{}
+			for i := 0; i < maxHistoryLenth+5; i++ {
+				Expect(addHistoryItemToDeployItem(W000001, di)).To(Succeed())
+			}
+			Expect(addHistoryItemToDeployItem(W000002, di)).To(Succeed())
+			history, err := getHistoryAnnotation(&di.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(history).To(HaveLen(maxHistoryLenth))
+			Expect(history[maxHistoryLenth-2].WriteID).To(Equal(W000001))
+			Expect(history[maxHistoryLenth-1].WriteID).To(Equal(W000002))
 		})
 	})
 })

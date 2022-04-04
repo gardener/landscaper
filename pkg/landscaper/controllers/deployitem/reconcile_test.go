@@ -164,8 +164,8 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		testutils.ShouldReconcile(ctx, deployItemController, diReqF)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReqS.NamespacedName, diS))
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReqF.NamespacedName, diF))
-		Expect(diS.Annotations).To(BeNil())
-		Expect(diF.Annotations).To(BeNil())
+		Expect(metav1.HasAnnotation(diS.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation)).To(BeFalse(), "deploy item should not have an abort timestamp annotation")
+		Expect(metav1.HasAnnotation(diF.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation)).To(BeFalse(), "deploy item should not have an abort timestamp annotation")
 	})
 
 	It("Should prefer a timeout specified in the deploy item over the default", func() {
@@ -194,7 +194,7 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 		By("Verify that deploy item is not timed out")
 		testutils.ShouldReconcile(ctx, deployItemController, diReq)
 		utils.ExpectNoError(testenv.Client.Get(ctx, diReq.NamespacedName, di))
-		Expect(di.Annotations).To(BeNil())
+		Expect(metav1.HasAnnotation(di.ObjectMeta, lsv1alpha1.AbortTimestampAnnotation)).To(BeFalse(), "deploy item should not have an abort timestamp annotation")
 
 		By("Set timed out LastReconcileTime timestamp (deploy item specific timeout duration)")
 		timedOut = metav1.Time{Time: time.Now().Add(-(di.Spec.Timeout.Duration + (5 * time.Second)))}
