@@ -32,6 +32,7 @@ var (
 	SiblingImportError = errors.New("a sibling still imports some of the exports")
 )
 
+// dummy change
 func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	var (
 		currentOperation = "Deletion"
