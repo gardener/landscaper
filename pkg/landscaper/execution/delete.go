@@ -24,7 +24,7 @@ import (
 )
 
 // Delete handles the delete flow for a execution
-func (o *Operation) DeleteExec(ctx context.Context) error {
+func (o *Operation) Delete(ctx context.Context) error {
 	op := "Deletion"
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting

@@ -98,7 +98,7 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 	}
 
 	if !exec.DeletionTimestamp.IsZero() {
-		return op.DeleteExec(ctx)
+		return op.Delete(ctx)
 	}
 
 	return op.Reconcile(ctx)

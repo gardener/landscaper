@@ -88,7 +88,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		if err != nil {
 			return err
 		}
-		return c.UpdateSubInstsAndExecs(ctx, instOp, imps)
+		return c.Update(ctx, instOp, imps)
 	}
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
@@ -139,7 +139,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	if err != nil {
 		return err
 	}
-	if err := c.UpdateSubInstsAndExecs(ctx, instOp, imps); err != nil {
+	if err := c.Update(ctx, instOp, imps); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 }
 
 // Update redeploys subinstallations and deploy items.
-func (c *Controller) UpdateSubInstsAndExecs(ctx context.Context, op *installations.Operation, imps *imports.Imports) error {
+func (c *Controller) Update(ctx context.Context, op *installations.Operation, imps *imports.Imports) error {
 	inst := op.Inst
 	currOp := "Reconcile"
 	// collect and merge all imports and start the Executions
