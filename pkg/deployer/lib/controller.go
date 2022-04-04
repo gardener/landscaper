@@ -378,9 +378,14 @@ func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, d
 }
 
 func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
-	if err := c.deployer.Delete(ctx, lsCtx, deployItem, target); err != nil {
-		return err
+	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
+		c.log.Info("Deleting deploy item %s without uninstall", deployItem.Name)
+	} else {
+		if err := c.deployer.Delete(ctx, lsCtx, deployItem, target); err != nil {
+			return err
+		}
 	}
+
 	if controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
 		if err := read_write_layer.UpdateDeployItem(ctx, c.lsClient, deployItem); err != nil {

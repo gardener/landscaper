@@ -314,3 +314,11 @@ func HasIgnoreAnnotation(obj metav1.ObjectMeta) bool {
 	v, ok := obj.GetAnnotations()[v1alpha1.IgnoreAnnotation]
 	return ok && v == "true"
 }
+
+// HasDeleteWithoutUninstallAnnotation returns true only if the given object
+// has the 'landscaper.gardener.cloud/delete-without-uninstall' annotation
+// and its value is 'true'.
+func HasDeleteWithoutUninstallAnnotation(obj metav1.ObjectMeta) bool {
+	v, ok := obj.GetAnnotations()[v1alpha1.DeleteWithoutUninstallAnnotation]
+	return ok && v == "true"
+}

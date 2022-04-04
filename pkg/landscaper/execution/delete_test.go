@@ -7,6 +7,8 @@ package execution_test
 import (
 	"context"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -152,4 +154,23 @@ var _ = Describe("Delete", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	It("should propagate the delete-without-uninstall annotation to deploy items", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		exec := fakeExecutions["test6/exec-1"]
+
+		eOp := execution.NewOperation(op, exec, false)
+		err := eOp.DeleteExec(ctx)
+		Expect(err).ToNot(HaveOccurred())
+
+		deployItemA := &lsv1alpha1.DeployItem{}
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-a", Namespace: "test6"}, deployItemA)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItemA.ObjectMeta)).To(BeTrue())
+
+		deployItemB := &lsv1alpha1.DeployItem{}
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-b", Namespace: "test6"}, deployItemB)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItemB.ObjectMeta)).To(BeTrue())
+	})
 })

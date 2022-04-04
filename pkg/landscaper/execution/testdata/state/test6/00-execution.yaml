@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Execution
+metadata:
+  name: exec-1
+  namespace: test6
+  annotations:
+    landscaper.gardener.cloud/delete-without-uninstall: "true"
+  generation: 2
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  deployItems:
+  - name: a
+    type: landscaper.gardener.cloud/helm
+    config:
+      my-val: val1
+  - name: b
+    type: landscaper.gardener.cloud/container
+    dependsOn:
+    - a
+    config:
+      my-val: val1
+
+status:
+  phase: Init
+
+  observedGeneration: 0
+
+  deployItemRefs:
+  - name: a
+    ref:
+      name: di-a
+      namespace: test6
+      observedGeneration: 2
+  - name: b
+    ref:
+      name: di-b
+      namespace: test6
+      observedGeneration: 2

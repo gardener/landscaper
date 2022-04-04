@@ -25,6 +25,10 @@ const (
 	// OperationAnnotation is the annotation that specifies a operation for a component
 	OperationAnnotation = "landscaper.gardener.cloud/operation"
 
+	// DeleteWithoutUninstallAnnotation is the annotation that specifies that root installations are deleted without
+	// uninstalling the deployed artifacts
+	DeleteWithoutUninstallAnnotation = "landscaper.gardener.cloud/delete-without-uninstall"
+
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = "landscaper.gardener.cloud/reconcile-time"
 
