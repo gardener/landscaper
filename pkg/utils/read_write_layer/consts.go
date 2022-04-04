@@ -1,6 +1,8 @@
 package read_write_layer
 
-type WriteID string
+import "github.com/gardener/landscaper/apis/core/v1alpha1"
+
+type WriteID = v1alpha1.WriteID
 
 const (
 	// Constants to identify different write operations. Every constant must be used only once.
