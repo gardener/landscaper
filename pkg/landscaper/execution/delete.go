@@ -63,7 +63,7 @@ func (o *Operation) DeleteExec(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return lserrors.NewErrorOrNil(read_write_layer.UpdateExecutionStatus(ctx, o.Client(), o.exec), op, "RemoveFinalizer")
+	return lserrors.NewErrorOrNil(read_write_layer.UpdateExecution(ctx, o.Client(), o.exec), op, "RemoveFinalizer")
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.

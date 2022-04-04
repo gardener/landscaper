@@ -201,7 +201,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	if err := read_write_layer.PatchExecution(ctx, o.Client(), o.exec, old); err != nil {
+	if err := read_write_layer.PatchExecutionStatus(ctx, o.Client().Status(), o.exec, old); err != nil {
 		return fmt.Errorf("unable to patch deployitem status: %w", err)
 	}
 	return nil

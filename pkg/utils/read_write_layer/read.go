@@ -33,7 +33,7 @@ func GetDeployItem(ctx context.Context, c client.Reader, key client.ObjectKey, d
 	return get(ctx, c, key, deployItem)
 }
 
-func ListDeployItem(ctx context.Context, c client.Reader, deployItems *lsv1alpha1.DeployItemList, opts ...client.ListOption) error {
+func ListDeployItems(ctx context.Context, c client.Reader, deployItems *lsv1alpha1.DeployItemList, opts ...client.ListOption) error {
 	return list(ctx, c, deployItems, opts...)
 }
 

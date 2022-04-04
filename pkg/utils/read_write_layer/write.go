@@ -55,6 +55,11 @@ func UpdateExecutionStatus(ctx context.Context, c client.StatusWriter, execution
 	return updateStatus(ctx, c, execution)
 }
 
+func PatchExecutionStatus(ctx context.Context, c client.StatusWriter, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
+	opts ...client.PatchOption) error {
+	return patchStatus(ctx, c, new, client.MergeFrom(old), opts...)
+}
+
 func DeleteExecution(ctx context.Context, c client.Client, execution *lsv1alpha1.Execution) error {
 	return delete(ctx, c, execution)
 }
