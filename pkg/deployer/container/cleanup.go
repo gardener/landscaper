@@ -139,5 +139,5 @@ func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, l
 	}
 
 	controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-	return read_write_layer.UpdateDeployItem(ctx, lsClient, deployItem)
+	return read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000038, lsClient, deployItem)
 }

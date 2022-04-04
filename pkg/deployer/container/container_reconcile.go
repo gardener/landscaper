@@ -62,7 +62,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
 				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-				if err := read_write_layer.UpdateDeployItemStatus(ctx, c.lsClient.Status(), c.DeployItem); err != nil {
+				if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.lsClient.Status(), c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
 
@@ -155,14 +155,14 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// we have to persist the observed changes so lets do a patch
-		if err := read_write_layer.PatchDeployItemStatus(ctx, c.lsClient.Status(), c.DeployItem, oldDeployItem); err != nil {
+		if err := read_write_layer.PatchDeployItemStatus(ctx, read_write_layer.W000063, c.lsClient.Status(), c.DeployItem, oldDeployItem); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "UpdateDeployItemStatus", err.Error())
 		}
 
 		if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			delete(c.DeployItem.Annotations, lsv1alpha1.OperationAnnotation)
-			if err := read_write_layer.UpdateDeployItem(ctx, c.lsClient, c.DeployItem); err != nil {
+			if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000039, c.lsClient, c.DeployItem); err != nil {
 				return lserrors.NewWrappedError(err,
 					operationName, "RemoveReconcileAnnotation", err.Error())
 			}
@@ -192,7 +192,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "UpdatePodStatus", err.Error())
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, c.lsClient.Status(), c.DeployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.lsClient.Status(), c.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
 	}
