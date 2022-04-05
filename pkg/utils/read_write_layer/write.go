@@ -33,7 +33,7 @@ func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, i
 }
 
 func UpdateInstallationStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, installation *lsv1alpha1.Installation) error {
-	//addHistoryItemToInstallationStatus(writeID, installation)
+	addHistoryItemToInstallationStatus(writeID, installation)
 	return updateStatus(ctx, c, installation)
 }
 
@@ -65,7 +65,7 @@ func PatchExecution(ctx context.Context, writeID WriteID, c client.Client, new *
 }
 
 func UpdateExecutionStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, execution *lsv1alpha1.Execution) error {
-	//addHistoryItemToExecutionStatus(writeID, execution)
+	addHistoryItemToExecutionStatus(writeID, execution)
 	return updateStatus(ctx, c, execution)
 }
 
@@ -94,7 +94,7 @@ func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, dep
 }
 
 func UpdateDeployItemStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, deployItem *lsv1alpha1.DeployItem) error {
-	//addHistoryItemToDeployItemStatus(writeID, deployItem)
+	addHistoryItemToDeployItemStatus(writeID, deployItem)
 	return updateStatus(ctx, c, deployItem)
 }
 
