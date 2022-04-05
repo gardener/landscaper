@@ -16,30 +16,18 @@ import (
 
 func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
-	return kubernetes.CreateOrUpdate(ctx, c, installation, func() error {
-		if err := f(); err != nil {
-			return err
-		}
-
-		return addHistoryItemToInstallation(writeID, installation)
-	})
+	return kubernetes.CreateOrUpdate(ctx, c, installation, f)
 }
 
 func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
-	return createOrUpdateCore(ctx, c, installation, func() error {
-		if err := f(); err != nil {
-			return err
-		}
-
-		return addHistoryItemToInstallation(writeID, installation)
-	})
+	return createOrUpdateCore(ctx, c, installation, f)
 }
 
 func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation) error {
-	if err := addHistoryItemToInstallation(writeID, installation); err != nil {
-		return err
-	}
+	//if err := addHistoryItemToInstallation(writeID, installation); err != nil {
+	//	return err
+	//}
 
 	return update(ctx, c, installation)
 }
@@ -56,13 +44,7 @@ func DeleteInstallation(ctx context.Context, writeID WriteID, c client.Client, i
 // methods for executions
 func CreateOrUpdateExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
-	return kubernetes.CreateOrUpdate(ctx, c, execution, func() error {
-		if err := f(); err != nil {
-			return err
-		}
-
-		return addHistoryItemToExecution(writeID, execution)
-	})
+	return kubernetes.CreateOrUpdate(ctx, c, execution, f)
 }
 
 func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
@@ -75,9 +57,9 @@ func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, exec
 
 func PatchExecution(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
-	if err := addHistoryItemToExecution(writeID, new); err != nil {
-		return err
-	}
+	//if err := addHistoryItemToExecution(writeID, new); err != nil {
+	//	return err
+	//}
 
 	return patch(ctx, c, new, client.MergeFrom(old), opts...)
 }
@@ -100,19 +82,13 @@ func DeleteExecution(ctx context.Context, writeID WriteID, c client.Client, exec
 // methods for deploy items
 func CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
-	return kubernetes.CreateOrUpdate(ctx, c, deployItem, func() error {
-		if err := f(); err != nil {
-			return err
-		}
-
-		return addHistoryItemToDeployItem(writeID, deployItem)
-	})
+	return kubernetes.CreateOrUpdate(ctx, c, deployItem, f)
 }
 
 func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem) error {
-	if err := addHistoryItemToDeployItem(writeID, deployItem); err != nil {
-		return err
-	}
+	//if err := addHistoryItemToDeployItem(writeID, deployItem); err != nil {
+	//	return err
+	//}
 
 	return update(ctx, c, deployItem)
 }
