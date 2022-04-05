@@ -48,9 +48,9 @@ func CreateOrUpdateExecution(ctx context.Context, writeID WriteID, c client.Clie
 }
 
 func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
-	if err := addHistoryItemToExecution(writeID, execution); err != nil {
-		return err
-	}
+	//if err := addHistoryItemToExecution(writeID, execution); err != nil {
+	//	return err
+	//}
 
 	return update(ctx, c, execution)
 }
