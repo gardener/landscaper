@@ -33,7 +33,7 @@ func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, i
 }
 
 func UpdateInstallationStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, installation *lsv1alpha1.Installation) error {
-	addHistoryItemToInstallationStatus(writeID, installation)
+	//addHistoryItemToInstallationStatus(writeID, installation)
 	return updateStatus(ctx, c, installation)
 }
 
@@ -65,13 +65,13 @@ func PatchExecution(ctx context.Context, writeID WriteID, c client.Client, new *
 }
 
 func UpdateExecutionStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, execution *lsv1alpha1.Execution) error {
-	addHistoryItemToExecutionStatus(writeID, execution)
+	//addHistoryItemToExecutionStatus(writeID, execution)
 	return updateStatus(ctx, c, execution)
 }
 
 func PatchExecutionStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
-	addHistoryItemToExecutionStatus(writeID, new)
+	//addHistoryItemToExecutionStatus(writeID, new)
 	return patchStatus(ctx, c, new, client.MergeFrom(old), opts...)
 }
 
@@ -94,13 +94,13 @@ func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, dep
 }
 
 func UpdateDeployItemStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, deployItem *lsv1alpha1.DeployItem) error {
-	addHistoryItemToDeployItemStatus(writeID, deployItem)
+	//addHistoryItemToDeployItemStatus(writeID, deployItem)
 	return updateStatus(ctx, c, deployItem)
 }
 
 func PatchDeployItemStatus(ctx context.Context, writeID WriteID, c client.StatusWriter, new *lsv1alpha1.DeployItem, old *lsv1alpha1.DeployItem,
 	opts ...client.PatchOption) error {
-	addHistoryItemToDeployItemStatus(writeID, new)
+	//addHistoryItemToDeployItemStatus(writeID, new)
 	return patchStatus(ctx, c, new, client.MergeFrom(old), opts...)
 }
 
