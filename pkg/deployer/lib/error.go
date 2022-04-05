@@ -24,7 +24,7 @@ import (
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, deployItem *lsv1alpha1.DeployItem) func(ctx context.Context, err error) error {
+func HandleErrorFunc(log logr.Logger, c client.Client, eventRecorder record.EventRecorder, deployItem *lsv1alpha1.DeployItem) func(ctx context.Context, err error) error {
 	old := deployItem.DeepCopy()
 	return func(ctx context.Context, err error) error {
 		deployItem.Status.LastError = lserrors.TryUpdateError(deployItem.Status.LastError, err)
@@ -38,7 +38,8 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err2 := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, client.Status(), deployItem); err2 != nil {
+			writer := read_write_layer.NewWriter(log, c)
+			if err2 := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, deployItem); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

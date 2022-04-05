@@ -78,7 +78,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 		di.Status.ProviderStatus = config.ProviderStatus
 	}
 
-	return read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000059, d.lsClient.Status(), di)
+	return d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000059, di)
 }
 
 func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
@@ -147,7 +147,7 @@ func (d *deployer) ensureExport(ctx context.Context, item *lsv1alpha1.DeployItem
 		Namespace: secret.Namespace,
 	}
 
-	return read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000061, d.lsClient.Status(), item)
+	return d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000061, item)
 }
 
 func (d *deployer) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (*mockv1alpha1.ProviderConfiguration, error) {
@@ -156,12 +156,12 @@ func (d *deployer) getConfig(ctx context.Context, item *lsv1alpha1.DeployItem) (
 		d.log.Error(err, "unable to unmarshal config")
 		item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionFalse,
 			"FailedUnmarshal", err.Error())
-		_ = read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000053, d.lsClient.Status(), item)
+		_ = d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000053, item)
 		return nil, err
 	}
 	item.Status.Conditions = lsv1alpha1helper.CreateOrUpdateConditions(item.Status.Conditions, lsv1alpha1.DeployItemValidationCondition, lsv1alpha1.ConditionTrue,
 		"SuccessfullValidation", "Successfully validated configuration")
-	_ = read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000054, d.lsClient.Status(), item)
+	_ = d.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000054, item)
 	return config, nil
 }
 
@@ -180,4 +180,8 @@ func (d *deployer) NextReconcile(ctx context.Context, last time.Time, di *lsv1al
 	}
 	next := schedule.Next(last)
 	return &next, nil
+}
+
+func (d *deployer) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(d.log, d.lsClient)
 }

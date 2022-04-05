@@ -60,7 +60,7 @@ func (o *Operation) Delete(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return lserrors.NewErrorOrNil(read_write_layer.UpdateExecution(ctx, read_write_layer.W000026, o.Client(), o.exec), op, "RemoveFinalizer")
+	return lserrors.NewErrorOrNil(o.Writer().UpdateExecution(ctx, read_write_layer.W000026, o.exec), op, "RemoveFinalizer")
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
@@ -91,7 +91,7 @@ func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executi
 	}
 
 	if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(*item, executionItems) {
-		if err := read_write_layer.DeleteDeployItem(ctx, read_write_layer.W000065, o.Client(), item.DeployItem); err != nil {
+		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000065, item.DeployItem); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return false, lserrors.NewWrappedError(err,
 					"DeleteDeployItem",
@@ -122,7 +122,7 @@ func (o *Operation) propagateDeleteWithoutUninstallAnnotation(ctx context.Contex
 
 	for _, di := range deployItems {
 		metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
-		if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000041, o.Client(), &di); err != nil {
+		if err := o.Writer().UpdateDeployItem(ctx, read_write_layer.W000041, &di); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

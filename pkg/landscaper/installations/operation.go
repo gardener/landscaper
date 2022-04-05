@@ -184,7 +184,7 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
-	if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000018, o.Client().Status(), inst); err != nil {
+	if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000018, inst); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}
@@ -508,7 +508,7 @@ func (o *Operation) TriggerDependents(ctx context.Context) error {
 
 		// todo: maybe use patch
 		metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000011, o.Client(), sibling.Info); err != nil {
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000011, sibling.Info); err != nil {
 			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
 		}
 	}
@@ -521,7 +521,7 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
 	o.Inst.Info.Status.ConfigGeneration = ""
-	return read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Client().Status(), o.Inst.Info)
+	return o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.Info)
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.

@@ -72,3 +72,18 @@ const (
 	W000066 WriteID = "w000066"
 	W000067 WriteID = "w000067"
 )
+
+const (
+	opInstCreateOrUpdate = "history: installation create or update"
+	opInstSpec           = "history: installation update"
+	opInstStatus         = "history: installation status update"
+	opInstDelete         = "history: installation delete"
+	opExecCreateOrUpdate = "history: execution create or update"
+	opExecSpec           = "history: execution update"
+	opExecStatus         = "history: execution status update"
+	opExecDelete         = "history: execution delete"
+	opDICreateOrUpdate   = "history: deployitem create or update"
+	opDISpec             = "history: deployitem update"
+	opDIStatus           = "history: deployitem status update"
+	opDIDelete           = "history: deployitem delete"
+)

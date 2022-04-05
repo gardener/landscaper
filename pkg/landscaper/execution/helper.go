@@ -105,7 +105,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 			// at least one deploy item is outdated or got deleted, a reconcile is required
 			logger.V(7).Info("deploy item cannot be found or does not match last observed generation")
 			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-			err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000028, o.Client().Status(), o.exec)
+			err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000028, o.exec)
 			if err != nil {
 				return fmt.Errorf("error updating execution status for %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
 			}
@@ -120,7 +120,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 		// Phase is completed but doesn't fit to the deploy items' phases
 		logger.V(5).Info("execution phase mismatch", "phase", string(o.exec.Status.Phase), "combinedPhase", string(cp))
 		o.exec.Status.Phase = cp
-		err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000030, o.Client().Status(), o.exec)
+		err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000030, o.exec)
 		if err != nil {
 			return fmt.Errorf("error updating execution status for %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
 		}
