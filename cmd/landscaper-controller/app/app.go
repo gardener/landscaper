@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"golang.org/x/sync/errgroup"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/yaml"
@@ -83,6 +85,7 @@ func (o *Options) run(ctx context.Context) error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		NewClient:          utils.NewUncachedClient,
 	}
 
 	if o.Config.Controllers.SyncPeriod != nil {

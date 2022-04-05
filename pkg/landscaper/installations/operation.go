@@ -184,7 +184,7 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
-	if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000018, o.Client().Status(), inst); err != nil {
+	if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000018, o.Client(), inst); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}
@@ -521,7 +521,7 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
 	o.Inst.Info.Status.ConfigGeneration = ""
-	return read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Client().Status(), o.Inst.Info)
+	return read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Client(), o.Inst.Info)
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.

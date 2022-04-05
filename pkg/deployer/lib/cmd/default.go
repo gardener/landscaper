@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
@@ -66,6 +68,7 @@ func (o *DefaultOptions) Complete() error {
 	opts := manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0", // disable the metrics serving by default
+		NewClient:          utils.NewUncachedClient,
 	}
 
 	restConfig, err := ctrl.GetConfig()

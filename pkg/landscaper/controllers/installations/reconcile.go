@@ -57,7 +57,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: remove annotation
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseAborted
-		if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000014, c.Client().Status(), inst); err != nil {
+		if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000014, c.Client(), inst); err != nil {
 			return err
 		}
 		return nil

@@ -121,7 +121,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
 		log.V(7).Info("updating status")
-		if err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000033, c.Status(), exec); err != nil {
+		if err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000033, c, exec); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated status")
@@ -161,7 +161,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, exec.Status) {
-			if err2 := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000031, client.Status(), exec); err2 != nil {
+			if err2 := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000031, client, exec); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

@@ -38,7 +38,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err2 := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, client.Status(), deployItem); err2 != nil {
+			if err2 := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, client, deployItem); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

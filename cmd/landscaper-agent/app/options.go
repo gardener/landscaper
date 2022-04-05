@@ -21,6 +21,7 @@ import (
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 type options struct {
@@ -69,6 +70,7 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		NewClient:          utils.NewUncachedClient,
 	}
 	hostRestConfig, err := ctrl.GetConfig()
 	if err != nil {

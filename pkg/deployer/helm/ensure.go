@@ -106,7 +106,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return lserrors.NewWrappedError(err, currOp, "ProviderStatus", err.Error())
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000052, h.lsKubeClient.Status(), h.DeployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000052, h.lsKubeClient, h.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "UpdateStatus", err.Error())
 	}
 

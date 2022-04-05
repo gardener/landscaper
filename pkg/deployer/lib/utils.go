@@ -90,7 +90,7 @@ func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Cl
 	}
 
 	log.V(7).Info("updating status")
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, kubeClient.Status(), di); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, kubeClient, di); err != nil {
 		return err
 	}
 	log.V(7).Info("successfully updated status")
@@ -192,7 +192,7 @@ func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 		Namespace: secret.Namespace,
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000060, kubeClient.Status(), deployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000060, kubeClient, deployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "Update DeployItem", err.Error())
 	}

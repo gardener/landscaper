@@ -79,7 +79,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		return lserrors.NewWrappedError(err,
 			currOp, "ProviderStatus", err.Error())
 	}
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000062, m.lsKubeClient.Status(), m.DeployItem); err != nil {
+	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000062, m.lsKubeClient, m.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "UpdateStatus", err.Error())
 	}

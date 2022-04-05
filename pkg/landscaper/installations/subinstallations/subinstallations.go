@@ -377,7 +377,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	if !reflect.DeepEqual(oldStatus, inst.Status) {
-		if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000017, o.Client().Status(), inst); err != nil {
+		if err := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000017, o.Client(), inst); err != nil {
 			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
 		}
 	}

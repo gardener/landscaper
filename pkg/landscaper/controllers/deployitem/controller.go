@@ -91,7 +91,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, err
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000056, con.c.Status(), di); err != nil {
+			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000056, con.c, di); err != nil {
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
 			}
@@ -113,7 +113,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000057, con.c.Status(), di); err != nil {
+			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000057, con.c, di); err != nil {
 				// we might need to expose this as event on the deploy item
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err

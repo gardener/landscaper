@@ -218,7 +218,7 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, inst.Status) {
-			if err2 := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000015, client.Status(), inst); err2 != nil {
+			if err2 := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000015, client, inst); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {
