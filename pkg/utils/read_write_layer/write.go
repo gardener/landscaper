@@ -19,9 +19,14 @@ import (
 func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 
-	equal, externalErr := installationEqual(ctx, c, installation)
-	if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-		return controllerutil.OperationResultNone, externalErr
+	hasName := installation.Name != ""
+	equal := false
+	var externalErr error = nil
+	if hasName {
+		equal, externalErr = installationEqual(ctx, c, installation)
+		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
+			return controllerutil.OperationResultNone, externalErr
+		}
 	}
 
 	return kubernetes.CreateOrUpdate(ctx, c, installation, func() error {
@@ -40,9 +45,14 @@ func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.C
 func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 
-	equal, externalErr := installationEqual(ctx, c, installation)
-	if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-		return controllerutil.OperationResultNone, externalErr
+	hasName := installation.Name != ""
+	equal := false
+	var externalErr error = nil
+	if hasName {
+		equal, externalErr = installationEqual(ctx, c, installation)
+		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
+			return controllerutil.OperationResultNone, externalErr
+		}
 	}
 
 	return createOrUpdateCore(ctx, c, installation, func() error {
@@ -165,9 +175,14 @@ func DeleteExecution(ctx context.Context, writeID WriteID, c client.Client, exec
 func CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 
-	equal, externalErr := deployItemEqual(ctx, c, deployItem)
-	if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-		return controllerutil.OperationResultNone, externalErr
+	hasName := deployItem.Name != ""
+	equal := false
+	var externalErr error = nil
+	if hasName {
+		equal, externalErr = deployItemEqual(ctx, c, deployItem)
+		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
+			return controllerutil.OperationResultNone, externalErr
+		}
 	}
 
 	return kubernetes.CreateOrUpdate(ctx, c, deployItem, func() error {
