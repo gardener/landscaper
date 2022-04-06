@@ -42,7 +42,11 @@ func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.C
 		return nil
 	})
 
-	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	if externalErr != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	}
+
+	return result, nil
 }
 
 func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
@@ -70,7 +74,11 @@ func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c clie
 		return nil
 	})
 
-	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	if externalErr != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	}
+
+	return result, nil
 }
 
 func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation) error {
@@ -131,7 +139,11 @@ func CreateOrUpdateExecution(ctx context.Context, writeID WriteID, c client.Clie
 		return nil
 	})
 
-	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	if externalErr != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	}
+
+	return result, nil
 }
 
 func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
@@ -219,7 +231,11 @@ func CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, c client.Cli
 		return nil
 	})
 
-	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	if externalErr != nil {
+		return controllerutil.OperationResultNone, fmt.Errorf("write error: %s - %w", writeID, externalErr)
+	}
+
+	return result, nil
 }
 
 func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem) error {
