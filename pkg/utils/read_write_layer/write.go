@@ -2,6 +2,7 @@ package read_write_layer
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -25,11 +26,11 @@ func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.C
 	if hasName {
 		equal, externalErr = installationEqual(ctx, c, installation)
 		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-			return controllerutil.OperationResultNone, externalErr
+			return controllerutil.OperationResultNone, fmt.Errorf("read error: %s - %w", writeID, externalErr)
 		}
 	}
 
-	return kubernetes.CreateOrUpdate(ctx, c, installation, func() error {
+	result, externalErr := kubernetes.CreateOrUpdate(ctx, c, installation, func() error {
 		if err := f(); err != nil {
 			return err
 		}
@@ -40,6 +41,8 @@ func CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, c client.C
 
 		return nil
 	})
+
+	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
 }
 
 func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation,
@@ -51,11 +54,11 @@ func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c clie
 	if hasName {
 		equal, externalErr = installationEqual(ctx, c, installation)
 		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-			return controllerutil.OperationResultNone, externalErr
+			return controllerutil.OperationResultNone, fmt.Errorf("read error: %s - %w", writeID, externalErr)
 		}
 	}
 
-	return createOrUpdateCore(ctx, c, installation, func() error {
+	result, externalErr := createOrUpdateCore(ctx, c, installation, func() error {
 		if err := f(); err != nil {
 			return err
 		}
@@ -66,19 +69,23 @@ func CreateOrUpdateCoreInstallation(ctx context.Context, writeID WriteID, c clie
 
 		return nil
 	})
+
+	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
 }
 
 func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation) error {
 	equal, externalErr := installationEqual(ctx, c, installation)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
 		if err := addHistoryItemToInstallation(writeID, installation); err != nil {
-			return err
+			return fmt.Errorf("write error: %s - %w", writeID, err)
 		}
-		return update(ctx, c, installation)
+		if err := update(ctx, c, installation); err != nil {
+			return fmt.Errorf("write error: %s - %w", writeID, err)
+		}
 	}
 
 	return nil
@@ -87,12 +94,14 @@ func UpdateInstallation(ctx context.Context, writeID WriteID, c client.Client, i
 func UpdateInstallationStatus(ctx context.Context, writeID WriteID, c client.Client, installation *lsv1alpha1.Installation) error {
 	equal, externalErr := installationStatusEqual(ctx, c, installation)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
 		addHistoryItemToInstallationStatus(writeID, installation)
-		return updateStatus(ctx, c, installation)
+		if err := updateStatus(ctx, c, installation); err != nil {
+			return fmt.Errorf("write error: %s - %w", writeID, err)
+		}
 	}
 	return nil
 }
@@ -107,10 +116,10 @@ func CreateOrUpdateExecution(ctx context.Context, writeID WriteID, c client.Clie
 
 	equal, externalErr := executionEqual(ctx, c, execution)
 	if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-		return controllerutil.OperationResultNone, externalErr
+		return controllerutil.OperationResultNone, fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
-	return kubernetes.CreateOrUpdate(ctx, c, execution, func() error {
+	result, externalErr := kubernetes.CreateOrUpdate(ctx, c, execution, func() error {
 		if err := f(); err != nil {
 			return err
 		}
@@ -121,19 +130,23 @@ func CreateOrUpdateExecution(ctx context.Context, writeID WriteID, c client.Clie
 
 		return nil
 	})
+
+	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
 }
 
 func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
 	equal, externalErr := executionEqual(ctx, c, execution)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
 		if err := addHistoryItemToExecution(writeID, execution); err != nil {
-			return err
+			return fmt.Errorf("write error: %s - %w", writeID, err)
 		}
-		return update(ctx, c, execution)
+		if err := update(ctx, c, execution); err != nil {
+			return fmt.Errorf("write error: %s - %w", writeID, err)
+		}
 	}
 
 	return nil
@@ -142,21 +155,27 @@ func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, exec
 func PatchExecution(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
 	if err := addHistoryItemToExecution(writeID, new); err != nil {
-		return err
+		return fmt.Errorf("patch error: %s - %w", writeID, err)
 	}
 
-	return patch(ctx, c, new, client.MergeFrom(old), opts...)
+	if err := patch(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+		return fmt.Errorf("patch error: %s - %w", writeID, err)
+	}
+
+	return nil
 }
 
 func UpdateExecutionStatus(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
 	equal, externalErr := executionStatusEqual(ctx, c, execution)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
 		addHistoryItemToExecutionStatus(writeID, execution)
-		return updateStatus(ctx, c, execution)
+		if err := updateStatus(ctx, c, execution); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
 	}
 	return nil
 }
@@ -164,7 +183,10 @@ func UpdateExecutionStatus(ctx context.Context, writeID WriteID, c client.Client
 func PatchExecutionStatus(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
 	addHistoryItemToExecutionStatus(writeID, new)
-	return patchStatus(ctx, c, new, client.MergeFrom(old), opts...)
+	if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+		return fmt.Errorf("patch error: %s - %w", writeID, err)
+	}
+	return nil
 }
 
 func DeleteExecution(ctx context.Context, writeID WriteID, c client.Client, execution *lsv1alpha1.Execution) error {
@@ -181,11 +203,11 @@ func CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, c client.Cli
 	if hasName {
 		equal, externalErr = deployItemEqual(ctx, c, deployItem)
 		if externalErr != nil && !apierrors.IsNotFound(externalErr) {
-			return controllerutil.OperationResultNone, externalErr
+			return controllerutil.OperationResultNone, fmt.Errorf("read error: %s - %w", writeID, externalErr)
 		}
 	}
 
-	return kubernetes.CreateOrUpdate(ctx, c, deployItem, func() error {
+	result, externalErr := kubernetes.CreateOrUpdate(ctx, c, deployItem, func() error {
 		if err := f(); err != nil {
 			return err
 		}
@@ -196,12 +218,14 @@ func CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, c client.Cli
 
 		return nil
 	})
+
+	return result, fmt.Errorf("write error: %s - %w", writeID, externalErr)
 }
 
 func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem) error {
 	equal, externalErr := deployItemEqual(ctx, c, deployItem)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
@@ -209,7 +233,9 @@ func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, dep
 			return err
 		}
 
-		return update(ctx, c, deployItem)
+		if err := update(ctx, c, deployItem); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
 	}
 	return nil
 }
@@ -217,12 +243,14 @@ func UpdateDeployItem(ctx context.Context, writeID WriteID, c client.Client, dep
 func UpdateDeployItemStatus(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem) error {
 	equal, externalErr := deployItemStatusEqual(ctx, c, deployItem)
 	if externalErr != nil {
-		return externalErr
+		return fmt.Errorf("read error: %s - %w", writeID, externalErr)
 	}
 
 	if !equal {
 		addHistoryItemToDeployItemStatus(writeID, deployItem)
-		return updateStatus(ctx, c, deployItem)
+		if err := updateStatus(ctx, c, deployItem); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
 	}
 	return nil
 }
@@ -230,7 +258,10 @@ func UpdateDeployItemStatus(ctx context.Context, writeID WriteID, c client.Clien
 func PatchDeployItemStatus(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.DeployItem, old *lsv1alpha1.DeployItem,
 	opts ...client.PatchOption) error {
 	addHistoryItemToDeployItemStatus(writeID, new)
-	return patchStatus(ctx, c, new, client.MergeFrom(old), opts...)
+	if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+		return fmt.Errorf("patch error: %s - %w", writeID, err)
+	}
+	return nil
 }
 
 func DeleteDeployItem(ctx context.Context, writeID WriteID, c client.Client, deployItem *lsv1alpha1.DeployItem) error {
