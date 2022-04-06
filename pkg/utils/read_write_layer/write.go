@@ -166,14 +166,18 @@ func UpdateExecution(ctx context.Context, writeID WriteID, c client.Client, exec
 
 func PatchExecution(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
-	if err := addHistoryItemToExecution(writeID, new); err != nil {
-		return fmt.Errorf("patch error: %s - %w", writeID, err)
-	}
 
-	if err := patch(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
-		return fmt.Errorf("patch error: %s - %w", writeID, err)
-	}
+	equal := reflect.DeepEqual(new.ObjectMeta, old.ObjectMeta) && reflect.DeepEqual(new.Spec, old.Spec)
 
+	if !equal {
+		if err := addHistoryItemToExecution(writeID, new); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
+
+		if err := patch(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
+	}
 	return nil
 }
 
@@ -194,10 +198,16 @@ func UpdateExecutionStatus(ctx context.Context, writeID WriteID, c client.Client
 
 func PatchExecutionStatus(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.Execution, old *lsv1alpha1.Execution,
 	opts ...client.PatchOption) error {
-	addHistoryItemToExecutionStatus(writeID, new)
-	if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
-		return fmt.Errorf("patch error: %s - %w", writeID, err)
+
+	equal := reflect.DeepEqual(new.Status, old.Status)
+
+	if !equal {
+		addHistoryItemToExecutionStatus(writeID, new)
+		if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
 	}
+
 	return nil
 }
 
@@ -273,10 +283,15 @@ func UpdateDeployItemStatus(ctx context.Context, writeID WriteID, c client.Clien
 
 func PatchDeployItemStatus(ctx context.Context, writeID WriteID, c client.Client, new *lsv1alpha1.DeployItem, old *lsv1alpha1.DeployItem,
 	opts ...client.PatchOption) error {
-	addHistoryItemToDeployItemStatus(writeID, new)
-	if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
-		return fmt.Errorf("patch error: %s - %w", writeID, err)
+	equal := reflect.DeepEqual(new.Status, old.Status)
+
+	if !equal {
+		addHistoryItemToDeployItemStatus(writeID, new)
+		if err := patchStatus(ctx, c, new, client.MergeFrom(old), opts...); err != nil {
+			return fmt.Errorf("patch error: %s - %w", writeID, err)
+		}
 	}
+
 	return nil
 }
 
