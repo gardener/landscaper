@@ -118,7 +118,14 @@ func WaitForDeployItemToBeInPhase(
 	})
 
 	if err != nil {
-		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w", phase, err)
+		updated := &lsv1alpha1.DeployItem{}
+		if err2 := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err2 != nil {
+			return fmt.Errorf("error while finally fetching deploy item: %w", err2)
+		}
+		finalPhase := updated.Status.Phase
+		lastError := updated.Status.LastError
+		return fmt.Errorf("error while waiting for deploy item to be in phase %q: %w - finalPhase: %q - lastErrorMessage: %q - lastErrorReason: %q",
+			phase, err, finalPhase, lastError.Message, lastError.Reason)
 	}
 	return nil
 }

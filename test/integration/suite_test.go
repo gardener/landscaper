@@ -9,13 +9,6 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/gardener/landscaper/test/integration/core"
-	"github.com/gardener/landscaper/test/integration/deployitems"
-	"github.com/gardener/landscaper/test/integration/executions"
-	"github.com/gardener/landscaper/test/integration/installations"
-	"github.com/gardener/landscaper/test/integration/tutorial"
-	"github.com/gardener/landscaper/test/integration/webhook"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -53,13 +46,13 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tutorial.RegisterTests(f)
-	webhook.RegisterTests(f)
-	core.RegisterTests(f)
+	//tutorial.RegisterTests(f)
+	//webhook.RegisterTests(f)
+	//core.RegisterTests(f)
 	deployers.RegisterTests(f)
-	deployitems.RegisterTests(f)
-	installations.RegisterTests(f)
-	executions.RegisterTests(f)
+	//deployitems.RegisterTests(f)
+	//installations.RegisterTests(f)
+	//executions.RegisterTests(f)
 
 	AfterSuite(func() {
 		f.Cleanup.Run()
