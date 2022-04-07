@@ -68,7 +68,8 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 
 	if changedMeta {
 		log.V(7).Info("updating metadata")
-		if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000046, kubeClient, di); err != nil {
+		writer := read_write_layer.NewWriter(log, kubeClient)
+		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")
@@ -90,7 +91,8 @@ func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Cl
 	}
 
 	log.V(7).Info("updating status")
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, kubeClient.Status(), di); err != nil {
+	writer := read_write_layer.NewWriter(log, kubeClient)
+	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
 		return err
 	}
 	log.V(7).Info("successfully updated status")
@@ -157,7 +159,7 @@ func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme 
 }
 
 // CreateOrUpdateExport creates or updates the export of a deploy item.
-func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {
+func CreateOrUpdateExport(ctx context.Context, kubeWriter *read_write_layer.Writer, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {
 	if values == nil {
 		return nil
 	}
@@ -192,7 +194,7 @@ func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 		Namespace: secret.Namespace,
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000060, kubeClient.Status(), deployItem); err != nil {
+	if err := kubeWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000060, deployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "Update DeployItem", err.Error())
 	}

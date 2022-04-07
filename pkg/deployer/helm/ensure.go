@@ -106,7 +106,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 		return lserrors.NewWrappedError(err, currOp, "ProviderStatus", err.Error())
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000052, h.lsKubeClient.Status(), h.DeployItem); err != nil {
+	if err := h.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000052, h.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "UpdateStatus", err.Error())
 	}
 
@@ -260,7 +260,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		exports = utils.MergeMaps(exports, resourceExports)
 	}
 
-	if err := deployerlib.CreateOrUpdateExport(ctx, h.lsKubeClient, h.DeployItem, exports); err != nil {
+	if err := deployerlib.CreateOrUpdateExport(ctx, h.Writer(), h.lsKubeClient, h.DeployItem, exports); err != nil {
 		return err
 	}
 
@@ -282,7 +282,7 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 
 	if h.ProviderStatus == nil || len(h.ProviderStatus.ManagedResources) == 0 {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000067, h.lsKubeClient, h.DeployItem)
+		return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000067, h.DeployItem)
 	}
 
 	_, targetClient, _, err := h.TargetClient(ctx)
@@ -312,7 +312,7 @@ func (h *Helm) deleteManifests(ctx context.Context) error {
 
 	// remove finalizer
 	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000049, h.lsKubeClient, h.DeployItem)
+	return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000049, h.DeployItem)
 }
 
 func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
@@ -321,7 +321,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 
 	if h.ProviderStatus == nil {
 		controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-		return read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000047, h.lsKubeClient, h.DeployItem)
+		return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000047, h.DeployItem)
 	}
 
 	_, _, targetClientSet, err := h.TargetClient(ctx)
@@ -339,7 +339,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 
 	// remove finalizer
 	controllerutil.RemoveFinalizer(h.DeployItem, lsv1alpha1.LandscaperFinalizer)
-	return read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000048, h.lsKubeClient, h.DeployItem)
+	return h.Writer().UpdateDeployItem(ctx, read_write_layer.W000048, h.DeployItem)
 }
 
 func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[string]interface{}, error) {
@@ -368,4 +368,8 @@ func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[st
 	}
 
 	return exports, nil
+}
+
+func (h *Helm) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(h.log, h.lsKubeClient)
 }

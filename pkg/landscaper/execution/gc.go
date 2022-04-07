@@ -24,7 +24,7 @@ func (o *Operation) cleanupOrphanedDeployItems(ctx context.Context, orphaned []l
 	}
 	for _, item := range orphaned {
 		if item.DeletionTimestamp.IsZero() && o.checkGCDeletable(item, orphaned) {
-			if err := read_write_layer.DeleteDeployItem(ctx, read_write_layer.W000064, o.Client(), &item); err != nil {
+			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000064, &item); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return fmt.Errorf("unable to delete deploy item %s", item.Name)
 				}

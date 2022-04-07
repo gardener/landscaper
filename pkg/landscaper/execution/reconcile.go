@@ -151,7 +151,7 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 	if o.forceReconcile {
 		old := o.exec.DeepCopy()
 		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := read_write_layer.PatchExecution(ctx, read_write_layer.W000029, o.Client(), o.exec, old); err != nil {
+		if err := o.Writer().PatchExecution(ctx, read_write_layer.W000029, o.exec, old); err != nil {
 			o.EventRecorder().Event(o.exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
 			return lserrors.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
 		}
@@ -181,7 +181,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	}
 	item.DeployItem.Spec.RegistryPullSecrets = o.exec.Spec.RegistryPullSecrets
 
-	if _, err := read_write_layer.CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, o.Client(), item.DeployItem, func() error {
+	if _, err := o.Writer().CreateOrUpdateDeployItem(ctx, read_write_layer.W000036, item.DeployItem, func() error {
 		ApplyDeployItemTemplate(item.DeployItem, item.Info)
 		kutil.SetMetaDataLabel(&item.DeployItem.ObjectMeta, lsv1alpha1.ExecutionManagedByLabel, o.exec.Name)
 		item.DeployItem.Spec.Context = o.exec.Spec.Context
@@ -201,7 +201,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) err
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	if err := read_write_layer.PatchExecutionStatus(ctx, read_write_layer.W000034, o.Client().Status(), o.exec, old); err != nil {
+	if err := o.Writer().PatchExecutionStatus(ctx, read_write_layer.W000034, o.exec, old); err != nil {
 		return fmt.Errorf("unable to patch deployitem status: %w", err)
 	}
 	return nil

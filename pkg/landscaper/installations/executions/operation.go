@@ -80,7 +80,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
-	if _, err := read_write_layer.CreateOrUpdateExecution(ctx, read_write_layer.W000022, o.Client(), exec, func() error {
+	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.Info.Spec.Context
 		exec.Spec.DeployItems = executions
 

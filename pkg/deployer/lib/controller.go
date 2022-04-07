@@ -293,7 +293,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			}
 			logger.V(5).Info("removing reconcile annotation")
 			delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-			if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000040, c.lsClient, di); err != nil {
+			if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000040, di); err != nil {
 				return reconcile.Result{}, err
 			}
 			if err := errHdl(ctx, c.deployer.ForceReconcile(ctx, lsCtx, di, target)); err != nil {
@@ -368,7 +368,7 @@ func returnAndLogReconcileResult(logger logr.Logger, result extension.HookResult
 func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
 	if !controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000050, c.lsClient, deployItem); err != nil {
+		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000050, deployItem); err != nil {
 			return lserrors.NewWrappedError(err,
 				"Reconcile", "AddFinalizer", err.Error())
 		}
@@ -388,12 +388,16 @@ func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, depl
 
 	if controllerutil.ContainsFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.RemoveFinalizer(deployItem, lsv1alpha1.LandscaperFinalizer)
-		if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000037, c.lsClient, deployItem); err != nil {
+		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000037, deployItem); err != nil {
 			return lserrors.NewWrappedError(err,
 				"Reconcile", "RemoveFinalizer", err.Error())
 		}
 	}
 	return nil
+}
+
+func (c *controller) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(c.log, c.lsClient)
 }
 
 // typePredicate is a predicate definition that does only react on deployitem of the specific type.

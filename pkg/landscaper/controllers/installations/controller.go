@@ -113,7 +113,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000010, c.Client(), inst); err != nil {
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000010, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
@@ -126,7 +126,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// remove the reconcile annotation if it exists
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := read_write_layer.UpdateInstallation(ctx, read_write_layer.W000009, c.Client(), inst); err != nil {
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); err != nil {
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
@@ -218,7 +218,8 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, inst.Status) {
-			if err2 := read_write_layer.UpdateInstallationStatus(ctx, read_write_layer.W000015, client.Status(), inst); err2 != nil {
+			writer := read_write_layer.NewWriter(log, client)
+			if err2 := writer.UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

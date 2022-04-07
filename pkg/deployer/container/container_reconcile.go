@@ -52,6 +52,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "FetchRunningPod", err.Error())
 	}
 
+	lsWriter := read_write_layer.NewWriter(c.log, c.lsClient)
+
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
@@ -62,7 +64,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
 				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-				if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.lsClient.Status(), c.DeployItem); err != nil {
+				if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
 
@@ -155,16 +157,14 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// we have to persist the observed changes so lets do a patch
-		if err := read_write_layer.PatchDeployItemStatus(ctx, read_write_layer.W000063, c.lsClient.Status(), c.DeployItem, oldDeployItem); err != nil {
-			return lserrors.NewWrappedError(err,
-				operationName, "UpdateDeployItemStatus", err.Error())
+		if err := lsWriter.PatchDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem, oldDeployItem); err != nil {
+			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
 
 		if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			delete(c.DeployItem.Annotations, lsv1alpha1.OperationAnnotation)
-			if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000039, c.lsClient, c.DeployItem); err != nil {
-				return lserrors.NewWrappedError(err,
-					operationName, "RemoveReconcileAnnotation", err.Error())
+			if err := lsWriter.UpdateDeployItem(ctx, read_write_layer.W000039, c.DeployItem); err != nil {
+				return lserrors.NewWrappedError(err, operationName, "RemoveReconcileAnnotation", err.Error())
 			}
 		}
 		return nil
@@ -192,7 +192,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "UpdatePodStatus", err.Error())
 	}
 
-	if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.lsClient.Status(), c.DeployItem); err != nil {
+	if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
 	}

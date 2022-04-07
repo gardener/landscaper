@@ -92,7 +92,7 @@ func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alph
 
 	if exec.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(exec, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(exec, lsv1alpha1.LandscaperFinalizer)
-		if err := read_write_layer.UpdateExecution(ctx, read_write_layer.W000025, c.client, exec); err != nil {
+		if err := op.Writer().UpdateExecution(ctx, read_write_layer.W000025, exec); err != nil {
 			return lserrors.NewError("Reconcile", "AddFinalizer", err.Error())
 		}
 	}
@@ -121,7 +121,8 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
 		log.V(7).Info("updating status")
-		if err := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000033, c.Status(), exec); err != nil {
+		writer := read_write_layer.NewWriter(log, c)
+		if err := writer.UpdateExecutionStatus(ctx, read_write_layer.W000033, exec); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated status")
@@ -130,7 +131,8 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		log.V(5).Info("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 		log.V(7).Info("updating metadata")
-		if err := read_write_layer.UpdateExecution(ctx, read_write_layer.W000027, c, exec); err != nil {
+		writer := read_write_layer.NewWriter(log, c)
+		if err := writer.UpdateExecution(ctx, read_write_layer.W000027, exec); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")
@@ -141,7 +143,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
+func HandleErrorFunc(log logr.Logger, c client.Client, eventRecorder record.EventRecorder, exec *lsv1alpha1.Execution) func(ctx context.Context, err error) error {
 	old := exec.DeepCopy()
 	return func(ctx context.Context, err error) error {
 		if err == nil && reflect.DeepEqual(old.Status.LastError, exec.Status.LastError) {
@@ -161,7 +163,8 @@ func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record
 		}
 
 		if !reflect.DeepEqual(old.Status, exec.Status) {
-			if err2 := read_write_layer.UpdateExecutionStatus(ctx, read_write_layer.W000031, client.Status(), exec); err2 != nil {
+			writer := read_write_layer.NewWriter(log, c)
+			if err2 := writer.UpdateExecutionStatus(ctx, read_write_layer.W000031, exec); err2 != nil {
 				if apierrors.IsConflict(err2) { // reduce logging
 					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 				} else {

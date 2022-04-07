@@ -10,6 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // RegistriesAccessor is a getter interface for available registries.
@@ -56,6 +58,10 @@ func (o *Operation) Log() logr.Logger {
 // Client returns a controller runtime client.Registry
 func (o *Operation) Client() client.Client {
 	return o.client
+}
+
+func (o *Operation) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(o.log, o.client)
 }
 
 // Scheme returns a kubernetes scheme

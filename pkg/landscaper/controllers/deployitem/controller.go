@@ -91,7 +91,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, err
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000056, con.c.Status(), di); err != nil {
+			if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000056, di); err != nil {
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
 			}
@@ -113,7 +113,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := read_write_layer.UpdateDeployItemStatus(ctx, read_write_layer.W000057, con.c.Status(), di); err != nil {
+			if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000057, di); err != nil {
 				// we might need to expose this as event on the deploy item
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
@@ -122,7 +122,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, nil
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000043, con.c, di); err != nil {
+			if err := con.Writer().UpdateDeployItem(ctx, read_write_layer.W000043, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}
@@ -143,7 +143,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := read_write_layer.UpdateDeployItem(ctx, read_write_layer.W000042, con.c, di); err != nil {
+			if err := con.Writer().UpdateDeployItem(ctx, read_write_layer.W000042, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}
@@ -268,4 +268,8 @@ func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1
 	// => requeue shortly after expected timeout
 	requeue := progressingTimeout - progressingDuration + (5 * time.Second)
 	return &requeue, nil
+}
+
+func (con *controller) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(con.log, con.c)
 }
