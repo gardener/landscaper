@@ -28,7 +28,7 @@ type executionItem struct {
 }
 
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
-func (o *Operation) Reconcile(ctx context.Context) error {
+func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 	op := "Reconcile"
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
@@ -145,16 +145,6 @@ func (o *Operation) Reconcile(ctx context.Context) error {
 			return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
 		}
 		phase = lsv1alpha1helper.CombinedExecutionPhase(phase, lsv1alpha1.ExecutionPhaseInit)
-	}
-
-	// remove force annotation
-	if o.forceReconcile {
-		old := o.exec.DeepCopy()
-		delete(o.exec.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := o.Writer().PatchExecution(ctx, read_write_layer.W000029, o.exec, old); err != nil {
-			o.EventRecorder().Event(o.exec, corev1.EventTypeWarning, "RemoveForceReconcileAnnotation", err.Error())
-			return lserrors.NewWrappedError(err, op, "RemoveForceReconcileAnnotation", err.Error())
-		}
 	}
 
 	if !lsv1alpha1helper.IsCompletedExecutionPhase(phase) {

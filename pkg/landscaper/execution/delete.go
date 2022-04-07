@@ -24,7 +24,7 @@ import (
 )
 
 // Delete handles the delete flow for a execution
-func (o *Operation) Delete(ctx context.Context) error {
+func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 	op := "Deletion"
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
@@ -60,7 +60,11 @@ func (o *Operation) Delete(ctx context.Context) error {
 	}
 
 	controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
-	return lserrors.NewErrorOrNil(o.Writer().UpdateExecution(ctx, read_write_layer.W000026, o.exec), op, "RemoveFinalizer")
+	err = o.Writer().UpdateExecution(ctx, read_write_layer.W000026, o.exec)
+	if err != nil {
+		return lserrors.NewWrappedError(err, op, "RemoveFinalizer", err.Error())
+	}
+	return nil
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
@@ -85,7 +89,7 @@ func (o *Operation) checkDeletable(item executionItem, items []executionItem) bo
 	return true
 }
 
-func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []executionItem) (gone bool, err error) {
+func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []executionItem) (gone bool, err lserrors.LsError) {
 	if item.DeployItem == nil {
 		return true, nil
 	}
@@ -113,7 +117,7 @@ func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executi
 	return false, nil
 }
 
-func (o *Operation) propagateDeleteWithoutUninstallAnnotation(ctx context.Context, deployItems []lsv1alpha1.DeployItem) error {
+func (o *Operation) propagateDeleteWithoutUninstallAnnotation(ctx context.Context, deployItems []lsv1alpha1.DeployItem) lserrors.LsError {
 	op := "PropagateDeleteWithoutUninstallAnnotationToDeployItems"
 
 	if !lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(o.exec.ObjectMeta) {

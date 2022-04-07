@@ -50,7 +50,8 @@ var _ = Describe("Reconcile", func() {
 		exec := fakeExecutions["test1/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
-		err := eOp.Reconcile(ctx)
+		var err error
+		err = eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
@@ -68,7 +69,8 @@ var _ = Describe("Reconcile", func() {
 		exec := fakeExecutions["test4/exec-1"]
 		eOp := execution.NewOperation(op, exec, false)
 
-		err := eOp.Reconcile(ctx)
+		var err error
+		err = eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
@@ -109,7 +111,8 @@ var _ = Describe("Reconcile", func() {
 		deployItemA.Status.Phase = lsv1alpha1.ExecutionPhaseSucceeded
 		Expect(fakeClient.Status().Update(ctx, deployItemA)).ToNot(HaveOccurred())
 
-		err := eOp.Reconcile(ctx)
+		var err error
+		err = eOp.Reconcile(ctx)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(exec.Status.DeployItemReferences).To(HaveLen(2))
