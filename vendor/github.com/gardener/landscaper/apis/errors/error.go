@@ -14,6 +14,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+type LsError interface {
+	error
+	LandscaperError() *lsv1alpha1.Error
+	Unwrap() error
+	UpdatedError(lastError *lsv1alpha1.Error) *lsv1alpha1.Error
+}
+
 // Error is a wrapper around the landscaper crd error
 // that implements the go error interface.
 type Error struct {
@@ -59,7 +66,7 @@ func NewError(operation, reason, message string, codes ...lsv1alpha1.ErrorCode) 
 }
 
 // NewWrappedError creates a new landscaper internal error that wraps another error
-func NewWrappedError(err error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) *Error {
+func NewWrappedError(err error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) LsError {
 	return &Error{
 		lsErr: lsv1alpha1.Error{
 			Operation:          operation,
@@ -76,7 +83,7 @@ func NewWrappedError(err error, operation, reason, message string, codes ...lsv1
 // NewErrorOrNil creates a new landscaper internal error that wraps another error.
 // if no error is set the functions return nil.
 // The error is automatically set as error message.
-func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) error {
+func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) LsError {
 	if err == nil {
 		return nil
 	}
