@@ -89,12 +89,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 			return lserrors.NewWrappedError(err, currentOperation, "GetImports", err.Error())
 		}
 
-		err = c.Update(ctx, instOp, imps)
-		if err != nil {
-			return lserrors.NewWrappedError(err, currentOperation, "Update", err.Error())
-		}
-
-		return nil
+		return c.Update(ctx, instOp, imps)
 	}
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
@@ -149,7 +144,7 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	}
 
 	if err := c.Update(ctx, instOp, imps); err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "Update", err.Error())
+		return err
 	}
 
 	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
@@ -163,39 +158,35 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 }
 
 // Update redeploys subinstallations and deploy items.
-func (c *Controller) Update(ctx context.Context, op *installations.Operation, imps *imports.Imports) error {
+func (c *Controller) Update(ctx context.Context, op *installations.Operation, imps *imports.Imports) lserrors.LsError {
 	inst := op.Inst
 	currOp := "Reconcile"
 	// collect and merge all imports and start the Executions
 	constructor := imports.NewConstructor(op)
 	if err := constructor.Construct(ctx, imps); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "ConstructImports", err.Error())
+		return lserrors.NewWrappedError(err, currOp, "ConstructImports", err.Error())
 	}
 
 	if err := op.CreateOrUpdateImports(ctx); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "CreateOrUpdateImports", err.Error())
+		return lserrors.NewWrappedError(err, currOp, "CreateOrUpdateImports", err.Error())
 	}
 
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx); err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currOp, "EnsureSubinstallations", err.Error())
 	}
 
 	// todo: check if this can be moved to ensure
 	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
 		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
-		return lserrors.NewWrappedError(err,
-			currOp, "ReconcileSubinstallations", err.Error())
+		return lserrors.NewWrappedError(err, currOp, "ReconcileSubinstallations", err.Error())
 	}
 
 	exec := executions.New(op)
 	if err := exec.Ensure(ctx, inst); err != nil {
-		return lserrors.NewWrappedError(err,
-			currOp, "ReconcileExecution", err.Error())
+		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
 	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
