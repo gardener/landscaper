@@ -90,7 +90,7 @@ type ExportTemplates struct {
 	// The template has to output a valid yaml structure that contains a map under the key "dataExports" and the key "targetExports".
 	// Input parameters for the template are:
 	// "imports": the installation imports
-	//	"installationPath": the complete installation path that contains the deploy item, which is also used for selecting the template
+	//	"installationPath": the complete path to the installation, which is also used for selecting the template
 	//	"templateName": the user specified name of this template
 	//	"installation": the complete installation structure
 	//  "cd": the component descriptor
