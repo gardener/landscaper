@@ -462,9 +462,8 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 }
 
 // NewError creates a new error with the current operation
-func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) error {
-	return lserrors.NewWrappedError(err,
-		o.CurrentOperation, reason, message, codes...)
+func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) lserrors.LsError {
+	return lserrors.NewWrappedError(err, o.CurrentOperation, reason, message, codes...)
 }
 
 // CreateEventFromCondition creates a new event based on the given condition

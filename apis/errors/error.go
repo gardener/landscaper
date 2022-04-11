@@ -33,7 +33,7 @@ func (e Error) Error() string {
 	if e.err != nil {
 		return e.err.Error()
 	}
-	return fmt.Sprintf("Op: %q - Reason: %q - Message: %q", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
+	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
 }
 
 // LandscaperError returns the wrapped landscaper error.

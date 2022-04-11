@@ -16,6 +16,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	lserror "github.com/gardener/landscaper/apis/errors"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
@@ -178,12 +180,10 @@ var _ = Describe("ConditionalImports", func() {
 		// satisfy imports
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 		err = imports.NewConstructor(op).Construct(ctx, nil)
-		parsedErr, ok := err.(*installations.Error)
+		parsedErr, ok := err.(lserror.LsError)
 		Expect(ok).To(BeTrue(), "error should be of type installations.Error")
-		Expect(parsedErr).To(PointTo(MatchFields(IgnoreExtras, Fields{
-			"Reason":  BeEquivalentTo(installations.ImportNotFound),
-			"Message": ContainSubstring("rootcond.bar"),
-		})))
+		Expect(installations.IsImportNotFoundError(parsedErr)).To(BeTrue())
+		Expect(parsedErr.LandscaperError().Message).To(ContainSubstring("rootcond.bar"))
 	})
 
 })

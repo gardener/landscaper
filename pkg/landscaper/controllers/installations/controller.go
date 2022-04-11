@@ -109,7 +109,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
-	errHdl := HandleErrorFunc(logger, c.Client(), c.EventRecorder(), inst)
+
+	oldInst := inst.DeepCopy()
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -120,7 +121,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if !inst.DeletionTimestamp.IsZero() {
-		return reconcile.Result{}, errHdl(ctx, c.handleDelete(ctx, inst))
+		err := c.handleDelete(ctx, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
 	}
 
 	// remove the reconcile annotation if it exists
@@ -129,11 +131,14 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); err != nil {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
+
+		err := c.reconcile(ctx, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		return reconcile.Result{}, errHdl(ctx, c.forceReconcile(ctx, inst))
+		err := c.forceReconcile(ctx, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
@@ -155,30 +160,28 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	return reconcile.Result{}, errHdl(ctx, c.reconcile(ctx, inst))
+	err := c.reconcile(ctx, inst)
+	return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
 }
 
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
-func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
+func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
 	lsCtx, err := installations.GetInstallationContext(ctx, c.Client(), inst, c.ComponentOverwriter)
 	if err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "CalculateContext", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "CalculateContext", err.Error())
 	}
 
 	if err := c.SetupRegistries(ctx, op, append(lsCtx.External.RegistryPullSecrets(), inst.Spec.RegistryPullSecrets...), inst); err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "SetupRegistries", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "SetupRegistries", err.Error())
 	}
 
 	intBlueprint, err := blueprints.Resolve(ctx, op.ComponentsRegistry(), lsCtx.External.ComponentDescriptorRef(), inst.Spec.Blueprint)
 	if err != nil {
-		return nil, lserrors.NewWrappedError(err,
-			currOp, "ResolveBlueprint", err.Error())
+		return nil, lserrors.NewWrappedError(err, currOp, "ResolveBlueprint", err.Error())
 	}
 
 	internalInstallation, err := installations.New(inst, intBlueprint)
@@ -201,36 +204,30 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	return instOp, nil
 }
 
-// HandleErrorFunc returns a error handler func for deployers.
-// The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, inst *lsv1alpha1.Installation) func(ctx context.Context, err error) error {
-	old := inst.DeepCopy()
-	return func(ctx context.Context, err error) error {
-		inst.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
-		inst.Status.Phase = lserrors.GetPhaseForLastError(
-			inst.Status.Phase,
-			inst.Status.LastError,
-			5*time.Minute)
+func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
+	inst.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
+	inst.Status.Phase = lserrors.GetPhaseForLastError(
+		inst.Status.Phase,
+		inst.Status.LastError,
+		5*time.Minute)
 
-		if inst.Status.LastError != nil {
-			lastErr := inst.Status.LastError
-			eventRecorder.Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-		}
+	if inst.Status.LastError != nil {
+		lastErr := inst.Status.LastError
+		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
 
-		if !reflect.DeepEqual(old.Status, inst.Status) {
-			writer := read_write_layer.NewWriter(log, client)
-			if err2 := writer.UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
-				if apierrors.IsConflict(err2) { // reduce logging
-					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
-				} else {
-					log.Error(err2, "unable to update status")
-				}
-				// retry on conflict
-				if err != nil {
-					return err2
-				}
+	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
+		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
+			if apierrors.IsConflict(err2) { // reduce logging
+				c.Log().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+			} else {
+				c.Log().Error(err2, "unable to update status")
+			}
+			// retry on conflict
+			if err == nil {
+				return err2
 			}
 		}
-		return err
 	}
+	return err
 }

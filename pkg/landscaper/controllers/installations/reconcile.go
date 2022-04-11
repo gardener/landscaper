@@ -22,7 +22,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
-func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
 		currentOperation = "Validate"
 		log              = logr.FromContextOrDiscard(ctx)
@@ -58,14 +58,14 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		// todo: remove annotation
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseAborted
 		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000014, inst); err != nil {
-			return err
+			return lserrors.NewWrappedError(err, currentOperation, "SetInstallationPhaseAborted", err.Error())
 		}
 		return nil
 	}
 
-	instOp, err := c.initPrerequisites(ctx, inst)
-	if err != nil {
-		return err
+	instOp, lsErr := c.initPrerequisites(ctx, inst)
+	if lsErr != nil {
+		return lsErr
 	}
 	instOp.CurrentOperation = currentOperation
 
@@ -74,21 +74,27 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	// check if a reconcile is required due to changed spec or imports
 	updateRequired, err := rh.UpdateRequired()
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currentOperation, "IsUpdateRequired", err.Error())
 	}
 	if updateRequired {
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
 		// check whether the installation can be updated
 		err := rh.UpdateAllowed()
 		if err != nil {
-			return err
+			return lserrors.NewWrappedError(err, currentOperation, "IsUpdateAllowed", err.Error())
 		}
 
 		imps, err := rh.GetImports()
 		if err != nil {
-			return err
+			return lserrors.NewWrappedError(err, currentOperation, "GetImports", err.Error())
 		}
-		return c.Update(ctx, instOp, imps)
+
+		err = c.Update(ctx, instOp, imps)
+		if err != nil {
+			return lserrors.NewWrappedError(err, currentOperation, "Update", err.Error())
+		}
+
+		return nil
 	}
 
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
@@ -121,11 +127,12 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	return nil
 }
 
-func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	currentOperation := "ForceReconcile"
 	c.Log().Info("Force Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
-	instOp, err := c.initPrerequisites(ctx, inst)
-	if err != nil {
-		return err
+	instOp, lsErr := c.initPrerequisites(ctx, inst)
+	if lsErr != nil {
+		return lsErr
 	}
 
 	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
@@ -133,19 +140,21 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	// it is only checked whether the imports are satisfied,
 	// the check whether installations this one depends on are succeeded is skipped
 	if err := rh.ImportsSatisfied(); err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currentOperation, "ImportsSatisfied", err.Error())
 	}
+
 	imps, err := rh.GetImports()
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currentOperation, "GetImports", err.Error())
 	}
+
 	if err := c.Update(ctx, instOp, imps); err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currentOperation, "Update", err.Error())
 	}
 
 	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
 	if err := instOp.Writer().UpdateInstallation(ctx, read_write_layer.W000012, instOp.Inst.Info); err != nil {
-		return err
+		return lserrors.NewWrappedError(err, currentOperation, "RemoveOperationAnnotation", err.Error())
 	}
 
 	instOp.Inst.Info.Status.ObservedGeneration = instOp.Inst.Info.Generation
