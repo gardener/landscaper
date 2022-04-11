@@ -16,11 +16,12 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/gardener/landscaper/test/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	"github.com/gardener/landscaper/pkg/api"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
+	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -73,6 +74,7 @@ var _ = Describe("Template", func() {
 		mgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
+			NewClient:          utils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
 
@@ -80,7 +82,7 @@ var _ = Describe("Template", func() {
 
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())
-		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
 		go func() {
 			Expect(mgr.Start(ctx)).To(Succeed())

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -54,6 +56,7 @@ var _ = Describe("GarbageCollector", func() {
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
 			Logger:             logger.WithName("lsManager"),
+			NewClient:          utils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
 
@@ -61,6 +64,7 @@ var _ = Describe("GarbageCollector", func() {
 			Scheme:             scheme.Scheme,
 			MetricsBindAddress: "0",
 			Logger:             logger.WithName("hostManager"),
+			NewClient:          utils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
 

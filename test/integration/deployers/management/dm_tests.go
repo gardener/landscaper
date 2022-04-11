@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo"
@@ -114,6 +116,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				mgr, err = manager.New(f.RestConfig, manager.Options{
 					Scheme:             api.LandscaperScheme,
 					MetricsBindAddress: "0",
+					NewClient:          utils.NewUncachedClient,
 				})
 				testutil.ExpectNoError(err)
 

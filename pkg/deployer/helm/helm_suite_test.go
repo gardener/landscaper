@@ -25,7 +25,8 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
-	"github.com/gardener/landscaper/test/utils"
+	"github.com/gardener/landscaper/pkg/utils"
+	testutils "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -58,7 +59,7 @@ var _ = Describe("Template", func() {
 
 		kubeconfig, err := kutil.GenerateKubeconfigJSONBytes(testenv.Env.Config)
 		Expect(err).ToNot(HaveOccurred())
-		chartData, closer := utils.ReadChartFrom("./testdata/testchart")
+		chartData, closer := testutils.ReadChartFrom("./testdata/testchart")
 		defer closer()
 		helmConfig := &helmv1alpha1.ProviderConfiguration{}
 		helmConfig.Kubeconfig = base64.StdEncoding.EncodeToString(kubeconfig)
@@ -107,6 +108,7 @@ var _ = Describe("Template", func() {
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				Scheme:             api.LandscaperScheme,
 				MetricsBindAddress: "0",
+				NewClient:          utils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(helm.AddDeployerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
@@ -122,12 +124,12 @@ var _ = Describe("Template", func() {
 		})
 
 		It("should create the release namespace if configured", func() {
-			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
-			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+			target, err := testutils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(state.Create(ctx, target)).To(Succeed())
 
-			chartBytes, closer := utils.ReadChartFrom("./chartresolver/testdata/testchart")
+			chartBytes, closer := testutils.ReadChartFrom("./chartresolver/testdata/testchart")
 			defer closer()
 
 			chartAccess := helmv1alpha1.Chart{

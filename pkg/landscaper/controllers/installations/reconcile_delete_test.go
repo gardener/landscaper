@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -212,6 +214,7 @@ var _ = Describe("Delete", func() {
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				Scheme:             api.LandscaperScheme,
 				MetricsBindAddress: "0",
+				NewClient:          utils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
 
