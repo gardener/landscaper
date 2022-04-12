@@ -148,7 +148,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
 		// check whether the current phase does still match the combined phase of subinstallations and executions
 		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
-			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleSubComponentPhaseChanges", err.Error())
+			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
 		}
 		return reconcile.Result{}, nil
 	}
@@ -200,7 +200,7 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 // HandleSubComponentPhaseChanges updates the phase of the given installation, if its phase doesn't match the combined phase of its subinstallations/executions anymore
 func (c *Controller) handleSubComponentPhaseChanges(
 	ctx context.Context,
-	inst *lsv1alpha1.Installation) error {
+	inst *lsv1alpha1.Installation) lserrors.LsError {
 	logger := logr.FromContext(ctx)
 
 	execRef := inst.Status.ExecutionReference
@@ -209,13 +209,15 @@ func (c *Controller) handleSubComponentPhaseChanges(
 		exec := &lsv1alpha1.Execution{}
 		err := read_write_layer.GetExecution(ctx, c.Client(), execRef.NamespacedName(), exec)
 		if err != nil {
-			return fmt.Errorf("error getting execution for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+			message := fmt.Sprintf("error getting execution for installation %s/%s", inst.Namespace, inst.Name)
+			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "GetExecution", message)
 		}
 		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
 	}
 	subinsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
 	if err != nil {
-		return fmt.Errorf("error fetching subinstallations for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+		message := fmt.Sprintf("error fetching subinstallations for installation %s/%s", inst.Namespace, inst.Name)
+		return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "ListSubinstallations", message)
 	}
 	for _, sub := range subinsts {
 		phases = append(phases, sub.Status.Phase)
@@ -233,7 +235,8 @@ func (c *Controller) handleSubComponentPhaseChanges(
 		var err error
 		instOp, err := c.initPrerequisites(ctx, inst)
 		if err != nil {
-			return fmt.Errorf("unable to construct operation for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+			message := fmt.Sprintf("unable to construct operation for installation %s/%s", inst.Namespace, inst.Name)
+			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "initPrerequisites", message)
 		}
 
 		if cp == lsv1alpha1.ComponentPhaseSucceeded {
@@ -250,7 +253,8 @@ func (c *Controller) handleSubComponentPhaseChanges(
 		// update status
 		err = instOp.UpdateInstallationStatus(ctx, inst, cp)
 		if err != nil {
-			return fmt.Errorf("error updating installation status for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+			message := fmt.Sprintf("error updating installation status for installation %s/%s", inst.Namespace, inst.Name)
+			return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "UpdateInstallationStatus", message)
 		}
 
 		if cp == lsv1alpha1.ComponentPhaseSucceeded {
