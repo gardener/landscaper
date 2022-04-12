@@ -9,11 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -553,75 +550,4 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 	}
 
 	return completeData, data, cm.Generation, nil
-}
-
-// HandleSubComponentPhaseChanges updates the phase of the given installation, if its phase doesn't match the combined phase of its subinstallations/executions anymore
-func HandleSubComponentPhaseChanges(
-	ctx context.Context,
-	logger logr.Logger,
-	kubeClient client.Client,
-	inst *lsv1alpha1.Installation,
-	getOperation func(context.Context, *lsv1alpha1.Installation) (*Operation, error),
-	getExports func(context.Context, *Operation) ([]*dataobjects.DataObject, []*dataobjects.Target, error)) error {
-
-	execRef := inst.Status.ExecutionReference
-	phases := []lsv1alpha1.ComponentInstallationPhase{}
-	if execRef != nil {
-		exec := &lsv1alpha1.Execution{}
-		err := read_write_layer.GetExecution(ctx, kubeClient, execRef.NamespacedName(), exec)
-		if err != nil {
-			return fmt.Errorf("error getting execution for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
-		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
-	}
-	subinsts, err := ListSubinstallations(ctx, kubeClient, inst)
-	if err != nil {
-		return fmt.Errorf("error fetching subinstallations for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-	}
-	for _, sub := range subinsts {
-		phases = append(phases, sub.Status.Phase)
-	}
-	if len(phases) == 0 {
-		// Installation contains neither an execution nor subinstallations, so the phase can't be out of sync.
-		return nil
-	}
-	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
-	if inst.Status.Phase != cp {
-		// Phase is completed but doesn't fit to the deploy items' phases
-		logger.V(5).Info("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
-
-		// get operation
-		instOp, err := getOperation(ctx, inst)
-		if err != nil {
-			return fmt.Errorf("unable to construct operation for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
-
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// recompute exports
-			dataExports, targetExports, err := getExports(ctx, instOp)
-			if err != nil {
-				return instOp.NewError(err, "ConstructExports", err.Error())
-			}
-			if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
-				return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
-			}
-		}
-
-		// update status
-		err = instOp.UpdateInstallationStatus(ctx, inst, cp)
-		if err != nil {
-			return fmt.Errorf("error updating installation status for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
-
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// trigger dependent installations
-			err = instOp.TriggerDependents(ctx)
-			if err != nil {
-				return instOp.NewError(err, "TriggerDependants", err.Error())
-			}
-		}
-
-		return nil
-	}
-	return nil
 }

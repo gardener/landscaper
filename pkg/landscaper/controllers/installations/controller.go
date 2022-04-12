@@ -25,7 +25,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/api"
-	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -148,13 +147,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
 		// check whether the current phase does still match the combined phase of subinstallations and executions
-		getOperationFunc := func(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, error) {
-			return c.initPrerequisites(ctx, inst)
-		}
-		getExportsFunc := func(ctx context.Context, instOp *installations.Operation) ([]*dataobjects.DataObject, []*dataobjects.Target, error) {
-			return exports.NewConstructor(instOp).Construct(ctx)
-		}
-		if err := installations.HandleSubComponentPhaseChanges(ctx, logger, c.Client(), inst, getOperationFunc, getExportsFunc); err != nil {
+		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
 			return reconcile.Result{}, lserrors.NewWrappedError(err, "Reconcile", "HandleSubComponentPhaseChanges", err.Error())
 		}
 		return reconcile.Result{}, nil
@@ -202,6 +195,75 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 	}
 	instOp.SetOverwriter(c.ComponentOverwriter)
 	return instOp, nil
+}
+
+// HandleSubComponentPhaseChanges updates the phase of the given installation, if its phase doesn't match the combined phase of its subinstallations/executions anymore
+func (c *Controller) handleSubComponentPhaseChanges(
+	ctx context.Context,
+	inst *lsv1alpha1.Installation) error {
+	logger := logr.FromContext(ctx)
+
+	execRef := inst.Status.ExecutionReference
+	phases := []lsv1alpha1.ComponentInstallationPhase{}
+	if execRef != nil {
+		exec := &lsv1alpha1.Execution{}
+		err := read_write_layer.GetExecution(ctx, c.Client(), execRef.NamespacedName(), exec)
+		if err != nil {
+			return fmt.Errorf("error getting execution for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+		}
+		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
+	}
+	subinsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return fmt.Errorf("error fetching subinstallations for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+	}
+	for _, sub := range subinsts {
+		phases = append(phases, sub.Status.Phase)
+	}
+	if len(phases) == 0 {
+		// Installation contains neither an execution nor subinstallations, so the phase can't be out of sync.
+		return nil
+	}
+	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
+	if inst.Status.Phase != cp {
+		// Phase is completed but doesn't fit to the deploy items' phases
+		logger.V(5).Info("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
+
+		// get operation
+		var err error
+		instOp, err := c.initPrerequisites(ctx, inst)
+		if err != nil {
+			return fmt.Errorf("unable to construct operation for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+		}
+
+		if cp == lsv1alpha1.ComponentPhaseSucceeded {
+			// recompute exports
+			dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
+			if err != nil {
+				return instOp.NewError(err, "ConstructExports", err.Error())
+			}
+			if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
+				return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
+			}
+		}
+
+		// update status
+		err = instOp.UpdateInstallationStatus(ctx, inst, cp)
+		if err != nil {
+			return fmt.Errorf("error updating installation status for installation %s/%s: %w", inst.Namespace, inst.Name, err)
+		}
+
+		if cp == lsv1alpha1.ComponentPhaseSucceeded {
+			// trigger dependent installations
+			err = instOp.TriggerDependents(ctx)
+			if err != nil {
+				return instOp.NewError(err, "TriggerDependants", err.Error())
+			}
+		}
+
+		return nil
+	}
+	return nil
 }
 
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
