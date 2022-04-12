@@ -129,6 +129,16 @@ func TryUpdateError(lastErr *lsv1alpha1.Error, err error) *lsv1alpha1.Error {
 	return nil
 }
 
+// TryUpdateLsError tries to update the properties of the last error if the err is a internal landscaper error.
+func TryUpdateLsError(lastErr *lsv1alpha1.Error, err LsError) *lsv1alpha1.Error {
+	if err == nil {
+		return nil
+	}
+
+	errorInfo := err.LandscaperError()
+	return UpdatedError(lastErr, errorInfo.Operation, errorInfo.Reason, errorInfo.Message, errorInfo.Codes...)
+}
+
 // UpdatedError updates the properties of a error.
 func UpdatedError(lastError *lsv1alpha1.Error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) *lsv1alpha1.Error {
 	newError := &lsv1alpha1.Error{

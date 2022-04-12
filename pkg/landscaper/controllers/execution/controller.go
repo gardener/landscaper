@@ -170,9 +170,13 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 
 func handleError(ctx context.Context, err lserrors.LsError, log logr.Logger, c client.Client,
 	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution) error {
+	// There are two kind of errors: err != nil and exec.Status.LastError != nil
+	// If err != nil this error is set and returned such that a retry is initiated.
+	// If err == nil and exec.Status.LastError != nil another object must change its state and initiate a new event
+	// for the execution exec.
 	if err != nil {
 		log.Error(err, "handleError")
-		exec.Status.LastError = err.LandscaperError()
+		exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, err)
 	}
 
 	exec.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(

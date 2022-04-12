@@ -205,7 +205,8 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 }
 
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
-	inst.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
+	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
+
 	inst.Status.Phase = lserrors.GetPhaseForLastError(
 		inst.Status.Phase,
 		inst.Status.LastError,
