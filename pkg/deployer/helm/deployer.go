@@ -82,7 +82,7 @@ func (d *deployer) Reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, di 
 			"ConstructExportFromValues", "", err.Error())
 		return err
 	}
-	return helm.ApplyFiles(ctx, files, crds, exports, ch, values)
+	return helm.ApplyFiles(ctx, files, crds, exports, ch)
 }
 
 func (d *deployer) Delete(ctx context.Context, lsCtx *lsv1alpha1.Context, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target) error {
