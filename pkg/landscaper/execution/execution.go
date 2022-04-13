@@ -13,7 +13,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -59,7 +58,7 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		return err
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+	if _, err := o.Writer().CreateOrUpdateDataObject(ctx, read_write_layer.W000075, raw, func() error {
 		if err := controllerutil.SetOwnerReference(o.exec, raw, api.LandscaperScheme); err != nil {
 			return err
 		}

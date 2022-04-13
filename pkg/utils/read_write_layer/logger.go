@@ -16,6 +16,58 @@ const (
 	keyResourceVersionNew = "resource-version-new"
 )
 
+func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.Target,
+	generationOld int64, resourceVersionOld string, err error) {
+	if err == nil {
+		generationNew, resourceVersionNew := getGenerationAndResourceVersion(target)
+		w.log.V(historyLogLevel).Info(op,
+			keyWriteID, writeID,
+			keyName, target.Name,
+			keyNamespace, target.Namespace,
+			keyPhase, "none",
+			keyGenerationOld, generationOld,
+			keyGenerationNew, generationNew,
+			keyResourceVersionOld, resourceVersionOld,
+			keyResourceVersionNew, resourceVersionNew,
+		)
+	} else {
+		w.log.Error(err, op,
+			keyWriteID, writeID,
+			keyName, target.Name,
+			keyNamespace, target.Namespace,
+			keyPhase, "none",
+			keyGenerationOld, generationOld,
+			keyResourceVersionOld, resourceVersionOld,
+		)
+	}
+}
+
+func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.DataObject,
+	generationOld int64, resourceVersionOld string, err error) {
+	if err == nil {
+		generationNew, resourceVersionNew := getGenerationAndResourceVersion(do)
+		w.log.V(historyLogLevel).Info(op,
+			keyWriteID, writeID,
+			keyName, do.Name,
+			keyNamespace, do.Namespace,
+			keyPhase, "none",
+			keyGenerationOld, generationOld,
+			keyGenerationNew, generationNew,
+			keyResourceVersionOld, resourceVersionOld,
+			keyResourceVersionNew, resourceVersionNew,
+		)
+	} else {
+		w.log.Error(err, op,
+			keyWriteID, writeID,
+			keyName, do.Name,
+			keyNamespace, do.Namespace,
+			keyPhase, "none",
+			keyGenerationOld, generationOld,
+			keyResourceVersionOld, resourceVersionOld,
+		)
+	}
+}
+
 func (w *Writer) logInstallationUpdate(writeID WriteID, op string, installation *lsv1alpha1.Installation,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {

@@ -208,7 +208,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 		return fmt.Errorf("unable to create cluster role binding for %q: %w", sa.Name, err)
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, target, func() error {
+	if _, err := dm.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000074, target, func() error {
 		if err := lsutils.BuildKubernetesTarget(target, restConfig); err != nil {
 			return err
 		}

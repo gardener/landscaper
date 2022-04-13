@@ -549,7 +549,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000068, raw, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
@@ -574,7 +574,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, raw, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
@@ -665,7 +665,7 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 	}
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+	if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000070, raw, func() error {
 		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 			return err
 		}
@@ -715,7 +715,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	}
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, target, func() error {
 		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 			return err
 		}
@@ -774,7 +774,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	for i, target := range targets {
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, target, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 				return err
 			}

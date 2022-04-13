@@ -50,6 +50,10 @@ type EnvironmentController struct {
 	dm     *DeployerManagement
 }
 
+func (con *EnvironmentController) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(con.log, con.client)
+}
+
 func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.WithValues("resource", req.NamespacedName.String())
 
@@ -110,7 +114,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	target := &lsv1alpha1.Target{}
 	target.Name = env.Name
 	target.Namespace = con.config.DeployerManagement.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, con.client, target, func() error {
+	if _, err := con.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000073, target, func() error {
 		target.Annotations = targetTemplate.Annotations
 		target.Labels = targetTemplate.Labels
 		target.Spec = lsv1alpha1.TargetSpec{
