@@ -23,6 +23,8 @@ import (
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -334,7 +336,7 @@ func GetComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 	res := dataobjects.NewComponentDescriptor()
 	res.Def = &imp
 	owner := kubernetes.GetOwner(op.Inst.Info.ObjectMeta)
-	if owner != nil && owner.Kind == "Installation" {
+	if OwnerReferenceIsInstallation(owner) {
 		res.SetOwner(owner)
 	}
 	switch refType {
@@ -550,4 +552,8 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 	}
 
 	return completeData, data, cm.Generation, nil
+}
+
+func OwnerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
+	return owner != nil && owner.Kind == "Installation"
 }

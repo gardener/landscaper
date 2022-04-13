@@ -208,7 +208,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallation(owner) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -261,7 +261,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallation(owner) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -320,7 +320,7 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 				configGen = strconv.Itoa(int(t.Raw.Generation))
 				owner     = kutil.GetOwner(t.Raw.ObjectMeta)
 			)
-			if owner != nil && owner.Kind == "Installation" {
+			if OwnerReferenceIsInstallation(owner) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
@@ -369,7 +369,7 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 			configGen   = cd.Descriptor.Version
 			owner       = cd.Owner
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallation(owner) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -422,7 +422,7 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 				sourceRef *lsv1alpha1.ObjectReference
 				owner     = cd.Owner
 			)
-			if owner != nil && owner.Kind == "Installation" {
+			if OwnerReferenceIsInstallation(owner) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
