@@ -164,7 +164,7 @@ func getImportSource(ctx context.Context,
 	}
 
 	// we cannot validate if the source is not an installation
-	if owner == nil || owner.Kind != "Installation" {
+	if !installations.OwnerReferenceIsInstallation(owner) {
 		return nil, nil
 	}
 	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
@@ -186,7 +186,7 @@ func getTargetSources(ctx context.Context,
 	refs := make([]*lsv1alpha1.ObjectReference, 0)
 	for _, target := range targets {
 		owner := kutil.GetOwner(target.Raw.ObjectMeta)
-		if owner == nil || owner.Kind != "Installation" {
+		if !installations.OwnerReferenceIsInstallation(owner) {
 			continue
 		}
 		refs = append(refs, &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Namespace})

@@ -470,7 +470,7 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 //   the exporting installation is actually exporting this value and is a sibling of the current installation.
 func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobjects.Imported) error {
 	owner := imp.GetOwnerReference()
-	if owner == nil || owner.Kind != "Installation" {
+	if !installations.OwnerReferenceIsInstallation(owner) {
 		// we cannot validate if there is no owner or the owner is not an installation
 		return nil
 	}
