@@ -156,6 +156,12 @@ func NginxIngressTest(f *framework.Framework) {
 			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
 			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
+			// check
+			deploy := &appsv1.Deployment{}
+			utils.ExpectNoError(f.Client.Get(ctx, nginxIngressObjectKey, deploy))
+			gomega.Expect(deploy.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold == 4).To(gomega.BeTrue())
+
+			// delete
 			ginkgo.By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
