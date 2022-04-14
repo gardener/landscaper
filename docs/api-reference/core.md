@@ -1531,6 +1531,17 @@ ObjectReference
 <p>SourceRef is the reference to the installation from where the value is imported</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>configGeneration</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ConfigGeneration is the generation of the imported value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ClusterRestConfig">ClusterRestConfig

@@ -104,7 +104,7 @@ func (cd *ComponentDescriptor) GetInClusterObjects() []client.Object {
 }
 
 func (cd *ComponentDescriptor) ComputeConfigGeneration() string {
-	return ""
+	return cd.Descriptor.Version
 }
 
 func (cd *ComponentDescriptor) GetListItems() []ImportedBase {

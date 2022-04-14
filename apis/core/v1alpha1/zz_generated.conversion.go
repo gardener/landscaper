@@ -994,6 +994,7 @@ func autoConvert_v1alpha1_CDImportStatus_To_core_CDImportStatus(in *CDImportStat
 	out.SecretRef = in.SecretRef
 	out.ConfigMapRef = in.ConfigMapRef
 	out.SourceRef = (*core.ObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.ConfigGeneration = in.ConfigGeneration
 	return nil
 }
 
@@ -1007,6 +1008,7 @@ func autoConvert_core_CDImportStatus_To_v1alpha1_CDImportStatus(in *core.CDImpor
 	out.SecretRef = in.SecretRef
 	out.ConfigMapRef = in.ConfigMapRef
 	out.SourceRef = (*ObjectReference)(unsafe.Pointer(in.SourceRef))
+	out.ConfigGeneration = in.ConfigGeneration
 	return nil
 }
 

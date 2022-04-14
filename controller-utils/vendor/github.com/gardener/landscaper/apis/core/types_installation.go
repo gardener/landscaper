@@ -377,6 +377,8 @@ type CDImportStatus struct {
 	ConfigMapRef string `json:"configMapRef,omitempty"`
 	// SourceRef is the reference to the installation from where the value is imported
 	SourceRef *ObjectReference `json:"sourceRef,omitempty"`
+	// ConfigGeneration is the generation of the imported value.
+	ConfigGeneration string `json:"configGeneration,omitempty"`
 }
 
 // ImportStatus hold the state of a import.

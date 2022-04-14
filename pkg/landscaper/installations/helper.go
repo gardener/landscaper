@@ -557,3 +557,10 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 func OwnerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
 	return owner != nil && owner.Kind == "Installation"
 }
+
+func OwnerReferenceIsInstallationButNoParent(owner *metav1.OwnerReference, installation *lsv1alpha1.Installation) bool {
+	parentName := GetParentInstallationName(installation)
+
+	return OwnerReferenceIsInstallation(owner) && parentName != installation.Name
+
+}

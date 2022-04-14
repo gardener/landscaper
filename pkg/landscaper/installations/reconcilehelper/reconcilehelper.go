@@ -140,7 +140,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 
 			owner := imp.GetOwnerReference()
 			var configGen string
-			if installations.OwnerReferenceIsInstallation(owner) {
+			if installations.OwnerReferenceIsInstallationButNoParent(owner, rh.Inst.Info) {
 				// owner is an installation, get configGeneration from its status
 				configGen, err = rh.getOwnerGeneration(owner)
 				if err != nil {
@@ -164,7 +164,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 				if storedConfigGens != nil {
 					storedConfigGen = storedConfigGens[objectName]
 				}
-				if installations.OwnerReferenceIsInstallation(owner) {
+				if installations.OwnerReferenceIsInstallationButNoParent(owner, rh.Inst.Info) {
 					// owner is an installation, get configGeneration from its status
 					configGen, err = rh.getOwnerGeneration(owner)
 					if err != nil {

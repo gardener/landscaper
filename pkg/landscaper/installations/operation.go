@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -208,7 +207,7 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
-		if OwnerReferenceIsInstallation(owner) {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -261,7 +260,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
 		)
-		if OwnerReferenceIsInstallation(owner) {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -317,10 +316,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		for i, t := range tl.Targets {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
-				configGen = strconv.Itoa(int(t.Raw.Generation))
+				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
 				owner     = kutil.GetOwner(t.Raw.ObjectMeta)
 			)
-			if OwnerReferenceIsInstallation(owner) {
+			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
@@ -366,10 +365,10 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 			sref, cmref string
 			cdref       *lsv1alpha1.ComponentDescriptorReference = nil
 			sourceRef   *lsv1alpha1.ObjectReference
-			configGen   = cd.Descriptor.Version
+			configGen   = dataobjects.ImportedBase(cd).ComputeConfigGeneration()
 			owner       = cd.Owner
 		)
-		if OwnerReferenceIsInstallation(owner) {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
@@ -379,6 +378,7 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
+			configGen = inst.Status.ConfigGeneration
 		}
 		switch cd.RefType {
 		case dataobjects.RegistryReference:
@@ -420,9 +420,10 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 		for i, cd := range cdl.ComponentDescriptors {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
+				configGen = dataobjects.ImportedBase(cd).ComputeConfigGeneration()
 				owner     = cd.Owner
 			)
-			if OwnerReferenceIsInstallation(owner) {
+			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
@@ -432,6 +433,7 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
+				configGen = inst.Status.ConfigGeneration
 			}
 			var (
 				sref, cmref string
@@ -450,6 +452,7 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 				ConfigMapRef:           cmref,
 				SecretRef:              sref,
 				SourceRef:              sourceRef,
+				ConfigGeneration:       configGen,
 			}
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
