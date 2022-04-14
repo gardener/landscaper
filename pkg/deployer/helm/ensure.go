@@ -44,7 +44,7 @@ import (
 
 // ApplyFiles applies the helm templated files to the target cluster.
 func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, exports map[string]interface{},
-	ch *chart.Chart, values map[string]interface{}) error {
+	ch *chart.Chart) error {
 
 	currOp := "ApplyFile"
 
@@ -80,7 +80,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 	} else {
 		// apply helm
 		// convert manifests in ManagedResourceStatusList
-		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration, values,
+		realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(ch, h.ProviderConfiguration,
 			h.TargetRestConfig, targetClientSet, h.log)
 		deployErr = realHelmDeployer.Deploy(ctx)
 		if deployErr == nil {
@@ -329,7 +329,7 @@ func (h *Helm) deleteManifestsWithRealHelmDeployer(ctx context.Context) error {
 		return err
 	}
 
-	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration, nil,
+	realHelmDeployer := realhelmdeployer.NewRealHelmDeployer(nil, h.ProviderConfiguration,
 		h.TargetRestConfig, targetClientSet, h.log)
 
 	err = realHelmDeployer.Undeploy(ctx)
