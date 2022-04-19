@@ -153,6 +153,7 @@ func PhasePropagationTests(f *framework.Framework) {
 			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "root installation should be in phase %q", string(lsv1alpha1.ComponentPhaseSucceeded))
 
 			By("set subinstallation deploy item to Failed and verify phase propagation")
+			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinstExecDi), subinstExecDi))
 			subinstExecDi.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 			utils.ExpectNoError(f.Client.Status().Update(ctx, subinstExecDi))
 			Eventually(func() (lsv1alpha1.ExecutionPhase, error) {
