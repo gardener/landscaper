@@ -561,6 +561,6 @@ func OwnerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
 func OwnerReferenceIsInstallationButNoParent(owner *metav1.OwnerReference, installation *lsv1alpha1.Installation) bool {
 	parentName := GetParentInstallationName(installation)
 
-	return OwnerReferenceIsInstallation(owner) && parentName != installation.Name
+	return OwnerReferenceIsInstallation(owner) && owner.Name != parentName
 
 }

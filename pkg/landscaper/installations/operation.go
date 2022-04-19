@@ -365,7 +365,7 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 			sref, cmref string
 			cdref       *lsv1alpha1.ComponentDescriptorReference = nil
 			sourceRef   *lsv1alpha1.ObjectReference
-			configGen   = dataobjects.ImportedBase(cd).ComputeConfigGeneration()
+			configGen   = cd.Descriptor.Version
 			owner       = cd.Owner
 		)
 		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
@@ -378,7 +378,6 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
-			configGen = inst.Status.ConfigGeneration
 		}
 		switch cd.RefType {
 		case dataobjects.RegistryReference:
@@ -420,7 +419,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 		for i, cd := range cdl.ComponentDescriptors {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
-				configGen = dataobjects.ImportedBase(cd).ComputeConfigGeneration()
 				owner     = cd.Owner
 			)
 			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
@@ -433,7 +431,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
-				configGen = inst.Status.ConfigGeneration
 			}
 			var (
 				sref, cmref string
@@ -452,7 +449,6 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 				ConfigMapRef:           cmref,
 				SecretRef:              sref,
 				SourceRef:              sourceRef,
-				ConfigGeneration:       configGen,
 			}
 		}
 		o.Inst.ImportStatus().Update(lsv1alpha1.ImportStatus{
