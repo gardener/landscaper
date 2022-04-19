@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+
 	lserror "github.com/gardener/landscaper/apis/errors"
 
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
@@ -28,7 +30,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 )
@@ -38,23 +43,23 @@ type RealHelmDeployer struct {
 	decoder            runtime.Decoder
 	releaseName        string
 	defaultNamespace   string
+	rawValues          json.RawMessage
 	helmConfig         *helmv1alpha1.HelmDeploymentConfiguration
-	values             map[string]interface{}
 	targetRestConfig   *rest.Config
 	apiResourceHandler *resourcemanager.ApiResourceHandler
 	log                logr.Logger
 }
 
-func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, values map[string]interface{},
-	targetRestConfig *rest.Config, clientset kubernetes.Interface, log logr.Logger) *RealHelmDeployer {
+func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderConfiguration, targetRestConfig *rest.Config,
+	clientset kubernetes.Interface, log logr.Logger) *RealHelmDeployer {
 
 	return &RealHelmDeployer{
 		chart:              ch,
 		decoder:            serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		releaseName:        providerConfig.Name,
 		defaultNamespace:   providerConfig.Namespace,
+		rawValues:          providerConfig.Values,
 		helmConfig:         providerConfig.HelmDeploymentConfig,
-		values:             values,
 		targetRestConfig:   targetRestConfig,
 		apiResourceHandler: resourcemanager.CreateApiResourceHandler(clientset),
 		log:                log,
@@ -62,15 +67,20 @@ func NewRealHelmDeployer(ch *chart.Chart, providerConfig *helmv1alpha1.ProviderC
 }
 
 func (c *RealHelmDeployer) Deploy(ctx context.Context) error {
-	_, err := c.getRelease(ctx)
+	values := make(map[string]interface{})
+	if err := yaml.Unmarshal(c.rawValues, &values); err != nil {
+		return lserrors.NewWrappedError(
+			err, "Deploy", "ParseHelmValues", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	}
 
+	_, err := c.getRelease(ctx)
 	if err != nil && c.isReleaseNotFoundErr(err) {
-		_, err = c.installRelease(ctx)
+		_, err = c.installRelease(ctx, values)
 		return err
 	} else if err != nil {
 		return err
 	} else {
-		_, err = c.upgradeRelease(ctx)
+		_, err = c.upgradeRelease(ctx, values)
 		return err
 	}
 }
@@ -105,7 +115,7 @@ func (c *RealHelmDeployer) getRelease(ctx context.Context) (*release.Release, er
 }
 
 // installRelease creates a helm release
-func (c *RealHelmDeployer) installRelease(ctx context.Context) (*release.Release, error) {
+func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string]interface{}) (*release.Release, error) {
 	currOp := "InstallHelmRelease"
 	c.log.V(1).Info(fmt.Sprintf("installing release %s into namespace %s", c.releaseName, c.defaultNamespace))
 
@@ -128,7 +138,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context) (*release.Release
 
 	c.log.V(1).Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
 
-	rel, err := install.Run(c.chart, c.values)
+	rel, err := install.Run(c.chart, values)
 	if err != nil {
 		err2 := fmt.Errorf("unable to install helm chart release: %w", err)
 		return nil, lserror.NewWrappedError(err2, currOp, "Install", err2.Error())
@@ -140,7 +150,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context) (*release.Release
 }
 
 // upgradeRelease upgrades a helm release
-func (c *RealHelmDeployer) upgradeRelease(ctx context.Context) (*release.Release, error) {
+func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string]interface{}) (*release.Release, error) {
 	currOp := "UpgradeHelmRelease"
 	c.log.V(1).Info(fmt.Sprintf("upgrading release %s", c.releaseName))
 
@@ -162,7 +172,7 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context) (*release.Release
 
 	c.log.V(1).Info(fmt.Sprintf("upgrading helm chart release %s", c.releaseName))
 
-	rel, err := upgrade.Run(c.releaseName, c.chart, c.values)
+	rel, err := upgrade.Run(c.releaseName, c.chart, values)
 	if err != nil {
 		err2 := fmt.Errorf("unable to upgrade helm chart release: %w", err)
 		return nil, lserror.NewWrappedError(err2, currOp, "Upgrade", err2.Error())
