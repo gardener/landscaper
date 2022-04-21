@@ -50,6 +50,7 @@ landscaper:
 #  metrics:
 #    port: 8080
 
+#  if a "deployerManagement.agent.name" is specified, the length of the name may not exceed 30
 #  deployerManagement:
 #    disable: false
 #    agent:

@@ -654,6 +654,20 @@ DeployerInstallationTemplate
 </table>
 </td>
 </tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">
+DeployerRegistrationStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Status contains the current status of the deployer registration.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Environment">Environment
@@ -2842,6 +2856,38 @@ DeployerInstallationTemplate
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">DeployerRegistrationStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistration">DeployerRegistration</a>)
+</p>
+<p>
+<p>DeployerRegistrationStatus contains the current status of a deployer registration.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>lastError</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Error">
+Error
+</a>
+</em>
+</td>
+<td>
+<p>LastError describes the last error that occurred.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
 </h3>
 <p>
@@ -2953,6 +2999,7 @@ when calling from different networking zones.</p>
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">DeployerRegistrationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
 </p>

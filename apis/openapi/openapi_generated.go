@@ -110,6 +110,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistration":                               schema_landscaper_apis_core_v1alpha1_DeployerRegistration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationList":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec":                           schema_landscaper_apis_core_v1alpha1_DeployerRegistrationSpec(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationStatus":                         schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Duration":                                           schema_landscaper_apis_core_v1alpha1_Duration(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.Environment":                                        schema_landscaper_apis_core_v1alpha1_Environment(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.EnvironmentList":                                    schema_landscaper_apis_core_v1alpha1_EnvironmentList(ref),
@@ -4280,12 +4281,19 @@ func schema_landscaper_apis_core_v1alpha1_DeployerRegistration(ref common.Refere
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec"),
 						},
 					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status contains the current status of the deployer registration.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationStatus"),
+						},
+					},
 				},
 				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationSpec", "github.com/gardener/landscaper/apis/core/v1alpha1.DeployerRegistrationStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -4373,6 +4381,27 @@ func schema_landscaper_apis_core_v1alpha1_DeployerRegistrationSpec(ref common.Re
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.DeployerInstallationTemplate"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_DeployerRegistrationStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DeployerRegistrationStatus contains the current status of a deployer registration.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"lastError": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastError describes the last error that occurred.",
+							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.Error"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.Error"},
 	}
 }
 
