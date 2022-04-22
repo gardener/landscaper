@@ -27,11 +27,6 @@ type Target struct {
 	Def        *lsv1alpha1.TargetImport
 }
 
-// NewTarget creates a new internal target.
-func NewTarget() *Target {
-	return &Target{}
-}
-
 // NewFromTarget creates a new internal target instance from a raw target.
 func NewFromTarget(target *lsv1alpha1.Target) (*Target, error) {
 	return &Target{
@@ -140,6 +135,7 @@ func (t *Target) GetInClusterObjects() []client.Object {
 }
 
 func (t *Target) ComputeConfigGeneration() string {
+
 	return strconv.FormatInt(t.GetInClusterObject().GetGeneration(), 10)
 }
 

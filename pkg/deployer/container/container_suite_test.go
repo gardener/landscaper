@@ -24,6 +24,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -73,6 +74,7 @@ var _ = Describe("Template", func() {
 		mgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
+			NewClient:          lsutils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
 

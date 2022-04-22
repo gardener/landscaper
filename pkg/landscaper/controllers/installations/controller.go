@@ -121,7 +121,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if !inst.DeletionTimestamp.IsZero() {
 		err := c.handleDelete(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
 	}
 
 	// remove the reconcile annotation if it exists
@@ -132,12 +132,12 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		}
 
 		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		err := c.forceReconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
@@ -148,13 +148,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
 		// check whether the current phase does still match the combined phase of subinstallations and executions
 		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
-			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
+			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 		}
 		return reconcile.Result{}, nil
 	}
 
 	err := c.reconcile(ctx, inst)
-	return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst)
+	return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 }
 
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
@@ -270,8 +270,12 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	return nil
 }
 
-func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
+func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
+	// if successfully deleted we could not update the object
+	if isDelete && err == nil {
+		return nil
+	}
 
 	inst.Status.Phase = lserrors.GetPhaseForLastError(
 		inst.Status.Phase,

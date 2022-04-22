@@ -7,6 +7,8 @@ package container
 import (
 	"context"
 
+	lserror "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -59,11 +61,10 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	if deployItem == nil {
 		return reconcile.Result{}, nil
 	}
-	errHdl := deployerlib.HandleErrorFunc(r.log, r.lsClient, r.lsEventRecorder, deployItem)
-	if err := errHdl(ctx, r.diRec.Reconcile(ctx, lsCtx, deployItem, nil)); err != nil {
-		return reconcile.Result{}, err
-	}
-	return reconcile.Result{}, nil
+	old := deployItem.DeepCopy()
+	err = r.diRec.Reconcile(ctx, lsCtx, deployItem, nil)
+	lsErr := lserror.BuildLsErrorOrNil(err, "Reconcile", "Reconcile")
+	return reconcile.Result{}, deployerlib.HandleErrorFunc(ctx, lsErr, r.log, r.lsClient, r.lsEventRecorder, old, deployItem, false)
 }
 
 // PodEventHandler implements the controller runtime handler interface

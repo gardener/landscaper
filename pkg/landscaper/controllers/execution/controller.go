@@ -77,7 +77,8 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		lsError = lsErr2
 	}
 
-	return reconcile.Result{}, handleError(ctx, lsError, logger, c.client, c.eventRecorder, oldExec, exec)
+	isDelete := !exec.DeletionTimestamp.IsZero()
+	return reconcile.Result{}, handleError(ctx, lsError, logger, c.client, c.eventRecorder, oldExec, exec, isDelete)
 }
 
 func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
@@ -169,7 +170,12 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 }
 
 func handleError(ctx context.Context, err lserrors.LsError, log logr.Logger, c client.Client,
-	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution) error {
+	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution, isDelete bool) error {
+	// if successfully deleted we could not update the object
+	if isDelete && err == nil {
+		return nil
+	}
+
 	// There are two kind of errors: err != nil and exec.Status.LastError != nil
 	// If err != nil this error is set and returned such that a retry is initiated.
 	// If err == nil and exec.Status.LastError != nil another object must change its state and initiate a new event
