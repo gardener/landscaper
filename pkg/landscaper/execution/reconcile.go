@@ -95,34 +95,31 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 				}
 
 				// the deployitem up-to-date
-				if deployItemUpToDate {
-
-					// deployitem is failed => set execution to failed
-					if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-						// TODO: check if need to wait for other deployitems to finish
-						o.exec.Status.ObservedGeneration = o.exec.Generation
-						o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-						o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
-							lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
-								"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
-						o.exec.Status.LastError = lserrors.UpdatedError(
-							o.exec.Status.LastError,
-							"DeployItemReconcile",
-							"DeployItemFailed",
-							fmt.Sprintf("reconciliation of deployitem %q failed", item.DeployItem.Name),
-						)
-						dlogger.V(7).Info("deployitem failed, aborting reconcile")
-						return nil
-					}
-
-					// the deployitem is
-					// - up-to-date
-					// - in a final state
-					// - not failed
-					// => nothing to do with the deployitem
-					dlogger.V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
-					continue
+				// deployitem is failed => set execution to failed
+				if item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+					// TODO: check if need to wait for other deployitems to finish
+					o.exec.Status.ObservedGeneration = o.exec.Generation
+					o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+					o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions,
+						lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+							"DeployItemFailed", fmt.Sprintf("DeployItem %s (%s) is in failed state", item.Info.Name, item.DeployItem.Name)))
+					o.exec.Status.LastError = lserrors.UpdatedError(
+						o.exec.Status.LastError,
+						"DeployItemReconcile",
+						"DeployItemFailed",
+						fmt.Sprintf("reconciliation of deployitem %q failed", item.DeployItem.Name),
+					)
+					dlogger.V(7).Info("deployitem failed, aborting reconcile")
+					return nil
 				}
+
+				// the deployitem is
+				// - up-to-date
+				// - in a final state
+				// - not failed
+				// => nothing to do with the deployitem
+				dlogger.V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
+				continue
 			}
 		}
 		runnable, err := o.checkRunnable(ctx, item, executionItems)

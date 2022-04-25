@@ -33,7 +33,7 @@ func (e Error) Error() string {
 	if e.err != nil {
 		return e.err.Error()
 	}
-	return fmt.Sprintf("Op: %q - Reason: %q - Message: %q", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
+	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
 }
 
 // LandscaperError returns the wrapped landscaper error.
@@ -127,6 +127,16 @@ func TryUpdateError(lastErr *lsv1alpha1.Error, err error) *lsv1alpha1.Error {
 		return intErr.UpdatedError(lastErr)
 	}
 	return nil
+}
+
+// TryUpdateLsError tries to update the properties of the last error if the err is a internal landscaper error.
+func TryUpdateLsError(lastErr *lsv1alpha1.Error, err LsError) *lsv1alpha1.Error {
+	if err == nil {
+		return nil
+	}
+
+	errorInfo := err.LandscaperError()
+	return UpdatedError(lastErr, errorInfo.Operation, errorInfo.Reason, errorInfo.Message, errorInfo.Codes...)
 }
 
 // UpdatedError updates the properties of a error.

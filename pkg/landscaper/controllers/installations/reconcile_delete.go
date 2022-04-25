@@ -31,7 +31,7 @@ var (
 	SiblingImportError = errors.New("a sibling still imports some of the exports")
 )
 
-func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
 		currentOperation = "Deletion"
 		log              = logr.FromContextOrDiscard(ctx)
@@ -45,7 +45,8 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		log.V(7).Info("remove force reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000003, inst); err != nil {
-			return lserrors.NewWrappedError(err, currentOperation, "RemoveOperationAnnotation", "Unable to remove operation annotation")
+			return lserrors.NewWrappedError(err,
+				currentOperation, "RemoveOperationAnnotation", "Unable to remove operation annotation")
 		}
 
 		return nil
@@ -72,15 +73,14 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 
 	subPhase, err := subinstallations.CombinedPhase(ctx, c.Client(), inst)
 	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currentOperation, "CheckSubinstallationStatus", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "CheckSubinstallationStatus", err.Error())
 	}
 
-	// if no installations nor an execution is deployed both phases are empty.
-	// Then we can simply skip the deletion.
+	// if no installations nor an execution is deployed both phases are empty. Then we can simply skip the deletion.
 	if (len(execPhase) + len(subPhase)) == 0 {
 		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		return c.Writer().UpdateInstallation(ctx, read_write_layer.W000004, inst)
+		err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000004, inst)
+		return lserrors.NewErrorOrNil(err, currentOperation, "RemoveFinalizer")
 	}
 
 	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subPhase, lsv1alpha1.ComponentInstallationPhase(execPhase))
@@ -92,13 +92,14 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		return nil
 	}
 
-	return DeleteExecutionAndSubinstallations(ctx, c.Writer(), c.Client(), inst)
+	err = DeleteExecutionAndSubinstallations(ctx, c.Writer(), c.Client(), inst)
+	return lserrors.NewErrorOrNil(err, currentOperation, "DeleteExecutionAndSubinstallations")
 }
 
 // DeleteExecutionAndSubinstallations deletes the execution and all subinstallations of the installation.
 // The function does not wait for the successful deletion of all resources.
 // It returns nil and should be called on every reconcile until it removes the finalizer form the current installation.
-func DeleteExecutionAndSubinstallations(ctx context.Context, writer *read_write_layer.Writer, c client.Client, inst *lsv1alpha1.Installation) error {
+func DeleteExecutionAndSubinstallations(ctx context.Context, writer *read_write_layer.Writer, c client.Client, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "Deletion"
 	inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
 
@@ -117,7 +118,8 @@ func DeleteExecutionAndSubinstallations(ctx context.Context, writer *read_write_
 	}
 
 	controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-	return writer.UpdateInstallation(ctx, read_write_layer.W000008, inst)
+	err = writer.UpdateInstallation(ctx, read_write_layer.W000008, inst)
+	return lserrors.NewErrorOrNil(err, op, "RemoveFinalizer")
 }
 
 func deleteExecution(ctx context.Context, kubeWriter *read_write_layer.Writer, kubeClient client.Client, inst *lsv1alpha1.Installation) (bool, error) {

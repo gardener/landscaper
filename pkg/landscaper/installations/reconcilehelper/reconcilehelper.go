@@ -140,7 +140,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 
 			owner := imp.GetOwnerReference()
 			var configGen string
-			if ownerReferenceIsInstallation(owner) {
+			if installations.OwnerReferenceIsInstallationButNoParent(owner, rh.Inst.Info) {
 				// owner is an installation, get configGeneration from its status
 				configGen, err = rh.getOwnerGeneration(owner)
 				if err != nil {
@@ -164,7 +164,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 				if storedConfigGens != nil {
 					storedConfigGen = storedConfigGens[objectName]
 				}
-				if ownerReferenceIsInstallation(owner) {
+				if installations.OwnerReferenceIsInstallationButNoParent(owner, rh.Inst.Info) {
 					// owner is an installation, get configGeneration from its status
 					configGen, err = rh.getOwnerGeneration(owner)
 					if err != nil {
@@ -400,7 +400,7 @@ func (rh *ReconcileHelper) fetchDependencies() error {
 
 // getOwnerGeneration returns the config generation of the owner, if the owner is an installation
 func (rh *ReconcileHelper) getOwnerGeneration(owner *metav1.OwnerReference) (string, error) {
-	if !ownerReferenceIsInstallation(owner) {
+	if !installations.OwnerReferenceIsInstallation(owner) {
 		// validation only possible for installations
 		return "", nil
 	}
@@ -422,10 +422,6 @@ func (rh *ReconcileHelper) getOwnerGeneration(owner *metav1.OwnerReference) (str
 	}
 
 	return "", fmt.Errorf("owner reference %q refers to an installation which is neither the parent nor a sibling", ref.NamespacedName().String())
-}
-
-func ownerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
-	return owner != nil && owner.Kind == "Installation"
 }
 
 // getConfigGenerationsFromImportStatus gets the config generation(s) for the given import
@@ -474,7 +470,7 @@ func (rh *ReconcileHelper) getConfigGenerationsFromImportStatus(imp *dataobjects
 //   the exporting installation is actually exporting this value and is a sibling of the current installation.
 func (rh *ReconcileHelper) checkStateForImport(impPath *field.Path, imp dataobjects.Imported) error {
 	owner := imp.GetOwnerReference()
-	if owner == nil || owner.Kind != "Installation" {
+	if !installations.OwnerReferenceIsInstallation(owner) {
 		// we cannot validate if there is no owner or the owner is not an installation
 		return nil
 	}
