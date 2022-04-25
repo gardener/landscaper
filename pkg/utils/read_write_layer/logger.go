@@ -24,7 +24,6 @@ func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.
 			keyWriteID, writeID,
 			keyName, target.Name,
 			keyNamespace, target.Namespace,
-			keyPhase, "none",
 			keyGenerationOld, generationOld,
 			keyGenerationNew, generationNew,
 			keyResourceVersionOld, resourceVersionOld,
@@ -35,7 +34,6 @@ func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.
 			keyWriteID, writeID,
 			keyName, target.Name,
 			keyNamespace, target.Namespace,
-			keyPhase, "none",
 			keyGenerationOld, generationOld,
 			keyResourceVersionOld, resourceVersionOld,
 		)
@@ -50,7 +48,6 @@ func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.
 			keyWriteID, writeID,
 			keyName, do.Name,
 			keyNamespace, do.Namespace,
-			keyPhase, "none",
 			keyGenerationOld, generationOld,
 			keyGenerationNew, generationNew,
 			keyResourceVersionOld, resourceVersionOld,
@@ -61,7 +58,6 @@ func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.
 			keyWriteID, writeID,
 			keyName, do.Name,
 			keyNamespace, do.Namespace,
-			keyPhase, "none",
 			keyGenerationOld, generationOld,
 			keyResourceVersionOld, resourceVersionOld,
 		)
