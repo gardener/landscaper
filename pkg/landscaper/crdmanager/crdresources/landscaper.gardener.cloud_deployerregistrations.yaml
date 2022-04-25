@@ -654,11 +654,53 @@ spec:
             - types
             - installationTemplate
             type: object
+          status:
+            description: Status contains the current status of the deployer registration.
+            properties:
+              lastError:
+                description: LastError describes the last error that occurred.
+                properties:
+                  codes:
+                    description: Well-defined error codes in case the condition reports
+                      a problem.
+                    items:
+                      type: string
+                    type: array
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    format: date-time
+                    type: string
+                  lastUpdateTime:
+                    description: Last time the condition was updated.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  operation:
+                    description: Operation describes the operator where the error
+                      occurred.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                required:
+                - operation
+                - lastTransitionTime
+                - lastUpdateTime
+                - reason
+                - message
+                type: object
+            type: object
         required:
         - spec
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

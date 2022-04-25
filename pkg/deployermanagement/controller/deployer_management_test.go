@@ -125,6 +125,33 @@ var _ = Describe("Deployer Management Test", func() {
 			testutils.ExpectNoError(testenv.Client.Get(ctx, targetKey, target))
 			Expect(string(target.Spec.Configuration.RawMessage)).To(ContainSubstring("my-service-account-token"))
 		})
+
+		It("should handle installation name exceeding max length", func() {
+			env := &lsv1alpha1.Environment{}
+			env.GenerateName = "test-12345-test-123456789-new-abjk-"
+			env.Spec.TargetSelectors = make([]lsv1alpha1.TargetSelector, 0)
+			env.Spec.HostTarget.Type = "mytype"
+			env.Spec.Namespace = state.Namespace
+			Expect(state.Create(ctx, env)).To(Succeed())
+
+			reg := &lsv1alpha1.DeployerRegistration{}
+			reg.GenerateName = "testdeployer-"
+			controllerutil.AddFinalizer(reg, lsv1alpha1.LandscaperDMFinalizer)
+			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
+			testutils.ExpectNoError(state.Create(ctx, reg))
+
+			testutils.MimicKCMServiceAccount(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
+				Name:      deployers.FQName(reg, env),
+				Namespace: state.Namespace,
+				Token:     "my-service-account-token",
+			})
+			err := dm.Reconcile(ctx, reg, env)
+			Expect(err).To(HaveOccurred())
+
+			regKey := kutil.ObjectKey(reg.Name, state.Namespace)
+			testutils.ExpectNoError(testenv.Client.Get(ctx, regKey, reg))
+			Expect(reg.Status.LastError).ToNot(BeNil())
+		})
 	})
 
 })

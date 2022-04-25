@@ -34,7 +34,7 @@ deployItems:
             disable: false
             namespace: {{ .imports.virtualClusterNamespace }}
             agent:
-              name: landscaper-{{ .imports.hostingClusterNamespace }}
+              name: {{ .imports.hostingClusterNamespace }}
               disable: false
               namespace: {{ .imports.hostingClusterNamespace }}
 
