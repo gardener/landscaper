@@ -41,7 +41,6 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 	kubeClient client.Client,
 	di *lsv1alpha1.DeployItem,
 	deployerInfo lsv1alpha1.DeployerInformation) error {
-	changedMeta := false
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
 	if hasReconcileAnnotation || hasForceReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
@@ -55,18 +54,10 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 			return err
 		}
 	}
+
 	if hasReconcileAnnotation {
 		log.V(5).Info("removing reconcile annotation")
-		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-	}
-	if metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp)) {
-		log.V(5).Info("removing timestamp annotation")
-		changedMeta = true
-		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
-	}
-
-	if changedMeta {
 		log.V(7).Info("updating metadata")
 		writer := read_write_layer.NewWriter(log, kubeClient)
 		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {

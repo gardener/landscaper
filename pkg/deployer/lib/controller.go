@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"github.com/go-logr/logr"
@@ -200,6 +202,11 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 	if !shouldReconcile {
 		return returnAndLogReconcileResult(logger, *hookRes), nil
+	}
+
+	lsErr = c.removeReconcileTimestampAnnotation(ctx, di)
+	if lsErr != nil {
+		return reconcile.Result{}, HandleErrorFunc(ctx, lsErr, logger, c.lsClient, c.lsEventRecorder, old, di, false)
 	}
 
 	tmpHookRes, lsErr = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.AfterResponsibilityCheckHook)
@@ -404,6 +411,18 @@ func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, depl
 				"Reconcile", "RemoveFinalizer", err.Error())
 		}
 	}
+	return nil
+}
+
+func (c *controller) removeReconcileTimestampAnnotation(ctx context.Context, deployItem *lsv1alpha1.DeployItem) lserrors.LsError {
+	if metav1.HasAnnotation(deployItem.ObjectMeta, lsv1alpha1.ReconcileTimestampAnnotation) {
+		delete(deployItem.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
+
+		if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000076, deployItem); err != nil {
+			return lserrors.BuildLsError(err, "RemoveReconcileTimestampAnnotation", "UpdateMetadata", err.Error())
+		}
+	}
+
 	return nil
 }
 
