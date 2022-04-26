@@ -4,6 +4,27 @@ This tutorial describes the basics of developing Blueprints. It covers the whole
 
 For this tutorial, we are going to use the [NGINX ingress controller](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx) as the example application which will get deployed via its upstream helm chart.
 
+## Structure
+
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Prepare the NGINX helm chart](#step-1-prepare-the-nginx-helm-chart)
+  - [Step 2: Define the Component Descriptor](#step-2-define-the-component-descriptor)
+  - [Step 3: Create a Blueprint](#step-3-create-a-blueprint)
+    - [Imports and Exports declaration](#imports-and-exports-declaration)
+    - [DeployItems](#deployitems)
+  - [Step 4: Render and Validate the Blueprint locally](#step-4-render-and-validate-the-blueprint-locally)
+  - [Step 5: Remote Upload](#step-5-remote-upload)
+  - [Step 6: Installation](#step-6-installation)
+    - [Defining the _Target_ that is used as import](#defining-the-target-that-is-used-as-import)
+    - [Providing the "namespace"-Import as configmap](#providing-the-namespace-import-as-configmap)
+    - [Defining the _Installation_ resource](#defining-the-installation-resource)
+    - [The final _Installation_ resource](#the-final-installation-resource)
+    - [Applying the resources to Kubernetes and let Landscaper do is work](#applying-the-resources-to-kubernetes-and-let-landscaper-do-is-work)
+    - [Deployers](#deployers)
+  - [Summary](#summary)
+  - [Up Next](#up-next)
+  
+  
 ## Prerequisites
 
 For this tutorial, you will need:
@@ -20,17 +41,7 @@ All example resources can be found in the folder [./resources/ingress-nginx](./r
 :warning: Note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` that is used throughout this tutorial is an example repository and has to be replaced with the path to your own registry if you want to upload your own artifacts.
 If you do not have your own OCI registry, you can of course reuse the artifacts that we provided at `eu.gcr.io/gardener-project/landscaper/tutorials` which are publicly readable.
 
-## Structure
 
-- [Prerequisites](#prerequisites)
-1. [Prepare the NGINX helm chart](#Step-1:-Prepare-the-NGINX-helm-chart)
-1. [Define the Component Descriptor](#Step-2:-Define-the-Component-Descriptor)
-1. [Create a Blueprint](#Step-3:-Create-a-Blueprint)
-1. [Render and Validate the Blueprint locally](#Step-4:-Render-and-Validate-the-Blueprint-locally)
-1. [Remote Upload](#Step-5:-Remote-Upload)
-1. [Installation](#Step-6:-Installation)
-- [Summary](#summary)
-- [Up next](#up-next)
 
 ## Step 1: Prepare the NGINX helm chart
 
