@@ -1,7 +1,7 @@
 # Motivation
 In this chapter, it is described what Landscaper is, what it does and why you should start using it.
 
-- [What is Landscaper, why do I need it, what does it?](motivation/motivation.md) 
+- [What is Landscaper ?](motivation/motivation.md) 
 
 - [Install Landscaper](./gettingstarted/install-landscaper-controller.md)
 
