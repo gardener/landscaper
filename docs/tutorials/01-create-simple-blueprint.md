@@ -214,12 +214,12 @@ Access to individual component resources is possible through the template functi
 {{ $resource := getResource .cd "name" "ingress-nginx-chart" }}
 ```
 
-Exports can be described the same way as imports and they can be templated using template executions in the `exportExecutions` - just like `deployExections`.
-Export execution are expected to output the exports as a map of <export name>: <value> .
+Just like `deployExections` are templates for individual DeployItems, `exportExecutions` are templates for export parameters of the blueprint.
+These export execution are expected to output the exports as a map of `<export name>`:`<value>`.
 
 <details>
 
-If a target gets exported, it is expected to adhere to the following structure:
+If a target is exported, it is expected to adhere to the following structure:
 
 ```yaml
 <target export name>:
@@ -230,7 +230,7 @@ If a target gets exported, it is expected to adhere to the following structure:
     config: {}
 ```
 
-To export values of _DeployItems_ and _Installations_, Landscaper gives access to them via templating imports:
+To export values of DeployItems and Installations, the Landscaper provides access to them via templating imports:
 
 ```yaml
 values:
@@ -243,6 +243,8 @@ values:
 ```
 
 </details>
+
+Let's have a look at the complete Blueprint for the ingress-nginx Helm Chart:
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -294,7 +296,7 @@ exportExecutions:
 exports:
 - name: ingressClass
   type: data
-  schema: # here comes a valid jsonschema
+  schema: 
     type: string
 ```
 
@@ -304,11 +306,11 @@ For an example see [./resources/ingress-nginx/blueprint](resources/ingress-nginx
 
 ## Step 4: Render and Validate the Blueprint locally
 
-The Blueprint would result in a _DeployItem_ of type _Helm_ that was derived from a template and one import. This step is called rendering.
+The Blueprint as shown above will result in a DeployItem named _deploy_ of type `landscaper.gardener.cloud/helm`, derived from a template defined in the `deployExecution` and two imports `cluster`and `namespace`. The process of producing a concrete DeployItem is called `rendering`.
 
-To test the rendering locally and to have a look at the resulting DeployItem, `landscaper-cli` can be used (`landscaper-cli` will use the same rendering library as the landscaper-controller that would run within Kubernetes).
+To test this rendering locally in order to have a look at the resulting DeployItem, `landscaper-cli` can be used. This CLI uses the same rendering library as the landscaper-controller that runs within Kubernetes.
 
-First, the import values that are used by the templating step need to be put into a file that will be provided to `landscaper-cli` (e.g. [docs/tutorials/resources/ingress-nginx/import-values.yaml](./resources/ingress-nginx/import-values.yaml)).
+First, the import values that are used by the templating step need to be put into a file that will be provided to the `landscaper-cli` ( see also [docs/tutorials/resources/ingress-nginx/import-values.yaml](./resources/ingress-nginx/import-values.yaml)).
 
 ```yaml
 imports:
@@ -324,7 +326,7 @@ imports:
           apiVersion: ...
 ```
 
-Now, with this file and the Component Descriptor (e.g. [docs/tutorials/resources/ingress-nginx/component-descriptor.yaml](./resources/ingress-nginx/component-descriptor.yaml)) at hand, the Blueprint can be rendered.
+With this file and the Component Descriptor (e.g. [docs/tutorials/resources/ingress-nginx/component-descriptor.yaml](./resources/ingress-nginx/component-descriptor.yaml)) at hand, the Blueprint can be rendered.
 
 ```shell script
 landscaper-cli blueprints render ./docs/tutorials/resources/ingress-nginx/blueprint \
@@ -332,7 +334,7 @@ landscaper-cli blueprints render ./docs/tutorials/resources/ingress-nginx/bluepr
   -f ./docs/tutorials/resources/ingress-nginx/import-values.yaml
 ```
 
-This is result in a DeployItem that could get picked up by a deployer in a later step.
+This will result in the following DeployItem:
 
 ```yaml
 --------------------------------------
@@ -371,7 +373,7 @@ status:
 
 Once the development of the Blueprint is finished and it renders successfully, it has to be uploaded to an OCI registry and its reference needs to be added to the Component Descriptor.
 
-The Blueprint can easily be uploaded with the `landscaper-cli` tool which will package the Blueprint and upload it to the given OCI registry.
+The Blueprint can easily be uploaded with the `landscaper-cli` tool. The CLI will package the Blueprint and upload it to the given OCI registry.
 
 ```shell script
 # replace the values to match your registry and file locations
@@ -386,10 +388,10 @@ landscaper-cli blueprints push \
   docs/tutorials/resources/ingress-nginx/blueprint
 ```
 
-Blueprints are also just resources/artifacts of a Component Descriptor. Therefore, after the Blueprint got uploaded, its reference needs to be added to the Component Descriptor. This is necessary to make sure that all resources of an application are known and stored - and the Blueprint is just one of the resources of an application.
-In addition, Landscaper needs this information to resolve the location of the Blueprint resource.
+Blueprints are also just resources of a Component Descriptor. Therefore, after the Blueprint got uploaded, its reference needs to be added to the Component Descriptor. This is necessary to make sure that all resources of an application are known to the Component Descriptor - and the Blueprint is just one of the resources of an application.
+In addition, the Landscaper needs this information to resolve the location of the Blueprint resource.
 
-Note that the repository context as well as the Blueprint resource should be added to the Component Descriptor.
+Note that also the repository context needs to be added to the Component Descriptor. (**ToDo**: Add more info about this here or link to respective docs ...)
 
 ```yaml
 meta:
@@ -423,7 +425,7 @@ component:
       imageReference: eu.gcr.io/gardener-project/landscaper/tutorials/blueprints/ingress-nginx:v0.3.0
 ```
 
-Finally, the Component Descriptor must be uploaded to an OCI registry. This is done witl the `component-cli` tool, which has been integrated into the `landscaper-cli`.
+Finally, the Component Descriptor must be uploaded to an OCI registry. This is done with the `component-cli` tool, which is included already in the `landscaper-cli`.
 
 ```shell script
 
@@ -436,18 +438,17 @@ landscaper-cli component-cli ca remote push ./docs/tutorials/resources/ingress-n
 ```
 
 Once the upload succeeds, the Component Descriptor should be accessible at `eu.gcr.io/gardener-project/landscaper/tutorials/components/component-descriptors/github.com/gardener/landscaper/ingress-nginx/v0.3.2` in the registry.
+(**ToDo**: This will NOT be the registry, if the user performing this tutorial created his own registry. Needs to be updated to make this more clear.)
 
 ## Step 6: Installation
 
-Now that all external resources are defined and uploaded to OCI registries, the nginx-ingress can finally get installed by Landscaper into our target Kubernetes cluster.
+Now all resources are added to the Component Descriptor, and everything is uploaded to the OCI registry. The nginx-ingress can finally be installed by the Landscaper into the target Kubernetes cluster.
 
-Before the runtime resources are defined, the landscaper-controller has to be installed into the first (the Landscaper-) Kubernetes cluster. For a detailed installation instructions, see the [Landscaper Controller Installation](../gettingstarted/install-landscaper-controller.md) document.
-
-The Blueprint that we created so far in the previous steps can be installed by Landscaper into a target cluster by creating an _Installation_ resource in our Landscaper-cluster.
+For this, a working Landscaper Installation is needed. For a detailed installation instruction, see the [Landscaper Controller Installation](../gettingstarted/install-landscaper-controller.md) document.
 
 ### Defining the _Target_ that is used as import
 
-The Blueprint defines one import of a Kubernetes cluster, therefore, a _Target_ resource of type `landscaper.gardener.cloud/kubernetes-cluster` that points to the target cluster has to be defined. This target basically needs to contain the target cluster's kubeconfig.
+The Blueprint that has been created above defines one import parameter of type `landscaper.gardener.cloud/kubernetes-cluster`, therefore, a Target resource of type `landscaper.gardener.cloud/kubernetes-cluster` that points to the target cluster has to be defined. This target basically needs to contain the target cluster's kubeconfig.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -464,11 +465,9 @@ spec:
 
 ### Providing the "namespace"-Import as configmap
 
-The Blueprint defines another import for the namespace that should be of type `string`.
-Imports that are defined by a jsonschema are called data imports.
-These imports can be defined either via `DataObject`, `Secret` or `ConfigMap`.
+The Blueprint defines another import for the namespace that should be of type `string`. Imports that are defined by a jsonschema are called data imports. These imports can be defined either via `DataObject`, `Secret` or `ConfigMap`.
 
-In this tutorial the import is defined as configmap:
+In this tutorial, we will define this import as `ConfigMap`:
 
 ```yaml
 apiVersion: v1
@@ -481,11 +480,11 @@ data:
 
 ### Defining the _Installation_ resource
 
-An _Installation_ is an instance of a Blueprint, i.e. it is the runtime representation of one specific Blueprint installation.
+An _Installation_ is an instance of a Blueprint, i.e. it is the runtime representation of one specific Blueprint.
 
-An installation consists of a Blueprint, Imports and Exports.
+An installation resource needs to provide references to a Component Descriptor and a Blueprint, and concretely specify import and export data.
 
-__Component Descriptor__: Remember that a Blueprint is just another resource of a software component and thus is referenced by the Component Descriptor. We need to spcify the Component Descriptor through its repository context, the component name and its version.
+__Component Descriptor__: Remember that a Blueprint is just another resource of a software component and thus is referenced by the Component Descriptor. In the `installation.yaml`, we need to specify the Component Descriptor through its repository context, the component name and its version.
 
 ```yaml
 componentDescriptor:
@@ -497,7 +496,7 @@ componentDescriptor:
     version: v0.3.2
 ```
 
-__Blueprint__: Once the Component Descriptor is given, the Blueprint artifact in the component descriptor is specified by its resource with the unique name `ingress-nginx-blueprint`.
+__Blueprint__: Once the Component Descriptor is known to the iinstallation, the Blueprint artifact can be referenced by its unique name `ingress-nginx-blueprint`.
 
 ```yaml
 blueprint:
@@ -505,8 +504,7 @@ blueprint:
     resourceName: ingress-nginx-blueprint
 ```
 
-__Imports__: The Blueprint needs a _Target_ import of type _kubernetes-cluster_ and a data import for the namespace.
-The target `my-target-cluster` and the configmap that we created before, needs to be connected to the Blueprint's import in the Installation.
+__Imports__: The Blueprint requires a _Target_ import of type `landscaper.gardener.cloud/kubernetes-cluster` and a data import for the namespace. This means that the target `my-target-cluster` and the configmap we created before need to be connected to the Blueprints import in the Installation.
 
 :warning: The "#" has to be used to reference the previously created target. Otherwise, Landscaper would try to import the target from another component's export.
 
@@ -525,7 +523,7 @@ imports:
 
 ```
 
-__Exports__: The nginx ingress Blueprint exports the used `ingressClass` so that it can be reused by other components. To give the generic ingress class more semantic meaning in the current installation, the export is exported as `myIngressClass`.
+__Exports__: The nginx ingress Blueprint exports the used `ingressClass`, so that it can be reused by other components. To give the generic ingress class more semantic meaning in the current installation, the export is exported as `myIngressClass`.
 Other installation are now able to consume the data with this specific name.
 
 :warning: Note that this name has to be unique so that it will not be overwritten by other installations.
@@ -580,7 +578,7 @@ spec:
 
 ### Applying the resources to Kubernetes and let Landscaper do is work
 
-The _Target_ and the _Installation_ resources can now be applied to the Kubernetes cluster running the landscaper-controller.
+The _Target_ and the _Installation_ resources can now be applied to the Kubernetes cluster where the landscaper-controller runs.
 
 ```shell script
 kubectl apply -f docs/tutorials/resources/ingress-nginx/my-target.yaml
@@ -588,9 +586,9 @@ kubectl apply -f docs/tutorials/resources/ingress-nginx/configmap.yaml
 kubectl apply -f docs/tutorials/resources/ingress-nginx/installation.yaml
 ```
 
-Landscaper will now immediately start to reconcile the _Installation_ as all imports are satisfied.
+The Landscaper will immediately start to reconcile the _Installation_ as all imports are satisfied.
 
-The first resource that will be created is the execution object which is a helper resource that contains the rendered deployitems. The status shows the one specified Helm _DeployItem_ which has been automatically created by Landscaper.
+The first resource that will be created is the execution object, which is a helper resource that contains the rendered deployitems. The status shows the one specified Helm DeployItem, which has been automatically created by the Landscaper.
 
 ```shell output
 $ kubectl get installation
@@ -636,9 +634,9 @@ status:
 
 ### Deployers
 
-The newly created _DeployItem_ will be reconciled by the Helm deployer. It is the Helm deployer that creates and updates the configured resources of the Helm chart in the target cluster. 
+The created _DeployItem_ will be reconciled by the Helm deployer. It is the Helm deployer that creates and updates the configured resources of the Helm chart in the target cluster. 
 
-When the deployer successfully reconciled the DeployItem, the phase is set to `Succeeded` and all managed resources are added to the DeployItem's status.
+After the deployer successfully reconciled the DeployItem, the phase is set to `Succeeded` and all managed resources are added to the DeployItem's status.
 
 ```shell output
 $ kubectl get di my-ingress-deploy-xxx -oyaml
@@ -678,7 +676,7 @@ status:
     [...]
 ```
 
-The Blueprint configured export values, therefore, the Helm deployer also creates a secret that contains the exported values.
+The Blueprint declared export parameters, and therefore, the Helm deployer creates a secret which contains the exported values.
 
 ```shell
 # A kubectl plugin is used to automatically decode the base64 encoded secret
@@ -717,7 +715,7 @@ data:
     ingressClass: nginx
 ```
 
-Landscaper collects the export from the execution and creates the configured exported dataobject `myIngressClass`.
+The Landscaper collects the export from the execution and creates the configured exported dataobject `myIngressClass`.
 The exported dataobject is a contextified dataobject, which means that it can only be imported by other installations in the same context. The dataobject's context is the root context `""` so that all root installations could use the export as import.
 
 Contextified dataobjects name is a hash of the exported key and the context, so that they can be unqiely identified by the landscaper.
