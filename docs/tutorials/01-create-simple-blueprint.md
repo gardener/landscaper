@@ -91,9 +91,9 @@ helm push $CHART_REF
 
 ## Step 2: Define the Component Descriptor
 
-A Component Descriptor contains references and locations to all _resources_ that are used by Landscaper to deploy and install an application. In this example, the only kind of _resources_ is a `helm` chart (that of the nginx-ingress controller that we uploaded to an OCI registry in the previous step) but it could also be `oci images` or even `node modules`.
+A Component Descriptor contains references and locations to all _resources_ that are used by the Landscaper to deploy and install an application. In this example, the only resource is a `helm` chart of the nginx-ingress controller we uploaded to an OCI registry in the [previous step](#step-1-prepare-the-nginx-helm-chart).
 
-If a Helm chart is referenced through a component descriptor, the version of the chart in the component descriptor should match the version of the chart itself. Since we are using version 4.0.17 of the _ingress-nginx_ Helm chart in this tutorial, the component descriptor references it accordingly.
+If a Helm chart is referenced through a component descriptor, the version of the chart in the component descriptor should match the version of the chart itself (in this example 4.0.17)
 
 For more information about the component descriptor and the usage of the different fields, refer to the [component descriptor documentation](https://github.com/gardener/component-spec).
 
@@ -125,18 +125,18 @@ component:
 
 ## Step 3: Create a Blueprint
 
-Blueprints describe how _DeployItems_ are created by taking the values of `imports` and applying them to templates inside `deployExecutions`. Additionally, they specify which pieces of data appear as `exports` from the executed _DeployItems_.
+Blueprints contain instructions on how to install a component and what is needed to perform this deployment. In blueprints, it is possible to declare `import` and `export parameters`, which in a sense describe the interface of a blueprint.
+Technically, blueprints describe how `DeployItems` are created by taking data from import parameters and applying that data to templates inside of so-called `deployExecutions`. Blueprints also specify which data is exported via export parameters from the DeployItems.
 
 For detailed documentation about Blueprints, look at [docs/usage/Blueprints.md](/docs/usage/Blueprints.md).
 
 ### Imports and Exports declaration
 
-The `imports` are described as a list of import declarations. Each _import_ is declared by a unique name and a type which is either a JSON schema or a `targetType`.
+The `imports` are described as a list of import declarations. Each import is declared by a unique name and a type, which is either a JSON schema or a `targetType`.
 
 <details>
 
-Imports with the type `schema` import their data from a data object with a given JSON schema. Imports with the type `targetType` are imported from the specified _Target_.
-
+Imports with the type `schema` import their data from a data object with a given JSON schema. 
 ```yaml
 # import with type JSON schema
 
@@ -144,7 +144,7 @@ Imports with the type `schema` import their data from a data object with a given
   schema: # valid jsonschema
     type: string | object | number | ...
 ```
-
+Imports with the type `targetType` are imported from the specified _Target_.
 ```yaml
 # import from/into targetType
 
@@ -154,24 +154,24 @@ Imports with the type `schema` import their data from a data object with a given
 
 </details>
 
-Our _nginx-ingress_ controller in this tutorial only needs to import a target Kubernetes cluster and a namespace in the target cluster. 
-The target will be used as the k8s cluster where the Helm chart gets deployed to. 
-The following YAML snippet _declares_ the imports:
+The nginx-ingress controller in this tutorial only needs to import a target Kubernetes cluster and a namespace in that cluster. 
+This target will be used as the k8s cluster where the Helm chart is deployed to. 
+
+The following YAML snippet declares both imports:
 
 ```yaml
 imports:
 - name: cluster
   targetType: landscaper.gardener.cloud/kubernetes-cluster
-# the namespace is expected to be a string
 - name: namespace
   type: data
   schema:
-    type: string
+    type: string    # namespace is expected to be a string
 ```
 
-The declaration of `exports` works just like declaring `imports`. Again, each _export_ is declared as a list-item with a unique name and a data type (again, JSON schema or `targetType`).
+The declaration of `exports` works in the same way. Again, each export is declared with a unique name and a data type (again, JSON schema or `targetType`).
 
-To be able to use the ingress in a later Blueprint or Installation, this Blueprint will export the name of the ingress class as a simple string. With this piece of YAML, the export is _declared_:
+To use the ingress in another Blueprint, this Blueprint exports the name of the ingress class as a simple string. With this following YAML, the export parameter is declared:
 
 ```yaml
 exports:
@@ -182,23 +182,23 @@ exports:
 
 ### DeployItems
 
-_DeployItems_ are created from templates that are given in the `deployExecutions` section. Each element specifies a templating step which will result in one or multiple _DeployItems_ (returned as a list).
+DeployItems are created from templates, which are specified in the `deployExecutions` section of a Blueprint. Each element specifies a templating step which will result in one or multiple DeployItems (returned as a list).
 
 ```yaml
 - name: "unique name of the deployitem"
   type: landscaper.gardener.cloud/helm | landscaper.gardener.cloud/container | ... # deployer identifier
-  # names of other deployitems that the deploy item depends on.
-  # If a item depends on another, the landscaper ensures that dependencies are executed and reconciled before the item.
-  dependsOn: []
+  dependsOn: [] # names of other deployitems that the deploy item depends on.
   config: # provider specific configuration
     apiVersion: mydeployer.landscaper.gardener.cloud/test
     kind: ProviderConfiguration
     ...
 ```
 
-At the moment, the supported templating engines are [GoTemplate](https://golang.org/pkg/text/template/) and [Spiff](https://github.com/mandelsoft/spiff). For detailed information about the template executors, [read this](/docs/usage/TemplateExecutors.md).
+Note that if a deployitem depends on another deployitem, the Landscaper ensures that dependencies are executed and reconciled in the correct sequence.
 
-While processing the templates, Landscaper offers access to the `imports` and the fields of the component descriptor through the following structure:
+The currently supported templating engines are [GoTemplate](https://golang.org/pkg/text/template/) and [Spiff](https://github.com/mandelsoft/spiff). For detailed information about the template executors, read [/docs/usage/TemplateExecutors](/docs/usage/TemplateExecutors.md).
+
+While processing the templates, the Landscaper offers access to the `imports` and the fields of the component descriptor through the following structure:
 
 ```yaml
 imports:
