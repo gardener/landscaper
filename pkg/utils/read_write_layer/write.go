@@ -25,6 +25,34 @@ func NewWriter(log logr.Logger, c client.Client) *Writer {
 	}
 }
 
+// methods for targets
+
+func (w *Writer) CreateOrUpdateCoreTarget(ctx context.Context, writeID WriteID, target *lsv1alpha1.Target,
+	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(target)
+	result, err := createOrUpdateCore(ctx, w.client, target, f)
+	w.logTargetUpdate(writeID, opInstSpec, target, generationOld, resourceVersionOld, err)
+	return result, errorWithWriteID(err, writeID)
+}
+
+// methods for data objects
+
+func (w *Writer) CreateOrUpdateCoreDataObject(ctx context.Context, writeID WriteID, do *lsv1alpha1.DataObject,
+	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
+	result, err := createOrUpdateCore(ctx, w.client, do, f)
+	w.logDataObjectUpdate(writeID, opInstSpec, do, generationOld, resourceVersionOld, err)
+	return result, errorWithWriteID(err, writeID)
+}
+
+func (w *Writer) CreateOrUpdateDataObject(ctx context.Context, writeID WriteID, do *lsv1alpha1.DataObject,
+	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
+	result, err := kubernetes.CreateOrUpdate(ctx, w.client, do, f)
+	w.logDataObjectUpdate(writeID, opInstCreateOrUpdate, do, generationOld, resourceVersionOld, err)
+	return result, errorWithWriteID(err, writeID)
+}
+
 // methods for installations
 
 func (w *Writer) CreateOrUpdateInstallation(ctx context.Context, writeID WriteID, installation *lsv1alpha1.Installation,

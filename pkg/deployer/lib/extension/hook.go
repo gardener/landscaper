@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	lserror "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -77,7 +79,7 @@ type ReconcileExtensionHookSetup struct {
 // The results of all executed hooks are aggregated using the AggregateHookResults function, except for
 //   DuringResponsibilityCheck and ShouldReconcile hooks, where AggregateHookResultsWithInvertedAbortPriority is used instead.
 // An error is returned if one of the hooks returns an error or if an unknown hook type is given.
-func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, error) {
+func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
 	logger := log.WithName(string(ht))
 	logger.V(7).Info("calling extension hooks")
 	typedHooks, ok := hooks[ht]
@@ -88,7 +90,7 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.
 			BeforeDeleteHook, BeforeReconcileHook, BeforeAnyReconcileHook, EndHook:
 			return nil, nil
 		default:
-			return nil, fmt.Errorf("unknown hook type %q", string(ht))
+			return nil, lserror.NewError("ExecuteHooks", "UnknownHookType", fmt.Sprintf("unknown hook type %q", string(ht)))
 		}
 	}
 	hookRes := make([]*HookResult, len(typedHooks))
@@ -97,7 +99,8 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.
 		var err error
 		hookRes[i], err = hook(ctx, logger, di, target, ht)
 		if err != nil {
-			return nil, fmt.Errorf("error executing reconciliation extension hook %d of type %q: %w", i, string(ht), err)
+			return nil, lserror.NewWrappedError(err, "ExecuteHooks", "ExecuteReconcile",
+				fmt.Sprintf("error executing reconciliation extension hook %d of type %q", i, string(ht)))
 		}
 	}
 	if ht == DuringResponsibilityCheckHook || ht == ShouldReconcileHook {

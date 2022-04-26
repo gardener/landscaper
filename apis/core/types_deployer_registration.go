@@ -27,6 +27,9 @@ type DeployerRegistration struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// Spec defines the deployer registration configuration.
 	Spec DeployerRegistrationSpec `json:"spec"`
+	// Status contains the current status of the deployer registration.
+	// +optional
+	Status DeployerRegistrationStatus `json:"status"`
 }
 
 // DeployerRegistrationSpec defines the configuration of a deployer registration
@@ -52,4 +55,10 @@ type DeployerInstallationTemplate struct {
 	// Example: namespace: (( installation.imports.namespace ))
 	// +optional
 	ImportDataMappings map[string]AnyJSON `json:"importDataMappings,omitempty"`
+}
+
+// DeployerRegistrationStatus contains the current status of a deployer registration.
+type DeployerRegistrationStatus struct {
+	// LastError describes the last error that occurred.
+	LastError *Error `json:"lastError,omitempty"`
 }

@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"time"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"k8s.io/apimachinery/pkg/selection"
@@ -30,6 +32,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	validation "github.com/gardener/landscaper/apis/core/validation"
 )
 
 // DeployerClusterRoleName is the name of the deployer cluster role.
@@ -138,6 +141,21 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	if len(installations.Items) == 0 {
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = FQName(registration, env)
+
+		if len(inst.Name) > validation.InstallationNameMaxLength {
+			err := lserrors.NewError(
+				"getInstallation",
+				"installation name max length exceeded",
+				fmt.Sprintf("installation name %q in namespace %q exceeds maximum length of %d (environment %q)", inst.Name, dm.config.Namespace, validation.InstallationNameMaxLength, env.Name))
+			registration.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
+
+			if err := dm.client.Status().Update(ctx, registration); err != nil {
+				dm.log.Error(err, "failed to update status for deployer registration", registration.Name)
+			}
+
+			return nil, err
+		}
+
 		inst.Namespace = dm.config.Namespace
 		inst.Labels = map[string]string{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
@@ -208,7 +226,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 		return fmt.Errorf("unable to create cluster role binding for %q: %w", sa.Name, err)
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, target, func() error {
+	if _, err := dm.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000074, target, func() error {
 		if err := lsutils.BuildKubernetesTarget(target, restConfig); err != nil {
 			return err
 		}

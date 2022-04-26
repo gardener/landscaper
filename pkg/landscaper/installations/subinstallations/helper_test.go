@@ -161,7 +161,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 			sortInstallationTemplatesAlphabetically(tmpls)
 			_, err := subinstallations.OrderInstallationTemplates(tmpls)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Op: \"EnsureNestedInstallations\" - Reason: \"OrderNestedInstallationTemplates\" - Message: \"The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_data]-> c}\""))
+			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_data]-> c}"))
 		})
 
 	})
