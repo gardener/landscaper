@@ -28,7 +28,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, cmgr *compo
 		cmgr)
 	return builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.ComponentOverwrites{}).
-		WithLogger(log).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
+		WithLogger(log).
 		Complete(c)
 }

@@ -165,6 +165,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Configuration":                        schema_apis_deployer_container_v1alpha1_Configuration(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec":                        schema_apis_deployer_container_v1alpha1_ContainerSpec(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerStatus":                      schema_apis_deployer_container_v1alpha1_ContainerStatus(ref),
+		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller":                           schema_apis_deployer_container_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions":                         schema_apis_deployer_container_v1alpha1_DebugOptions(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection":                    schema_apis_deployer_container_v1alpha1_GarbageCollection(ref),
 		"github.com/gardener/landscaper/apis/deployer/container/v1alpha1.PodStatus":                            schema_apis_deployer_container_v1alpha1_PodStatus(ref),
@@ -178,6 +179,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Auth":                                      schema_apis_deployer_helm_v1alpha1_Auth(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Chart":                                     schema_apis_deployer_helm_v1alpha1_Chart(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Configuration":                             schema_apis_deployer_helm_v1alpha1_Configuration(ref),
+		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller":                                schema_apis_deployer_helm_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration":                       schema_apis_deployer_helm_v1alpha1_ExportConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepo":                             schema_apis_deployer_helm_v1alpha1_HelmChartRepo(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.HelmChartRepoCredentials":                  schema_apis_deployer_helm_v1alpha1_HelmChartRepoCredentials(ref),
@@ -189,10 +191,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteArchiveAccess":                       schema_apis_deployer_helm_v1alpha1_RemoteArchiveAccess(ref),
 		"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.RemoteChartReference":                      schema_apis_deployer_helm_v1alpha1_RemoteChartReference(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Configuration":                         schema_apis_deployer_manifest_v1alpha1_Configuration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller":                            schema_apis_deployer_manifest_v1alpha1_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration":                   schema_apis_deployer_manifest_v1alpha1_ExportConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderConfiguration":                 schema_apis_deployer_manifest_v1alpha1_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ProviderStatus":                        schema_apis_deployer_manifest_v1alpha1_ProviderStatus(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Configuration":                         schema_apis_deployer_manifest_v1alpha2_Configuration(ref),
+		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller":                            schema_apis_deployer_manifest_v1alpha2_Controller(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration":                   schema_apis_deployer_manifest_v1alpha2_ExportConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderConfiguration":                 schema_apis_deployer_manifest_v1alpha2_ProviderConfiguration(ref),
 		"github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ProviderStatus":                        schema_apis_deployer_manifest_v1alpha2_ProviderStatus(ref),
@@ -6826,12 +6830,19 @@ func schema_apis_deployer_container_v1alpha1_Configuration(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions"),
 						},
 					},
+					"controller": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controller contains configuration concerning the controller framework.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller"),
+						},
+					},
 				},
 				Required: []string{"defaultImage", "initContainer", "waitContainer", "garbageCollection"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.ContainerSpec", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.DebugOptions", "github.com/gardener/landscaper/apis/deployer/container/v1alpha1.GarbageCollection"},
 	}
 }
 
@@ -6949,6 +6960,28 @@ func schema_apis_deployer_container_v1alpha1_ContainerStatus(ref common.Referenc
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.ContainerState"},
+	}
+}
+
+func schema_apis_deployer_container_v1alpha1_Controller(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controller contains configuration concerning the controller framework.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 
@@ -7533,11 +7566,40 @@ func schema_apis_deployer_helm_v1alpha1_Configuration(ref common.ReferenceCallba
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration"),
 						},
 					},
+					"controller": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controller contains configuration concerning the controller framework.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/config.OCIConfiguration", "github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1.ExportConfiguration"},
+	}
+}
+
+func schema_apis_deployer_helm_v1alpha1_Controller(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controller contains configuration concerning the controller framework.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 
@@ -8009,11 +8071,40 @@ func schema_apis_deployer_manifest_v1alpha1_Configuration(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration"),
 						},
 					},
+					"controller": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controller contains configuration concerning the controller framework.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha1.ExportConfiguration"},
+	}
+}
+
+func schema_apis_deployer_manifest_v1alpha1_Controller(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controller contains configuration concerning the controller framework.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 
@@ -8206,11 +8297,40 @@ func schema_apis_deployer_manifest_v1alpha2_Configuration(ref common.ReferenceCa
 							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration"),
 						},
 					},
+					"controller": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Controller contains configuration concerning the controller framework.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration"},
+			"github.com/gardener/landscaper/apis/core/v1alpha1.TargetSelector", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.Controller", "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2.ExportConfiguration"},
+	}
+}
+
+func schema_apis_deployer_manifest_v1alpha2_Controller(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Controller contains configuration concerning the controller framework.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"CommonControllerConfig": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"),
+						},
+					},
+				},
+				Required: []string{"CommonControllerConfig"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/config/v1alpha1.CommonControllerConfig"},
 	}
 }
 

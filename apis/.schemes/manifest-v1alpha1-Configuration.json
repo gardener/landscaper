@@ -1,6 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "definitions": {
+    "config-v1alpha1-CommonControllerConfig": {
+      "description": "CommonControllerConfig describes common controller configuration that can be included in the specific controller configurations.",
+      "type": "object",
+      "required": [
+        "workers",
+        "cacheSyncTimeout"
+      ],
+      "properties": {
+        "cacheSyncTimeout": {
+          "description": "CacheSyncTimeout refers to the time limit set to wait for syncing the kubernetes resource caches. Defaults to 2 minutes if not set.",
+          "$ref": "#/definitions/meta-v1-Duration"
+        },
+        "workers": {
+          "description": "Workers is the maximum number of concurrent Reconciles which can be run. Defaults to 1.",
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        }
+      }
+    },
     "core-v1alpha1-Duration": {
       "description": "Duration is a wrapper for time.Duration that implements JSON marshalling and openapi scheme.",
       "type": "string"
@@ -80,6 +100,19 @@
         }
       }
     },
+    "manifest-v1alpha1-Controller": {
+      "description": "Controller contains configuration concerning the controller framework.",
+      "type": "object",
+      "required": [
+        "CommonControllerConfig"
+      ],
+      "properties": {
+        "CommonControllerConfig": {
+          "default": {},
+          "$ref": "#/definitions/config-v1alpha1-CommonControllerConfig"
+        }
+      }
+    },
     "manifest-v1alpha1-ExportConfiguration": {
       "description": "ExportConfiguration defines the export configuration for the deployer.",
       "type": "object",
@@ -89,6 +122,10 @@
           "$ref": "#/definitions/core-v1alpha1-Duration"
         }
       }
+    },
+    "meta-v1-Duration": {
+      "description": "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
+      "type": "string"
     }
   },
   "description": "Configuration is the manifest deployer configuration that configures the controller",
@@ -96,6 +133,11 @@
     "apiVersion": {
       "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
       "type": "string"
+    },
+    "controller": {
+      "$ref": "#/definitions/manifest-v1alpha1-Controller",
+      "default": {},
+      "description": "Controller contains configuration concerning the controller framework."
     },
     "export": {
       "$ref": "#/definitions/manifest-v1alpha1-ExportConfiguration",
