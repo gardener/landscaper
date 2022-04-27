@@ -33,8 +33,7 @@ For this tutorial, you will need:
   - your helm version should be at least `3.7` legacy commands can be found in the details
 - [OPTIONAL] an OCI compatible registry (e.g. GCR or Harbor)
 - a Kubernetes Cluster (better use two different clusters: one which Landscaper runs in and one that NGINX gets installed into)
-
-You will also need the `landscaper-cli` and `component-cli` command line tools. Their installation is described [here](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) and [here](https://github.com/gardener/component-cli) respectively.
+- the `landscaper-cli` and `component-cli` command line tools. Their installation is described [here](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) and [here](https://github.com/gardener/component-cli).
 
 All example resources can be found in the folder [./resources/ingress-nginx](./resources/ingress-nginx) of this repository.
 
