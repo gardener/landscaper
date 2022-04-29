@@ -87,7 +87,10 @@ repositoryContext:
     baseUrl: {{ .Values.landscaper.repositoryContext.baseUrl }}
 {{- end }}
 
-{{ .Values.landscaper.controllers | toYaml }}
+{{- if .Values.landscaper.controllers }}
+controllers:
+{{ .Values.landscaper.controllers | toYaml | indent 2 }}
+{{- end }}
 
 {{- if .Values.landscaper.registryConfig }}
 registry:

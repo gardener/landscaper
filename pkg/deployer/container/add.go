@@ -7,6 +7,8 @@ package container
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,6 +53,13 @@ func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, 
 		config,
 		deployer)
 
+	options := controller.Options{
+		MaxConcurrentReconciles: config.Controller.Workers,
+	}
+	if config.Controller.CacheSyncTimeout != nil {
+		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
+	}
+
 	err = deployerlib.Add(ctrl.Log, lsMgr, hostMgr, deployerlib.DeployerArgs{
 		Name:            Name,
 		Version:         version.Get().String(),
@@ -58,6 +67,7 @@ func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, 
 		Type:            Type,
 		Deployer:        deployer,
 		TargetSelectors: config.TargetSelector,
+		Options:         options,
 	})
 	if err != nil {
 		return err

@@ -7,6 +7,8 @@ package v1alpha1
 import (
 	"time"
 
+	lsconfigv1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -27,4 +29,9 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 	if obj.DeleteTimeout == nil {
 		obj.DeleteTimeout = &lsv1alpha1.Duration{Duration: 3 * time.Minute}
 	}
+}
+
+// SetDefaults_Configuration sets the defaults for the manifest deployer controller configuration.
+func SetDefaults_Configuration(obj *Configuration) {
+	lsconfigv1alpha1.SetDefaults_CommonControllerConfig(&obj.Controller.CommonControllerConfig)
 }

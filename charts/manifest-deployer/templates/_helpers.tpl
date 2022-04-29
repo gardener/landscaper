@@ -76,6 +76,10 @@ namespace: {{ .Values.deployer.namespace | default .Release.Namespace  }}
 targetSelector:
 {{ toYaml . }}
 {{- end }}
+{{- if .Values.deployer.controller }}
+controller:
+{{ .Values.deployer.controller | toYaml | indent 2 }}
+{{- end }}
 {{- end }}
 
 {{- define "deployer-image" -}}

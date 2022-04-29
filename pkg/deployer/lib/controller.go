@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -60,6 +61,7 @@ type DeployerArgs struct {
 	Type            lsv1alpha1.DeployItemType
 	Deployer        Deployer
 	TargetSelectors []lsv1alpha1.TargetSelector
+	Options         ctrl.Options
 }
 
 // Default defaults deployer arguments
@@ -103,6 +105,7 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
+		WithOptions(args.Options).
 		WithLogger(log).
 		Complete(con)
 }
