@@ -117,7 +117,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeClient = testenv.Client
 		fakeInstallations = state.Installations
 
-		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11")).To(Succeed())
+		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -276,6 +276,20 @@ var _ = Describe("SubInstallation", func() {
 			defer ctx.Done()
 
 			_ = expectSubInstallationsFail(ctx, "test9", "root")
+		})
+
+		It("should inherit context definition", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			_, subinsts := expectSubInstallationsSucceed(ctx, "test12", "root", lsv1alpha1.NamedObjectReference{
+				Name: "def-1",
+				Reference: lsv1alpha1.ObjectReference{
+					Name:      "def-1",
+					Namespace: "test12"},
+			})
+
+			Expect(subinsts[0].Spec.Context).To(Equal("custom"))
 		})
 
 		Context("Cleanup", func() {

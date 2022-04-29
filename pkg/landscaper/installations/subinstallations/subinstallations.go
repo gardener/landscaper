@@ -328,7 +328,6 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	_, err = o.Writer().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
-		subInst.Spec.Context = inst.Spec.Context
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}
@@ -339,6 +338,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
+			Context:             inst.Spec.Context,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			ComponentDescriptor: subCdDef,
 			Blueprint:           *subBlueprint,
