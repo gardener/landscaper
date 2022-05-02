@@ -8,6 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,14 +32,46 @@ func TestConfig(t *testing.T) {
 
 const projectRoot = "../../../"
 
+func RenderBlueprint(deployer string) *lsutils.RenderedDeployItemsSubInstallations {
+	fs := osfs.New()
+	overlayFs, err := projectionfs.New(fs, filepath.Join(projectRoot, ".landscaper", deployer))
+	Expect(err).ToNot(HaveOccurred())
+
+	blueprintsFs, err := projectionfs.New(overlayFs, "blueprint")
+	Expect(err).ToNot(HaveOccurred())
+	blueprint, err := blueprints.NewFromFs(blueprintsFs)
+	Expect(err).ToNot(HaveOccurred())
+
+	exampleFs, err := projectionfs.New(overlayFs, "example")
+	Expect(err).ToNot(HaveOccurred())
+
+	importsData, err := vfs.ReadFile(exampleFs, "imports.yaml")
+	Expect(err).ToNot(HaveOccurred())
+	var imports map[string]interface{}
+	err = yaml.Unmarshal(importsData, &imports)
+	Expect(err).ToNot(HaveOccurred())
+
+	cdData, err := vfs.ReadFile(exampleFs, "component-descriptor.yaml")
+	Expect(err).ToNot(HaveOccurred())
+	var cd cdv2.ComponentDescriptor
+	err = yaml.Unmarshal(cdData, &cd)
+	Expect(err).ToNot(HaveOccurred())
+
+	renderer := lsutils.NewBlueprintRenderer(&cdv2.ComponentDescriptorList{}, nil, nil)
+
+	out, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
+		ComponentDescriptor: &cd,
+		Installation:        &lsv1alpha1.Installation{},
+		Blueprint:           blueprint,
+	}, imports["imports"].(map[string]interface{}))
+	testutils.ExpectNoError(err)
+	return out
+}
+
 var _ = Describe("Blueprint", func() {
 
 	It("ContainerDeployer", func() {
-		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
-			Fs:      osfs.New(),
-			RootDir: filepath.Join(projectRoot, ".landscaper/container-deployer"),
-		})
-		testutils.ExpectNoError(err)
+		out := RenderBlueprint("container-deployer")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -89,11 +129,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("HelmDeployer", func() {
-		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
-			Fs:      osfs.New(),
-			RootDir: filepath.Join(projectRoot, ".landscaper/helm-deployer"),
-		})
-		testutils.ExpectNoError(err)
+		out := RenderBlueprint("helm-deployer")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -131,11 +167,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("ManifestDeployer", func() {
-		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
-			Fs:      osfs.New(),
-			RootDir: filepath.Join(projectRoot, ".landscaper/manifest-deployer"),
-		})
-		testutils.ExpectNoError(err)
+		out := RenderBlueprint("manifest-deployer")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 
@@ -173,11 +205,7 @@ var _ = Describe("Blueprint", func() {
 	})
 
 	It("MockDeployer", func() {
-		out, err := lsutils.RenderBlueprint(lsutils.BlueprintRenderArgs{
-			Fs:      osfs.New(),
-			RootDir: filepath.Join(projectRoot, ".landscaper/mock-deployer"),
-		})
-		testutils.ExpectNoError(err)
+		out := RenderBlueprint("mock-deployer")
 		Expect(out.DeployItems).To(HaveLen(1))
 		Expect(out.Installations).To(HaveLen(0))
 

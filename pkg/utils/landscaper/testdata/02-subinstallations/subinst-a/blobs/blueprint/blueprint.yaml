@@ -1,0 +1,54 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: cluster
+    required: true
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: subinst-a-param-a
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: subinst-a-param-b
+    required: true
+    type: data
+    schema:
+      type: string
+
+exports:
+  - name: subinst-a-export-a
+    type: data
+    schema:
+      type: string
+
+  - name: subinst-a-export-b
+    type: data
+    schema:
+      type: string
+
+exportExecutions:
+  - name: export
+    type: GoTemplate
+    template: |
+      exports:
+       subinst-a-export-a: {{ index .values "deployitems" "subinst-a-deploy" "subinst-a-export-a" }}
+       subinst-a-export-b: {{ index .values "deployitems" "subinst-a-deploy" "subinst-a-export-b" }}
+
+deployExecutions:
+  - name: deploy-execution
+    type: GoTemplate
+    template: |
+      state:
+        statekey: stateval
+      deployItems:
+        - name: subinst-a-deploy
+          type: landscaper.gardener.cloud/mock
+          target:
+            name: {{ .imports.cluster.metadata.name }}
+            namespace: {{ .imports.cluster.metadata.namespace }}
+          config:
+            key-a: {{ index .imports "subinst-a-param-a" }}
+            key-b: {{ index .imports "subinst-a-param-b" }}

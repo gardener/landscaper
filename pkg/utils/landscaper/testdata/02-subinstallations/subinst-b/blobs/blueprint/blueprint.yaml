@@ -1,0 +1,79 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: cluster
+    required: true
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: subinst-b-param-a
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: subinst-b-param-b
+    required: true
+    type: data
+    schema:
+      type: string
+
+exports:
+  - name: subinst-b-export-a
+    type: data
+    schema:
+      type: string
+
+  - name: subinst-b-export-b
+    type: data
+    schema:
+      type: string
+
+  - name: subinst-b-export-target
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+exportExecutions:
+  - name: export
+    type: GoTemplate
+    template: |
+      exports:
+       subinst-b-export-a: {{ index .values "deployitems" "subinst-b-deploy" "subinst-b-export-a" }}
+       subinst-b-export-b: {{ index .values "deployitems" "subinst-b-deploy" "subinst-b-export-b" }}
+       subinst-b-export-target:
+         type: landscaper.gardener.cloud/kubernetes-cluster
+         config:
+           kubeconfig: |
+             apiVersion: v1
+             kind: Config
+             clusters:
+               - name: test
+                 cluster:
+                   server: 'https://api.test.local'
+                   certificate-authority-data: >-
+                     askadsklasoijasdlm
+             contexts:
+               - name: test
+                 context:
+                   cluster: test
+                   user: testuser
+             current-context: test
+             users:
+               - name: testuser
+                 user:
+                   token: >-
+                     abcdefghij
+
+deployExecutions:
+  - name: deploy-execution
+    type: GoTemplate
+    template: |
+      deployItems:
+        - name: subinst-b-deploy
+          type: landscaper.gardener.cloud/mock
+          target:
+            name: {{ .imports.cluster.metadata.name }}
+            namespace: {{ .imports.cluster.metadata.namespace }}
+          config:
+            key-a: {{ index .imports "subinst-b-param-a" }}
+            key-b: {{ index .imports "subinst-b-param-b" }}

@@ -1,0 +1,152 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: cluster
+    required: true
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: clusters
+    type: targetList
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: root-param-a
+    required: true
+    type: data
+    schema:
+      type: string
+
+  - name: root-param-b
+    required: true
+    type: data
+    schema:
+      type: string
+
+exports:
+  - name: export-root-a
+    type: data
+    schema:
+      type: string
+
+  - name: export-root-b
+    type: data
+    schema:
+      type: string
+
+  - name: export-root-c
+    type: data
+    schema:
+      type: string
+
+  - name: export-root-target
+    type: target
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+exportExecutions:
+  - name: export
+    type: GoTemplate
+    template: |
+      exports:
+        export-root-a: {{ index .values "dataobjects" "export-subinst-a" "val-a" }}
+        export-root-b: {{ index .values "dataobjects" "subinst-b-export-b" }}
+        export-root-c: {{ index .values "dataobjects" "subinst-c-export" }}
+        export-root-target:
+          type: {{ index .values "targets" "subinst-b-export-target" "spec" "type" }}
+          config:
+            kubeconfig: |
+      {{ index .values "targets" "subinst-b-export-target" "spec" "config" "kubeconfig" | indent 8 }}
+
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: subinst-a
+
+    blueprint:
+      ref: cd://componentReferences/component-a/resources/blueprint
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+      data:
+        - name: importParamA
+          dataRef: root-param-a
+        - name: importParamB
+          dataRef: root-param-b
+
+    importDataMappings:
+      subinst-a-param-a: (( importParamA ))
+      subinst-a-param-b: (( importParamB ))
+
+    exports:
+      data:
+        - name: subinst-a-export-a
+          dataRef: subinst-a-export-a
+        - name: subinst-a-export-b
+          dataRef: subinst-a-export-b
+
+    exportDataMappings:
+      export-subinst-a:
+        val-a: (( subinst-a-export-a ))
+        val-b: (( subinst-a-export-b ))
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: subinst-b
+
+    blueprint:
+      ref: cd://componentReferences/component-b/resources/blueprint
+
+    imports:
+      targets:
+        - name: cluster
+          target: cluster
+      data:
+        - name: importParamA
+          dataRef: root-param-a
+        - name: importParamB
+          dataRef: subinst-a-export-b
+
+    importDataMappings:
+      subinst-b-param-a: (( importParamA ))
+      subinst-b-param-b: (( importParamB ))
+
+    exports:
+      data:
+        - name: subinst-b-export-a
+          dataRef: subinst-a-export-a
+        - name: subinst-b-export-b
+          dataRef: subinst-b-export-b
+
+      targets:
+        - name: subinst-b-export-target
+          target: subinst-b-export-target
+
+    exportDataMappings:
+      export-subinst-b:
+        val-a: (( subinst-b-export-a ))
+        val-b: (( subinst-b-export-b ))
+
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+
+    name: subinst-c
+
+    blueprint:
+      ref: cd://componentReferences/component-c/resources/blueprint
+
+    imports:
+      targets:
+        - name: clusters-a
+          targets:
+            - cluster
+        - name: clusters-b
+          targetListRef: clusters
+
+    exports:
+      data:
+        - name: subinst-c-export
+          dataRef: subinst-c-export
+

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -7,14 +7,9 @@ package landscaper
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/mandelsoft/vfs/pkg/osfs"
-	"github.com/mandelsoft/vfs/pkg/projectionfs"
-	"github.com/mandelsoft/vfs/pkg/vfs"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -28,210 +23,138 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
-type BlueprintRenderArgs struct {
-	Fs            vfs.FileSystem
-	BlueprintPath string
-	// ImportValuesFilepath is a path to to a imports.yaml file
-	// +optional
-	ImportValuesFilepath string
-	// Imports describes the imports that should be used for the blueprint templating.
-	// If the imports values filepath is given and the imports then both imports are merged.
-	// +optional
-	Imports *Imports
-	// ComponentDescriptorFilepath describes the path to the component descriptor.
-	ComponentDescriptorFilepath string
-	// ComponentDescriptor is the component descriptor of the blueprint to be rendered.
-	// +optional
-	ComponentDescriptor *cdv2.ComponentDescriptor
-	// ComponentDescriptorList is a list of component descriptors that should be the transitive component references of the original component descriptor.
-	ComponentDescriptorList *cdv2.ComponentDescriptorList
-	// ComponentResolver implements a component descriptor resolver.
-	ComponentResolver ctf.ComponentResolver
-	// RepositoryContext can be used to overwrite the default repository context of the component descriptor.
-	// +optional
-	RepositoryContext *cdv2.UnstructuredTypedObject
-
-	// RootDir describes a directory that is used to default the other filepaths.
-	// The blueprint is expected to have the following structure
-	// <root Dir>
-	// - blueprint
-	//   - blueprint.yaml
-	// - examples
-	//   - imports.yaml
-	//   - component-descriptor.yaml
-	// +optional
-	RootDir string
+// BlueprintRenderer is able to render a blueprint with given import values or exports for export templates.
+type BlueprintRenderer struct {
+	// cdList is the list of local component descriptors available to the renderer.
+	cdList *cdv2.ComponentDescriptorList
+	// componentResolver is used to resolve component descriptors.
+	componentResolver ctf.ComponentResolver
+	// repositoryContext is an optional repository context used to overwrite the effective repository context of component descriptors.
+	repositoryContext *cdv2.UnstructuredTypedObject
 }
 
-// Default defaults the BlueprintRender args
-func (args *BlueprintRenderArgs) Default() error {
-	if args.Fs == nil {
-		args.Fs = osfs.New()
-	}
-	if len(args.RootDir) == 0 {
-		args.RootDir = "../"
-	}
-	exampleDir := filepath.Join(args.RootDir, "example")
-	if len(args.BlueprintPath) == 0 {
-		args.BlueprintPath = filepath.Join(args.RootDir, "blueprint")
-		if _, err := args.Fs.Stat(args.BlueprintPath); err != nil {
-			args.BlueprintPath = ""
-		}
-	}
-	if args.Imports == nil && len(args.ImportValuesFilepath) == 0 {
-		args.ImportValuesFilepath = filepath.Join(exampleDir, "imports.yaml")
-		if _, err := args.Fs.Stat(args.ImportValuesFilepath); err != nil {
-			args.ImportValuesFilepath = ""
-		}
-	}
-	if len(args.ComponentDescriptorFilepath) == 0 {
-		args.ComponentDescriptorFilepath = filepath.Join(exampleDir, "component-descriptor.yaml")
-		if _, err := args.Fs.Stat(args.ComponentDescriptorFilepath); err != nil {
-			args.ComponentDescriptorFilepath = ""
-		}
-	}
-	if args.ComponentDescriptorList == nil {
-		args.ComponentDescriptorList = &cdv2.ComponentDescriptorList{}
-	}
-	return nil
+// ResolvedInstallation contains a tuple of component descriptor, installation and blueprint.
+type ResolvedInstallation struct {
+	*cdv2.ComponentDescriptor
+	*lsv1alpha1.Installation
+	*blueprints.Blueprint
 }
 
-// BlueprintRenderOut describes the output of the blueprint render function.
-type BlueprintRenderOut struct {
-	DeployItems               []*lsv1alpha1.DeployItem
-	DeployItemTemplateState   map[string][]byte
-	Installations             []*lsv1alpha1.Installation
+// RenderedDeployItemsSubInstallations contains a list of rendered deployitems, deployitem state, installations and installation state.
+type RenderedDeployItemsSubInstallations struct {
+	// DeployItems contains the list of rendered deployitems.
+	DeployItems []*lsv1alpha1.DeployItem
+	// DeployItemTemplateState contains the rendered state of the deployitems templates.
+	DeployItemTemplateState map[string][]byte
+	// Installations contains the rendered installations.
+	Installations []ResolvedInstallation
+	// InstallationTemplateState contains the rendered state of the installation templates.
 	InstallationTemplateState map[string][]byte
 }
 
-// Imports describes the json/yaml file format for blueprint render imports.
-type Imports struct {
-	Imports map[string]interface{} `json:"imports"`
+// NewBlueprintRenderer creates a new blueprint renderer. The arguments are optional and may be nil.
+func NewBlueprintRenderer(cdList *cdv2.ComponentDescriptorList, resolver ctf.ComponentResolver, repositoryContext *cdv2.UnstructuredTypedObject) *BlueprintRenderer {
+	renderer := &BlueprintRenderer{
+		cdList:            cdList,
+		componentResolver: resolver,
+		repositoryContext: repositoryContext,
+	}
+	return renderer
 }
 
-// RenderBlueprint renders a blueprint
-func RenderBlueprint(args BlueprintRenderArgs) (*BlueprintRenderOut, error) {
-	if err := args.Default(); err != nil {
-		return nil, fmt.Errorf("unable to default args: %w", err)
-	}
-	imports := Imports{}
-	if len(args.ImportValuesFilepath) != 0 {
-		if err := utils.YAMLReadFromFile(args.Fs, args.ImportValuesFilepath, &imports); err != nil {
-			return nil, fmt.Errorf("unable to read imports from %q: %w", args.ImportValuesFilepath, err)
-		}
+// RenderDeployItemsAndSubInstallations renders deploy items and subinstallations of a given blueprint using the given imports.
+// The import values are validated with the JSON schemas defined in the blueprint.
+func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *ResolvedInstallation, imports map[string]interface{}) (*RenderedDeployItemsSubInstallations, error) {
+	if input == nil {
+		return nil, fmt.Errorf("render input may not be nil")
 	}
 
-	// merge imports
-	if args.Imports != nil {
-		MergeImports(&imports, args.Imports)
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
 	}
 
-	var cd *cdv2.ComponentDescriptor
-	if args.ComponentDescriptor != nil {
-		cd = args.ComponentDescriptor
-	} else if len(args.ComponentDescriptorFilepath) != 0 {
-		cd = &cdv2.ComponentDescriptor{}
-		data, err := vfs.ReadFile(args.Fs, args.ComponentDescriptorFilepath)
-		if err != nil {
-			return nil, fmt.Errorf("unable to read component descriptor from %q: %w", args.ComponentDescriptorFilepath, err)
-		}
-		if err := codec.Decode(data, cd); err != nil {
-			return nil, fmt.Errorf("unable to decode component descriptor from %q: %w", args.ComponentDescriptorFilepath, err)
-		}
-	}
-
-	bpFs, err := projectionfs.New(args.Fs, args.BlueprintPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create blueprint fs for %q: %w", args.BlueprintPath, err)
-	}
-	blueprint, err := blueprints.NewFromFs(bpFs)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read blueprint from %q: %w", args.BlueprintPath, err)
-	}
-
-	if err := ValidateImports(blueprint, &imports, cd, args.ComponentResolver, args.RepositoryContext); err != nil {
+	if err := r.validateImports(input, imports); err != nil {
 		return nil, err
 	}
 
-	sampleRepository, err := cdv2.NewUnstructured(cdv2.NewOCIRegistryRepository("example.com/components", ""))
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse sample repository context: %w", err)
-	}
-	inst := &lsv1alpha1.Installation{}
-	inst.Spec.Blueprint.Reference = &lsv1alpha1.RemoteBlueprintReference{
-		ResourceName: "example-blueprint",
-	}
-	inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
-		Reference: &lsv1alpha1.ComponentDescriptorReference{
-			RepositoryContext: &sampleRepository,
-			ComponentName:     "my-example-component",
-			Version:           "v0.0.0",
-		},
-	}
-	if cd != nil {
-		inst.Spec.ComponentDescriptor.Reference.ComponentName = cd.GetName()
-		inst.Spec.ComponentDescriptor.Reference.Version = cd.GetVersion()
-		if len(cd.RepositoryContexts) != 0 {
-			repoCtx := cd.GetEffectiveRepositoryContext()
-			inst.Spec.ComponentDescriptor.Reference.RepositoryContext = repoCtx
-		}
-	}
-
-	if args.RepositoryContext != nil {
-		inst.Spec.ComponentDescriptor.Reference.RepositoryContext = args.RepositoryContext
-	}
-
-	deployItems, deployItemsState, err := RenderBlueprintDeployItems(
-		blueprint,
-		imports,
-		cd,
-		args.ComponentDescriptorList,
-		inst,
-		args.ComponentResolver,
-		args.RepositoryContext)
+	deployItems, deployItemsState, err := r.renderDeployItems(input, imports)
 	if err != nil {
 		return nil, err
 	}
 
-	installations, installationsState, err := RenderBlueprintSubInstallations(
-		blueprint,
-		imports,
-		cd,
-		args.ComponentDescriptorList,
-		args.ComponentResolver,
-		args.RepositoryContext,
-		inst)
+	subInstallations, subInstallationsState, err := r.renderSubInstallations(input, imports)
 	if err != nil {
 		return nil, err
 	}
 
-	return &BlueprintRenderOut{
+	renderOut := &RenderedDeployItemsSubInstallations{
 		DeployItems:               deployItems,
 		DeployItemTemplateState:   deployItemsState,
-		Installations:             installations,
-		InstallationTemplateState: installationsState,
-	}, nil
+		Installations:             subInstallations,
+		InstallationTemplateState: subInstallationsState,
+	}
+	return renderOut, nil
 }
 
-func RenderBlueprintDeployItems(
-	blueprint *blueprints.Blueprint,
-	imports Imports,
-	cd *cdv2.ComponentDescriptor,
-	cdList *cdv2.ComponentDescriptorList,
-	inst *lsv1alpha1.Installation,
-	componentResolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+// RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.
+func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
+	var (
+		blobResolver ctf.BlobResolver
+		ctx          context.Context
+	)
 
-	var blobResolver ctf.BlobResolver
-	if cd != nil && componentResolver != nil {
+	if input == nil {
+		return nil, fmt.Errorf("render input may not be nil")
+	}
+
+	if input.Blueprint == nil {
+		return nil, fmt.Errorf("blueprint may not be nil")
+	}
+
+	ctx = context.Background()
+	defer ctx.Done()
+
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
 		var err error
-		if repositoryContext == nil {
-			repositoryContext = cd.GetEffectiveRepositoryContext()
+		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
+		if err != nil {
+			return nil, fmt.Errorf("unable to get blob resolver: %w", err)
 		}
-		_, blobResolver, err = componentResolver.ResolveWithBlobResolver(context.Background(), repositoryContext, cd.GetName(), cd.GetVersion())
+	}
+
+	values := map[string]interface{}{
+		"deployitems": deployItemsExports,
+		"dataobjects": installationDataImports,
+		"targets":     installationTargetImports,
+	}
+
+	templateStateHandler := template.NewMemoryStateHandler()
+	formatter := template.NewTemplateInputFormatter(true)
+	exports, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+		TemplateExportExecutions(input.Blueprint, values)
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to template export executions: %w", err)
+	}
+
+	return exports, nil
+}
+
+// renderDeployItems renders deploy items.
+func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, imports map[string]interface{}) ([]*lsv1alpha1.DeployItem, map[string][]byte, error) {
+	var (
+		blobResolver ctf.BlobResolver
+		ctx          context.Context
+	)
+
+	ctx = context.Background()
+	defer ctx.Done()
+
+	if input.ComponentDescriptor != nil && r.componentResolver != nil {
+		var err error
+		_, blobResolver, err = r.componentResolver.ResolveWithBlobResolver(ctx, r.getRepositoryContext(input), input.ComponentDescriptor.GetName(), input.ComponentDescriptor.GetVersion())
 		if err != nil {
 			return nil, nil, fmt.Errorf("unable to get blob resolver: %w", err)
 		}
@@ -241,11 +164,11 @@ func RenderBlueprintDeployItems(
 	formatter := template.NewTemplateInputFormatter(true)
 	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateDeployExecutions(template.DeployExecutionOptions{
-			Imports:              imports.Imports,
-			Blueprint:            blueprint,
-			ComponentDescriptor:  cd,
-			ComponentDescriptors: cdList,
-			Installation:         inst,
+			Imports:              imports,
+			Blueprint:            input.Blueprint,
+			ComponentDescriptor:  input.ComponentDescriptor,
+			ComponentDescriptors: r.cdList,
+			Installation:         input.Installation,
 		})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template deploy executions: %w", err)
@@ -264,36 +187,39 @@ func RenderBlueprintDeployItems(
 	return deployItems, templateStateHandler, nil
 }
 
-func RenderBlueprintSubInstallations(
-	blueprint *blueprints.Blueprint,
-	imports Imports,
-	cd *cdv2.ComponentDescriptor,
-	cdList *cdv2.ComponentDescriptorList,
-	compResolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject,
-	inst *lsv1alpha1.Installation) ([]*lsv1alpha1.Installation, map[string][]byte, error) {
+// renderSubInstallations renders subinstallations.
+func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, imports map[string]interface{}) ([]ResolvedInstallation, map[string][]byte, error) {
+	ctx := context.Background()
+	defer ctx.Done()
 
-	installationTemplates, err := blueprint.GetSubinstallations()
+	installationTemplates, err := input.Blueprint.GetSubinstallations()
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to get subinstallation of blueprint: %w", err)
+	}
+
+	if len(installationTemplates) > 0 {
+		installationTemplates, err = subinstallations.OrderInstallationTemplates(installationTemplates)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable for order subinstallations of blueprint: %w", err)
+		}
 	}
 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
 	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
 		TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-			Imports:              imports.Imports,
-			Blueprint:            blueprint,
-			ComponentDescriptor:  cd,
-			ComponentDescriptors: cdList,
-			Installation:         inst,
+			Imports:              imports,
+			Blueprint:            input.Blueprint,
+			ComponentDescriptor:  input.ComponentDescriptor,
+			ComponentDescriptors: r.cdList,
+			Installation:         input.Installation,
 		})
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template subinstalltion executions: %w", err)
 	}
 
 	installationTemplates = append(installationTemplates, subInstallationTemplates...)
-	installations := make([]*lsv1alpha1.Installation, len(installationTemplates))
+	subInstallations := make([]ResolvedInstallation, len(installationTemplates))
 	for i, subInstTmpl := range installationTemplates {
 		subInst := &lsv1alpha1.Installation{}
 		subInst.Name = subInstTmpl.Name
@@ -303,44 +229,69 @@ func RenderBlueprintSubInstallations(
 			Exports:            subInstTmpl.Exports,
 			ExportDataMappings: subInstTmpl.ExportDataMappings,
 		}
-		if repositoryContext == nil {
-			repositoryContext = cd.GetEffectiveRepositoryContext()
-		}
-		subBlueprint, _, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(
-			inst,
+		subBlueprintDef, subCd, err := subinstallations.GetBlueprintDefinitionFromInstallationTemplate(
+			input.Installation,
 			subInstTmpl,
-			cd,
-			compResolver,
-			repositoryContext)
+			input.ComponentDescriptor,
+			r.componentResolver,
+			r.getRepositoryContext(input))
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable to get blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
+			return nil, nil, fmt.Errorf("unable to get blueprint definition for subinstallation %q: %w", subInstTmpl.Name, err)
 		}
-		subInst.Spec.Blueprint = *subBlueprint
-		installations[i] = subInst
+		subInst.Spec.Blueprint = *subBlueprintDef
+		subInst.Spec.ComponentDescriptor = subCd
+
+		subInstRepositoryContext := r.getRepositoryContext(&ResolvedInstallation{
+			ComponentDescriptor: input.ComponentDescriptor,
+			Installation:        subInst,
+		})
+
+		subCd.Reference.RepositoryContext = subInstRepositoryContext
+		subBlueprint, err := blueprints.Resolve(ctx, r.componentResolver, subCd.Reference, *subBlueprintDef)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to resolve blueprint for subinstallation %q: %w", subInstTmpl.Name, err)
+		}
+
+		var (
+			subComponentName, subComponentVersion string
+		)
+
+		if subInst.Spec.ComponentDescriptor.Reference != nil {
+			subComponentName = subInst.Spec.ComponentDescriptor.Reference.ComponentName
+			subComponentVersion = subInst.Spec.ComponentDescriptor.Reference.Version
+		} else if subInst.Spec.ComponentDescriptor.Inline != nil {
+			subComponentName = subInst.Spec.ComponentDescriptor.Inline.Name
+			subComponentVersion = subInst.Spec.ComponentDescriptor.Inline.Version
+		}
+
+		cd, err := r.componentResolver.Resolve(ctx, subInstRepositoryContext, subComponentName, subComponentVersion)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		subInstallations[i].ComponentDescriptor = cd
+		subInstallations[i].Installation = subInst
+		subInstallations[i].Blueprint = subBlueprint
 	}
 
-	return installations, templateStateHandler, nil
+	return subInstallations, templateStateHandler, nil
 }
 
-// ValidateImports the imports for a blueprint.
-func ValidateImports(bp *blueprints.Blueprint,
-	imports *Imports,
-	cd *cdv2.ComponentDescriptor,
-	componentResolver ctf.ComponentResolver,
-	repositoryContext *cdv2.UnstructuredTypedObject) error {
+// validateImports validates the imports with the JSON schemas defined in the blueprint
+func (r *BlueprintRenderer) validateImports(input *ResolvedInstallation, imports map[string]interface{}) error {
 
 	validatorConfig := &jsonschema.ReferenceContext{
-		LocalTypes:          bp.Info.LocalTypes,
-		BlueprintFs:         bp.Fs,
-		ComponentDescriptor: cd,
-		ComponentResolver:   componentResolver,
-		RepositoryContext:   repositoryContext,
+		LocalTypes:          input.Blueprint.Info.LocalTypes,
+		BlueprintFs:         input.Blueprint.Fs,
+		ComponentDescriptor: input.ComponentDescriptor,
+		ComponentResolver:   r.componentResolver,
+		RepositoryContext:   r.getRepositoryContext(input),
 	}
 
 	var allErr field.ErrorList
-	for _, importDef := range bp.Info.Imports {
+	for _, importDef := range input.Blueprint.Info.Imports {
 		fldPath := field.NewPath(importDef.Name)
-		value, ok := imports.Imports[importDef.Name]
+		value, ok := imports[importDef.Name]
 		if !ok {
 			if *importDef.Required {
 				allErr = append(allErr, field.Required(fldPath, "Import is required"))
@@ -373,6 +324,32 @@ func ValidateImports(bp *blueprints.Blueprint,
 	}
 
 	return allErr.ToAggregate()
+}
+
+// getRepositoryContext retrieves the correct repository context.
+// The priority is as following:
+// 1. explicitly user defined repository context
+// 2. repository context defined in the installation
+// 3. effective repository context defined in the component descriptor.
+func (r *BlueprintRenderer) getRepositoryContext(input *ResolvedInstallation) *cdv2.UnstructuredTypedObject {
+	if r.repositoryContext != nil {
+		return r.repositoryContext
+	}
+
+	if input.Installation != nil && input.Installation.Spec.ComponentDescriptor != nil {
+		if input.Installation.Spec.ComponentDescriptor.Reference != nil && input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext != nil {
+			return input.Installation.Spec.ComponentDescriptor.Reference.RepositoryContext
+		}
+		if input.Installation.Spec.ComponentDescriptor.Inline != nil {
+			return input.Installation.Spec.ComponentDescriptor.Inline.GetEffectiveRepositoryContext()
+		}
+	}
+
+	if input.ComponentDescriptor != nil {
+		return input.ComponentDescriptor.GetEffectiveRepositoryContext()
+	}
+
+	return nil
 }
 
 func validateTargetImport(value interface{}, expectedTargetType string, fldPath *field.Path) field.ErrorList {
@@ -441,15 +418,4 @@ func validateComponentDescriptorListImport(value interface{}, fldPath *field.Pat
 	}
 
 	return allErr
-}
-
-// MergeImports merges all imports of b into a.
-func MergeImports(a, b *Imports) {
-	if a.Imports == nil {
-		a.Imports = b.Imports
-		return
-	}
-	for key, val := range b.Imports {
-		a.Imports[key] = val
-	}
 }
