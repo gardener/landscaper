@@ -27,7 +27,7 @@ import (
 
 // Resolve returns a blueprint from a given reference.
 // If no fs is given, a temporary filesystem will be created.
-func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition, repositoryContext *cdv2.UnstructuredTypedObject) (*Blueprint, error) {
+func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alpha1.ComponentDescriptorReference, bpDef lsv1alpha1.BlueprintDefinition) (*Blueprint, error) {
 	if bpDef.Reference == nil && bpDef.Inline == nil {
 		return nil, errors.New("no remote reference nor a inline blueprint is defined")
 	}
@@ -64,10 +64,7 @@ func Resolve(ctx context.Context, resolver ctf.ComponentResolver, cdRef *lsv1alp
 	if resolver == nil {
 		return nil, fmt.Errorf("did not get a working component descriptor resolver")
 	}
-	if repositoryContext == nil {
-		repositoryContext = cdRef.RepositoryContext
-	}
-	cd, blobResolver, err := resolver.ResolveWithBlobResolver(ctx, repositoryContext, cdRef.ComponentName, cdRef.Version)
+	cd, blobResolver, err := resolver.ResolveWithBlobResolver(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve component descriptor for ref %#v: %w", cdRef, err)
 	}
