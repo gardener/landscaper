@@ -8,7 +8,7 @@ blueprint:
 
 imports:
   targets:
-    - name: cluster
+    - name: runtimeCluster
       target: hostingCluster
   data:
     - name: importHostingClusterNamespace
@@ -21,7 +21,7 @@ imports:
       dataRef: dnsAccessDomain
 
 importDataMappings:
-  hostingCluster:
+  runtimeClusterSettings:
     namespace: (( importHostingClusterNamespace ))
     infrastructureProvider: (( importProviderType ))
 
@@ -42,5 +42,5 @@ exports:
     - name: virtualGardenEndpoint
       dataRef: virtualGardenEndpoint
   targets:
-    - name: virtualGardenKubeconfig
-      target: virtualGardenKubeconfig
+    - name: virtualGardenCluster
+      target: virtualGardenCluster

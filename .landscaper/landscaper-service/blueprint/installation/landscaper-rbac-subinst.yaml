@@ -9,7 +9,7 @@ blueprint:
 imports:
   targets:
     - name: virtualCluster
-      target: virtualGardenKubeconfig
+      target: virtualGardenCluster
   data:
     - name: virtualClusterNamespace
       dataRef: virtualClusterNamespace
