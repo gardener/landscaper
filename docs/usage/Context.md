@@ -61,25 +61,25 @@ data:
 type: kubernetes.io/dockerconfigjson
 ```
 
-**Example**:
+**Example for Google Container Registry**:
 
-This example describes how to create a secret with access data to the  Google Container Registry. First, you need a 
+This example describes how to create a secret with access data to the Google Container Registry. You find more detailed
+information [here](https://cloud.google.com/iam/docs/creating-managing-service-account-keys). First, you need a 
 service account with read permissions for your registry. Then you create a service account key and download the 
-corresponding service account key file ([see](https://cloud.google.com/iam/docs/creating-managing-service-account-keys)). 
+corresponding service account key file to e.g. `~/json-key-file-from-gcp.json` 
+([see](https://cloud.google.com/iam/docs/creating-managing-service-account-keys)). 
 
-Finally, you create the authentication data for the secret according to the following example. 
+Finally, you create the secret with the authentication data with this command assuming your registry is located under
+the domain `eu.gcr.io`: 
 
 ```
-{
-  "auths":{
-    "eu.gcr.io/somePath":{"auth":"base64 encoded content of the service account key file"}
-  }
-}
+kubectl create secret docker-registry my-pullsecret \
+  -n example-namespace \
+  --docker-server=eu.gcr.io \
+  --docker-username=_json_key \
+  --docker-password="$(cat ~/json-key-file-from-gcp.json)" \
+  --docker-email=any@valid.email
 ```
-
-`eu.gcr.io/somePath` defines that all OCI artefacts stored at a location starting with this URL are fetched using the 
-specified access data of the `auth` entry. Of course, you need to use your URL here. If your resources are located
-in different OCI registries, you could add several URLs together with the appropriate access data. 
 
 ## Installation with Context Reference
 
@@ -142,3 +142,10 @@ something in the LandscaperConfiguration because the responsible context control
 modifications always with these settings.
 
 If an installation has no context configured, the default context is used. 
+
+## Configurations
+
+The `configurations` section of a context object might contain additional configuration data. Currently, only the 
+following use case is supported but additional will follow:
+
+- authorization data for helm chart repositories ([see](../deployer/helm.md#access-to-helm-chart-repo-with-authentication))
