@@ -16,6 +16,30 @@ const (
 	keyResourceVersionNew = "resource-version-new"
 )
 
+func (w *Writer) logContextUpdate(writeID WriteID, op string, context *lsv1alpha1.Context,
+	generationOld int64, resourceVersionOld string, err error) {
+	if err == nil {
+		generationNew, resourceVersionNew := getGenerationAndResourceVersion(context)
+		w.log.V(historyLogLevel).Info(op,
+			keyWriteID, writeID,
+			keyName, context.Name,
+			keyNamespace, context.Namespace,
+			keyGenerationOld, generationOld,
+			keyGenerationNew, generationNew,
+			keyResourceVersionOld, resourceVersionOld,
+			keyResourceVersionNew, resourceVersionNew,
+		)
+	} else {
+		w.log.Error(err, op,
+			keyWriteID, writeID,
+			keyName, context.Name,
+			keyNamespace, context.Namespace,
+			keyGenerationOld, generationOld,
+			keyResourceVersionOld, resourceVersionOld,
+		)
+	}
+}
+
 func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.Target,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {

@@ -7,6 +7,8 @@ package context
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -14,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -69,7 +70,7 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 
 	// we only want to overwrite the central managed configuration.
 	// manual added configuration should be kept.
-	if _, err := controllerutil.CreateOrPatch(ctx, c.client, defaultCtx, func() error {
+	if _, err := c.Writer().CreateOrPatchCoreContext(ctx, read_write_layer.W000077, defaultCtx, func() error {
 		if c.config.Default.RepositoryContext != nil {
 			defaultCtx.RepositoryContext = c.config.Default.RepositoryContext
 		}
@@ -78,4 +79,8 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func (c *defaulterController) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(c.log, c.client)
 }

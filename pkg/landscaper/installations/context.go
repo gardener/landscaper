@@ -216,7 +216,7 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 		}, nil
 	}
 
-	cond, err := ApplyComponentOverwrite(overwriter, lsCtx, cdRef)
+	cond, err := ApplyComponentOverwrite(inst, overwriter, lsCtx, cdRef)
 	if err != nil {
 		return ExternalContext{}, lserrors.NewWrappedError(err,
 			"Context", "OverwriteComponentReference", err.Error())
@@ -237,7 +237,8 @@ func GetExternalContext(ctx context.Context, kubeClient client.Client, inst *lsv
 
 // ApplyComponentOverwrite applies a component overwrite for the component reference if applicable.
 // The overwriter can be nil
-func ApplyComponentOverwrite(overwriter componentoverwrites.Overwriter, lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
+func ApplyComponentOverwrite(inst *lsv1alpha1.Installation, overwriter componentoverwrites.Overwriter,
+	lsCtx *lsv1alpha1.Context, cdRef *lsv1alpha1.ComponentDescriptorReference) (*lsv1alpha1.Condition, error) {
 	if cdRef == nil {
 		return nil, nil
 	}
@@ -251,6 +252,10 @@ func ApplyComponentOverwrite(overwriter componentoverwrites.Overwriter, lsCtx *l
 	}
 
 	cond := lsv1alpha1helper.InitCondition(lsv1alpha1.ComponentReferenceOverwriteCondition)
+	if inst != nil {
+		cond = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.ComponentReferenceOverwriteCondition)
+	}
+
 	oldRef := cdRef.DeepCopy()
 
 	overwritten, err := overwriter.Replace(cdRef)

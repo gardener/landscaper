@@ -118,7 +118,6 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
 		return instOp.NewError(err, "TriggerDependents", err.Error())
 	}
-	inst.Status.LastError = nil
 	return nil
 }
 
@@ -192,6 +191,5 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
 	inst.Info.Status.ObservedGeneration = inst.Info.Generation
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-	inst.Info.Status.LastError = nil
 	return nil
 }

@@ -25,13 +25,23 @@ func NewWriter(log logr.Logger, c client.Client) *Writer {
 	}
 }
 
+// methods for contexts
+
+func (w *Writer) CreateOrPatchCoreContext(ctx context.Context, writeID WriteID, lsContext *lsv1alpha1.Context,
+	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+	generationOld, resourceVersionOld := getGenerationAndResourceVersion(lsContext)
+	result, err := createOrPatchCore(ctx, w.client, lsContext, f)
+	w.logContextUpdate(writeID, opContextCreateOrUpdate, lsContext, generationOld, resourceVersionOld, err)
+	return result, errorWithWriteID(err, writeID)
+}
+
 // methods for targets
 
 func (w *Writer) CreateOrUpdateCoreTarget(ctx context.Context, writeID WriteID, target *lsv1alpha1.Target,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(target)
 	result, err := createOrUpdateCore(ctx, w.client, target, f)
-	w.logTargetUpdate(writeID, opInstSpec, target, generationOld, resourceVersionOld, err)
+	w.logTargetUpdate(writeID, opTargetCreateOrUpdate, target, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -41,7 +51,7 @@ func (w *Writer) CreateOrUpdateCoreDataObject(ctx context.Context, writeID Write
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
 	result, err := createOrUpdateCore(ctx, w.client, do, f)
-	w.logDataObjectUpdate(writeID, opInstSpec, do, generationOld, resourceVersionOld, err)
+	w.logDataObjectUpdate(writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -49,7 +59,7 @@ func (w *Writer) CreateOrUpdateDataObject(ctx context.Context, writeID WriteID, 
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, do, f)
-	w.logDataObjectUpdate(writeID, opInstCreateOrUpdate, do, generationOld, resourceVersionOld, err)
+	w.logDataObjectUpdate(writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -179,6 +189,12 @@ func (w *Writer) DeleteDeployItem(ctx context.Context, writeID WriteID, deployIt
 }
 
 // base methods
+
+func createOrPatchCore(ctx context.Context, c client.Client, object client.Object,
+	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
+	return controllerutil.CreateOrPatch(ctx, c, object, f)
+}
+
 func createOrUpdateCore(ctx context.Context, c client.Client, object client.Object,
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	return controllerutil.CreateOrUpdate(ctx, c, object, f)
