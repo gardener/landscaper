@@ -13,7 +13,7 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM alpine:3.13.5 AS base
+FROM alpine:3.13.10 AS base
 
 RUN apk add --no-cache ca-certificates
 
