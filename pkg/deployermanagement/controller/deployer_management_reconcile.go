@@ -11,6 +11,10 @@ import (
 	"fmt"
 	"time"
 
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"k8s.io/apimachinery/pkg/selection"
 
 	"github.com/go-logr/logr"
@@ -28,6 +32,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	validation "github.com/gardener/landscaper/apis/core/validation"
 )
 
 // DeployerClusterRoleName is the name of the deployer cluster role.
@@ -81,7 +86,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 		return fmt.Errorf("unable to marshal target selectors: %w", err)
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, dm.client, inst, func() error {
+	_, err = dm.Writer().CreateOrUpdateCoreInstallation(ctx, read_write_layer.W000002, inst, func() error {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
 		inst.Spec.ComponentDescriptor = registration.Spec.InstallationTemplate.ComponentDescriptor
 		inst.Spec.Blueprint = registration.Spec.InstallationTemplate.Blueprint
@@ -124,7 +129,7 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	registration *lsv1alpha1.DeployerRegistration,
 	env *lsv1alpha1.Environment) (*lsv1alpha1.Installation, error) {
 	installations := &lsv1alpha1.InstallationList{}
-	if err := dm.client.List(ctx, installations,
+	if err := read_write_layer.ListInstallations(ctx, dm.client, installations,
 		client.InNamespace(dm.config.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
@@ -136,6 +141,21 @@ func (dm *DeployerManagement) getInstallation(ctx context.Context,
 	if len(installations.Items) == 0 {
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = FQName(registration, env)
+
+		if len(inst.Name) > validation.InstallationNameMaxLength {
+			err := lserrors.NewError(
+				"getInstallation",
+				"installation name max length exceeded",
+				fmt.Sprintf("installation name %q in namespace %q exceeds maximum length of %d (environment %q)", inst.Name, dm.config.Namespace, validation.InstallationNameMaxLength, env.Name))
+			registration.Status.LastError = lserrors.TryUpdateError(inst.Status.LastError, err)
+
+			if err := dm.client.Status().Update(ctx, registration); err != nil {
+				dm.log.Error(err, "failed to update status for deployer registration", registration.Name)
+			}
+
+			return nil, err
+		}
+
 		inst.Namespace = dm.config.Namespace
 		inst.Labels = map[string]string{
 			lsv1alpha1.DeployerEnvironmentLabelName:  env.Name,
@@ -206,7 +226,7 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 		return fmt.Errorf("unable to create cluster role binding for %q: %w", sa.Name, err)
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, dm.client, target, func() error {
+	if _, err := dm.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000074, target, func() error {
 		if err := lsutils.BuildKubernetesTarget(target, restConfig); err != nil {
 			return err
 		}
@@ -248,7 +268,7 @@ func (dm *DeployerManagement) CleanupInstallation(ctx context.Context, inst *lsv
 		return err
 	}
 	controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
-	if err := dm.client.Update(ctx, inst); err != nil {
+	if err := dm.Writer().UpdateInstallation(ctx, read_write_layer.W000013, inst); err != nil {
 		return fmt.Errorf("unable to remove finalizer: %w", err)
 	}
 	return nil
@@ -294,6 +314,10 @@ func (dm *DeployerManagement) EnsureRBACRoles(ctx context.Context) error {
 		return fmt.Errorf("unable to ensure cluster rabac role %q: %w", clusterrole.Name, err)
 	}
 	return nil
+}
+
+func (dm *DeployerManagement) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(dm.log, dm.client)
 }
 
 // FQName defines the fully qualified name for the resources created for a deployer installation.

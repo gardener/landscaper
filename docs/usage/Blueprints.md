@@ -138,13 +138,13 @@ subinstallations:
     targets:
     - name: "" # target import name
       target: "" # target name
-  #importMappings: {}
+  #importDataMappings: {}
 
   exports:
     targets:
     - name: "" # target export name
       target: "" # target name
-  #exportMappings: {}
+  #exportDataMappings: {}
 
 ```
 

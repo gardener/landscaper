@@ -8,6 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	lsconfigv1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -50,6 +52,9 @@ type Configuration struct {
 
 	// DebugOptions configure additional debug options.
 	DebugOptions *DebugOptions `json:"debug,omitempty"`
+
+	// Controller contains configuration concerning the controller framework.
+	Controller Controller `json:"controller,omitempty"`
 }
 
 // ContainerSpec defines a container specification
@@ -100,4 +105,9 @@ type GarbageCollection struct {
 type DebugOptions struct {
 	// KeepPod will only remove the finalizer on the pod but will not delete the pod.
 	KeepPod bool `json:"keepPod,omitempty"`
+}
+
+// Controller contains configuration concerning the controller framework.
+type Controller struct {
+	lsconfigv1alpha1.CommonControllerConfig
 }

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -24,7 +26,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 	}
 	instKey := kutil.ObjectKeyFromObject(inst)
 
-	if err := dm.client.Get(ctx, instKey, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, dm.client, instKey, inst); err != nil {
 		if apierrors.IsNotFound(err) {
 			// installation is already deleted
 			// nothing to do.
@@ -34,12 +36,12 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 	}
 
 	// trigger deletion
-	if err := dm.client.Delete(ctx, inst); err != nil {
+	if err := dm.Writer().DeleteInstallation(ctx, read_write_layer.W000020, inst); err != nil {
 		return fmt.Errorf("unable to delete client: %w", err)
 	}
 	// wait for installation deletion.
 	return wait.PollImmediate(20*time.Second, 5*time.Minute, func() (done bool, err error) {
-		if err := dm.client.Get(ctx, instKey, inst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, dm.client, instKey, inst); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}

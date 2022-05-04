@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -22,7 +24,7 @@ func (o *Operation) cleanupOrphanedDeployItems(ctx context.Context, orphaned []l
 	}
 	for _, item := range orphaned {
 		if item.DeletionTimestamp.IsZero() && o.checkGCDeletable(item, orphaned) {
-			if err := o.Client().Delete(ctx, &item); err != nil {
+			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000064, &item); err != nil {
 				if !apierrors.IsNotFound(err) {
 					return fmt.Errorf("unable to delete deploy item %s", item.Name)
 				}

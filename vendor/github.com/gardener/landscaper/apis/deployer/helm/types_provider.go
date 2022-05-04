@@ -18,6 +18,8 @@ import (
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 )
 
+const HelmChartRepoCredentialsKey = "helmChartRepoCredentials"
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderConfiguration is the helm deployer configuration that is expected in a DeployItem
@@ -71,6 +73,15 @@ type ProviderConfiguration struct {
 	// ContinuousReconcile contains the schedule for continuous reconciliation.
 	// +optional
 	ContinuousReconcile *cr.ContinuousReconcileSpec `json:"continuousReconcile,omitempty"`
+
+	// HelmDeployment indicates that helm is used as complete deployment mechanism and not only helm templating.
+	// Default is true.
+	// +optional
+	HelmDeployment *bool `json:"helmDeployment,omitempty"`
+
+	// HelmDeploymentConfig contains settings for helm operations. Only relevant if HelmDeployment is true.
+	// +optional
+	HelmDeploymentConfig *HelmDeploymentConfiguration `json:"helmDeploymentConfig,omitempty"`
 }
 
 // UpdateStrategy defines the strategy that is used to apply resources to the cluster.
@@ -94,6 +105,16 @@ type Chart struct {
 	// Archive defines a compressed tarred helm chart as base64 encoded string.
 	// +optional
 	Archive *ArchiveAccess `json:"archive,omitempty"`
+	// HelmChartRepo defines a reference to a chart in a helm chart repo.
+	// +optional
+	HelmChartRepo *HelmChartRepo `json:"helmChartRepo,omitempty"`
+}
+
+// HelmChartRepo defines a reference to a chart in a helm chart repo
+type HelmChartRepo struct {
+	HelmChartRepoUrl string `json:"helmChartRepoUrl,omitempty"`
+	HelmChartName    string `json:"helmChartName,omitempty"`
+	HelmChartVersion string `json:"helmChartVersion,omitempty"`
 }
 
 // RemoteChartReference defines a reference to a remote Helm chart through a Component-Descriptor
@@ -120,6 +141,31 @@ type RemoteArchiveAccess struct {
 	URL string `json:"url,omitempty"`
 }
 
+// HelmDeploymentConfiguration defines settings for a helm deployment.
+type HelmDeploymentConfiguration struct {
+	Install   map[string]lscore.AnyJSON `json:"install,omitempty"`
+	Upgrade   map[string]lscore.AnyJSON `json:"upgrade,omitempty"`
+	Uninstall map[string]lscore.AnyJSON `json:"uninstall,omitempty"`
+}
+
+// HelmInstallConfiguration defines settings for a helm install operation.
+type HelmInstallConfiguration struct {
+	Atomic bool `json:"atomic,omitempty"`
+	// Timeout is the timeout for the operation in minutes.
+	// +optional
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+}
+
+// HelmUpgradeConfiguration defines settings for a helm upgrade operation.
+type HelmUpgradeConfiguration = HelmInstallConfiguration
+
+// HelmUninstallConfiguration defines settings for a helm uninstall operation.
+type HelmUninstallConfiguration struct {
+	// Timeout is the timeout for the operation in minutes.
+	// +optional
+	Timeout *lsv1alpha1.Duration `json:"timeout,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ProviderStatus is the helm provider specific status
@@ -128,4 +174,22 @@ type ProviderStatus struct {
 
 	// ManagedResources contains all kubernetes resources that are deployed by the helm deployer.
 	ManagedResources managedresource.ManagedResourceStatusList `json:"managedResources,omitempty"`
+}
+
+// HelmChartRepoCredentials contains the credentials to access hepl chart repos
+type HelmChartRepoCredentials struct {
+	Auths []Auth `json:"auths,omitempty"`
+}
+
+// Auth contains authentication info for one helm chart repo
+type Auth struct {
+	// URL contains URL of helm chart repo
+	URL string `json:"url,omitempty"`
+	// CustomCAData allows you to add a custom CA, which is useful if your server speaks HTTPS with a self-
+	// signed certificate. The added certificate must be in PEM format and base64 encoded.
+	// +optional
+	CustomCAData string `json:"customCAData,omitempty"`
+	// AuthHeader contains the value that will be set in the "Authorization" header when fetching the Chart, e.g.
+	// "Basic dX...3dvcmQ=".
+	AuthHeader string `json:"authHeader,omitempty"`
 }

@@ -23,6 +23,7 @@ import (
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // NewController creates a new deploy item controller that handles timeouts
@@ -70,7 +71,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 	logger.V(7).Info("reconcile")
 
 	di := &lsv1alpha1.DeployItem{}
-	if err := con.c.Get(ctx, req.NamespacedName, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil
@@ -90,7 +91,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, err
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := con.c.Status().Update(ctx, di); err != nil {
+			if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000056, di); err != nil {
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
 			}
@@ -112,7 +113,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Status, di.Status) {
-			if err := con.c.Status().Update(ctx, di); err != nil {
+			if err := con.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000057, di); err != nil {
 				// we might need to expose this as event on the deploy item
 				logger.Error(err, "unable to set deployitem status")
 				return reconcile.Result{}, err
@@ -121,7 +122,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			return reconcile.Result{}, nil
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := con.c.Update(ctx, di); err != nil {
+			if err := con.Writer().UpdateDeployItem(ctx, read_write_layer.W000043, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}
@@ -142,7 +143,7 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 			requeue = tmp
 		}
 		if !reflect.DeepEqual(old.Annotations, di.Annotations) {
-			if err := con.c.Update(ctx, di); err != nil {
+			if err := con.Writer().UpdateDeployItem(ctx, read_write_layer.W000042, di); err != nil {
 				logger.Error(err, "unable to update deploy item")
 				return reconcile.Result{}, err
 			}
@@ -209,9 +210,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 	}
 
 	// no aborting timeout if timestamp is missing or deploy item is in a final phase
-	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) ||
-		di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded ||
-		di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) || lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
 		logger.V(7).Info("deploy item doesn't have abort timestamp annotation or is in a final phase, nothing to do")
 		return nil, nil
 	}
@@ -245,9 +244,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectProgressingTimeouts")
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
-	if di.Status.LastReconcileTime.IsZero() ||
-		di.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded ||
-		di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+	if di.Status.LastReconcileTime.IsZero() || lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
 		logger.V(7).Info("deploy item is reconciled for the first time or in a final phase, nothing to do")
 		return nil, nil
 	}
@@ -271,4 +268,8 @@ func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1
 	// => requeue shortly after expected timeout
 	requeue := progressingTimeout - progressingDuration + (5 * time.Second)
 	return &requeue, nil
+}
+
+func (con *controller) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(con.log, con.c)
 }

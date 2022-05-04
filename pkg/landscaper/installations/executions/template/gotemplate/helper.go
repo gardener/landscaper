@@ -6,6 +6,7 @@ package gotemplate
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -14,6 +15,8 @@ const (
 	sourceCodePrepend = 5
 	// sourceCodeAppend the number of lines after the error line that are printed.
 	sourceCodeAppend = 5
+	// sourceIndentation is the fixed width of the code line prefix containing the line number.
+	sourceIndentation = 6
 )
 
 // CreateSourceSnippet creates an excerpt of lines of source code, containing some lines before
@@ -40,7 +43,6 @@ func CreateSourceSnippet(errorLine, errorColumn int, source []string) string {
 	sourceStartLine = errorLine - sourceCodePrepend
 	if sourceStartLine < 0 {
 		sourceStartLine = 0
-
 	}
 
 	errorLine -= sourceStartLine
@@ -57,8 +59,14 @@ func CreateSourceSnippet(errorLine, errorColumn int, source []string) string {
 	for i, line := range source {
 		// for printing, the line has to be converted back to one based index
 		realLine := sourceStartLine + i + 1
+		realLineWidth := int(math.Log10(float64(realLine)) + 1)
+		// account for the colon after the line number
+		repeat := sourceIndentation - realLineWidth - 1
+		if repeat < 0 {
+			repeat = 0
+		}
 		// the prefix contains the line number and some amount of whitespaces to keep the correct indentation
-		prefix := fmt.Sprintf("%d:%s", realLine, strings.Repeat(" ", 4-(realLine/10)))
+		prefix := fmt.Sprintf("%d:%s", realLine, strings.Repeat(" ", repeat))
 		formatted.WriteString(fmt.Sprintf("%s%s\n", prefix, line))
 
 		if i == errorLine {

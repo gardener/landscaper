@@ -14,6 +14,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
+type LsError interface {
+	error
+	LandscaperError() *lsv1alpha1.Error
+	Unwrap() error
+	UpdatedError(lastError *lsv1alpha1.Error) *lsv1alpha1.Error
+}
+
 // Error is a wrapper around the landscaper crd error
 // that implements the go error interface.
 type Error struct {
@@ -26,7 +33,7 @@ func (e Error) Error() string {
 	if e.err != nil {
 		return e.err.Error()
 	}
-	return fmt.Sprintf("Op: %q - Reason: %q - Message: %q", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
+	return fmt.Sprintf("Op: %s - Reason: %s - Message: %s", e.lsErr.Operation, e.lsErr.Reason, e.lsErr.Message)
 }
 
 // LandscaperError returns the wrapped landscaper error.
@@ -59,7 +66,7 @@ func NewError(operation, reason, message string, codes ...lsv1alpha1.ErrorCode) 
 }
 
 // NewWrappedError creates a new landscaper internal error that wraps another error
-func NewWrappedError(err error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) *Error {
+func NewWrappedError(err error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) LsError {
 	return &Error{
 		lsErr: lsv1alpha1.Error{
 			Operation:          operation,
@@ -76,7 +83,7 @@ func NewWrappedError(err error, operation, reason, message string, codes ...lsv1
 // NewErrorOrNil creates a new landscaper internal error that wraps another error.
 // if no error is set the functions return nil.
 // The error is automatically set as error message.
-func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) error {
+func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) LsError {
 	if err == nil {
 		return nil
 	}
@@ -90,6 +97,35 @@ func NewErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.Erro
 			Codes:              codes,
 		},
 		err: err,
+	}
+}
+
+// BuildLsError creates a new landscaper internal error if the provided error is not already of such a type or nil.
+// Otherwise the error is returned.
+func BuildLsError(err error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) LsError {
+	if err == nil {
+		return NewWrappedError(err, operation, reason, message, codes...)
+	}
+
+	switch e := err.(type) {
+	case LsError:
+		return e
+	default:
+		return NewWrappedError(err, operation, reason, message, codes...)
+	}
+}
+
+// BuildLsErrorOrNil creates a new landscaper internal error if the provided error is not already of such a type or nil.
+// Otherwise the error is returned. If the input error is nil also nil is returned.
+func BuildLsErrorOrNil(err error, operation, reason string, codes ...lsv1alpha1.ErrorCode) LsError {
+	if err == nil {
+		return nil
+	}
+	switch e := err.(type) {
+	case LsError:
+		return e
+	default:
+		return NewErrorOrNil(err, operation, reason, codes...)
 	}
 }
 
@@ -120,6 +156,35 @@ func TryUpdateError(lastErr *lsv1alpha1.Error, err error) *lsv1alpha1.Error {
 		return intErr.UpdatedError(lastErr)
 	}
 	return nil
+}
+
+// TryUpdateLsError tries to update the properties of the last error if the err is a internal landscaper error.
+func TryUpdateLsError(lastErr *lsv1alpha1.Error, err LsError) *lsv1alpha1.Error {
+	if err == nil {
+		return nil
+	}
+
+	codes := CollectErrorCodes(err)
+
+	errorInfo := err.LandscaperError()
+	return UpdatedError(lastErr, errorInfo.Operation, errorInfo.Reason, errorInfo.Message, codes...)
+}
+
+func CollectErrorCodes(err error) []lsv1alpha1.ErrorCode {
+	codes := []lsv1alpha1.ErrorCode{}
+	subError := errors.Unwrap(err)
+	if subError != nil {
+		codes = CollectErrorCodes(subError)
+	}
+
+	switch e := err.(type) {
+	case LsError:
+		codes = append(codes, e.LandscaperError().Codes...)
+	default:
+		// nothing
+	}
+
+	return codes
 }
 
 // UpdatedError updates the properties of a error.

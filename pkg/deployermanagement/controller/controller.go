@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +48,10 @@ type EnvironmentController struct {
 	client client.Client
 	scheme *runtime.Scheme
 	dm     *DeployerManagement
+}
+
+func (con *EnvironmentController) Writer() *read_write_layer.Writer {
+	return read_write_layer.NewWriter(con.log, con.client)
 }
 
 func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -108,7 +114,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	target := &lsv1alpha1.Target{}
 	target.Name = env.Name
 	target.Namespace = con.config.DeployerManagement.Namespace
-	if _, err := controllerutil.CreateOrUpdate(ctx, con.client, target, func() error {
+	if _, err := con.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000073, target, func() error {
 		target.Annotations = targetTemplate.Annotations
 		target.Labels = targetTemplate.Labels
 		target.Spec = lsv1alpha1.TargetSpec{
@@ -243,7 +249,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	}
 
 	inst := &lsv1alpha1.Installation{}
-	if err := con.client.Get(ctx, req.NamespacedName, inst); err != nil {
+	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(5).Info(err.Error())
 			return reconcile.Result{}, nil

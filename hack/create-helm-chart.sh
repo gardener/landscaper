@@ -32,6 +32,8 @@ if ! which helm 1>/dev/null; then
   curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 fi
 
+echo -n "Helm version: $(helm version)"
+
 export HELM_EXPERIMENTAL_OCI=1
 
 if which cli.py 1>/dev/null; then
@@ -43,5 +45,8 @@ echo "> Creating helm chart from $CHART_PATH with version ${EFFECTIVE_VERSION}"
 
 tempdir=$(mktemp -d)
 
+echo -n "Packaging helm chart"
 helm package ${PROJECT_ROOT}/${CHART_PATH} --version ${EFFECTIVE_VERSION} --app-version ${EFFECTIVE_VERSION} -d ${tempdir}
+
+echo -n "Pushing helm chart"
 helm push ${tempdir}/* "oci://${CHART_REPO}"

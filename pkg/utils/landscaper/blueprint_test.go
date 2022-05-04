@@ -1,16 +1,37 @@
-package landscaper
+package landscaper_test
 
 import (
-	"testing"
-
-	"github.com/mandelsoft/vfs/pkg/osfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/mandelsoft/vfs/pkg/osfs"
+	"github.com/mandelsoft/vfs/pkg/projectionfs"
+	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/yaml"
+
+	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 )
 
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Landscaper utils Test Suite")
+func GetBlueprint(path string) *blueprints.Blueprint {
+	fs := osfs.New()
+	blueprintsFs, err := projectionfs.New(fs, path)
+	Expect(err).ToNot(HaveOccurred())
+	blueprint, err := blueprints.NewFromFs(blueprintsFs)
+	Expect(err).ToNot(HaveOccurred())
+	return blueprint
+}
+
+func GetImports(path string) map[string]interface{} {
+	fs := osfs.New()
+	importsRaw, err := vfs.ReadFile(fs, path)
+	Expect(err).ToNot(HaveOccurred())
+	var imports map[string]interface{}
+	err = yaml.Unmarshal(importsRaw, &imports)
+	Expect(err).ToNot(HaveOccurred())
+	imports, ok := imports["imports"].(map[string]interface{})
+	Expect(ok).To(BeTrue())
+	return imports
 }
 
 var _ = Describe("Landscaper", func() {
@@ -18,24 +39,24 @@ var _ = Describe("Landscaper", func() {
 	Context("Render blueprint", func() {
 
 		It("should render a blueprint that imports a target list", func() {
-			blueprintRenderArgs := BlueprintRenderArgs{
-				Fs:                   osfs.New(),
-				ImportValuesFilepath: "./testdata/00-blueprint-with-targetlist/values.yaml",
-				RootDir:              "./testdata/00-blueprint-with-targetlist",
-			}
+			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
+			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
+				ComponentDescriptor: nil,
+				Installation:        nil,
+				Blueprint:           GetBlueprint("./testdata/00-blueprint-with-targetlist/blueprint"),
+			}, GetImports("./testdata/00-blueprint-with-targetlist/values.yaml"))
 
-			_, err := RenderBlueprint(blueprintRenderArgs)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should render a blueprint that imports a component descriptor and a component descriptor list", func() {
-			blueprintRenderArgs := BlueprintRenderArgs{
-				Fs:                   osfs.New(),
-				ImportValuesFilepath: "./testdata/01-blueprint-with-cdlist/values.yaml",
-				RootDir:              "./testdata/01-blueprint-with-cdlist",
-			}
+			renderer := lsutils.NewBlueprintRenderer(nil, nil, nil)
+			_, err := renderer.RenderDeployItemsAndSubInstallations(&lsutils.ResolvedInstallation{
+				ComponentDescriptor: nil,
+				Installation:        nil,
+				Blueprint:           GetBlueprint("./testdata/01-blueprint-with-cdlist/blueprint"),
+			}, GetImports("./testdata/01-blueprint-with-cdlist/values.yaml"))
 
-			_, err := RenderBlueprint(blueprintRenderArgs)
 			Expect(err).ToNot(HaveOccurred())
 		})
 

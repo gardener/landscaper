@@ -111,18 +111,64 @@ func GetBlueprintDefinitionFromInstallationTemplate(
 	return subBlueprint, cdDef, nil
 }
 
-// ComputeSubinstallationDependencies computes the dependencies between the given subinstallations.
+// PseudoInstallation is a helper struct which can be easily constructed from Installations as well as from InstallationTemplates.
+// It enables to use the same helper functions for both struct types.
+type PseudoInstallation struct {
+	Name               string
+	Imports            *lsv1alpha1.InstallationImports
+	ImportDataMappings *map[string]lsv1alpha1.AnyJSON
+	Exports            *lsv1alpha1.InstallationExports
+	ExportDataMappings *map[string]lsv1alpha1.AnyJSON
+}
+
+func AbstractInstallation(inst *lsv1alpha1.Installation) *PseudoInstallation {
+	return &PseudoInstallation{
+		Name:               inst.Name,
+		Imports:            &inst.Spec.Imports,
+		ImportDataMappings: &inst.Spec.ImportDataMappings,
+		Exports:            &inst.Spec.Exports,
+		ExportDataMappings: &inst.Spec.ExportDataMappings,
+	}
+}
+
+func AbstractInstallations(insts []*lsv1alpha1.Installation) []*PseudoInstallation {
+	res := make([]*PseudoInstallation, len(insts))
+	for i := range insts {
+		res[i] = AbstractInstallation(insts[i])
+	}
+	return res
+}
+
+func AbstractInstallationTemplate(tmpl *lsv1alpha1.InstallationTemplate) *PseudoInstallation {
+	return &PseudoInstallation{
+		Name:               tmpl.Name,
+		Imports:            &tmpl.Imports,
+		ImportDataMappings: &tmpl.ImportDataMappings,
+		Exports:            &tmpl.Exports,
+		ExportDataMappings: &tmpl.ExportDataMappings,
+	}
+}
+
+func AbstractInstallationTemplates(tmpls []*lsv1alpha1.InstallationTemplate) []*PseudoInstallation {
+	res := make([]*PseudoInstallation, len(tmpls))
+	for i := range tmpls {
+		res[i] = AbstractInstallationTemplate(tmpls[i])
+	}
+	return res
+}
+
+// ComputeInstallationDependencies computes the dependencies between the given subinstallations.
 // It checks for every import of every subinstallation, whether that import is exported from another subinstallation.
 // The resulting map contains one entry for every given subinstallation template, mapping that templates name to the
 // set of templates (by name) it depends on.
-func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.InstallationTemplate) (map[string]sets.String, utils.ImportRelationships) {
+func ComputeInstallationDependencies(installationTmpl []*PseudoInstallation) (map[string]sets.String, utils.ImportRelationships) {
 	dataExports := map[string]string{}
 	targetExports := map[string]string{}
 	for _, tmpl := range installationTmpl {
 		for _, exp := range tmpl.Exports.Data {
 			dataExports[exp.DataRef] = tmpl.Name
 		}
-		for exp := range tmpl.ExportDataMappings {
+		for exp := range *tmpl.ExportDataMappings {
 			dataExports[exp] = tmpl.Name
 		}
 		for _, exp := range tmpl.Exports.Targets {
@@ -174,7 +220,7 @@ func ComputeSubinstallationDependencies(installationTmpl []*lsv1alpha1.Installat
 	return deps, impRels
 }
 
-// OrderInstallationTemplates takes a list of installation templates and orders them according to their dependencies (as computed by ComputeSubinstallationDependencies).
+// OrderInstallationTemplates takes a list of installation templates and orders them according to their dependencies (as computed by ComputeInstallationDependencies).
 // Installation templates which have been put into the new order are referred to as 'scheduled'.
 func OrderInstallationTemplates(installationTmpl []*lsv1alpha1.InstallationTemplate) ([]*lsv1alpha1.InstallationTemplate, error) {
 	// 'done' and 'ordered' more or less contain the same information:
@@ -183,7 +229,7 @@ func OrderInstallationTemplates(installationTmpl []*lsv1alpha1.InstallationTempl
 	// while 'done' is a set to efficiently check whether a specific installation template is already scheduled.
 	ordered := []*lsv1alpha1.InstallationTemplate{}
 	done := sets.NewString()
-	dependencies, impRels := ComputeSubinstallationDependencies(installationTmpl)
+	dependencies, impRels := ComputeInstallationDependencies(AbstractInstallationTemplates(installationTmpl))
 	// repeat until either
 	// - all items from installationTmpl have been transferred to ordered (we are finished)
 	// - no new items have been scheduled during the last run

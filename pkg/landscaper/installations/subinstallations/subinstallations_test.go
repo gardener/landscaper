@@ -22,7 +22,6 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
@@ -118,7 +117,7 @@ var _ = Describe("SubInstallation", func() {
 		fakeClient = testenv.Client
 		fakeInstallations = state.Installations
 
-		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11")).To(Succeed())
+		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -279,6 +278,20 @@ var _ = Describe("SubInstallation", func() {
 			_ = expectSubInstallationsFail(ctx, "test9", "root")
 		})
 
+		It("should inherit context definition", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			_, subinsts := expectSubInstallationsSucceed(ctx, "test12", "root", lsv1alpha1.NamedObjectReference{
+				Name: "def-1",
+				Reference: lsv1alpha1.ObjectReference{
+					Name:      "def-1",
+					Namespace: "test12"},
+			})
+
+			Expect(subinsts[0].Spec.Context).To(Equal("custom"))
+		})
+
 		Context("Cleanup", func() {
 
 			It("should remove a subinstallation that is not referenced anymore", func() {
@@ -299,33 +312,6 @@ var _ = Describe("SubInstallation", func() {
 				err = fakeClient.Get(ctx, types.NamespacedName{Name: inst.Status.InstallationReferences[0].Reference.Name, Namespace: inst.Status.InstallationReferences[0].Reference.Namespace}, subinst)
 				Expect(err).To(HaveOccurred())
 				Expect(apierrors.IsNotFound(err)).To(BeTrue())
-			})
-		})
-
-		Context("Force-Reconcile Propagation", func() {
-			It("should propagate the force-reconcile annotation to all subinstallations", func() {
-				ctx := context.Background()
-				defer ctx.Done()
-
-				inst, subinsts := expectSubInstallationsSucceed(ctx, "test4", "root", lsv1alpha1.NamedObjectReference{
-					Name: "def-1",
-					Reference: lsv1alpha1.ObjectReference{
-						Name:      "def-1",
-						Namespace: "test4"},
-				}, lsv1alpha1.NamedObjectReference{
-					Name: "def-2",
-					Reference: lsv1alpha1.ObjectReference{
-						Name:      "def-2",
-						Namespace: "test4"},
-				})
-
-				si := createSubInstallationsOperation(ctx, inst)
-				si.Forced = true
-				Expect(si.Ensure(ctx)).To(Succeed())
-				for _, sub := range subinsts {
-					Expect(fakeClient.Get(ctx, client.ObjectKeyFromObject(sub), sub)).To(Succeed())
-					Expect(lsv1alpha1helper.HasOperation(sub.ObjectMeta, lsv1alpha1.ForceReconcileOperation)).To(BeTrue())
-				}
 			})
 		})
 

@@ -7,8 +7,8 @@ package helmcharts
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -119,19 +119,15 @@ func deployDeployItemAndWaitForSuccess(
 	utils.ExpectNoError(state.Create(ctx, target))
 
 	By("Creating the DeployItem")
+	chartYaml := utils.ReadValuesFromFile(filepath.Join(chartDir, "Chart.yaml"))
+	fmt.Fprintf(GinkgoWriter, "Chart: %s", chartYaml)
+
 	di := forgeHelmDeployItem(chartDir, valuesFile, deployerName, target, f.LsVersion)
 	utils.ExpectNoError(state.Create(ctx, di))
 	By("Waiting for the DeployItem to succeed")
 	utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 	By("Waiting for the corresponding Deployment to become ready")
-
-	// check deployment image version
-	deploy := &appsv1.Deployment{}
 	deployKey := kutil.ObjectKey(deployerName, state.Namespace)
-	utils.ExpectNoError(f.Client.Get(ctx, deployKey, deploy))
-	splitImage := strings.Split(deploy.Spec.Template.Spec.Containers[0].Image, ":")
-	Expect(splitImage[len(splitImage)-1]).To(Equal(f.LsVersion))
-
 	utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, deployKey, 2*time.Minute))
 
 	return di

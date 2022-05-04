@@ -11,7 +11,6 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -23,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -172,6 +173,7 @@ func GetDataImport(ctx context.Context,
 	if err != nil {
 		return nil, nil, err
 	}
+	do.Def = &dataImport
 
 	owner := kubernetes.GetOwner(do.Raw.ObjectMeta)
 	return do, owner, nil
@@ -187,14 +189,14 @@ func GetTargets(ctx context.Context,
 	var targets []*dataobjects.Target
 	var targetImportReferences []string
 	if len(targetImport.Target) != 0 {
-		target, err := GetTargetImport(ctx, kubeClient, contextName, inst, targetImport.Target)
+		target, err := GetTargetImport(ctx, kubeClient, contextName, inst, targetImport)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get target for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
 		targets = []*dataobjects.Target{target}
 		targetImportReferences = []string{targetImport.Target}
 	} else if targetImport.Targets != nil {
-		tl, err := GetTargetListImportByNames(ctx, kubeClient, contextName, inst, targetImport.Targets)
+		tl, err := GetTargetListImportByNames(ctx, kubeClient, contextName, inst, targetImport)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
@@ -204,7 +206,7 @@ func GetTargets(ctx context.Context,
 		targets = tl.Targets
 		targetImportReferences = targetImport.Targets
 	} else if len(targetImport.TargetListReference) != 0 {
-		tl, err := GetTargetListImportBySelector(ctx, kubeClient, contextName, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, true)
+		tl, err := GetTargetListImportBySelector(ctx, kubeClient, contextName, inst, map[string]string{lsv1alpha1.DataObjectKeyLabel: targetImport.TargetListReference}, targetImport, true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: unable to get targetlist for '%s': %w", targetImport.Name, targetImport.Name, err)
 		}
@@ -217,8 +219,9 @@ func GetTargets(ctx context.Context,
 }
 
 // GetTargetImport fetches the target import from the cluster.
-func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetName string) (*dataobjects.Target, error) {
+func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName string, inst *lsv1alpha1.Installation, targetImport lsv1alpha1.TargetImport) (*dataobjects.Target, error) {
 	// get deploy item from current context
+	targetName := targetImport.Target
 	raw := &lsv1alpha1.Target{}
 	targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
 	if err := kubeClient.Get(ctx, kubernetes.ObjectKey(targetName, inst.Namespace), raw); err != nil {
@@ -229,6 +232,7 @@ func GetTargetImport(ctx context.Context, kubeClient client.Client, contextName 
 	if err != nil {
 		return nil, fmt.Errorf("unable to create internal target for %s: %w", targetName, err)
 	}
+	target.Def = &targetImport
 
 	return target, nil
 }
@@ -239,9 +243,9 @@ func GetTargetListImportByNames(
 	kubeClient client.Client,
 	contextName string,
 	inst *lsv1alpha1.Installation,
-	targetNames []string) (*dataobjects.TargetList, error) {
-	targets := make([]lsv1alpha1.Target, len(targetNames))
-	for i, targetName := range targetNames {
+	targetImport lsv1alpha1.TargetImport) (*dataobjects.TargetList, error) {
+	targets := make([]lsv1alpha1.Target, len(targetImport.Targets))
+	for i, targetName := range targetImport.Targets {
 		// get deploy item from current context
 		raw := &lsv1alpha1.Target{}
 		targetName = lsv1alpha1helper.GenerateDataObjectName(contextName, targetName)
@@ -254,6 +258,7 @@ func GetTargetListImportByNames(
 	if err != nil {
 		return nil, err
 	}
+	targetList.Def = &targetImport
 
 	return targetList, nil
 }
@@ -266,6 +271,7 @@ func GetTargetListImportBySelector(
 	contextName string,
 	inst *lsv1alpha1.Installation,
 	selector map[string]string,
+	targetImport lsv1alpha1.TargetImport,
 	restrictToImport bool) (*dataobjects.TargetList, error) {
 	targets := &lsv1alpha1.TargetList{}
 	// construct label selector
@@ -308,33 +314,29 @@ func GetTargetListImportBySelector(
 	if err != nil {
 		return nil, err
 	}
+	targetList.Def = &targetImport
 	return targetList, nil
 }
 
 // GetComponentDescriptorImport fetches the component descriptor import from the cluster/registry.
 func GetComponentDescriptorImport(ctx context.Context, kubeClient client.Client, contextName string, op *Operation, imp lsv1alpha1.ComponentDescriptorImport) (*dataobjects.ComponentDescriptor, error) {
-	return getComponentDescriptorImport(ctx, kubeClient, contextName, op, imp.Name, imp.Ref, imp.ConfigMapRef, imp.SecretRef, imp.DataRef)
-}
-
-// getComponentDescriptorImport fetches the component descriptor import from the cluster/registry.
-// This auxiliary function is necessary to reuse the same code for component descriptor and component descriptor list imports, as both use different structs for the import (which share mostly the same values).
-func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client, contextName string, op *Operation, impName string, regRef *lsv1alpha1.ComponentDescriptorReference, cmRef *lsv1alpha1.ConfigMapReference, secretRef *lsv1alpha1.SecretReference, dataRef string) (*dataobjects.ComponentDescriptor, error) {
 	var refType dataobjects.CDReferenceType
-	if cmRef != nil {
+	if imp.ConfigMapRef != nil {
 		refType = dataobjects.ConfigMapReference
-	} else if secretRef != nil {
+	} else if imp.SecretRef != nil {
 		refType = dataobjects.SecretReference
-	} else if regRef != nil {
+	} else if imp.Ref != nil {
 		refType = dataobjects.RegistryReference
-	} else if len(dataRef) != 0 {
+	} else if len(imp.DataRef) != 0 {
 		refType = dataobjects.DataReference
 	} else {
-		return nil, fmt.Errorf("invalid component descriptor import '%s': none of dataRef, configMapRef, secretRef, and componentDescriptorRef is specified", impName)
+		return nil, fmt.Errorf("invalid component descriptor import '%s': none of dataRef, configMapRef, secretRef, and componentDescriptorRef is specified", imp.Name)
 	}
 
 	res := dataobjects.NewComponentDescriptor()
+	res.Def = &imp
 	owner := kubernetes.GetOwner(op.Inst.Info.ObjectMeta)
-	if owner != nil && owner.Kind == "Installation" {
+	if OwnerReferenceIsInstallation(owner) {
 		res.SetOwner(owner)
 	}
 	switch refType {
@@ -344,18 +346,18 @@ func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 		return nil, fmt.Errorf("unsupported reference type '%s'", string(refType))
 	case dataobjects.RegistryReference:
 		// fetch component descriptor from registry
-		if regRef == nil {
+		if imp.Ref == nil {
 			return nil, fmt.Errorf("reference type mismatch: reference type is '%s', but Ref is nil", string(refType))
 		}
-		cd, err := op.ComponentsRegistry().Resolve(ctx, regRef.RepositoryContext, regRef.ComponentName, regRef.Version)
+		cd, err := op.ComponentsRegistry().Resolve(ctx, imp.Ref.RepositoryContext, imp.Ref.ComponentName, imp.Ref.Version)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get component descriptor from registry (%v): %w", regRef, err)
+			return nil, fmt.Errorf("unable to get component descriptor from registry (%v): %w", imp.Ref, err)
 		}
-		res.SetRegistryReference(regRef).SetDescriptor(cd)
+		res.SetRegistryReference(imp.Ref).SetDescriptor(cd)
 	case dataobjects.ConfigMapReference:
-		_, yamlData, _, err := ResolveConfigMapReference(ctx, kubeClient, cmRef)
+		_, yamlData, _, err := ResolveConfigMapReference(ctx, kubeClient, imp.ConfigMapRef)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get component descriptor from configmap %s: %w", cmRef.NamespacedName().String(), err)
+			return nil, fmt.Errorf("unable to get component descriptor from configmap %s: %w", imp.ConfigMapRef.NamespacedName().String(), err)
 		}
 		data, err := yaml.ToJSON([]byte(yamlData))
 		if err != nil {
@@ -366,11 +368,11 @@ func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert data into component descriptor: %w", err)
 		}
-		res.SetConfigMapReference(cmRef).SetDescriptor(cd)
+		res.SetConfigMapReference(imp.ConfigMapRef).SetDescriptor(cd)
 	case dataobjects.SecretReference:
-		_, yamlData, _, err := ResolveSecretReference(ctx, kubeClient, secretRef)
+		_, yamlData, _, err := ResolveSecretReference(ctx, kubeClient, imp.SecretRef)
 		if err != nil {
-			return nil, fmt.Errorf("unable to get component descriptor from secret %s: %w", secretRef.NamespacedName().String(), err)
+			return nil, fmt.Errorf("unable to get component descriptor from secret %s: %w", imp.SecretRef.NamespacedName().String(), err)
 		}
 		data, err := yaml.ToJSON(yamlData)
 		if err != nil {
@@ -381,7 +383,7 @@ func getComponentDescriptorImport(ctx context.Context, kubeClient client.Client,
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert data into component descriptor: %w", err)
 		}
-		res.SetSecretReference(secretRef).SetDescriptor(cd)
+		res.SetSecretReference(imp.SecretRef).SetDescriptor(cd)
 	default:
 		return nil, fmt.Errorf("unknown reference type '%s' for component descriptor import", string(refType))
 	}
@@ -396,8 +398,16 @@ func GetComponentDescriptorListImport(ctx context.Context, kubeClient client.Cli
 		return nil, fmt.Errorf("invalid component descriptor list import %s: import does not describe a list", imp.Name)
 	}
 	res := dataobjects.NewComponentDescriptorListWithSize(len(imp.List))
+	res.Def = &imp
 	for i, elem := range imp.List {
-		cd, err := getComponentDescriptorImport(ctx, kubeClient, contextName, op, fmt.Sprintf("%s[%d]", imp.Name, i), elem.Ref, elem.ConfigMapRef, elem.SecretRef, elem.DataRef)
+		dummyImportDef := lsv1alpha1.ComponentDescriptorImport{
+			Name:         fmt.Sprintf("%s[%d]", imp.Name, i),
+			Ref:          elem.Ref,
+			ConfigMapRef: elem.ConfigMapRef,
+			SecretRef:    elem.SecretRef,
+			DataRef:      elem.DataRef,
+		}
+		cd, err := GetComponentDescriptorImport(ctx, kubeClient, contextName, op, dummyImportDef)
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve component descriptor for index %d of cd import list %s: %w", i, imp.Name, err)
 		}
@@ -544,73 +554,13 @@ func ResolveConfigMapReference(ctx context.Context, kubeClient client.Client, co
 	return completeData, data, cm.Generation, nil
 }
 
-// HandleSubComponentPhaseChanges updates the phase of the given installation, if its phase doesn't match the combined phase of its subinstallations/executions anymore
-func HandleSubComponentPhaseChanges(
-	ctx context.Context,
-	logger logr.Logger,
-	kubeClient client.Client,
-	inst *lsv1alpha1.Installation,
-	getOperation func(context.Context, *lsv1alpha1.Installation) (*Operation, error),
-	getExports func(context.Context, *Operation) ([]*dataobjects.DataObject, []*dataobjects.Target, error)) error {
+func OwnerReferenceIsInstallation(owner *metav1.OwnerReference) bool {
+	return owner != nil && owner.Kind == "Installation"
+}
 
-	execRef := inst.Status.ExecutionReference
-	phases := []lsv1alpha1.ComponentInstallationPhase{}
-	if execRef != nil {
-		exec := &lsv1alpha1.Execution{}
-		err := kubeClient.Get(ctx, execRef.NamespacedName(), exec)
-		if err != nil {
-			return fmt.Errorf("error getting execution for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
-		phases = append(phases, lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase))
-	}
-	subinsts, err := ListSubinstallations(ctx, kubeClient, inst)
-	if err != nil {
-		return fmt.Errorf("error fetching subinstallations for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-	}
-	for _, sub := range subinsts {
-		phases = append(phases, sub.Status.Phase)
-	}
-	if len(phases) == 0 {
-		// Installation contains neither an execution nor subinstallations, so the phase can't be out of sync.
-		return nil
-	}
-	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
-	if inst.Status.Phase != cp {
-		// Phase is completed but doesn't fit to the deploy items' phases
-		logger.V(5).Info("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
+func OwnerReferenceIsInstallationButNoParent(owner *metav1.OwnerReference, installation *lsv1alpha1.Installation) bool {
+	parentName := GetParentInstallationName(installation)
 
-		// get operation
-		instOp, err := getOperation(ctx, inst)
-		if err != nil {
-			return fmt.Errorf("unable to construct operation for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
+	return OwnerReferenceIsInstallation(owner) && owner.Name != parentName
 
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// recompute exports
-			dataExports, targetExports, err := getExports(ctx, instOp)
-			if err != nil {
-				return instOp.NewError(err, "ConstructExports", err.Error())
-			}
-			if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
-				return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
-			}
-		}
-
-		// update status
-		err = instOp.UpdateInstallationStatus(ctx, inst, cp)
-		if err != nil {
-			return fmt.Errorf("error updating installation status for installation %s/%s: %w", inst.Namespace, inst.Name, err)
-		}
-
-		if cp == lsv1alpha1.ComponentPhaseSucceeded {
-			// trigger dependent installations
-			err = instOp.TriggerDependants(ctx)
-			if err != nil {
-				return instOp.NewError(err, "TriggerDependants", err.Error())
-			}
-		}
-
-		return nil
-	}
-	return nil
 }

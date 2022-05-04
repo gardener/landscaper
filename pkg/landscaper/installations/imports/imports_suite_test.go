@@ -26,7 +26,7 @@ func TestConfig(t *testing.T) {
 func createDefaultContextsForNamespace(kubeClient client.Client) {
 	// create default repo for all namespaces
 	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 11; i++ {
 		Expect(testutils.CreateDefaultContext(context.TODO(), kubeClient, repoCtx, fmt.Sprintf("test%d", i))).To(Succeed())
 	}
 }

@@ -69,6 +69,32 @@ func NginxIngressTest(f *framework.Framework) {
 			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
 			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
+			// Update the installation to use the next component descriptor version (see
+			// docs/tutorials/resources/ingress-nginx-upgrade/component-descriptor.yaml) with the next nginx version.
+			ginkgo.By("Upgrade installation")
+			instKey := kutil.ObjectKey(inst.Name, inst.Namespace)
+			inst = &lsv1alpha1.Installation{}
+			utils.ExpectNoError(f.Client.Get(ctx, instKey, inst))
+			inst.Spec.ComponentDescriptor.Reference.Version = "v0.3.3"
+			err = f.Client.Update(ctx, inst)
+			utils.ExpectNoError(err)
+
+			// wait for installation to finish
+			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+
+			deployItems, err = lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
+			utils.ExpectNoError(err)
+			gomega.Expect(deployItems).To(gomega.HaveLen(1))
+			gomega.Expect(deployItems[0].Status.Phase).To(gomega.Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+
+			// expect that the nginx deployment is successfully running
+			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
+
+			// check the new chart version in label "helm.sh/chart" of the deployment
+			deploy := &appsv1.Deployment{}
+			utils.ExpectNoError(f.Client.Get(ctx, nginxIngressObjectKey, deploy))
+			gomega.Expect(deploy.GetLabels()).To(gomega.HaveKeyWithValue("helm.sh/chart", "ingress-nginx-4.0.18"))
+
 			ginkgo.By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
@@ -130,6 +156,12 @@ func NginxIngressTest(f *framework.Framework) {
 			nginxIngressObjectKey := kutil.ObjectKey(nginxIngressDeploymentName, state.Namespace)
 			utils.ExpectNoError(utils.WaitForDeploymentToBeReady(ctx, f.TestLog(), f.Client, nginxIngressObjectKey, 2*time.Minute))
 
+			// check
+			deploy := &appsv1.Deployment{}
+			utils.ExpectNoError(f.Client.Get(ctx, nginxIngressObjectKey, deploy))
+			gomega.Expect(deploy.Spec.Template.Spec.Containers[0].LivenessProbe.FailureThreshold == 4).To(gomega.BeTrue())
+
+			// delete
 			ginkgo.By("Delete installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))

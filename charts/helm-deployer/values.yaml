@@ -31,6 +31,10 @@ deployer:
 #      operator:
 #      value:
 
+  controller:
+    workers: 30
+    # cacheSyncTimeout: 2m
+
 replicaCount: 1
 
 image:

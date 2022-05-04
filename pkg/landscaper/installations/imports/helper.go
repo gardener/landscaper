@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -77,7 +79,7 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 
 		// we expect that the source ref is always an installation
 		inst := &lsv1alpha1.Installation{}
-		if err := kubeClient.Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, sourceRef.NamespacedName(), inst); err != nil {
 			return false, false, err
 		}
 
@@ -88,6 +90,11 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 
 		if inst.Generation != inst.Status.ObservedGeneration {
 			log.V(3).Info("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
+			return false, false, nil
+		}
+
+		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+			log.V(3).Info("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 
@@ -157,7 +164,7 @@ func getImportSource(ctx context.Context,
 	}
 
 	// we cannot validate if the source is not an installation
-	if owner == nil || owner.Kind != "Installation" {
+	if !installations.OwnerReferenceIsInstallation(owner) {
 		return nil, nil
 	}
 	return &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Info.Namespace}, nil
@@ -179,7 +186,7 @@ func getTargetSources(ctx context.Context,
 	refs := make([]*lsv1alpha1.ObjectReference, 0)
 	for _, target := range targets {
 		owner := kutil.GetOwner(target.Raw.ObjectMeta)
-		if owner == nil || owner.Kind != "Installation" {
+		if !installations.OwnerReferenceIsInstallation(owner) {
 			continue
 		}
 		refs = append(refs, &lsv1alpha1.ObjectReference{Name: owner.Name, Namespace: inst.Namespace})

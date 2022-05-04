@@ -34,10 +34,21 @@ deployExecutions:
     {{ toYaml .componentDescriptorDef | indent 8 }}
             resourceName: ingress-nginx-chart
 
+        helmDeployment: true
+
         updateStrategy: patch
 
         name: test
         namespace: {{ .imports.namespace }}
+
+        values:
+          controller:
+            livenessProbe:
+              failureThreshold: 4
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 5
 
         exportsFromManifests:
         - key: ingressClass

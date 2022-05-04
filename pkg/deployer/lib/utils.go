@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +41,6 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 	kubeClient client.Client,
 	di *lsv1alpha1.DeployItem,
 	deployerInfo lsv1alpha1.DeployerInformation) error {
-	changedMeta := false
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
 	if hasReconcileAnnotation || hasForceReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
@@ -53,20 +54,13 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 			return err
 		}
 	}
+
 	if hasReconcileAnnotation {
 		log.V(5).Info("removing reconcile annotation")
-		changedMeta = true
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-	}
-	if metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp)) {
-		log.V(5).Info("removing timestamp annotation")
-		changedMeta = true
-		delete(di.ObjectMeta.Annotations, lsv1alpha1.ReconcileTimestampAnnotation)
-	}
-
-	if changedMeta {
 		log.V(7).Info("updating metadata")
-		if err := kubeClient.Update(ctx, di); err != nil {
+		writer := read_write_layer.NewWriter(log, kubeClient)
+		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
 			return err
 		}
 		log.V(7).Info("successfully updated metadata")
@@ -88,7 +82,8 @@ func PrepareReconcile(ctx context.Context, log logr.Logger, kubeClient client.Cl
 	}
 
 	log.V(7).Info("updating status")
-	if err := kubeClient.Status().Update(ctx, di); err != nil {
+	writer := read_write_layer.NewWriter(log, kubeClient)
+	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
 		return err
 	}
 	log.V(7).Info("successfully updated status")
@@ -155,7 +150,7 @@ func SetProviderStatus(di *lsv1alpha1.DeployItem, status runtime.Object, scheme 
 }
 
 // CreateOrUpdateExport creates or updates the export of a deploy item.
-func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {
+func CreateOrUpdateExport(ctx context.Context, kubeWriter *read_write_layer.Writer, kubeClient client.Client, deployItem *lsv1alpha1.DeployItem, values interface{}) error {
 	if values == nil {
 		return nil
 	}
@@ -190,7 +185,7 @@ func CreateOrUpdateExport(ctx context.Context, kubeClient client.Client, deployI
 		Namespace: secret.Namespace,
 	}
 
-	if err := kubeClient.Status().Update(ctx, deployItem); err != nil {
+	if err := kubeWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000060, deployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			currOp, "Update DeployItem", err.Error())
 	}

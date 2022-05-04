@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -22,32 +24,37 @@ import (
 
 // HandleErrorFunc returns a error handler func for deployers.
 // The functions automatically sets the phase for long running errors and updates the status accordingly.
-func HandleErrorFunc(log logr.Logger, client client.Client, eventRecorder record.EventRecorder, deployItem *lsv1alpha1.DeployItem) func(ctx context.Context, err error) error {
-	old := deployItem.DeepCopy()
-	return func(ctx context.Context, err error) error {
-		deployItem.Status.LastError = lserrors.TryUpdateError(deployItem.Status.LastError, err)
-		deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(lserrors.GetPhaseForLastError(
-			lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
-			deployItem.Status.LastError,
-			5*time.Minute))
-		if deployItem.Status.LastError != nil {
-			lastErr := deployItem.Status.LastError
-			eventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-		}
+func HandleErrorFunc(ctx context.Context, err lserrors.LsError, log logr.Logger, c client.Client,
+	eventRecorder record.EventRecorder, oldDeployItem, deployItem *lsv1alpha1.DeployItem, isDelete bool) error {
+	// if successfully deleted we could not update the object
+	if isDelete && err == nil {
+		return nil
+	}
 
-		if !reflect.DeepEqual(old.Status, deployItem.Status) {
-			if err2 := client.Status().Update(ctx, deployItem); err2 != nil {
-				if apierrors.IsConflict(err2) { // reduce logging
-					log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
-				} else {
-					log.Error(err2, "unable to update status")
-				}
-				// retry on conflict
-				if err != nil {
-					return err2
-				}
+	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
+
+	phaseForLastError := lserrors.GetPhaseForLastError(lsv1alpha1.ComponentInstallationPhase(deployItem.Status.Phase),
+		deployItem.Status.LastError, 5*time.Minute)
+	deployItem.Status.Phase = lsv1alpha1.ExecutionPhase(phaseForLastError)
+
+	if deployItem.Status.LastError != nil {
+		lastErr := deployItem.Status.LastError
+		eventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
+		writer := read_write_layer.NewWriter(log, c)
+		if err2 := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000051, deployItem); err2 != nil {
+			if apierrors.IsConflict(err2) { // reduce logging
+				log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+			} else {
+				log.Error(err2, "unable to update status")
+			}
+			// retry on conflict
+			if err == nil {
+				return err2
 			}
 		}
-		return err
 	}
+	return err
 }

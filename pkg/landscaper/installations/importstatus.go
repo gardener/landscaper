@@ -25,7 +25,7 @@ func (s *ImportStatus) set(status lsv1alpha1.ImportStatus) {
 		s.Target[status.Name] = &status
 	}
 	if status.Type == lsv1alpha1.CDImportStatusType || status.Type == lsv1alpha1.CDListImportStatusType {
-		s.Target[status.Name] = &status
+		s.ComponentDescriptor[status.Name] = &status
 	}
 }
 
@@ -69,7 +69,7 @@ func (s *ImportStatus) GetTarget(name string) (lsv1alpha1.ImportStatus, error) {
 
 // GetComponentDescriptor returns the import target state for the given key.
 func (s *ImportStatus) GetComponentDescriptor(name string) (lsv1alpha1.ImportStatus, error) {
-	state, ok := s.Target[name]
+	state, ok := s.ComponentDescriptor[name]
 	if !ok {
 		return lsv1alpha1.ImportStatus{}, fmt.Errorf("import state %s not found", name)
 	}

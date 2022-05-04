@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -264,7 +266,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		Name:      obj.GetLabels()[container.ContainerDeployerDeployItemNameLabel],
 	}
 	logger := gc.log.WithValues("deployItem", key.String(), "resource", kutil.ObjectKeyFromObject(obj).String())
-	if err := gc.lsClient.Get(ctx, key, di); err != nil {
+	if err := read_write_layer.GetDeployItem(ctx, gc.lsClient, key, di); err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}

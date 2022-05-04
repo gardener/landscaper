@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,7 +80,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
-	if _, err := kutil.CreateOrUpdate(ctx, o.Client(), exec, func() error {
+	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.Info.Spec.Context
 		exec.Spec.DeployItems = executions
 
@@ -113,7 +115,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 // The execution can be nil if no execution has been found.
 func GetExecutionForInstallation(ctx context.Context, kubeClient client.Client, inst *lsv1alpha1.Installation) (*lsv1alpha1.Execution, error) {
 	exec := &lsv1alpha1.Execution{}
-	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(inst), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, kubeClient, kutil.ObjectKeyFromObject(inst), exec); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -50,7 +52,8 @@ func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string)
 func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
 	deployItemList := &lsv1alpha1.DeployItemList{}
 	// todo: maybe use name and namespace
-	if err := o.Client().List(ctx, deployItemList, client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name}, client.InNamespace(o.exec.Namespace)); err != nil {
+	if err := read_write_layer.ListDeployItems(ctx, o.Client(), deployItemList,
+		client.MatchingLabels{lsv1alpha1.ExecutionManagedByLabel: o.exec.Name}, client.InNamespace(o.exec.Namespace)); err != nil {
 		return nil, err
 	}
 	return deployItemList.Items, nil
@@ -61,11 +64,11 @@ func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.De
 func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
 	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
 	managed := sets.NewInt()
-	for i, exec := range o.exec.Spec.DeployItems {
+	for i, di := range o.exec.Spec.DeployItems {
 		execItem := executionItem{
-			Info: *exec.DeepCopy(),
+			Info: *di.DeepCopy(),
 		}
-		if j, found := getDeployItemIndexByManagedName(items, exec.Name); found {
+		if j, found := getDeployItemIndexByManagedName(items, di.Name); found {
 			managed.Insert(j)
 			execItem.DeployItem = items[j].DeepCopy()
 		}
@@ -89,7 +92,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 	// fetch all managed deploy items and check their phase and generation
 	for _, managedDi := range o.exec.Status.DeployItemReferences {
 		di := &lsv1alpha1.DeployItem{}
-		err := o.Client().Get(ctx, managedDi.Reference.NamespacedName(), di)
+		err := read_write_layer.GetDeployItem(ctx, o.Client(), managedDi.Reference.NamespacedName(), di)
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return fmt.Errorf("unable to get deploy item %q: %w", managedDi.Reference.NamespacedName().String(), err)
@@ -102,7 +105,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 			// at least one deploy item is outdated or got deleted, a reconcile is required
 			logger.V(7).Info("deploy item cannot be found or does not match last observed generation")
 			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-			err := o.Client().Status().Update(ctx, o.exec)
+			err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000028, o.exec)
 			if err != nil {
 				return fmt.Errorf("error updating execution status for %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
 			}
@@ -117,7 +120,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 		// Phase is completed but doesn't fit to the deploy items' phases
 		logger.V(5).Info("execution phase mismatch", "phase", string(o.exec.Status.Phase), "combinedPhase", string(cp))
 		o.exec.Status.Phase = cp
-		err := o.Client().Status().Update(ctx, o.exec)
+		err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000030, o.exec)
 		if err != nil {
 			return fmt.Errorf("error updating execution status for %s/%s: %w", o.exec.Namespace, o.exec.Name, err)
 		}

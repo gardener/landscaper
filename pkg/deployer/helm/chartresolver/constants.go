@@ -4,6 +4,8 @@
 
 package chartresolver
 
+import "github.com/gardener/landscaper/pkg/deployer/helm/shared"
+
 const (
 	// HelmChartConfigMediaType is the reserved media type for the Helm chart manifest config
 	HelmChartConfigMediaType = "application/vnd.cncf.helm.config.v1+json"
@@ -21,7 +23,7 @@ const (
 	LegacyChartLayerMediaType = "application/tar+gzip"
 
 	// OldHelmResourceType describes the old helm resource type of a component descrptor defined resource.
-	OldHelmResourceType = "helm"
+	OldHelmResourceType = shared.OldHelmResourceType
 	// HelmChartResourceType describes the helm resource type of a component descrptor defined resource.
-	HelmChartResourceType = "helm.io/chart"
+	HelmChartResourceType = shared.HelmChartResourceType
 )

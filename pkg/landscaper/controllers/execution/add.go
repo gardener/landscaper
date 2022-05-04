@@ -31,7 +31,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config conf
 	return builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.Execution{}).
 		Owns(&lsv1alpha1.DeployItem{}).
-		WithLogger(log).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
+		WithLogger(log).
 		Complete(a)
 }

@@ -16,7 +16,6 @@ import (
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/deployer/lib"
@@ -40,6 +39,8 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	dockerreference "github.com/containerd/containerd/reference/docker"
+
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // Reconcile handles the reconcile flow for a container deploy item.
@@ -51,6 +52,8 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "FetchRunningPod", err.Error())
 	}
 
+	lsWriter := read_write_layer.NewWriter(c.log, c.lsClient)
+
 	// do nothing if the pod is still running
 	if pod != nil {
 		if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodUnknown {
@@ -61,7 +64,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			// check if pod is in error state
 			if err := podIsInErrorState(pod); err != nil {
 				c.DeployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
-				if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
+				if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000055, c.DeployItem); err != nil {
 					return err // returns the error and retry
 				}
 
@@ -82,7 +85,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 
 		// before we start syncing lets read the current deploy item from the server
 		oldDeployItem := &lsv1alpha1.DeployItem{}
-		if err := c.lsClient.Get(ctx, kutil.ObjectKey(c.DeployItem.GetName(), c.DeployItem.GetNamespace()), oldDeployItem); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(c.DeployItem.GetName(), c.DeployItem.GetNamespace()), oldDeployItem); err != nil {
 			return lserrors.NewWrappedError(err,
 				operationName, "FetchDeployItem", err.Error())
 		}
@@ -154,16 +157,14 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// we have to persist the observed changes so lets do a patch
-		if err := c.lsClient.Status().Patch(ctx, c.DeployItem, client.MergeFrom(oldDeployItem)); err != nil {
-			return lserrors.NewWrappedError(err,
-				operationName, "UpdateDeployItemStatus", err.Error())
+		if err := lsWriter.PatchDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem, oldDeployItem); err != nil {
+			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
 
 		if lsv1alpha1helper.HasOperation(c.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 			delete(c.DeployItem.Annotations, lsv1alpha1.OperationAnnotation)
-			if err := c.lsClient.Update(ctx, c.DeployItem); err != nil {
-				return lserrors.NewWrappedError(err,
-					operationName, "RemoveReconcileAnnotation", err.Error())
+			if err := lsWriter.UpdateDeployItem(ctx, read_write_layer.W000039, c.DeployItem); err != nil {
+				return lserrors.NewWrappedError(err, operationName, "RemoveReconcileAnnotation", err.Error())
 			}
 		}
 		return nil
@@ -191,7 +192,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 			"Reconcile", "UpdatePodStatus", err.Error())
 	}
 
-	if err := c.lsClient.Status().Update(ctx, c.DeployItem); err != nil {
+	if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000066, c.DeployItem); err != nil {
 		return lserrors.NewWrappedError(err,
 			operationName, "UpdateDeployItemStatus", err.Error())
 	}

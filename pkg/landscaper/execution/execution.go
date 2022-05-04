@@ -7,11 +7,12 @@ package execution
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -37,7 +38,7 @@ func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReco
 func (o *Operation) UpdateStatus(ctx context.Context, phase lsv1alpha1.ExecutionPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	o.exec.Status.Phase = phase
 	o.exec.Status.Conditions = lsv1alpha1helper.MergeConditions(o.exec.Status.Conditions, updatedConditions...)
-	if err := o.Client().Status().Update(ctx, o.exec); err != nil {
+	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000032, o.exec); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}
@@ -57,7 +58,7 @@ func (o *Operation) CreateOrUpdateExportReference(ctx context.Context, values in
 		return err
 	}
 
-	if _, err := kubernetesutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+	if _, err := o.Writer().CreateOrUpdateDataObject(ctx, read_write_layer.W000075, raw, func() error {
 		if err := controllerutil.SetOwnerReference(o.exec, raw, api.LandscaperScheme); err != nil {
 			return err
 		}

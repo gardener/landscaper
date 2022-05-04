@@ -1,17 +1,20 @@
 # Helm Deployer
 
-The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. It renders a given helm chart and deploys the resulting manifest into a cluster.
+The helm deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/helm`. There are two
+alternative working modes of the helm deployer. One renders a given helm chart and deploys the resulting manifest into 
+a cluster. The other deploys a helm chart with [helm 3](https://helm.sh/). The second case is the default.
 
-It also checks by default the health of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
+By default, the helm deployer checks the health of the deployed resources. See [healthchecks.md](healthchecks.md) for more info.
 
 **Index**:
 - [Provider Configuration](#provider-configuration)
 - [Provider Status](#status)
 - [Deployer Configuration](#deployer-configuration)
 
-### Provider Configuration
+## Provider Configuration
 
-This sections describes the provider specific configuration.
+This sections describes the provider specific configuration. The following example defines a deployment which deploys
+a helm chart with helm 3. 
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -42,6 +45,17 @@ spec:
         resourceName: my-helm-chart
       archive:
         raw: "" # base64 encoded helm chart tar.gz
+
+    # settings for the different helm 3 operations 
+    helmDeploymentConfig:
+      install: # see  https://helm.sh/docs/helm/helm_install/#options
+        atomic: true
+        timeout: 10m
+      upgrade: # see https://helm.sh/docs/helm/helm_upgrade/#options
+        atomic: true
+        timeout: 10m
+      uninstall: # see https://helm.sh/docs/helm/helm_uninstall/#options
+        timeout: 15m
 
     # base64 encoded kubeconfig pointing to the cluster to install the chart
     kubeconfig: xxx
@@ -163,9 +177,37 @@ spec:
 
 Exports can be defined in `exportsFromManifests` by specifying the exported key to export.
 The value is taken from a rendered resource and a jsonpath to the value.
-For a complete documention of the availabel jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
+For a complete documentation of the available jsonPath see here (https://kubernetes.io/docs/reference/kubectl/jsonpath/).
 
 :warning: Only unique identifiable resources (_apiVersion_, _kind_, _name_ and _namespace_).
+
+## Manifest-Only Deployment
+
+If you want to deploy the chart not with helm 3 but only apply the manifests you just need to add the field 
+`helmDeployment: false` to the provider configuration as shown in the following example. 
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-nginx
+spec:
+  type: landscaper.gardener.cloud/helm
+
+  target: # has to be of type landscaper.gardener.cloud/kubernetes-cluster
+    name: my-cluster
+    namespace: test
+
+  config:
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+
+    chart:
+      ...
+
+    # specifies that only the rendered manifests are applied
+    helmDeployment: false
+```
 
 ##### Continuous Reconciliation
 For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
@@ -212,3 +254,143 @@ targetSelector:
   annotations: []
   labels: []
 ```
+
+## Support of Helm Chart Repositories
+
+The example above requires that the helm chart is stored in an OCI registry, but also helm chart repositories are 
+supported. There are two alternatives how to specify the helm chart: either directly in the provider configuration of 
+the deploy item, or via a resource in a component descriptor.
+
+#### Specifying a helm chart in the provider configuration
+
+To read a chart from a helm chart repository, you can specify the repository URL, chart name, and chart version 
+in field `chart.helmChartRepo` of the provider configuration, as in this example:
+
+```yaml
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: my-nginx
+spec:
+  type: landscaper.gardener.cloud/helm
+
+  config:
+    apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
+    kind: ProviderConfiguration
+    
+    chart:
+      helmChartRepo:
+        helmChartRepoUrl: https://charts.bitnami.com/bitnami
+        helmChartName: nginx
+        helmChartVersion: 9.7.1
+    ...
+```
+
+The full example can be found 
+[here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/real-helm-deployment).
+
+#### Specifying a helm chart via component descriptor
+
+Alternatively, the provider configuration can reference a resource in the component descriptor.
+Repository URL, chart name, and chart version are then specified in that resource in the component descriptor. 
+
+Provider configuration:
+
+```yaml
+    chart:
+      helmChartRepo:
+        {{- $resource := getResource .cd "name" "nginx-chart" }}
+        helmChartRepoUrl: {{ $resource.access.helmChartRepoUrl }}
+        helmChartName:    {{ $resource.access.helmChartName }}
+        helmChartVersion: {{ $resource.access.helmChartVersion }}
+```
+
+Component descriptor:
+
+```yaml
+meta:
+  schemaVersion: 'v2'
+component:
+  name: 'github.com/gardener/landscaper-examples/helm-deployer/real-helm-deployment-cd'
+  version: 'v0.1.0'
+  ...
+  resources:
+    - type: helm.io/chart
+      name: nginx-chart
+      version: 9.7.0
+      relation: external
+      access:
+        type: helmChartRepository
+        mediaType: application/octet-stream
+        helmChartRepoUrl: https://charts.bitnami.com/bitnami
+        helmChartName: nginx
+        helmChartVersion: 9.7.0
+```
+
+Note that the access type of the resource (field `access.type`) must be `helmChartRepository`.
+
+The full example can be found 
+[here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/real-helm-deployment-cd).
+
+#### Access to Helm Chart Repo with Authentication
+
+If your helm chart repository is protected proceed as follows:
+
+1) Create a [context CR](../usage/Context.md) in the same namespace as your installation.
+
+```
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Context
+metadata:
+  name: helm-repo-protected
+  namespace: example
+
+repositoryContext:
+  baseUrl: eu.gcr.io/gardener-project/landscaper/examples
+  type: ociRegistry
+
+registryPullSecrets: []
+
+configurations:
+  helmChartRepoCredentials:
+    auths:
+      - url: "your.protected.helmchart.repo.com"
+        authHeader: "Basic dX3d...cmQ=" 
+```
+
+The field `repositoryContext` contains the base URL of your component repository. 
+
+The field `configurations` contains an entry `helmChartRepoCredentials` with the URL and the authentication header of your 
+protected helm chart repo (you might configure more than one).
+
+2) Use the context in your installation
+
+```
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: helm-repo-protected
+  namespace: example
+
+spec:
+  blueprint:
+    ref:
+      resourceName: blueprint
+
+  context: helm-repo-protected
+
+  componentDescriptor:
+    ref:
+      componentName: github.com/gardener/landscaper-examples/helm-deployer/helm-repo-protected
+      version: v0.1.0
+```
+
+You can skip the field `repositoryContext` under `spec.componentDescriptor.ref` because this is fetched from the context
+CR.
+
+You find a complete example [here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer/helm-repo-protected).
+
+## Examples
+
+Other example could be found
+[here](https://github.com/gardener/landscaper-examples/tree/master/helm-deployer).

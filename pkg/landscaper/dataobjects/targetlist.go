@@ -8,22 +8,24 @@ import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 )
 
+var _ ImportedBase = &TargetList{}
+
 // TargetList is the internal representation of a list of targets.
 type TargetList struct {
 	Targets []*Target
+	Def     *lsv1alpha1.TargetImport
 }
 
 // NewTargetList creates a new internal targetlist.
 func NewTargetList() *TargetList {
-	return &TargetList{
-		Targets: []*Target{},
-	}
+	return NewTargetListWithSize(0)
 }
 
 // NewTargetListWithSize creates a new internal targetlist with a given size.
@@ -104,4 +106,45 @@ func (tl TargetList) Apply(raw *lsv1alpha1.Target, index int) error {
 	raw.Spec = t.Raw.Spec
 	SetMetadataFromObject(raw, t.Metadata)
 	return nil
+}
+
+// Imported interface
+
+func (tl *TargetList) GetImportType() lsv1alpha1.ImportType {
+	return lsv1alpha1.ImportTypeTargetList
+}
+
+func (tl *TargetList) IsListTypeImport() bool {
+	return true
+}
+
+func (tl *TargetList) GetInClusterObject() client.Object {
+	return nil
+}
+func (tl *TargetList) GetInClusterObjects() []client.Object {
+	res := []client.Object{}
+	for _, t := range tl.Targets {
+		res = append(res, t.Raw)
+	}
+	return res
+}
+
+func (tl *TargetList) ComputeConfigGeneration() string {
+	return ""
+}
+
+func (tl *TargetList) GetListItems() []ImportedBase {
+	res := make([]ImportedBase, len(tl.Targets))
+	for i := range tl.Targets {
+		res[i] = tl.Targets[i]
+	}
+	return res
+}
+
+func (tl *TargetList) GetImportReference() string {
+	return ""
+}
+
+func (tl *TargetList) GetImportDefinition() interface{} {
+	return tl.Def
 }

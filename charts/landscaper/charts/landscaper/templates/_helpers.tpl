@@ -87,7 +87,10 @@ repositoryContext:
     baseUrl: {{ .Values.landscaper.repositoryContext.baseUrl }}
 {{- end }}
 
-{{ .Values.landscaper.controllers | toYaml }}
+{{- if .Values.landscaper.controllers }}
+controllers:
+{{ .Values.landscaper.controllers | toYaml | indent 2 }}
+{{- end }}
 
 {{- if .Values.landscaper.registryConfig }}
 registry:
@@ -117,6 +120,11 @@ crdManagement:
 {{- end }}
 
 {{- if .Values.landscaper.deployerManagement }}
+{{- if .Values.landscaper.deployerManagement.agent.name }}
+{{- if gt (len .Values.landscaper.deployerManagement.agent.name) 30 }}
+{{- fail "the length of .Values.landscaper.deployerManagement.agent.name may not be greater than 30" }}
+{{- end }}
+{{- end }}
 deployerManagement:
 {{ toYaml .Values.landscaper.deployerManagement | indent 2 }}
 {{- end -}}

@@ -327,6 +327,21 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>configurations</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.AnyJSON">
+map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configurations contains arbitrary configuration information for dedicated purposes given by a string key.
+The key should use a dns-like syntax to express the purpose and avoid conflicts.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DataObject">DataObject
@@ -637,6 +652,20 @@ DeployerInstallationTemplate
 </td>
 </tr>
 </table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">
+DeployerRegistrationStatus
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Status contains the current status of the deployer registration.</p>
 </td>
 </tr>
 </tbody>
@@ -1289,6 +1318,7 @@ AnyJSON
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Context">Context</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.DataObject">DataObject</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.BlueprintStaticDataSource">BlueprintStaticDataSource</a>, 
@@ -2826,6 +2856,38 @@ DeployerInstallationTemplate
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">DeployerRegistrationStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistration">DeployerRegistration</a>)
+</p>
+<p>
+<p>DeployerRegistrationStatus contains the current status of a deployer registration.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>lastError</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.Error">
+Error
+</a>
+</em>
+</td>
+<td>
+<p>LastError describes the last error that occurred.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Duration">Duration
 </h3>
 <p>
@@ -2937,6 +2999,7 @@ when calling from different networking zones.</p>
 <p>
 (<em>Appears on:</em>
 <a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>, 
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployerRegistrationStatus">DeployerRegistrationStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>, 
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
 </p>

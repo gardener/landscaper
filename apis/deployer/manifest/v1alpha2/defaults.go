@@ -7,6 +7,8 @@ package v1alpha2
 import (
 	"time"
 
+	lsconfigv1alpha1 "github.com/gardener/landscaper/apis/config/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
@@ -34,4 +36,9 @@ func SetDefaults_ProviderConfiguration(obj *ProviderConfiguration) {
 			obj.Manifests[i].Policy = managedresource.ManagePolicy
 		}
 	}
+}
+
+// SetDefaults_Configuration sets the defaults for the manifest deployer controller configuration.
+func SetDefaults_Configuration(obj *Configuration) {
+	lsconfigv1alpha1.SetDefaults_CommonControllerConfig(&obj.Controller.CommonControllerConfig)
 }

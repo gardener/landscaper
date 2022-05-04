@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -17,8 +19,6 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
 	"github.com/gardener/landscaper/apis/core/validation"
-
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,12 +31,12 @@ import (
 func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation, operation lsv1alpha1.Operation) error {
 	for _, instRef := range inst.Status.InstallationReferences {
 		subInst := &lsv1alpha1.Installation{}
-		if err := o.Client().Get(ctx, instRef.Reference.NamespacedName(), subInst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, o.Client(), instRef.Reference.NamespacedName(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 
 		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(operation))
-		if err := o.Client().Update(ctx, subInst); err != nil {
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000007, subInst); err != nil {
 			return errors.Wrapf(err, "unable to update sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 	}
@@ -228,7 +228,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 
 		// delete installation
 		o.Log().V(3).Info("delete orphaned installation", "name", subInst.Name)
-		if err := o.Client().Delete(ctx, subInst); err != nil {
+		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -327,22 +327,18 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 		return nil, err
 	}
 
-	_, err = kubernetes.CreateOrUpdate(ctx, o.Client(), subInst, func() error {
-		subInst.Spec.Context = inst.Spec.Context
+	_, err = o.Writer().CreateOrUpdateInstallation(ctx, read_write_layer.W000001, subInst, func() error {
 		subInst.Labels = map[string]string{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		}
 		subInst.Annotations = map[string]string{
 			lsv1alpha1.SubinstallationNameAnnotation: subInstTmpl.Name,
 		}
-		if o.Forced {
-			// propagate force-reconcile annotation to subinstallations
-			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
-		}
 		if err := controllerutil.SetControllerReference(inst, subInst, o.Scheme()); err != nil {
 			return errors.Wrapf(err, "unable to set owner reference")
 		}
 		subInst.Spec = lsv1alpha1.InstallationSpec{
+			Context:             inst.Spec.Context,
 			RegistryPullSecrets: inst.Spec.RegistryPullSecrets,
 			ComponentDescriptor: subCdDef,
 			Blueprint:           *subBlueprint,
@@ -381,7 +377,7 @@ func (o *Operation) createOrUpdateNewInstallation(ctx context.Context,
 	}
 
 	if !reflect.DeepEqual(oldStatus, inst.Status) {
-		if err := o.Client().Status().Update(ctx, inst); err != nil {
+		if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000017, inst); err != nil {
 			return nil, errors.Wrapf(err, "unable to add new installation for %s to state", subInstTmpl.Name)
 		}
 	}

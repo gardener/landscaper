@@ -102,6 +102,7 @@ var _ = Describe("Helm Deployer", func() {
 
 		// create helm provider config
 		providerConfig := &helmv1alpha1.ProviderConfiguration{}
+		providerConfig.HelmDeployment = pointer.Bool(false)
 		providerConfig.Chart.Ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0"
 		providerConfig.Name = "ingress-test"
 		providerConfig.Namespace = state.Namespace

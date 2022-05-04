@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -37,6 +36,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // Operation contains all installation operations and implements the Operation interface.
@@ -150,7 +150,7 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 
 	// the controller-runtime cache does currently not support field selectors (except a simple equal matcher).
 	// Therefore, we have to use our own filtering.
-	err := kubeClient.List(ctx, installationList, client.InNamespace(inst.Namespace),
+	err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, client.InNamespace(inst.Namespace),
 		client.MatchingLabels{
 			lsv1alpha1.EncompassedByLabel: inst.Name,
 		})
@@ -183,7 +183,7 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
-	if err := o.Client().Status().Update(ctx, inst); err != nil {
+	if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000018, inst); err != nil {
 		o.Log().Error(err, "unable to set installation status")
 		return err
 	}
@@ -204,16 +204,16 @@ func (o *Operation) GetImportedDataObjects(ctx context.Context) (map[string]*dat
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = do.Metadata.Hash
+			configGen = dataobjects.ImportedBase(do).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(do.Raw.ObjectMeta)
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -249,7 +249,7 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 			// It's a target list, skip it
 			continue
 		}
-		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Target)
+		target, err := GetTargetImport(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
 		if err != nil {
 			return nil, err
 		}
@@ -257,16 +257,16 @@ func (o *Operation) GetImportedTargets(ctx context.Context) (map[string]*dataobj
 
 		var (
 			sourceRef *lsv1alpha1.ObjectReference
-			configGen = strconv.Itoa(int(target.Raw.Generation))
+			configGen = dataobjects.ImportedBase(target).ComputeConfigGeneration()
 			owner     = kutil.GetOwner(target.Raw.ObjectMeta)
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -298,10 +298,10 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		)
 		if def.Targets != nil {
 			// List of target names
-			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def.Targets)
+			tl, err = GetTargetListImportByNames(ctx, o.Client(), o.Context().Name, o.Inst.Info, def)
 		} else if len(def.TargetListReference) != 0 {
 			// TargetListReference is converted to a label selector internally
-			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, true)
+			tl, err = GetTargetListImportBySelector(ctx, o.Client(), o.Context().Name, o.Inst.Info, map[string]string{lsv1alpha1.DataObjectKeyLabel: def.TargetListReference}, def, true)
 		} else {
 			// Invalid target
 			err = fmt.Errorf("invalid target definition '%s': none of target, targets and targetListRef is defined", def.Name)
@@ -316,16 +316,16 @@ func (o *Operation) GetImportedTargetLists(ctx context.Context) (map[string]*dat
 		for i, t := range tl.Targets {
 			var (
 				sourceRef *lsv1alpha1.ObjectReference
-				configGen = strconv.Itoa(int(t.Raw.Generation))
+				configGen = dataobjects.ImportedBase(t).ComputeConfigGeneration()
 				owner     = kutil.GetOwner(t.Raw.ObjectMeta)
 			)
-			if owner != nil && owner.Kind == "Installation" {
+			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
 				}
 				inst := &lsv1alpha1.Installation{}
-				if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
@@ -368,13 +368,13 @@ func (o *Operation) GetImportedComponentDescriptors(ctx context.Context) (map[st
 			configGen   = cd.Descriptor.Version
 			owner       = cd.Owner
 		)
-		if owner != nil && owner.Kind == "Installation" {
+		if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 			sourceRef = &lsv1alpha1.ObjectReference{
 				Name:      owner.Name,
 				Namespace: o.Inst.Info.Namespace,
 			}
 			inst := &lsv1alpha1.Installation{}
-			if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+			if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
 				return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 					sourceRef.NamespacedName().String(), def.Name, err)
 			}
@@ -421,13 +421,13 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 				sourceRef *lsv1alpha1.ObjectReference
 				owner     = cd.Owner
 			)
-			if owner != nil && owner.Kind == "Installation" {
+			if OwnerReferenceIsInstallationButNoParent(owner, o.Inst.Info) {
 				sourceRef = &lsv1alpha1.ObjectReference{
 					Name:      owner.Name,
 					Namespace: o.Inst.Info.Namespace,
 				}
 				inst := &lsv1alpha1.Installation{}
-				if err := o.Client().Get(ctx, sourceRef.NamespacedName(), inst); err != nil {
+				if err := read_write_layer.GetInstallation(ctx, o.Client(), sourceRef.NamespacedName(), inst); err != nil {
 					return nil, fmt.Errorf("unable to get source installation '%s' for import '%s': %w",
 						sourceRef.NamespacedName().String(), def.Name, err)
 				}
@@ -461,9 +461,8 @@ func (o *Operation) GetImportedComponentDescriptorLists(ctx context.Context) (ma
 }
 
 // NewError creates a new error with the current operation
-func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) error {
-	return lserrors.NewWrappedError(err,
-		o.CurrentOperation, reason, message, codes...)
+func (o *Operation) NewError(err error, reason, message string, codes ...lsv1alpha1.ErrorCode) lserrors.LsError {
+	return lserrors.NewWrappedError(err, o.CurrentOperation, reason, message, codes...)
 }
 
 // CreateEventFromCondition creates a new event based on the given condition
@@ -482,7 +481,7 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	opts = append(opts, client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)})
 
 	installationList := &lsv1alpha1.InstallationList{}
-	if err := kubeClient.List(ctx, installationList, opts...); err != nil {
+	if err := read_write_layer.ListInstallations(ctx, kubeClient, installationList, opts...); err != nil {
 		return nil, err
 	}
 
@@ -497,9 +496,9 @@ func GetRootInstallations(ctx context.Context, kubeClient client.Client, filter 
 	return installations, nil
 }
 
-// TriggerDependants triggers all installations that depend on the current installation.
+// TriggerDependents triggers all installations that depend on the current installation.
 // These are most likely all installation that import a key which is exported by the current installation.
-func (o *Operation) TriggerDependants(ctx context.Context) error {
+func (o *Operation) TriggerDependents(ctx context.Context) error {
 	for _, sibling := range o.Context().Siblings {
 		if !importsAnyExport(o.Inst, sibling) {
 			continue
@@ -507,7 +506,7 @@ func (o *Operation) TriggerDependants(ctx context.Context) error {
 
 		// todo: maybe use patch
 		metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		if err := o.Client().Update(ctx, sibling.Info); err != nil {
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000011, sibling.Info); err != nil {
 			return errors.Wrapf(err, "unable to trigger installation %s", sibling.Info.Name)
 		}
 	}
@@ -520,7 +519,7 @@ func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {
 	// we have to set our config generation to the desired state
 
 	o.Inst.Info.Status.ConfigGeneration = ""
-	return o.Client().Status().Update(ctx, o.Inst.Info)
+	return o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000016, o.Inst.Info)
 }
 
 // CreateOrUpdateExports creates or updates the data objects that holds the exported values of the installation.
@@ -549,7 +548,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000068, raw, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
@@ -574,7 +573,7 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 		}
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, raw, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 				return err
 			}
@@ -665,7 +664,7 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 	}
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), raw, func() error {
+	if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000070, raw, func() error {
 		if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
 			return err
 		}
@@ -715,7 +714,7 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 	}
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
-	if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+	if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000071, target, func() error {
 		if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 			return err
 		}
@@ -774,7 +773,7 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 
 	// we do not need to set controller ownership as we anyway need a separate garbage collection.
 	for i, target := range targets {
-		if _, err := controllerutil.CreateOrUpdate(ctx, o.Client(), target, func() error {
+		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000072, target, func() error {
 			if err := controllerutil.SetOwnerReference(o.Inst.Info, target, api.LandscaperScheme); err != nil {
 				return err
 			}

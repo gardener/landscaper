@@ -46,7 +46,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -61,7 +61,7 @@ var _ = Describe("GetChart", func() {
 				Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v3.29.0",
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 		})
@@ -85,7 +85,7 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
@@ -111,7 +111,7 @@ var _ = Describe("GetChart", func() {
 			FromResource: ref,
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("ingress-nginx"))
 	})
@@ -130,7 +130,7 @@ var _ = Describe("GetChart", func() {
 			},
 		}
 
-		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+		chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(chart.Metadata.Name).To(Equal("testchart"))
 	})
@@ -170,7 +170,7 @@ var _ = Describe("GetChart", func() {
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(chart.Metadata.Name).To(Equal("testchart"))
 		})
@@ -196,7 +196,7 @@ var _ = Describe("GetChart", func() {
 				},
 			}
 
-			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, chartAccess)
+			chart, err := chartresolver.GetChart(ctx, logr.Discard(), ociClient, nil, chartAccess)
 			Expect(chart).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(http.StatusText(401)))

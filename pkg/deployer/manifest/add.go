@@ -6,6 +6,7 @@ package manifest
 
 import (
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
@@ -27,6 +28,13 @@ func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, co
 		return err
 	}
 
+	options := controller.Options{
+		MaxConcurrentReconciles: config.Controller.Workers,
+	}
+	if config.Controller.CacheSyncTimeout != nil {
+		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
+	}
+
 	return deployerlib.Add(log, lsMgr, hostMgr, deployerlib.DeployerArgs{
 		Name:            Name,
 		Version:         version.Get().String(),
@@ -34,5 +42,6 @@ func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, co
 		Type:            Type,
 		Deployer:        d,
 		TargetSelectors: config.TargetSelector,
+		Options:         options,
 	})
 }

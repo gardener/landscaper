@@ -36,7 +36,7 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, overwriter 
 		For(&v1alpha1.Installation{}).
 		Owns(&v1alpha1.Execution{}).
 		Owns(&v1alpha1.Installation{}).
-		WithLogger(log).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Installations.CommonControllerConfig)).
+		WithLogger(log).
 		Complete(a)
 }

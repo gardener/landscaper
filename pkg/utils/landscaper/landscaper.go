@@ -20,6 +20,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/v1alpha1/health"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // WaitForInstallationToBeHealthy waits until the given installation is in the expected phase
@@ -79,7 +80,7 @@ func WaitForInstallationToHaveCondition(
 
 	return wait.Poll(5*time.Second, timeout, func() (bool, error) {
 		updated := &lsv1alpha1.Installation{}
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
 			return false, err
 		}
 		*inst = *updated
@@ -106,7 +107,7 @@ func WaitForDeployItemToBeInPhase(
 
 	err := wait.Poll(5*time.Second, timeout, func() (bool, error) {
 		updated := &lsv1alpha1.DeployItem{}
-		if err := kubeClient.Get(ctx, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, kubeClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), updated); err != nil {
 			return false, err
 		}
 		*deployItem = *updated
@@ -131,14 +132,14 @@ func GetDeployItemsOfInstallation(ctx context.Context, kubeClient client.Client,
 		return nil, errors.New("no execution reference defined for the installation")
 	}
 	exec := &lsv1alpha1.Execution{}
-	if err := kubeClient.Get(ctx, inst.Status.ExecutionReference.NamespacedName(), exec); err != nil {
+	if err := read_write_layer.GetExecution(ctx, kubeClient, inst.Status.ExecutionReference.NamespacedName(), exec); err != nil {
 		return nil, err
 	}
 
 	items := make([]*lsv1alpha1.DeployItem, 0)
 	for _, ref := range exec.Status.DeployItemReferences {
 		item := &lsv1alpha1.DeployItem{}
-		if err := kubeClient.Get(ctx, ref.Reference.NamespacedName(), item); err != nil {
+		if err := read_write_layer.GetDeployItem(ctx, kubeClient, ref.Reference.NamespacedName(), item); err != nil {
 			return nil, fmt.Errorf("unable to find deploy item %q: %w", ref.Name, err)
 		}
 		items = append(items, item)
@@ -155,7 +156,7 @@ func GetSubInstallationsOfInstallation(ctx context.Context, kubeClient client.Cl
 
 	for _, ref := range inst.Status.InstallationReferences {
 		inst := &lsv1alpha1.Installation{}
-		if err := kubeClient.Get(ctx, ref.Reference.NamespacedName(), inst); err != nil {
+		if err := read_write_layer.GetInstallation(ctx, kubeClient, ref.Reference.NamespacedName(), inst); err != nil {
 			return nil, fmt.Errorf("unable to find installation %q: %w", ref.Name, err)
 		}
 		list = append(list, inst)

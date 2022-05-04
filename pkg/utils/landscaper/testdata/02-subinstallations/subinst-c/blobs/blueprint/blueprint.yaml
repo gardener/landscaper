@@ -1,0 +1,17 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+imports:
+  - name: clusters-a
+    type: targetList
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+  - name: clusters-b
+    type: targetList
+    targetType: landscaper.gardener.cloud/kubernetes-cluster
+
+exports:
+  - name: subinst-c-export
+    type: data
+    schema:
+      type: string
