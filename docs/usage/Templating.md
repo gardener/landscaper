@@ -57,6 +57,9 @@ deployExecutions:
 
 The blueprint's filesystem structure is accessible for the template engines as root file system.
 
+Depending on what is being rendered, there is more data available during the templating, such as imports, etc..
+The available bindings are described in the docs belonging to the resource the templates are part of, e.g. [here](./Blueprints.md#rendering) for the templates in blueprints.
+
 **Example**
 - Filesystem
   ```

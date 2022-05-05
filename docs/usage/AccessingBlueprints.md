@@ -2,7 +2,7 @@
 
 Blueprints are referenced in installations or installation templates via the component descriptors access.
 
-Basically blueprints are a filesystem, therefore, any blob store could be supported.
+Basically, blueprints are a filesystem. Therefore, any storage capable of storing a filesystem or an archive containing one could be used to store Blueprints.
 Currently, local and OCI registry access is supported.
 
 :warning: Be aware that a local registry should be only used for testing and development, whereas the OCI registry is the preferred productive method.

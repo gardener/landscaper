@@ -10,8 +10,8 @@
 
 #### _Blueprint_
 
-  Blueprints contain actual rules to describe target state for described software
-  installations in form of [_DeployItems_](#deployitem).
+  Blueprints contain actual instructions and steps on how to install a software component form of [_DeployItems_](#deployitem).
+  As these instructions are expected to be idempotent, Blueprints can be interpreted as descriptions of a target state for the described software.
 
   __Background Knowledge__:
     <details>
@@ -88,7 +88,7 @@
 
   An _ExportExecution_ is the instantiation of a [template](#template) to generate [exports](#export) as part of a [Blueprint](#blueprint).
   These templates contain the instructions which data gets written into the exports and how it might be preprocessed.
-  It is used in list of such execution under the field `exportExecutions` in a blueprint descriptor.
+  They are specified as lists of executions under the field `exportExecutions` in a blueprint descriptor.
 
 #### _Import_
 
