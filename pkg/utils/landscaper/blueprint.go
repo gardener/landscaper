@@ -100,7 +100,7 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 }
 
 // RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.
-func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
+func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, imports, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
 	var (
 		blobResolver ctf.BlobResolver
 		ctx          context.Context
@@ -134,7 +134,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
 	exports, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
-		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, nil), values))
+		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, imports), values))
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to template export executions: %w", err)
