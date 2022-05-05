@@ -69,7 +69,8 @@ var _ = Describe("Validation", func() {
 
 				Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-				rh := reconcilehelper.NewReconcileHelper(ctx, op)
+				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(rh.ImportsSatisfied()).To(Succeed())
 			})
 
@@ -92,7 +93,8 @@ var _ = Describe("Validation", func() {
 
 				Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-				rh := reconcilehelper.NewReconcileHelper(ctx, op)
+				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(rh.ImportsSatisfied()).To(Succeed())
 			})
 
@@ -114,7 +116,8 @@ var _ = Describe("Validation", func() {
 
 				Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-				rh := reconcilehelper.NewReconcileHelper(ctx, op)
+				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).ToNot(HaveOccurred())
 				Expect(rh.ImportsSatisfied()).To(Succeed())
 			})
 
@@ -131,8 +134,8 @@ var _ = Describe("Validation", func() {
 				target.Namespace = "test4"
 				Expect(fakeClient.Delete(ctx, target))
 
-				rh := reconcilehelper.NewReconcileHelper(ctx, op)
-				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+				_, err = reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).To(HaveOccurred())
 			})
 
 			It("should fail if a import from a parent import is not present", func() {
@@ -148,8 +151,8 @@ var _ = Describe("Validation", func() {
 				target.Namespace = "test4"
 				Expect(fakeClient.Delete(ctx, target))
 
-				rh := reconcilehelper.NewReconcileHelper(ctx, op)
-				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+				_, err = reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).To(HaveOccurred())
 			})
 
 		})
@@ -164,8 +167,8 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
+			_, err = reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should fail if the parent provides the import but is not progressing", func() {
@@ -183,7 +186,8 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
 		})
 
@@ -205,8 +209,13 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(rh.InstallationsDependingOnReady()).To(Succeed())
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(rh.InstallationsDependingOnReady(dependedOnSiblings)).To(Succeed())
 		})
 
 		It("should fail if the parent installation is not running", func() {
@@ -224,8 +233,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("parent installation %q is not progressing", kutil.ObjectKeyFromObject(inInstRoot.Info).String()))
@@ -241,8 +253,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not succeeded", kutil.ObjectKey("root-dep", "test3").String()))
@@ -271,8 +286,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inInstA.Info).String()))
@@ -301,8 +319,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inInstA.Info).String()))
@@ -332,8 +353,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which is not up-to-date", kutil.ObjectKeyFromObject(inInstA.Info).String()))
@@ -359,8 +383,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which has (force-)reconcile annotation", kutil.ObjectKeyFromObject(inInstA.Info).String()))
@@ -386,8 +413,11 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			err = rh.InstallationsDependingOnReady()
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			dependedOnSiblings, err := rh.FetchDependencies()
+			Expect(err).ToNot(HaveOccurred())
+			err = rh.InstallationsDependingOnReady(dependedOnSiblings)
 			Expect(err).To(HaveOccurred())
 			Expect(installations.IsNotCompletedDependentsError(err)).To(BeTrue())
 			Expect(err.Error()).To(ContainSubstring("depending on installation %q which has (force-)reconcile annotation", kutil.ObjectKeyFromObject(inInstA.Info).String()))
@@ -416,7 +446,8 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
 			utd, err := rh.ImportsUpToDate()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(utd).To(BeTrue())
@@ -442,7 +473,8 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
 			utd, err := rh.ImportsUpToDate()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(utd).To(BeFalse())
@@ -458,8 +490,7 @@ var _ = Describe("Validation", func() {
 			Expect(err).ToNot(HaveOccurred())
 			op.Inst = inInstA
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(rh.InstUpToDate()).To(BeTrue())
+			Expect(reconcilehelper.InstUpToDate(op.Inst.Info)).To(BeTrue())
 		})
 
 		It("should fail if the installation is not up-to-date", func() {
@@ -470,8 +501,7 @@ var _ = Describe("Validation", func() {
 			Expect(fakeClient.Status().Update(ctx, inInstA.Info)).To(Succeed())
 			op.Inst = inInstA
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(rh.InstUpToDate()).To(BeFalse())
+			Expect(reconcilehelper.InstUpToDate(op.Inst.Info)).To(BeFalse())
 		})
 
 	})

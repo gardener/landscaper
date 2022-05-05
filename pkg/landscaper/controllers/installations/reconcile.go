@@ -69,7 +69,10 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 	instOp.CurrentOperation = currentOperation
 
-	rh := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	rh, err := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	if err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "NewReconcileHelper", err.Error())
+	}
 
 	// check if a reconcile is required due to changed spec or imports
 	updateRequired, err := rh.UpdateRequired()
@@ -78,8 +81,14 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 	if updateRequired {
 		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
+
+		dependedOnSiblings, err := rh.FetchDependencies()
+		if err != nil {
+			return lserrors.NewWrappedError(err, currentOperation, "FetchDependencies", err.Error())
+		}
+
 		// check whether the installation can be updated
-		err := rh.UpdateAllowed()
+		err = rh.UpdateAllowed(dependedOnSiblings)
 		if err != nil {
 			return lserrors.NewWrappedError(err, currentOperation, "IsUpdateAllowed", err.Error())
 		}
@@ -130,7 +139,11 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 	}
 
 	instOp.Inst.Info.Status.Phase = lsv1alpha1.ComponentPhasePending
-	rh := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	rh, err := reconcilehelper.NewReconcileHelper(ctx, instOp)
+	if err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "NewReconcileHelper", err.Error())
+	}
+
 	// it is only checked whether the imports are satisfied,
 	// the check whether installations this one depends on are succeeded is skipped
 	if err := rh.ImportsSatisfied(); err != nil {

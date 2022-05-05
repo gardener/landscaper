@@ -63,7 +63,8 @@ var _ = Describe("OutdatedImports", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+		Expect(err).ToNot(HaveOccurred())
 		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
 		Expect(upToDate).To(BeFalse())
@@ -83,7 +84,8 @@ var _ = Describe("OutdatedImports", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+		Expect(err).ToNot(HaveOccurred())
 		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
 		Expect(upToDate).To(BeFalse())
@@ -99,7 +101,8 @@ var _ = Describe("OutdatedImports", func() {
 
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+		Expect(err).ToNot(HaveOccurred())
 		upToDate, err := rh.ImportsUpToDate()
 		Expect(err).To(Succeed())
 		Expect(upToDate).To(BeTrue())
@@ -119,7 +122,8 @@ var _ = Describe("OutdatedImports", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
 			upToDate, err := rh.ImportsUpToDate()
 			Expect(err).To(Succeed())
 			Expect(upToDate).To(BeFalse())
@@ -137,7 +141,8 @@ var _ = Describe("OutdatedImports", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			rh := reconcilehelper.NewReconcileHelper(ctx, op)
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
 			upToDate, err := rh.ImportsUpToDate()
 			Expect(err).To(Succeed())
 			Expect(upToDate).To(BeTrue())

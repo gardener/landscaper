@@ -19,32 +19,21 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/imports"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
-	lsutils "github.com/gardener/landscaper/pkg/utils"
-)
-
-const (
-	parentRequirement     = "parent"
-	siblingsRequirement   = "siblings"
-	importsRequirement    = "imports"
-	dependencyRequirement = "dependency"
 )
 
 type ReconcileHelper struct {
 	*installations.Operation
-	ctx                context.Context
-	parent             *installations.Installation                // parent installation or nil in case of a root installation
-	importStatus       *installations.ImportStatus                // we need to store the 'old' import status, as it is overwritten during import loading
-	siblings           map[string]*installations.InstallationBase // all installations in the same namespace with the same parent, mapped by their names for faster lookup
-	dependedOnSiblings sets.String                                // set of sibling installation names which this installation depends on, including transitive dependencies
-	state              lsutils.Requirements                       // helper struct to keep track of which information has already been gathered
-	imports            *imports.Imports                           // struct containing the imports
+	ctx          context.Context
+	parent       *installations.Installation                // parent installation or nil in case of a root installation
+	importStatus *installations.ImportStatus                // we need to store the 'old' import status, as it is overwritten during import loading
+	siblings     map[string]*installations.InstallationBase // all installations in the same namespace with the same parent, mapped by their names for faster lookup
+	imports      *imports.Imports                           // struct containing the imports
 }
 
-func NewReconcileHelper(ctx context.Context, op *installations.Operation) *ReconcileHelper {
+func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*ReconcileHelper, error) {
 	rh := &ReconcileHelper{
 		ctx:       ctx,
 		Operation: op,
-		state:     lsutils.NewRequirements(),
 	}
 
 	// copy import status
@@ -64,12 +53,19 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) *Recon
 		rh.importStatus.ComponentDescriptor[k] = v.DeepCopy()
 	}
 
-	rh.state.Register(parentRequirement, rh.fetchParent)
-	rh.state.Register(siblingsRequirement, rh.fetchSiblings)
-	rh.state.Register(importsRequirement, rh.fetchImports)
-	rh.state.Register(dependencyRequirement, rh.fetchDependencies)
+	if err := rh.fetchParent(); err != nil {
+		return nil, err
+	}
 
-	return rh
+	if err := rh.fetchSiblings(); err != nil {
+		return nil, err
+	}
+
+	if err := rh.fetchImports(); err != nil {
+		return nil, err
+	}
+
+	return rh, nil
 }
 
 ///// VALIDATION METHODS /////
@@ -90,8 +86,8 @@ func (rh *ReconcileHelper) UpdateRequired() (bool, error) {
 }
 
 // UpdateAllowed returns an error if the installation cannot be updated due to dependencies or unfulfilled imports.
-func (rh *ReconcileHelper) UpdateAllowed() error {
-	err := rh.InstallationsDependingOnReady()
+func (rh *ReconcileHelper) UpdateAllowed(dependedOnSiblings sets.String) error {
+	err := rh.InstallationsDependingOnReady(dependedOnSiblings)
 	if err != nil {
 		// at least one of the installations the current one depends on is not succeeded or has pending changes
 		return installations.NewNotCompletedDependentsErrorf(err, "not all installations which are depended on are ready: %s", err.Error())
@@ -102,17 +98,18 @@ func (rh *ReconcileHelper) UpdateAllowed() error {
 
 // InstUpToDate returns true if the observedGeneration in the installation status matches the current generation of the installation
 func (rh *ReconcileHelper) InstUpToDate() bool {
-	return rh.Inst.Info.ObjectMeta.Generation == rh.Inst.Info.Status.ObservedGeneration
+	return InstUpToDate(rh.Inst.Info)
+}
+
+// InstUpToDate returns true if the observedGeneration in the installation status matches the current generation of the installation
+func InstUpToDate(installation *lsv1alpha1.Installation) bool {
+	return installation.ObjectMeta.Generation == installation.Status.ObservedGeneration
 }
 
 // ImportsUpToDate returns true if the export configGeneration of each import is equal to the configGeneration in the import status
 // meaning that the imports have not been updated since they have last been imported.
 // It does not check whether the exporting installation is up-to-date.
 func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
-	if err := rh.state.Require(importsRequirement, parentRequirement, siblingsRequirement); err != nil {
-		return false, err
-	}
-
 	returnAndSetCondition := func(utd bool) bool {
 		cond := lsv1alpha1helper.GetOrInitCondition(rh.Inst.Info.Status.Conditions, lsv1alpha1.ValidateImportsCondition)
 		outdatedImportsReason := "OutdatedImports"
@@ -191,17 +188,13 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 // - not queued for reconciliation (no 'landscaper.gardener.cloud/operation' annotation with value 'reconcile' or 'forceReconcile')
 // Returns an error if any of these requirements is not fulfilled.
 // Additionally, an error is returned if the installation has a parent and it is not progressing.
-func (rh *ReconcileHelper) InstallationsDependingOnReady() error {
-	if err := rh.state.Require(parentRequirement, dependencyRequirement); err != nil {
-		return err
-	}
-
+func (rh *ReconcileHelper) InstallationsDependingOnReady(dependedOnSiblings sets.String) error {
 	if rh.parent != nil && !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
 		return installations.NewNotCompletedDependentsErrorf(nil, "parent installation %q is not progressing", kutil.ObjectKeyFromObject(rh.parent.Info).String())
 	}
 
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
-	for dep := range rh.dependedOnSiblings {
+	for dep := range dependedOnSiblings {
 		inst := rh.siblings[dep]
 		if inst == nil {
 			return fmt.Errorf("internal error: sibling %q is nil", dep)
@@ -228,10 +221,6 @@ func (rh *ReconcileHelper) InstallationsDependingOnReady() error {
 // - exist (indirectly done by the import requirement)
 // - are actually exported by the parent or a sibling
 func (rh *ReconcileHelper) ImportsSatisfied() error {
-	if err := rh.state.Require(parentRequirement, siblingsRequirement, importsRequirement); err != nil {
-		return err
-	}
-
 	fldPath := field.NewPath("spec", "imports")
 
 	// check data imports
@@ -303,9 +292,6 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 // GetImports returns the imports of the installation.
 // They are fetched from the cluster if that has not happened before.
 func (rh *ReconcileHelper) GetImports() (*imports.Imports, error) {
-	if err := rh.state.Require(importsRequirement); err != nil {
-		return nil, err
-	}
 	return rh.imports, nil
 }
 
@@ -338,10 +324,6 @@ func (rh *ReconcileHelper) fetchSiblings() error {
 // fetchImports fills the imports field
 // It requires siblings and parent
 func (rh *ReconcileHelper) fetchImports() error {
-	if err := rh.state.Require(siblingsRequirement, parentRequirement); err != nil {
-		return err
-	}
-
 	var err error
 	con := imports.NewConstructor(rh.Operation)
 	rh.imports, err = con.LoadImports(rh.ctx)
@@ -352,13 +334,10 @@ func (rh *ReconcileHelper) fetchImports() error {
 	return nil
 }
 
-// fetchDependencies fills the dependedOnSiblings field
+// fetchDependencies return set of sibling installation names which this installation depends on, including transitive dependencies
 // It requires siblings
-func (rh *ReconcileHelper) fetchDependencies() error {
-	if err := rh.state.Require(siblingsRequirement); err != nil {
-		return err
-	}
-	rh.dependedOnSiblings = sets.NewString()
+func (rh *ReconcileHelper) FetchDependencies() (sets.String, error) {
+	dependedOnSiblings := sets.NewString()
 
 	// build helper struct to re-use function from subinstallation template depencency computation
 	insts := []*subinstallations.PseudoInstallation{}
@@ -381,19 +360,19 @@ func (rh *ReconcileHelper) fetchDependencies() error {
 		curDeps, ok := deps[elem]
 		if !ok {
 			// should not happen
-			return fmt.Errorf("internal error: installation %q not found in dependency graph", elem)
+			return dependedOnSiblings, fmt.Errorf("internal error: installation %q not found in dependency graph", elem)
 		}
 		for d := range curDeps {
-			if !rh.dependedOnSiblings.Has(d) {
+			if !dependedOnSiblings.Has(d) {
 				// add sibling to list of depended on siblings
-				rh.dependedOnSiblings.Insert(d)
+				dependedOnSiblings.Insert(d)
 				// queue sibling to fetch transitive dependencies
 				queue = append(queue, d)
 			}
 		}
 	}
 
-	return nil
+	return dependedOnSiblings, nil
 }
 
 ///// AUXILIARY FUNCTIONS /////
