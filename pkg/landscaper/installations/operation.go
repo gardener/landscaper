@@ -657,9 +657,6 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-			"CreateDataObjects", fmt.Sprintf("unable to create dataobjects for import '%s'", importDef.Name),
-			err.Error())
 		return fmt.Errorf("unable to build data object for import '%s': %w", importDef.Name, err)
 	}
 
@@ -674,9 +671,6 @@ func (o *Operation) createOrUpdateDataImport(ctx context.Context, src string, im
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateDataObjects",
 				fmt.Sprintf("unable to create data object for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-			"CreateDatatObjects", fmt.Sprintf("unable to create data objects for import '%s'", importDef.Name),
-			err.Error())
 		return fmt.Errorf("unable to create or update data object '%s' for import '%s': %w", raw.Name, importDef.Name, err)
 	}
 	return nil
@@ -707,9 +701,6 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
-			err.Error())
 		return fmt.Errorf("unable to build target for import '%s': %w", importDef.Name, err)
 	}
 
@@ -724,9 +715,6 @@ func (o *Operation) createOrUpdateTargetImport(ctx context.Context, src string, 
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-			"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
-			err.Error())
 		return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
 	}
 
@@ -765,9 +753,6 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 			lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 				"CreateTargets",
 				fmt.Sprintf("unable to create targets for import '%s'", importDef.Name)))
-		o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-			"CreateTargets", fmt.Sprintf("unable to create targets for import '%s'", importDef.Name),
-			err.Error())
 		return fmt.Errorf("unable to build targets for import '%s': %w", importDef.Name, err)
 	}
 
@@ -783,9 +768,6 @@ func (o *Operation) createOrUpdateTargetListImport(ctx context.Context, src stri
 				lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 					"CreateTargets",
 					fmt.Sprintf("unable to create target for import '%s'", importDef.Name)))
-			o.Inst.Info.Status.LastError = lserrors.UpdatedError(o.Inst.Info.Status.LastError,
-				"CreateTargets", fmt.Sprintf("unable to create target for import '%s'", importDef.Name),
-				err.Error())
 			return fmt.Errorf("unable to create or update target '%s' for import '%s': %w", target.Name, importDef.Name, err)
 		}
 	}

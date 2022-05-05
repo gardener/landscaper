@@ -7,6 +7,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -189,18 +190,39 @@ func CollectErrorCodes(err error) []lsv1alpha1.ErrorCode {
 
 // UpdatedError updates the properties of a error.
 func UpdatedError(lastError *lsv1alpha1.Error, operation, reason, message string, codes ...lsv1alpha1.ErrorCode) *lsv1alpha1.Error {
+	if lastError == nil {
+		return &lsv1alpha1.Error{
+			Operation:          operation,
+			Reason:             reason,
+			Message:            message,
+			LastTransitionTime: metav1.Now(),
+			LastUpdateTime:     metav1.Now(),
+			Codes:              codes,
+		}
+	}
+
 	newError := &lsv1alpha1.Error{
 		Operation:          operation,
 		Reason:             reason,
 		Message:            message,
-		LastTransitionTime: metav1.Now(),
-		LastUpdateTime:     metav1.Now(),
+		LastTransitionTime: lastError.LastTransitionTime,
+		LastUpdateTime:     lastError.LastUpdateTime,
 		Codes:              codes,
 	}
 
-	if lastError != nil && lastError.Operation == operation {
-		newError.LastTransitionTime = lastError.LastTransitionTime
+	// Normalize nil and empty slice
+	if len(lastError.Codes) == 0 && len(codes) == 0 {
+		newError.Codes = lastError.Codes
 	}
+
+	if !reflect.DeepEqual(lastError, newError){
+		newError.LastUpdateTime = metav1.Now()
+	}
+
+	if lastError.Operation != operation {
+		newError.LastTransitionTime = metav1.Now()
+	}
+
 	return newError
 }
 

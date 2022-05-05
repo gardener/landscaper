@@ -318,7 +318,7 @@ var _ = Describe("Context", func() {
 			lsCtx := &lsv1alpha1.Context{
 				RepositoryContext: testutils.ExampleRepositoryContext(),
 			}
-			_, err := installations.ApplyComponentOverwrite(nil, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(nil, nil, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
 		})
@@ -336,7 +336,7 @@ var _ = Describe("Context", func() {
 			lsCtx := &lsv1alpha1.Context{
 				RepositoryContext: testutils.ExampleRepositoryContext(),
 			}
-			_, err := installations.ApplyComponentOverwrite(ow, lsCtx, ref)
+			_, err := installations.ApplyComponentOverwrite(nil, ow, lsCtx, ref)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ref.RepositoryContext).To(Equal(repoCtx))
 			Expect(lsCtx.RepositoryContext).To(Equal(testutils.ExampleRepositoryContext()))
