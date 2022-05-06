@@ -10,7 +10,7 @@
 
 #### _Blueprint_
 
-  Blueprints contain actual instructions and steps on how to install a software component form of [_DeployItems_](#deployitem).
+  Blueprints contain actual instructions and steps on how to install a software component in form of [_DeployItems_](#deployitem).
   As these instructions are expected to be idempotent, Blueprints can be interpreted as descriptions of a target state for the described software.
 
   __Background Knowledge__:
