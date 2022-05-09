@@ -43,7 +43,8 @@ var _ = Describe("DeployItemExecutions", func() {
 		op.Inst = inInstRoot
 		Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-		rh := reconcilehelper.NewReconcileHelper(ctx, op)
+		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+		Expect(err).ToNot(HaveOccurred())
 		imps, err := rh.GetImports()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(rh.ImportsSatisfied()).To(Succeed())
