@@ -25,7 +25,7 @@ spec:
   imports:
     data:
     - name: root.a
-      dataRef: "#my-import"
+      dataRef: "my-import"
 
   exports:
     data:

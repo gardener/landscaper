@@ -900,6 +900,7 @@ func autoConvert_v1alpha1_Blueprint_To_core_Blueprint(in *Blueprint, out *core.B
 	out.JSONSchemaVersion = in.JSONSchemaVersion
 	out.LocalTypes = *(*map[string]core.JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*core.ImportDefinitionList)(unsafe.Pointer(&in.Imports))
+	out.ImportExecutions = *(*[]core.TemplateExecutor)(unsafe.Pointer(&in.ImportExecutions))
 	out.Exports = *(*core.ExportDefinitionList)(unsafe.Pointer(&in.Exports))
 	out.Subinstallations = *(*core.SubinstallationTemplateList)(unsafe.Pointer(&in.Subinstallations))
 	out.SubinstallationExecutions = *(*[]core.TemplateExecutor)(unsafe.Pointer(&in.SubinstallationExecutions))
@@ -919,6 +920,7 @@ func autoConvert_core_Blueprint_To_v1alpha1_Blueprint(in *core.Blueprint, out *B
 	out.LocalTypes = *(*map[string]JSONSchemaDefinition)(unsafe.Pointer(&in.LocalTypes))
 	out.Imports = *(*ImportDefinitionList)(unsafe.Pointer(&in.Imports))
 	out.Exports = *(*ExportDefinitionList)(unsafe.Pointer(&in.Exports))
+	out.ImportExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.ImportExecutions))
 	out.Subinstallations = *(*SubinstallationTemplateList)(unsafe.Pointer(&in.Subinstallations))
 	out.SubinstallationExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.SubinstallationExecutions))
 	out.DeployExecutions = *(*[]TemplateExecutor)(unsafe.Pointer(&in.DeployExecutions))

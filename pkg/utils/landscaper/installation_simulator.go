@@ -337,7 +337,7 @@ func (s *InstallationSimulator) executeInstallation(ctx *ResolvedInstallation, i
 	}
 
 	// render export executions
-	renderedExports, err := s.blueprintRenderer.RenderExportExecutions(ctx, dataObjectsCurrentInstAndSiblings, targetsCurrentInstAndSiblings, exportsByDeployItem)
+	renderedExports, err := s.blueprintRenderer.RenderExportExecutions(ctx, imports, dataObjectsCurrentInstAndSiblings, targetsCurrentInstAndSiblings, exportsByDeployItem)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to render exports for installation %s: %w", pathString, err)
 	}

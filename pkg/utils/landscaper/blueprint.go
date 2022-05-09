@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
@@ -99,7 +100,7 @@ func (r *BlueprintRenderer) RenderDeployItemsAndSubInstallations(input *Resolved
 }
 
 // RenderExportExecutions renders the export executions of the given blueprint and returns the rendered exports.
-func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
+func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, imports, installationDataImports, installationTargetImports, deployItemsExports map[string]interface{}) (map[string]interface{}, error) {
 	var (
 		blobResolver ctf.BlobResolver
 		ctx          context.Context
@@ -133,7 +134,7 @@ func (r *BlueprintRenderer) RenderExportExecutions(input *ResolvedInstallation, 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
 	exports, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
-		TemplateExportExecutions(input.Blueprint, values)
+		TemplateExportExecutions(template.NewExportExecutionOptions(template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList, imports), values))
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to template export executions: %w", err)
@@ -162,20 +163,94 @@ func (r *BlueprintRenderer) renderDeployItems(input *ResolvedInstallation, impor
 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
-	deployItemTemplates, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
-		TemplateDeployExecutions(template.DeployExecutionOptions{
-			Imports:              imports,
-			Blueprint:            input.Blueprint,
-			ComponentDescriptor:  input.ComponentDescriptor,
-			ComponentDescriptors: r.cdList,
-			Installation:         input.Installation,
-		})
+	executions, err := template.New(gotemplate.New(blobResolver, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
+		TemplateDeployExecutions(template.NewDeployExecutionOptions(template.NewBlueprintExecutionOptions(
+			input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList,
+			imports)))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template deploy executions: %w", err)
 	}
 
-	deployItems := make([]*lsv1alpha1.DeployItem, len(deployItemTemplates))
-	for i, tmpl := range deployItemTemplates {
+	// map deployitem specifications into templates for executions
+	// includes resolving target import references to target object references
+	deployItemTemplates := make(core.DeployItemTemplateList, len(executions))
+	for i, elem := range executions {
+		target := &core.ObjectReference{
+			Name:      elem.Target.Name,
+			Namespace: input.Installation.Namespace,
+		}
+		if elem.Target.Index != nil {
+			// targetlist import reference
+			raw := imports[elem.Target.Import]
+			imp := input.Blueprint.GetImportByName(elem.Target.Import)
+			if imp == nil {
+				return nil, nil, deployItemSpecificationError(elem.Name, "targetlist import %q not found", elem.Target.Import)
+			}
+			if imp.Type != lsv1alpha1.ImportTypeTargetList {
+				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a targetlist", elem.Target.Import)
+			}
+			if raw == nil {
+				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+			}
+			val, ok := raw.([]map[string]interface{})
+			if !ok {
+				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+			}
+			if *elem.Target.Index < 0 || *elem.Target.Index >= len(val) {
+				return nil, nil, deployItemSpecificationError(elem.Name, "index %d out of bounds", *elem.Target.Index)
+			}
+			name, _, err := unstructured.NestedString(val[*elem.Target.Index], "metadata", "name")
+			if err != nil {
+				return nil, nil, err
+			}
+			namespace, _, _ := unstructured.NestedString(val[*elem.Target.Index], "metadata", "namespace")
+			target.Name = name
+			target.Namespace = namespace
+		} else if len(elem.Target.Import) > 0 {
+			// single target import reference
+			raw := imports[elem.Target.Import]
+			imp := input.Blueprint.GetImportByName(elem.Target.Import)
+			if imp == nil {
+				return nil, nil, deployItemSpecificationError(elem.Name, "target import %q not found", elem.Target.Import)
+			}
+			if imp.Type != lsv1alpha1.ImportTypeTarget {
+				return nil, nil, deployItemSpecificationError(elem.Name, "import %q is not a target", elem.Target.Import)
+			}
+			if raw == nil {
+				return nil, nil, deployItemSpecificationError(elem.Name, "no value for import %q given", elem.Target.Import)
+			}
+			val, ok := raw.(map[string]interface{})
+			if !ok {
+				return nil, nil, deployItemSpecificationError(elem.Name, "invalid target spec for import %q", elem.Target.Import)
+			}
+			name, _, err := unstructured.NestedString(val, "metadata", "name")
+			if err != nil {
+				return nil, nil, err
+			}
+			namespace, _, _ := unstructured.NestedString(val, "metadata", "namespace")
+			target.Name = name
+			target.Namespace = namespace
+		} else if len(elem.Target.Name) == 0 {
+			return nil, nil, deployItemSpecificationError(elem.Name, "empty target reference")
+		}
+
+		deployItemTemplates[i] = core.DeployItemTemplate{
+			Name:          elem.Name,
+			Type:          elem.Type,
+			Target:        target,
+			Labels:        elem.Labels,
+			Configuration: elem.Configuration,
+			DependsOn:     elem.DependsOn,
+		}
+	}
+
+	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
+	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&deployItemTemplates, &versionedDeployItemTemplateList, nil); err != nil {
+		return nil, nil, fmt.Errorf("error converting internal representation of deployitem templates to versioned one: %w", err)
+	}
+
+	deployItems := make([]*lsv1alpha1.DeployItem, len(versionedDeployItemTemplateList))
+	for i, tmpl := range versionedDeployItemTemplateList {
 		di := &lsv1alpha1.DeployItem{}
 		if err := kutil.InjectTypeInformation(di, api.LandscaperScheme); err != nil {
 			return nil, nil, fmt.Errorf("unable to inject deploy item type information for %q: %w", tmpl.Name, err)
@@ -207,13 +282,9 @@ func (r *BlueprintRenderer) renderSubInstallations(input *ResolvedInstallation, 
 	templateStateHandler := template.NewMemoryStateHandler()
 	formatter := template.NewTemplateInputFormatter(true)
 	subInstallationTemplates, err := template.New(gotemplate.New(nil, templateStateHandler).WithInputFormatter(formatter), spiff.New(templateStateHandler).WithInputFormatter(formatter)).
-		TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-			Imports:              imports,
-			Blueprint:            input.Blueprint,
-			ComponentDescriptor:  input.ComponentDescriptor,
-			ComponentDescriptors: r.cdList,
-			Installation:         input.Installation,
-		})
+		TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
+			template.NewBlueprintExecutionOptions(input.Installation, input.Blueprint, input.ComponentDescriptor, r.cdList,
+				imports)))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to template subinstalltion executions: %w", err)
 	}
@@ -368,6 +439,14 @@ func validateTargetImport(value interface{}, expectedTargetType string, fldPath 
 			fmt.Sprintf("unable to get type of target: %s", err.Error())))
 		return allErr
 	}
+	_, _, err = unstructured.NestedString(targetObj, "metadata", "name")
+	if err != nil {
+		allErr = append(allErr, field.Invalid(
+			fldPath,
+			value,
+			fmt.Sprintf("unable to get name of target: %s", err.Error())))
+		return allErr
+	}
 	if targetType != expectedTargetType {
 		allErr = append(allErr, field.Invalid(
 			fldPath,
@@ -418,4 +497,8 @@ func validateComponentDescriptorListImport(value interface{}, fldPath *field.Pat
 	}
 
 	return allErr
+}
+
+func deployItemSpecificationError(name, message string, args ...interface{}) error {
+	return fmt.Errorf(fmt.Sprintf("invalid deployitem specification %q: ", name)+message, args...)
 }

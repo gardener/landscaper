@@ -12,14 +12,17 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
+	"github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/validation"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -51,7 +54,7 @@ func New(op *installations.Operation) *ExecutionOperation {
 	}
 }
 
-func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
+func (o *ExecutionOperation) RenderDeployItemTemplates(ctx context.Context, inst *installations.Installation) (core.DeployItemTemplateList, error) {
 	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	templateStateHandler := template.KubernetesStateHandler{
@@ -59,30 +62,103 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		Inst:       inst.Info,
 	}
 	tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
-	executions, err := tmpl.TemplateDeployExecutions(template.DeployExecutionOptions{
-		Imports:              inst.GetImports(),
-		Installation:         o.Context().External.InjectComponentDescriptorRef(inst.Info),
-		Blueprint:            inst.Blueprint,
-		ComponentDescriptor:  o.ComponentDescriptor,
-		ComponentDescriptors: o.ResolvedComponentDescriptorList,
-	})
+	executions, err := tmpl.TemplateDeployExecutions(
+		template.NewDeployExecutionOptions(
+			template.NewBlueprintExecutionOptions(
+				o.Context().External.InjectComponentDescriptorRef(inst.Info),
+				inst.Blueprint,
+				o.ComponentDescriptor,
+				o.ResolvedComponentDescriptorList,
+				inst.GetImports())))
+
 	if err != nil {
 		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
 			TemplatingFailedReason, "Unable to template executions"))
-		return fmt.Errorf("unable to template executions: %w", err)
+		return nil, fmt.Errorf("unable to template executions: %w", err)
 	}
 
 	if len(executions) == 0 {
-		return nil
+		return nil, nil
 	}
+
+	// map deployitem specifications into templates for executions
+	// includes resolving target import references to target object references
+	execTemplates := make(core.DeployItemTemplateList, len(executions))
+	for i, elem := range executions {
+		var target *core.ObjectReference
+		if elem.Target != nil {
+			target = &core.ObjectReference{
+				Name:      elem.Target.Name,
+				Namespace: o.Inst.Info.Namespace,
+			}
+			if elem.Target.Index != nil {
+				// targetlist import reference
+				ti := o.GetTargetListImport(elem.Target.Import)
+				if ti == nil {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "targetlist import %q not found", elem.Target.Import)
+				}
+				if *elem.Target.Index < 0 || *elem.Target.Index >= len(ti.Targets) {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "index %d out of bounds", *elem.Target.Index)
+				}
+				rawTarget := ti.Targets[*elem.Target.Index].Raw
+				target.Name = rawTarget.Name
+				target.Namespace = rawTarget.Namespace
+			} else if len(elem.Target.Import) > 0 {
+				// single target import reference
+				t := o.GetTargetImport(elem.Target.Import)
+				if t == nil {
+					return nil, o.deployItemSpecificationError(cond, elem.Name, "target import %q not found", elem.Target.Import)
+				}
+				rawTarget := t.Raw
+				target.Name = rawTarget.Name
+				target.Namespace = rawTarget.Namespace
+			} else if len(elem.Target.Name) == 0 {
+				return nil, o.deployItemSpecificationError(cond, elem.Name, "empty target reference")
+			}
+		}
+
+		execTemplates[i] = core.DeployItemTemplate{
+			Name:          elem.Name,
+			Type:          elem.Type,
+			Target:        target,
+			Labels:        elem.Labels,
+			Configuration: elem.Configuration,
+			DependsOn:     elem.DependsOn,
+		}
+	}
+
+	if err := validation.ValidateDeployItemTemplateList(field.NewPath("deployExecutions"), execTemplates).ToAggregate(); err != nil {
+		err2 := fmt.Errorf("error validating deployitem templates: %w", err)
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			TemplatingFailedReason, err2.Error()))
+		return nil, err2
+	}
+
+	return execTemplates, nil
+}
+
+func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Installation) error {
+	execTemplates, err := o.RenderDeployItemTemplates(ctx, inst)
+	if execTemplates == nil || err != nil {
+		return err
+	}
+
+	cond := lsv1alpha1helper.GetOrInitCondition(inst.Info.Status.Conditions, lsv1alpha1.ReconcileExecutionCondition)
 
 	exec := &lsv1alpha1.Execution{}
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
+	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
+	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&execTemplates, &versionedDeployItemTemplateList, nil); err != nil {
+		err2 := fmt.Errorf("error converting internal representation of deployitem templates to versioned one: %w", err)
+		inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+			TemplatingFailedReason, err2.Error()))
+		return err2
+	}
 	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.Info.Spec.Context
-		exec.Spec.DeployItems = executions
+		exec.Spec.DeployItems = versionedDeployItemTemplateList
 
 		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
@@ -122,4 +198,11 @@ func GetExecutionForInstallation(ctx context.Context, kubeClient client.Client, 
 		return nil, err
 	}
 	return exec, nil
+}
+
+func (o *ExecutionOperation) deployItemSpecificationError(cond lsv1alpha1.Condition, name, message string, args ...interface{}) error {
+	err := fmt.Errorf(fmt.Sprintf("invalid deployitem specification %q: ", name)+message, args...)
+	o.Inst.MergeConditions(lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
+		TemplatingFailedReason, err.Error()))
+	return err
 }

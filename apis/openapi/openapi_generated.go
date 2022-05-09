@@ -2832,6 +2832,20 @@ func schema_landscaper_apis_core_v1alpha1_Blueprint(ref common.ReferenceCallback
 							},
 						},
 					},
+					"importExecutions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImportExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of errors",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.TemplateExecutor"),
+									},
+								},
+							},
+						},
+					},
 					"exports": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Exports define the exported values of the definition and its sub-definitions",

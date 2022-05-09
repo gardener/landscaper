@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: import-index-wrong
+  namespace: test2
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: v1.0.0
+      componentName: example.com/root
+      kind: localResource
+
+  blueprint:
+    ref:
+      resourceName: import-index-wrong
+
+  imports:
+    targets:
+    - name: targetImp
+      target: mytarget
+    - name: targetListImp
+      targets:
+      - mytarget
+      - mytarget

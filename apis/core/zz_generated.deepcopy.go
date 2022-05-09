@@ -71,6 +71,13 @@ func (in *Blueprint) DeepCopyInto(out *Blueprint) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ImportExecutions != nil {
+		in, out := &in.ImportExecutions, &out.ImportExecutions
+		*out = make([]TemplateExecutor, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.Subinstallations != nil {
 		in, out := &in.Subinstallations, &out.Subinstallations
 		*out = make(SubinstallationTemplateList, len(*in))

@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: g
+  local/version: 1.0.0
+
+imports:
+- name: mine
+  type: data
+  schema:
+    type: string
+
+importExecutions:
+  - name: g.a
+    type: Spiff
+    template:
+      bindings:
+        processed: (( imports.mine "(extended)" ))

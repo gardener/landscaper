@@ -1,6 +1,7 @@
 ## Documentation Index
 
 ### Concepts
+- [Overview](./concepts/Concepts.md)
 - [Glossary](./concepts/Glossary.md)
 - [Installation-Blueprint relationship](./concepts/InstallationBlueprintRelationship.md)
 
@@ -12,7 +13,7 @@
 ### Usage
 - [Blueprints](./usage/Blueprints.md)
 - [Installations](./usage/Installations.md)
-- [Template Executors](./usage/TemplateExecutors.md)
+- [Templating](./usage/Templating.md)
 - [JSON Schema](./usage/JSONSchema.md)
 - [Component Overwrites](./usage/ComponentOverwrites.md)
 - [Conditional Imports](./usage/ConditionalImports.md)

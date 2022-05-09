@@ -5,6 +5,8 @@
 package v1alpha1
 
 const (
+	LandscaperDomain = "landscaper.gardener.cloud"
+
 	// LandscapeConfigName is the namespace unique name of the landscape configuration
 	LandscapeConfigName = "default"
 
@@ -12,28 +14,28 @@ const (
 	DataObjectSecretDataKey = "config"
 
 	// LandscaperFinalizer is the finalizer of the landscaper
-	LandscaperFinalizer = "finalizer.landscaper.gardener.cloud"
+	LandscaperFinalizer = "finalizer." + LandscaperDomain
 
 	// LandscaperDMFinalizer is the finalizer of the landscaper deployer management.
-	LandscaperDMFinalizer = "finalizer.deployermanagement.landscaper.gardener.cloud"
+	LandscaperDMFinalizer = "finalizer.deployermanagement." + LandscaperDomain
 
 	// LandscaperAgentFinalizer is the finalizer of the landscaper agent.
-	LandscaperAgentFinalizer = "finalizer.agent.landscaper.gardener.cloud"
+	LandscaperAgentFinalizer = "finalizer.agent." + LandscaperDomain
 
 	// Annotations
 
 	// OperationAnnotation is the annotation that specifies a operation for a component
-	OperationAnnotation = "landscaper.gardener.cloud/operation"
+	OperationAnnotation = LandscaperDomain + "/operation"
 
 	// DeleteWithoutUninstallAnnotation is the annotation that specifies that root installations are deleted without
 	// uninstalling the deployed artifacts
 	DeleteWithoutUninstallAnnotation = "landscaper.gardener.cloud/delete-without-uninstall"
 
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
-	ReconcileTimestampAnnotation = "landscaper.gardener.cloud/reconcile-time"
+	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
 
 	// AbortTimestampAnnotation is used to recognize timeouts in deployitems
-	AbortTimestampAnnotation = "landscaper.gardener.cloud/abort-time"
+	AbortTimestampAnnotation = LandscaperDomain + "/abort-time"
 
 	// IgnoreAnnotation can be used to stop reconciliation for landscaper resources.
 	// Will only have an effect if set to 'true'.
@@ -43,7 +45,7 @@ const (
 
 	// LandscaperComponentLabelName is the name of the labels the holds the information about landscaper components.
 	// This label should be set on landscaper related components like the landscaper controller or deployers.
-	LandscaperComponentLabelName = "landscaper.gardener.cloud/component"
+	LandscaperComponentLabelName = LandscaperDomain + "/component"
 
 	// DeployerRegistrationLabelName is the name of the label that holds the reference to the deployer registration
 	// that installation originated from.
@@ -58,19 +60,19 @@ const (
 	DMEnvironmentTargetAnnotationName = DeployerEnvironmentLabelName
 
 	// DeployerEnvironmentTargetAnnotationName is the default name for the target selector of specific environments.
-	DeployerEnvironmentTargetAnnotationName = "landscaper.gardener.cloud/environment"
+	DeployerEnvironmentTargetAnnotationName = LandscaperDomain + "/environment"
 
 	// DeployerOnlyTargetAnnotationName marks a target to be used to deploy only deployers
-	DeployerOnlyTargetAnnotationName = "landscaper.gardener.cloud/deployer-only"
+	DeployerOnlyTargetAnnotationName = LandscaperDomain + "/deployer-only"
 
 	// NotUseDefaultDeployerAnnotation is the installation annotation that refuses the internal deployer to reconcile
 	// the installation.
-	NotUseDefaultDeployerAnnotation = "landscaper.gardener.cloud/not-internal"
+	NotUseDefaultDeployerAnnotation = LandscaperDomain + "/not-internal"
 
 	// Component Descriptor
 
 	// InlineComponentDescriptorLabel is the label name used for nested inline component descriptors
-	InlineComponentDescriptorLabel = "landscaper.gardener.cloud/component-descriptor"
+	InlineComponentDescriptorLabel = LandscaperDomain + "/component-descriptor"
 
 	// BlueprintFileName is the filename of a component definition on a local path
 	BlueprintFileName = "blueprint.yaml"

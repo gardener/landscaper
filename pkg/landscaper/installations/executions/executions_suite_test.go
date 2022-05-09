@@ -5,13 +5,21 @@
 package executions_test
 
 import (
+	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/test/utils/envtest"
+
+	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
+
+	testutils "github.com/gardener/landscaper/test/utils"
 )
 
 func TestConfig(t *testing.T) {
@@ -36,3 +44,13 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	Expect(testenv.Stop()).ToNot(HaveOccurred())
 })
+
+func createDefaultContextsForNamespace(kubeClient client.Client) {
+	// create default repo for all namespaces
+	repoCtx := componentsregistry.NewLocalRepository("../testdata/registry")
+	list, err := os.ReadDir("./testdata/state")
+	Expect(err).To(Succeed())
+	for _, d := range list {
+		Expect(testutils.CreateDefaultContext(context.TODO(), kubeClient, repoCtx, filepath.Base(d.Name()))).To(Succeed())
+	}
+}

@@ -67,7 +67,7 @@ spec:
   imports:
     targets:
       - name: target-cluster
-        target: "#my-cluster"
+        target: "my-cluster"
 ```
 
 The Installation references the [Component Descriptor](./basic_concepts.md#blueprint-component-and-component-descriptor) 

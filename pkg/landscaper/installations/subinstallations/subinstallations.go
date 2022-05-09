@@ -253,13 +253,14 @@ func (o *Operation) getInstallationTemplates() ([]*lsv1alpha1.InstallationTempla
 			Inst:       o.Inst.Info,
 		}
 		tmpl := template.New(gotemplate.New(o.BlobResolver, templateStateHandler), spiff.New(templateStateHandler))
-		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.DeployExecutionOptions{
-			Imports:              o.Inst.GetImports(),
-			Installation:         o.Context().External.InjectComponentDescriptorRef(o.Inst.Info.DeepCopy()),
-			Blueprint:            o.Inst.Blueprint,
-			ComponentDescriptor:  o.ComponentDescriptor,
-			ComponentDescriptors: o.ResolvedComponentDescriptorList,
-		})
+		templatedTmpls, err := tmpl.TemplateSubinstallationExecutions(template.NewDeployExecutionOptions(
+			template.NewBlueprintExecutionOptions(
+				o.Context().External.InjectComponentDescriptorRef(o.Inst.Info.DeepCopy()),
+				o.Inst.Blueprint,
+				o.ComponentDescriptor,
+				o.ResolvedComponentDescriptorList,
+				o.Inst.GetImports())))
+
 		if err != nil {
 			return nil, fmt.Errorf("unable to template subinstllations: %w", err)
 		}

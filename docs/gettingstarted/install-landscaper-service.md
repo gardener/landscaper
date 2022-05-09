@@ -76,7 +76,7 @@ spec:
     # The "hostingCluster" specifies the target Kubernetes cluster into which the landscaper service will be installed.
     # References a landscaper "target" resource.
     - name: hostingCluster
-      target: "#my-target-cluster"
+      target: "my-target-cluster"
     data:
     # The OCI registry secretes can be referenced as a Kubernetes secret.
     - name: ociSecrets

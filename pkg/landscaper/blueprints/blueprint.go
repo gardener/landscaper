@@ -47,6 +47,15 @@ func NewFromFs(content vfs.FileSystem) (*Blueprint, error) {
 	return New(blueprint, content), nil
 }
 
+func (b *Blueprint) GetImportByName(name string) *lsv1alpha1.ImportDefinition {
+	for _, elem := range b.Info.Imports {
+		if elem.Name == name {
+			return &elem
+		}
+	}
+	return nil
+}
+
 // GetSubinstallations gets the direct subinstallation templates for a blueprint.
 func (b *Blueprint) GetSubinstallations() ([]*lsv1alpha1.InstallationTemplate, error) {
 	var (

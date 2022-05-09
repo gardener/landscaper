@@ -539,6 +539,14 @@
       },
       "type": "array"
     },
+    "importExecutions": {
+      "description": "ImportExecutions defines the templating executors that are sequentially executed by the landscaper. The templates must return a list of errors",
+      "items": {
+        "$ref": "#/definitions/core-v1alpha1-TemplateExecutor",
+        "default": {}
+      },
+      "type": "array"
+    },
     "imports": {
       "description": "Imports define the import values that are needed for the definition and its sub-definitions.",
       "items": {

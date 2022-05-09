@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: root-target-import
+  local/version: v1.0.0
+
+imports:
+- name: targetImp
+  type: target
+  targetType: mock
+- name: targetListImp
+  type: targetList
+  targetType: mock
+
+
+deployExecutions:
+- name: exec
+  type: Spiff
+  template:
+    deployItems:
+    - name: myDi
+      type: landscaper.gardener.cloud/mock
+      target:
+        import: targetImp
+    - name: myOtherDi
+      type: landscaper.gardener.cloud/mock
+      target:
+        import: targetListImp
+        index: 0
+    - name: myLegacyDi
+      type: landscaper.gardener.cloud/mock
+      target:
+        name: mytarget

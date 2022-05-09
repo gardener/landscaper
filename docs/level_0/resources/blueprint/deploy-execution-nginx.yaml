@@ -2,8 +2,7 @@ deployItems:
 - name: nginx
   type: landscaper.gardener.cloud/helm
   target:
-    name: {{ index .imports "target-cluster" "metadata" "name" }}
-    namespace: {{ index .imports "target-cluster" "metadata" "namespace" }}
+    import: target-cluster
   config:
     apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
     kind: ProviderConfiguration

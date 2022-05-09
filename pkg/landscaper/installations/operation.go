@@ -50,6 +50,9 @@ type Operation struct {
 	ResolvedComponentDescriptorList *cdv2.ComponentDescriptorList
 	context                         Context
 
+	targetLists map[string]*dataobjects.TargetList
+	targets     map[string]*dataobjects.Target
+
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
 }
@@ -72,6 +75,19 @@ func NewInstallationOperationFromOperation(ctx context.Context, op *lsoperation.
 	return NewOperationBuilder(inst).
 		WithOperation(op).
 		Build(ctx)
+}
+
+func (o *Operation) GetTargetImport(name string) *dataobjects.Target {
+	return o.targets[name]
+}
+func (o *Operation) GetTargetListImport(name string) *dataobjects.TargetList {
+	return o.targetLists[name]
+}
+func (o *Operation) SetTargetImports(data map[string]*dataobjects.Target) {
+	o.targets = data
+}
+func (o *Operation) SetTargetListImports(data map[string]*dataobjects.TargetList) {
+	o.targetLists = data
 }
 
 // ResolveComponentDescriptors resolves the effective component descriptors for the installation.

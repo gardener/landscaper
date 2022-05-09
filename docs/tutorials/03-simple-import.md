@@ -76,8 +76,7 @@ deployItems:
 - name: deploy
   type: landscaper.gardener.cloud/kubernetes-manifest
   target:
-    name: {{ .imports.cluster.metadata.name }}
-    namespace: {{ .imports.cluster.metadata.namespace }}
+    import: cluster
   config:
     apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
     kind: ProviderConfiguration
@@ -243,8 +242,7 @@ spec:
   imports:
     targets:
     - name: cluster
-      # the "#" forces the landscaper to use the target with the name "my-cluster" in the same namespace
-      target: "#my-cluster"
+      target: "my-cluster"
     data:
     - name: namespace
       configMapRef:
