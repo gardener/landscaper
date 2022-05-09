@@ -5,9 +5,9 @@ This document aims to describe what exactly happens during the reconciliation of
 Please note that errors can occur in most of the steps for various reasons. To not overload the descriptions with possible error messages, *the descriptions usually don't contain information on the possible errors*. This also means that even the steps not marked as potential exit points for the reconciliation flow might be able to abort the reconciliation in case of an error.
 
 - 🚪
-  - The door symbol means that the current flow is exited during this step. It usually corresponds to a `return` statement in the code. This symbol is used independently of whether the flow aborts with or without an error.
+  - The door symbol means that the current flow has exited during this step. It usually corresponds to a `return` statement in the code. This symbol is used independently of whether the flow aborts with or without an error.
 - ❔
-  - The question mark stands for a conditional, where the following actions are determined by a specific check. It usually corresponds to an `if` statement in the code. Note that symbols listed directly after this one represent the potential for the event they stand for. An example: while 🚪 means that the current flow will be exited in the current step, ❔🚪 means that there is a check which *might* cause the end of the current flow, depending on the outcome of the check.
+  - The question mark stands for a conditional, where the following actions are determined by a specific check. A symbol following the question mark represents an event that might be triggered based on the check. E.g. ❔🚪 means that there is a check which *might* cause the end of the current flow, depending on the outcome of the check.
 - ↪
   - The arrow means that another flow is started. It usually corresponds to a method call in the code. If not described otherwise, the current flow will continue after the subroutine has returned. The description of the step provides more information on which flow is started.
 - ✔️
