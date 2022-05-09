@@ -1,6 +1,6 @@
 # Types
 
-This documents the resource and media type that are used by the landscaper and somme deployers.
+This documents the resource and media type that are used by the landscaper and some deployers.
 
 For known target types see [target types](./target_types.md)
 
