@@ -14,15 +14,12 @@ Blueprints are entities, which contain the instructions and steps about how to d
 
 In other words, Blueprints are reusable collections of installation tasks, which could be parameterized through import parameters. Several DeployItems can be defined in a Blueprint at once. Also, the execution order of these DeployItems in a Blueprint can be specified.
 
-  __Background Knowledge__:
-    <details>
-    Blueprints consists of:
-      - Configuration Data ([Imports](#import))
-      - Installation instructions
-        - [DeployItems](#deployitem) or
-        - [Sub-Installations](#sub-installation)
-      - [Output](#export)
-    </details>
+Blueprints in a nutshell:
+  - Configuration Data ([Imports](#import))
+  - Installation instructions
+    - [DeployItems](#deployitem) or
+    - [Sub-Installations](#sub-installation)
+    - [Output](#export)
 
 #### _Component Descriptor_
   A Component Descriptor contains references and locations to all resources that are used by Landscaper to deploy and install an application.
