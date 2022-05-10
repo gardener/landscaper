@@ -2,6 +2,9 @@
 
 This document describes the basic concepts, artifacts and their relationships within the Landscaper universe. 
 
+TODO: Provide an overview picture containing all relevant entities like blueprint, deployExecution, installation and so on ...
+
+
 ## DeployItem
 
 The main objective of Landscaper is to set up large cloud environments with complex relationships consisting of many
