@@ -199,7 +199,7 @@ It is used in list of such execution under the field `exportExecutions` in a blu
   Templates are used to render other elements for various purposes based on a dedicated
   value binding provided by a [_Blueprint_](#blueprint). The instantiation context of a
   template is called [_Execution_](#execution). There are [_DeployExecutions_](#deployexecution),
-  [_ExportExecutions](#exportexecution) and [_SubinstallationExecutions_](#subinstallationexecution).
-  The _Landscaper_ supports two kinds of template processors to process those templates: Go templates and [Spiff](https://github.com/mandelsoft/spiff) templates.
+  [_ExportExecutions_](#exportexecution) and [_SubinstallationExecutions_](#subinstallationexecution).
+  The _Landscaper_ supports two kinds of template processors to process those templates: Go templates and [_Spiff_](https://github.com/mandelsoft/spiff) templates.
   
 [↑](#glossary)
