@@ -4,6 +4,11 @@ In this example we describe how to deploy your first component with Landscaper. 
 
 To try out this example by yourself, you need to install Landscaper (see [here](../gettingstarted/install-landscaper-controller.md)) in a cluster.
 
+**Structure**
+  - [Step 1 - Create and apply the Target Custom Resource](#step-1---create-and-apply-the-target-custom-resource)
+  - [Step 2 - Create and apply the K8s namespace for the deployment in the target cluster](#step-2---create-and-apply-the-k8s-namespace-for-the-deployment-in-the-target-cluster)
+  - [Step 3 - Create and apply the Installation custom resource](#step-3---create-and-apply-the-installation-custom-resource)
+
 ## Step 1 - Create and apply the Target Custom Resource
 
 We want to deploy the nginx ingress-controller into a target cluster. Landscaper needs the access information for this cluster to execute 
