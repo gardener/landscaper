@@ -1,13 +1,13 @@
 # Motivation
-In this chapter, it is described what Landscaper is, what it does and why you should start using it.
+In this chapter, it is described what the Landscaper is, what it does and why you should start using it. It also describes what you need to get started (the Landscaper CLI), and even how you could deploy and operate the Landscaper yourself to your own cluster.
 
-- [What is Landscaper ?](motivation/motivation.md) 
-
-- [Install Landscaper](./gettingstarted/install-landscaper-controller.md)
+- [What is the Landscaper ?](motivation/motivation.md) 
+- [Installing the Landscaper CLI](https://github.com/gardener/landscapercli/blob/master/docs/installation.md)
+- [Installing the Landscaper Controller in your own cluster](./gettingstarted/install-landscaper-controller.md)
 
 # Level 0 (Beginner)
 
-- [Basic Concepts](./level_0/basic_concepts.md)
+- [Basic Concepts (WiP/ToDo)](./level_0/basic_concepts.md)
 
 - [First Example Installation](./level_0/first_example_installation.md)
 
@@ -49,8 +49,6 @@ In this chapter, it is described what Landscaper is, what it does and why you sh
   - Error Analysis
 
 3.2.3. Hands-on Tutorials
-- Tutorial 1
-- Tutorial 2 
 
 
 ### 3.3. Level 2 (Landscaper Core)
