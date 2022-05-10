@@ -1,12 +1,17 @@
 # First Example Component
 
-In this example we describe how to develop the component that we have used in the
+In this example, we will walk through the process of developing the component that we have used in the
 [First Example Installation](./first_example_installation.md).
 
-The component contains a Component Descriptor and a Blueprint with one DeployItem. The DeployItem specifies how to 
-deploy the nginx as a helm chart.
+The component contains a Component Descriptor and a Blueprint with one DeployItem. The DeployItem specifies how to deploy the nginx as a helm chart.
 
-## Deploy Item
+**Structure**
+- [First Example Component](#first-example-component)
+  - [Creating the Deploy Item](#creating-the-deploy-item)
+  - [Creating the Blueprint](#creating-the-blueprint)
+  - [Creating the Component Descriptor](#creating-the-component-descriptor)
+
+## Creating the Deploy Item
 
 We want to deploy an nginx ingress-controller via the helm chart [nginx ingress](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx).
 Therefore, we specify a DeployItem in a yaml file with the following content.
@@ -47,7 +52,7 @@ reusable component.
 
 You find the DeployItem in file [deploy-execution-nginx.yaml](./resources/blueprint/deploy-execution-nginx.yaml).
 
-## Blueprint
+## Creating the Blueprint
 
 Next, we specify the Blueprint. The Blueprint consists of a [directory](./resources/blueprint) with the following 
 structure:
@@ -94,7 +99,7 @@ We have uploaded the Blueprint into an OCI registry. You find the Blueprint OCI 
 You can upload a Blueprint by yourself to another OCI registry with the help of the Landscaper CLI command 
 [landscaper-cli blueprints push](https://github.com/gardener/landscapercli/blob/master/docs/reference/landscaper-cli_blueprints_push.md).
 
-## Component Descriptor
+## Creating the Component Descriptor
 
 Our component needs a Component Descriptor that contains the list of all required resources and how to access them.
 Here, these are the Blueprint, and the helm chart of the nginx with their corresponding OCI references.
