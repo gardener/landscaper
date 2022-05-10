@@ -10,8 +10,9 @@
 
 #### _Blueprint_
 
-  Blueprints contain actual instructions and steps on how to install a software component in form of [_DeployItems_](#deployitem).
-  As these instructions are expected to be idempotent, Blueprints can be interpreted as descriptions of a target state for the described software.
+Blueprints are entities, which contain the instructions and steps about how to deploy a software component in the form of [_DeployItems_](#deployitem). As these instructions are expected to be idempotent, Blueprints can be defined as descriptions of the target state for the software component. These Blueprints define an interface for import data, as required by its DeployItems. It can also define an export interface to expose output data of its DeployItems.
+
+In other words, Blueprints are reusable collections of installation tasks, which could be parameterized through import parameters. Several DeployItems can be defined in a Blueprint at once. Also, the execution order of these DeployItems in a Blueprint can be specified.
 
   __Background Knowledge__:
     <details>
