@@ -4,7 +4,7 @@ In this example we describe how to deploy your first component with Landscaper. 
 
 To try out this example by yourself, you need to install Landscaper (see [here](../gettingstarted/install-landscaper-controller.md)) in a cluster.
 
-## Step 1 - Create the Target Custom Resource
+## Step 1 - Create and apply the Target Custom Resource
 
 We want to deploy the nginx ingress-controller into a target cluster. Landscaper needs the access information for this cluster to execute 
 the deployment. Therefore, we have to create a custom resource of type _Target_ in the namespace _demo_ in the cluster watched 
@@ -35,7 +35,7 @@ After you have created the Target custom resource, you need to apply it to the L
 kubectl apply -f _your_target_cr_filename
 ```
 
-## Step 2 - Create Kubernetes namespace for the deployment in the target cluster
+## Step 2 - Create and apply the K8s namespace for the deployment in the target cluster
 
 The nginx ingress-controller will be deployed in a namespace `first-example` on the target cluster. The component **will not** create 
 this namespace automatically. We must do this manually with the following command, using the kubeconfig of the 
@@ -44,7 +44,7 @@ target cluster:
 kubectl create namespace first-example
 ```
 
-## Step 3 - Create Installation custom resource
+## Step 3 - Create and apply the Installation custom resource
 
 To install the nginx ingress-controller with the Landscaper, we have to finally create a custom resource of kind `Installation`. Such Ìnstallation`custom resources are watched by the Landscaper controller and triggers the installation as described by the Blueprint, which is located within the specified Component Descriptor.
 
