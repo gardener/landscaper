@@ -6,7 +6,6 @@ In this example, we will walk through the process of developing the component th
 The component contains a Component Descriptor and a Blueprint with one DeployItem. The DeployItem specifies how to deploy the nginx as a helm chart.
 
 **Structure**
-- [First Example Component](#first-example-component)
   - [Creating the Deploy Item](#creating-the-deploy-item)
   - [Creating the Blueprint](#creating-the-blueprint)
   - [Creating the Component Descriptor](#creating-the-component-descriptor)
