@@ -9,6 +9,8 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
 
 - [Basic Concepts (WiP/ToDo)](./level_0/basic_concepts.md)
 
+- [Glossary](/docs/concepts/Glossary.md)
+
 - [First Example Installation](./level_0/first_example_installation.md)
 
 - [First Example Component](./level_0/first_example_component.md)
