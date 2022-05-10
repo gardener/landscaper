@@ -17,7 +17,7 @@ In this chapter, it is described what the Landscaper is, what it does and why yo
 
 - [Architecture Overview](./level_0/basic_architecture.md)
   
-- [Simple Component Development with Landscaper CLI](https://github.com/gardener/landscapercli)
+- [Component Development with Landscaper CLI](https://github.com/gardener/landscapercli/blob/master/docs/commands/README.md)
   
 - Landscaper configuration options
 
