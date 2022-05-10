@@ -2,7 +2,7 @@
 
 This tutorial describes the basics of developing Blueprints. It covers the whole manual workflow from writing the Blueprint together with a Component Descriptor and storing them in a remote OCI repository.
 
-For this tutorial, we are going to use the [NGINX ingress controller](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx) as the example application which will get deployed via its upstream helm chart.
+For this tutorial, we are going to use the [NGINX ingress controller](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx) as the example application which will get deployed via its helm chart.
 
 ## Structure
 
@@ -30,17 +30,16 @@ For this tutorial, we are going to use the [NGINX ingress controller](https://gi
 For this tutorial, you will need:
 
 - the Helm (v3) commandline tool (see https://helm.sh/docs/intro/install/)
-  - your helm version should be at least `3.7` legacy commands can be found in the details
+  - your helm version should be at least `3.7` 
+  - legacy commands can be found in the details
 - [OPTIONAL] an OCI compatible registry (e.g. GCR or Harbor)
-- a Kubernetes Cluster (better use two different clusters: one which Landscaper runs in and one that NGINX gets installed into)
+- a Kubernetes Cluster (better use two different clusters: one in which Landscaper runs and one that NGINX gets installed into)
 - the `landscaper-cli` and `component-cli` command line tools. Their installation is described [here](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) and [here](https://github.com/gardener/component-cli).
 
 All example resources can be found in the folder [./resources/ingress-nginx](./resources/ingress-nginx) of this repository.
 
 :warning: Note that the repository `eu.gcr.io/gardener-project/landscaper/tutorials` that is used throughout this tutorial is an example repository and has to be replaced with the path to your own registry if you want to upload your own artifacts.
 If you do not have your own OCI registry, you can of course reuse the artifacts that we provided at `eu.gcr.io/gardener-project/landscaper/tutorials` which are publicly readable.
-
-
 
 ## Step 1: Prepare the NGINX helm chart
 
@@ -65,7 +64,7 @@ helm push /tmp/ingress-nginx-4.0.17.tgz $CHART_REF_PREFIX
 # the helm chart is uploaded as oci artifact to $CHART_REF_PREFIX/chart-name:chart-version" e.g. eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.17
 ```
 
-See details for Helm version < `3.7`.
+Expand the below details for Helm version < `3.7`.
 <details>
 
 ```shell script
@@ -743,9 +742,9 @@ items:
 
 ## Summary
 - A blueprint has been created that describes how a nginx ingress can be deployed into a kubernetes cluster.
-- A component descriptor has been created that contains the blueprint and another external resources as local resources with access type `localOciBlob`.
-- The blueprint and the component descriptor are uploaded to the oci registry.
+- A component descriptor has been created that contains the blueprint and another external resources as resources.
+- The blueprint and the component descriptor have been uploaded to the OCI registry.
 - An installation has been defined and applied to the cluster which resulted in the deployed nginx application.
 
 ## Up Next
-In the [next tutorial](./02-local-simple-blueprint.md), the same blueprint is deployed but using only component local artifacts.
+In the [next tutorial](./02-local-simple-blueprint.md), the same blueprint is deployed but using only local component artifacts.
