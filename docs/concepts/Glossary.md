@@ -56,7 +56,11 @@
 
 #### _DeployItem_
 
-  A DeployItem is the interface between the Landscaper controller and the [Deployers](#deployer). It contains input data and a set of Deployer-specific instructions on how to install a component (e.g. install a helm chart with some custom values). Additionally, it is used to record the status as returned by the Deployer.
+The main objective of Landscaper is to set up large cloud environments with complex relationships consisting of many small installation tasks like Helm deployments, network setup etc. These elementary installation tasks are defined by DeployItems. There are different types of DeployItems for example for deploying Helm charts, plain kubernetes manifests or terraform configurations.
+
+A DeployItem can be described as the interface between the Landscaper controller and the [Deployers](#deployer). It contains input data and a set of Deployer-specific instructions on how to install a component (e.g. install a helm chart with some custom values). Additionally, it is used to record the status as returned by the Deployer.
+
+These DeployItems can be configured such that they can be used in different scenarios. Typical examples of configurable parts of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also define output parameters for data it creates and which can be consumed by others.
 
 #### _Execution_
   
