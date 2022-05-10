@@ -5,26 +5,25 @@ This document describes the basic concepts, artifacts and their relationships wi
 TODO: Provide an overview picture containing all relevant entities like blueprint, deployExecution, installation and so on ...
 
 
-## DeployItem
+## Main Objective of the Landscaper
 
-The main objective of Landscaper is to set up large cloud environments with complex relationships consisting of many
+The Landscaper is typically used to set up large cloud environments with complex relationships, consisting of many
 small installation tasks like Helm deployments, network setup etc. These elementary installation tasks are defined by 
-DeployItems. There are different types of DeployItems for example for deploying Helm charts, plain kubernetes manifests 
+DeployItems. There are different types of DeployItems, for example for deploying Helm charts, plain kubernetes manifests 
 or terraform configurations.
 
 A DeployItem can be configured such that it can be used in different scenarios. Typical examples of configurable parts
 of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also 
 define output parameters for data it creates and which can be consumed by others.
 
-## Blueprint
+## Reusable Installation Tasks
 
-Blueprints are reusable collections of combined installation tasks which could be parameterized through import
+So-called `Blueprints` are effectively reusable collections of combined installation tasks, which can be parameterized through import
 parameters.
 
-Several DeployItems can be defined in a Blueprint. 
-Also the execution order of the DeployItems of a Blueprint can be specified.
+Several DeployItems can be defined in a single Blueprint. The execution order of the DeployItems contained in a Blueprint can also be specified.
 
-A Blueprint defines an interface for import data, required by its DeployItems. It can also define an export 
+These Blueprints define an interface for import data, as required by its DeployItems. They can also define an export 
 interface to expose output data of its DeployItems. 
 
 ## Blueprint Component and Component Descriptor
