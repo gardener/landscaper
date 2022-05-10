@@ -31,6 +31,8 @@
 
   Their practical use is to install multiple components that depend on each other.
 
+[↑](#glossary)
+
 #### _Blueprint_
 
 Blueprints are entities, which contain the instructions and steps about how to deploy a software component in the form of [_DeployItems_](#deployitem). As these instructions are expected to be idempotent, Blueprints can be defined as descriptions of the target state for the software component. These Blueprints define an interface for import data, as required by its DeployItems. It can also define an export interface to expose output data of its DeployItems.
@@ -44,11 +46,15 @@ Blueprints in a nutshell:
     - [Sub-Installations](#sub-installation)
     - [Output](#export)
 
+[↑](#glossary)
+
 #### _Component Descriptor_
   A Component Descriptor contains references and locations to all resources that are used by Landscaper to deploy and install an application.
   Typically, a Component Descriptor is stored in an OCI registry.
 
   For more details see [here](https://gardener.github.io/component-spec/format.html) and [here](https://gardener.github.io/component-spec/semantics.html).
+
+[↑](#glossary)
 
 #### _Context_
 
@@ -62,18 +68,26 @@ Blueprints in a nutshell:
 
   Since Installations can be nested, the resulting contexts are nested as well.
 
+[↑](#glossary)
+
 #### _DataObject_
 
   DataObjects are vehicles to store arbitrary kinds of data. They exist in a [Context](#context) and provide data to Imports / receive data from Exports. They can be considered to be the implementation of the data flow in an installation.
+
+[↑](#glossary)
 
 #### _Deployer_
 
   Deployer are highly specialized controllers that act on [DeployItems](#deployitem) of a certain type. They execute the installation instructions and aim to maintain the declared desired state.
 
+[↑](#glossary)
+
 #### _DeployExecution_
 
   A _DeployExecution_ is a dedicated instantiation of a [template](#template) to generate [deploy items](#deployitem) as part of a [Blueprint](#blueprint). Mainly used to describe the installation instructions and customize it using the data provided as [imports](#import).
   It is used in list of such execution under the field `deployExecutions` in a blueprint descriptor.
+
+[↑](#glossary)
 
 #### _DeployItem_
 
@@ -83,6 +97,8 @@ A DeployItem can be described as the interface between the Landscaper controller
 
 These DeployItems can be configured such that they can be used in different scenarios. Typical examples of configurable parts of a DeployItem are the target cluster or namespace where a helm chart should be deployed to. A DeployItem can also define output parameters for data it creates and which can be consumed by others.
 
+[↑](#glossary)
+
 #### _Execution_
   
   An _Execution_ describes the instantiation of a [template](#template) in a [_Blueprint_](#blueprint).
@@ -91,13 +107,19 @@ These DeployItems can be configured such that they can be used in different scen
   - [ExportExecutions](#exportexecution) are used to render exports of a [_Blueprint_](#blueprint).
   - [SubinstallationExecutions](#subinstallationexecution) are used to render nested [_Installations_](#installation)
 
+[↑](#glossary)
+
 #### _Export_
 
   `Export` has 2 ambiguous meanings, whether we are talking about Blueprints or Installations.
 
+[↑](#glossary)
+
 ##### Blueprint Export
 
   Exports declare the output expected from a processed Blueprint.
+
+[↑](#glossary)
 
 ##### Installation Export
 
@@ -109,11 +131,15 @@ These DeployItems can be configured such that they can be used in different scen
     They cannot be used as inputs for their deploy items.
     </details>
 
+[↑](#glossary)
+
 #### _ExportExecution_
 
   An _ExportExecution_ is the instantiation of a [template](#template) to generate [exports](#export) as part of a [Blueprint](#blueprint).
   These templates contain the instructions which data gets written into the exports and how it might be preprocessed.
   They are specified as lists of executions under the field `exportExecutions` in a blueprint descriptor.
+
+[↑](#glossary)
 
 #### _Import_
 
@@ -127,14 +153,20 @@ These DeployItems can be configured such that they can be used in different scen
 
   Imports in an Installation assign actual values and make them accessible for further processing. They satisfy the requirements (imports) defined in the Blueprint.
 
+[↑](#glossary)
+
 #### _Installation_
 
   An installation is the parameterized instance of a Blueprint deployed by a user.
   Landscaper acts upon creation or update and creates or updates dependent [Execution](#execution) and [Sub-Installations](#sub-installation).
 
+[↑](#glossary)
+
 #### Sibling Installations
 
   Sibling Installations refer to Installations belonging to the same parent.
+
+[↑](#glossary)
 
 #### _Sub-Installation_
 
@@ -146,15 +178,21 @@ These DeployItems can be configured such that they can be used in different scen
     Sub-installations can be nested, when deployed, they are managed by their parent (sub)installation.
   </details>
 
+[↑](#glossary)
+
 #### _SubinstallationExecution_
 
 A _SubinstallationExecution_ is the instantiation of a [template](#template) to generate [nested installations](#installation) as part of a [Blueprint](#blueprint).
 These templates contain installation descriptions and their wiring, that is instantiated in an own [context](#context) whenever a blueprint is instantiated.
 It is used in list of such execution under the field `exportExecutions` in a blueprint descriptor.
 
+[↑](#glossary)
+
 #### _Target_
 
   A Target defines the system in which Landscaper will run the installation steps. Target resources contain all relevant data to access this environment including credentials.
+
+[↑](#glossary)
 
 #### _Template_
 
@@ -163,3 +201,5 @@ It is used in list of such execution under the field `exportExecutions` in a blu
   template is called [_Execution_](#execution). There are [_DeployExecutions_](#deployexecution),
   [_ExportExecutions](#exportexecution) and [_SubinstallationExecutions_](#subinstallationexecution).
   The _Landscaper_ supports two kinds of template processors to process those templates: Go templates and [Spiff](https://github.com/mandelsoft/spiff) templates.
+  
+[↑](#glossary)
