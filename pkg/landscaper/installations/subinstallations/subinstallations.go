@@ -28,14 +28,14 @@ import (
 )
 
 // TriggerSubInstallations triggers a reconcile for all sub installation of the component.
-func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation, operation lsv1alpha1.Operation) error {
+func (o *Operation) TriggerSubInstallations(ctx context.Context, inst *lsv1alpha1.Installation) error {
 	for _, instRef := range inst.Status.InstallationReferences {
 		subInst := &lsv1alpha1.Installation{}
 		if err := read_write_layer.GetInstallation(ctx, o.Client(), instRef.Reference.NamespacedName(), subInst); err != nil {
 			return errors.Wrapf(err, "unable to get sub installation %s", instRef.Reference.NamespacedName().String())
 		}
 
-		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(operation))
+		metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000007, subInst); err != nil {
 			return errors.Wrapf(err, "unable to update sub installation %s", instRef.Reference.NamespacedName().String())
 		}

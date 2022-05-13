@@ -4819,6 +4819,13 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionSpec(ref common.ReferenceCall
 							},
 						},
 					},
+					"reconcileID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReconcileID is used to update an execution even if its deploy items have not changed but their reconciliation should be triggered again.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

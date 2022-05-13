@@ -8,6 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -149,6 +153,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	exec.Name = inst.Info.Name
 	exec.Namespace = inst.Info.Namespace
 	exec.Spec.RegistryPullSecrets = inst.Info.Spec.RegistryPullSecrets
+
 	versionedDeployItemTemplateList := lsv1alpha1.DeployItemTemplateList{}
 	if err := lsv1alpha1.Convert_core_DeployItemTemplateList_To_v1alpha1_DeployItemTemplateList(&execTemplates, &versionedDeployItemTemplateList, nil); err != nil {
 		err2 := fmt.Errorf("error converting internal representation of deployitem templates to versioned one: %w", err)
@@ -156,6 +161,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			TemplatingFailedReason, err2.Error()))
 		return err2
 	}
+
 	if _, err := o.Writer().CreateOrUpdateExecution(ctx, read_write_layer.W000022, exec, func() error {
 		exec.Spec.Context = inst.Info.Spec.Context
 		exec.Spec.DeployItems = versionedDeployItemTemplateList
@@ -164,6 +170,10 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
 		} else {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		}
+
+		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+			exec.Spec.ReconcileID = uuid.New().String()
 		}
 
 		if err := controllerutil.SetControllerReference(inst.Info, exec, api.LandscaperScheme); err != nil {
@@ -184,7 +194,18 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 	}
 	cond = lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionTrue,
 		ExecutionDeployedReason, "Deployed execution item")
-	return o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond)
+	if err := o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond); err != nil {
+		return err
+	}
+
+	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst.Info); err != nil {
+			return lserrors.NewWrappedError(err, "Ensure", "DeleteOperationAnnotation", err.Error())
+		}
+	}
+
+	return nil
 }
 
 // GetExecutionForInstallation returns the execution of an installation.

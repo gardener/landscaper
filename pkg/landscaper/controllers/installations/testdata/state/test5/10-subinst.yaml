@@ -1,0 +1,38 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  annotations:
+    landscaper.gardener.cloud/subinstallation-name: subinst
+  labels:
+    landscaper.gardener.cloud/encompassed-by: root
+  name: subinst
+  namespace: {{ .Namespace }}
+  ownerReferences:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Installation
+    name: root
+    uid: abc-def-root
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+
+  blueprint:
+    inline:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
+
+status:
+  configGeneration: ""
+  observedGeneration: 1
+  phase: Failed

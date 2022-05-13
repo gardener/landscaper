@@ -2025,6 +2025,7 @@ func autoConvert_v1alpha1_ExecutionSpec_To_core_ExecutionSpec(in *ExecutionSpec,
 	out.Context = in.Context
 	out.DeployItems = *(*core.DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.RegistryPullSecrets = *(*[]core.ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ReconcileID = in.ReconcileID
 	return nil
 }
 
@@ -2032,6 +2033,7 @@ func autoConvert_core_ExecutionSpec_To_v1alpha1_ExecutionSpec(in *core.Execution
 	out.Context = in.Context
 	out.DeployItems = *(*DeployItemTemplateList)(unsafe.Pointer(&in.DeployItems))
 	out.RegistryPullSecrets = *(*[]ObjectReference)(unsafe.Pointer(&in.RegistryPullSecrets))
+	out.ReconcileID = in.ReconcileID
 	return nil
 }
 

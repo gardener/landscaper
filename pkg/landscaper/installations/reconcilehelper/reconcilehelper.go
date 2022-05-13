@@ -72,17 +72,21 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 
 // UpdateRequired returns true if either the installation or one of its imports is outdated and therefore an update is required.
 func (rh *ReconcileHelper) UpdateRequired() (bool, error) {
-	// check if a reconcile is required due to changed spec or imports
-	updateRequired := !rh.InstUpToDate()
-	if !updateRequired {
-		// installation is up-to-date, need to check the imports
-		impsUpToDate, err := rh.ImportsUpToDate()
-		if err != nil {
-			return false, rh.NewError(err, "ImportsUpToDate", err.Error())
-		}
-		updateRequired = !impsUpToDate
+	if lsv1alpha1helper.HasOperation(rh.Inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) &&
+		rh.Inst.Info.Status.Phase == lsv1alpha1.ComponentPhaseFailed {
+		return true, nil
 	}
-	return updateRequired, nil
+
+	// check if a reconcile is required due to changed spec or imports
+	if !rh.InstUpToDate() {
+		return true, nil
+	}
+
+	impsUpToDate, err := rh.ImportsUpToDate()
+	if err != nil {
+		return false, rh.NewError(err, "ImportsUpToDate", err.Error())
+	}
+	return !impsUpToDate, nil
 }
 
 // UpdateAllowed returns an error if the installation cannot be updated due to dependencies or unfulfilled imports.

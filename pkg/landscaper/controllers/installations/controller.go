@@ -124,17 +124,6 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
 	}
 
-	// remove the reconcile annotation if it exists
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); err != nil {
-			return reconcile.Result{}, err
-		}
-
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	}
-
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		err := c.forceReconcile(ctx, inst)
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
@@ -145,16 +134,19 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.Log().Info("do abort")
 	}
 
-	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) && inst.Status.ObservedGeneration == inst.Generation {
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		err := c.reconcile(ctx, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
+	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) || inst.Status.ObservedGeneration != inst.Generation {
+		err := c.reconcile(ctx, inst)
+		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
+	} else {
 		// check whether the current phase does still match the combined phase of subinstallations and executions
 		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
 			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 		}
 		return reconcile.Result{}, nil
 	}
-
-	err := c.reconcile(ctx, inst)
-	return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 }
 
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
@@ -294,11 +286,11 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 			} else {
 				c.Log().Error(err2, "unable to update status")
 			}
-			// retry on conflict
 			if err == nil {
 				return err2
 			}
 		}
 	}
+
 	return err
 }

@@ -70,7 +70,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 				// the deployitem is: up-to-date, in a final state, not failed => deployItem.spec.phase == succeeded => nothing to do with the deployitem
 				dlogger.V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
 			}
-		} else {
+		} else { // deploy item not up to date or force reconcile
 			allSucceeded = false
 
 			runnable, err := o.checkRunnable(ctx, item, executionItems)

@@ -1,0 +1,26 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Blueprint
+
+annotations:
+  local/name: root3
+  local/version: 1.0.0
+
+deployExecutions:
+- type: Spiff
+  template:
+    deployItems:
+    - name: subexec
+      type: landscaper.gardener.cloud/mock
+      config:
+        apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
+        kind: ProviderConfiguration
+
+subinstallations:
+  - apiVersion: landscaper.gardener.cloud/v1alpha1
+    kind: InstallationTemplate
+    name: subinst
+    blueprint:
+      filesystem:
+        blueprint.yaml: |
+          apiVersion: landscaper.gardener.cloud/v1alpha1
+          kind: Blueprint
