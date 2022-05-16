@@ -61,6 +61,10 @@ type ExecutionSpec struct {
 	// Note that the type information is used to determine the secret key and the type of the secret.
 	// +optional
 	RegistryPullSecrets []ObjectReference `json:"registryPullSecrets,omitempty"`
+
+	// ReconcileID is used to update an execution even if its deploy items have not changed but their
+	// reconciliation should be triggered again.
+	ReconcileID string `json:"reconcileID,omitempty"`
 }
 
 // ExecutionStatus contains the current status of a execution.

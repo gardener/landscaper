@@ -62,9 +62,18 @@ This is the default reconciliation logic.
 
 4. Check if an update is required ❔🚪
 
-    If neither the installation itself nor any of its imports has been modified, there is no need to trigger the nested installations and executions. This is checked by comparing generation values with stored 'observed' generation values, the latter of which are updated when a new generation is observed. For imports which are exported by another installation, the generation is read from the exporting installation's status. For imports which are not owned by an installation, it is usually a hash over their respective spec, although the implementations slightly differ, depending on the type of import.
+    The nested installations and executions need to be triggered in the following cases:
+    - if the installation itself was changed
+    - or any of its imports has been modified,
+    - or if the installation has phase `Failed` and has the reconcile annotation.
+   
+    This is checked by comparing generation values with stored 'observed' generation values, 
+    the latter of which are updated when a new generation is observed. For imports which are exported by another 
+    installation, the generation is read from the exporting installation's status. For imports which are not owned by an 
+    installation, it is usually a hash over their respective spec, although the implementations slightly differ, 
+    depending on the type of import.
  
-   If an update is required, the installation's phase is set to `PendingDependencies` and it is checked whether the installation can be updated now.
+    If an update is required, the installation's phase is set to `PendingDependencies` and it is checked whether the installation can be updated now.
     
     1. Check if updating is possible ❔✔️🚪
 
@@ -82,18 +91,21 @@ This is the default reconciliation logic.
         
         Otherwise, the installation will be stuck in `PendingDependencies` and log a corresponding error message. 🚪
 
-5. Export generation
+6. Export generation
 
     The exports are generated.
 
-6. Trigger depending installations
+7. Trigger depending installations
 
     All sibling installations which depend on this one are triggered by having the reconcile operation annotation added.
 
 
 ### Force Reconciliation
 
-A force reconciliation only happens if the corresponding operation annotation has been added to the installation. Since it is clear in this case that an update is desired, most of the checks of the standard reconciliation are skipped in this flow. Most noticable, it is possible to update an installation despite installations the current one depends on being `Failed` or `Progressing`.
+A force reconciliation only happens if the corresponding operation annotation has been added to the installation. 
+Since it is clear in this case that an update is desired, most of the checks of the standard reconciliation are skipped 
+in this flow. Most noticable, it is possible to update an installation despite installations the current one depends on 
+being `Failed` or `Progressing`.
 
 1. Check if imports are satisfied ❔🚪
 

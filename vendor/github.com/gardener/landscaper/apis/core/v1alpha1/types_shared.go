@@ -207,7 +207,11 @@ type Error struct {
 type Operation string
 
 const (
-	// ReconcileOperation is a annotation for the landscaper to reconcile the resource
+	// ReconcileOperation is an annotation for the landscaper to reconcile resources (installations, subinstallations,
+	// executions, deploy items). If set at an installations/execution it triggers a reconcile for all dependent
+	// resources for which something has changed (spec or imports) or which are in a failed state with a save strategy
+	// (e.g. no predecessor is running).
+	// If set at a deploy item it triggers a reconcile even if nothing has changed or the phase is not failed.
 	ReconcileOperation Operation = "reconcile"
 
 	// ForceReconcileOperation forces the landscaper to not wait for children (executions nor subinstallations) to be completed.

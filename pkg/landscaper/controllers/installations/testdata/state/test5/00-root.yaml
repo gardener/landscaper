@@ -1,0 +1,35 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Installation
+metadata:
+  name: root
+  namespace: {{ .Namespace }}
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
+  finalizers:
+  - finalizer.landscaper.gardener.cloud
+spec:
+
+  componentDescriptor:
+    ref:
+      repositoryContext:
+        type: local
+        baseUrl: "../testdata/registry"
+      version: 1.0.0
+      componentName: example.com/root
+
+  blueprint:
+    ref:
+      resourceName: root3
+
+status:
+  configGeneration: ""
+  executionRef:
+    name: root
+    namespace: {{ .Namespace }}
+  installationRefs:
+    - name: subinst
+      ref:
+        name: subinst
+        namespace: {{ .Namespace }}
+  observedGeneration: 1
+  phase: Failed

@@ -29,26 +29,12 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	)
 	log.Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
-	execState, err := executions.CombinedPhase(ctx, c.Client(), inst)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currentOperation, "CheckExecutionStatus", err.Error(), lsv1alpha1.ErrorInternalProblem)
+	combinedState, lsErr := c.combinedPhaseOfSubobjects(ctx, inst, currentOperation)
+	if lsErr != nil {
+		return lsErr
 	}
 
-	subState, err := subinstallations.CombinedPhase(ctx, c.Client(), inst)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currentOperation, "CheckSubinstallationStatus", err.Error())
-	}
-
-	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
-
-	// we have to wait until all children (subinstallations and execution) are finished
-	if combinedState == "" {
-		// If combinedState is empty, this means there are neither subinstallations nor executions
-		// and an 'empty' installation is Succeeded by default
-		combinedState = lsv1alpha1.ComponentPhaseSucceeded
-	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
+	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
@@ -140,6 +126,32 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	return nil
 }
 
+func (c *Controller) combinedPhaseOfSubobjects(ctx context.Context, inst *lsv1alpha1.Installation,
+	currentOperation string) (lsv1alpha1.ComponentInstallationPhase, lserrors.LsError) {
+	execState, err := executions.CombinedPhase(ctx, c.Client(), inst)
+	if err != nil {
+		return "", lserrors.NewWrappedError(err,
+			currentOperation, "CheckExecutionStatus", err.Error(), lsv1alpha1.ErrorInternalProblem)
+	}
+
+	subState, err := subinstallations.CombinedPhase(ctx, c.Client(), inst)
+	if err != nil {
+		return "", lserrors.NewWrappedError(err,
+			currentOperation, "CheckSubinstallationStatus", err.Error())
+	}
+
+	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subState, lsv1alpha1.ComponentInstallationPhase(execState))
+
+	// we have to wait until all children (subinstallations and execution) are finished
+	if combinedState == "" {
+		// If combinedState is empty, this means there are neither subinstallations nor executions
+		// and an 'empty' installation is Succeeded by default
+		combinedState = lsv1alpha1.ComponentPhaseSucceeded
+	}
+
+	return combinedState, nil
+}
+
 func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	currentOperation := "ForceReconcile"
 	c.Log().Info("Force Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
@@ -201,7 +213,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 	}
 
 	// todo: check if this can be moved to ensure
-	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info, lsv1alpha1.ReconcileOperation); err != nil {
+	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info); err != nil {
 		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
 		return lserrors.NewWrappedError(err, currOp, "ReconcileSubinstallations", err.Error())
 	}

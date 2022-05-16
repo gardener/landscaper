@@ -901,6 +901,18 @@ For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-conta
 Note that the type information is used to determine the secret key and the type of the secret.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>reconcileID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ReconcileID is used to update an execution even if its deploy items have not changed but their
+reconciliation should be triggered again.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -3221,6 +3233,18 @@ DeployItemTemplateList
 pull blueprints, component descriptors and jsonschemas from the respective registry.
 For more info see: <a href="https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/">https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/</a>
 Note that the type information is used to determine the secret key and the type of the secret.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reconcileID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ReconcileID is used to update an execution even if its deploy items have not changed but their
+reconciliation should be triggered again.</p>
 </td>
 </tr>
 </tbody>

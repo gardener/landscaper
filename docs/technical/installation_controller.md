@@ -48,8 +48,11 @@ sub-objects with updates of their spec.
 
 ##### Update Required
 
-An update is required if the status of the installation is not up-to-date (`generation != observedGeneration`) or if
-one of the imports has been modified, see [Standard Reconciliation](./reconciliation_flow.md#standard-reconciliation).
+An update is required in the following cases:
+
+- if the status of the installation is not up-to-date (`generation != observedGeneration`) 
+- or if one of the imports has been modified, see [Standard Reconciliation](./reconciliation_flow.md#standard-reconciliation),
+- or if the installation is failed and has the reconcile annotation. 
 
 
 ## Force Reconcile

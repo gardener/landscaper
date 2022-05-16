@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -122,6 +124,31 @@ var _ = Describe("Reconcile", func() {
 			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 		})
 
-	})
+		It("should trigger reconcile of execution", func() {
+			// A reconciliation of a failed installation with reconcile annotation should trigger a
+			// reconciliation of its failed execution by changing the ReconcileID in the execution spec.
+			ctx := context.Background()
 
+			var err error
+			state, err = testenv.InitResources(ctx, "./testdata/state/test5")
+			testutils.ExpectNoError(err)
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			inst := state.Installations[state.Namespace+"/root"]
+			subinst := state.Installations[state.Namespace+"/subinst"]
+			exec := state.Executions[state.Namespace+"/root"]
+			oldReconcileID := exec.Spec.ReconcileID
+
+			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+			Expect(inst.Status.Phase).To(Equal(lsv1alpha1.ComponentPhaseProgressing))
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst))
+			lsv1alpha1helper.HasOperation(subinst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
+			Expect(exec.Spec.ReconcileID).NotTo(Equal(oldReconcileID))
+		})
+	})
 })
