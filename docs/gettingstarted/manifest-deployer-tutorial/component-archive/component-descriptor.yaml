@@ -1,0 +1,13 @@
+component:
+  componentReferences: []
+  name: test.net/test
+  provider: internal
+  repositoryContexts:
+  - baseUrl: <OCIURL> 
+    componentNameMapping: urlPath
+    type: ociRegistry
+  resources: []
+  sources: []
+  version: v0.1.0
+meta:
+  schemaVersion: v2

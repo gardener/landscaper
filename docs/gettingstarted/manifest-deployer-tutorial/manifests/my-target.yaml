@@ -1,0 +1,13 @@
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: Target
+metadata:
+  creationTimestamp: null
+  name: my-cluster
+  namespace: example
+spec:
+  config:
+    kubeconfig: |+
+     <KUBECONFIG> 
+
+  type: landscaper.gardener.cloud/kubernetes-cluster
+

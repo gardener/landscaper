@@ -1,0 +1,20 @@
+---
+type: ociImage
+name: hello
+version: v0.1.0
+relation: external
+access:
+  type: ociRegistry
+  imageReference: >-
+    <IMAGEURL>
+...
+---
+type: blueprint
+name: blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint
+  mediaType: application/vnd.gardener.landscaper.blueprint.v1+tar+gzip
+  compress: true
+...
