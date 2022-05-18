@@ -113,9 +113,6 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
 	}
 
-	// update import status
-	inst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
-
 	// as all exports are validated, lets trigger dependant components
 	// todo: check if this is a must, maybe track what we already successfully triggered
 	// maybe we also need to increase the generation manually to signal a new config version
@@ -123,6 +120,10 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
 		return instOp.NewError(err, "TriggerDependents", err.Error())
 	}
+
+	// update import status
+	inst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+
 	return nil
 }
 
