@@ -140,13 +140,19 @@ func ParseOCIReference(ref string) [2]string {
 	if err != nil {
 		panic(err)
 	}
+
 	splitRef := strings.Split(ref, ":")
 	if len(splitRef) < 2 {
 		panic("invalid reference")
 	}
 
 	// todo: remove workaround with new component-cli version
-	repository := strings.TrimPrefix(refspec.Name(), "index.docker.io/library/")
+	repository := refspec.Name()
+	if strings.HasPrefix(repository, "index.docker.io/library/") {
+		repository = strings.TrimPrefix(refspec.Name(), "index.docker.io/library/")
+	} else if strings.HasPrefix(repository, "index.docker.io/") {
+		repository = strings.TrimPrefix(refspec.Name(), "index.docker.io/")
+	}
 
 	if refspec.Tag != nil {
 		return [2]string{
