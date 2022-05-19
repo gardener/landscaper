@@ -87,6 +87,10 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		return c.Update(ctx, instOp, imps)
 	}
 
+	if lsErr := c.removeReconcileAnnotation(ctx, instOp.Inst); lsErr != nil {
+		return lsErr
+	}
+
 	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
 		inst.Status.Phase = combinedState
 		return nil
@@ -224,8 +228,22 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
+	if lsErr := c.removeReconcileAnnotation(ctx, inst); lsErr != nil {
+		return lsErr
+	}
+
 	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
 	inst.Info.Status.ObservedGeneration = inst.Info.Generation
 	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+	return nil
+}
+
+func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *installations.Installation) lserrors.LsError {
+	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst.Info); err != nil {
+			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
+		}
+	}
 	return nil
 }

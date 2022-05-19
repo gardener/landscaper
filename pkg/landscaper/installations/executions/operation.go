@@ -10,8 +10,6 @@ import (
 
 	"github.com/google/uuid"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -196,13 +194,6 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		ExecutionDeployedReason, "Deployed execution item")
 	if err := o.UpdateInstallationStatus(ctx, inst.Info, inst.Info.Status.Phase, cond); err != nil {
 		return err
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst.Info); err != nil {
-			return lserrors.NewWrappedError(err, "Ensure", "DeleteOperationAnnotation", err.Error())
-		}
 	}
 
 	return nil
