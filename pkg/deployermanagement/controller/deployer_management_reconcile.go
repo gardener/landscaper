@@ -32,7 +32,8 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	validation "github.com/gardener/landscaper/apis/core/validation"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/apis/core/validation"
 )
 
 // DeployerClusterRoleName is the name of the deployer cluster role.
@@ -88,6 +89,7 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 
 	_, err = dm.Writer().CreateOrUpdateCoreInstallation(ctx, read_write_layer.W000002, inst, func() error {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
+		lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 		inst.Spec.ComponentDescriptor = registration.Spec.InstallationTemplate.ComponentDescriptor
 		inst.Spec.Blueprint = registration.Spec.InstallationTemplate.Blueprint
 		inst.Spec.Imports = registration.Spec.InstallationTemplate.Imports
