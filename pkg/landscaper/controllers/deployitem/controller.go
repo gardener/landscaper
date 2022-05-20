@@ -159,7 +159,10 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 
 func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectPickupTimeouts")
-	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && di.Status.LastError != nil && di.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason {
+	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+		di.Status.ObservedGeneration == di.Generation &&
+		di.Status.LastError != nil &&
+		di.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason {
 		// don't do anything if phase is already failed due to a recent pickup timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
 		logger.V(7).Info("deploy item already failed due to pickup timeout, nothing to do")
@@ -181,6 +184,7 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 		// => pickup timeout
 		logger.V(5).Info("pickup timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		di.Status.ObservedGeneration = di.Generation
 		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
 			lsv1alpha1.PickupTimeoutOperation,
 			lsv1alpha1.PickupTimeoutReason,
@@ -199,6 +203,7 @@ func (con *controller) detectPickupTimeouts(log logr.Logger, di *lsv1alpha1.Depl
 func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
 	logger := log.WithValues("operation", "DetectAbortingTimeouts")
 	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+		di.Status.ObservedGeneration == di.Generation &&
 		di.Status.LastError != nil &&
 		di.Status.LastError.Reason == lsv1alpha1.AbortingTimeoutReason {
 		// don't do anything if phase is already failed due to a recent aborting timeout
@@ -226,6 +231,7 @@ func (con *controller) detectAbortingTimeouts(log logr.Logger, di *lsv1alpha1.De
 		logger.V(5).Info("aborting timeout occurred")
 		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		di.Status.ObservedGeneration = di.Generation
 		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
 			lsv1alpha1.AbortingTimeoutOperation,
 			lsv1alpha1.AbortingTimeoutReason,

@@ -248,21 +248,17 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 	var (
 		failed  bool
 		aborted bool
-		init    bool
 		empty   = true
 	)
 	for _, phase := range phases {
 		switch phase {
-		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting:
+		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting, v1alpha1.ComponentPhaseInit:
 			return v1alpha1.ComponentPhaseProgressing
 		case v1alpha1.ComponentPhaseFailed:
 			failed = true
 			empty = false
 		case v1alpha1.ComponentPhaseAborted:
 			aborted = true
-			empty = false
-		case v1alpha1.ComponentPhaseInit:
-			init = true
 			empty = false
 		case v1alpha1.ComponentPhaseSucceeded:
 			empty = false
@@ -275,10 +271,6 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 
 	if failed {
 		return v1alpha1.ComponentPhaseFailed
-	}
-
-	if init {
-		return v1alpha1.ComponentPhaseInit
 	}
 
 	if empty {

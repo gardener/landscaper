@@ -26,6 +26,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/execution"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -173,7 +174,12 @@ func handleError(ctx context.Context, err lserrors.LsError, log logr.Logger, c c
 	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution, isDelete bool) error {
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
-		return nil
+		exec2 := &lsv1alpha1.Execution{}
+		if err2 := read_write_layer.GetExecution(ctx, c, kutil.ObjectKey(exec.Name, exec.Namespace), exec2); err2 != nil {
+			if apierrors.IsNotFound(err2) {
+				return nil
+			}
+		}
 	}
 
 	// There are two kind of errors: err != nil and exec.Status.LastError != nil

@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +25,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
-	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -37,83 +38,86 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 		log              = logr.FromContextOrDiscard(ctx)
 	)
 
+	inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
+	inst.Status.ObservedGeneration = inst.GetGeneration()
+
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		if err := DeleteExecutionAndSubinstallations(ctx, c.Writer(), c.Client(), inst); err != nil {
+		if err := c.DeleteExecutionAndSubinstallations(ctx, inst); err != nil {
 			return err
 		}
 
-		log.V(7).Info("remove force reconcile annotation")
-		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000003, inst); err != nil {
-			return lserrors.NewWrappedError(err,
-				currentOperation, "RemoveOperationAnnotation", "Unable to remove operation annotation")
+		if lsErr := c.removeForceReconcileAnnotation(ctx, inst); lsErr != nil {
+			return lsErr
 		}
 
 		return nil
 	}
 
+	if lsErr := c.deleteAllowed(ctx, inst); lsErr != nil {
+		return lsErr
+	}
+
+	exec, subinst, err := readSubObjects(ctx, c.Client(), inst)
+	if err != nil {
+		return lserrors.NewWrappedError(err, currentOperation, "ReadSubObjects", err.Error())
+	}
+
+	// We have to wait until all subobjects (execution & subinstallations) are completed which do not yet have a deletion
+	// timestamp. We need not wait for objects with deletion timestamp. Actually, we should not wait for them in order
+	// to avoid deadlocks like this: if subinstallation A with deletion timestamp has a dependency to subinstallation B
+	// without deletion timestamp, then A does not complete before B is gone, and B would not get a deletion timestamp
+	// before A is completed. This occurs if the process of adding the deletion timestamps was interrupted after A and
+	// before B.
+	if !allCompletedOrWithDeletionTimestamp(exec, subinst) {
+		log.V(2).Info("Waiting for execution and subinstallations to be completed")
+		return nil
+	}
+
+	err = c.DeleteExecutionAndSubinstallations(ctx, inst)
+	return lserrors.NewErrorOrNil(err, currentOperation, "DeleteExecutionAndSubinstallations")
+}
+
+func (c *Controller) deleteAllowed(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	op := "DeleteInstallationAllowed"
+
 	_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err,
-			currentOperation, "CalculateInstallationContext", err.Error(), lsv1alpha1.ErrorInternalProblem)
+			op, "CalculateInstallationContext", err.Error(), lsv1alpha1.ErrorInternalProblem)
 	}
 
 	// check if suitable for deletion
 	// todo: replacements and internal deletions
 	if checkIfSiblingImports(inst, installations.CreateInternalInstallationBases(siblings...)) {
 		return lserrors.NewWrappedError(SiblingImportError,
-			currentOperation, "SiblingImport", SiblingImportError.Error())
+			op, "SiblingImport", SiblingImportError.Error())
 	}
 
-	execPhase, err := executions.CombinedPhase(ctx, c.Client(), inst)
-	if err != nil {
-		return lserrors.NewWrappedError(err,
-			currentOperation, "CheckExecutionStatus", err.Error(), lsv1alpha1.ErrorInternalProblem)
-	}
-
-	subPhase, err := subinstallations.CombinedPhase(ctx, c.Client(), inst)
-	if err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "CheckSubinstallationStatus", err.Error())
-	}
-
-	// if no installations nor an execution is deployed both phases are empty. Then we can simply skip the deletion.
-	if (len(execPhase) + len(subPhase)) == 0 {
-		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
-		err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000004, inst)
-		return lserrors.NewErrorOrNil(err, currentOperation, "RemoveFinalizer")
-	}
-
-	combinedState := lsv1alpha1helper.CombinedInstallationPhase(subPhase, lsv1alpha1.ComponentInstallationPhase(execPhase))
-
-	// we have to wait until all children (subinstallations and execution) are finished
-	if combinedState != "" && !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		log.V(2).Info("Waiting for all deploy items and subinstallations to be completed")
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
-		return nil
-	}
-
-	err = DeleteExecutionAndSubinstallations(ctx, c.Writer(), c.Client(), inst)
-	return lserrors.NewErrorOrNil(err, currentOperation, "DeleteExecutionAndSubinstallations")
+	return nil
 }
 
 // DeleteExecutionAndSubinstallations deletes the execution and all subinstallations of the installation.
 // The function does not wait for the successful deletion of all resources.
 // It returns nil and should be called on every reconcile until it removes the finalizer form the current installation.
-func DeleteExecutionAndSubinstallations(ctx context.Context, writer *read_write_layer.Writer, c client.Client, inst *lsv1alpha1.Installation) lserrors.LsError {
-	op := "Deletion"
-	inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
+func (c *Controller) DeleteExecutionAndSubinstallations(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	op := "DeleteExecutionAndSubinstallations"
 
-	execDeleted, err := deleteExecution(ctx, writer, c, inst)
+	writer := c.Writer()
+
+	execDeleted, err := deleteExecution(ctx, writer, c.Client(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "DeleteExecution", err.Error())
 	}
 
-	subInstsDeleted, err := deleteSubInstallations(ctx, writer, c, inst)
+	subInstsDeleted, err := deleteSubInstallations(ctx, writer, c.Client(), inst)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "DeleteSubinstallations", err.Error())
 	}
 
 	if !execDeleted || !subInstsDeleted {
+		if lsErr := c.removeReconcileAnnotation(ctx, inst); err != nil {
+			return lsErr
+		}
 		return nil
 	}
 
@@ -145,8 +149,14 @@ func deleteExecution(ctx context.Context, kubeWriter *read_write_layer.Writer, k
 		}
 	}
 
-	// add force reconcile annotation if present
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+	// add reconcile or force reconcile annotation if present
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
+		exec.Spec.ReconcileID = uuid.New().String()
+		if err := kubeWriter.UpdateExecution(ctx, read_write_layer.W000078, exec); err != nil {
+			return false, fmt.Errorf("unable to add reconcile label")
+		}
+	} else if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
 		if err := kubeWriter.UpdateExecution(ctx, read_write_layer.W000023, exec); err != nil {
 			return false, fmt.Errorf("unable to add force reconcile label")
@@ -179,6 +189,11 @@ func deleteSubInstallations(ctx context.Context, kubeWriter *read_write_layer.Wr
 			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
 			if err := kubeWriter.UpdateInstallation(ctx, read_write_layer.W000005, subInst); err != nil {
 				return false, fmt.Errorf("unable to add force reconcile annotation to subinstallation %s: %w", subInst.Name, err)
+			}
+		} else if lsv1alpha1helper.HasOperation(parentInst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+			lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+			if err := kubeWriter.UpdateInstallation(ctx, read_write_layer.W000079, subInst); err != nil {
+				return false, fmt.Errorf("unable to add reconcile annotation to subinstallation %s: %w", subInst.Name, err)
 			}
 		}
 	}
@@ -223,4 +238,41 @@ func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installati
 		}
 	}
 	return false
+}
+
+func readSubObjects(ctx context.Context, cl client.Client, inst *lsv1alpha1.Installation) (
+	*lsv1alpha1.Execution, []*lsv1alpha1.Installation, error) {
+
+	exec, err := executions.GetExecutionForInstallation(ctx, cl, inst)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	subinsts, err := installations.ListSubinstallations(ctx, cl, inst)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return exec, subinsts, nil
+}
+
+func allCompletedOrWithDeletionTimestamp(exec *lsv1alpha1.Execution, subinsts []*lsv1alpha1.Installation) bool {
+	filterExec := func(exec *lsv1alpha1.Execution) bool {
+		return exec == nil ||
+			!exec.DeletionTimestamp.IsZero() ||
+			(exec.Generation == exec.Status.ObservedGeneration && lsv1alpha1helper.IsCompletedInstallationPhase(lsv1alpha1.ComponentInstallationPhase(exec.Status.Phase)))
+	}
+
+	filterInst := func(inst *lsv1alpha1.Installation) bool {
+		return inst == nil ||
+			!inst.DeletionTimestamp.IsZero() ||
+			(inst.Generation == inst.Status.ObservedGeneration && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase))
+	}
+
+	result := filterExec(exec)
+	for _, subinst := range subinsts {
+		result = result && filterInst(subinst)
+	}
+
+	return result
 }

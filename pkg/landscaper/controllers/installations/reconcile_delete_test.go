@@ -89,7 +89,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)).To(Succeed())
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instA := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "a", Namespace: state.Namespace}, instA)).ToNot(HaveOccurred())
@@ -114,7 +115,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			err = instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -132,7 +134,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)).To(Succeed())
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instC := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
