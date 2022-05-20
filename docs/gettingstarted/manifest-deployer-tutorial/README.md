@@ -149,9 +149,9 @@ Then, push the OCI image into the OCI registry running inside the cluster.
 ``` bash
 docker login -p $OCI_PASSWD -u $OCI_USER $OCI_REGISTRY
 
-docker tag hello:latest $OCI_REGISTRY/hello
+docker tag hello:v0.1.0 $OCI_REGISTRY/hello:v0.1.0
 
-docker push $OCI_REGISTRY/hello
+docker push $OCI_REGISTRY/hello:v0.1.0
 
 curl --location --request GET https://$OCI_REGISTRY/v2/_catalog -u "$OCI_USER:$OCI_PASSWD"
 ```
@@ -226,7 +226,7 @@ Let us go through the steps, to prepare our Landscaper manifest deployment:
         type: ociRegistry
       resources:
       - access:
-          imageReference: <OCIURL>/hello
+          imageReference: <OCIURL>/hello:v0.1.0
           type: ociRegistry
         name: hello
         relation: external
