@@ -89,14 +89,14 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, log logr.Logger, 
 	}
 
 	for _, deployerName := range o.EnabledDeployers {
-		if err := o.deployInternalDeployer(ctx, log, deployerName, kubeClient, apply); err != nil {
+		if err := o.deployDeployerRegistrations(ctx, log, deployerName, kubeClient, apply); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *Options) deployInternalDeployer(ctx context.Context, log logr.Logger, deployerName string, kubeClient client.Client, apply DeployerApplyFunc) error {
+func (o *Options) deployDeployerRegistrations(ctx context.Context, log logr.Logger, deployerName string, kubeClient client.Client, apply DeployerApplyFunc) error {
 	log.Info("Enable Deployer", "name", deployerName)
 
 	deployerConfig, _ := o.GetDeployerConfigForDeployer(deployerName)
