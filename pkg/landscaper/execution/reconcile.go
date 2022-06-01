@@ -142,7 +142,6 @@ func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfo
 
 func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
 	dlogger logr.Logger) {
-	exec.Status.ObservedGeneration = exec.Generation
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -168,7 +167,6 @@ func setPhaseProgressingOfRunningDeployItem(exec *lsv1alpha1.Execution, itemInfo
 
 func setPhaseFailedBecauseFailedDeployItem(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
 	dlogger logr.Logger) {
-	exec.Status.ObservedGeneration = exec.Generation
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,

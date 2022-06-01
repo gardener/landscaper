@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -87,7 +89,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		return c.Update(ctx, instOp, imps)
 	}
 
-	if lsErr := c.removeReconcileAnnotation(ctx, instOp.Inst); lsErr != nil {
+	if lsErr := c.removeReconcileAnnotation(ctx, instOp.Inst.Info); lsErr != nil {
 		return lsErr
 	}
 
@@ -186,9 +188,8 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 		return err
 	}
 
-	delete(instOp.Inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-	if err := instOp.Writer().UpdateInstallation(ctx, read_write_layer.W000012, instOp.Inst.Info); err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "RemoveOperationAnnotation", err.Error())
+	if lsErr := c.removeForceReconcileAnnotation(ctx, instOp.Inst.Info); lsErr != nil {
+		return lsErr
 	}
 
 	instOp.Inst.Info.Status.ObservedGeneration = instOp.Inst.Info.Generation
@@ -228,7 +229,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
-	if lsErr := c.removeReconcileAnnotation(ctx, inst); lsErr != nil {
+	if lsErr := c.removeReconcileAnnotation(ctx, inst.Info); lsErr != nil {
 		return lsErr
 	}
 
@@ -238,11 +239,23 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 	return nil
 }
 
-func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *installations.Installation) lserrors.LsError {
-	if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		delete(inst.Info.Annotations, lsv1alpha1.OperationAnnotation)
-		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst.Info); err != nil {
+func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		logr.FromContextOrDiscard(ctx).V(7).Info("remove reconcile annotation")
+		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
+		}
+	}
+	return nil
+}
+
+func (c *Controller) removeForceReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
+		logr.FromContextOrDiscard(ctx).V(7).Info("remove force reconcile annotation")
+		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000003, inst); err != nil {
+			return lserrors.NewWrappedError(err, "RemoveForceReconcileAnnotation", "UpdateInstallation", err.Error())
 		}
 	}
 	return nil

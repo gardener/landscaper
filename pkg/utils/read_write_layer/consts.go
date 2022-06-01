@@ -82,6 +82,9 @@ const (
 	W000076 WriteID = "w000076"
 	W000077 WriteID = "w000077"
 	W000078 WriteID = "w000078"
+	W000079 WriteID = "w000079"
+	W000080 WriteID = "w000080"
+	W000081 WriteID = "w000081"
 )
 
 const (

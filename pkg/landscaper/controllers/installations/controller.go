@@ -33,6 +33,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -266,7 +267,12 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
-		return nil
+		inst2 := &lsv1alpha1.Installation{}
+		if err2 := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), inst2); err2 != nil {
+			if apierrors.IsNotFound(err2) {
+				return nil
+			}
+		}
 	}
 
 	inst.Status.Phase = lserrors.GetPhaseForLastError(
