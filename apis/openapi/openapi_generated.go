@@ -50,6 +50,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config.LandscaperAgentConfiguration":                              schema_gardener_landscaper_apis_config_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LandscaperConfiguration":                                   schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.LocalRegistryConfiguration":                                schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config.LsDeployments":                                             schema_gardener_landscaper_apis_config_LsDeployments(ref),
 		"github.com/gardener/landscaper/apis/config.MetricsConfiguration":                                      schema_gardener_landscaper_apis_config_MetricsConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCICacheConfiguration":                                     schema_gardener_landscaper_apis_config_OCICacheConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config.OCIConfiguration":                                          schema_gardener_landscaper_apis_config_OCIConfiguration(ref),
@@ -72,6 +73,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperAgentConfiguration":                     schema_landscaper_apis_config_v1alpha1_LandscaperAgentConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LandscaperConfiguration":                          schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.LocalRegistryConfiguration":                       schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref),
+		"github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments":                                    schema_landscaper_apis_config_v1alpha1_LsDeployments(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration":                             schema_landscaper_apis_config_v1alpha1_MetricsConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.OCICacheConfiguration":                            schema_landscaper_apis_config_v1alpha1_OCICacheConfiguration(ref),
 		"github.com/gardener/landscaper/apis/config/v1alpha1.OCIConfiguration":                                 schema_landscaper_apis_config_v1alpha1_OCIConfiguration(ref),
@@ -136,6 +138,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/gardener/landscaper/apis/core/v1alpha1.InstallationTemplateBlueprintDefinition":            schema_landscaper_apis_core_v1alpha1_InstallationTemplateBlueprintDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.JSONSchemaDefinition":                               schema_landscaper_apis_core_v1alpha1_JSONSchemaDefinition(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.KubernetesClusterTargetConfig":                      schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheck":                                      schema_landscaper_apis_core_v1alpha1_LsHealthCheck(ref),
+		"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheckList":                                  schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.NamedObjectReference":                               schema_landscaper_apis_core_v1alpha1_NamedObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference":                                    schema_landscaper_apis_core_v1alpha1_ObjectReference(ref),
 		"github.com/gardener/landscaper/apis/core/v1alpha1.RemoteBlueprintReference":                           schema_landscaper_apis_core_v1alpha1_RemoteBlueprintReference(ref),
@@ -1739,12 +1743,18 @@ func schema_gardener_landscaper_apis_config_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config.DeployItemTimeouts"),
 						},
 					},
+					"LsDeployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsDeployments contains the names of the landscaper deployments",
+							Ref:         ref("github.com/gardener/landscaper/apis/config.LsDeployments"),
+						},
+					},
 				},
 				Required: []string{"TypeMeta", "Controllers", "Registry", "BlueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config.BlueprintStore", "github.com/gardener/landscaper/apis/config.Controllers", "github.com/gardener/landscaper/apis/config.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config.LsDeployments", "github.com/gardener/landscaper/apis/config.MetricsConfiguration", "github.com/gardener/landscaper/apis/config.RegistryConfiguration", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
 	}
 }
 
@@ -1765,6 +1775,34 @@ func schema_gardener_landscaper_apis_config_LocalRegistryConfiguration(ref commo
 					},
 				},
 				Required: []string{"rootPath"},
+			},
+		},
+	}
+}
+
+func schema_gardener_landscaper_apis_config_LsDeployments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LsDeployments contains the names of the landscaper deployments.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"LsController": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"WebHook": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"LsController", "WebHook"},
 			},
 		},
 	}
@@ -2585,12 +2623,18 @@ func schema_landscaper_apis_config_v1alpha1_LandscaperConfiguration(ref common.R
 							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts"),
 						},
 					},
+					"lsDeployments": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LsDeployments contains the names of the landscaper deployments",
+							Ref:         ref("github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments"),
+						},
+					},
 				},
 				Required: []string{"controllers", "registry", "blueprintStore"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
+			"github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject", "github.com/gardener/landscaper/apis/config/v1alpha1.BlueprintStore", "github.com/gardener/landscaper/apis/config/v1alpha1.Controllers", "github.com/gardener/landscaper/apis/config/v1alpha1.CrdManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployItemTimeouts", "github.com/gardener/landscaper/apis/config/v1alpha1.DeployerManagementConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.LsDeployments", "github.com/gardener/landscaper/apis/config/v1alpha1.MetricsConfiguration", "github.com/gardener/landscaper/apis/config/v1alpha1.RegistryConfiguration"},
 	}
 }
 
@@ -2611,6 +2655,34 @@ func schema_landscaper_apis_config_v1alpha1_LocalRegistryConfiguration(ref commo
 					},
 				},
 				Required: []string{"rootPath"},
+			},
+		},
+	}
+}
+
+func schema_landscaper_apis_config_v1alpha1_LsDeployments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LsDeployments contains the names of the landscaper deployments.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"lsController": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"webHook": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"lsController", "webHook"},
 			},
 		},
 	}
@@ -5737,6 +5809,114 @@ func schema_landscaper_apis_core_v1alpha1_KubernetesClusterTargetConfig(ref comm
 		},
 		Dependencies: []string{
 			"github.com/gardener/landscaper/apis/core/v1alpha1.ValueRef"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_LsHealthCheck(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LsHealthCheck is a resource containing information about problems with the landscaper installation",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status defines the overall status of the landscaper and its standard deployers.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lastUpdateTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastUpdateTime contains last time the check was updated.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description contains description of the problem(s)",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"status", "lastUpdateTime", "description"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+	}
+}
+
+func schema_landscaper_apis_core_v1alpha1_LsHealthCheckList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LsHealthCheckList contains a list of LsHealthChecks",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheck"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/gardener/landscaper/apis/core/v1alpha1.LsHealthCheck", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 

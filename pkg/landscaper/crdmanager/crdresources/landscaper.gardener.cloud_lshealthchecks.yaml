@@ -1,0 +1,52 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: lshealthchecks.landscaper.gardener.cloud
+spec:
+  group: landscaper.gardener.cloud
+  names:
+    kind: LsHealthCheck
+    plural: lshealthchecks
+    shortNames:
+    - lshc
+    singular: lshealthcheck
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status
+      name: status
+      type: string
+    - jsonPath: .lastUpdateTime
+      name: lastUpdateTime
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: LsHealthCheck is a resource containing information about problems
+          with the landscaper installation
+        properties:
+          description:
+            description: Description contains description of the problem(s)
+            type: string
+          lastUpdateTime:
+            description: LastUpdateTime contains last time the check was updated.
+            format: date-time
+            type: string
+          status:
+            description: Status defines the overall status of the landscaper and its
+              standard deployers.
+            type: string
+        required:
+        - status
+        - lastUpdateTime
+        - description
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
