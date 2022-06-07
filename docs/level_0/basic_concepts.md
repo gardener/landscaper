@@ -40,7 +40,7 @@ Component Descriptors are a complete description of all resources belonging to a
 different tasks like security scanning or transport.
 
 Usually Component Descriptors and Blueprints are stored in an OCI registry. More details about Component 
-Descriptors and Component Descriptor Artifacts can be found [here](https://github.com/gardener/component-spec).
+Descriptors and Component Descriptor Artifacts can be found [here](https://github.com/gardener/component-spec/blob/master/doc/proposal/00-overview.md).
 
 ## Installation
 
