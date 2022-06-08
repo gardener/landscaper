@@ -30,6 +30,8 @@ Resource Types:
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>
 </li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>
+</li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Target">Target</a>
 </li></ul>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint
@@ -1246,6 +1248,89 @@ map[string]github.com/gardener/landscaper/apis/core/v1alpha1.AnyJSON
 It is expected to contain a key for every blueprint-defined data export.
 Missing keys will be defaulted to their respective data export.
 Example: namespace: (( blueprint.exports.namespace ))</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck
+</h3>
+<p>
+<p>LsHealthCheck is a resource containing information about problems with the landscaper installation</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>LsHealthCheck</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheckStatus">
+LsHealthCheckStatus
+</a>
+</em>
+</td>
+<td>
+<p>Status defines the overall status of the landscaper and its standard deployers.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastUpdateTime contains last time the check was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>description</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Description contains description of the problem(s)</p>
 </td>
 </tr>
 </tbody>
@@ -4257,6 +4342,14 @@ ValueRef
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LsHealthCheckStatus">LsHealthCheckStatus
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference
 </h3>
 <p>

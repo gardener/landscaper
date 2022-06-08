@@ -30,6 +30,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
+	"github.com/gardener/landscaper/pkg/landscaper/controllers/healthcheck"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	"github.com/gardener/landscaper/pkg/agent"
@@ -191,6 +192,11 @@ func (o *Options) run(ctx context.Context) error {
 		}
 		if err := o.DeployInternalDeployers(ctx, lsMgr); err != nil {
 			return err
+		}
+
+		if err := healthcheck.AddControllersToManager(ctx, ctrlLogger, hostMgr,
+			&o.Config.DeployerManagement.Agent.AgentConfiguration, o.Config.LsDeployments, o.Deployer.EnabledDeployers); err != nil {
+			return fmt.Errorf("unable to register health check controller: %w", err)
 		}
 	}
 

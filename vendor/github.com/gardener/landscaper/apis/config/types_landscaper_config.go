@@ -38,6 +38,15 @@ type LandscaperConfiguration struct {
 	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
 	// +optional
 	DeployItemTimeouts *DeployItemTimeouts
+	// LsDeployments contains the names of the landscaper deployments
+	// +optional
+	LsDeployments *LsDeployments
+}
+
+// LsDeployments contains the names of the landscaper deployments.
+type LsDeployments struct {
+	LsController string
+	WebHook      string
 }
 
 // CommonControllerConfig describes common controller configuration that can be included in
