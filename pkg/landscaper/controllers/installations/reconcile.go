@@ -61,6 +61,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 
 	rh, err := reconcilehelper.NewReconcileHelper(ctx, instOp)
 	if err != nil {
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lserrors.NewWrappedError(err, currentOperation, "NewReconcileHelper", err.Error())
 	}
 
