@@ -7,7 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/cloudfoundry-incubator/candiedyaml v0.0.0-20170901234223-a41693b7b7af // indirect
-	github.com/containerd/containerd v1.5.10
+	github.com/containerd/containerd v1.5.13
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/docker/cli v20.10.7+incompatible
 	github.com/gardener/component-cli v0.32.0
@@ -38,9 +38,7 @@ require (
 	golang.org/x/net v0.0.0-20211005215030-d2e5035098b3 // indirect
 	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.3 // indirect
 	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e // indirect
 	google.golang.org/grpc v1.41.0 // indirect
 	helm.sh/helm/v3 v3.7.0
