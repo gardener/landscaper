@@ -31,15 +31,20 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	)
 	log.Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
+	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
+	}
+
 	combinedState, lsErr := c.combinedPhaseOfSubobjects(ctx, inst, currentOperation)
 	if lsErr != nil {
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lsErr
 	}
 
 	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
+		// If the subobjects are not completed, ensure that the installation phase is Progressing, so that the
+		// subobjects continue to work. (Normally, the installation phase should already be Progressing in this case.)
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
 	}
 
@@ -54,14 +59,12 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 
 	instOp, lsErr := c.initPrerequisites(ctx, inst)
 	if lsErr != nil {
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lsErr
 	}
 	instOp.CurrentOperation = currentOperation
 
 	rh, err := reconcilehelper.NewReconcileHelper(ctx, instOp)
 	if err != nil {
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lserrors.NewWrappedError(err, currentOperation, "NewReconcileHelper", err.Error())
 	}
 
