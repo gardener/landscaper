@@ -135,10 +135,10 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		c.Log().Info("do abort")
 	}
 
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) || inst.Status.ObservedGeneration != inst.Generation {
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) ||
+		!lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) ||
+		inst.Status.ObservedGeneration != inst.Generation {
+
 		err := c.reconcile(ctx, inst)
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
 	} else {

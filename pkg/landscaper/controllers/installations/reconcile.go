@@ -33,12 +33,13 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 
 	combinedState, lsErr := c.combinedPhaseOfSubobjects(ctx, inst, currentOperation)
 	if lsErr != nil {
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lsErr
 	}
 
 	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
 		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return nil
 	}
 
@@ -53,6 +54,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 
 	instOp, lsErr := c.initPrerequisites(ctx, inst)
 	if lsErr != nil {
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
 		return lsErr
 	}
 	instOp.CurrentOperation = currentOperation
