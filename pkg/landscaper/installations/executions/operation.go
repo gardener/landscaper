@@ -13,7 +13,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -164,13 +163,7 @@ func (o *ExecutionOperation) Ensure(ctx context.Context, inst *installations.Ins
 		exec.Spec.Context = inst.Info.Spec.Context
 		exec.Spec.DeployItems = versionedDeployItemTemplateList
 
-		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ForceReconcileOperation))
-		} else {
-			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
-		}
-
-		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed && lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		if exec.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
 			exec.Spec.ReconcileID = uuid.New().String()
 		}
 

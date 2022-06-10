@@ -95,6 +95,12 @@ spec:
             description: 'DeployItemStatus contains the status of a deploy item. todo:
               add operation'
             properties:
+              JobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              JobIdFinished:
+                description: JobIdFinished is the ID of the finished working request.
+                type: string
               conditions:
                 description: Conditions contains the actual condition of a deploy
                   item
@@ -227,6 +233,8 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
             required:
             - observedGeneration
+            - JobID
+            - JobIdFinished
             type: object
         required:
         - spec

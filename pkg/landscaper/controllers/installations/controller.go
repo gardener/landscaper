@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -101,16 +103,8 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	// don't reconcile if ignore annotation is set and installation is not currently running
-	if lsv1alpha1helper.HasIgnoreAnnotation(inst.ObjectMeta) && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-		logger.V(7).Info("skipping reconcile due to ignore annotation")
-		return reconcile.Result{}, nil
-	}
-
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
-
-	oldInst := inst.DeepCopy()
 
 	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
@@ -120,32 +114,29 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
+	oldInst := inst.DeepCopy()
+
 	if !inst.DeletionTimestamp.IsZero() {
 		err := c.handleDelete(ctx, inst)
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
 	}
 
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		err := c.forceReconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
-		// todo: handle abort..
-		c.Log().Info("do abort")
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	} else if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) || inst.Status.ObservedGeneration != inst.Generation {
-		err := c.reconcile(ctx, inst)
-		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
-	} else {
-		// check whether the current phase does still match the combined phase of subinstallations and executions
-		if err := c.handleSubComponentPhaseChanges(ctx, inst); err != nil {
-			return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || inst.Status.JobID != inst.Status.JobIdFinished {
+		if inst.Status.JobID == inst.Status.JobIdFinished {
+			inst.Status.JobID = uuid.New().String()
+			inst.Status.Phase = lsv1alpha1.ComponentPhaseInit
+			if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
+				return reconcile.Result{}, err
+			}
 		}
+
+		if err := c.removeReconcileAnnotation(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		err := c.reconcile(ctx, inst)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, err, oldInst, inst)
+	} else {
 		return reconcile.Result{}, nil
 	}
 }
@@ -263,6 +254,39 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	return nil
 }
 
+func (c *Controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
+	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
+
+	inst.Status.Phase = lserrors.GetPhaseForLastError(
+		inst.Status.Phase,
+		inst.Status.LastError,
+		5*time.Minute)
+
+	if inst.Status.LastError != nil {
+		lastErr := inst.Status.LastError
+		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+		inst.Status.JobIdFinished = inst.Status.JobID
+	}
+
+	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
+		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
+			if apierrors.IsConflict(err2) { // reduce logging
+				c.Log().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+			} else {
+				c.Log().Error(err2, "unable to update status")
+			}
+			if err == nil {
+				return err2
+			}
+		}
+	}
+
+	return err
+}
+
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
@@ -295,6 +319,12 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 			if err == nil {
 				return err2
 			}
+		}
+	}
+
+	if lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
+		if err := c.removeReconcileAnnotation(ctx, inst); err != nil {
+			c.Log().Error(err, "unable to update status")
 		}
 	}
 

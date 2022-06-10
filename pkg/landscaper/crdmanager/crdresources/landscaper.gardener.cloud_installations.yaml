@@ -697,6 +697,12 @@ spec:
           status:
             description: Status contains the status of the installation.
             properties:
+              JobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              JobIdFinished:
+                description: JobIdFinished is the ID of the finished working request.
+                type: string
               conditions:
                 description: Conditions contains the actual condition of a installation
                 items:
@@ -978,6 +984,8 @@ spec:
             required:
             - observedGeneration
             - configGeneration
+            - JobID
+            - JobIdFinished
             type: object
         required:
         - spec

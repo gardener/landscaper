@@ -97,6 +97,12 @@ type DeployItemStatus struct {
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
+
+	// JobID is the ID of the current working request.
+	JobID string `json:"JobID"`
+
+	// JobIdFinished is the ID of the finished working request.
+	JobIdFinished string `json:"JobIdFinished"`
 }
 
 // DeployerInformation holds additional information about the deployer that

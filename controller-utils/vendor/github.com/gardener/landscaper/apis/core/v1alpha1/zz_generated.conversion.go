@@ -1598,6 +1598,8 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	}
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 
@@ -1617,6 +1619,8 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	}
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 
@@ -2065,6 +2069,8 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]core.VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	out.ExecutionGenerations = *(*[]core.ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 
@@ -2081,6 +2087,8 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	out.ExecutionGenerations = *(*[]ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 
@@ -2394,6 +2402,8 @@ func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Inst
 	out.Imports = *(*[]core.ImportStatus)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
 	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 
@@ -2411,6 +2421,8 @@ func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core
 	out.Imports = *(*[]ImportStatus)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
 	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	out.JobID = in.JobID
+	out.JobIdFinished = in.JobIdFinished
 	return nil
 }
 

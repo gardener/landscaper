@@ -57,23 +57,6 @@ func (o *Operation) Ensure(ctx context.Context) error {
 		return err
 	}
 
-	// need to check if we are allowed to update the subinstallation
-	// - we are not allowed if any subresource is in deletion
-	// - we are not allowed to update if any subinstallation is progressing
-	for _, subInstallations := range subInstallations {
-		if subInstallations.DeletionTimestamp != nil {
-			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err := fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallations.Name)
-			return o.NewError(err, "DeletingSubInstallation", err.Error())
-		}
-
-		if subInstallations.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
-			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
-			return o.NewError(err, "RunningSubinstallation", err.Error())
-		}
-	}
-
 	installationTmpl, err := o.getInstallationTemplates()
 	if err != nil {
 		err = fmt.Errorf("unable to get installation templates of blueprint: %w", err)

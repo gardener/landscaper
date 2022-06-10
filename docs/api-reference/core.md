@@ -2692,6 +2692,28 @@ ObjectReference
 <p>ExportReference is the reference to the object that contains the exported values.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>JobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobIdFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIdFinished is the ID of the finished working request.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemTemplate">DeployItemTemplate
@@ -3447,6 +3469,28 @@ only used for operation purpose.</p>
 <em>(Optional)</em>
 <p>ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
 So in this case, the observedGeneration refers to the executions generation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobIdFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIdFinished is the ID of the finished working request.</p>
 </td>
 </tr>
 </tbody>
@@ -4227,6 +4271,28 @@ ObjectReference
 </td>
 <td>
 <p>ExecutionReference is the reference to the execution that schedules the templated execution items.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobIdFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIdFinished is the ID of the finished working request.</p>
 </td>
 </tr>
 </tbody>

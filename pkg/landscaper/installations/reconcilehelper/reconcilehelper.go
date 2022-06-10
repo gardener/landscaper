@@ -90,8 +90,8 @@ func (rh *ReconcileHelper) UpdateRequired() (bool, error) {
 }
 
 // UpdateAllowed returns an error if the installation cannot be updated due to dependencies or unfulfilled imports.
-func (rh *ReconcileHelper) UpdateAllowed(dependedOnSiblings sets.String) error {
-	err := rh.InstallationsDependingOnReady(dependedOnSiblings)
+func (rh *ReconcileHelper) UpdateAllowed(inst *lsv1alpha1.Installation, dependedOnSiblings sets.String) error {
+	err := rh.InstallationsDependingOnReady(inst, dependedOnSiblings)
 	if err != nil {
 		// at least one of the installations the current one depends on is not succeeded or has pending changes
 		return installations.NewNotCompletedDependentsErrorf(err, "not all installations which are depended on are ready: %s", err.Error())
@@ -186,17 +186,7 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 	return returnAndSetCondition(true), nil
 }
 
-// InstallationsDependingOnReady returns nil if all installations the current one depends on are
-// - in phase 'Succeeded'
-// - up-to-date (observedGeneration == generation)
-// - not queued for reconciliation (no 'landscaper.gardener.cloud/operation' annotation with value 'reconcile' or 'forceReconcile')
-// Returns an error if any of these requirements is not fulfilled.
-// Additionally, an error is returned if the installation has a parent and it is not progressing.
-func (rh *ReconcileHelper) InstallationsDependingOnReady(dependedOnSiblings sets.String) error {
-	if rh.parent != nil && !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
-		return installations.NewNotCompletedDependentsErrorf(nil, "parent installation %q is not progressing", kutil.ObjectKeyFromObject(rh.parent.Info).String())
-	}
-
+func (rh *ReconcileHelper) InstallationsDependingOnReady(installation *lsv1alpha1.Installation, dependedOnSiblings sets.String) error {
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
 	for dep := range dependedOnSiblings {
 		inst := rh.siblings[dep]
@@ -208,13 +198,24 @@ func (rh *ReconcileHelper) InstallationsDependingOnReady(dependedOnSiblings sets
 			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not succeeded", kutil.ObjectKeyFromObject(inst.Info).String())
 		}
 
-		if inst.Info.Generation != inst.Info.Status.ObservedGeneration {
-			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not up-to-date", kutil.ObjectKeyFromObject(inst.Info).String())
-		}
-
 		if lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.Info.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which has (force-)reconcile annotation", kutil.ObjectKeyFromObject(inst.Info).String())
 		}
+
+		if installation.IsRoot() {
+			// we must resolve the problem, that changes of root exports might happen after reading the sibling object
+			if inst.Info.Status.JobID != inst.Info.Status.JobIdFinished {
+				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q with not updated JobIdFinished",
+					kutil.ObjectKeyFromObject(inst.Info).String(), installation.Status.JobID)
+			}
+		} else {
+			if installation.Status.JobID != inst.Info.Status.JobIdFinished {
+				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which not finished current job %q",
+					kutil.ObjectKeyFromObject(inst.Info).String(), installation.Status.JobID)
+
+			}
+		}
+
 	}
 
 	return nil

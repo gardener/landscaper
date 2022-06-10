@@ -4165,8 +4165,24 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
+					"JobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"JobIdFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIdFinished is the ID of the finished working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"observedGeneration"},
+				Required: []string{"observedGeneration", "JobID", "JobIdFinished"},
 			},
 		},
 		Dependencies: []string{
@@ -4982,7 +4998,24 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"JobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"JobIdFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIdFinished is the ID of the finished working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
+				Required: []string{"JobID", "JobIdFinished"},
 			},
 		},
 		Dependencies: []string{
@@ -5650,8 +5683,24 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
+					"JobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"JobIdFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIdFinished is the ID of the finished working request.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"observedGeneration", "configGeneration"},
+				Required: []string{"observedGeneration", "configGeneration", "JobID", "JobIdFinished"},
 			},
 		},
 		Dependencies: []string{

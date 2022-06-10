@@ -153,6 +153,12 @@ type ExecutionStatus struct {
 	// So in this case, the observedGeneration refers to the executions generation.
 	// +optional
 	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
+
+	// JobID is the ID of the current working request.
+	JobID string `json:"JobID"`
+
+	// JobIdFinished is the ID of the finished working request.
+	JobIdFinished string `json:"JobIdFinished"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

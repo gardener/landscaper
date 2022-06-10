@@ -31,26 +31,6 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	)
 	log.Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
-	combinedState, lsErr := c.combinedPhaseOfSubobjects(ctx, inst, currentOperation)
-	if lsErr != nil {
-		return lsErr
-	}
-
-	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-		return nil
-	}
-
-	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
-		// todo: remove annotation
-		inst.Status.Phase = lsv1alpha1.ComponentPhaseAborted
-		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000014, inst); err != nil {
-			return lserrors.NewWrappedError(err, currentOperation, "SetInstallationPhaseAborted", err.Error())
-		}
-		return nil
-	}
-
 	instOp, lsErr := c.initPrerequisites(ctx, inst)
 	if lsErr != nil {
 		return lsErr
@@ -62,21 +42,14 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 		return lserrors.NewWrappedError(err, currentOperation, "NewReconcileHelper", err.Error())
 	}
 
-	// check if a reconcile is required due to changed spec or imports
-	updateRequired, err := rh.UpdateRequired()
+	dependedOnSiblings, err := rh.FetchDependencies()
 	if err != nil {
-		return lserrors.NewWrappedError(err, currentOperation, "IsUpdateRequired", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "FetchDependencies", err.Error())
 	}
-	if updateRequired {
-		inst.Status.Phase = lsv1alpha1.ComponentPhasePending
 
-		dependedOnSiblings, err := rh.FetchDependencies()
-		if err != nil {
-			return lserrors.NewWrappedError(err, currentOperation, "FetchDependencies", err.Error())
-		}
-
+	if inst.Status.Phase == lsv1alpha1.ComponentPhaseInit {
 		// check whether the installation can be updated
-		err = rh.UpdateAllowed(dependedOnSiblings)
+		err = rh.UpdateAllowed(inst, dependedOnSiblings)
 		if err != nil {
 			return lserrors.NewWrappedError(err, currentOperation, "IsUpdateAllowed", err.Error())
 		}
@@ -86,49 +59,73 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 			return lserrors.NewWrappedError(err, currentOperation, "GetImports", err.Error())
 		}
 
-		return c.Update(ctx, instOp, imps)
+		err = c.copyImportsAndEnsureSubInstsAndExec(ctx, instOp, imps)
+		if err != nil {
+			return lserrors.NewWrappedError(err, currentOperation, "ensureSubInstsAndExec", err.Error())
+		}
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseSubobjectCreated
 	}
 
-	if lsErr := c.removeReconcileAnnotation(ctx, instOp.Inst.Info); lsErr != nil {
-		return lsErr
+	if inst.Status.Phase == lsv1alpha1.ComponentPhaseSubobjectCreated {
+		err := c.triggerSubInstsAndExec(ctx, instOp)
+		if err != nil {
+			return lserrors.NewWrappedError(err, currentOperation, "ensureSubInstsAndExec", err.Error())
+		}
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 	}
 
-	if combinedState != lsv1alpha1.ComponentPhaseSucceeded {
-		inst.Status.Phase = combinedState
-		return nil
+	if inst.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
+		var finished, successful bool
+		var err error
+
+		finished, err = c.allSubinstsAndEcexFinishedSuccessfullWithLastJob()
+		if err != nil {
+			return lserrors.NewWrappedError(err, currentOperation, "allSubinstsAndEcexFinishedWithLastJob", err.Error())
+		} else if !finished {
+			return lserrors.NewError(currentOperation, "allSubinstsAndEcexFinishedWithLastJob", "not finished")
+		}
+
+		successful = c.allSubinstsAndEcexSuccessful()
+		if !successful {
+			inst.Status.Phase = lsv1alpha1.ComponentPhaseFailed
+			return nil
+		}
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseAllSuccessfullyExecuted
 	}
 
-	// no update required, continue with exports
-	// construct imports so that they are available for export templating
-	imps, err := rh.GetImports()
-	if err != nil {
-		return instOp.NewError(err, "GetImportsForExports", err.Error())
-	}
-	impCon := imports.NewConstructor(instOp)
-	err = impCon.Construct(ctx, imps)
-	if err != nil {
-		return instOp.NewError(err, "ConstructImportsForExports", err.Error())
-	}
-	instOp.CurrentOperation = "Completing"
-	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
-	if err != nil {
-		return instOp.NewError(err, "ConstructExports", err.Error())
-	}
+	if inst.Status.Phase == lsv1alpha1.ComponentPhaseAllSuccessfullyExecuted {
+		// no update required, continue with exports
+		// construct imports so that they are available for export templating
+		imps, err := rh.GetImports()
+		if err != nil {
+			return instOp.NewError(err, "GetImportsForExports", err.Error())
+		}
+		impCon := imports.NewConstructor(instOp)
+		err = impCon.Construct(ctx, imps)
+		if err != nil {
+			return instOp.NewError(err, "ConstructImportsForExports", err.Error())
+		}
+		instOp.CurrentOperation = "Completing"
+		dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
+		if err != nil {
+			return instOp.NewError(err, "ConstructExports", err.Error())
+		}
 
-	if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
-		return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
-	}
+		if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
+			return instOp.NewError(err, "CreateOrUpdateExports", err.Error())
+		}
 
-	// as all exports are validated, lets trigger dependant components
-	// todo: check if this is a must, maybe track what we already successfully triggered
-	// maybe we also need to increase the generation manually to signal a new config version
-	if err := instOp.TriggerDependents(ctx); err != nil {
-		err = fmt.Errorf("unable to trigger dependent installations: %w", err)
-		return instOp.NewError(err, "TriggerDependents", err.Error())
-	}
+		// as all exports are validated, lets trigger dependant components
+		// todo: check if this is a must, maybe track what we already successfully triggered
+		// maybe we also need to increase the generation manually to signal a new config version
+		if err := instOp.TriggerDependents(ctx); err != nil {
+			err = fmt.Errorf("unable to trigger dependent installations: %w", err)
+			return instOp.NewError(err, "TriggerDependents", err.Error())
+		}
 
-	// update import status
-	inst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+		// update import status
+		inst.Status.Phase = lsv1alpha1.ComponentPhaseSucceeded
+	}
 
 	return nil
 }
@@ -199,8 +196,18 @@ func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Instal
 
 // Update redeploys subinstallations and deploy items.
 func (c *Controller) Update(ctx context.Context, op *installations.Operation, imps *imports.Imports) lserrors.LsError {
-	inst := op.Inst
-	currOp := "Reconcile"
+
+	err := c.ensureSubInstsAndExec(ctx, op, imps)
+	if err != nil {
+		return err
+	}
+
+	return c.triggerSubInstsAndExec(ctx, op)
+}
+
+func (c *Controller) copyImportsAndEnsureSubInstsAndExec(ctx context.Context, op *installations.Operation,
+	imps *imports.Imports) lserrors.LsError {
+	currOp := "ensure"
 	// collect and merge all imports and start the Executions
 	constructor := imports.NewConstructor(op)
 	if err := constructor.Construct(ctx, imps); err != nil {
@@ -211,31 +218,37 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 		return lserrors.NewWrappedError(err, currOp, "CreateOrUpdateImports", err.Error())
 	}
 
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
-
 	subinstallation := subinstallations.New(op)
 	if err := subinstallation.Ensure(ctx); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "EnsureSubinstallations", err.Error())
 	}
 
-	// todo: check if this can be moved to ensure
-	if err := subinstallation.TriggerSubInstallations(ctx, inst.Info); err != nil {
-		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
-		return lserrors.NewWrappedError(err, currOp, "ReconcileSubinstallations", err.Error())
-	}
-
+	inst := op.Inst
 	exec := executions.New(op)
 	if err := exec.Ensure(ctx, inst); err != nil {
 		return lserrors.NewWrappedError(err, currOp, "ReconcileExecution", err.Error())
 	}
 
-	if lsErr := c.removeReconcileAnnotation(ctx, inst.Info); lsErr != nil {
-		return lsErr
-	}
-
 	inst.Info.Status.Imports = inst.ImportStatus().GetStatus()
 	inst.Info.Status.ObservedGeneration = inst.Info.Generation
-	inst.Info.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
+
+	return nil
+}
+
+func (c *Controller) triggerSubInstsAndExec(ctx context.Context, op *installations.Operation) lserrors.LsError {
+
+	inst := op.Inst
+	currOp := "triggerSubInsts"
+
+	// todo:
+	subinstallations := c.fetchSubinsts()
+	if err := subinstallations.TriggerSubInstallations(ctx, inst.Info); err != nil {
+		err = fmt.Errorf("unable to trigger subinstallations: %w", err)
+		return lserrors.NewWrappedError(err, currOp, "ReconcileSubinstallations", err.Error())
+	}
+
+	c.triggerExec()
+
 	return nil
 }
 

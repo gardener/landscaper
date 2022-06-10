@@ -190,6 +190,12 @@ type InstallationStatus struct {
 
 	// ExecutionReference is the reference to the execution that schedules the templated execution items.
 	ExecutionReference *ObjectReference `json:"executionRef,omitempty"`
+
+	// JobID is the ID of the current working request.
+	JobID string `json:"JobID"`
+
+	// JobIdFinished is the ID of the finished working request.
+	JobIdFinished string `json:"JobIdFinished"`
 }
 
 // InstallationImports defines import of data objects and targets.
