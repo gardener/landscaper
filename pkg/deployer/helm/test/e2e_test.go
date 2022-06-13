@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -49,6 +51,10 @@ var _ = Describe("Helm Deployer", func() {
 	})
 
 	It("should deploy an ingress-nginx chart from an oci artifact into the cluster", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 

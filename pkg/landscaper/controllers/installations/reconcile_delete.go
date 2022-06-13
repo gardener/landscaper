@@ -32,9 +32,128 @@ var (
 	SiblingImportError = errors.New("a sibling still imports some of the exports")
 )
 
+func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError error, normalError error) {
+	if err := c.deleteAllowed(ctx, inst); err != nil {
+		return nil, err
+	}
+
+	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	if err != nil {
+		return err, nil
+	}
+
+	if exec != nil {
+		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) &&
+			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) {
+			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+			if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
+				return err, nil
+			}
+		}
+
+		if exec.DeletionTimestamp.IsZero() {
+			if err = c.Writer().DeleteExecution(ctx, read_write_layer.W000012, exec); err != nil {
+				return err, nil
+			}
+		}
+	}
+
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return err, nil
+	}
+
+	for _, subInst := range subInsts {
+		if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(inst.ObjectMeta) &&
+			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(subInst.ObjectMeta) {
+			metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
+			if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000103, subInst); err != nil {
+				return err, nil
+			}
+		}
+
+		if subInst.DeletionTimestamp.IsZero() {
+			if err = c.Writer().DeleteInstallation(ctx, read_write_layer.W000091, subInst); err != nil {
+				if apierrors.IsConflict(err) {
+					return nil, err
+				}
+				return err, nil
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	if err != nil {
+		return err
+	}
+
+	if exec != nil && exec.Status.JobID != inst.Status.JobID {
+		exec.Status.JobID = inst.Status.JobID
+		if err = c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000093, exec); err != nil {
+			return err
+		}
+	}
+
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return err
+	}
+
+	for _, subInst := range subInsts {
+		if subInst.Status.JobID != inst.Status.JobID {
+			subInst.Status.JobID = inst.Status.JobID
+			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000094, subInst); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1alpha1.Installation) (allFinished bool, allDeleted bool, err error) {
+	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	if err != nil {
+		return false, false, err
+	}
+
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return false, false, err
+	}
+
+	if exec == nil && len(subInsts) == 0 {
+		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
+		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000095, inst); err != nil {
+			return false, false, err
+		}
+		return true, true, nil
+	}
+
+	// check if all finished
+	if exec != nil {
+		if exec.Status.JobIDFinished != inst.Status.JobID {
+			return false, false, nil
+		}
+	}
+
+	for _, subInst := range subInsts {
+		if subInst.Status.JobIDFinished != inst.Status.JobID {
+			return false, false, nil
+		}
+	}
+
+	// now we know that there exists subobjects and all of them are finished which means that they must have failed.
+	return true, false, nil
+}
+
 func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
-		currentOperation = "Deletion"
+		currentOperation = "handleDelete"
 		log              = logr.FromContextOrDiscard(ctx)
 	)
 

@@ -31,7 +31,7 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
-	managedItems, err := o.listManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListDeployItems", err.Error())
 	}
@@ -50,7 +50,7 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 			continue
 		}
 
-		gone, deleteFailed, err := o.deleteItem(ctx, &item, executionItems)
+		gone, deleteFailed, err := o.deleteItem(ctx, item, executionItems)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
-func (o *Operation) checkDeletable(item executionItem, items []executionItem) bool {
+func (o *Operation) checkDeletable(item executionItem, items []*executionItem) bool {
 	for _, exec := range items {
 		if exec.Info.Name == item.Info.Name {
 			continue
@@ -97,7 +97,7 @@ func (o *Operation) checkDeletable(item executionItem, items []executionItem) bo
 	return true
 }
 
-func (o *Operation) DeleteItemOld(ctx context.Context, item *executionItem, executionItems []executionItem) (gone bool,
+func (o *Operation) DeleteItemOld(ctx context.Context, item *executionItem, executionItems []*executionItem) (gone bool,
 	deleteFailed bool, err lserrors.LsError) {
 	if item.DeployItem == nil {
 		return true, false, nil
@@ -128,7 +128,7 @@ func (o *Operation) DeleteItemOld(ctx context.Context, item *executionItem, exec
 	return false, false, nil
 }
 
-func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []executionItem) (gone bool,
+func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []*executionItem) (gone bool,
 	deleteFailed bool, err lserrors.LsError) {
 	if item.DeployItem == nil {
 		return true, false, nil
@@ -155,7 +155,7 @@ func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executi
 	return false, false, nil
 }
 
-func (o *Operation) triggerDeletionIsRequired(_ context.Context, item *executionItem, executionItems []executionItem) bool {
+func (o *Operation) triggerDeletionIsRequired(_ context.Context, item *executionItem, executionItems []*executionItem) bool {
 	lastAppliedGeneration, ok := getExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name)
 	if ok && lastAppliedGeneration.ObservedGeneration == o.exec.Generation {
 		return false
@@ -166,7 +166,7 @@ func (o *Operation) triggerDeletionIsRequired(_ context.Context, item *execution
 
 func (o *Operation) triggerDeletion(ctx context.Context, item *executionItem) lserrors.LsError {
 	if item.DeployItem.DeletionTimestamp.IsZero() {
-		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000065, item.DeployItem); client.IgnoreNotFound(err) != nil {
+		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000113, item.DeployItem); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "DeleteDeployItem",
 				fmt.Sprintf("unable to delete deploy item %s of step %s", item.DeployItem.Name, item.Info.Name),
 				err.Error(),

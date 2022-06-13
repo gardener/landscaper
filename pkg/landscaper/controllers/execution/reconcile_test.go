@@ -7,6 +7,8 @@ package execution_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,6 +42,10 @@ var _ = Describe("Reconcile", func() {
 	})
 
 	It("should correctly reconcile a deleted execution when it was in failed state", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		// first deploy reconcile a simple execution with one deploy item
 		exec := &lsv1alpha1.Execution{}
@@ -84,6 +90,10 @@ var _ = Describe("Reconcile", func() {
 
 	Context("Context", func() {
 		It("should pass the context to the deploy item", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 			// first deploy reconcile a simple execution with one deploy item
 			exec := &lsv1alpha1.Execution{}
@@ -116,6 +126,10 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should default the context of the deploy item", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 			// first deploy reconcile a simple execution with one deploy item
 			exec := &lsv1alpha1.Execution{}
@@ -148,6 +162,10 @@ var _ = Describe("Reconcile", func() {
 	})
 
 	It("should adapt the status of the execution if a deploy item changes from Failed to Succeeded and vice versa", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		// first deploy reconcile a simple execution with one deploy item
 		exec := &lsv1alpha1.Execution{}

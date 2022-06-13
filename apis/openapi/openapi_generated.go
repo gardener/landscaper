@@ -4165,6 +4165,33 @@ func schema_landscaper_apis_core_v1alpha1_DeployItemStatus(ref common.ReferenceC
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
 						},
 					},
+					"jobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"jobIDFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIDFinished is the ID of the finished working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"jobIDGenerationTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIDGenerationTime is the timestamp when the JobID was set.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"deployItemPhase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DeployItemPhase is the current phase of the deploy item.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"observedGeneration"},
 			},
@@ -4982,6 +5009,27 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							},
 						},
 					},
+					"JobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"JobIDFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIDFinished is the ID of the finished working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"executionPhase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionPhase is the current phase of the execution.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -5648,6 +5696,34 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 						SchemaProps: spec.SchemaProps{
 							Description: "ExecutionReference is the reference to the execution that schedules the templated execution items.",
 							Ref:         ref("github.com/gardener/landscaper/apis/core/v1alpha1.ObjectReference"),
+						},
+					},
+					"jobID": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobID is the ID of the current working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"jobIDFinished": {
+						SchemaProps: spec.SchemaProps{
+							Description: "JobIDFinished is the ID of the finished working request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"installationPhase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InstallationPhase is the current phase of the installation.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"importsHash": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImportsHash is the hash of the import data.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},

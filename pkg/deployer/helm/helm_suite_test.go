@@ -125,6 +125,10 @@ var _ = Describe("Template", func() {
 		})
 
 		It("should create the release namespace if configured", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())

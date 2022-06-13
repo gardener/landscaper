@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -70,6 +72,10 @@ var _ = Describe("Container Deployer", func() {
 	})
 
 	It("should requeue after the correct time if continuous reconciliation is configured", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 

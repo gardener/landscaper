@@ -836,6 +836,10 @@ func (in *DeployItemStatus) DeepCopyInto(out *DeployItemStatus) {
 		*out = new(ObjectReference)
 		**out = **in
 	}
+	if in.JobIDGenerationTime != nil {
+		in, out := &in.JobIDGenerationTime, &out.JobIDGenerationTime
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

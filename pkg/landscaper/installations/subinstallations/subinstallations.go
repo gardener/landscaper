@@ -60,16 +60,16 @@ func (o *Operation) Ensure(ctx context.Context) error {
 	// need to check if we are allowed to update the subinstallation
 	// - we are not allowed if any subresource is in deletion
 	// - we are not allowed to update if any subinstallation is progressing
-	for _, subInstallations := range subInstallations {
-		if subInstallations.DeletionTimestamp != nil {
+	for _, subInstallation := range subInstallations {
+		if subInstallation.DeletionTimestamp != nil {
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err := fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallations.Name)
+			err := fmt.Errorf("not eligible for update due to deletion of subinstallation %s", subInstallation.Name)
 			return o.NewError(err, "DeletingSubInstallation", err.Error())
 		}
 
-		if subInstallations.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
+		if subInstallation.Status.Phase == lsv1alpha1.ComponentPhaseProgressing {
 			inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, cond)
-			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallations.Name)
+			err = fmt.Errorf("not eligible for update due to running subinstallation %s", subInstallation.Name)
 			return o.NewError(err, "RunningSubinstallation", err.Error())
 		}
 	}

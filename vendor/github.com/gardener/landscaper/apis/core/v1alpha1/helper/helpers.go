@@ -68,6 +68,15 @@ func RemoveAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
 	delete(obj.Annotations, string(AbortTimestamp))
 }
 
+func Touch(obj *metav1.ObjectMeta) {
+	_, ok := obj.Annotations[v1alpha1.TouchAnnotation]
+	if ok {
+		delete(obj.Annotations, v1alpha1.TouchAnnotation)
+	} else {
+		metav1.SetMetaDataAnnotation(obj, v1alpha1.TouchAnnotation, "true")
+	}
+}
+
 // InitCondition initializes a new Condition with an Unknown status.
 func InitCondition(conditionType v1alpha1.ConditionType) v1alpha1.Condition {
 	return v1alpha1.Condition{
@@ -278,6 +287,13 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 	}
 
 	return v1alpha1.ComponentPhaseSucceeded
+}
+
+func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
+	return phase == v1alpha1.InstallationPhaseInitDelete ||
+		phase == v1alpha1.InstallationPhaseTriggerDelete ||
+		phase == v1alpha1.InstallationPhaseDeleting ||
+		phase == v1alpha1.InstallationPhaseDeleteFailed
 }
 
 // IsCompletedExecutionPhase returns true if the phase indicates a final state.

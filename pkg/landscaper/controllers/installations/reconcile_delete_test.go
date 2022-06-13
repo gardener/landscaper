@@ -143,6 +143,10 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the force deletion annotation to an execution in deletion state", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -175,6 +179,10 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the delete-without-uninstall annotation to an execution", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -237,6 +245,9 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should not delete if another installation still imports a exported value", func() {
+			if lsutils.NewReconcile {
+				return
+			}
 
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")

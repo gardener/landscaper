@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,6 +69,14 @@ type controller struct {
 }
 
 func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if utils.NewReconcile {
+		return con.reconcileNew(ctx, req)
+	} else {
+		return con.reconcileOld(ctx, req)
+	}
+}
+
+func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.WithValues("resource", req.NamespacedName.String())
 	logger.V(7).Info("reconcile")
 
@@ -278,4 +288,8 @@ func (con *controller) detectProgressingTimeouts(log logr.Logger, di *lsv1alpha1
 
 func (con *controller) Writer() *read_write_layer.Writer {
 	return read_write_layer.NewWriter(con.log, con.c)
+}
+
+func (con *controller) hasBeenPickedUp(di *lsv1alpha1.DeployItem) bool {
+	return di.Status.LastReconcileTime != nil && !di.Status.LastReconcileTime.Before(di.Status.JobIDGenerationTime)
 }
