@@ -17,6 +17,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
+	"github.com/mandelsoft/spiff/spiffing"
+	spiffyaml "github.com/mandelsoft/spiff/yaml"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -114,14 +117,23 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		}
 	}
 
+	// exportDataMappings
+	exportDataMappings, err := c.templateDataMappings(fldPath, exports)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Resolve export mapping for all internalExports
 	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.Info.Spec.Exports.Data))
 	dataExportsPath := fldPath.Child("exports").Child("data")
 	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
 		dataExportPath := dataExportsPath.Child(dataExport.Name)
-		data, ok := exports[dataExport.Name]
+		data, ok := exportDataMappings[dataExport.Name]
 		if !ok {
-			return nil, nil, fmt.Errorf("%s: data export is not defined", dataExportPath.String())
+			data, ok = exports[dataExport.Name]
+			if !ok {
+				return nil, nil, fmt.Errorf("%s: data export is not defined", dataExportPath.String())
+			}
 		}
 		do := dataobjects.New().
 			SetSourceType(lsv1alpha1.ExportDataObjectSourceType).
@@ -134,9 +146,12 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	targetExportsPath := fldPath.Child("exports").Child("targets")
 	for i, targetExport := range c.Inst.Info.Spec.Exports.Targets {
 		targetExportPath := targetExportsPath.Child(targetExport.Name)
-		data, ok := exports[targetExport.Name]
+		data, ok := exportDataMappings[targetExport.Name]
 		if !ok {
-			return nil, nil, fmt.Errorf("%s: target export is not defined", targetExportPath.String())
+			data, ok = exports[targetExport.Name]
+			if !ok {
+				return nil, nil, fmt.Errorf("%s: target export is not defined", targetExportPath.String())
+			}
 		}
 		target, err := ConvertTargetTemplateToTarget(data)
 		if err != nil {
@@ -212,4 +227,39 @@ func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, e
 		},
 	}
 	return dataobjects.NewFromTarget(raw)
+}
+
+// templateDataMappings constructs the export data mappings
+func (c *Constructor) templateDataMappings(fldPath *field.Path, exports map[string]interface{}) (map[string]interface{}, error) {
+
+	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(exports)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
+	}
+
+	values := make(map[string]interface{})
+	for key, dataMapping := range c.Inst.Info.Spec.ExportDataMappings {
+		expPath := fldPath.Child(key)
+
+		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse import mapping template %s: %w", expPath.String(), err)
+		}
+
+		res, err := spiff.Cascade(tmpl, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to template import mapping template %s: %w", expPath.String(), err)
+		}
+
+		dataBytes, err := spiffyaml.Marshal(res)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal templated import mapping %s: %w", expPath.String(), err)
+		}
+		var data interface{}
+		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal templated import mapping %s: %w", expPath.String(), err)
+		}
+		values[key] = data
+	}
+	return values, nil
 }
