@@ -13,9 +13,9 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM alpine:3.16.0 AS base
+FROM gcr.io/distroless/static-debian11:nonroot AS base
 
-RUN apk add --no-cache ca-certificates
+#RUN apt install -y --no-cache ca-certificates
 
 #### Landscaper Controller ####
 FROM base as landscaper-controller
