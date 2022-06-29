@@ -529,6 +529,26 @@ func (o *Operation) TriggerDependents(ctx context.Context) error {
 	return nil
 }
 
+// NewTriggerDependents triggers all installations that depend on the current installation.
+func (o *Operation) NewTriggerDependents(ctx context.Context) error {
+	for _, sibling := range o.Context().Siblings {
+		if !importsAnyExport(o.Inst, sibling) {
+			continue
+		}
+
+		if IsRootInstallation(o.Inst.Info) {
+			metav1.SetMetaDataAnnotation(&sibling.Info.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
+		} else {
+			lsv1alpha1helper.Touch(&sibling.Info.ObjectMeta)
+		}
+
+		if err := o.Writer().UpdateInstallation(ctx, read_write_layer.W000085, sibling.Info); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // SetExportConfigGeneration returns the new export generation of the installation
 // based on its own generation and its context
 func (o *Operation) SetExportConfigGeneration(ctx context.Context) error {

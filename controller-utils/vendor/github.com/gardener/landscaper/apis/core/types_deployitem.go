@@ -13,6 +13,8 @@ import (
 // DeployItemType defines the type of the deploy item
 type DeployItemType string
 
+type DeployItemPhase string
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DeployItemList contains a list of DeployItems
@@ -97,6 +99,18 @@ type DeployItemStatus struct {
 	// ExportReference is the reference to the object that contains the exported values.
 	// +optional
 	ExportReference *ObjectReference `json:"exportRef,omitempty"`
+
+	// JobID is the ID of the current working request.
+	JobID string `json:"jobID,omitempty"`
+
+	// JobIDFinished is the ID of the finished working request.
+	JobIDFinished string `json:"jobIDFinished,omitempty"`
+
+	// JobIDGenerationTime is the timestamp when the JobID was set.
+	JobIDGenerationTime *metav1.Time `json:"jobIDGenerationTime,omitempty"`
+
+	// DeployItemPhase is the current phase of the deploy item.
+	DeployItemPhase DeployItemPhase `json:"deployItemPhase,omitempty"`
 }
 
 // DeployerInformation holds additional information about the deployer that

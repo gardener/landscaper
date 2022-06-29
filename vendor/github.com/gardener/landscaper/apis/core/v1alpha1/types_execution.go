@@ -40,6 +40,21 @@ const (
 	ExecutionPhaseFailed      = ExecutionPhase(ComponentPhaseFailed)
 )
 
+type ExecPhase string
+
+const (
+	ExecPhaseInit        ExecPhase = "Init"
+	ExecPhaseProgressing ExecPhase = "Progressing"
+	ExecPhaseCompleting  ExecPhase = "Completing"
+	ExecPhaseSucceeded   ExecPhase = "Succeeded"
+	ExecPhaseFailed      ExecPhase = "Failed"
+
+	ExecPhaseInitDelete    ExecPhase = "InitDelete"
+	ExecPhaseTriggerDelete ExecPhase = "TriggerDelete"
+	ExecPhaseDeleting      ExecPhase = "Deleting"
+	ExecPhaseDeleteFailed  ExecPhase = "DeleteFailed"
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ExecutionList contains a list of Executions‚
@@ -64,6 +79,11 @@ var ExecutionDefinition = lsschema.CustomResourceDefinition{
 	Served:            true,
 	SubresourceStatus: true,
 	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
+		{
+			Name:     "ExecutionPhase",
+			Type:     "string",
+			JSONPath: ".status.executionPhase",
+		},
 		{
 			Name:     "Phase",
 			Type:     "string",
@@ -153,6 +173,15 @@ type ExecutionStatus struct {
 	// So in this case, the observedGeneration refers to the executions generation.
 	// +optional
 	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
+
+	// JobID is the ID of the current working request.
+	JobID string `json:"JobID,omitempty"`
+
+	// JobIDFinished is the ID of the finished working request.
+	JobIDFinished string `json:"JobIDFinished,omitempty"`
+
+	// ExecutionPhase is the current phase of the execution.
+	ExecutionPhase ExecPhase `json:"executionPhase,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

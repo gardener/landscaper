@@ -7,6 +7,10 @@ package execution
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -32,6 +36,120 @@ func NewOperation(op *operation.Operation, exec *lsv1alpha1.Execution, forceReco
 		exec:           exec,
 		forceReconcile: forceReconcile,
 	}
+}
+
+func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
+	op := "UpdateDeployItems"
+
+	executionItems, orphaned, lsErr := o.getDeployItems(ctx)
+	if lsErr != nil {
+		return lsErr
+	}
+
+	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
+		return lserrors.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
+	}
+
+	for _, item := range executionItems {
+		lsErr := o.deployOrTrigger(ctx, *item)
+		if lsErr != nil {
+			return lsErr
+		}
+	}
+
+	return nil
+}
+
+func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
+	op := "TriggerDeployItems"
+
+	items, _, lsErr := o.getDeployItems(ctx)
+	if lsErr != nil {
+		return nil, lsErr
+	}
+
+	classification, lsErr := newDeployItemClassification(o.exec.Status.JobID, items)
+	if lsErr != nil {
+		return nil, lsErr
+	}
+
+	// Start the runnable items, provided there are no failed items
+	if !classification.HasFailedItems() {
+		runnableItems := classification.GetRunnableItems()
+		for _, item := range runnableItems {
+			key := kutil.ObjectKeyFromObject(item.DeployItem)
+			di := &lsv1alpha1.DeployItem{}
+			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+			}
+
+			di.Status.JobID = o.exec.Status.JobID
+			now := metav1.Now()
+			di.Status.JobIDGenerationTime = &now
+			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000089, di); err != nil {
+				return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+			}
+		}
+	}
+
+	return classification, nil
+}
+
+func (o *Operation) TriggerDeployItemsForDelete(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
+	op := "TriggerDeployItemsForDelete"
+
+	items, _, lsErr := o.getDeployItems(ctx)
+	if lsErr != nil {
+		return nil, lsErr
+	}
+
+	classification, lsErr := newDeployItemClassificationForDelete(o.exec.Status.JobID, items)
+	if lsErr != nil {
+		return nil, lsErr
+	}
+
+	// If all deploy items have been successfully deleted, remove the finalizer of the execution
+	if classification.AllSucceeded() {
+		controllerutil.RemoveFinalizer(o.exec, lsv1alpha1.LandscaperFinalizer)
+		err := o.Writer().UpdateExecution(ctx, read_write_layer.W000096, o.exec)
+		if err != nil {
+			return classification, lserrors.NewWrappedError(err, op, "RemoveFinalizer", err.Error())
+		}
+		return classification, nil
+	}
+
+	// Start the runnable items, provided there are no failed items
+	if !classification.HasFailedItems() {
+		deletableItems := classification.GetRunnableItems()
+		for _, item := range deletableItems {
+			key := kutil.ObjectKeyFromObject(item.DeployItem)
+			di := &lsv1alpha1.DeployItem{}
+			if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+				return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+			}
+
+			di.Status.JobID = o.exec.Status.JobID
+			now := metav1.Now()
+			di.Status.JobIDGenerationTime = &now
+			if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
+				return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+			}
+		}
+	}
+
+	return classification, nil
+}
+
+func (o *Operation) getDeployItems(ctx context.Context) ([]*executionItem, []lsv1alpha1.DeployItem, lserrors.LsError) {
+	op := "getDeployItems"
+
+	managedItems, err := o.ListManagedDeployItems(ctx)
+	if err != nil {
+		return nil, nil, lserrors.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
+	}
+
+	executionItems, orphaned := o.getExecutionItems(managedItems)
+	return executionItems, orphaned, nil
 }
 
 // UpdateStatus updates the status of a execution

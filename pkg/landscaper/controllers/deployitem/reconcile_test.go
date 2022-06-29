@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	utils2 "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -56,6 +58,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	})
 
 	It("Should detect pickup timeouts", func() {
+		if utils2.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -87,6 +93,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	})
 
 	It("Should detect progressing timeouts", func() {
+		if utils2.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -127,6 +137,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	})
 
 	It("Should not detect progressing timeouts for deploy items in a final phase", func() {
+		if utils2.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -169,6 +183,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	})
 
 	It("Should prefer a timeout specified in the deploy item over the default", func() {
+		if utils2.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -211,6 +229,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	})
 
 	It("Should detect aborting timeouts", func() {
+		if utils2.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 

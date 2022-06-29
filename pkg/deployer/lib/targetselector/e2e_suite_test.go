@@ -55,6 +55,10 @@ var _ = Describe("E2E", func() {
 	})
 
 	It("should reconcile a deploy item with matching annotation selector", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 

@@ -95,6 +95,10 @@ var _ = Describe("Template", func() {
 	})
 
 	It("should set phase to failed if the provider configuration is invalid", func() {
+		if lsutils.NewReconcile {
+			return
+		}
+
 		item, err := containerctlr.NewDeployItemBuilder().ProviderConfig(&containerv1alpha1.ProviderConfiguration{
 			RegistryPullSecrets: []lsv1alpha1.ObjectReference{
 				{},

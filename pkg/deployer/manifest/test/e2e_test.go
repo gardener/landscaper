@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -68,6 +70,10 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should create a secret defined by a manifest deployer", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -110,14 +116,26 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should update a secret defined by a manifest deployer", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		checkUpdate("./testdata/01-di.yaml", "./testdata/02-di-updated.yaml", state, ctrl)
 	})
 
 	It("should patch a secret defined by a manifest deployer", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		checkUpdate("./testdata/05-di.yaml", "./testdata/06-di-patched.yaml", state, ctrl)
 	})
 
 	It("should cleanup resources that are removed from the list of managed resources", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -165,6 +183,10 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should fail if a resource is created in non existing namespace", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -202,6 +224,10 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should requeue after the correct time if continuous reconciliation is configured", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 

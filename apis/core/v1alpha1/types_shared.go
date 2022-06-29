@@ -219,6 +219,11 @@ const (
 
 	// AbortOperation is the annotation to let the landscaper abort all currently running children and itself.
 	AbortOperation Operation = "abort"
+
+	// InterruptOperation is the annotation to let the landscaper interrupt all currently running deploy items of an
+	// installation and its subinstallations. It differs from abort by not waiting some time such that the responsible
+	// deployer could do some cleanup.
+	InterruptOperation Operation = "interrupt"
 )
 
 // ObjectReference is the reference to a kubernetes object.

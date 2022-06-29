@@ -8,6 +8,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -69,6 +71,10 @@ var _ = Describe("Simple", func() {
 	})
 
 	It("Should successfully reconcile SimpleTest", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 
 		var err error

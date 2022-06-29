@@ -46,7 +46,7 @@ var _ = Describe("DeployItemExecutions", func() {
 		rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
 		Expect(err).ToNot(HaveOccurred())
 		imps, err := rh.GetImports()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		Expect(rh.ImportsSatisfied()).To(Succeed())
 		c := imports.NewConstructor(op)
 		Expect(c.Construct(ctx, imps)).To(Succeed())

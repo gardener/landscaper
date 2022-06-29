@@ -12,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -58,10 +60,6 @@ func NewReconcileHelper(ctx context.Context, op *installations.Operation) (*Reco
 	}
 
 	if err := rh.fetchSiblings(); err != nil {
-		return nil, err
-	}
-
-	if err := rh.fetchImports(); err != nil {
 		return nil, err
 	}
 
@@ -130,7 +128,12 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 		return utd
 	}
 
-	for _, imp := range rh.imports.All() {
+	imps, err := rh.GetImports()
+	if err != nil {
+		return false, err
+	}
+
+	for _, imp := range imps.All() {
 		// fetch stored config generation from installation status
 		storedConfigGen, storedConfigGens, err := rh.getConfigGenerationsFromImportStatus(imp)
 		if err != nil {
@@ -186,6 +189,59 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 	return returnAndSetCondition(true), nil
 }
 
+func (rh *ReconcileHelper) GetPredecessors(installation *lsv1alpha1.Installation, predecessorNames sets.String) (map[string]*installations.InstallationBase, error) {
+	predecessorMap := map[string]*installations.InstallationBase{}
+
+	for name := range predecessorNames {
+		predecessor := rh.siblings[name]
+		if predecessor == nil {
+			return nil, fmt.Errorf("internal error: sibling %q is nil", name)
+		}
+
+		predecessorMap[name] = predecessor
+	}
+
+	return predecessorMap, nil
+}
+
+func (rh *ReconcileHelper) AllPredecessorsFinished(installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationBase) error {
+	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
+	for name := range predecessorMap {
+		predecessor := predecessorMap[name]
+		if installations.IsRootInstallation(installation) {
+			if lsv1alpha1helper.HasOperation(predecessor.Info.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which has reconcile annotation",
+					kutil.ObjectKeyFromObject(predecessor.Info).String())
+			}
+
+			if predecessor.Info.Status.JobID != predecessor.Info.Status.JobIDFinished {
+				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which not finished current job %q",
+					kutil.ObjectKeyFromObject(predecessor.Info).String(), installation.Status.JobID)
+			}
+		} else {
+			if installation.Status.JobID != predecessor.Info.Status.JobIDFinished {
+				return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which not finished current job %q",
+					kutil.ObjectKeyFromObject(predecessor.Info).String(), installation.Status.JobID)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (rh *ReconcileHelper) AllPredecessorsSucceeded(installation *lsv1alpha1.Installation, predecessorMap map[string]*installations.InstallationBase) error {
+	for name := range predecessorMap {
+		predecessor := predecessorMap[name]
+
+		if predecessor.Info.Status.InstallationPhase != lsv1alpha1.InstallationPhaseSucceeded {
+			return installations.NewNotCompletedDependentsErrorf(nil, "depending on installation %q which is not succeeded",
+				kutil.ObjectKeyFromObject(predecessor.Info).String())
+		}
+	}
+
+	return nil
+}
+
 // InstallationsDependingOnReady returns nil if all installations the current one depends on are
 // - in phase 'Succeeded'
 // - up-to-date (observedGeneration == generation)
@@ -194,7 +250,8 @@ func (rh *ReconcileHelper) ImportsUpToDate() (bool, error) {
 // Additionally, an error is returned if the installation has a parent and it is not progressing.
 func (rh *ReconcileHelper) InstallationsDependingOnReady(dependedOnSiblings sets.String) error {
 	if rh.parent != nil && !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
-		return installations.NewNotCompletedDependentsErrorf(nil, "parent installation %q is not progressing", kutil.ObjectKeyFromObject(rh.parent.Info).String())
+		return installations.NewNotCompletedDependentsErrorf(nil, "parent installation %q is not progressing",
+			kutil.ObjectKeyFromObject(rh.parent.Info).String())
 	}
 
 	// iterate over siblings which is depended on (either directly or transitively) and check if they are 'ready'
@@ -227,9 +284,14 @@ func (rh *ReconcileHelper) InstallationsDependingOnReady(dependedOnSiblings sets
 func (rh *ReconcileHelper) ImportsSatisfied() error {
 	fldPath := field.NewPath("spec", "imports")
 
+	imps, err := rh.GetImports()
+	if err != nil {
+		return err
+	}
+
 	// check data imports
 	for _, imp := range rh.Inst.Info.Spec.Imports.Data {
-		data, ok := rh.imports.DataObjects[imp.Name]
+		data, ok := imps.DataObjects[imp.Name]
 		impPath := fldPath.Child("data", imp.Name)
 		if !ok {
 			return installations.NewImportNotSatisfiedErrorf(nil, "%s: import not satisfied", impPath.String())
@@ -245,7 +307,7 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 		// distinguish between single target and targetlist imports
 		if len(imp.Target) != 0 {
 			// single target import
-			target, ok := rh.imports.Targets[imp.Name]
+			target, ok := imps.Targets[imp.Name]
 			if !ok {
 				return installations.NewImportNotSatisfiedErrorf(nil, "%s: import not satisfied", impPath.String())
 			}
@@ -255,7 +317,7 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 			continue
 		}
 		// import has to be a targetlist import
-		targets, ok := rh.imports.TargetLists[imp.Name]
+		targets, ok := imps.TargetLists[imp.Name]
 		if !ok {
 			return installations.NewImportNotSatisfiedErrorf(nil, "%s: import not satisfied", impPath.String())
 		}
@@ -296,6 +358,12 @@ func (rh *ReconcileHelper) ImportsSatisfied() error {
 // GetImports returns the imports of the installation.
 // They are fetched from the cluster if that has not happened before.
 func (rh *ReconcileHelper) GetImports() (*imports.Imports, error) {
+	if rh.imports == nil {
+		if err := rh.fetchImports(); err != nil {
+			return nil, err
+		}
+	}
+
 	return rh.imports, nil
 }
 
@@ -484,6 +552,11 @@ func (rh *ReconcileHelper) checkStateForParentImport(fldPath *field.Path, import
 	if err != nil {
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
+
+	if utils.NewReconcile {
+		return nil
+	}
+
 	// parent has to be progressing
 	if !lsv1alpha1helper.IsProgressingInstallationPhase(rh.parent.Info.Status.Phase) {
 		return installations.NewImportNotSatisfiedErrorf(nil, "%s: Parent has to be progressing to get imports", fldPath.String())

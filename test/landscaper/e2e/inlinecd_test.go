@@ -8,6 +8,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -70,6 +72,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 	})
 
 	It("Should successfully reconcile InlineCDTest", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 
 		var err error

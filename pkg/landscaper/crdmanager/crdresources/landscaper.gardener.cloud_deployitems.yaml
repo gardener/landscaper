@@ -20,6 +20,9 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
+    - jsonPath: .status.deployItemPhase
+      name: DeployItemPhase
+      type: string
     - jsonPath: .status.exportRef.name
       name: ExportRef
       type: string
@@ -139,6 +142,9 @@ spec:
                   - message
                   type: object
                 type: array
+              deployItemPhase:
+                description: DeployItemPhase is the current phase of the deploy item.
+                type: string
               deployer:
                 description: Deployer describes the deployer that has reconciled the
                   deploy item.
@@ -170,6 +176,17 @@ spec:
                 required:
                 - name
                 type: object
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
+              jobIDGenerationTime:
+                description: JobIDGenerationTime is the timestamp when the JobID was
+                  set.
+                format: date-time
+                type: string
               lastError:
                 description: LastError describes the last error that occurred.
                 properties:

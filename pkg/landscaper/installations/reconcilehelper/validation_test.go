@@ -7,6 +7,8 @@ package reconcilehelper_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -134,8 +136,9 @@ var _ = Describe("Validation", func() {
 				target.Namespace = "test4"
 				Expect(fakeClient.Delete(ctx, target))
 
-				_, err = reconcilehelper.NewReconcileHelper(ctx, op)
-				Expect(err).To(HaveOccurred())
+				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
 			})
 
 			It("should fail if a import from a parent import is not present", func() {
@@ -151,8 +154,9 @@ var _ = Describe("Validation", func() {
 				target.Namespace = "test4"
 				Expect(fakeClient.Delete(ctx, target))
 
-				_, err = reconcilehelper.NewReconcileHelper(ctx, op)
-				Expect(err).To(HaveOccurred())
+				rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rh.ImportsSatisfied()).ToNot(Succeed())
 			})
 
 		})
@@ -167,11 +171,16 @@ var _ = Describe("Validation", func() {
 
 			Expect(op.SetInstallationContext(ctx)).To(Succeed())
 
-			_, err = reconcilehelper.NewReconcileHelper(ctx, op)
-			Expect(err).To(HaveOccurred())
+			rh, err := reconcilehelper.NewReconcileHelper(ctx, op)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rh.ImportsSatisfied()).ToNot(Succeed())
 		})
 
 		It("should fail if the parent provides the import but is not progressing", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			inInstA, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test1/a"])
