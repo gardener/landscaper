@@ -161,7 +161,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 			sortInstallationTemplatesAlphabetically(tmpls)
 			_, err := subinstallations.OrderInstallationTemplates(tmpls)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_data]-> c}"))
+			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_mapping]-> d -[c_target]-> c}"))
 		})
 
 	})
@@ -189,7 +189,7 @@ func newDependencyProvider(mode dependencyMode) dependencyProvider {
 	}
 }
 
-func (d dependencyProvider) nextMode() string {
+func (d *dependencyProvider) nextMode() string {
 	mode := d.mode
 	if mode == mixedDependency {
 		cur := d.count % 3
@@ -209,7 +209,7 @@ func (d dependencyProvider) nextMode() string {
 // generateSubinstallationTemplates describes dependencies between the subinstallation templates which should be created
 // There is expected to be one key for each installation template
 // and the value should list the names of all other installation templates this one depends on.
-// The 'mode' argument can be set to 'data', 'target', or 'mapping' and controls whether the import is satisfied by a
+// The dependency provider returns one of 'data', 'target', or 'mapping' via its 'nextMode' function, which controls whether the import is satisfied by a
 // data export, target export, or something exported in the exportDataMappings, respectively.
 func generateSubinstallationTemplates(deps map[string][]string, dProv dependencyProvider) []*lsv1alpha1.InstallationTemplate {
 	res := []*lsv1alpha1.InstallationTemplate{}

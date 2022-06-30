@@ -87,7 +87,7 @@ func (t *Target) SetOwner(own *metav1.OwnerReference) *Target {
 
 // Build creates a new data object based on the given data and metadata.
 // Does not set owner references.
-func (t Target) Build() (*lsv1alpha1.Target, error) {
+func (t *Target) Build() (*lsv1alpha1.Target, error) {
 	newTarget := &lsv1alpha1.Target{}
 	newTarget.Name = lsv1alpha1helper.GenerateDataObjectName(t.Metadata.Context, t.Metadata.Key)
 	newTarget.Namespace = t.Metadata.Namespace
