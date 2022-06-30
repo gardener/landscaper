@@ -88,7 +88,7 @@ func New(config *Config) (logr.Logger, error) {
 
 	zapLog, err := zapCfg.Build(zap.AddCallerSkip(1))
 	if err != nil {
-		return nil, err
+		return logr.Logger{}, err
 	}
 	return zapr.NewLogger(zapLog), nil
 }

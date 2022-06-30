@@ -50,7 +50,7 @@ var _ = Describe("GarbageCollector", func() {
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
-		logger := simplelogger.NewIOLogger(GinkgoWriter).WithTimestamps()
+		logger := simplelogger.WithTimestamps(simplelogger.NewIOLogger(GinkgoWriter))
 		var err error
 		lsMgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,

@@ -191,7 +191,7 @@ func CreateRegistry(ctx context.Context,
 
 	pod := &corev1.Pod{}
 	if _, _, err := serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder().Decode(podBytes.Bytes(), nil, pod); err != nil {
-		logger.Log(string(podBytes.Bytes()))
+		logger.Log(podBytes.String())
 		return fmt.Errorf("unable to decode pod: %w", err)
 	}
 	pod.Name = svc.Name
