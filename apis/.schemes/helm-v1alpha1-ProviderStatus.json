@@ -33,7 +33,8 @@
           "description": "UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids",
           "type": "string"
         }
-      }
+      },
+      "x-kubernetes-map-type": "atomic"
     },
     "utils-managedresource-ManagedResourceStatus": {
       "description": "ManagedResourceStatus describes the managed resource and their metadata.",

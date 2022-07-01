@@ -112,7 +112,7 @@
       ],
       "properties": {
         "containerID": {
-          "description": "Container's ID in the format 'docker://\u003ccontainer_id\u003e'",
+          "description": "Container's ID in the format '\u003ctype\u003e://\u003ccontainer_id\u003e'",
           "type": "string"
         },
         "exitCode": {

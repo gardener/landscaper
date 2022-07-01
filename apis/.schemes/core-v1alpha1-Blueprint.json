@@ -196,7 +196,6 @@
       ],
       "properties": {
         "value": {
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-AnyJSON"
         }
       }
@@ -328,7 +327,6 @@
       "properties": {
         "filesystem": {
           "description": "Filesystem defines a virtual filesystem with all files needed for a blueprint. The filesystem must be a YAML filesystem.",
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-AnyJSON"
         },
         "ref": {
@@ -386,7 +384,6 @@
           "description": "ExportDataMappings contains a template for restructuring exports. It is expected to contain a key for every blueprint-defined data export. Missing keys will be defaulted to their respective data export. Example: namespace: (( blueprint.exports.namespace ))",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/core-v1alpha1-AnyJSON"
           }
         },
@@ -403,7 +400,6 @@
           "description": "ImportDataMappings contains a template for restructuring imports. It is expected to contain a key for every blueprint-defined data import. Missing keys will be defaulted to their respective data import. Example: namespace: (( installation.imports.namespace ))",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/core-v1alpha1-AnyJSON"
           }
         },
@@ -490,7 +486,6 @@
         },
         "template": {
           "description": "Template contains an optional inline template. The template has to be of string for go template and a valid yaml/json for spiff.",
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-AnyJSON"
         },
         "type": {
@@ -566,8 +561,7 @@
     },
     "localTypes": {
       "additionalProperties": {
-        "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition",
-        "default": {}
+        "$ref": "#/definitions/core-v1alpha1-JSONSchemaDefinition"
       },
       "description": "LocalTypes defines additional blueprint local schemas",
       "type": "object"

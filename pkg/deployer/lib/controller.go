@@ -111,7 +111,7 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
 		WithOptions(args.Options).
-		WithLogger(log).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
 		Complete(con)
 }
 

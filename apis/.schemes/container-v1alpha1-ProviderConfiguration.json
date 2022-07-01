@@ -389,7 +389,6 @@
       "properties": {
         "filesystem": {
           "description": "Filesystem defines a inline yaml filesystem with a blueprint.",
-          "default": {},
           "$ref": "#/definitions/core-v1alpha1-AnyJSON"
         }
       }

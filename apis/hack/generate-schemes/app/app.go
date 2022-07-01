@@ -12,9 +12,9 @@ import (
 	"github.com/gardener/landscaper/apis/hack/generate-schemes/generators"
 	lsschema "github.com/gardener/landscaper/apis/schema"
 	"github.com/go-openapi/jsonreference"
-	"github.com/go-openapi/spec"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kube-openapi/pkg/common"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 	"sigs.k8s.io/yaml"
 )
 
@@ -38,8 +38,8 @@ type SchemaGenerator struct {
 // NewSchemaGenerator creates a new SchemaGenerator instance
 func NewSchemaGenerator(exports []string, CRDs []lsschema.CustomResourceDefinitions, getOpenAPIDefinitions GetOpenAPIDefinitions) *SchemaGenerator {
 	schemaGenerator := &SchemaGenerator{
-		Exports: exports,
-		CRDs:    CRDs,
+		Exports:               exports,
+		CRDs:                  CRDs,
 		GetOpenAPIDefinitions: getOpenAPIDefinitions,
 	}
 	return schemaGenerator

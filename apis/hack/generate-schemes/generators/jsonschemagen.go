@@ -8,10 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-openapi/spec"
 	"k8s.io/kube-openapi/pkg/common"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 )
-
 
 // DefinitionsPropName is the name of property where the definition is located
 const DefinitionsPropName = "definitions"
@@ -51,7 +50,7 @@ func (g *JSONSchemaGenerator) addDependencies(schemas map[string]spec.Schema, de
 		return fmt.Errorf("definition %q is not defined", defName)
 	}
 	for _, depName := range def.Dependencies {
-		if _, ok :=schemas[ParsePackageVersionName(depName).String()]; ok {
+		if _, ok := schemas[ParsePackageVersionName(depName).String()]; ok {
 			continue
 		}
 		def, ok := g.Definitions[depName]

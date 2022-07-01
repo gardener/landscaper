@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -29,6 +30,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, cmgr *compo
 	return builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.ComponentOverwrites{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
-		WithLogger(log).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
 		Complete(c)
 }

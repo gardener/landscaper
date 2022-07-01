@@ -7,6 +7,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -45,7 +46,7 @@ func AddControllersToManager(ctx context.Context, log logr.Logger, hostMgr manag
 
 	err := builder.ControllerManagedBy(hostMgr).
 		For(&lsv1alpha1.LsHealthCheck{}).
-		WithLogger(log.WithName("LsHealthCheck")).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("LsHealthCheck") }).
 		Complete(healthCheckController)
 	if err != nil {
 		return fmt.Errorf("unable to register health check controller: %w", err)

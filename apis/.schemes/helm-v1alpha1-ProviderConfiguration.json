@@ -441,21 +441,18 @@
         "install": {
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/core-v1alpha1-AnyJSON"
           }
         },
         "uninstall": {
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/core-v1alpha1-AnyJSON"
           }
         },
         "upgrade": {
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/core-v1alpha1-AnyJSON"
           }
         }

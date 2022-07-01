@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
 
@@ -27,7 +28,7 @@ func AddControllersToManager(log logr.Logger, mgr manager.Manager, config *confi
 
 	err := builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.Environment{}).
-		WithLogger(log.WithName("Environment")).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("Environment") }).
 		Complete(env)
 	if err != nil {
 		return fmt.Errorf("unable to register environment controller: %w", err)
@@ -42,7 +43,7 @@ func AddControllersToManager(log logr.Logger, mgr manager.Manager, config *confi
 
 	err = builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.DeployerRegistration{}).
-		WithLogger(log.WithName("DeployerRegistration")).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("DeployerRegistration") }).
 		Complete(deployerReg)
 	if err != nil {
 		return fmt.Errorf("unable to register deployer registration controller: %w", err)
@@ -57,7 +58,7 @@ func AddControllersToManager(log logr.Logger, mgr manager.Manager, config *confi
 
 	err = builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.Installation{}).
-		WithLogger(log.WithName("DeployerRegistration")).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("DeployerRegistration") }).
 		Complete(inst)
 	if err != nil {
 		return fmt.Errorf("unable to register installation controller: %w", err)

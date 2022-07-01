@@ -5,28 +5,28 @@
 package generators
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	lsschema "github.com/gardener/landscaper/apis/schema"
-	"github.com/go-openapi/spec"
 	apiext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextval "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
-	runtimeschema "k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kube-openapi/pkg/common"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 	"k8s.io/utils/pointer"
 )
 
 // CustomResourceDefinition defines the internal representation of the custom resource.
 type CustomResourceDefinition struct {
 	OutputDir string
-	CRD *apiextv1.CustomResourceDefinition
+	CRD       *apiextv1.CustomResourceDefinition
 }
 
 // CRDGenerator defines a generator to generate crd's.
 type CRDGenerator struct {
-	crds map[string]*CustomResourceDefinition
+	crds        map[string]*CustomResourceDefinition
 	Definitions map[string]common.OpenAPIDefinition
 }
 
@@ -36,7 +36,7 @@ func NewCRDGenerator(definitionsFunc func(ref common.ReferenceCallback) map[stri
 		return spec.MustCreateRef(path)
 	}
 	return &CRDGenerator{
-		crds: map[string]*CustomResourceDefinition{},
+		crds:        map[string]*CustomResourceDefinition{},
 		Definitions: definitionsFunc(origRefCallback),
 	}
 }
@@ -46,7 +46,7 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 	// first find the correct schema definition
 	var (
 		schema *spec.Schema
-		pvn PackageVersionName
+		pvn    PackageVersionName
 	)
 	for name, openapidef := range g.Definitions {
 		pvn = ParsePackageVersionName(name)
@@ -83,7 +83,7 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 	if !ok {
 		crd = &CustomResourceDefinition{
 			OutputDir: outputDir,
-			CRD: &apiextv1.CustomResourceDefinition{},
+			CRD:       &apiextv1.CustomResourceDefinition{},
 		}
 		crd.CRD.APIVersion = "apiextensions.k8s.io/v1"
 		crd.CRD.Kind = "CustomResourceDefinition"
@@ -108,12 +108,12 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 	}
 
 	defVersion := apiextv1.CustomResourceDefinitionVersion{
-		Name:                     version,
-		Served:                   def.Served,
-		Storage:                  def.Storage,
-		Deprecated:               def.Deprecated,
-		DeprecationWarning:       nil,
-		Schema:                   &apiextv1.CustomResourceValidation{
+		Name:               version,
+		Served:             def.Served,
+		Storage:            def.Storage,
+		Deprecated:         def.Deprecated,
+		DeprecationWarning: nil,
+		Schema: &apiextv1.CustomResourceValidation{
 			OpenAPIV3Schema: jsonSchemaProps,
 		},
 	}
@@ -138,6 +138,7 @@ func (g *CRDGenerator) Generate(group, version string, def lsschema.CustomResour
 
 func (g *CRDGenerator) CRDs() ([]*CustomResourceDefinition, error) {
 	crds := make([]*CustomResourceDefinition, 0)
+	ctx := context.Background()
 	for _, c := range g.crds {
 		defaultedCRD := c.CRD.DeepCopy()
 		apiextv1.SetDefaults_CustomResourceDefinition(defaultedCRD)
@@ -145,15 +146,12 @@ func (g *CRDGenerator) CRDs() ([]*CustomResourceDefinition, error) {
 		if err := apiextv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(defaultedCRD, coreCRD, nil); err != nil {
 			return nil, fmt.Errorf("unable to convert crd %s: %w", c.CRD.Name, err)
 		}
-		if err := apiextval.ValidateCustomResourceDefinition(coreCRD, runtimeschema.GroupVersion{
-			Group:   c.CRD.GroupVersionKind().Group,
-			Version: c.CRD.GroupVersionKind().Version,
-		}); len(err) != 0 {
+		if err := apiextval.ValidateCustomResourceDefinition(ctx, coreCRD); len(err) != 0 {
 			return nil, fmt.Errorf("crd %s is invalid: %w", c.CRD.Name, err.ToAggregate())
 		}
 		crds = append(crds, &CustomResourceDefinition{
 			OutputDir: c.OutputDir,
-			CRD: c.CRD,
+			CRD:       c.CRD,
 		})
 	}
 	return crds, nil
@@ -241,7 +239,7 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 	}
 	if len(schema.Type) > 1 {
 		return &apiextv1.JSONSchemaProps{
-			Description: schema.Description,
+			Description:            schema.Description,
 			XPreserveUnknownFields: pointer.BoolPtr(true),
 		}, nil
 	}
@@ -249,46 +247,46 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 	// automatically use runtime extension if the schema is one
 	if schema.Type[0] == "object" && schema.Ref.String() == "k8s.io/apimachinery/pkg/runtime.RawExtension" {
 		return &apiextv1.JSONSchemaProps{
-			Type: "object",
-			Description: schema.Description,
+			Type:                   "object",
+			Description:            schema.Description,
 			XPreserveUnknownFields: pointer.BoolPtr(true),
-			XEmbeddedResource: true,
+			XEmbeddedResource:      true,
 		}, nil
 	}
 	if schema.Ref.String() == "github.com/gardener/component-spec/bindings-go/apis/v2.UnstructuredTypedObject" {
 		return &apiextv1.JSONSchemaProps{
-			Type: "object",
-			Description: schema.Description,
+			Type:                   "object",
+			Description:            schema.Description,
 			XPreserveUnknownFields: pointer.BoolPtr(true),
 		}, nil
 	}
 	schemaProps := &apiextv1.JSONSchemaProps{
-		ID:                     schema.ID,
-		Schema:                 "",
-		Ref:                    nil, // never set in our case
-		Description:            schema.Description,
-		Type:                   schema.Type[0],
-		Format:                 schema.Format,
-		Title:                  "",
-		Default:                nil,
-		Maximum:                schema.Maximum,
-		ExclusiveMaximum:       schema.ExclusiveMaximum,
-		Minimum:                schema.Minimum,
-		ExclusiveMinimum:       schema.ExclusiveMinimum,
-		MaxLength:              schema.MaxLength,
-		MinLength:              schema.MinLength,
-		Pattern:               schema.Pattern,
-		MaxItems:               schema.MaxItems,
-		MinItems:               schema.MinItems,
-		UniqueItems:            schema.UniqueItems,
-		MultipleOf:             schema.MultipleOf,
-		MaxProperties:          schema.MaxProperties,
-		MinProperties:          schema.MinProperties,
-		Required:               schema.Required,
-		Properties:             nil,
-		AdditionalProperties:   nil,
-		PatternProperties:      nil,
-		AdditionalItems:        nil,
+		ID:                   schema.ID,
+		Schema:               "",
+		Ref:                  nil, // never set in our case
+		Description:          schema.Description,
+		Type:                 schema.Type[0],
+		Format:               schema.Format,
+		Title:                "",
+		Default:              nil,
+		Maximum:              schema.Maximum,
+		ExclusiveMaximum:     schema.ExclusiveMaximum,
+		Minimum:              schema.Minimum,
+		ExclusiveMinimum:     schema.ExclusiveMinimum,
+		MaxLength:            schema.MaxLength,
+		MinLength:            schema.MinLength,
+		Pattern:              schema.Pattern,
+		MaxItems:             schema.MaxItems,
+		MinItems:             schema.MinItems,
+		UniqueItems:          schema.UniqueItems,
+		MultipleOf:           schema.MultipleOf,
+		MaxProperties:        schema.MaxProperties,
+		MinProperties:        schema.MinProperties,
+		Required:             schema.Required,
+		Properties:           nil,
+		AdditionalProperties: nil,
+		PatternProperties:    nil,
+		AdditionalItems:      nil,
 	}
 
 	if schema.Enum != nil {
@@ -386,4 +384,3 @@ func ConvertSpecSchemaToApiextv1Schema(schema *spec.Schema) (*apiextv1.JSONSchem
 
 	return schemaProps, nil
 }
-
