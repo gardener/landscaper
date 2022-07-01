@@ -25,11 +25,8 @@ github.com/Masterminds/sprig/v3
 github.com/Masterminds/squirrel
 # github.com/Microsoft/go-winio v0.5.0
 ## explicit; go 1.12
-github.com/Microsoft/go-winio
-github.com/Microsoft/go-winio/pkg/guid
 # github.com/Microsoft/hcsshim v0.8.24
 ## explicit; go 1.13
-github.com/Microsoft/hcsshim/osversion
 # github.com/PuerkitoBio/purell v1.1.1
 ## explicit
 github.com/PuerkitoBio/purell
@@ -71,7 +68,6 @@ github.com/containerd/containerd/remotes/errors
 github.com/containerd/containerd/version
 # github.com/containerd/continuity v0.2.0
 ## explicit; go 1.13
-github.com/containerd/continuity/pathdriver
 # github.com/cyphar/filepath-securejoin v0.2.2
 ## explicit
 github.com/cyphar/filepath-securejoin
@@ -98,7 +94,7 @@ github.com/docker/distribution/registry/client/auth/challenge
 github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
-# github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+# github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible => github.com/moby/moby v20.10.5+incompatible
 ## explicit
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
@@ -113,18 +109,11 @@ github.com/docker/docker/api/types/swarm/runtime
 github.com/docker/docker/api/types/versions
 github.com/docker/docker/errdefs
 github.com/docker/docker/pkg/homedir
-github.com/docker/docker/pkg/idtools
 github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/longpath
-github.com/docker/docker/pkg/mount
 github.com/docker/docker/pkg/stringid
-github.com/docker/docker/pkg/system
-github.com/docker/docker/pkg/tarsum
-github.com/docker/docker/pkg/term
-github.com/docker/docker/pkg/term/windows
 github.com/docker/docker/registry
-github.com/docker/docker/registry/resumable
 github.com/docker/docker/rootless
 # github.com/docker/docker-credential-helpers v0.6.3
 ## explicit
@@ -133,7 +122,6 @@ github.com/docker/docker-credential-helpers/credentials
 # github.com/docker/go-connections v0.4.0
 ## explicit
 github.com/docker/go-connections/nat
-github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-metrics v0.0.1
 ## explicit; go 1.11
@@ -502,7 +490,6 @@ github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v1.0.2
 ## explicit; go 1.13
-github.com/opencontainers/runc/libcontainer/user
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 ## explicit
 github.com/peterbourgon/diskv
@@ -646,8 +633,6 @@ golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-golang.org/x/net/internal/socks
-golang.org/x/net/proxy
 # golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
 ## explicit; go 1.11
 golang.org/x/oauth2
@@ -1275,3 +1260,4 @@ sigs.k8s.io/yaml
 # github.com/mandelsoft/spiff => github.com/mandelsoft/spiff v1.3.0-beta-7.0.20200909122641-3393af1d3804
 # github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.8.0
 # github.com/onsi/gomega => github.com/onsi/gomega v1.5.0
+# github.com/docker/docker => github.com/moby/moby v20.10.5+incompatible
