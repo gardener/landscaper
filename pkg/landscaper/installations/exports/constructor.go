@@ -118,9 +118,14 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// exportDataMappings
-	exportDataMappings, err := c.templateDataMappings(fldPath, exports)
-	if err != nil {
-		return nil, nil, err
+	if c.Inst.Info.Spec.ExportDataMappings != nil && len(c.Inst.Info.Spec.ExportDataMappings) > 0 {
+		exportDataMappings, err := c.templateDataMappings(fldPath, exports)
+		if err != nil {
+			return nil, nil, err
+		}
+		for k, v := range exportDataMappings {
+			exports[k] = v // overwrite exports with exportDataMappings
+		}
 	}
 
 	// Resolve export mapping for all internalExports
@@ -128,17 +133,18 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	dataExportsPath := fldPath.Child("exports").Child("data")
 	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
 		dataExportPath := dataExportsPath.Child(dataExport.Name)
-		data, ok := exportDataMappings[dataExport.Name]
+		data, ok := exports[dataExport.Name]
 		if !ok {
-			data, ok = exports[dataExport.Name]
-			if !ok {
-				return nil, nil, fmt.Errorf("%s: data export is not defined", dataExportPath.String())
-			}
+			return nil, nil, fmt.Errorf("%s: data export is not defined", dataExportPath.String())
 		}
 		do := dataobjects.New().
 			SetSourceType(lsv1alpha1.ExportDataObjectSourceType).
 			SetKey(dataExport.DataRef).
 			SetData(data)
+		if len(do.Metadata.Key) == 0 {
+			// this will happen if the export was generated via an exportDataMapping
+			do.SetKey(dataExport.Name)
+		}
 		dataObjects[i] = do
 	}
 
@@ -146,12 +152,9 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	targetExportsPath := fldPath.Child("exports").Child("targets")
 	for i, targetExport := range c.Inst.Info.Spec.Exports.Targets {
 		targetExportPath := targetExportsPath.Child(targetExport.Name)
-		data, ok := exportDataMappings[targetExport.Name]
+		data, ok := exports[targetExport.Name]
 		if !ok {
-			data, ok = exports[targetExport.Name]
-			if !ok {
-				return nil, nil, fmt.Errorf("%s: target export is not defined", targetExportPath.String())
-			}
+			return nil, nil, fmt.Errorf("%s: target export is not defined", targetExportPath.String())
 		}
 		target, err := ConvertTargetTemplateToTarget(data)
 		if err != nil {
@@ -232,7 +235,14 @@ func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, e
 // templateDataMappings constructs the export data mappings
 func (c *Constructor) templateDataMappings(fldPath *field.Path, exports map[string]interface{}) (map[string]interface{}, error) {
 
-	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(exports)
+	// have all exports as top-level key and below an 'exports' key
+	// this allows easy access, but forbids using exports which are named 'exports'
+	exportValues := map[string]interface{}{}
+	for k, v := range exports {
+		exportValues[k] = v
+	}
+	exportValues["exports"] = exports
+	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(exportValues)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
 	}
@@ -243,21 +253,21 @@ func (c *Constructor) templateDataMappings(fldPath *field.Path, exports map[stri
 
 		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)
 		if err != nil {
-			return nil, fmt.Errorf("unable to parse import mapping template %s: %w", expPath.String(), err)
+			return nil, fmt.Errorf("unable to parse export mapping template %s: %w", expPath.String(), err)
 		}
 
 		res, err := spiff.Cascade(tmpl, nil)
 		if err != nil {
-			return nil, fmt.Errorf("unable to template import mapping template %s: %w", expPath.String(), err)
+			return nil, fmt.Errorf("unable to template export mapping template %s: %w", expPath.String(), err)
 		}
 
 		dataBytes, err := spiffyaml.Marshal(res)
 		if err != nil {
-			return nil, fmt.Errorf("unable to marshal templated import mapping %s: %w", expPath.String(), err)
+			return nil, fmt.Errorf("unable to marshal templated export mapping %s: %w", expPath.String(), err)
 		}
 		var data interface{}
 		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
-			return nil, fmt.Errorf("unable to unmarshal templated import mapping %s: %w", expPath.String(), err)
+			return nil, fmt.Errorf("unable to unmarshal templated export mapping %s: %w", expPath.String(), err)
 		}
 		values[key] = data
 	}

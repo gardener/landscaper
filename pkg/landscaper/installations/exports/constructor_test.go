@@ -49,7 +49,7 @@ var _ = Describe("Constructor", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		fakeInstallations = state.Installations
-		Expect(testutils.CreateExampleDefaultContext(context.TODO(), fakeClient, "test1", "test2", "test3", "test4"))
+		Expect(testutils.CreateExampleDefaultContext(context.TODO(), fakeClient, "test1", "test2", "test3", "test4", "test5", "test6"))
 
 		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
@@ -260,6 +260,81 @@ var _ = Describe("Constructor", func() {
 			c := exports.NewConstructor(op)
 			_, _, err = c.Construct(ctx)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Context("ExportDataMappings", func() {
+		It("should correctly export hard-coded values", func() {
+			ctx := context.Background()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test5/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+
+			c := exports.NewConstructor(op)
+			res, _, err := c.Construct(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			Expect(res).To(HaveLen(1), "should export 1 data object for 1 exportDataMapping")
+
+			id := func(element interface{}) string {
+				return element.(*dataobjects.DataObject).Metadata.Key
+			}
+			Expect(res).To(MatchAllElements(id, Elements{
+				"a.z": PointTo(MatchFields(IgnoreExtras, Fields{
+					"Metadata": MatchFields(IgnoreExtras, Fields{
+						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+					}),
+					"Data": Equal("bar"),
+				})),
+			}))
+		})
+
+		It("should correctly render templates with the child's exports", func() {
+			ctx := context.Background()
+			inInstRoot, err := installations.CreateInternalInstallation(ctx, op.ComponentsRegistry(), fakeInstallations["test6/root"])
+			Expect(err).ToNot(HaveOccurred())
+			op.Inst = inInstRoot
+			Expect(op.SetInstallationContext(ctx)).To(Succeed())
+
+			op.Inst.Blueprint.Info.ExportExecutions = []lsv1alpha1.TemplateExecutor{
+				{
+					Type:     lsv1alpha1.GOTemplateType,
+					Template: lsv1alpha1.AnyJSON{RawMessage: []byte(`"exports:\n  root.y: {{ index .values.dataobjects \"root.y\" }}\n  root.z: {{ index .values.dataobjects \"root.z\" }}"`)},
+				},
+			}
+
+			c := exports.NewConstructor(op)
+			res, _, err := c.Construct(ctx)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res).ToNot(BeNil())
+			Expect(res).To(HaveLen(2), "should export 2 data object from b and c")
+
+			id := func(element interface{}) string {
+				do := element.(*dataobjects.DataObject)
+				return do.Metadata.Key
+			}
+			Expect(res).To(MatchAllElements(id, Elements{
+				"root.z": PointTo(MatchFields(IgnoreExtras, Fields{
+					"Data": Equal(map[string]interface{}{
+						"some": map[string]interface{}{
+							"arbitrary": map[string]interface{}{
+								"struct": "val-b",
+							},
+						},
+					}),
+					"Metadata": MatchFields(IgnoreExtras, Fields{
+						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+						"Key":        Equal("root.z"),
+					}),
+				})),
+				"root.y": PointTo(MatchFields(IgnoreExtras, Fields{
+					"Data": Equal("val-c"),
+					"Metadata": MatchFields(IgnoreExtras, Fields{
+						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
+						"Key":        Equal("root.y"),
+					}),
+				})),
+			}))
 		})
 	})
 
