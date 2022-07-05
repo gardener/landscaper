@@ -25,9 +25,5 @@ spec:
   importDataMappings:
     a.b: "foo"
 
-  exports:
-    data:
-    - name: a.z
-
   exportDataMappings:
     a.z: "bar"

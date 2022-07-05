@@ -31,7 +31,6 @@ spec:
     data:
     - name: root.y
       dataRef: root.y
-    - name: root.z
   
   exportDataMappings:
     root.z:

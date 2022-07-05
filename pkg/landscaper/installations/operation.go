@@ -829,6 +829,13 @@ func importsAnyExport(exporter *Installation, importer *InstallationBase) bool {
 			}
 		}
 	}
+	for export := range exporter.Info.Spec.ExportDataMappings {
+		for _, def := range importer.Info.Spec.Imports.Data {
+			if def.DataRef == export {
+				return true
+			}
+		}
+	}
 	for _, export := range exporter.Info.Spec.Exports.Targets {
 		for _, def := range importer.Info.Spec.Imports.Targets {
 			if def.Target == export.Target {

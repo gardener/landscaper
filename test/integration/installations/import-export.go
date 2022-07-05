@@ -120,7 +120,6 @@ func ImportExportTests(f *framework.Framework) {
 			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
 
 			labels := map[string]string{
-				lsv1alpha1.DataObjectKeyLabel:        "dataExp",
 				lsv1alpha1.DataObjectSourceTypeLabel: "export",
 				lsv1alpha1.DataObjectSourceLabel:     fmt.Sprintf("Inst.%s", root.Name),
 			}
