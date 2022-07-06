@@ -13,8 +13,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/yaml"
@@ -153,6 +154,10 @@ func CheckForDuplicateExports(current *lsv1alpha1.Installation, existing []lsv1a
 	}
 
 	for _, inst := range existing {
+		if current.Name == inst.Name {
+			// make sure we don't compare the installation with itself, as this will always lead to conflicts if something is exported
+			continue
+		}
 		existDataExp, existTargetExp := extractExportNames(&inst)
 		commonDataExp := curDataExp.Intersection(existDataExp)
 		commonTargetExp := curTargetExp.Intersection(existTargetExp)
