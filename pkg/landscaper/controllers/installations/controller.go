@@ -143,6 +143,14 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 
 	}
 
+	if inst.Status.ObservedGeneration != inst.Generation {
+		// spec has changed, make sure the exports don't conflict
+		err := c.checkForDuplicateExports(ctx, inst)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	// generate new jobID
 	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !lsv1alpha1helper.IsDeletionInstallationPhase(inst.Status.InstallationPhase)
 	if installations.IsRootInstallation(inst) &&
@@ -213,29 +221,9 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	if inst.Status.ObservedGeneration != inst.Generation {
 		// spec has changed, make sure the exports don't conflict
-		// fetch all installations in the same namespace with the same parent
-		var selector client.ListOption
-		if parent, ok := inst.Labels[lsv1alpha1.EncompassedByLabel]; ok {
-			selector = client.MatchingLabels(map[string]string{
-				lsv1alpha1.EncompassedByLabel: parent,
-			})
-		} else {
-			r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			selector = client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)}
-		}
-		siblingList := &lsv1alpha1.InstallationList{}
-		err := read_write_layer.ListInstallations(ctx, c.Client(), siblingList, client.InNamespace(inst.Namespace), selector)
+		err := c.checkForDuplicateExports(ctx, inst)
 		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		err = utils.CheckForDuplicateExports(inst, siblingList.Items)
-		if err != nil {
-			lserr := lserrors.BuildLsError(err, "Reconcile", "DuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
-			return reconcile.Result{}, c.handleError(ctx, lserr, oldInst, inst, false)
+			return reconcile.Result{}, c.handleError(ctx, lserrors.BuildLsError(err, "CheckForDuplicateExports", "DuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem), oldInst, inst, false)
 		}
 	}
 
@@ -509,4 +497,27 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	return lsError
+}
+
+func (c *Controller) checkForDuplicateExports(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	// fetch all installations in the same namespace with the same parent
+	var selector client.ListOption
+	if parent, ok := inst.Labels[lsv1alpha1.EncompassedByLabel]; ok {
+		selector = client.MatchingLabels(map[string]string{
+			lsv1alpha1.EncompassedByLabel: parent,
+		})
+	} else {
+		r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
+		if err != nil {
+			return err
+		}
+		selector = client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)}
+	}
+	siblingList := &lsv1alpha1.InstallationList{}
+	err := read_write_layer.ListInstallations(ctx, c.Client(), siblingList, client.InNamespace(inst.Namespace), selector)
+	if err != nil {
+		return err
+	}
+
+	return utils.CheckForDuplicateExports(inst, siblingList.Items)
 }
