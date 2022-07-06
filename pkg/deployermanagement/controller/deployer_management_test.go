@@ -100,7 +100,7 @@ var _ = Describe("Deployer Management Test", func() {
 			reg.Spec.DeployItemTypes = []lsv1alpha1.DeployItemType{"test"}
 			testutils.ExpectNoError(state.Create(ctx, reg))
 
-			testutils.MimicKCMServiceAccount(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
+			testutils.MimicKCMServiceAccountTokenGeneration(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
 				Name:      deployers.FQName(reg, env),
 				Namespace: state.Namespace,
 				Token:     "my-service-account-token",

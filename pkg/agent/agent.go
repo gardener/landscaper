@@ -169,7 +169,8 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 	}
 
 	hostRestConfig := rest.CopyConfig(a.hostRestConfig)
-	if err := kutil.AddServiceAccountAuth(ctx, kubeClient, sa, hostRestConfig); err != nil {
+	if err := kutil.AddServiceAccountToken(ctx, kubeClient, sa, hostRestConfig); err != nil {
+		a.log.Error(err, "unable to add a service account token", "service-account", sa.Name)
 		return nil, err
 	}
 
