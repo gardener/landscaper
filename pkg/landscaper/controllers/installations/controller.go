@@ -18,7 +18,9 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -207,6 +209,34 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	if !inst.DeletionTimestamp.IsZero() {
 		err := c.handleDelete(ctx, inst)
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
+	}
+
+	if inst.Status.ObservedGeneration != inst.Generation {
+		// spec has changed, make sure the exports don't conflict
+		// fetch all installations in the same namespace with the same parent
+		var selector client.ListOption
+		if parent, ok := inst.Labels[lsv1alpha1.EncompassedByLabel]; ok {
+			selector = client.MatchingLabels(map[string]string{
+				lsv1alpha1.EncompassedByLabel: parent,
+			})
+		} else {
+			r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			selector = client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)}
+		}
+		siblingList := &lsv1alpha1.InstallationList{}
+		err := read_write_layer.ListInstallations(ctx, c.Client(), siblingList, client.InNamespace(inst.Namespace), selector)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		err = utils.CheckForDuplicateExports(inst, siblingList.Items)
+		if err != nil {
+			lserr := lserrors.BuildLsError(err, "Reconcile", "DuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+			return reconcile.Result{}, c.handleError(ctx, lserr, oldInst, inst, false)
+		}
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
