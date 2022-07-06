@@ -114,6 +114,41 @@ type MimicKCMServiceAccountArgs struct {
 	Timeout time.Duration
 }
 
+// MimicKCMServiceAccountTokenGeneration mimics the kube controller manager behavior for service accounts.
+// The apiserver is watched for secrets of a service account, and a token is added to the secret.
+func MimicKCMServiceAccountTokenGeneration(ctx context.Context, client client.Client, args MimicKCMServiceAccountArgs) {
+	if len(args.Token) == 0 {
+		args.Token = "my-test-token"
+	}
+	if args.Timeout == 0 {
+		args.Timeout = 20 * time.Second
+	}
+	go func() {
+		_ = wait.PollImmediate(2*time.Second, args.Timeout, func() (done bool, err error) {
+			secrets, err := kutil.GetSecretsForServiceAccount(ctx, client, kutil.ObjectKey(args.Name, args.Namespace))
+			if err != nil {
+				return false, err
+			}
+
+			if len(secrets) == 0 {
+				return false, nil
+			}
+
+			for _, secret := range secrets {
+				secret.Data = map[string][]byte{
+					corev1.ServiceAccountTokenKey: []byte(args.Token),
+				}
+
+				if err = client.Update(ctx, secret); err != nil {
+					return false, err
+				}
+			}
+
+			return true, nil
+		})
+	}()
+}
+
 // MimicKCMServiceAccount mimics the kube controller manager behavior for service accounts.
 // The apiserver is watched for service accounts and a account secret is created.
 func MimicKCMServiceAccount(ctx context.Context, client client.Client, args MimicKCMServiceAccountArgs) {
