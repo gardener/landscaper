@@ -274,7 +274,7 @@ The curl should return the following:
 
 ### 4. Deploy the application
 
-Lets take a quick summary of what has been done so far. We installed the Landscaper plus an OCI registry into a Kubernetes cluster. We pushed the OCI image of our hello application into the OCI registry. We developed the component-descriptor which describes all resources needed for deploying the application, we modified the blueprint which describes what needs to be done to deploy the application. These artifacts were transformed into an OCI artifact and pushed into the OCI registry.
+Let's take a quick summary of what has been done so far. We installed the Landscaper plus an OCI registry into a Kubernetes cluster. We pushed the OCI image of our hello application into the OCI registry. We developed the component-descriptor which describes all resources needed for deploying the application, including the modified blueprint which describes what needs to be done to deploy the application. These artifacts were transformed into a component archive and uploaded as an OCI artifact into the OCI registry.
 
 Now, we need to tell Landscaper to pick up the artifacts from the OCI registry and execute the deployment. To achieve this, we need to develop two Kubernetes custom resources.
 
