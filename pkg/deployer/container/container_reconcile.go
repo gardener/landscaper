@@ -157,7 +157,7 @@ func (c *Container) Reconcile(ctx context.Context, operation container.Operation
 		}
 
 		// we have to persist the observed changes so lets do a patch
-		if err := lsWriter.PatchDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem, oldDeployItem); err != nil {
+		if err := lsWriter.UpdateDeployItemStatus(ctx, read_write_layer.W000063, c.DeployItem); err != nil {
 			return lserrors.NewWrappedError(err, operationName, "UpdateDeployItemStatus", err.Error())
 		}
 

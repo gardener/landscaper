@@ -25,6 +25,7 @@ import (
 
 // ApplyDeployItemTemplate sets and updates the values defined by deploy item template on a deploy item.
 func ApplyDeployItemTemplate(di *lsv1alpha1.DeployItem, tmpl lsv1alpha1.DeployItemTemplate) {
+	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 	lsv1alpha1helper.SetOperation(&di.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	lsv1alpha1helper.SetTimestampAnnotationNow(&di.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)
 	di.Spec.Type = tmpl.Type
@@ -49,7 +50,7 @@ func getDeployItemIndexByManagedName(items []lsv1alpha1.DeployItem, name string)
 
 // listManagedDeployItems collects all deploy items that are managed by the execution.
 // The managed execution is identified by the managed by label and the ownership.
-func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
+func (o *Operation) ListManagedDeployItems(ctx context.Context) ([]lsv1alpha1.DeployItem, error) {
 	deployItemList := &lsv1alpha1.DeployItemList{}
 	// todo: maybe use name and namespace
 	if err := read_write_layer.ListDeployItems(ctx, o.Client(), deployItemList,
@@ -61,8 +62,8 @@ func (o *Operation) listManagedDeployItems(ctx context.Context) ([]lsv1alpha1.De
 
 // getExecutionItems creates an internal representation for all execution items.
 // It also returns all removed deploy items that are not defined by the execution anymore.
-func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executionItem, []lsv1alpha1.DeployItem) {
-	execItems := make([]executionItem, len(o.exec.Spec.DeployItems))
+func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]*executionItem, []lsv1alpha1.DeployItem) {
+	execItems := make([]*executionItem, len(o.exec.Spec.DeployItems))
 	managed := sets.NewInt()
 	for i, di := range o.exec.Spec.DeployItems {
 		execItem := executionItem{
@@ -72,7 +73,7 @@ func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]executio
 			managed.Insert(j)
 			execItem.DeployItem = items[j].DeepCopy()
 		}
-		execItems[i] = execItem
+		execItems[i] = &execItem
 	}
 	orphaned := make([]lsv1alpha1.DeployItem, 0)
 	for i, item := range items {

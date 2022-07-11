@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -65,6 +67,7 @@ var _ = Describe("Landscaper Controller", func() {
 			defer ctx.Done()
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				MetricsBindAddress: "0",
+				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
 			lsinstall.Install(mgr.GetScheme())

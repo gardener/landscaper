@@ -10,6 +10,10 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
+
+	"github.com/google/uuid"
+
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +37,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
@@ -87,6 +92,105 @@ type Controller struct {
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if !utils.NewReconcile {
+		return c.reconcileOld(ctx, req)
+	} else {
+		return c.reconcileNew(ctx, req)
+	}
+}
+
+func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := c.Log().WithValues("installation", req.NamespacedName.String())
+	ctx = logr.NewContext(ctx, logger)
+	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
+
+	inst := &lsv1alpha1.Installation{}
+	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
+		if apierrors.IsNotFound(err) {
+			c.Log().V(5).Info(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	// default the installation as it not done by the Controller runtime
+	api.LandscaperScheme.Default(inst)
+
+	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
+		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000107, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
+	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.InterruptOperation) {
+		if err := c.handleInterruptOperation(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+	}
+
+	oldInst := inst.DeepCopy()
+
+	if !installations.IsRootInstallation(inst) && lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		// only root installations could be triggered with operation annotation to prevent that end users interfere with overall
+		// algorithm
+		if err := c.removeReconcileAnnotation(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{}, nil
+
+	}
+
+	// generate new jobID
+	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !lsv1alpha1helper.IsDeletionInstallationPhase(inst.Status.InstallationPhase)
+	if installations.IsRootInstallation(inst) &&
+		(lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || isFirstDelete) &&
+		inst.Status.JobID == inst.Status.JobIDFinished {
+
+		inst.Status.JobID = uuid.New().String()
+		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000082, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		if err := c.removeReconcileAnnotation(ctx, inst); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		return reconcile.Result{}, nil
+	}
+
+	// handle reconcile
+	if inst.Status.JobID != inst.Status.JobIDFinished {
+
+		// set init phase if the phase is empty or final from previous job
+		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded ||
+			inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed ||
+			inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed ||
+			inst.Status.InstallationPhase == "" {
+
+			if inst.DeletionTimestamp.IsZero() {
+				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
+			} else {
+				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInitDelete
+			}
+
+			if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000088, inst); err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+		err := c.handleReconcilePhase(ctx, inst)
+		return reconcile.Result{}, c.handleReconcileResult(ctx, err, oldInst, inst)
+
+	} else {
+		// job finished; nothing to do
+		return reconcile.Result{}, nil
+	}
+}
+
+func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.Log().WithValues("installation", req.NamespacedName.String())
 	ctx = logr.NewContext(ctx, logger)
 	logger.V(5).Info("reconcile", "resource", req.NamespacedName)
@@ -262,11 +366,58 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	return nil
 }
 
+func (c *Controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
+	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
+
+	if inst.Status.LastError != nil {
+		lastErr := inst.Status.LastError
+		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded ||
+		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed ||
+		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed {
+
+		inst.Status.JobIDFinished = inst.Status.JobID
+	}
+
+	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
+		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000106, inst); err2 != nil {
+
+			// accept not-found errors during deletion
+			if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
+				// recheck if already deleted
+				instRecheck := &lsv1alpha1.Installation{}
+				errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)
+				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+					return nil
+				}
+			}
+
+			if apierrors.IsConflict(err2) { // reduce logging
+				c.Log().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+			} else {
+				c.Log().Error(err2, "unable to update status")
+			}
+			if err == nil {
+				return err2
+			}
+		}
+	}
+
+	return err
+}
+
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
-		return nil
+		inst2 := &lsv1alpha1.Installation{}
+		if err2 := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), inst2); err2 != nil {
+			if apierrors.IsNotFound(err2) {
+				return nil
+			}
+		}
 	}
 
 	inst.Status.Phase = lserrors.GetPhaseForLastError(
@@ -293,4 +444,60 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 	}
 
 	return err
+}
+
+func (c *Controller) compareJobIDs(predecessorMap, predecessorMapNew map[string]*installations.InstallationBase) bool {
+	if len(predecessorMap) != len(predecessorMapNew) {
+		return false
+	}
+
+	for name, oldPredecessor := range predecessorMap {
+		newPredecessor := predecessorMapNew[name]
+		if newPredecessor == nil {
+			return false
+		}
+
+		if oldPredecessor.Info.Status.JobID != newPredecessor.Info.Status.JobID {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
+	if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000097, inst); err != nil {
+		return err
+	}
+
+	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
+	if err != nil {
+		return err
+	}
+
+	if exec != nil {
+		lsv1alpha1helper.SetOperation(&exec.ObjectMeta, lsv1alpha1.InterruptOperation)
+		lsv1alpha1helper.Touch(&exec.ObjectMeta)
+
+		if err = c.Writer().UpdateExecution(ctx, read_write_layer.W000098, exec); err != nil {
+			return err
+		}
+	}
+
+	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
+	if err != nil {
+		return nil
+	}
+
+	for _, subInst := range subInsts {
+		lsv1alpha1helper.SetOperation(&subInst.ObjectMeta, lsv1alpha1.InterruptOperation)
+		lsv1alpha1helper.Touch(&subInst.ObjectMeta)
+
+		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000099, subInst); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

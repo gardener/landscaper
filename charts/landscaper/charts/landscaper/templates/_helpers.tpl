@@ -136,6 +136,10 @@ deployItemTimeouts:
   {{- end }}
 {{- end }}
 
+lsDeployments:
+  lsController: "{{- include "landscaper.fullname" . }}"
+  webHook: "{{- include "landscaper.webhooks.fullname" . }}"
+
 {{- end }}
 
 {{- define "landscaper-image" -}}

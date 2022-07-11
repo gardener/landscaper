@@ -29,7 +29,7 @@ const (
 
 	// DeleteWithoutUninstallAnnotation is the annotation that specifies that root installations are deleted without
 	// uninstalling the deployed artifacts
-	DeleteWithoutUninstallAnnotation = "landscaper.gardener.cloud/delete-without-uninstall"
+	DeleteWithoutUninstallAnnotation = LandscaperDomain + "/delete-without-uninstall"
 
 	// ReconcileTimestampAnnotation is used to recognize timeouts in deployitems
 	ReconcileTimestampAnnotation = LandscaperDomain + "/reconcile-time"
@@ -39,7 +39,10 @@ const (
 
 	// IgnoreAnnotation can be used to stop reconciliation for landscaper resources.
 	// Will only have an effect if set to 'true'.
-	IgnoreAnnotation = "landscaper.gardener.cloud/ignore"
+	IgnoreAnnotation = LandscaperDomain + "/ignore"
+
+	// TouchAnnotation can be used to trigger a reconciliation event for a landscaper resource.
+	TouchAnnotation = LandscaperDomain + "/touch"
 
 	// Labels
 

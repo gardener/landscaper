@@ -68,6 +68,15 @@ func RemoveAbortOperationAndTimestamp(obj *metav1.ObjectMeta) {
 	delete(obj.Annotations, string(AbortTimestamp))
 }
 
+func Touch(obj *metav1.ObjectMeta) {
+	_, ok := obj.Annotations[v1alpha1.TouchAnnotation]
+	if ok {
+		delete(obj.Annotations, v1alpha1.TouchAnnotation)
+	} else {
+		metav1.SetMetaDataAnnotation(obj, v1alpha1.TouchAnnotation, "true")
+	}
+}
+
 // InitCondition initializes a new Condition with an Unknown status.
 func InitCondition(conditionType v1alpha1.ConditionType) v1alpha1.Condition {
 	return v1alpha1.Condition{
@@ -248,21 +257,17 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 	var (
 		failed  bool
 		aborted bool
-		init    bool
 		empty   = true
 	)
 	for _, phase := range phases {
 		switch phase {
-		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting:
+		case v1alpha1.ComponentPhaseProgressing, v1alpha1.ComponentPhasePending, v1alpha1.ComponentPhaseDeleting, v1alpha1.ComponentPhaseInit:
 			return v1alpha1.ComponentPhaseProgressing
 		case v1alpha1.ComponentPhaseFailed:
 			failed = true
 			empty = false
 		case v1alpha1.ComponentPhaseAborted:
 			aborted = true
-			empty = false
-		case v1alpha1.ComponentPhaseInit:
-			init = true
 			empty = false
 		case v1alpha1.ComponentPhaseSucceeded:
 			empty = false
@@ -277,15 +282,18 @@ func CombinedInstallationPhase(phases ...v1alpha1.ComponentInstallationPhase) v1
 		return v1alpha1.ComponentPhaseFailed
 	}
 
-	if init {
-		return v1alpha1.ComponentPhaseInit
-	}
-
 	if empty {
 		return ""
 	}
 
 	return v1alpha1.ComponentPhaseSucceeded
+}
+
+func IsDeletionInstallationPhase(phase v1alpha1.InstallationPhase) bool {
+	return phase == v1alpha1.InstallationPhaseInitDelete ||
+		phase == v1alpha1.InstallationPhaseTriggerDelete ||
+		phase == v1alpha1.InstallationPhaseDeleting ||
+		phase == v1alpha1.InstallationPhaseDeleteFailed
 }
 
 // IsCompletedExecutionPhase returns true if the phase indicates a final state.

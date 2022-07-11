@@ -380,6 +380,24 @@
         }
       }
     },
+    "config-v1alpha1-LsDeployments": {
+      "description": "LsDeployments contains the names of the landscaper deployments.",
+      "type": "object",
+      "required": [
+        "lsController",
+        "webHook"
+      ],
+      "properties": {
+        "lsController": {
+          "type": "string",
+          "default": ""
+        },
+        "webHook": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "config-v1alpha1-MetricsConfiguration": {
       "description": "MetricsConfiguration allows to configure how metrics are exposed",
       "type": "object",
@@ -573,6 +591,10 @@
     "kind": {
       "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
       "type": "string"
+    },
+    "lsDeployments": {
+      "$ref": "#/definitions/config-v1alpha1-LsDeployments",
+      "description": "LsDeployments contains the names of the landscaper deployments"
     },
     "metrics": {
       "$ref": "#/definitions/config-v1alpha1-MetricsConfiguration",

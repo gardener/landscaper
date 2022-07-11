@@ -30,6 +30,8 @@ Resource Types:
 </li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationTemplate">InstallationTemplate</a>
 </li><li>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>
+</li><li>
 <a href="#landscaper.gardener.cloud/v1alpha1.Target">Target</a>
 </li></ul>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Blueprint">Blueprint
@@ -1250,6 +1252,89 @@ Example: namespace: (( blueprint.exports.namespace ))</p>
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck
+</h3>
+<p>
+<p>LsHealthCheck is a resource containing information about problems with the landscaper installation</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code></br>
+string</td>
+<td>
+<code>
+landscaper.gardener.cloud/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code></br>
+string
+</td>
+<td><code>LsHealthCheck</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheckStatus">
+LsHealthCheckStatus
+</a>
+</em>
+</td>
+<td>
+<p>Status defines the overall status of the landscaper and its standard deployers.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>LastUpdateTime contains last time the check was updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>description</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Description contains description of the problem(s)</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.Target">Target
 </h3>
 <p>
@@ -2373,6 +2458,14 @@ AnyJSON
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemPhase">DeployItemPhase
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemStatus">DeployItemStatus</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.DeployItemSpec">DeployItemSpec
 </h3>
 <p>
@@ -2605,6 +2698,54 @@ ObjectReference
 <td>
 <em>(Optional)</em>
 <p>ExportReference is the reference to the object that contains the exported values.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobIDFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIDFinished is the ID of the finished working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobIDGenerationTime</code></br>
+<em>
+<a href="https://v1-22.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>JobIDGenerationTime is the timestamp when the JobID was set.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deployItemPhase</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.DeployItemPhase">
+DeployItemPhase
+</a>
+</em>
+</td>
+<td>
+<p>DeployItemPhase is the current phase of the deploy item.</p>
 </td>
 </tr>
 </tbody>
@@ -3126,6 +3267,14 @@ string
 <p>
 <p>ErrorCode is a string alias.</p>
 </p>
+<h3 id="landscaper.gardener.cloud/v1alpha1.ExecPhase">ExecPhase
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecutionStatus">ExecutionStatus</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.ExecutionGeneration">ExecutionGeneration
 </h3>
 <p>
@@ -3362,6 +3511,41 @@ only used for operation purpose.</p>
 <em>(Optional)</em>
 <p>ExecutionGenerations stores which generation the execution had when it last applied a specific deployitem.
 So in this case, the observedGeneration refers to the executions generation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>JobIDFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIDFinished is the ID of the finished working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>executionPhase</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.ExecPhase">
+ExecPhase
+</a>
+</em>
+</td>
+<td>
+<p>ExecutionPhase is the current phase of the execution.</p>
 </td>
 </tr>
 </tbody>
@@ -3888,6 +4072,14 @@ AnyJSON
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.InstallationPhase">InstallationPhase
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationStatus">InstallationStatus</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationSpec">InstallationSpec
 </h3>
 <p>
@@ -4144,6 +4336,52 @@ ObjectReference
 <p>ExecutionReference is the reference to the execution that schedules the templated execution items.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>jobID</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobID is the ID of the current working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jobIDFinished</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>JobIDFinished is the ID of the finished working request.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>installationPhase</code></br>
+<em>
+<a href="#landscaper.gardener.cloud/v1alpha1.InstallationPhase">
+InstallationPhase
+</a>
+</em>
+</td>
+<td>
+<p>InstallationPhase is the current phase of the installation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>importsHash</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ImportsHash is the hash of the import data.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="landscaper.gardener.cloud/v1alpha1.InstallationTemplateBlueprintDefinition">InstallationTemplateBlueprintDefinition
@@ -4257,6 +4495,14 @@ ValueRef
 </tr>
 </tbody>
 </table>
+<h3 id="landscaper.gardener.cloud/v1alpha1.LsHealthCheckStatus">LsHealthCheckStatus
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#landscaper.gardener.cloud/v1alpha1.LsHealthCheck">LsHealthCheck</a>)
+</p>
+<p>
+</p>
 <h3 id="landscaper.gardener.cloud/v1alpha1.NamedObjectReference">NamedObjectReference
 </h3>
 <p>

@@ -14,6 +14,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.executionPhase
+      name: ExecutionPhase
+      type: string
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -113,6 +116,12 @@ spec:
           status:
             description: Status contains the current status of the execution.
             properties:
+              JobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              JobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
               conditions:
                 description: Conditions contains the actual condition of a execution
                 items:
@@ -212,6 +221,9 @@ spec:
                   - observedGeneration
                   type: object
                 type: array
+              executionPhase:
+                description: ExecutionPhase is the current phase of the execution.
+                type: string
               exportRef:
                 description: ExportReference references the object that contains the
                   exported values. only used for operation purpose.

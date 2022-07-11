@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -87,7 +89,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstRoot, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)).To(Succeed())
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instA := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "a", Namespace: state.Namespace}, instA)).ToNot(HaveOccurred())
@@ -112,7 +115,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			err = instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -130,7 +134,8 @@ var _ = Describe("Delete", func() {
 			instOp, err := installations.NewInstallationOperationFromOperation(ctx, op, inInstB, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(installationsctl.DeleteExecutionAndSubinstallations(ctx, instOp.Writer(), instOp.Client(), instOp.Inst.Info)).To(Succeed())
+			instController := installationsctl.NewTestActuator(*instOp.Operation, nil)
+			Expect(instController.DeleteExecutionAndSubinstallations(ctx, instOp.Inst.Info)).To(Succeed())
 
 			instC := &lsv1alpha1.Installation{}
 			Expect(testenv.Client.Get(ctx, client.ObjectKey{Name: "c", Namespace: state.Namespace}, instC)).ToNot(HaveOccurred())
@@ -138,6 +143,10 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the force deletion annotation to an execution in deletion state", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -170,6 +179,10 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the delete-without-uninstall annotation to an execution", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -212,6 +225,7 @@ var _ = Describe("Delete", func() {
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				Scheme:             api.LandscaperScheme,
 				MetricsBindAddress: "0",
+				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
 
@@ -231,6 +245,9 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should not delete if another installation still imports a exported value", func() {
+			if lsutils.NewReconcile {
+				return
+			}
 
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")

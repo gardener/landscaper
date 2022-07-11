@@ -38,7 +38,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 
 	logger := o.Log().WithValues("operation", "reconcile", "resource", kutil.ObjectKeyFromObject(o.exec).String())
 
-	managedItems, err := o.listManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListManagedDeployItems", err.Error())
 	}
@@ -79,7 +79,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 			}
 
 			if runnable {
-				if err := o.deployOrTrigger(ctx, item); err != nil {
+				if err := o.deployOrTrigger(ctx, *item); err != nil {
 					return err
 				}
 			} else {
@@ -142,7 +142,6 @@ func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfo
 
 func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
 	dlogger logr.Logger) {
-	exec.Status.ObservedGeneration = exec.Generation
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -168,7 +167,6 @@ func setPhaseProgressingOfRunningDeployItem(exec *lsv1alpha1.Execution, itemInfo
 
 func setPhaseFailedBecauseFailedDeployItem(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
 	dlogger logr.Logger) {
-	exec.Status.ObservedGeneration = exec.Generation
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -213,11 +211,10 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) lse
 	ref.Reference.Namespace = item.DeployItem.Namespace
 	ref.Reference.ObservedGeneration = item.DeployItem.Generation
 
-	old := o.exec.DeepCopy()
 	o.exec.Status.DeployItemReferences = lsv1alpha1helper.SetVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, ref)
 	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-	if err := o.Writer().PatchExecutionStatus(ctx, read_write_layer.W000034, o.exec, old); err != nil {
+	if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000034, o.exec); err != nil {
 		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
 		return lserrors.NewWrappedError(err, "TriggerDeployItem", msg, err.Error())
 	}
@@ -227,7 +224,7 @@ func (o *Operation) deployOrTrigger(ctx context.Context, item executionItem) lse
 // collectAndUpdateExports loads all exports of all deployitems and
 // persists them in a data object in the cluster.
 // It also updates the export reference of the execution.
-func (o *Operation) collectAndUpdateExports(ctx context.Context, items []executionItem) error {
+func (o *Operation) collectAndUpdateExports(ctx context.Context, items []*executionItem) error {
 	values := make(map[string]interface{})
 	for _, item := range items {
 		data, err := o.addExports(ctx, item.DeployItem)
@@ -238,6 +235,32 @@ func (o *Operation) collectAndUpdateExports(ctx context.Context, items []executi
 	}
 
 	return o.CreateOrUpdateExportReference(ctx, values)
+}
+
+// CollectAndUpdateExportsNew loads all exports of all deployitems and persists them in a data object in the cluster.
+// It also updates the export reference of the execution.
+func (o *Operation) CollectAndUpdateExportsNew(ctx context.Context) lserrors.LsError {
+	op := "CollectAndUpdateExports"
+
+	items, _, lsErr := o.getDeployItems(ctx)
+	if lsErr != nil {
+		return lsErr
+	}
+
+	values := make(map[string]interface{})
+	for _, item := range items {
+		data, err := o.addExports(ctx, item.DeployItem)
+		if err != nil {
+			return lserrors.NewWrappedError(err, op, "AddExports", err.Error())
+		}
+		values[item.Info.Name] = data
+	}
+
+	if err := o.CreateOrUpdateExportReference(ctx, values); err != nil {
+		return lserrors.NewWrappedError(err, op, "CreateOrUpdateExportReference", err.Error())
+	}
+
+	return nil
 }
 
 // addExports loads the exports of a deployitem and adds it to the given values.
@@ -257,7 +280,7 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 }
 
 // checkRunnable checks whether all deployitems a given deployitem depends on have been successfully executed.
-func (o *Operation) checkRunnable(ctx context.Context, item executionItem, items []executionItem) (bool, lserrors.LsError) {
+func (o *Operation) checkRunnable(ctx context.Context, item *executionItem, items []*executionItem) (bool, lserrors.LsError) {
 	if len(item.Info.DependsOn) == 0 {
 		return true, nil
 	}

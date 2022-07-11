@@ -7,6 +7,8 @@ package installations_test
 import (
 	"context"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -65,6 +67,10 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should propagate phase changes from executions to installations", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -95,6 +101,10 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should propagate phase changes from subinstallations to installations", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			ctx := context.Background()
 
 			var err error
@@ -125,6 +135,10 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should trigger reconcile of execution", func() {
+			if utils.NewReconcile {
+				return
+			}
+
 			// A reconciliation of a failed installation with reconcile annotation should trigger a
 			// reconciliation of its failed execution by changing the ReconcileID in the execution spec.
 			ctx := context.Background()

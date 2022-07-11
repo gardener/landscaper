@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 #### BUILDER ####
-FROM golang:1.17.1 AS builder
+FROM golang:1.17.11 AS builder
 
 WORKDIR /go/src/github.com/gardener/landscaper
 COPY . .
@@ -13,9 +13,9 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 #### BASE ####
-FROM alpine:3.15.4 AS base
+FROM gcr.io/distroless/static-debian11:nonroot AS base
 
-RUN apk add --no-cache ca-certificates
+#RUN apt install -y --no-cache ca-certificates
 
 #### Landscaper Controller ####
 FROM base as landscaper-controller

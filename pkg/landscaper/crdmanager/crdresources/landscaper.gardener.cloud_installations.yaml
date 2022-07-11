@@ -14,6 +14,9 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.installationPhase
+      name: InstallationPhase
+      type: string
     - jsonPath: .status.phase
       name: phase
       type: string
@@ -903,6 +906,12 @@ spec:
                   - type
                   type: object
                 type: array
+              importsHash:
+                description: ImportsHash is the hash of the import data.
+                type: string
+              installationPhase:
+                description: InstallationPhase is the current phase of the installation.
+                type: string
               installationRefs:
                 description: InstallationReferences contain all references to sub-components
                   that are created based on the component definition.
@@ -930,6 +939,12 @@ spec:
                   - ref
                   type: object
                 type: array
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
               lastError:
                 description: LastError describes the last error that occurred.
                 properties:

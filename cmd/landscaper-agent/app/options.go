@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -69,6 +71,7 @@ func (o *options) Complete() error {
 		LeaderElection:     false,
 		Port:               9443,
 		MetricsBindAddress: "0",
+		NewClient:          lsutils.NewUncachedClient,
 	}
 	hostRestConfig, err := ctrl.GetConfig()
 	if err != nil {

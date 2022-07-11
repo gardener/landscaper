@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	lsutils "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -107,6 +109,7 @@ var _ = Describe("Template", func() {
 			mgr, err = manager.New(testenv.Env.Config, manager.Options{
 				Scheme:             api.LandscaperScheme,
 				MetricsBindAddress: "0",
+				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(helm.AddDeployerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
@@ -122,6 +125,10 @@ var _ = Describe("Template", func() {
 		})
 
 		It("should create the release namespace if configured", func() {
+			if lsutils.NewReconcile {
+				return
+			}
+
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())

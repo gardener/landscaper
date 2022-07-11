@@ -9,5 +9,6 @@ set -e
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
+GO111MODULE=on go mod tidy
 GO111MODULE=on go mod vendor
 GO111MODULE=on go mod tidy

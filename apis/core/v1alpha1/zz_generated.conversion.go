@@ -612,6 +612,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*LsHealthCheck)(nil), (*core.LsHealthCheck)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_LsHealthCheck_To_core_LsHealthCheck(a.(*LsHealthCheck), b.(*core.LsHealthCheck), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.LsHealthCheck)(nil), (*LsHealthCheck)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_LsHealthCheck_To_v1alpha1_LsHealthCheck(a.(*core.LsHealthCheck), b.(*LsHealthCheck), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*LsHealthCheckList)(nil), (*core.LsHealthCheckList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_LsHealthCheckList_To_core_LsHealthCheckList(a.(*LsHealthCheckList), b.(*core.LsHealthCheckList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*core.LsHealthCheckList)(nil), (*LsHealthCheckList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_core_LsHealthCheckList_To_v1alpha1_LsHealthCheckList(a.(*core.LsHealthCheckList), b.(*LsHealthCheckList), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*NamedObjectReference)(nil), (*core.NamedObjectReference)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_NamedObjectReference_To_core_NamedObjectReference(a.(*NamedObjectReference), b.(*core.NamedObjectReference), scope)
 	}); err != nil {
@@ -1578,6 +1598,10 @@ func autoConvert_v1alpha1_DeployItemStatus_To_core_DeployItemStatus(in *DeployIt
 	}
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
+	out.DeployItemPhase = core.DeployItemPhase(in.DeployItemPhase)
 	return nil
 }
 
@@ -1597,6 +1621,10 @@ func autoConvert_core_DeployItemStatus_To_v1alpha1_DeployItemStatus(in *core.Dep
 	}
 	out.ProviderStatus = (*runtime.RawExtension)(unsafe.Pointer(in.ProviderStatus))
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.JobIDGenerationTime = (*metav1.Time)(unsafe.Pointer(in.JobIDGenerationTime))
+	out.DeployItemPhase = DeployItemPhase(in.DeployItemPhase)
 	return nil
 }
 
@@ -2045,6 +2073,9 @@ func autoConvert_v1alpha1_ExecutionStatus_To_core_ExecutionStatus(in *ExecutionS
 	out.ExportReference = (*core.ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]core.VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	out.ExecutionGenerations = *(*[]core.ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.ExecutionPhase = core.ExecPhase(in.ExecutionPhase)
 	return nil
 }
 
@@ -2061,6 +2092,9 @@ func autoConvert_core_ExecutionStatus_To_v1alpha1_ExecutionStatus(in *core.Execu
 	out.ExportReference = (*ObjectReference)(unsafe.Pointer(in.ExportReference))
 	out.DeployItemReferences = *(*[]VersionedNamedObjectReference)(unsafe.Pointer(&in.DeployItemReferences))
 	out.ExecutionGenerations = *(*[]ExecutionGeneration)(unsafe.Pointer(&in.ExecutionGenerations))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.ExecutionPhase = ExecPhase(in.ExecutionPhase)
 	return nil
 }
 
@@ -2374,6 +2408,10 @@ func autoConvert_v1alpha1_InstallationStatus_To_core_InstallationStatus(in *Inst
 	out.Imports = *(*[]core.ImportStatus)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]core.NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
 	out.ExecutionReference = (*core.ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.InstallationPhase = core.InstallationPhase(in.InstallationPhase)
+	out.ImportsHash = in.ImportsHash
 	return nil
 }
 
@@ -2391,6 +2429,10 @@ func autoConvert_core_InstallationStatus_To_v1alpha1_InstallationStatus(in *core
 	out.Imports = *(*[]ImportStatus)(unsafe.Pointer(&in.Imports))
 	out.InstallationReferences = *(*[]NamedObjectReference)(unsafe.Pointer(&in.InstallationReferences))
 	out.ExecutionReference = (*ObjectReference)(unsafe.Pointer(in.ExecutionReference))
+	out.JobID = in.JobID
+	out.JobIDFinished = in.JobIDFinished
+	out.InstallationPhase = InstallationPhase(in.InstallationPhase)
+	out.ImportsHash = in.ImportsHash
 	return nil
 }
 
@@ -2485,6 +2527,54 @@ func autoConvert_core_JSONSchemaDefinition_To_v1alpha1_JSONSchemaDefinition(in *
 // Convert_core_JSONSchemaDefinition_To_v1alpha1_JSONSchemaDefinition is an autogenerated conversion function.
 func Convert_core_JSONSchemaDefinition_To_v1alpha1_JSONSchemaDefinition(in *core.JSONSchemaDefinition, out *JSONSchemaDefinition, s conversion.Scope) error {
 	return autoConvert_core_JSONSchemaDefinition_To_v1alpha1_JSONSchemaDefinition(in, out, s)
+}
+
+func autoConvert_v1alpha1_LsHealthCheck_To_core_LsHealthCheck(in *LsHealthCheck, out *core.LsHealthCheck, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	out.Status = core.LsHealthCheckStatus(in.Status)
+	out.LastUpdateTime = in.LastUpdateTime
+	out.Description = in.Description
+	return nil
+}
+
+// Convert_v1alpha1_LsHealthCheck_To_core_LsHealthCheck is an autogenerated conversion function.
+func Convert_v1alpha1_LsHealthCheck_To_core_LsHealthCheck(in *LsHealthCheck, out *core.LsHealthCheck, s conversion.Scope) error {
+	return autoConvert_v1alpha1_LsHealthCheck_To_core_LsHealthCheck(in, out, s)
+}
+
+func autoConvert_core_LsHealthCheck_To_v1alpha1_LsHealthCheck(in *core.LsHealthCheck, out *LsHealthCheck, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	out.Status = LsHealthCheckStatus(in.Status)
+	out.LastUpdateTime = in.LastUpdateTime
+	out.Description = in.Description
+	return nil
+}
+
+// Convert_core_LsHealthCheck_To_v1alpha1_LsHealthCheck is an autogenerated conversion function.
+func Convert_core_LsHealthCheck_To_v1alpha1_LsHealthCheck(in *core.LsHealthCheck, out *LsHealthCheck, s conversion.Scope) error {
+	return autoConvert_core_LsHealthCheck_To_v1alpha1_LsHealthCheck(in, out, s)
+}
+
+func autoConvert_v1alpha1_LsHealthCheckList_To_core_LsHealthCheckList(in *LsHealthCheckList, out *core.LsHealthCheckList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]core.LsHealthCheck)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1alpha1_LsHealthCheckList_To_core_LsHealthCheckList is an autogenerated conversion function.
+func Convert_v1alpha1_LsHealthCheckList_To_core_LsHealthCheckList(in *LsHealthCheckList, out *core.LsHealthCheckList, s conversion.Scope) error {
+	return autoConvert_v1alpha1_LsHealthCheckList_To_core_LsHealthCheckList(in, out, s)
+}
+
+func autoConvert_core_LsHealthCheckList_To_v1alpha1_LsHealthCheckList(in *core.LsHealthCheckList, out *LsHealthCheckList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]LsHealthCheck)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_core_LsHealthCheckList_To_v1alpha1_LsHealthCheckList is an autogenerated conversion function.
+func Convert_core_LsHealthCheckList_To_v1alpha1_LsHealthCheckList(in *core.LsHealthCheckList, out *LsHealthCheckList, s conversion.Scope) error {
+	return autoConvert_core_LsHealthCheckList_To_v1alpha1_LsHealthCheckList(in, out, s)
 }
 
 func autoConvert_v1alpha1_NamedObjectReference_To_core_NamedObjectReference(in *NamedObjectReference, out *core.NamedObjectReference, s conversion.Scope) error {

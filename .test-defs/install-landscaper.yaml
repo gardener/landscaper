@@ -11,4 +11,4 @@ spec:
   - >-
     ./hack/install-landscaper-for-integration-test.sh
 
-  image: alpine:3.15
+  image: alpine:3.16.0

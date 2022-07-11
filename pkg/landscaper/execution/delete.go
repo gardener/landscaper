@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +31,7 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 	// set state to deleting
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseDeleting
 
-	managedItems, err := o.listManagedDeployItems(ctx)
+	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
 		return lserrors.NewWrappedError(err, op, "ListDeployItems", err.Error())
 	}
@@ -42,17 +44,23 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 	executionItems, _ := o.getExecutionItems(managedItems)
 
 	allDeleted := true
+	oneDeleteFailed := false
 	for _, item := range executionItems {
 		if item.DeployItem == nil {
 			continue
 		}
 
-		gone, err := o.deleteItem(ctx, &item, executionItems)
+		gone, deleteFailed, err := o.deleteItem(ctx, item, executionItems)
 		if err != nil {
 			return err
 		}
 
 		allDeleted = allDeleted && gone
+		oneDeleteFailed = oneDeleteFailed || deleteFailed
+	}
+
+	if oneDeleteFailed {
+		o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	}
 
 	if !allDeleted {
@@ -68,7 +76,7 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
-func (o *Operation) checkDeletable(item executionItem, items []executionItem) bool {
+func (o *Operation) checkDeletable(item executionItem, items []*executionItem) bool {
 	for _, exec := range items {
 		if exec.Info.Name == item.Info.Name {
 			continue
@@ -89,32 +97,104 @@ func (o *Operation) checkDeletable(item executionItem, items []executionItem) bo
 	return true
 }
 
-func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []executionItem) (gone bool, err lserrors.LsError) {
+func (o *Operation) DeleteItemOld(ctx context.Context, item *executionItem, executionItems []*executionItem) (gone bool,
+	deleteFailed bool, err lserrors.LsError) {
 	if item.DeployItem == nil {
-		return true, nil
+		return true, false, nil
 	}
 
 	if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(*item, executionItems) {
 		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000065, item.DeployItem); err != nil {
 			if !apierrors.IsNotFound(err) {
-				return false, lserrors.NewWrappedError(err,
+				return false, false, lserrors.NewWrappedError(err,
 					"DeleteDeployItem",
 					fmt.Sprintf("unable to delete deploy item %s of step %s", item.DeployItem.Name, item.Info.Name),
 					err.Error(),
 				)
 			}
 
-			return true, nil
+			return true, false, nil
 		}
 
-		return false, nil
+		return false, false, nil
 	}
 
-	if !item.DeployItem.DeletionTimestamp.IsZero() && item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
-		o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+	if !item.DeployItem.DeletionTimestamp.IsZero() &&
+		item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+		item.DeployItem.Status.ObservedGeneration == item.DeployItem.Generation {
+		return false, true, nil
 	}
 
-	return false, nil
+	return false, false, nil
+}
+
+func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executionItems []*executionItem) (gone bool,
+	deleteFailed bool, err lserrors.LsError) {
+	if item.DeployItem == nil {
+		return true, false, nil
+	}
+
+	if o.triggerDeletionIsRequired(ctx, item, executionItems) {
+		if err := o.triggerDeletion(ctx, item); err != nil {
+			return false, false, err
+		}
+
+		if err := o.markTriggerDeletionAsDone(ctx, item); err != nil {
+			return false, false, err
+		}
+
+		return false, false, nil
+	}
+
+	if !item.DeployItem.DeletionTimestamp.IsZero() &&
+		item.DeployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+		item.DeployItem.Status.ObservedGeneration == item.DeployItem.Generation {
+		return false, true, nil
+	}
+
+	return false, false, nil
+}
+
+func (o *Operation) triggerDeletionIsRequired(_ context.Context, item *executionItem, executionItems []*executionItem) bool {
+	lastAppliedGeneration, ok := getExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name)
+	if ok && lastAppliedGeneration.ObservedGeneration == o.exec.Generation {
+		return false
+	}
+
+	return o.checkDeletable(*item, executionItems)
+}
+
+func (o *Operation) triggerDeletion(ctx context.Context, item *executionItem) lserrors.LsError {
+	if item.DeployItem.DeletionTimestamp.IsZero() {
+		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000113, item.DeployItem); client.IgnoreNotFound(err) != nil {
+			return lserrors.NewWrappedError(err, "DeleteDeployItem",
+				fmt.Sprintf("unable to delete deploy item %s of step %s", item.DeployItem.Name, item.Info.Name),
+				err.Error(),
+			)
+		}
+	} else {
+		// if the deletionTimestamp is already set, re-trigger via reconcile annotation
+		if _, err := o.Writer().CreateOrUpdateDeployItem(ctx, read_write_layer.W000080, item.DeployItem, func() error {
+			lsv1alpha1helper.SetOperation(&item.DeployItem.ObjectMeta, lsv1alpha1.ReconcileOperation)
+			lsv1alpha1helper.SetTimestampAnnotationNow(&item.DeployItem.ObjectMeta, lsv1alpha1helper.ReconcileTimestamp)
+			return nil
+		}); client.IgnoreNotFound(err) != nil {
+			msg := fmt.Sprintf("error while re-triggering deletion of deployitem %q", item.Info.Name)
+			return lserrors.NewWrappedError(err, "TriggerDeployItemDeletion", msg, err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (o *Operation) markTriggerDeletionAsDone(ctx context.Context, item *executionItem) lserrors.LsError {
+	old := o.exec.DeepCopy()
+	o.exec.Status.ExecutionGenerations = setExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name, o.exec.Generation)
+	if err := o.Writer().PatchExecutionStatus(ctx, read_write_layer.W000081, o.exec, old); err != nil {
+		msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
+		return lserrors.NewWrappedError(err, "MarkTriggerDeletionAsDone", msg, err.Error())
+	}
+	return nil
 }
 
 func (o *Operation) propagateDeleteWithoutUninstallAnnotation(ctx context.Context, deployItems []lsv1alpha1.DeployItem) lserrors.LsError {

@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	"github.com/go-logr/logr"
@@ -28,7 +30,12 @@ func HandleErrorFunc(ctx context.Context, err lserrors.LsError, log logr.Logger,
 	eventRecorder record.EventRecorder, oldDeployItem, deployItem *lsv1alpha1.DeployItem, isDelete bool) error {
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
-		return nil
+		di := &lsv1alpha1.DeployItem{}
+		if err2 := read_write_layer.GetDeployItem(ctx, c, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), di); err2 != nil {
+			if apierrors.IsNotFound(err2) {
+				return nil
+			}
+		}
 	}
 
 	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)

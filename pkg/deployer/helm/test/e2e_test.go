@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -49,6 +51,10 @@ var _ = Describe("Helm Deployer", func() {
 	})
 
 	It("should deploy an ingress-nginx chart from an oci artifact into the cluster", func() {
+		if utils.NewReconcile {
+			return
+		}
+
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -157,14 +163,14 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(state.Client.Update(ctx, di))
 
 		// reconcile once to generate status
-		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		_, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
 		testutil.ExpectNoError(err)
 
 		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
 		lastReconciled := di.Status.LastReconcileTime
 		testDuration := time.Duration(1 * time.Hour)
 		expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
-		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
 		testutil.ExpectNoError(err)
 		timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
 		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision

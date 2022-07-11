@@ -133,12 +133,15 @@ var _ = Describe("Delete", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 		exec := fakeExecutions["test3/exec-1"]
+		// Simulate that the execution controller considers the deploy item as up-to-date
+		exec.Status.ExecutionGenerations = []lsv1alpha1.ExecutionGeneration{{Name: "b", ObservedGeneration: exec.Generation}}
 		eOp := execution.NewOperation(op, exec, false)
 
 		deployItemB := fakeDeployItems["test3/di-b"]
 		delTime := metav1.Now()
 		deployItemB.DeletionTimestamp = &delTime
 		deployItemB.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		deployItemB.Status.ObservedGeneration = deployItemB.Generation
 		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
 		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
 
@@ -147,6 +150,38 @@ var _ = Describe("Delete", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(exec.Finalizers).To(HaveLen(1))
 		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseFailed))
+
+		item := &lsv1alpha1.DeployItem{}
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-b", Namespace: "test3"}, item)
+		Expect(err).ToNot(HaveOccurred())
+
+		item = &lsv1alpha1.DeployItem{}
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-a", Namespace: "test3"}, item)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("should not propagate an outdated failure in a deploy item to the execution", func() {
+		ctx := context.Background()
+		defer ctx.Done()
+		exec := fakeExecutions["test3/exec-1"]
+		// Simulate that the execution controller considers the deploy item as up-to-date
+		exec.Status.ExecutionGenerations = []lsv1alpha1.ExecutionGeneration{{Name: "b", ObservedGeneration: exec.Generation}}
+		eOp := execution.NewOperation(op, exec, false)
+
+		deployItemB := fakeDeployItems["test3/di-b"]
+		delTime := metav1.Now()
+		deployItemB.DeletionTimestamp = &delTime
+		deployItemB.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		// Simulate that the deployer has not yet handled the deletion
+		deployItemB.Status.ObservedGeneration = deployItemB.Generation - 1
+		controllerutil.AddFinalizer(deployItemB, lsv1alpha1.LandscaperFinalizer)
+		Expect(eOp.Client().Update(ctx, deployItemB)).ToNot(HaveOccurred())
+
+		var err error
+		err = eOp.Delete(ctx)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(exec.Finalizers).To(HaveLen(1))
+		Expect(exec.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseDeleting))
 
 		item := &lsv1alpha1.DeployItem{}
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: "di-b", Namespace: "test3"}, item)

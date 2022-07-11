@@ -2,6 +2,8 @@ package read_write_layer
 
 import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/pkg/utils"
 )
 
 const (
@@ -9,18 +11,22 @@ const (
 	keyName               = "name"
 	keyNamespace          = "namespace"
 	keyPhase              = "phase"
+	keyPhaseDeployer      = "phase-d"
 	keyWriteID            = "write-id"
-	keyGenerationOld      = "generation-old"
-	keyGenerationNew      = "generation-new"
-	keyResourceVersionOld = "resource-version-old"
-	keyResourceVersionNew = "resource-version-new"
+	keyGenerationOld      = "gen-old"
+	keyGenerationNew      = "gen-new"
+	keyOperation          = "op"
+	keyResourceVersionOld = "rv-old"
+	keyResourceVersionNew = "rv-new"
+	keyJobID              = "j-id"
+	keyJobIDFinished      = "j-id-f"
 )
 
-func (w *Writer) logContextUpdate(writeID WriteID, op string, context *lsv1alpha1.Context,
+func (w *Writer) logContextUpdate(writeID WriteID, msg string, context *lsv1alpha1.Context,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(context)
-		w.log.V(historyLogLevel).Info(op,
+		w.log.V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, context.Name,
 			keyNamespace, context.Namespace,
@@ -30,7 +36,7 @@ func (w *Writer) logContextUpdate(writeID WriteID, op string, context *lsv1alpha
 			keyResourceVersionNew, resourceVersionNew,
 		)
 	} else {
-		w.log.Error(err, op,
+		w.log.Error(err, msg,
 			keyWriteID, writeID,
 			keyName, context.Name,
 			keyNamespace, context.Namespace,
@@ -40,11 +46,11 @@ func (w *Writer) logContextUpdate(writeID WriteID, op string, context *lsv1alpha
 	}
 }
 
-func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.Target,
+func (w *Writer) logTargetUpdate(writeID WriteID, msg string, target *lsv1alpha1.Target,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(target)
-		w.log.V(historyLogLevel).Info(op,
+		w.log.V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, target.Name,
 			keyNamespace, target.Namespace,
@@ -54,7 +60,7 @@ func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.
 			keyResourceVersionNew, resourceVersionNew,
 		)
 	} else {
-		w.log.Error(err, op,
+		w.log.Error(err, msg,
 			keyWriteID, writeID,
 			keyName, target.Name,
 			keyNamespace, target.Namespace,
@@ -64,11 +70,11 @@ func (w *Writer) logTargetUpdate(writeID WriteID, op string, target *lsv1alpha1.
 	}
 }
 
-func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.DataObject,
+func (w *Writer) logDataObjectUpdate(writeID WriteID, msg string, do *lsv1alpha1.DataObject,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(do)
-		w.log.V(historyLogLevel).Info(op,
+		w.log.V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, do.Name,
 			keyNamespace, do.Namespace,
@@ -78,7 +84,7 @@ func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.
 			keyResourceVersionNew, resourceVersionNew,
 		)
 	} else {
-		w.log.Error(err, op,
+		w.log.Error(err, msg,
 			keyWriteID, writeID,
 			keyName, do.Name,
 			keyNamespace, do.Namespace,
@@ -88,80 +94,177 @@ func (w *Writer) logDataObjectUpdate(writeID WriteID, op string, do *lsv1alpha1.
 	}
 }
 
-func (w *Writer) logInstallationUpdate(writeID WriteID, op string, installation *lsv1alpha1.Installation,
+func (w *Writer) logInstallationUpdate(writeID WriteID, msg string, installation *lsv1alpha1.Installation,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(installation)
-		w.log.V(historyLogLevel).Info(op,
-			keyWriteID, writeID,
-			keyName, installation.Name,
-			keyNamespace, installation.Namespace,
-			keyPhase, installation.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyGenerationNew, generationNew,
-			keyResourceVersionOld, resourceVersionOld,
-			keyResourceVersionNew, resourceVersionNew,
-		)
+		opNew := lsv1alpha1helper.GetOperation(installation.ObjectMeta)
+		if utils.NewReconcile {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, installation.Name,
+				keyNamespace, installation.Namespace,
+				keyPhase, installation.Status.InstallationPhase,
+				keyJobID, installation.Status.JobID,
+				keyJobIDFinished, installation.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		} else {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, installation.Name,
+				keyNamespace, installation.Namespace,
+				keyPhase, installation.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		}
+
 	} else {
-		w.log.Error(err, op,
-			keyWriteID, writeID,
-			keyName, installation.Name,
-			keyNamespace, installation.Namespace,
-			keyPhase, installation.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyResourceVersionOld, resourceVersionOld,
-		)
+		if utils.NewReconcile {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, installation.Name,
+				keyNamespace, installation.Namespace,
+				keyPhase, installation.Status.InstallationPhase,
+				keyJobID, installation.Status.JobID,
+				keyJobIDFinished, installation.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		} else {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, installation.Name,
+				keyNamespace, installation.Namespace,
+				keyPhase, installation.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		}
 	}
 }
 
-func (w *Writer) logExecutionUpdate(writeID WriteID, op string, execution *lsv1alpha1.Execution,
+func (w *Writer) logExecutionUpdate(writeID WriteID, msg string, execution *lsv1alpha1.Execution,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(execution)
-		w.log.V(historyLogLevel).Info(op,
-			keyWriteID, writeID,
-			keyName, execution.Name,
-			keyNamespace, execution.Namespace,
-			keyPhase, execution.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyGenerationNew, generationNew,
-			keyResourceVersionOld, resourceVersionOld,
-			keyResourceVersionNew, resourceVersionNew,
-		)
+		opNew := lsv1alpha1helper.GetOperation(execution.ObjectMeta)
+		if utils.NewReconcile {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, execution.Name,
+				keyNamespace, execution.Namespace,
+				keyPhase, execution.Status.ExecutionPhase,
+				keyJobID, execution.Status.JobID,
+				keyJobIDFinished, execution.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		} else {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, execution.Name,
+				keyNamespace, execution.Namespace,
+				keyPhase, execution.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		}
 	} else {
-		w.log.Error(err, op,
-			keyWriteID, writeID,
-			keyName, execution.Name,
-			keyNamespace, execution.Namespace,
-			keyPhase, execution.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyResourceVersionOld, resourceVersionOld,
-		)
+		if utils.NewReconcile {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, execution.Name,
+				keyNamespace, execution.Namespace,
+				keyPhase, execution.Status.ExecutionPhase,
+				keyJobID, execution.Status.JobID,
+				keyJobIDFinished, execution.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		} else {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, execution.Name,
+				keyNamespace, execution.Namespace,
+				keyPhase, execution.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		}
 	}
 }
 
-func (w *Writer) logDeployItemUpdate(writeID WriteID, op string, deployItem *lsv1alpha1.DeployItem,
+func (w *Writer) logDeployItemUpdate(writeID WriteID, msg string, deployItem *lsv1alpha1.DeployItem,
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(deployItem)
-		w.log.V(historyLogLevel).Info(op,
-			keyWriteID, writeID,
-			keyName, deployItem.Name,
-			keyNamespace, deployItem.Namespace,
-			keyPhase, deployItem.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyGenerationNew, generationNew,
-			keyResourceVersionOld, resourceVersionOld,
-			keyResourceVersionNew, resourceVersionNew,
-		)
+		opNew := lsv1alpha1helper.GetOperation(deployItem.ObjectMeta)
+		if utils.NewReconcile {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, deployItem.Name,
+				keyNamespace, deployItem.Namespace,
+				keyPhase, deployItem.Status.DeployItemPhase,
+				keyPhaseDeployer, deployItem.Status.Phase,
+				keyJobID, deployItem.Status.JobID,
+				keyJobIDFinished, deployItem.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		} else {
+			w.log.V(historyLogLevel).Info(msg,
+				keyWriteID, writeID,
+				keyName, deployItem.Name,
+				keyNamespace, deployItem.Namespace,
+				keyPhase, deployItem.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyGenerationNew, generationNew,
+				keyOperation, opNew,
+				keyResourceVersionOld, resourceVersionOld,
+				keyResourceVersionNew, resourceVersionNew,
+			)
+		}
+
 	} else {
-		w.log.Error(err, op,
-			keyWriteID, writeID,
-			keyName, deployItem.Name,
-			keyNamespace, deployItem.Namespace,
-			keyPhase, deployItem.Status.Phase,
-			keyGenerationOld, generationOld,
-			keyResourceVersionOld, resourceVersionOld,
-		)
+		if utils.NewReconcile {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, deployItem.Name,
+				keyNamespace, deployItem.Namespace,
+				keyPhase, deployItem.Status.DeployItemPhase,
+				keyPhaseDeployer, deployItem.Status.Phase,
+				keyJobID, deployItem.Status.JobID,
+				keyJobIDFinished, deployItem.Status.JobIDFinished,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		} else {
+			w.log.Error(err, msg,
+				keyWriteID, writeID,
+				keyName, deployItem.Name,
+				keyNamespace, deployItem.Namespace,
+				keyPhase, deployItem.Status.Phase,
+				keyGenerationOld, generationOld,
+				keyResourceVersionOld, resourceVersionOld,
+			)
+		}
 	}
 }

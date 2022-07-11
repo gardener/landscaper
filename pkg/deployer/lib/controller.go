@@ -7,7 +7,12 @@ package lib
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/gardener/landscaper/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -154,6 +159,122 @@ func NewController(log logr.Logger,
 
 // Reconcile implements the reconcile.Reconciler interface that reconciles DeployItems.
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	if !utils.NewReconcile {
+		return c.reconcileOld(ctx, req)
+	} else {
+		return c.reconcileNew(ctx, req)
+	}
+}
+
+func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	logger := c.log.WithValues("resource", req.NamespacedName)
+	logger.V(7).Info("reconcile")
+
+	var err error
+
+	di := &lsv1alpha1.DeployItem{}
+	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(5).Info(err.Error())
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	c.lsScheme.Default(di)
+
+	target, shouldReconcile, err := c.checkTargetResponsibility(ctx, logger, di)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !shouldReconcile {
+		return reconcile.Result{}, nil
+	}
+
+	old := di.DeepCopy()
+
+	lsCtx := &lsv1alpha1.Context{}
+	// todo: check for real repository context. Maybe overwritten by installation.
+	if err := c.lsClient.Get(ctx, kutil.ObjectKey(di.Spec.Context, di.Namespace), lsCtx); err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
+	}
+
+	if di.Status.JobID != di.Status.JobIDFinished {
+		if di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+			di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed ||
+			di.Status.DeployItemPhase == "" {
+
+			di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
+			if di.DeletionTimestamp.IsZero() {
+				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseProgressing
+			} else {
+				di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseDeleting
+			}
+
+			if err := c.updateDiForNewReconcile(ctx, di); err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+		var err lserrors.LsError
+		if di.DeletionTimestamp.IsZero() {
+			err = c.reconcile(ctx, lsCtx, di, target)
+		} else {
+			err = c.delete(ctx, lsCtx, di, target)
+		}
+		return reconcile.Result{}, c.handleReconcileResult(ctx, err, old, di)
+	} else {
+		return reconcile.Result{}, nil
+	}
+}
+
+func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
+	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
+
+	if deployItem.Status.LastError != nil {
+		lastErr := deployItem.Status.LastError
+		c.lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
+	} else if deployItem.Status.Phase == lsv1alpha1.ExecutionPhaseSucceeded {
+		deployItem.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseSucceeded
+	}
+
+	if deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded ||
+		deployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed {
+		deployItem.Status.JobIDFinished = deployItem.Status.JobID
+	}
+
+	if !reflect.DeepEqual(oldDeployItem.Status, deployItem.Status) {
+		if err2 := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000092, deployItem); err2 != nil {
+			if !deployItem.DeletionTimestamp.IsZero() {
+				// recheck if already deleted
+				diRecheck := &lsv1alpha1.DeployItem{}
+				errRecheck := read_write_layer.GetDeployItem(ctx, c.lsClient, kutil.ObjectKey(deployItem.Name, deployItem.Namespace), diRecheck)
+				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+					return nil
+				}
+			}
+
+			if apierrors.IsConflict(err2) { // reduce logging
+				c.log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+			} else {
+				c.log.Error(err2, "unable to update status")
+			}
+			if err == nil {
+				return err2
+			}
+		}
+	}
+
+	return err
+}
+
+// Reconcile implements the reconcile.Reconciler interface that reconciles DeployItems.
+func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
 	logger.V(7).Info("reconcile")
 	extensionLogger := logger.WithName("extension")
@@ -394,7 +515,6 @@ func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, d
 
 	err := c.deployer.Reconcile(ctx, lsCtx, deployItem, target)
 	return lserrors.BuildLsErrorOrNil(err, "reconcile", "Reconcile")
-
 }
 
 func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
@@ -431,6 +551,22 @@ func (c *controller) removeReconcileTimestampAnnotation(ctx context.Context, dep
 
 func (c *controller) Writer() *read_write_layer.Writer {
 	return read_write_layer.NewWriter(c.log, c.lsClient)
+}
+
+func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) error {
+	di.Status.ObservedGeneration = di.Generation
+	now := metav1.Now()
+	di.Status.LastReconcileTime = &now
+	if di.Status.Deployer.Identity != c.info.Identity {
+		c.log.V(7).Info("updating deployer identity")
+		di.Status.Deployer = c.info
+	}
+
+	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // typePredicate is a predicate definition that does only react on deployitem of the specific type.

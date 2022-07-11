@@ -38,6 +38,15 @@ type LandscaperConfiguration struct {
 	// DeployItemTimeouts contains configuration for multiple deploy item timeouts
 	// +optional
 	DeployItemTimeouts *DeployItemTimeouts `json:"deployItemTimeouts,omitempty"`
+	// LsDeployments contains the names of the landscaper deployments
+	// +optional
+	LsDeployments *LsDeployments `json:"lsDeployments,omitempty"`
+}
+
+// LsDeployments contains the names of the landscaper deployments.
+type LsDeployments struct {
+	LsController string `json:"lsController"`
+	WebHook      string `json:"webHook"`
 }
 
 // CommonControllerConfig describes common controller configuration that can be included in
