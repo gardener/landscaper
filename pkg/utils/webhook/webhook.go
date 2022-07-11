@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	lscore "github.com/gardener/landscaper/apis/core"
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/core/validation"
 )
 
@@ -77,11 +78,17 @@ func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Reque
 	}
 
 	// check if the installation declares an export which is already exported by another installation in the same context
-	dupErr, err := checkForDuplicateExports(ctx, iv.Client, inst)
+	v1alpha1Inst := &lsv1alpha1.Installation{}
+	err := lsv1alpha1.Convert_core_Installation_To_v1alpha1_Installation(inst, v1alpha1Inst, nil)
 	if err != nil {
-		iv.log.Error(err, "error while checking for duplicate exports")
-	} else if dupErr != nil {
-		return admission.Denied(dupErr.Error())
+		iv.log.Error(err, "error while converting core Installation to v1alpha1 Installation")
+	} else {
+		dupErr, err := checkForDuplicateExports(ctx, iv.Client, v1alpha1Inst)
+		if err != nil {
+			iv.log.Error(err, "error while checking for duplicate exports")
+		} else if dupErr != nil {
+			return admission.Denied(dupErr.Error())
+		}
 	}
 
 	return admission.Allowed("Installation is valid")
