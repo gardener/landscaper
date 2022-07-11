@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	install "github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/pkg/utils"
 )
@@ -25,6 +26,7 @@ func GetCachelessClient(restConfig *rest.Config) (client.Client, error) {
 	if err := scheme.AddToScheme(s); err != nil {
 		return nil, err
 	}
+	install.Install(s)
 
 	return client.New(restConfig, client.Options{Scheme: s})
 }
