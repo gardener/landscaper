@@ -201,7 +201,7 @@ func (d *dependencyProvider) nextMode() string {
 		case 2:
 			mode = mappingDependency
 		}
-		d.count++
+		d.count = (d.count + 1) % 3
 	}
 	return string(mode)
 }
@@ -213,7 +213,14 @@ func (d *dependencyProvider) nextMode() string {
 // data export, target export, or something exported in the exportDataMappings, respectively.
 func generateSubinstallationTemplates(deps map[string][]string, dProv dependencyProvider) []*lsv1alpha1.InstallationTemplate {
 	res := []*lsv1alpha1.InstallationTemplate{}
-	for k, v := range deps {
+	// sort map keys to make iteration order deterministic
+	keys := []string{}
+	for k := range deps {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := deps[k]
 		tmpl := &lsv1alpha1.InstallationTemplate{
 			Name: k,
 			Imports: lsv1alpha1.InstallationImports{
