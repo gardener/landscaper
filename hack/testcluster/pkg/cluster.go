@@ -172,7 +172,7 @@ func CreateCluster(ctx context.Context, logger simplelogger.Logger, args CreateC
 	if err := kubeClient.Create(ctx, pod); err != nil {
 		return fmt.Errorf("unable to create cluster pod: %w", err)
 	}
-	logger.Logfln("Created cluster %q", pod.Name)
+	logger.Logfln("Created cluster %q from image %q running kubernetes version %q", pod.Name, pod.Spec.Containers[0].Image, kubernetesVersion)
 
 	// register cleanup to delete the cluster if something fails
 	defer func() {

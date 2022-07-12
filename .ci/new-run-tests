@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+KUBECONFIG_PATH=$1
+REGISTRY_CONFIG=$2
+VERSION=$3
+
+SOURCE_PATH="$(dirname $0)/.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+
+echo "Run tests"
+go test -timeout=60m -mod=vendor ./test/integration \
+    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor \
+    --kubeconfig $KUBECONFIG_PATH \
+    --registry-config=$REGISTRY_CONFIG \
+    --ls-namespace=ls-system \
+    --ls-version=$VERSION \
+    --ls-run-on-shoot
+
+# echo "Delete namespace with registry"
+# kubectl --kubeconfig=$KUBECONFIG_PATH delete ns $REGISTRY_NS
+# rm -r $TMP
