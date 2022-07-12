@@ -114,6 +114,41 @@ func AddServiceAccountAuth(ctx context.Context, kubeClient client.Client, sa *co
 	return fmt.Errorf("no token for authentication was present in the secret %q", secret.Name)
 }
 
+// AddServiceAccountToken adds the authentication information of a service account to a rest config.
+// It also waits until the token has been created.
+func AddServiceAccountToken(ctx context.Context, kubeClient client.Client, sa *corev1.ServiceAccount, config *rest.Config) error {
+	secrets, err := GetSecretsForServiceAccount(ctx, kubeClient, ObjectKeyFromObject(sa))
+	if err != nil {
+		return fmt.Errorf("unable to get secrets for service account %s: %w", sa.Name, err)
+	}
+
+	var secret *corev1.Secret
+	if len(secrets) == 0 {
+		secret, err = CreateSecretForServiceAccount(ctx, kubeClient, sa)
+		if err != nil {
+			return fmt.Errorf("unable to create secret for service account %s: %w", sa.Name, err)
+		}
+	} else {
+		secret = secrets[0]
+	}
+
+	if err = WaitForServiceAccountToken(ctx, kubeClient, ObjectKeyFromObject(secret)); err != nil {
+		return fmt.Errorf("timeout when waiting for token of service account %s: %w", sa.Name, err)
+	}
+
+	if err = kubeClient.Get(ctx, ObjectKeyFromObject(secret), secret); err != nil {
+		return fmt.Errorf("unable to read secret %s for service account %s: %w", secret.Name, sa.Name, err)
+	}
+
+	token, ok := secret.Data[corev1.ServiceAccountTokenKey]
+	if !ok {
+		return fmt.Errorf("no token for authentication was present in the secret %q", secret.Name)
+	}
+
+	config.BearerToken = string(token)
+	return nil
+}
+
 // ResolveSecrets finds and returns the secrets referenced by secretRefs
 func ResolveSecrets(ctx context.Context, client client.Client, secretRefs []v1alpha1.ObjectReference) ([]corev1.Secret, error) {
 	secrets := make([]corev1.Secret, len(secretRefs))

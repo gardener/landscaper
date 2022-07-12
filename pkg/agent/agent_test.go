@@ -70,7 +70,7 @@ var _ = Describe("Agent", func() {
 		})
 
 		It("should ensure all host resources", func() {
-			testutils.MimicKCMServiceAccount(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
+			testutils.MimicKCMServiceAccountTokenGeneration(ctx, testenv.Client, testutils.MimicKCMServiceAccountArgs{
 				Name:      "deployer-testenv",
 				Namespace: state.Namespace,
 				Token:     "test-token",

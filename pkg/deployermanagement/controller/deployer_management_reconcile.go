@@ -199,7 +199,8 @@ func (dm *DeployerManagement) createDeployerTarget(ctx context.Context,
 	restConfig.TLSClientConfig.ServerName = env.Spec.LandscaperClusterRestConfig.TLSClientConfig.ServerName
 	restConfig.TLSClientConfig.CAData = env.Spec.LandscaperClusterRestConfig.TLSClientConfig.CAData
 
-	if err := kutil.AddServiceAccountAuth(ctx, dm.client, sa, restConfig); err != nil {
+	if err := kutil.AddServiceAccountToken(ctx, dm.client, sa, restConfig); err != nil {
+		dm.log.Error(err, "unable to add service account token", "service-account", sa.Name)
 		return err
 	}
 
