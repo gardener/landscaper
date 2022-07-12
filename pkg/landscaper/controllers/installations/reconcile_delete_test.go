@@ -143,7 +143,8 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the force deletion annotation to an execution in deletion state", func() {
-			if lsutils.NewReconcile {
+			if lsutils.IsNewReconcile() {
+				// force reconcile is not required by new reconcile strategy
 				return
 			}
 
@@ -179,10 +180,6 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should propagate the delete-without-uninstall annotation to an execution", func() {
-			if lsutils.NewReconcile {
-				return
-			}
-
 			ctx := context.Background()
 
 			var err error
@@ -196,17 +193,38 @@ var _ = Describe("Delete", func() {
 			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			metav1.SetMetaDataAnnotation(&inst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			testutils.ExpectNoError(testenv.Client.Update(ctx, inst))
+			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
 			testutils.ExpectNoError(testenv.Client.Delete(ctx, inst))
-			testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
 
-			exec := &lsv1alpha1.Execution{}
-			exec.Name = "root"
-			exec.Namespace = state.Namespace
-			testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
-			Expect(exec.DeletionTimestamp).ToNot(BeNil())
-			ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
-			Expect(ok).To(BeTrue())
-			Expect(ann).To(Equal("true"))
+			if lsutils.IsNewReconcile() {
+				testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+				_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+				Expect(lsutils.IsInstallationPhase(inst, lsv1alpha1.InstallationPhaseDeleting)).To(BeTrue())
+				Expect(lsutils.IsInstallationJobIDsIdentical(inst)).To(BeFalse())
+
+				exec := &lsv1alpha1.Execution{}
+				exec.Name = "root"
+				exec.Namespace = state.Namespace
+				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
+				Expect(exec.DeletionTimestamp).ToNot(BeNil())
+				ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
+				Expect(ok).To(BeTrue())
+				Expect(ann).To(Equal("true"))
+			} else {
+				testutils.ShouldReconcile(ctx, ctrl, testutils.RequestFromObject(inst))
+
+				exec := &lsv1alpha1.Execution{}
+				exec.Name = "root"
+				exec.Namespace = state.Namespace
+				testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec))
+				Expect(exec.DeletionTimestamp).ToNot(BeNil())
+				ann, ok := exec.Annotations[lsv1alpha1.DeleteWithoutUninstallAnnotation]
+				Expect(ok).To(BeTrue())
+				Expect(ann).To(Equal("true"))
+			}
+
 		})
 	})
 
@@ -245,10 +263,6 @@ var _ = Describe("Delete", func() {
 		})
 
 		It("should not delete if another installation still imports a exported value", func() {
-			if lsutils.NewReconcile {
-				return
-			}
-
 			var err error
 			state, err = testenv.InitResources(ctx, "./testdata/state/test1")
 			Expect(err).ToNot(HaveOccurred())
@@ -256,6 +270,10 @@ var _ = Describe("Delete", func() {
 
 			inst := state.Installations[state.Namespace+"/a"]
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
+			if lsutils.IsNewReconcile() {
+				Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
+				Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
+			}
 
 			Eventually(func() error {
 				i := &lsv1alpha1.Installation{}

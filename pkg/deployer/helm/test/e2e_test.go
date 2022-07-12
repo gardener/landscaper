@@ -8,7 +8,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
+	continuousreconcileextension "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
+	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
@@ -25,12 +27,10 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
-	"github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
-	continuousreconcileextension "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	testutil "github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -51,10 +51,6 @@ var _ = Describe("Helm Deployer", func() {
 	})
 
 	It("should deploy an ingress-nginx chart from an oci artifact into the cluster", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -90,6 +86,8 @@ var _ = Describe("Helm Deployer", func() {
 			Namespace: state.Namespace,
 		}
 		di.Spec.Type = helmctrl.Type
+
+		di.Status.JobID = "1"
 
 		// Create target
 		target, err := testutil.CreateOrUpdateTarget(ctx,
@@ -140,12 +138,14 @@ var _ = Describe("Helm Deployer", func() {
 			Expect(testutil.SetReadyStatus(ctx, testenv.Client, obj)).To(Succeed())
 		}
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
+		di.Status.JobID = di.Status.JobID + "-1"
 		Expect(testenv.Client.Status().Update(ctx, di)).To(Succeed())
 
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
 		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		Expect(lsutils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
 
 		deploymentList := &appsv1.DeploymentList{}
 		Expect(testenv.Client.List(ctx, deploymentList, client.InNamespace(state.Namespace))).To(Succeed())
@@ -155,58 +155,60 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(deployment.Name).To(Equal("ingress-test-ingress-nginx-controller"))
 
 		By("verify continuous reconciliation")
+		// continuous reconcile currently not supported by new reconcile strategy
+		if !lsutils.IsNewReconcile() {
+			// add continuous reconcile spec to di
+			providerConfig.ContinuousReconcile = &continuousreconcile.ContinuousReconcileSpec{Every: &lsv1alpha1.Duration{Duration: 1 * time.Hour}}
+			di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(state.Client.Update(ctx, di))
 
-		// add continuous reconcile spec to di
-		providerConfig.ContinuousReconcile = &continuousreconcile.ContinuousReconcileSpec{Every: &lsv1alpha1.Duration{Duration: 1 * time.Hour}}
-		di.Spec.Configuration, err = helper.ProviderConfigurationToRawExtension(providerConfig)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(state.Client.Update(ctx, di))
+			// reconcile once to generate status
+			_, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+			testutil.ExpectNoError(err)
 
-		// reconcile once to generate status
-		_, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-		testutil.ExpectNoError(err)
+			testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+			lastReconciled := di.Status.LastReconcileTime
+			testDuration := time.Duration(1 * time.Hour)
+			expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
+			recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+			testutil.ExpectNoError(err)
+			timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
+			Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
 
-		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-		lastReconciled := di.Status.LastReconcileTime
-		testDuration := time.Duration(1 * time.Hour)
-		expectedNextReconcileIn := time.Until(lastReconciled.Add(testDuration))
-		recRes, err := ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-		testutil.ExpectNoError(err)
-		timeDiff := expectedNextReconcileIn - recRes.RequeueAfter
-		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+			// check again when closer to the next reconciliation time
+			testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+			shortTestDuration := time.Duration(10 * time.Minute)
+			lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
+			di.Status.LastReconcileTime = lastReconciled
+			testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
+			recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+			testutil.ExpectNoError(err)
+			lstr := di.Status.LastReconcileTime.Time.String()
+			nxtr := recRes.RequeueAfter.String()
+			By("last: " + lstr + " - next: " + nxtr)
+			timeDiff = shortTestDuration - recRes.RequeueAfter
+			Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
 
-		// check again when closer to the next reconciliation time
-		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-		shortTestDuration := time.Duration(10 * time.Minute)
-		lastReconciled.Time = time.Now().Add((-1) * testDuration).Add(shortTestDuration)
-		di.Status.LastReconcileTime = lastReconciled
-		testutil.ExpectNoError(testenv.Client.Status().Update(ctx, di))
-		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-		testutil.ExpectNoError(err)
-		lstr := di.Status.LastReconcileTime.Time.String()
-		nxtr := recRes.RequeueAfter.String()
-		By("last: " + lstr + " - next: " + nxtr)
-		timeDiff = shortTestDuration - recRes.RequeueAfter
-		Expect(timeDiff).To(BeNumerically("~", time.Duration(0), 1*time.Second)) // allow for slight imprecision
+			// verify that continuous reconciliation can be disabled by annotation
+			if di.Annotations == nil {
+				di.Annotations = make(map[string]string)
+			}
+			di.Annotations[continuousreconcileextension.ContinuousReconcileActiveAnnotation] = "false"
+			testutil.ExpectNoError(testenv.Client.Update(ctx, di))
+			recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
+			testutil.ExpectNoError(err)
+			Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
 
-		// verify that continuous reconciliation can be disabled by annotation
-		if di.Annotations == nil {
-			di.Annotations = make(map[string]string)
+			//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+			//// Expect that the deploy item gets deleted
+			//Eventually(func() error{
+			//	_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
+			//	return err
+			//}, time.Minute, 5 *time.Second).Should(Succeed())
+			//
+			//Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 		}
-		di.Annotations[continuousreconcileextension.ContinuousReconcileActiveAnnotation] = "false"
-		testutil.ExpectNoError(testenv.Client.Update(ctx, di))
-		recRes, err = ctrl.Reconcile(ctx, kutil.ReconcileRequestFromObject(di))
-		testutil.ExpectNoError(err)
-		Expect(recRes.RequeueAfter).To(BeNumerically("==", time.Duration(0)))
-
-		//testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
-		//// Expect that the deploy item gets deleted
-		//Eventually(func() error{
-		//	_, err := actuator.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
-		//	return err
-		//}, time.Minute, 5 *time.Second).Should(Succeed())
-		//
-		//Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(HaveOccurred())
 	})
 
 })

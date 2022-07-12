@@ -99,7 +99,7 @@ func (w *Writer) logInstallationUpdate(writeID WriteID, msg string, installation
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(installation)
 		opNew := lsv1alpha1helper.GetOperation(installation.ObjectMeta)
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, installation.Name,
@@ -128,7 +128,7 @@ func (w *Writer) logInstallationUpdate(writeID WriteID, msg string, installation
 		}
 
 	} else {
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.Error(err, msg,
 				keyWriteID, writeID,
 				keyName, installation.Name,
@@ -157,7 +157,7 @@ func (w *Writer) logExecutionUpdate(writeID WriteID, msg string, execution *lsv1
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(execution)
 		opNew := lsv1alpha1helper.GetOperation(execution.ObjectMeta)
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, execution.Name,
@@ -185,7 +185,7 @@ func (w *Writer) logExecutionUpdate(writeID WriteID, msg string, execution *lsv1
 			)
 		}
 	} else {
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.Error(err, msg,
 				keyWriteID, writeID,
 				keyName, execution.Name,
@@ -214,7 +214,7 @@ func (w *Writer) logDeployItemUpdate(writeID WriteID, msg string, deployItem *ls
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(deployItem)
 		opNew := lsv1alpha1helper.GetOperation(deployItem.ObjectMeta)
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, deployItem.Name,
@@ -244,7 +244,7 @@ func (w *Writer) logDeployItemUpdate(writeID WriteID, msg string, deployItem *ls
 		}
 
 	} else {
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
 			w.log.Error(err, msg,
 				keyWriteID, writeID,
 				keyName, deployItem.Name,

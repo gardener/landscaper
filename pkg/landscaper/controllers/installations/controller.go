@@ -92,7 +92,7 @@ type Controller struct {
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	if !utils.NewReconcile {
+	if !utils.IsNewReconcile() {
 		return c.reconcileOld(ctx, req)
 	} else {
 		return c.reconcileNew(ctx, req)
@@ -131,8 +131,6 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	oldInst := inst.DeepCopy()
-
 	if !installations.IsRootInstallation(inst) && lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		// only root installations could be triggered with operation annotation to prevent that end users interfere with overall
 		// algorithm
@@ -164,25 +162,8 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	// handle reconcile
 	if inst.Status.JobID != inst.Status.JobIDFinished {
 
-		// set init phase if the phase is empty or final from previous job
-		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded ||
-			inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed ||
-			inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed ||
-			inst.Status.InstallationPhase == "" {
-
-			if inst.DeletionTimestamp.IsZero() {
-				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInit
-			} else {
-				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseInitDelete
-			}
-
-			if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000088, inst); err != nil {
-				return reconcile.Result{}, err
-			}
-		}
-
 		err := c.handleReconcilePhase(ctx, inst)
-		return reconcile.Result{}, c.handleReconcileResult(ctx, err, oldInst, inst)
+		return reconcile.Result{}, err
 
 	} else {
 		// job finished; nothing to do
@@ -366,48 +347,6 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	return nil
 }
 
-func (c *Controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation) error {
-	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
-
-	if inst.Status.LastError != nil {
-		lastErr := inst.Status.LastError
-		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
-	}
-
-	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded ||
-		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed ||
-		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed {
-
-		inst.Status.JobIDFinished = inst.Status.JobID
-	}
-
-	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
-		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000106, inst); err2 != nil {
-
-			// accept not-found errors during deletion
-			if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
-				// recheck if already deleted
-				instRecheck := &lsv1alpha1.Installation{}
-				errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)
-				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
-					return nil
-				}
-			}
-
-			if apierrors.IsConflict(err2) { // reduce logging
-				c.Log().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
-			} else {
-				c.Log().Error(err2, "unable to update status")
-			}
-			if err == nil {
-				return err2
-			}
-		}
-	}
-
-	return err
-}
-
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
@@ -500,4 +439,44 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 	}
 
 	return nil
+}
+
+func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
+	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError) lserrors.LsError {
+
+	if lsError != nil {
+		c.Log().Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
+	}
+
+	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, lsError)
+
+	if inst.Status.LastError != nil {
+		lastErr := inst.Status.LastError
+		c.EventRecorder().Event(inst, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
+	}
+
+	inst.Status.InstallationPhase = phase
+	if phase == lsv1alpha1.InstallationPhaseFailed ||
+		phase == lsv1alpha1.InstallationPhaseSucceeded ||
+		phase == lsv1alpha1.InstallationPhaseDeleteFailed {
+		inst.Status.JobIDFinished = inst.Status.JobID
+	}
+
+	if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000114, inst); err != nil {
+		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
+			// recheck if already deleted
+			instRecheck := &lsv1alpha1.Installation{}
+			errRecheck := read_write_layer.GetInstallation(ctx, c.Client(), kutil.ObjectKey(inst.Name, inst.Namespace), instRecheck)
+			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+				return nil
+			}
+		}
+
+		c.Log().Error(err, "unable to update installation status")
+		if lsError == nil {
+			return lserrors.NewWrappedError(err, "setInstallationPhaseAndUpdate", "UpdateInstallationStatus", err.Error())
+		}
+	}
+
+	return lsError
 }

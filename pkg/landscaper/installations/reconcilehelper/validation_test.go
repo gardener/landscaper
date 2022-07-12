@@ -177,7 +177,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should fail if the parent provides the import but is not progressing", func() {
-			if utils.NewReconcile {
+			if utils.IsNewReconcile() {
 				return
 			}
 

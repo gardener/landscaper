@@ -166,7 +166,9 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		inst := &lsv1alpha1.Installation{}
 		inst.Name = "deployer"
 		inst.Namespace = state.Namespace
-		inst.Annotations = map[string]string{}
+		inst.Annotations = map[string]string{
+			lsv1alpha1.OperationAnnotation: string(lsv1alpha1.ReconcileOperation),
+		}
 		inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 			Reference: &lsv1alpha1.ComponentDescriptorReference{
 				RepositoryContext: &repoCtx,
@@ -208,7 +210,11 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 
 		utils.ExpectNoError(state.Create(ctx, inst))
-		utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+		if commonutils.IsNewReconcile() {
+			utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+		} else {
+			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+		}
 
 		ginkgo.By("Testing the deployer with a simple deployitem")
 
@@ -225,10 +231,23 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		}
 		g.Expect(di).ToNot(g.BeNil())
 		utils.ExpectNoError(state.Create(ctx, di))
+		if commonutils.IsNewReconcile() {
+			// Set a new jobID to trigger a reconcile of the deploy item
+			utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
+			utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now()))
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
 
-		utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
+			utils.ExpectNoError(state.Client.Delete(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			g.Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(g.Succeed())
+			g.Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(g.Succeed())
+			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, di, 2*time.Minute))
+			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
+		} else {
+			utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))
 
-		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, di, 2*time.Minute))
-		utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
+			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, di, 2*time.Minute))
+			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
+		}
 	})
 }

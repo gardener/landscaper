@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gardener/landscaper/test/integration/core"
+	"github.com/gardener/landscaper/test/integration/deployers"
 	"github.com/gardener/landscaper/test/integration/deployitems"
 	"github.com/gardener/landscaper/test/integration/executions"
 	"github.com/gardener/landscaper/test/integration/installations"
@@ -21,7 +22,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
 	"github.com/gardener/landscaper/test/framework"
-	"github.com/gardener/landscaper/test/integration/deployers"
 )
 
 var opts *framework.Options
