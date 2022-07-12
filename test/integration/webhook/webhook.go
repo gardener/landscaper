@@ -65,7 +65,7 @@ func WebhookTest(f *framework.Framework) {
 
 			// walk over test files and create them
 			inst := &lsv1alpha1.Installation{}
-			filepath.WalkDir(testdataDir, func(path string, d fs.DirEntry, err error) error {
+			utils.ExpectNoError(filepath.WalkDir(testdataDir, func(path string, d fs.DirEntry, err error) error {
 				if path == testdataDir {
 					return nil
 				}
@@ -101,10 +101,10 @@ func WebhookTest(f *framework.Framework) {
 					}
 					utils.ExpectNoError(utils.ReadResourceFromFile(obj, path))
 					obj.SetNamespace(state.Namespace)
-					state.Create(ctx, obj)
+					utils.ExpectNoError(state.Create(ctx, obj))
 				}
 				return nil
-			})
+			}))
 			Expect(inst.Name).ToNot(BeEmpty()) // root installation should have been found
 
 			// apply root installation into cluster and wait for it to be succeeded
