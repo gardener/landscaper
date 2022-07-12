@@ -192,7 +192,9 @@ func buildAndUploadComponentDescriptorWithArtifacts(ctx context.Context, f *fram
 
 	ref, err := cdoci.OCIRef(repoCtx, cd.Name, cd.Version)
 	utils.ExpectNoError(err)
-	utils.ExpectNoError(f.OCIClient.PushManifest(ctx, ref, manifest))
+
+	err = f.OCIClient.PushManifest(ctx, ref, manifest)
+	utils.ExpectNoError(err)
 	return cd
 }
 

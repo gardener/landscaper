@@ -47,6 +47,8 @@ type CreateRegistryOptions struct {
 	// OutputAddressFormat is the format of the output address for the registry
 	// Can be either hostname or ip
 	OutputAddressFormat string
+
+	RunOnShoot bool
 }
 
 // AddFlags adds flags for the options to a flagset
@@ -58,6 +60,8 @@ func (o *CreateRegistryOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.Password, "registry-password", "", "set the registry password")
 	fs.StringVar(&o.ExportRegistryCreds, "registry-auth", "", "path where the docker auth config is written to")
 	fs.StringVar(&o.OutputAddressFormat, "address-format", "hostname", "the format of the addresses in the generated output. Can be hostname or ip.")
+	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
+
 }
 
 func (o *CreateRegistryOptions) Complete() error {
@@ -94,5 +98,6 @@ func (o *CreateRegistryOptions) Run(ctx context.Context) error {
 		o.Password,
 		o.OutputAddressFormat,
 		o.ExportRegistryCreds,
-		o.Timeout)
+		o.Timeout,
+		o.RunOnShoot)
 }
