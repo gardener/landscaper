@@ -2,7 +2,7 @@
 
 - [Deploy applications via Landscaper using manifest deployer](#deploy-applications-via-landscaper-using-manifest-deployer)
   - [Introduction](#introduction)
-  - [Preparation of work environment](#preparation-of-work-environment)
+  - [Preparation of dev environment](#preparation-of-dev-environment)
     - [Structure of demo material](#structure-of-demo-material)
     - [Install the Landscaper together with an OCI registry](#install-the-landscaper-together-with-an-oci-registry)
   - [Deploy applications via Landscaper](#deploy-applications-via-landscaper)
@@ -24,9 +24,9 @@ The demo is ordered into the following activities:
 
 ![alt text](README-deployment-4-steps.svg "Deployment with Landscaper in four steps")
 
-## Preparation of work environment
+## Preparation of dev environment
 
-Before you start, you need a working demo environment. If you do not have one, please refer to ["Prepare demo environment"](prepare-demo-environment.md).
+Before you start, you need a working dev environment. If you do not have one, please refer to ["Prepare dev environment"](prepare-dev-environment.md).
 
 First, download [demo material from this repository]([/](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgardener%2Flandscaper%2Ftree%2Fmaster%2Fdocs%2Fgettingstarted%2fmanifest-deployer-tutorial)). You will edit some of the downloaded files later.
 
@@ -51,7 +51,7 @@ The folder component-archive contains all resources needed for building Landscap
 │   ├── my-deployment.yaml
 │   ├── my-secret.yaml
 │   └── my-target.yaml
-├── prepare-demo-environment.md
+├── prepare-dev-environment.md
 └── README.md
 ```
 
@@ -136,7 +136,7 @@ The curl should return this:
 For this tutorial an OCI image is provided. The image contains a dummy application just for demonstration purposes. It does nothing, just keeps the container running.
 
 The image is located at /manifest-deployer-tutorial/demo-content/hello.tar.
-For the next steps, dockerd must be up and running in demo environment.
+For the next steps, dockerd must be up and running in dev environment.
 
 First, load the OCI image into local docker registry:
 
