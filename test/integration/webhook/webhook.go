@@ -30,8 +30,8 @@ import (
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
 
+	yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 // RegisterTests registers all tests of the package
