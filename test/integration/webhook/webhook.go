@@ -6,7 +6,11 @@ package webhook
 
 import (
 	"context"
+	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	utils2 "github.com/gardener/landscaper/pkg/utils"
@@ -15,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -24,6 +29,9 @@ import (
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/test/framework"
 	"github.com/gardener/landscaper/test/utils"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // RegisterTests registers all tests of the package
@@ -52,21 +60,83 @@ func WebhookTest(f *framework.Framework) {
 		})
 
 		It("should block invalid Installation resources", func() {
-			instResource := filepath.Join(f.RootPath, "/docs/tutorials/resources/ingress-nginx", "installation.yaml")
+			// reuse installation from import/export test, because it declares lots of imports/exports, which is useful for testing the validation
+			testdataDir := filepath.Join(f.RootPath, "test", "integration", "installations", "testdata", "test1")
 
-			// load nginx installation from tutorial
+			// walk over test files and create them
 			inst := &lsv1alpha1.Installation{}
-			Expect(utils.ReadResourceFromFile(inst, instResource)).To(Succeed())
-			inst.SetNamespace(state.Namespace)
-			if utils2.IsNewReconcile() {
-				lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
-			}
+			filepath.WalkDir(testdataDir, func(path string, d fs.DirEntry, err error) error {
+				if path == testdataDir {
+					return nil
+				}
+				if d.IsDir() {
+					return fs.SkipDir
+				}
+				if d.Name() == "00-root-installation.yaml" {
+					utils.ExpectNoError(utils.ReadResourceFromFile(inst, path))
+					inst.SetNamespace(state.Namespace)
+					if utils2.IsNewReconcile() {
+						lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+					}
+				} else {
+					// parse file and read kind
+					data, err := ioutil.ReadFile(path)
+					utils.ExpectNoError(err)
+					parsed := map[string]interface{}{}
+					utils.ExpectNoError(yaml.Unmarshal(data, parsed))
+					kind, ok := parsed["kind"].(string)
+					Expect(ok).To(BeTrue())
+					var obj client.Object
+					switch kind {
+					case "ConfigMap":
+						obj = &corev1.ConfigMap{}
+					case "Secret":
+						obj = &corev1.Secret{}
+					case "Target":
+						obj = &lsv1alpha1.Target{}
+					case "Installation":
+						obj = &lsv1alpha1.Installation{}
+					default:
+						Fail(fmt.Sprintf("manifest of unknown kind '%s' in test folder, probably this test needs to be expanded", kind))
+					}
+					utils.ExpectNoError(utils.ReadResourceFromFile(obj, path))
+					obj.SetNamespace(state.Namespace)
+					state.Create(ctx, obj)
+				}
+				return nil
+			})
+			Expect(inst.Name).ToNot(BeEmpty()) // root installation should have been found
+
+			// apply root installation into cluster and wait for it to be succeeded
+			utils.ExpectNoError(state.Client.Create(ctx, inst))
+			Eventually(func() lsv1alpha1.ComponentInstallationPhase {
+				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
+				return inst.Status.Phase
+			}, 30*time.Second, 1*time.Second).Should(Equal(lsv1alpha1.ComponentPhaseSucceeded))
 
 			// make installation invalid by duplicating the first export
-			inst.Spec.Exports.Data = append(inst.Spec.Exports.Data, inst.Spec.Exports.Data[0])
-			err := state.Create(ctx, inst)
+			invalidInst := inst.DeepCopy()
+			invalidInst.Spec.Exports.Data = append(invalidInst.Spec.Exports.Data, invalidInst.Spec.Exports.Data[0])
+			err := state.Client.Update(ctx, invalidInst)
 			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
 			Expect(err.Error()).To(HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
+
+			// create invalid installation by creating different installation with same exports
+			invalidInst = inst.DeepCopy()
+			invalidInst.SetName("root2")
+			err = state.Client.Create(ctx, invalidInst)
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
+			// the error should contain the conflicting export names
+			for _, exp := range inst.Spec.Exports.Data {
+				Expect(err.Error()).To(ContainSubstring(exp.DataRef))
+			}
+			for _, exp := range inst.Spec.Exports.Targets {
+				Expect(err.Error()).To(ContainSubstring(exp.Target))
+			}
+			for exp := range inst.Spec.ExportDataMappings {
+				Expect(err.Error()).To(ContainSubstring(exp))
+			}
 		})
 
 		It("should block invalid Execution resources", func() {
