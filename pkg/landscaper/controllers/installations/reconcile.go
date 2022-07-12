@@ -6,9 +6,6 @@ package installations
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,42 +29,80 @@ import (
 func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	op := "handleReconcilePhase"
 
-	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseInit {
-		if err := c.handlePhaseInit(ctx, inst); err != nil {
-			return err
+	// set init phase if the phase is empty or final from previous job
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseSucceeded ||
+		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseFailed ||
+		inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleteFailed ||
+		inst.Status.InstallationPhase == "" {
+
+		nextPhase := lsv1alpha1.InstallationPhaseInit
+		if !inst.DeletionTimestamp.IsZero() {
+			nextPhase = lsv1alpha1.InstallationPhaseInitDelete
 		}
 
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseObjectsCreated
+		inst.Status.InstallationPhase = nextPhase
+
+		// do not use setInstallationPhaseAndUpdate because jobIDFinished should not be set here
+		if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000115, inst); err != nil {
+			return lserrors.NewWrappedError(err, op, "InitialPhaseSetting", err.Error())
+		}
+	}
+
+	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseInit {
+		fatalError, normalError := c.handlePhaseInit(ctx, inst)
+
+		if fatalError != nil {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError)
+		} else if normalError != nil {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
+		}
+
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseObjectsCreated, nil); err != nil {
+			return err
+		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseObjectsCreated {
 		if err := c.handlePhaseObjectsCreated(ctx, inst); err != nil {
-			return err
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
 		}
 
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseProgressing
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseProgressing, nil); err != nil {
+			return err
+		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseProgressing {
 		allSucceeded, err := c.handlePhaseProgressing(ctx, inst)
 		if err != nil {
 			// error or unfinished subobjects => phase remains progressing
-			return err
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
 		}
 
+		var nextPhase lsv1alpha1.InstallationPhase
 		if allSucceeded {
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseCompleting
+			nextPhase = lsv1alpha1.InstallationPhaseCompleting
 		} else {
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
+			nextPhase = lsv1alpha1.InstallationPhaseFailed
+		}
+
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, nextPhase, nil); err != nil {
+			return err
 		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseCompleting {
-		if err := c.handlePhaseCompleting(ctx, inst); err != nil {
-			return err
+		fatalError, normalError := c.handlePhaseCompleting(ctx, inst)
+
+		if fatalError != nil {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError)
+		} else if normalError != nil {
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
 		}
 
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseSucceeded, nil); err != nil {
+			return err
+		}
 	}
 
 	// handle deletion phases
@@ -75,23 +110,27 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseInitDelete {
 		// trigger deletion of execution and sub installations
 		fatalError, normalError := c.handleDeletionPhaseInit(ctx, inst)
+
 		if fatalError != nil {
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseDeleteFailed
-			return lserrors.NewWrappedError(fatalError, op, "handleDeletionPhaseInit", fatalError.Error())
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, fatalError)
 		} else if normalError != nil {
-			return lserrors.NewWrappedError(normalError, op, "handleDeletionPhaseInit", normalError.Error())
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
 		}
 
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseTriggerDelete
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseTriggerDelete, nil); err != nil {
+			return err
+		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseTriggerDelete {
 
 		if err := c.handleDeletionPhaseTriggerDeleting(ctx, inst); err != nil {
-			return lserrors.NewWrappedError(err, op, "handleDeletionPhaseTriggerDeleting", err.Error())
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
 		}
 
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseDeleting
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleting, nil); err != nil {
+			return err
+		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
@@ -100,54 +139,60 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		allFinished, allDeleted, err := c.handleDeletionPhaseDeleting(ctx, inst)
 
 		if err != nil {
-			return lserrors.NewWrappedError(err, op, "handleDeletionPhaseDeleting", err.Error())
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
 		} else if allDeleted {
 			return nil
 		} else if allFinished {
-			inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseDeleteFailed
+			err = lserrors.NewError(op, "UndeletedSubobjects", "not all sub objects were deleted")
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, err)
 		} else {
 			// retry
-			return lserrors.NewError(op, "PendingSubobjects", "deletion of some sub objects pending")
+			err = lserrors.NewError(op, "PendingSubobjects", "deletion of some sub objects pending")
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
 		}
 	}
 
 	return nil
 }
 
-func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseInit"
 
 	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst)
 
 	if fatalError != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return fatalError
+		return fatalError, nil
 	} else if normalError != nil {
-		return normalError
+		return nil, normalError
 	}
 
 	if err := c.CreateImportsAndSubobjects(ctx, instOp, imps); err != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewWrappedError(err, currentOperation, "CreateImportsAndSubobjects", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "CreateImportsAndSubobjects", err.Error()), nil
 	}
-
-	inst.Status.ImportsHash = importsHash
 
 	// we need to recheck the predecessors because they might have been changed during fetching the import data and therefore
 	// the import data might not be consistent. Then we should not go to the next phase and start the current sub objects
-	_, _, _, predecessorMapNew, fatalError, normalError := c.init(ctx, inst)
+	// fatal errors are not so important here as there will be a retry and if these still exists, they will result in a failure
+	// in the next reconcile loop
+	_, _, importsHashNew, predecessorMapNew, fatalError, normalError := c.init(ctx, inst)
 	if fatalError != nil {
-		return fatalError
+		return nil, fatalError
 	} else if normalError != nil {
-		return normalError
+		return nil, normalError
 	}
 
 	allSame := c.compareJobIDs(predecessorMap, predecessorMapNew)
 	if !allSame {
-		return lserrors.NewError(currentOperation, "comparePredecessorMaps", "some predecessor was changed during fetching the import data")
+		return nil, lserrors.NewError(currentOperation, "comparePredecessorMaps", "some predecessor was changed during fetching the import data")
 	}
 
-	return nil
+	if importsHashNew != importsHash {
+		return nil, lserrors.NewError(currentOperation, "compareImportHashes", "some predecessor was changed during fetching the import data")
+	}
+
+	inst.Status.ImportsHash = importsHash
+
+	return nil, nil
 }
 
 func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation,
@@ -206,22 +251,18 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, fatalError, nil
 	}
 
+	c.Log().Info("imports hash computation", "hash", hash)
+
 	return instOp, imps, hash, predecessorMap, nil, nil
 }
 
-func (c *Controller) hash(object interface{}) (string, error) {
-	objectBytes, err := json.Marshal(object)
+func (c *Controller) hash(imps *imports.Imports) (string, error) {
+	hash, err := imports.ComputeImportsHash(imps)
 	if err != nil {
 		return "", err
 	}
 
-	h := sha1.New()
-	_, err = h.Write(objectBytes)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(h.Sum(nil)), nil
+	return hash, nil
 }
 
 func (c *Controller) handlePhaseObjectsCreated(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
@@ -298,58 +339,52 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 	return allSucceeded, nil
 }
 
-func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseCompleting"
 
-	instOp, imps, importsHash, _, fatalError, normalError := c.init(ctx, inst)
+	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
 
 	if fatalError != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return fatalError
-	} else if normalError != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return normalError
+		return fatalError, nil
+	} else if fatalError2 != nil {
+		return fatalError2, nil
 	}
 
 	if importsHash != inst.Status.ImportsHash {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewError(currentOperation, "CheckImportsHash", "imports have changed")
+		c.Log().Info("CHANGED HASH: old: %s, new: %s", inst.Status.ImportsHash, importsHash)
+
+		return lserrors.NewError(currentOperation, "CheckImportsHash", "imports have changed"), nil
 	}
 
 	if inst.Generation != inst.Status.ObservedGeneration {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed")
+		return lserrors.NewError(currentOperation, "CheckObservedGeneration", "installation spec has been changed"), nil
 	}
 
 	err := imports.NewConstructor(instOp).Construct(ctx, imps)
 	if err != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewWrappedError(err, currentOperation, "ConstructImportsForExports", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "ConstructImportsForExports", err.Error()), nil
 	}
 
 	dataExports, targetExports, err := exports.NewConstructor(instOp).Construct(ctx)
 	if err != nil {
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewWrappedError(err, currentOperation, "ConstructExports", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "ConstructExports", err.Error()), nil
 	}
 
 	if err := instOp.CreateOrUpdateExports(ctx, dataExports, targetExports); err != nil {
 		if apierrors.IsConflict(err) {
-			return lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error())
+			return nil, lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error())
 		}
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "CreateOrUpdateExports", err.Error()), nil
 	}
 
 	if err := instOp.NewTriggerDependents(ctx); err != nil {
 		if apierrors.IsConflict(err) {
-			return lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error())
+			return nil, lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error())
 		}
-		inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseFailed
-		return lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error())
+		return lserrors.NewWrappedError(err, currentOperation, "TriggerDependents", err.Error()), nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {

@@ -159,7 +159,7 @@ func NewController(log logr.Logger,
 
 // Reconcile implements the reconcile.Reconciler interface that reconciles DeployItems.
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	if !utils.NewReconcile {
+	if !utils.IsNewReconcile() {
 		return c.reconcileOld(ctx, req)
 	} else {
 		return c.reconcileNew(ctx, req)
@@ -233,6 +233,10 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
 
 	if deployItem.Status.LastError != nil {
+		if lserrors.ContainsAnyErrorCode(deployItem.Status.LastError.Codes, lsv1alpha1.UnrecoverableErrorCodes) {
+			deployItem.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
+		}
+
 		lastErr := deployItem.Status.LastError
 		c.lsEventRecorder.Event(deployItem, corev1.EventTypeWarning, lastErr.Reason, lastErr.Message)
 	}

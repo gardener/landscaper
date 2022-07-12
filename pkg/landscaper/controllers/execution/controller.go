@@ -54,7 +54,7 @@ type controller struct {
 }
 
 func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	if !utils.NewReconcile {
+	if !utils.IsNewReconcile() {
 		return c.reconcileOld(ctx, req)
 	} else {
 		return c.reconcileNew(ctx, req)
@@ -88,134 +88,114 @@ func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, nil
 	}
 
-	oldExec := exec.DeepCopy()
-
 	if exec.Status.JobID != exec.Status.JobIDFinished {
 		// Execution is unfinished
 
-		// A final or empty execution phase means that the current job was not yet started.
-		// Switch to start phase Init / InitDelete.
-		if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded ||
-			exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseFailed ||
-			exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed ||
-			exec.Status.ExecutionPhase == "" {
-
-			if exec.DeletionTimestamp.IsZero() {
-				exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInit
-			} else {
-				exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInitDelete
-			}
-
-			if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000087, exec); err != nil {
-				return reconcile.Result{}, err
-			}
-		}
-
 		err := c.handleReconcilePhase(ctx, logger, exec)
-		return reconcile.Result{}, c.handleReconcileResult(ctx, err, oldExec, exec)
+		return reconcile.Result{}, err
 	} else {
 		// Execution is finished; nothing to do
 		return reconcile.Result{}, nil
 	}
 }
 
-func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldExec, exec *lsv1alpha1.Execution) error {
-	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, err)
+func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+	op := "handleReconcilePhase"
 
+	// A final or empty execution phase means that the current job was not yet started.
+	// Switch to start phase Init / InitDelete.
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded ||
 		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseFailed ||
-		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed {
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed ||
+		exec.Status.ExecutionPhase == "" {
 
-		exec.Status.JobIDFinished = exec.Status.JobID
-	}
+		if exec.DeletionTimestamp.IsZero() {
+			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInit
+		} else {
+			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseInitDelete
+		}
 
-	if !reflect.DeepEqual(oldExec.Status, exec.Status) {
-		if err2 := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err2 != nil {
-
-			if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleting {
-				// recheck if already deleted
-				execRecheck := &lsv1alpha1.Execution{}
-				errRecheck := read_write_layer.GetExecution(ctx, c.client, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)
-				if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
-					return nil
-				}
-			}
-
-			if apierrors.IsConflict(err2) { // reduce logging
-				c.log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
-			} else {
-				c.log.Error(err2, "unable to update status")
-			}
-			if err == nil {
-				return err2
-			}
+		// do not use setExecutionPhaseAndUpdate because jobIDFinished should not be set here
+		if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err != nil {
+			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
 		}
 	}
-
-	return err
-}
-
-func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInit {
 		if err := c.handlePhaseInit(ctx, log, exec); err != nil {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
-			return err
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
 		}
 
-		exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseProgressing
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseProgressing, nil); err != nil {
+			return err
+		}
 	}
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseProgressing {
 		deployItemClassification, err := c.handlePhaseProgressing(ctx, log, exec)
 		if err != nil {
-			return err
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err)
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
+			err = lserrors.NewError(op, "handlePhaseProgressing", "failed sub objects")
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
-		} else if deployItemClassification.AllSucceeded() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseCompleting
+			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started")
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
+		} else if !deployItemClassification.AllSucceeded() {
+			// remain in progressing in all other cases
+			err = lserrors.NewError(op, "handlePhaseProgressing", "some running items")
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err)
+		} else {
+			// all succeeded; go to next phase
+			if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseCompleting, nil); err != nil {
+				return err
+			}
 		}
-		// remain in progressing in all other cases
 	}
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseCompleting {
 		if err := c.handlePhaseCompleting(ctx, log, exec); err != nil {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
-			return err
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
 		}
 
-		exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseSucceeded
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseSucceeded, nil); err != nil {
+			return err
+		}
 	}
 
 	// Handle deletion phases
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseInitDelete {
 		if err := c.handlePhaseInitDelete(ctx, log, exec); err != nil {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseDeleteFailed
-			return err
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err)
 		}
 
-		exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseDeleting
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleting, nil); err != nil {
+			return err
+		}
 	}
 
 	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleting {
 		deployItemClassification, err := c.handlePhaseDeleting(ctx, log, exec)
 		if err != nil {
-			return err
+			return c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, err)
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items")
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseFailed
-		} else if deployItemClassification.AllSucceeded() {
-			exec.Status.ExecutionPhase = lsv1alpha1.ExecPhaseCompleting
+			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items")
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
 		}
-		// remain in deleting in all other cases
+
+		// remain in deleting in all other cases,
+		// in particular if all deploy items are gone and the finalizer of the execution has been removed.
+		if err := c.setExecutionPhaseAndUpdate(ctx, exec, exec.Status.ExecutionPhase, nil); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -407,6 +387,43 @@ func (c *controller) handleInterruptOperation(ctx context.Context, log logr.Logg
 	}
 
 	return nil
+}
+
+func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1alpha1.Execution, phase lsv1alpha1.ExecPhase, lsErr lserrors.LsError) lserrors.LsError {
+	exec.Status.LastError = lserrors.TryUpdateLsError(exec.Status.LastError, lsErr)
+
+	if lsErr != nil {
+		c.log.Error(lsErr, "setExecutionPhaseAndUpdate:"+lsErr.Error())
+	}
+
+	exec.Status.ExecutionPhase = phase
+
+	if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseSucceeded ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseFailed ||
+		exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleteFailed {
+
+		exec.Status.JobIDFinished = exec.Status.JobID
+	}
+
+	if err := c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000105, exec); err != nil {
+
+		if exec.Status.ExecutionPhase == lsv1alpha1.ExecPhaseDeleting {
+			// recheck if already deleted
+			execRecheck := &lsv1alpha1.Execution{}
+			errRecheck := read_write_layer.GetExecution(ctx, c.client, kutil.ObjectKey(exec.Name, exec.Namespace), execRecheck)
+			if errRecheck != nil && apierrors.IsNotFound(errRecheck) {
+				return nil
+			}
+		}
+
+		c.log.Error(err, "unable to update status")
+
+		if lsErr == nil {
+			return lserrors.NewWrappedError(err, "setExecutionPhaseAndUpdate", "UpdateExecutionStatus", err.Error())
+		}
+	}
+
+	return lsErr
 }
 
 // HandleAnnotationsAndGeneration is meant to be called at the beginning of the reconcile loop.

@@ -8,6 +8,8 @@ import (
 	"context"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/go-logr/logr"
@@ -70,15 +72,12 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should create a secret defined by a manifest deployer", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		ctx := context.Background()
 		defer ctx.Done()
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
-
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 		Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
 
 		// First reconcile will add a finalizer
@@ -88,7 +87,12 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		if utils.IsNewReconcile() {
+			Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+			Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+		} else {
+			Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		}
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifestv1alpha2.ProviderStatus{}
@@ -103,6 +107,11 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		if utils.IsNewReconcile() {
+			Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+			Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+		}
+
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
 			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -116,31 +125,21 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should update a secret defined by a manifest deployer", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		checkUpdate("./testdata/01-di.yaml", "./testdata/02-di-updated.yaml", state, ctrl)
 	})
 
 	It("should patch a secret defined by a manifest deployer", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		checkUpdate("./testdata/05-di.yaml", "./testdata/06-di-patched.yaml", state, ctrl)
 	})
 
 	It("should cleanup resources that are removed from the list of managed resources", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		ctx := context.Background()
 		defer ctx.Done()
 
 		By("create deploy item")
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/01-di.yaml")
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 		Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
 
@@ -150,7 +149,13 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		if utils.IsNewReconcile() {
+			Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+			Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+		} else {
+			Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		}
+
 		// Expect that the secret has been created
 		secret := &corev1.Secret{}
 		testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
@@ -158,9 +163,17 @@ var _ = Describe("Manifest Deployer", func() {
 
 		By("update deploy item")
 		di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/03-di-removed.yaml")
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+
 		testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		if utils.IsNewReconcile() {
+			Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+			Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+		} else {
+			Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		}
 
 		// Expect that the secret has been deleted and a configmap has been created.
 		err := testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), &corev1.Secret{})
@@ -170,6 +183,10 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(secret.Data).To(HaveKeyWithValue("config", []byte("abc")))
 
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		if utils.IsNewReconcile() {
+			Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+			Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+		}
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
 			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -183,14 +200,12 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should fail if a resource is created in non existing namespace", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		ctx := context.Background()
 		defer ctx.Done()
 
 		di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", "./testdata/04-di-invalid.yaml")
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 		Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
 
@@ -199,7 +214,12 @@ var _ = Describe("Manifest Deployer", func() {
 
 		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		if utils.IsNewReconcile() {
+			Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseProgressing)).To(BeTrue())
+			Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeFalse())
+		} else {
+			Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseProgressing))
+		}
 		Expect(di.Status.ProviderStatus).ToNot(BeNil(), "the provider status should be written")
 
 		status := &manifestv1alpha2.ProviderStatus{}
@@ -214,6 +234,11 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
 		testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+		if utils.IsNewReconcile() {
+			Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+			Expect(testutil.AddAnnotationForDeployItem(ctx, testenv, di, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")).ToNot(HaveOccurred())
+			Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+		}
 		// Expect that the deploy item gets deleted
 		Eventually(func() error {
 			_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))
@@ -224,7 +249,8 @@ var _ = Describe("Manifest Deployer", func() {
 	})
 
 	It("should requeue after the correct time if continuous reconciliation is configured", func() {
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
+			// continuous reconciliation currently not implemented for new reconcile
 			return
 		}
 
@@ -281,6 +307,8 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 
 	By("create deploy item")
 	di := testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI1)
+	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+	Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
 
 	Expect(testutil.CreateDefaultContext(ctx, testenv.Client, nil, state.Namespace)).ToNot(HaveOccurred())
 
@@ -290,7 +318,13 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
 
-	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	if utils.IsNewReconcile() {
+		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+	} else {
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	}
+
 	// Expect that the secret has been created
 	secret := &corev1.Secret{}
 	testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
@@ -298,15 +332,30 @@ func checkUpdate(pathToDI1, pathToDI2 string, state *envtest.State, ctrl reconci
 
 	By("update deploy item")
 	di = testutil.ReadAndCreateOrUpdateDeployItem(ctx, testenv, state, "ingress-test-di", pathToDI2)
-	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
 	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
-	Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+
+	testutil.ShouldReconcile(ctx, ctrl, testutil.Request(di.GetName(), di.GetNamespace()))
+
+	Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+	if utils.IsNewReconcile() {
+		Expect(utils.IsDeployItemPhase(di, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployItemJobIDsIdentical(di)).To(BeTrue())
+	} else {
+		Expect(di.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+	}
+
 	// Expect that the secret has been updated
 	secret = &corev1.Secret{}
 	testutil.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKey("my-secret", "default"), secret))
 	Expect(secret.Data).To(HaveKeyWithValue("config", []byte("efg")))
 
 	testutil.ExpectNoError(testenv.Client.Delete(ctx, di))
+	if utils.IsNewReconcile() {
+		Expect(testenv.Client.Get(ctx, testutil.Request(di.GetName(), di.GetNamespace()).NamespacedName, di)).To(Succeed())
+		Expect(testutil.UpdateJobIdForDeployItem(ctx, testenv, di, metav1.Now())).ToNot(HaveOccurred())
+	}
+
 	// Expect that the deploy item gets deleted
 	Eventually(func() error {
 		_, err := ctrl.Reconcile(ctx, testutil.Request(di.GetName(), di.GetNamespace()))

@@ -41,7 +41,7 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 	}
 
 	// check pickup timeout
-	if !con.hasBeenPickedUp(di) {
+	if !HasBeenPickedUp(di) {
 		if con.pickupTimeout != 0 {
 			logger.V(7).Info("check for pickup timeout")
 
@@ -52,6 +52,9 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 				return reconcile.Result{}, err
 			}
 
+			if requeue == nil {
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{RequeueAfter: *requeue}, nil
 		}
 
@@ -73,6 +76,9 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 			return reconcile.Result{}, err
 		}
 
+		if requeue == nil {
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{RequeueAfter: *requeue}, nil
 	}
 
@@ -88,11 +94,13 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 		}
 
 		if exceeded {
-			if err = con.writeProgressingTimeoutExceeded(ctx, logger, di); err != nil {
-				return reconcile.Result{}, err
-			}
+			err = con.writeProgressingTimeoutExceeded(ctx, logger, di)
+			return reconcile.Result{}, err
 		}
 
+		if requeue == nil {
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{RequeueAfter: *requeue}, nil
 	}
 

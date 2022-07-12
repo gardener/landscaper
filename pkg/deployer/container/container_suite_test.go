@@ -95,25 +95,25 @@ var _ = Describe("Template", func() {
 	})
 
 	It("should set phase to failed if the provider configuration is invalid", func() {
-		if lsutils.NewReconcile {
-			return
-		}
-
-		item, err := containerctlr.NewDeployItemBuilder().ProviderConfig(&containerv1alpha1.ProviderConfiguration{
-			RegistryPullSecrets: []lsv1alpha1.ObjectReference{
-				{},
-			},
-		}).Build()
+		// create a deploy item that is invalid since name and namespace of the registry pull secret are missing
+		item, err := containerctlr.NewDeployItemBuilder().
+			Key(state.Namespace, "container-test").
+			ProviderConfig(&containerv1alpha1.ProviderConfiguration{
+				RegistryPullSecrets: []lsv1alpha1.ObjectReference{
+					{},
+				},
+			}).
+			GenerateJobID().
+			Build()
 		Expect(err).ToNot(HaveOccurred())
-		item.Name = "container-test"
-		item.Namespace = state.Namespace
 
-		Expect(state.Create(ctx, item)).To(Succeed())
+		Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
 
 		di := &lsv1alpha1.DeployItem{}
 		Eventually(func() error {
 			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), di)).To(Succeed())
-			if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed {
+			if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
+				(!lsutils.IsNewReconcile() || (di.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseFailed && di.Status.JobID == di.Status.JobIDFinished)) {
 				return nil
 			}
 			return fmt.Errorf("phase is %s but expected it to be failed", di.Status.Phase)

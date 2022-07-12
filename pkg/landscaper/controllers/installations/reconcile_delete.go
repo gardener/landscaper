@@ -32,14 +32,16 @@ var (
 	SiblingImportError = errors.New("a sibling still imports some of the exports")
 )
 
-func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError error, normalError error) {
+func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (fatalError lserrors.LsError, normalError lserrors.LsError) {
+	op := "handleDeletionPhaseInit"
+
 	if err := c.deleteAllowed(ctx, inst); err != nil {
-		return nil, err
+		return nil, lserrors.NewWrappedError(err, op, "deleteAllowed", err.Error())
 	}
 
 	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
 	if err != nil {
-		return err, nil
+		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error()), nil
 	}
 
 	if exec != nil {
@@ -47,20 +49,20 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
-				return err, nil
+				return lserrors.NewWrappedError(err, op, "UpdateExecution", err.Error()), nil
 			}
 		}
 
 		if exec.DeletionTimestamp.IsZero() {
 			if err = c.Writer().DeleteExecution(ctx, read_write_layer.W000012, exec); err != nil {
-				return err, nil
+				return lserrors.NewWrappedError(err, op, "DeleteExecution", err.Error()), nil
 			}
 		}
 	}
 
 	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
 	if err != nil {
-		return err, nil
+		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error()), nil
 	}
 
 	for _, subInst := range subInsts {
@@ -68,16 +70,16 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(subInst.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000103, subInst); err != nil {
-				return err, nil
+				return lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error()), nil
 			}
 		}
 
 		if subInst.DeletionTimestamp.IsZero() {
 			if err = c.Writer().DeleteInstallation(ctx, read_write_layer.W000091, subInst); err != nil {
 				if apierrors.IsConflict(err) {
-					return nil, err
+					return nil, lserrors.NewWrappedError(err, op, "IsConflict", err.Error())
 				}
-				return err, nil
+				return lserrors.NewWrappedError(err, op, "DeleteInstallation", err.Error()), nil
 			}
 		}
 	}
@@ -85,29 +87,30 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 	return nil, nil
 }
 
-func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, inst *lsv1alpha1.Installation) error {
+func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	op := "handleDeletionPhaseTriggerDeleting"
 	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
 
 	if exec != nil && exec.Status.JobID != inst.Status.JobID {
 		exec.Status.JobID = inst.Status.JobID
 		if err = c.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000093, exec); err != nil {
-			return err
+			return lserrors.NewWrappedError(err, op, "UpdateExecutionStatus", err.Error())
 		}
 	}
 
 	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
 	if err != nil {
-		return err
+		return lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
 
 	for _, subInst := range subInsts {
 		if subInst.Status.JobID != inst.Status.JobID {
 			subInst.Status.JobID = inst.Status.JobID
 			if err = c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000094, subInst); err != nil {
-				return err
+				return lserrors.NewWrappedError(err, op, "UpdateInstallationStatus", err.Error())
 			}
 		}
 	}
@@ -115,21 +118,23 @@ func (c *Controller) handleDeletionPhaseTriggerDeleting(ctx context.Context, ins
 	return nil
 }
 
-func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1alpha1.Installation) (allFinished bool, allDeleted bool, err error) {
+func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1alpha1.Installation) (allFinished bool, allDeleted bool, lsErr lserrors.LsError) {
+	op := "handleDeletionPhaseDeleting"
+
 	exec, err := executions.GetExecutionForInstallation(ctx, c.Client(), inst)
 	if err != nil {
-		return false, false, err
+		return false, false, lserrors.NewWrappedError(err, op, "GetExecutionForInstallation", err.Error())
 	}
 
 	subInsts, err := installations.ListSubinstallations(ctx, c.Client(), inst)
 	if err != nil {
-		return false, false, err
+		return false, false, lserrors.NewWrappedError(err, op, "ListSubinstallations", err.Error())
 	}
 
 	if exec == nil && len(subInsts) == 0 {
 		controllerutil.RemoveFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000095, inst); err != nil {
-			return false, false, err
+			return false, false, lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error())
 		}
 		return true, true, nil
 	}

@@ -72,7 +72,8 @@ var _ = Describe("Container Deployer", func() {
 	})
 
 	It("should requeue after the correct time if continuous reconciliation is configured", func() {
-		if utils.NewReconcile {
+		if utils.IsNewReconcile() {
+			// continuous reconciliation currently not supported by new reconcile
 			return
 		}
 

@@ -7,6 +7,8 @@ package installations
 import (
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/test/framework"
 )
 
@@ -17,6 +19,10 @@ var (
 
 // RegisterTests registers all tests of this package
 func RegisterTests(f *framework.Framework) {
-	ImportExportTests(f)
-	PhasePropagationTests(f)
+	if utils.IsNewReconcile() {
+		ImportExportTests(f)
+	} else {
+		ImportExportTests(f)
+		PhasePropagationTests(f)
+	}
 }

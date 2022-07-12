@@ -4,9 +4,14 @@
 
 package core
 
-import "github.com/gardener/landscaper/test/framework"
+import (
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/test/framework"
+)
 
 // RegisterTests registers all tests of the package
 func RegisterTests(f *framework.Framework) {
-	RegistryTest(f)
+	if !utils.IsNewReconcile() {
+		RegistryTest(f)
+	}
 }
