@@ -27,3 +27,8 @@ spec:
 
   exportDataMappings:
     a.z: "bar"
+
+  exports:
+    data:
+    - name: a.z
+      dataRef: my-export

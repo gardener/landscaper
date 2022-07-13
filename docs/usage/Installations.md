@@ -930,7 +930,7 @@ These mappings open up the following possibilities:
 - combine multiple exports to one
 - export hard coded values
 
-Note that exports specified via export data mappings do not need to be declared under `exports.data`. If `exports.data` contains an export with the same `name` as a key in `exportDataMappings`, the latter one will overwrite the former one.
+Note that exports specified via export data mappings still need to be declared in `exports.data`, with the entries' `name` fields matching the keys of the `exportDataMappings` map. 
 
 All values exported by a blueprint can be accessed in the templating by their export names. As some keys - e.g. ones with a `.` in their name - are hard to access when on top level, all values are additionally available under an `exports` key. Please note that this means that an export with name `exports` needs to be referenced via `exports.exports`, because a simple `exports` would refer to the mentioned intermediate key.
 
@@ -967,7 +967,12 @@ exports:
 *Installation snippet:*
 ```yaml
 spec:
-  exports: {}
+  exports:
+    data:
+    - name: identifier
+      dataRef: my-identifier
+    - name: creds
+      dataRef: my-credentials
   exportDataMappings:
     identifier: (( identifier ))
     creds:

@@ -31,9 +31,11 @@ spec:
     data:
     - name: root.y
       dataRef: root.y
+    - name: foo
+      dataRef: root.z
   
   exportDataMappings:
-    root.z:
+    foo:
       some:
         arbitrary:
           struct: (( exports["root.z"] ))

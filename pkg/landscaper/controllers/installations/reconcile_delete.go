@@ -350,11 +350,6 @@ func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installati
 				return true
 			}
 		}
-		for dataImport := range inst.Spec.ExportDataMappings {
-			if sibling.IsImportingData(dataImport) {
-				return true
-			}
-		}
 		for _, targetImport := range inst.Spec.Exports.Targets {
 			if sibling.IsImportingData(targetImport.Target) {
 				return true

@@ -71,6 +71,8 @@ spec:
     data:
     - name: dataExp
       dataRef: dataExp
+    - name: additionalDataExp
+      dataRef: additionalDataExp
     targets:
     - name: targetExp
       target: targetExp

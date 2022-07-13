@@ -280,7 +280,7 @@ var _ = Describe("Constructor", func() {
 				return element.(*dataobjects.DataObject).Metadata.Key
 			}
 			Expect(res).To(MatchAllElements(id, Elements{
-				"a.z": PointTo(MatchFields(IgnoreExtras, Fields{
+				"my-export": PointTo(MatchFields(IgnoreExtras, Fields{
 					"Metadata": MatchFields(IgnoreExtras, Fields{
 						"SourceType": Equal(lsv1alpha1.ExportDataObjectSourceType),
 					}),

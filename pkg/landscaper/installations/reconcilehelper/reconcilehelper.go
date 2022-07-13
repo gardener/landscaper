@@ -591,14 +591,6 @@ func (rh *ReconcileHelper) checkStateForSiblingExport(fldPath *field.Path, sibli
 				break
 			}
 		}
-		if !isExporting {
-			for def := range sib.Info.Spec.ExportDataMappings {
-				if def == importRef {
-					isExporting = true
-					break
-				}
-			}
-		}
 	case lsv1alpha1.ImportTypeTarget, lsv1alpha1.ImportTypeTargetList:
 		for _, def := range sib.Info.Spec.Exports.Targets {
 			if def.Target == importRef {

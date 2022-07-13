@@ -118,11 +118,14 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	}
 
 	// exportDataMappings
-	exportDataMappings := map[string]interface{}{}
 	if c.Inst.Info.Spec.ExportDataMappings != nil && len(c.Inst.Info.Spec.ExportDataMappings) > 0 {
-		exportDataMappings, err = c.templateDataMappings(fldPath, exports)
+		exportDataMappings, err := c.templateDataMappings(fldPath, exports)
 		if err != nil {
 			return nil, nil, err
+		}
+		// add exportDataMappings to available exports, potentially overwriting existing exports with that name
+		for expName, expValue := range exportDataMappings {
+			exports[expName] = expValue
 		}
 	}
 
@@ -130,10 +133,6 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 	dataObjects := make([]*dataobjects.DataObject, len(c.Inst.Info.Spec.Exports.Data))
 	dataExportsPath := fldPath.Child("exports").Child("data")
 	for i, dataExport := range c.Inst.Info.Spec.Exports.Data {
-		if _, ok := exportDataMappings[dataExport.Name]; ok {
-			// skip exports which are overwritten by exportDataMappings
-			continue
-		}
 		dataExportPath := dataExportsPath.Child(dataExport.Name)
 		data, ok := exports[dataExport.Name]
 		if !ok {
@@ -144,14 +143,6 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			SetKey(dataExport.DataRef).
 			SetData(data)
 		dataObjects[i] = do
-	}
-
-	for name, data := range exportDataMappings {
-		do := dataobjects.New().
-			SetSourceType(lsv1alpha1.ExportDataObjectSourceType).
-			SetKey(name).
-			SetData(data)
-		dataObjects = append(dataObjects, do)
 	}
 
 	targets := make([]*dataobjects.Target, len(c.Inst.Info.Spec.Exports.Targets))

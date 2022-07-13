@@ -69,11 +69,6 @@ func (i *InstallationBase) IsExportingData(name string) bool {
 			return true
 		}
 	}
-	for def := range i.Info.Spec.ExportDataMappings {
-		if def == name {
-			return true
-		}
-	}
 	return false
 }
 
