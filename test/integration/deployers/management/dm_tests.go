@@ -10,6 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/landscaper"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo"
@@ -163,8 +166,17 @@ func DeployerManagementTests(f *framework.Framework) {
 					// expect that all installations are healthy
 					var allErrs []error
 					for _, inst := range instList.Items {
-						if err := health.CheckInstallation(&inst); err != nil {
-							allErrs = append(allErrs, err)
+						if utils.IsNewReconcile() {
+							finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+							if err != nil {
+								allErrs = append(allErrs, err)
+							} else if !finished {
+								allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
+							}
+						} else {
+							if err := health.CheckInstallation(&inst); err != nil {
+								allErrs = append(allErrs, err)
+							}
 						}
 					}
 					if len(allErrs) != 0 {
@@ -251,8 +263,17 @@ func DeployerManagementTests(f *framework.Framework) {
 				// expect that all installations are healthy
 				var allErrs []error
 				for _, inst := range newInstallations {
-					if err := health.CheckInstallation(&inst); err != nil {
-						allErrs = append(allErrs, fmt.Errorf("installation %q not healthy: %w", inst.Name, err))
+					if utils.IsNewReconcile() {
+						finished, err := landscaper.IsInstallationFinished(&inst, lsv1alpha1.InstallationPhaseSucceeded)
+						if err != nil {
+							allErrs = append(allErrs, err)
+						} else if !finished {
+							allErrs = append(allErrs, fmt.Errorf("installation phase is not suceeded, but %s", inst.Status.InstallationPhase))
+						}
+					} else {
+						if err := health.CheckInstallation(&inst); err != nil {
+							allErrs = append(allErrs, fmt.Errorf("installation %q not healthy: %w", inst.Name, err))
+						}
 					}
 				}
 				if len(allErrs) != 0 {

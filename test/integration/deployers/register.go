@@ -19,8 +19,8 @@ func RegisterTests(f *framework.Framework) {
 		ContainerDeployerTestsForNewReconcile(f)
 		ManifestDeployerTestsForNewReconcile(f)
 		helmcharts.RegisterTests(f)
-		//blueprints.RegisterTests(f)  // adapt for new reconcile
-		//management.RegisterTests(f)  // adapt for new reconcile
+		blueprints.RegisterTests(f)
+		management.RegisterTests(f)
 	} else {
 		ContainerDeployerTests(f)
 		ManifestDeployerTests(f)

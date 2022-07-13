@@ -238,14 +238,10 @@ func TestDeployerBlueprint(f *framework.Framework, td testDefinition) {
 		if commonutils.IsNewReconcile() {
 			// Set a new jobID to trigger a reconcile of the deploy item
 			utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di))
-			utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now()))
+			utils.ExpectNoError(utils.UpdateJobIdForDeployItemC(ctx, f.Client, di, metav1.Now()))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
 
-			utils.ExpectNoError(state.Client.Delete(ctx, di))
-			// Set a new jobID to trigger a reconcile of the deploy item
-			g.Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(g.Succeed())
-			g.Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(g.Succeed())
-			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, di, 2*time.Minute))
+			utils.ExpectNoError(utils.DeleteDeployItemForNewReconcile(ctx, f.Client, di, 2*time.Minute))
 			utils.ExpectNoError(utils.DeleteObject(ctx, f.Client, inst, 2*time.Minute))
 		} else {
 			utils.ExpectNoError(lsutils.WaitForDeployItemToSucceed(ctx, f.Client, di, 2*time.Minute))

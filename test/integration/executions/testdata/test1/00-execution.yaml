@@ -6,6 +6,8 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Execution
 metadata:
   name: exec-1
+  finalizers:
+    - finalizer.landscaper.gardener.cloud
 spec:
 
   deployItems:
