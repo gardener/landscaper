@@ -8,8 +8,11 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,41 +32,44 @@ func RegisterTests(f *framework.Framework) {
 }
 
 func WebhookTest(f *framework.Framework) {
-	_ = ginkgo.Describe("WebhookTest", func() {
+	_ = Describe("WebhookTest", func() {
 		var (
 			ctx   context.Context
 			state = f.Register()
 		)
 
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func() {
 			ctx = context.Background()
 		})
 
-		ginkgo.AfterEach(func() {
+		AfterEach(func() {
 			ctx.Done()
 		})
 
-		ginkgo.It("should have created a ValidatingWebhookConfiguration", func() {
+		It("should have created a ValidatingWebhookConfiguration", func() {
 			vwc := admissionregistrationv1.ValidatingWebhookConfiguration{}
 			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKey("landscaper-validation-webhook", ""), &vwc))
 		})
 
-		ginkgo.It("should block invalid Installation resources", func() {
+		It("should block invalid Installation resources", func() {
 			instResource := filepath.Join(f.RootPath, "/docs/tutorials/resources/ingress-nginx", "installation.yaml")
 
 			// load nginx installation from tutorial
 			inst := &lsv1alpha1.Installation{}
-			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
+			Expect(utils.ReadResourceFromFile(inst, instResource)).To(Succeed())
 			inst.SetNamespace(state.Namespace)
+			if utils2.IsNewReconcile() {
+				lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+			}
 
 			// make installation invalid by duplicating the first export
 			inst.Spec.Exports.Data = append(inst.Spec.Exports.Data, inst.Spec.Exports.Data[0])
 			err := state.Create(ctx, inst)
-			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
-			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"installations.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
-		ginkgo.It("should block invalid Execution resources", func() {
+		It("should block invalid Execution resources", func() {
 			conf := hdv1alpha1.Configuration{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "ProviderConfiguration",
@@ -103,11 +109,11 @@ func WebhookTest(f *framework.Framework) {
 			}
 
 			err := state.Create(ctx, exec)
-			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
-			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"executions.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"executions.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
-		ginkgo.It("should block invalid DeployItem resources", func() {
+		It("should block invalid DeployItem resources", func() {
 			conf := hdv1alpha1.Configuration{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "ProviderConfiguration",
@@ -138,11 +144,11 @@ func WebhookTest(f *framework.Framework) {
 			}
 
 			err := state.Create(ctx, di)
-			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
-			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 
-		ginkgo.It("should block a DeployItem type update", func() {
+		It("should block a DeployItem type update", func() {
 			di := &lsv1alpha1.DeployItem{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-deployitem",
@@ -154,13 +160,13 @@ func WebhookTest(f *framework.Framework) {
 			}
 
 			err := state.Create(ctx, di)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			updated := di.DeepCopy()
 			updated.Spec.Type = "other-type"
 			err = f.Client.Update(ctx, updated)
-			gomega.Expect(err).To(gomega.HaveOccurred()) // validation webhook should have denied this
-			gomega.Expect(err.Error()).To(gomega.HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
+			Expect(err).To(HaveOccurred()) // validation webhook should have denied this
+			Expect(err.Error()).To(HavePrefix("admission webhook \"deployitems.validation.landscaper.gardener.cloud\" denied the request"))
 		})
 	})
 }

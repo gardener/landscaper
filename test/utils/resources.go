@@ -12,6 +12,10 @@ import (
 	"net/url"
 	"path/filepath"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/mandelsoft/vfs/pkg/osfs"
@@ -283,6 +287,44 @@ func BuildContainerDeployItem(configuration *containerv1alpha1.ProviderConfigura
 		Build()
 	ExpectNoErrorWithOffset(1, err)
 	return di
+}
+
+func AddAnnotationForDeployItem(ctx context.Context, testenv *envtest.Environment, di *lsv1alpha1.DeployItem,
+	annotation, value string) error {
+	metav1.SetMetaDataAnnotation(&di.ObjectMeta, annotation, value)
+	return testenv.Client.Update(ctx, di)
+}
+
+func AddReconcileAnnotation(ctx context.Context, testenv *envtest.Environment, inst *lsv1alpha1.Installation) error {
+	lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+	return testenv.Client.Update(ctx, inst)
+}
+
+func UpdateJobIdForDeployItem(ctx context.Context, testenv *envtest.Environment, di *lsv1alpha1.DeployItem, time metav1.Time) error {
+	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.JobIDGenerationTime = &time
+	return testenv.Client.Status().Update(ctx, di)
+}
+
+func UpdateJobIdForDeployItemC(ctx context.Context, cl client.Client, di *lsv1alpha1.DeployItem, time metav1.Time) error {
+	di.Status.JobID = di.Status.JobID + "-1"
+	di.Status.JobIDGenerationTime = &time
+	return cl.Status().Update(ctx, di)
+}
+
+func UpdateJobIdForExecution(ctx context.Context, testenv *envtest.Environment, exec *lsv1alpha1.Execution) error {
+	exec.Status.JobID = exec.Status.JobID + "-1"
+	return testenv.Client.Status().Update(ctx, exec)
+}
+
+func UpdateJobIdForExecutionC(ctx context.Context, cl client.Client, exec *lsv1alpha1.Execution) error {
+	exec.Status.JobID = exec.Status.JobID + "-1"
+	return cl.Status().Update(ctx, exec)
+}
+
+func UpdateJobIdForInstallation(ctx context.Context, testenv *envtest.Environment, inst *lsv1alpha1.Installation) error {
+	inst.Status.JobID = inst.Status.JobID + "-1"
+	return testenv.Client.Status().Update(ctx, inst)
 }
 
 // ReadAndCreateOrUpdateDeployItem reads a deploy item from the given file and creates or updated the deploy item

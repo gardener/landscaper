@@ -9,8 +9,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/onsi/ginkgo"
-	g "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -22,7 +22,7 @@ import (
 )
 
 func ContainerDeployerTests(f *framework.Framework) {
-	ginkgo.Describe("Container Deployer", func() {
+	Describe("Container Deployer", func() {
 		var (
 			state      = f.Register()
 			exampleDir = path.Join(f.RootPath, "examples/deploy-items")
@@ -30,17 +30,17 @@ func ContainerDeployerTests(f *framework.Framework) {
 			ctx context.Context
 		)
 
-		ginkgo.BeforeEach(func() {
+		BeforeEach(func() {
 			ctx = context.Background()
 		})
 
-		ginkgo.AfterEach(func() {
+		AfterEach(func() {
 			ctx.Done()
 		})
 
-		ginkgo.It("should run a simple docker image with a sleep command", func() {
+		It("should run a simple docker image with a sleep command", func() {
 
-			ginkgo.By("Create Target for the installation")
+			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
@@ -58,16 +58,16 @@ func ContainerDeployerTests(f *framework.Framework) {
 				Namespace: target.Namespace,
 			}
 
-			ginkgo.By("Create container deploy item")
+			By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
-			ginkgo.By("Delete container deploy item")
+			By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
 
-		ginkgo.It("should detect when a image cannot be pulled and succeed when the deploy item is updated", func() {
-			ginkgo.By("Create Target for the installation")
+		It("should detect when a image cannot be pulled and succeed when the deploy item is updated", func() {
+			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
@@ -86,11 +86,11 @@ func ContainerDeployerTests(f *framework.Framework) {
 				Namespace: target.Namespace,
 			}
 
-			ginkgo.By("Create erroneous container deploy item")
+			By("Create erroneous container deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseFailed, 2*time.Minute))
 
-			ginkgo.By("update the DeployItem and set a valid image")
+			By("update the DeployItem and set a valid image")
 			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), di))
 			updatedDi := utils.BuildContainerDeployItem(&containerv1alpha1.ProviderConfiguration{
 				Image: "alpine",
@@ -100,12 +100,12 @@ func ContainerDeployerTests(f *framework.Framework) {
 
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
-			ginkgo.By("Delete container deploy item")
+			By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
 
-		ginkgo.It("should export data", func() {
-			ginkgo.By("Create Target for the installation")
+		It("should export data", func() {
+			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
@@ -123,22 +123,22 @@ func ContainerDeployerTests(f *framework.Framework) {
 				Namespace: target.Namespace,
 			}
 
-			ginkgo.By("Create container deploy item")
+			By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "my-val": true }
-			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
+			Expect(di.Status.ExportReference).ToNot(BeNil())
 			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
-			g.Expect(exportData).To(g.MatchJSON(`{ "my-val": true }`))
+			Expect(exportData).To(MatchJSON(`{ "my-val": true }`))
 
-			ginkgo.By("Delete container deploy item")
+			By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
 
-		ginkgo.It("should write and read data from the state", func() {
-			ginkgo.By("Create Target for the installation")
+		It("should write and read data from the state", func() {
+			By("Create Target for the installation")
 			target := &lsv1alpha1.Target{}
 			target.Name = "my-cluster-target"
 			target.Namespace = state.Namespace
@@ -156,30 +156,219 @@ func ContainerDeployerTests(f *framework.Framework) {
 				Namespace: target.Namespace,
 			}
 
-			ginkgo.By("Create container deploy item")
+			By("Create container deploy item")
 			utils.ExpectNoError(state.Create(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 
 			// expect that the export contains a valid json with { "counter": 1 }
-			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
+			Expect(di.Status.ExportReference).ToNot(BeNil())
 			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
-			g.Expect(exportData).To(g.MatchJSON(`{ "counter": 1 }`))
+			Expect(exportData).To(MatchJSON(`{ "counter": 1 }`))
 
-			ginkgo.By("Rerun the deployitem")
+			By("Rerun the deployitem")
 			metav1.SetMetaDataAnnotation(&di.ObjectMeta, lsv1alpha1.OperationAnnotation, string(lsv1alpha1.ReconcileOperation))
 			utils.ExpectNoError(f.Client.Update(ctx, di))
 			utils.ExpectNoError(lsutils.WaitForDeployItemToBeInPhase(ctx, f.Client, di, lsv1alpha1.ExecutionPhaseSucceeded, 2*time.Minute))
 			// expect that the export contains a valid json with { "counter": 2 }
-			g.Expect(di.Status.ExportReference).ToNot(g.BeNil())
+			Expect(di.Status.ExportReference).ToNot(BeNil())
 			exportData, err = lsutils.GetDeployItemExport(ctx, f.Client, di)
 			utils.ExpectNoError(err)
-			g.Expect(exportData).To(g.MatchJSON(`{ "counter": 2 }`))
+			Expect(exportData).To(MatchJSON(`{ "counter": 2 }`))
 
-			ginkgo.By("Delete container deploy item")
+			By("Delete container deploy item")
 			utils.ExpectNoError(f.Client.Delete(ctx, di))
 		})
-
 	})
+}
 
+func ContainerDeployerTestsForNewReconcile(f *framework.Framework) {
+	Describe("Container Deployer", func() {
+		var (
+			state      = f.Register()
+			exampleDir = path.Join(f.RootPath, "examples/deploy-items")
+
+			ctx context.Context
+		)
+
+		BeforeEach(func() {
+			ctx = context.Background()
+		})
+
+		AfterEach(func() {
+			ctx.Done()
+		})
+
+		It("should run a simple docker image with a sleep command", func() {
+
+			By("Create Target for the installation")
+			target := &lsv1alpha1.Target{}
+			target.Name = "my-cluster-target"
+			target.Namespace = state.Namespace
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			di := &lsv1alpha1.DeployItem{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "30-DeployItem-Container-sleep.yaml")))
+			di.SetName("")
+			di.SetGenerateName("container-sleep-")
+			di.SetNamespace(state.Namespace)
+			di.Spec.Target = &lsv1alpha1.ObjectReference{
+				Name:      target.Name,
+				Namespace: target.Namespace,
+			}
+
+			By("Create container deploy item")
+			utils.ExpectNoError(state.Create(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+
+			By("Delete container deploy item")
+			utils.ExpectNoError(f.Client.Delete(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+		})
+
+		It("should detect when a image cannot be pulled and succeed when the deploy item is updated", func() {
+			By("Create Target for the installation")
+			target := &lsv1alpha1.Target{}
+			target.Name = "my-cluster-target"
+			target.Namespace = state.Namespace
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			di := utils.BuildContainerDeployItem(&containerv1alpha1.ProviderConfiguration{
+				Image: "example.com/some-invalid/image:v0.0.1",
+			})
+			di.SetName("")
+			di.SetGenerateName("container-sleep-")
+			di.SetNamespace(state.Namespace)
+			di.Spec.Target = &lsv1alpha1.ObjectReference{
+				Name:      target.Name,
+				Namespace: target.Namespace,
+			}
+
+			By("Create erroneous container deploy item")
+			utils.ExpectNoError(state.Create(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseFailed, 2*time.Minute))
+
+			By("update the DeployItem and set a valid image")
+			utils.ExpectNoError(f.Client.Get(ctx, kutil.ObjectKey(di.Name, di.Namespace), di))
+			updatedDi := utils.BuildContainerDeployItem(&containerv1alpha1.ProviderConfiguration{
+				Image: "alpine",
+			})
+			di.Spec.Configuration = updatedDi.Spec.Configuration
+			utils.ExpectNoError(f.Client.Update(ctx, di))
+
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			di.Status.JobID = "2"
+			Expect(state.Client.Status().Update(ctx, di)).To(Succeed())
+
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+
+			By("Delete container deploy item")
+			utils.ExpectNoError(f.Client.Delete(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+		})
+
+		It("should export data", func() {
+			By("Create Target for the installation")
+			target := &lsv1alpha1.Target{}
+			target.Name = "my-cluster-target"
+			target.Namespace = state.Namespace
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			di := &lsv1alpha1.DeployItem{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "31-DeployItem-Container-export.yaml")))
+			di.SetName("")
+			di.SetGenerateName("container-export-")
+			di.SetNamespace(state.Namespace)
+			di.Spec.Target = &lsv1alpha1.ObjectReference{
+				Name:      target.Name,
+				Namespace: target.Namespace,
+			}
+
+			By("Create container deploy item")
+			utils.ExpectNoError(state.Create(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+
+			// expect that the export contains a valid json with { "my-val": true }
+			Expect(di.Status.ExportReference).ToNot(BeNil())
+			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
+			utils.ExpectNoError(err)
+			Expect(exportData).To(MatchJSON(`{ "my-val": true }`))
+
+			By("Delete container deploy item")
+			utils.ExpectNoError(f.Client.Delete(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+		})
+
+		It("should write and read data from the state", func() {
+			By("Create Target for the installation")
+			target := &lsv1alpha1.Target{}
+			target.Name = "my-cluster-target"
+			target.Namespace = state.Namespace
+			target, err := utils.BuildInternalKubernetesTarget(ctx, f.Client, state.Namespace, target.Name, f.RestConfig, true)
+			utils.ExpectNoError(err)
+			utils.ExpectNoError(state.Create(ctx, target))
+
+			di := &lsv1alpha1.DeployItem{}
+			utils.ExpectNoError(utils.ReadResourceFromFile(di, path.Join(exampleDir, "32-DeployItem-Container-state.yaml")))
+			di.SetName("")
+			di.SetGenerateName("container-export-")
+			di.SetNamespace(state.Namespace)
+			di.Spec.Target = &lsv1alpha1.ObjectReference{
+				Name:      target.Name,
+				Namespace: target.Namespace,
+			}
+
+			By("Create container deploy item")
+			utils.ExpectNoError(state.Create(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+
+			// expect that the export contains a valid json with { "counter": 1 }
+			Expect(di.Status.ExportReference).ToNot(BeNil())
+			exportData, err := lsutils.GetDeployItemExport(ctx, f.Client, di)
+			utils.ExpectNoError(err)
+			Expect(exportData).To(MatchJSON(`{ "counter": 1 }`))
+
+			By("Rerun the deployitem")
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+
+			utils.ExpectNoError(lsutils.WaitForDeployItemToFinish(ctx, f.Client, di, lsv1alpha1.DeployItemPhaseSucceeded, 2*time.Minute))
+			// expect that the export contains a valid json with { "counter": 2 }
+			Expect(di.Status.ExportReference).ToNot(BeNil())
+			exportData, err = lsutils.GetDeployItemExport(ctx, f.Client, di)
+			utils.ExpectNoError(err)
+			Expect(exportData).To(MatchJSON(`{ "counter": 2 }`))
+
+			By("Delete container deploy item")
+			utils.ExpectNoError(f.Client.Delete(ctx, di))
+			// Set a new jobID to trigger a reconcile of the deploy item
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(utils.UpdateJobIdForDeployItemC(ctx, state.Client, di, metav1.Now())).To(Succeed())
+		})
+	})
 }

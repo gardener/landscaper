@@ -553,7 +553,7 @@ func (rh *ReconcileHelper) checkStateForParentImport(fldPath *field.Path, import
 		return installations.NewImportNotFoundErrorf(err, "%s: import in parent not found", fldPath.String())
 	}
 
-	if utils.NewReconcile {
+	if utils.IsNewReconcile() {
 		return nil
 	}
 

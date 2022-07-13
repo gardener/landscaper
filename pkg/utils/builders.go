@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -26,6 +28,7 @@ type DeployItemBuilder struct {
 	target                *lsv1alpha1.ObjectReference
 	annotations           map[string]string
 	Context               string
+	generateJobID         bool
 }
 
 // NewDeployItemBuilder creates a new deploy item builder
@@ -118,6 +121,11 @@ func (b *DeployItemBuilder) WithContext(name string) *DeployItemBuilder {
 	return b
 }
 
+func (b *DeployItemBuilder) GenerateJobID() *DeployItemBuilder {
+	b.generateJobID = true
+	return b
+}
+
 // Build creates the deploy items using the given options.
 func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 	b.applyDefaults()
@@ -146,6 +154,10 @@ func (b *DeployItemBuilder) Build() (*lsv1alpha1.DeployItem, error) {
 
 	if len(di.Spec.Context) == 0 {
 		di.Spec.Context = lsv1alpha1.DefaultContextName
+	}
+
+	if b.generateJobID {
+		di.Status.JobID = uuid.New().String()
 	}
 
 	return di, nil

@@ -125,10 +125,6 @@ var _ = Describe("Template", func() {
 		})
 
 		It("should create the release namespace if configured", func() {
-			if lsutils.NewReconcile {
-				return
-			}
-
 			Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 			target, err := utils.CreateKubernetesTarget(state.Namespace, "my-target", testenv.Env.Config)
 			Expect(err).ToNot(HaveOccurred())
@@ -153,9 +149,10 @@ var _ = Describe("Template", func() {
 				Key(state.Namespace, "myitem").
 				ProviderConfig(helmConfig).
 				Target(target.Namespace, target.Name).
+				GenerateJobID().
 				Build()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(state.Create(ctx, item)).To(Succeed())
+			Expect(state.Create(ctx, item, envtest.UpdateStatus(true))).To(Succeed())
 
 			Eventually(func() error {
 				if err := testenv.Client.Get(ctx, kutil.ObjectKey("some-namespace", ""), &corev1.Namespace{}); err != nil {

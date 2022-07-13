@@ -67,7 +67,8 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should propagate phase changes from executions to installations", func() {
-			if utils.NewReconcile {
+			if utils.IsNewReconcile() {
+				// propagating changes upwards is currently not supported by the new reconcile
 				return
 			}
 
@@ -101,7 +102,8 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should propagate phase changes from subinstallations to installations", func() {
-			if utils.NewReconcile {
+			if utils.IsNewReconcile() {
+				// propagating changes upwards is currently not supported by the new reconcile
 				return
 			}
 
@@ -135,7 +137,8 @@ var _ = Describe("Reconcile", func() {
 		})
 
 		It("should trigger reconcile of execution", func() {
-			if utils.NewReconcile {
+			if utils.IsNewReconcile() {
+				// this test is not relevant anymore are the whole strategy has changed
 				return
 			}
 

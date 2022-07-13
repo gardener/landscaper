@@ -55,10 +55,6 @@ var _ = Describe("E2E", func() {
 	})
 
 	It("should reconcile a deploy item with matching annotation selector", func() {
-		if utils.NewReconcile {
-			return
-		}
-
 		ctx := context.Background()
 		defer ctx.Done()
 
@@ -81,9 +77,10 @@ var _ = Describe("E2E", func() {
 			Key(state.Namespace, "test1").
 			ProviderConfig(mockConfig).
 			TargetFromObjectKey(kutil.ObjectKeyFromObject(tgt)).
+			GenerateJobID().
 			Build()
 		testutils.ExpectNoError(err)
-		testutils.ExpectNoError(state.Create(ctx, di))
+		testutils.ExpectNoError(state.Create(ctx, di, envtest.UpdateStatus(true)))
 
 		defaultContext := &lsv1alpha1.Context{}
 		defaultContext.Name = lsv1alpha1.DefaultContextName
@@ -110,6 +107,8 @@ var _ = Describe("E2E", func() {
 		resDi := &lsv1alpha1.DeployItem{}
 		testutils.ExpectNoError(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), resDi))
 		Expect(resDi.Status.Phase).To(Equal(lsv1alpha1.ExecutionPhaseSucceeded))
+		Expect(utils.IsDeployItemPhase(resDi, lsv1alpha1.DeployItemPhaseSucceeded)).To(BeTrue())
+		Expect(utils.IsDeployItemJobIDsIdentical(resDi)).To(BeTrue())
 	})
 
 	It("should not reconcile a deploy item if the annotation selector does not match", func() {

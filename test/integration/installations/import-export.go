@@ -11,6 +11,9 @@ import (
 	"path"
 	"path/filepath"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	utils2 "github.com/gardener/landscaper/pkg/utils"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -86,6 +89,7 @@ func ImportExportTests(f *framework.Framework) {
 			root := &lsv1alpha1.Installation{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(root, path.Join(testdataDir, "00-root-installation.yaml")))
 			root.SetNamespace(state.Namespace)
+			lsv1alpha1helper.SetOperation(&root.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			utils.ExpectNoError(state.Create(ctx, root))
 
 			By("verify that subinstallation has been created")
@@ -103,20 +107,38 @@ func ImportExportTests(f *framework.Framework) {
 			}, timeoutTime, resyncTime).Should(BeTrue(), "unable to fetch subinstallation")
 
 			By("verify that installations are succeeded")
-			Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
-				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
-				if err != nil {
-					return "", err
-				}
-				return root.Status.Phase, nil
-			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
-			Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
-				err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
-				if err != nil {
-					return "", err
-				}
-				return subinst.Status.Phase, nil
-			}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
+			if utils2.IsNewReconcile() {
+				Eventually(func() (lsv1alpha1.InstallationPhase, error) {
+					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
+					if err != nil {
+						return "", err
+					}
+					return root.Status.InstallationPhase, nil
+				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
+				Eventually(func() (lsv1alpha1.InstallationPhase, error) {
+					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
+					if err != nil {
+						return "", err
+					}
+					return subinst.Status.InstallationPhase, nil
+				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.InstallationPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.InstallationPhaseSucceeded)
+			} else {
+				By("verify that installations are succeeded")
+				Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
+					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(root), root)
+					if err != nil {
+						return "", err
+					}
+					return root.Status.Phase, nil
+				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "root installation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
+				Eventually(func() (lsv1alpha1.ComponentInstallationPhase, error) {
+					err := f.Client.Get(ctx, kutil.ObjectKeyFromObject(subinst), subinst)
+					if err != nil {
+						return "", err
+					}
+					return subinst.Status.Phase, nil
+				}, timeoutTime, resyncTime).Should(BeEquivalentTo(lsv1alpha1.ComponentPhaseSucceeded), "subinstallation should be in phase '%s'", lsv1alpha1.ComponentPhaseSucceeded)
+			}
 
 			labels := map[string]string{
 				lsv1alpha1.DataObjectKeyLabel:        "dataExp",
@@ -253,6 +275,5 @@ func ImportExportTests(f *framework.Framework) {
 			utils.ExpectNoError(json.Unmarshal(emptyCdListImportRaw, emptyCdListImport))
 			Expect(emptyCdListImport.Components).To(HaveLen(0))
 		})
-
 	})
 }
