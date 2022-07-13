@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
@@ -55,19 +57,21 @@ func WaitForInstallationToFinish(
 	timeout time.Duration) error {
 
 	err := WaitForInstallationToHaveCondition(ctx, kubeClient, inst, func(installation *lsv1alpha1.Installation) (bool, error) {
-		if inst.Status.JobIDFinished != inst.Status.JobID {
-			return false, nil
-		} else if inst.Status.InstallationPhase != phase {
-			return false, fmt.Errorf("installation has finish with unexpected phase: %s, expected: %s",
-				inst.Status.InstallationPhase, phase)
-		}
-
-		return true, nil
+		return IsInstallationFinished(installation, phase)
 	}, timeout)
 	if err != nil {
 		return fmt.Errorf("error while waiting for installation to finish: %w", err)
 	}
 	return nil
+}
+
+func IsInstallationFinished(inst *lsv1alpha1.Installation, phase lsv1alpha1.InstallationPhase) (bool, error) {
+	if inst.Status.JobIDFinished != inst.Status.JobID || helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		return false, nil
+	} else if inst.Status.InstallationPhase != phase {
+		return false, fmt.Errorf("installation has finish with unexpected phase: %s, expected: %s", inst.Status.InstallationPhase, phase)
+	}
+	return true, nil
 }
 
 // WaitForInstallationToBeInPhase waits until the given installation is in the expected phase
@@ -102,7 +106,7 @@ func WaitForInstallationToHaveCondition(
 	cond InstallationConditionFunc,
 	timeout time.Duration) error {
 
-	return wait.Poll(5*time.Second, timeout, func() (bool, error) {
+	return wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
 		updated := &lsv1alpha1.Installation{}
 		if err := read_write_layer.GetInstallation(ctx, kubeClient, kutil.ObjectKey(inst.Name, inst.Namespace), updated); err != nil {
 			return false, err

@@ -2,7 +2,7 @@ package utils
 
 import lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 
-var NewReconcile = false
+var NewReconcile = true
 
 func IsNewReconcile() bool {
 	return NewReconcile

@@ -18,6 +18,8 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	commonutils "github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
@@ -235,8 +237,14 @@ func (f *Framework) WaitForSystemComponents(ctx context.Context) error {
 	}
 	f.logger.WithTimestamp().Logf("Waiting for Deployer Installations to be ready in %s", f.LsNamespace)
 	for _, inst := range installationList.Items {
-		if err := lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, &inst, 2*time.Minute); err != nil {
-			return err
+		if commonutils.IsNewReconcile() {
+			if err := lsutils.WaitForInstallationToFinish(ctx, f.Client, &inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute); err != nil {
+				return err
+			}
+		} else {
+			if err := lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, &inst, 2*time.Minute); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/gardener/landscaper/apis/core/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,6 +43,48 @@ func WaitForObjectDeletion(
 		return fmt.Errorf("error while waiting for installation to be deleted: %w", err)
 	}
 	return nil
+}
+
+func DeleteExecutionForNewReconcile(
+	ctx context.Context,
+	kubeClient client.Client,
+	exec *v1alpha1.Execution,
+	timeout time.Duration) error {
+
+	if err := kubeClient.Delete(ctx, exec); err != nil {
+		return err
+	}
+
+	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(exec), exec); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	if err := UpdateJobIdForExecutionC(ctx, kubeClient, exec); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	return DeleteObject(ctx, kubeClient, exec, timeout)
+}
+
+func DeleteDeployItemForNewReconcile(
+	ctx context.Context,
+	kubeClient client.Client,
+	di *v1alpha1.DeployItem,
+	timeout time.Duration) error {
+
+	if err := kubeClient.Delete(ctx, di); err != nil {
+		return err
+	}
+
+	if err := kubeClient.Get(ctx, kutil.ObjectKeyFromObject(di), di); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	if err := UpdateJobIdForDeployItemC(ctx, kubeClient, di, metav1.Now()); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+
+	return DeleteObject(ctx, kubeClient, di, timeout)
 }
 
 // DeleteObject deletes a object and waits until the given object is deleted

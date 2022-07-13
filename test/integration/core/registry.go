@@ -11,6 +11,10 @@ import (
 	"path/filepath"
 	"time"
 
+	commonutils "github.com/gardener/landscaper/pkg/utils"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	"github.com/gardener/component-cli/pkg/commands/componentarchive/input"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
@@ -87,6 +91,7 @@ func RegistryTest(f *framework.Framework) {
 			inst := &lsv1alpha1.Installation{}
 			gomega.Expect(utils.ReadResourceFromFile(inst, instResource)).To(gomega.Succeed())
 			inst.SetNamespace(state.Namespace)
+			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			inst.Spec.ComponentDescriptor = &lsv1alpha1.ComponentDescriptorDefinition{
 				Reference: &lsv1alpha1.ComponentDescriptorReference{
 					RepositoryContext: repoCtx,
@@ -99,7 +104,11 @@ func RegistryTest(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, inst))
 
 			// wait for installation to finish
-			utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+			if commonutils.IsNewReconcile() {
+				utils.ExpectNoError(lsutils.WaitForInstallationToFinish(ctx, f.Client, inst, lsv1alpha1.InstallationPhaseSucceeded, 2*time.Minute))
+			} else {
+				utils.ExpectNoError(lsutils.WaitForInstallationToBeHealthy(ctx, f.Client, inst, 2*time.Minute))
+			}
 
 			deployItems, err := lsutils.GetDeployItemsOfInstallation(ctx, f.Client, inst)
 			utils.ExpectNoError(err)
