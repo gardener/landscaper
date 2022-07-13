@@ -1,7 +1,3 @@
-namespace:
-  # Specifies whether the Helm release namespace should be created
-  create: false
-
 global:
   serviceAccount:
     controller:
