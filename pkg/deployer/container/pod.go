@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +17,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -445,7 +444,7 @@ func EnsureServiceAccounts(ctx context.Context, hostClient client.Client, deploy
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	res.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, log, hostClient, initSA)
+	res.InitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, log, hostClient, initSA, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -512,7 +511,7 @@ func EnsureServiceAccounts(ctx context.Context, hostClient client.Client, deploy
 	}
 
 	// wait for kubernetes to create the service accounts secrets
-	res.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, log, hostClient, waitSA)
+	res.WaitContainerServiceAccountSecret, err = WaitAndGetServiceAccountSecret(ctx, log, hostClient, waitSA, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -520,41 +519,29 @@ func EnsureServiceAccounts(ctx context.Context, hostClient client.Client, deploy
 }
 
 // WaitAndGetServiceAccountSecret waits until a service accounts secret is available and returns the secrets name.
-func WaitAndGetServiceAccountSecret(ctx context.Context, log logr.Logger, c client.Client, serviceAccount *corev1.ServiceAccount) (types.NamespacedName, error) {
-	timeout, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-	var secretKey types.NamespacedName
-	err := wait.PollImmediateUntil(10*time.Second, func() (bool, error) {
-		sa := &corev1.ServiceAccount{}
-		saKey := kutil.ObjectKey(serviceAccount.Name, serviceAccount.Namespace)
-		if err := c.Get(timeout, saKey, sa); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
-			log.Error(err, "unable to get service account", "serviceaccount", saKey.String())
-			return false, nil
-		}
-		if len(sa.Secrets) == 0 {
-			return false, nil
-		}
-
-		secret := &corev1.Secret{}
-		secretKey = kutil.ObjectKey(sa.Secrets[0].Name, sa.Namespace)
-		if err := c.Get(ctx, secretKey, secret); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, err
-			}
-			log.Error(err, "unable to get service account secret", "secret", secretKey.String())
-			return false, nil
-		}
-		if secret.Type != corev1.SecretTypeServiceAccountToken {
-			return false, fmt.Errorf("expected secret of type %s but found %s", corev1.SecretTypeServiceAccountToken, secret.Type)
-		}
-
-		return true, nil
-	}, timeout.Done())
-	if err != nil {
+func WaitAndGetServiceAccountSecret(ctx context.Context, log logr.Logger, c client.Client, serviceAccount *corev1.ServiceAccount, labels map[string]string) (types.NamespacedName, error) {
+	secretKey := types.NamespacedName{}
+	config := &rest.Config{}
+	if err := kutil.AddServiceAccountToken(ctx, c, serviceAccount, config); err != nil {
 		return secretKey, err
 	}
+	saKey := client.ObjectKeyFromObject(serviceAccount)
+	secrets, err := kutil.GetSecretsForServiceAccount(ctx, c, saKey)
+	if err != nil {
+		log.Error(err, "unable to get secrets for service account", "serviceaccount", saKey.String())
+		return secretKey, err
+	}
+
+	if len(secrets) == 0 {
+		return secretKey, fmt.Errorf("no secret found for service account %s", saKey.String())
+	}
+
+	for _, secret := range secrets {
+		InjectDefaultLabels(secret, labels)
+		if err := c.Update(ctx, secret); err != nil {
+			return secretKey, err
+		}
+	}
+	secretKey = client.ObjectKeyFromObject(secrets[0])
 	return secretKey, nil
 }
