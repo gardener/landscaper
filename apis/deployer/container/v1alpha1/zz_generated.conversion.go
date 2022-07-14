@@ -282,6 +282,7 @@ func Convert_container_DebugOptions_To_v1alpha1_DebugOptions(in *container.Debug
 func autoConvert_v1alpha1_GarbageCollection_To_container_GarbageCollection(in *GarbageCollection, out *container.GarbageCollection, s conversion.Scope) error {
 	out.Disable = in.Disable
 	out.Worker = in.Worker
+	out.RequeueTimeSeconds = in.RequeueTimeSeconds
 	return nil
 }
 
@@ -293,6 +294,7 @@ func Convert_v1alpha1_GarbageCollection_To_container_GarbageCollection(in *Garba
 func autoConvert_container_GarbageCollection_To_v1alpha1_GarbageCollection(in *container.GarbageCollection, out *GarbageCollection, s conversion.Scope) error {
 	out.Disable = in.Disable
 	out.Worker = in.Worker
+	out.RequeueTimeSeconds = in.RequeueTimeSeconds
 	return nil
 }
 

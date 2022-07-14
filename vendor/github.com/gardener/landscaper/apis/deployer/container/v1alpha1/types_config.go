@@ -101,6 +101,9 @@ type GarbageCollection struct {
 	// Worker defines the number of parallel garbage collection routines.
 	// Defaults to 5.
 	Worker int `json:"worker"`
+	// RequeueTime specifies the duration after which the object, which is not yet ready to be garbage collected, is requeued.
+	// Defaults to 60.
+	RequeueTimeSeconds int `json:"requeueTimeSeconds"`
 }
 
 // DebugOptions defines optional debug options.
