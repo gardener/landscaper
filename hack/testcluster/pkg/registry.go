@@ -122,7 +122,8 @@ func CreateRegistry(ctx context.Context,
 	password string,
 	outputAddressFormat string,
 	exportRegistryCreds string,
-	timeout time.Duration) (err error) {
+	timeout time.Duration,
+	runOnShoot bool) (err error) {
 
 	logger.Logln("Creating registry service")
 	svc := &corev1.Service{}
@@ -138,6 +139,10 @@ func CreateRegistry(ctx context.Context,
 		},
 	}
 	svc.Spec.Selector = svc.Labels
+
+	if runOnShoot {
+		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+	}
 	if err := kubeClient.Create(ctx, svc); err != nil {
 		return err
 	}
@@ -255,7 +260,25 @@ func CreateRegistry(ctx context.Context,
 	case AddressFormatHostname:
 		auth.ServerAddress = fmt.Sprintf("%s.%s:5000", svc.Name, svc.Namespace)
 	case AddressFormatIP:
-		auth.ServerAddress = fmt.Sprintf("%s:5000", svc.Spec.ClusterIP)
+		if runOnShoot {
+			err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (done bool, err error) {
+				tmpSvc := &corev1.Service{}
+				if tmpErr := kubeClient.Get(ctx, client.ObjectKeyFromObject(svc), tmpSvc); tmpErr != nil {
+					return false, tmpErr
+				}
+				if len(tmpSvc.Status.LoadBalancer.Ingress) > 0 && len(tmpSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
+					auth.ServerAddress = fmt.Sprintf("%s:5000", tmpSvc.Status.LoadBalancer.Ingress[0].IP)
+					logger.Logln(fmt.Sprintf("External IP detected: %s", auth.ServerAddress))
+					return true, nil
+				}
+				return false, nil
+			})
+		} else {
+			auth.ServerAddress = fmt.Sprintf("%s:5000", svc.Spec.ClusterIP)
+		}
+
+		logger.Logln(fmt.Sprintf("IP detected: %s", auth.ServerAddress))
+
 	default:
 		return fmt.Errorf("unknown address format %q", outputAddressFormat)
 	}

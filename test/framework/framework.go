@@ -50,6 +50,7 @@ type Options struct {
 	LsVersion        string
 	DockerConfigPath string
 	DisableCleanup   bool
+	RunOnShoot       bool
 }
 
 // AddFlags registers the framework related flags
@@ -64,6 +65,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.LsVersion, "ls-version", "", "the version to use in integration tests")
 	fs.StringVar(&o.DockerConfigPath, "registry-config", "", "path to the docker config file")
 	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
+	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
 	o.fs = fs
 }
 
@@ -100,6 +102,8 @@ type Framework struct {
 	LsVersion string
 	// DisableCleanup skips the state cleanup step
 	DisableCleanup bool
+	// RunOnShoot tests are executed on shoot and not a k3s cluster (only for compatibility with old setup)
+	RunOnShoot bool
 
 	// RegistryConfig defines the oci registry config file.
 	// It is expected that the configfile contains exactly one server.
@@ -124,6 +128,7 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 		LsVersion:      cfg.LsVersion,
 		Cleanup:        &Cleanup{},
 		DisableCleanup: cfg.DisableCleanup,
+		RunOnShoot:     cfg.RunOnShoot,
 	}
 
 	var err error

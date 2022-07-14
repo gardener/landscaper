@@ -94,6 +94,10 @@ func DeployerBlueprintTests(f *framework.Framework) {
 			ComponentDescriptorName: "github.com/gardener/landscaper/helm-deployer",
 			BlueprintResourceName:   "helm-deployer-blueprint",
 			DeployItem: func(state *envtest.State, target *lsv1alpha1.Target) (*lsv1alpha1.DeployItem, error) {
+				ref := "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:4.0.18"
+				if !f.RunOnShoot {
+					ref = "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0"
+				}
 				return helm.NewDeployItemBuilder().
 					Key(state.Namespace, "my-di").
 					Target(target.Namespace, target.Name).
@@ -101,7 +105,7 @@ func DeployerBlueprintTests(f *framework.Framework) {
 						Name:      "my-chart",
 						Namespace: state.Namespace,
 						Chart: helmv1alpha1.Chart{
-							Ref: "eu.gcr.io/gardener-project/landscaper/tutorials/charts/ingress-nginx:v0.1.0",
+							Ref: ref,
 						},
 					}).Build()
 			},
