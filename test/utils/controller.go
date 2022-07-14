@@ -269,17 +269,12 @@ func (c *MimicKCMSecretController) Reconcile(ctx context.Context, req reconcile.
 		secret.Data = make(map[string][]byte)
 	}
 
-	rootCa, ok := secret.Data[corev1.ServiceAccountRootCAKey]
-	if !ok {
-		rootCa = []byte("my-test-rootca")
-		secret.Data[corev1.ServiceAccountRootCAKey] = rootCa
-
+	if _, ok := secret.Data[corev1.ServiceAccountRootCAKey]; !ok {
+		secret.Data[corev1.ServiceAccountRootCAKey] = []byte("my-test-rootca")
 	}
 
-	token, ok := secret.Data[corev1.ServiceAccountTokenKey]
-	if !ok {
-		token = []byte("my-test-token")
-		secret.Data[corev1.ServiceAccountTokenKey] = token
+	if _, ok := secret.Data[corev1.ServiceAccountTokenKey]; !ok {
+		secret.Data[corev1.ServiceAccountTokenKey] = []byte("my-test-token")
 	}
 
 	if err := c.client.Update(ctx, secret); err != nil {
