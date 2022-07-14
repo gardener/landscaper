@@ -63,14 +63,22 @@ spec:
           key: componentDescriptor
     - name: emptyCdListImp
       list: []
+    
+  importDataMappings:
+    mappedImp: myImportMapping
   
   exports:
     data:
     - name: dataExp
       dataRef: dataExp
+    - name: additionalDataExp
+      dataRef: additionalDataExp
     targets:
     - name: targetExp
       target: targetExp
+
+  exportDataMappings:
+    additionalDataExp: (( "mapping-" exports.dataExp ))
 
   blueprint:
     inline:
@@ -85,6 +93,10 @@ spec:
 
           imports:
           - name: dataImp
+            type: data
+            schema:
+              type: string
+          - name: mappedImp
             type: data
             schema:
               type: string
@@ -130,6 +142,8 @@ spec:
               data:
               - name: subDataImp
                 dataRef: dataImp
+              - name: subMappedImp
+                dataRef: mappedImp
               targets:
               - name: subTargetImp
                 target: targetImp
@@ -179,8 +193,13 @@ spec:
                             cdListImportByCdRefs: (( imports.subCdListImpByCdRefs ))
                             cdListImportByListRef: (( imports.subCdListImpByListRef ))
                             emptyCdListImport: (( imports.subEmptyCdListImp ))
+                            importDataMappings: (( imports.subMappedImp ))
                   imports:
                   - name: subDataImp
+                    type: data
+                    schema:
+                      type: string
+                  - name: subMappedImp
                     type: data
                     schema:
                       type: string

@@ -17,6 +17,9 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/gotemplate"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions/template/spiff"
 
+	"github.com/mandelsoft/spiff/spiffing"
+	spiffyaml "github.com/mandelsoft/spiff/yaml"
+
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -111,6 +114,18 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 			}
 		default:
 			return nil, nil, fmt.Errorf("%s: unknown export type '%s'", fldPath.String(), string(def.Type))
+		}
+	}
+
+	// exportDataMappings
+	if c.Inst.Info.Spec.ExportDataMappings != nil && len(c.Inst.Info.Spec.ExportDataMappings) > 0 {
+		exportDataMappings, err := c.templateDataMappings(fldPath, exports)
+		if err != nil {
+			return nil, nil, err
+		}
+		// add exportDataMappings to available exports, potentially overwriting existing exports with that name
+		for expName, expValue := range exportDataMappings {
+			exports[expName] = expValue
 		}
 	}
 
@@ -212,4 +227,46 @@ func ConvertTargetTemplateToTarget(tmplData interface{}) (*dataobjects.Target, e
 		},
 	}
 	return dataobjects.NewFromTarget(raw)
+}
+
+// templateDataMappings constructs the export data mappings
+func (c *Constructor) templateDataMappings(fldPath *field.Path, exports map[string]interface{}) (map[string]interface{}, error) {
+
+	// have all exports as top-level key and below an 'exports' key
+	// this allows easy access, but forbids using exports which are named 'exports'
+	exportValues := map[string]interface{}{}
+	for k, v := range exports {
+		exportValues[k] = v
+	}
+	exportValues["exports"] = exports
+	spiff, err := spiffing.New().WithFunctions(spiffing.NewFunctions()).WithValues(exportValues)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init spiff templater: %w", err)
+	}
+
+	values := make(map[string]interface{})
+	for key, dataMapping := range c.Inst.Info.Spec.ExportDataMappings {
+		expPath := fldPath.Child(key)
+
+		tmpl, err := spiffyaml.Unmarshal(key, dataMapping.RawMessage)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse export mapping template %s: %w", expPath.String(), err)
+		}
+
+		res, err := spiff.Cascade(tmpl, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to template export mapping template %s: %w", expPath.String(), err)
+		}
+
+		dataBytes, err := spiffyaml.Marshal(res)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal templated export mapping %s: %w", expPath.String(), err)
+		}
+		var data interface{}
+		if err := yaml.Unmarshal(dataBytes, &data); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal templated export mapping %s: %w", expPath.String(), err)
+		}
+		values[key] = data
+	}
+	return values, nil
 }
