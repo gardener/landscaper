@@ -38,7 +38,6 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -118,7 +117,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
 
-	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000107, inst); err != nil {
 			return reconcile.Result{}, err
@@ -206,7 +205,7 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	oldInst := inst.DeepCopy()
 
-	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000010, inst); err != nil {
 			return reconcile.Result{}, err
