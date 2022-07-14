@@ -158,6 +158,11 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
 	currentOperation := "handlePhaseInit"
 
+	err := c.checkForDuplicateExports(ctx, inst)
+	if err != nil {
+		return nil, lserrors.BuildLsError(err, currentOperation, "CheckForDuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+	}
+
 	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst)
 
 	if fatalError != nil {

@@ -219,14 +219,6 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, true)
 	}
 
-	if inst.Status.ObservedGeneration != inst.Generation {
-		// spec has changed, make sure the exports don't conflict
-		err := c.checkForDuplicateExports(ctx, inst)
-		if err != nil {
-			return reconcile.Result{}, c.handleError(ctx, lserrors.BuildLsError(err, "CheckForDuplicateExports", "DuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem), oldInst, inst, false)
-		}
-	}
-
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
 		err := c.forceReconcile(ctx, inst)
 		return reconcile.Result{}, c.handleError(ctx, err, oldInst, inst, false)
