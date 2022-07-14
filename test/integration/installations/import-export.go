@@ -58,6 +58,7 @@ func ImportExportTests(f *framework.Framework) {
 			secret.SetNamespace(state.Namespace)
 			utils.ExpectNoError(state.Create(ctx, secret))
 			expectedDataExport := string(secret.Data["value"])
+			expectedDataMappingExport := "mapping-" + expectedDataExport
 			// dummy target
 			target := &lsv1alpha1.Target{}
 			utils.ExpectNoError(utils.ReadResourceFromFile(target, path.Join(testdataDir, "10-dummy-target.yaml")))
@@ -141,7 +142,6 @@ func ImportExportTests(f *framework.Framework) {
 			}
 
 			labels := map[string]string{
-				lsv1alpha1.DataObjectKeyLabel:        "dataExp",
 				lsv1alpha1.DataObjectSourceTypeLabel: "export",
 				lsv1alpha1.DataObjectSourceLabel:     fmt.Sprintf("Inst.%s", root.Name),
 			}
@@ -158,17 +158,29 @@ func ImportExportTests(f *framework.Framework) {
 					doExports = append(doExports, elem)
 				}
 			}
-			Expect(doExports).To(HaveLen(1), "there should be exactly one root-level dataobject export")
-			Expect(doExports).To(ContainElement(MatchFields(IgnoreExtras, Fields{
-				"Data": WithTransform(func(aj lsv1alpha1.AnyJSON) interface{} {
-					var res interface{}
-					err := json.Unmarshal(aj.RawMessage, &res)
-					if err != nil {
-						return nil
-					}
-					return res
-				}, BeEquivalentTo(expectedDataExport)),
-			})))
+			Expect(doExports).To(HaveLen(2), "there should be exactly two root-level dataobject exports")
+			Expect(doExports).To(ConsistOf(
+				MatchFields(IgnoreExtras, Fields{
+					"Data": WithTransform(func(aj lsv1alpha1.AnyJSON) interface{} {
+						var res interface{}
+						err := json.Unmarshal(aj.RawMessage, &res)
+						if err != nil {
+							return nil
+						}
+						return res
+					}, BeEquivalentTo(expectedDataExport)),
+				}),
+				MatchFields(IgnoreExtras, Fields{
+					"Data": WithTransform(func(aj lsv1alpha1.AnyJSON) interface{} {
+						var res interface{}
+						err := json.Unmarshal(aj.RawMessage, &res)
+						if err != nil {
+							return nil
+						}
+						return res
+					}, BeEquivalentTo(expectedDataMappingExport)),
+				}),
+			))
 
 			// target export
 			By("verify target exports")

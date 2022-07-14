@@ -58,17 +58,6 @@ var _ = Describe("SubinstallationsHelper", func() {
 			Expect(impRels).To(HaveLen(1))
 			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_target")))
 		})
-		It("should correctly detect dependencies defined in exportDataMappings", func() {
-			deps := map[string][]string{
-				"a": nil,
-				"b": {"a"},
-			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mappingDependency))
-			computedDeps, impRels := subinstallations.ComputeInstallationDependencies(subinstallations.AbstractInstallationTemplates(tmpls))
-			Expect(computedDeps).To(HaveKeyWithValue("b", HaveKey("a")))
-			Expect(impRels).To(HaveLen(1))
-			Expect(impRels).To(HaveKeyWithValue(utils.RelationshipTuple{Exporting: "a", Importing: "b"}, sets.NewString().Insert("a_mapping")))
-		})
 
 	})
 
@@ -103,17 +92,6 @@ var _ = Describe("SubinstallationsHelper", func() {
 				"b": nil,
 			}
 			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(targetDependency))
-			sortInstallationTemplatesAlphabetically(tmpls)
-			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(installationTemplatesToNames(ordered)).To(Equal([]string{"b", "a"}))
-		})
-		It("should correctly order based on dependencies defined in exportDataMappings", func() {
-			deps := map[string][]string{
-				"a": {"b"},
-				"b": nil,
-			}
-			tmpls := generateSubinstallationTemplates(deps, newDependencyProvider(mappingDependency))
 			sortInstallationTemplatesAlphabetically(tmpls)
 			ordered, err := subinstallations.OrderInstallationTemplates(tmpls)
 			Expect(err).ToNot(HaveOccurred())
@@ -161,7 +139,7 @@ var _ = Describe("SubinstallationsHelper", func() {
 			sortInstallationTemplatesAlphabetically(tmpls)
 			_, err := subinstallations.OrderInstallationTemplates(tmpls)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_mapping]-> d -[c_target]-> c}"))
+			Expect(err.Error()).To(Equal("Op: EnsureNestedInstallations - Reason: OrderNestedInstallationTemplates - Message: The following cyclic dependencies have been found in the nested installation templates: {c -[e_data]-> e -[d_data]-> d -[c_target]-> c}"))
 		})
 
 	})
@@ -171,10 +149,9 @@ var _ = Describe("SubinstallationsHelper", func() {
 type dependencyMode string
 
 const (
-	dataDependency    = dependencyMode("data")
-	targetDependency  = dependencyMode("target")
-	mappingDependency = dependencyMode("mapping")
-	mixedDependency   = dependencyMode("mixed")
+	dataDependency   = dependencyMode("data")
+	targetDependency = dependencyMode("target")
+	mixedDependency  = dependencyMode("mixed")
 )
 
 // dependencyProvider is a helper struct to iterate over dependency modes
@@ -192,16 +169,14 @@ func newDependencyProvider(mode dependencyMode) dependencyProvider {
 func (d *dependencyProvider) nextMode() string {
 	mode := d.mode
 	if mode == mixedDependency {
-		cur := d.count % 3
+		cur := d.count % 2
 		switch cur {
 		case 0:
 			mode = dataDependency
 		case 1:
 			mode = targetDependency
-		case 2:
-			mode = mappingDependency
 		}
-		d.count = (d.count + 1) % 3
+		d.count = (d.count + 1) % 2
 	}
 	return string(mode)
 }
@@ -209,8 +184,8 @@ func (d *dependencyProvider) nextMode() string {
 // generateSubinstallationTemplates describes dependencies between the subinstallation templates which should be created
 // There is expected to be one key for each installation template
 // and the value should list the names of all other installation templates this one depends on.
-// The dependency provider returns one of 'data', 'target', or 'mapping' via its 'nextMode' function, which controls whether the import is satisfied by a
-// data export, target export, or something exported in the exportDataMappings, respectively.
+// The dependency provider returns one of 'data' or 'target', via its 'nextMode' function, which controls whether the import is satisfied by a
+// data export or target export, respectively.
 func generateSubinstallationTemplates(deps map[string][]string, dProv dependencyProvider) []*lsv1alpha1.InstallationTemplate {
 	res := []*lsv1alpha1.InstallationTemplate{}
 	// sort map keys to make iteration order deterministic
@@ -239,9 +214,6 @@ func generateSubinstallationTemplates(deps map[string][]string, dProv dependency
 						Target: fmt.Sprintf("%s_target", k),
 					},
 				},
-			},
-			ExportDataMappings: map[string]lsv1alpha1.AnyJSON{
-				fmt.Sprintf("%s_mapping", k): lsv1alpha1.NewAnyJSON([]byte("foo_mapping_value")),
 			},
 		}
 		for i, dep := range v {

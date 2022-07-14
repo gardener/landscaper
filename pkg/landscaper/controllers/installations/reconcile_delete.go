@@ -350,8 +350,8 @@ func propagateDeleteWithoutUninstallAnnotation(ctx context.Context, kubeWriter *
 // checkIfSiblingImports checks if a sibling imports any of the installations exports.
 func checkIfSiblingImports(inst *lsv1alpha1.Installation, siblings []*installations.InstallationBase) bool {
 	for _, sibling := range siblings {
-		for _, dataImports := range inst.Spec.Exports.Data {
-			if sibling.IsImportingData(dataImports.DataRef) {
+		for _, dataImport := range inst.Spec.Exports.Data {
+			if sibling.IsImportingData(dataImport.DataRef) {
 				return true
 			}
 		}
