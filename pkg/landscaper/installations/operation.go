@@ -32,6 +32,7 @@ import (
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
+	lsutil "github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -585,8 +586,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := o.Writer().CreateOrUpdateCoreDataObject(ctx, read_write_layer.W000068, raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
-				return err
+			if err := lsutil.SetExclusiveOwnerReference(o.Inst.Info, raw); err != nil {
+				return fmt.Errorf("dataobject '%s' for export '%s' conflicts with existing dataobject owned by another installation: %w", client.ObjectKeyFromObject(raw).String(), do.Metadata.Key, err)
 			}
 			return do.Apply(raw)
 		}); err != nil {
@@ -610,8 +611,8 @@ func (o *Operation) CreateOrUpdateExports(ctx context.Context, dataExports []*da
 
 		// we do not need to set controller ownership as we anyway need a separate garbage collection.
 		if _, err := o.Writer().CreateOrUpdateCoreTarget(ctx, read_write_layer.W000069, raw, func() error {
-			if err := controllerutil.SetOwnerReference(o.Inst.Info, raw, api.LandscaperScheme); err != nil {
-				return err
+			if err := lsutil.SetExclusiveOwnerReference(o.Inst.Info, raw); err != nil {
+				return fmt.Errorf("target object '%s' for export '%s' conflicts with existing target owned by another installation: %w", client.ObjectKeyFromObject(raw).String(), target.Metadata.Key, err)
 			}
 			return target.Apply(raw)
 		}); err != nil {

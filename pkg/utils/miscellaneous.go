@@ -16,8 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -189,4 +192,15 @@ func extractExportNames(inst *lsv1alpha1.Installation) (sets.String, sets.String
 	}
 
 	return dataExports, targetExports
+}
+
+// SetExclusiveOwnerReference is a wrapper around controllerutil.SetOwnerReference
+// It will throw an error if the object contains already an owner reference of the same kind but pointing to a different owner.
+func SetExclusiveOwnerReference(owner client.Object, obj client.Object) error {
+	for _, own := range obj.GetOwnerReferences() {
+		if own.Kind == owner.GetObjectKind().GroupVersionKind().Kind && own.UID != owner.GetUID() {
+			return fmt.Errorf("object '%s' is already owned by another object with kind '%s' (%s)", client.ObjectKeyFromObject(obj).String(), owner.GetObjectKind().GroupVersionKind().Kind, own.Name)
+		}
+	}
+	return controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
 }

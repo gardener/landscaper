@@ -43,7 +43,7 @@ var _ = Describe("Operation", func() {
 		}
 	})
 
-	Context("CreateOrUpdateExports", func() {
+	Context("CreateOrUpdateImports", func() {
 
 		It("should sync a target", func() {
 			ctx := context.Background()
