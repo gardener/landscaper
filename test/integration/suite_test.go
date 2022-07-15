@@ -53,6 +53,12 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !opts.DisableCleanupBefore {
+		if err := f.CleanupBeforeTestNamespaces(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	tutorial.RegisterTests(f)
 	webhook.RegisterTests(f)
 	core.RegisterTests(f)
