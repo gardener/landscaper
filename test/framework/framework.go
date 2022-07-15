@@ -13,7 +13,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
@@ -43,14 +46,15 @@ import (
 const OpenSourceRepositoryContext = "eu.gcr.io/gardener-project/development"
 
 type Options struct {
-	fs               *flag.FlagSet
-	KubeconfigPath   string
-	RootPath         string
-	LsNamespace      string
-	LsVersion        string
-	DockerConfigPath string
-	DisableCleanup   bool
-	RunOnShoot       bool
+	fs                   *flag.FlagSet
+	KubeconfigPath       string
+	RootPath             string
+	LsNamespace          string
+	LsVersion            string
+	DockerConfigPath     string
+	DisableCleanup       bool
+	RunOnShoot           bool
+	DisableCleanupBefore bool
 }
 
 // AddFlags registers the framework related flags
@@ -66,6 +70,7 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.DockerConfigPath, "registry-config", "", "path to the docker config file")
 	fs.BoolVar(&o.DisableCleanup, "disable-cleanup", false, "skips the cleanup of resources.")
 	fs.BoolVar(&o.RunOnShoot, "ls-run-on-shoot", false, "runs on a shoot and not a k3s cluster")
+	fs.BoolVar(&o.DisableCleanupBefore, "ls-disable-cleanup-before", false, "disables cleanup of all namespaces with prefix `test` before the tests are started")
 	o.fs = fs
 }
 
@@ -327,6 +332,81 @@ func (f *Framework) Register() *State {
 // IsRegistryEnabled returns true if a docker registry is configured.
 func (f *Framework) IsRegistryEnabled() bool {
 	return f.RegistryConfig != nil
+}
+
+func (f *Framework) CleanupBeforeTestNamespaces(ctx context.Context) error {
+	testNamespaces := &corev1.NamespaceList{}
+	if err := f.Client.List(ctx, testNamespaces); err != nil {
+		return err
+	}
+
+	for _, nextNamespace := range testNamespaces.Items {
+		if strings.HasPrefix(nextNamespace.Name, "test") && len(nextNamespace.Name) > len("test") {
+			if err := f.cleanupBeforeObjectsInTestNamespace(ctx, nextNamespace); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := f.Client.List(ctx, testNamespaces); err != nil {
+		return err
+	}
+
+	for _, nextNamespace := range testNamespaces.Items {
+		if strings.HasPrefix(nextNamespace.Name, "test") && len(nextNamespace.Name) > len("test") {
+			if nextNamespace.GetDeletionTimestamp().IsZero() {
+				if err := f.Client.Delete(ctx, &nextNamespace); err != nil && !apierrors.IsNotFound(err) {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (f *Framework) cleanupBeforeObjectsInTestNamespace(ctx context.Context, namespace corev1.Namespace) error {
+	instList := &lsv1alpha1.InstallationList{}
+	if err := f.Client.List(ctx, instList, client.InNamespace(namespace.Name)); err != nil {
+		return err
+	}
+	for _, obj := range instList.Items {
+		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+			return err
+		}
+	}
+
+	execList := &lsv1alpha1.ExecutionList{}
+	if err := f.Client.List(ctx, execList, client.InNamespace(namespace.Name)); err != nil {
+		return err
+	}
+	for _, obj := range execList.Items {
+		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+			return err
+		}
+	}
+
+	diList := &lsv1alpha1.DeployItemList{}
+	if err := f.Client.List(ctx, diList, client.InNamespace(namespace.Name)); err != nil {
+		return err
+	}
+	for _, obj := range diList.Items {
+		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+			return err
+		}
+	}
+
+	podList := &corev1.PodList{}
+	if err := f.Client.List(ctx, podList, client.InNamespace(namespace.Name)); err != nil {
+		return err
+	}
+	for _, obj := range podList.Items {
+		if err := envtest.CleanupForObject(ctx, f.Client, &obj, time.Second); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // CleanupLandscaperResources force cleans up all landscaper resources.

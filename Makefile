@@ -52,14 +52,10 @@ setup-testenv:
 test: setup-testenv
 	@$(REPO_ROOT)/hack/test.sh
 
+
 .PHONY: integration-test
 integration-test:
-	@go test -timeout=1h -mod=vendor $(REPO_ROOT)/test/integration --v -ginkgo.v -ginkgo.progress \
-		--kubeconfig $(KUBECONFIG) \
-		--ls-version $(EFFECTIVE_VERSION) \
-		--registry-config=$(REGISTRY_CONFIG) \
-		--disable-cleanup=$(DISABLE_CLEANUP)
-
+	@$(REPO_ROOT)/.ci/new-integration-test $(KUBECONFIG_PATH) $(EFFECTIVE_VERSION)
 
 .PHONY: verify
 verify: check
@@ -145,14 +141,6 @@ upload-tutorial-resources:
 install-testcluster-cmd:
 	@go install $(REPO_ROOT)/hack/testcluster
 
-.PHONY: setup-local-registry
-setup-local-registry:
-	@go run $(REPO_ROOT)/hack/testcluster create --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false --registry-auth=./tmp/local-docker.config
-	@echo "For local development add '127.0.0.1 registry-local.default' to your '/etc/hosts' and run a port-forward to the registry pod 'kubectl port-forward registry-local 5000'"
-
-.PHONY: remove-local-registry
-remove-local-registry:
-	@go run $(REPO_ROOT)/hack/testcluster delete --kubeconfig $(KUBECONFIG) -n default --id=local --enable-registry --enable-cluster=false
 
 .PHONY: start-webhooks
 start-webhooks:

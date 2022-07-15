@@ -42,17 +42,13 @@ The TestMachinery itself works with
 ![TestMachinery test setup](../images/TestMachineryITSetup.png)
 
 **local execution**
-The integration tests can also be executed locally by providing a kubernetes cluster and export the kubeconfig as `export KUBECONFIG=<path to kubeconfig>`.
-Then just run the tests with `make integration-test`.
+The integration tests can also be executed locally by providing a kubernetes cluster. Then just run the tests with:
 
-By default the integration tests that require an oci registry executed with the make command are skipped. (These tests are also flagged as `Require OCI Registry` see https://github.com/gardener/landscaper/blob/master/test/integration/core/registry.go#L37)
+```
+make integration-test KUBECONFIG_PATH=<path to cluster kubeconfig file>
+```
 
-Test that require an oci registry can be executed locally by
-1. Provide an oci-registry.<br>
-   The landscaper project offers you to deploy a local registry by running `make setup-local-registry` (a running k8s cluster is needed). Please follow all instructions printed by the command.
-   > Note: The registry configuration is written to `./tmp/local-docker.config`.<br>
-   > The registry can be deleted with `make remove-local-registry`
-2. running the integration tests with the oci registry configuration as `make integration-test REGISTRY_CONFIG=<path to config>`
+The tests set up a local OCI registry, install/upgrade the landscaper and executes the integration tests.
 
 #### write tests
 
