@@ -9,17 +9,17 @@ set -o nounset
 set -o pipefail
 
 KUBECONFIG_PATH=$1
+VERSION=$2
 SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 
 echo "Source path ${SOURCE_PATH}"
 
-VERSION="$(./hack/get-version.sh)"
 REGISTRY_NS=clusters
 ID="12"
 
-echo "Starting integration tests for landscaper version ${VERSION}"
+echo "Starting integration tests for landscaper version ${VERSION} and kubeconfig $KUBECONFIG_PATH"
 
 TMP="${SOURCE_PATH}/tmp-int-test"
 TMP_GEN="$TMP/gen"
