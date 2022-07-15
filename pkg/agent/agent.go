@@ -163,6 +163,7 @@ func (a *Agent) EnsureHostResources(ctx context.Context, kubeClient client.Clien
 	}
 	crb := DeployerClusterRoleBinding(sa, a.config.Name)
 	if _, err := controllerutil.CreateOrUpdate(ctx, kubeClient, crb, func() error {
+		crb.Subjects = DeployerClusterRoleBindingSubjects(sa)
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("unable to create cluster role biinding %q for deployer on host cluster: %w", crb.Name, err)
@@ -316,7 +317,12 @@ func DeployerClusterRoleBinding(sa *corev1.ServiceAccount, envName string) *rbac
 		Kind:     "ClusterRole",
 		Name:     DeployerClusterRoleName,
 	}
-	crb.Subjects = []rbacv1.Subject{
+	crb.Subjects = DeployerClusterRoleBindingSubjects(sa)
+	return crb
+}
+
+func DeployerClusterRoleBindingSubjects(sa *corev1.ServiceAccount) []rbacv1.Subject {
+	return []rbacv1.Subject{
 		{
 			APIGroup:  "",
 			Kind:      "ServiceAccount",
@@ -324,5 +330,4 @@ func DeployerClusterRoleBinding(sa *corev1.ServiceAccount, envName string) *rbac
 			Namespace: sa.Namespace,
 		},
 	}
-	return crb
 }
