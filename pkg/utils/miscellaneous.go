@@ -20,6 +20,7 @@ import (
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 )
@@ -195,12 +196,17 @@ func extractExportNames(inst *lsv1alpha1.Installation) (sets.String, sets.String
 }
 
 // SetExclusiveOwnerReference is a wrapper around controllerutil.SetOwnerReference
-// It will throw an error if the object contains already an owner reference of the same kind but pointing to a different owner.
-func SetExclusiveOwnerReference(owner client.Object, obj client.Object) error {
+// The first return value will contain an error if the object contains already an owner reference of the same kind but pointing to a different owner.
+// The second return value is meant for unexpected errors during the process.
+func SetExclusiveOwnerReference(owner client.Object, obj client.Object) (error, error) {
+	gvk, err := apiutil.GVKForObject(owner, api.LandscaperScheme)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine GroupVersionKind for object %s: %w", client.ObjectKeyFromObject(owner).String(), err)
+	}
 	for _, own := range obj.GetOwnerReferences() {
-		if own.Kind == owner.GetObjectKind().GroupVersionKind().Kind && own.UID != owner.GetUID() {
-			return fmt.Errorf("object '%s' is already owned by another object with kind '%s' (%s)", client.ObjectKeyFromObject(obj).String(), owner.GetObjectKind().GroupVersionKind().Kind, own.Name)
+		if own.Kind == gvk.Kind && own.UID != owner.GetUID() {
+			return fmt.Errorf("object '%s' is already owned by another object with kind '%s' (%s)", client.ObjectKeyFromObject(obj).String(), gvk.Kind, own.Name), nil
 		}
 	}
-	return controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
+	return nil, controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
 }
