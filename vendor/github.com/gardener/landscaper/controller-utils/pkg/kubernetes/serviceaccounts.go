@@ -11,6 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// GetSecretsForServiceAccount returns the list of secrets of type "kubernetes.io/service-account-token"
+// which belong to the given service account. The result list is sorted decreasingly by creation timestamp,
+// so that it starts with the newest secret.
 func GetSecretsForServiceAccount(ctx context.Context, kubeClient client.Client, serviceAccountKey client.ObjectKey) ([]*corev1.Secret, error) {
 	secretList := &corev1.SecretList{}
 	if err := kubeClient.List(ctx, secretList, client.InNamespace(serviceAccountKey.Namespace)); err != nil {

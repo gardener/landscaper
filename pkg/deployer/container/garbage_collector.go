@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -42,6 +43,7 @@ type GarbageCollector struct {
 	config        containerv1alpha1.GarbageCollection
 	lsClient      client.Client
 	hostClient    client.Client
+	requeueAfter  time.Duration
 }
 
 // NewGarbageCollector creates a new Garbage collector that cleanups leaked service accounts, rbac rules and pods.
@@ -58,6 +60,7 @@ func NewGarbageCollector(log logr.Logger,
 		config:        config,
 		lsClient:      lsClient,
 		hostClient:    hostClient,
+		requeueAfter:  time.Duration(config.RequeueTimeSeconds) * time.Second,
 	}
 }
 
@@ -130,7 +133,7 @@ func (gc *GarbageCollector) cleanupRBACResources(obj client.Object) reconcile.Re
 			return reconcile.Result{}, err
 		}
 		if !shouldGC {
-			return reconcile.Result{}, nil
+			return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
 		}
 
 		di := &lsv1alpha1.DeployItem{}
@@ -154,7 +157,7 @@ func (gc *GarbageCollector) cleanupSecret(ctx context.Context, req reconcile.Req
 		return reconcile.Result{}, err
 	}
 	if !shouldGC {
-		return reconcile.Result{}, nil
+		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
 	}
 
 	if err := gc.hostClient.Delete(ctx, obj); err != nil {
@@ -201,7 +204,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 	if isLatest {
 		logger.V(9).Info("not garbage collected", "reason", "latest pod")
-		return reconcile.Result{}, nil
+		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
 	}
 
 	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {

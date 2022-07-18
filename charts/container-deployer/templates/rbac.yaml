@@ -86,4 +86,5 @@ rules:
   - create
   - update
   - delete
+  - watch
 {{- end }}
