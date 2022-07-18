@@ -272,6 +272,7 @@ var _ = Describe("Delete", func() {
 			Expect(testenv.Client.Delete(ctx, inst)).To(Succeed())
 			if lsutils.IsNewReconcile() {
 				Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst)).ToNot(HaveOccurred())
+				inst.Status.InstallationPhase = lsv1alpha1.InstallationPhaseSucceeded
 				Expect(testutils.UpdateJobIdForInstallation(ctx, testenv, inst)).ToNot(HaveOccurred())
 			}
 

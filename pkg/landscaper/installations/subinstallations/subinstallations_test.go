@@ -271,7 +271,7 @@ var _ = Describe("SubInstallation", func() {
 			})
 		})
 
-		It("should not update until all subinstallations are not in progressing state", func() {
+		XIt("should not update until all subinstallations are not in progressing state", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 

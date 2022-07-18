@@ -14,9 +14,6 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.installationPhase
-      name: InstallationPhase
-      type: string
     - jsonPath: .status.phase
       name: phase
       type: string
@@ -909,9 +906,6 @@ spec:
               importsHash:
                 description: ImportsHash is the hash of the import data.
                 type: string
-              installationPhase:
-                description: InstallationPhase is the current phase of the installation.
-                type: string
               installationRefs:
                 description: InstallationReferences contain all references to sub-components
                   that are created based on the component definition.
@@ -988,7 +982,7 @@ spec:
                 format: int64
                 type: integer
               phase:
-                description: Phase is the current phase of the installation.
+                description: InstallationPhase is the current phase of the installation.
                 type: string
             required:
             - observedGeneration

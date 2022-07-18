@@ -103,11 +103,6 @@ var InstallationDefinition = lsschema.CustomResourceDefinition{
 	SubresourceStatus: true,
 	AdditionalPrinterColumns: []lsschema.CustomResourceColumnDefinition{
 		{
-			Name:     "InstallationPhase",
-			Type:     "string",
-			JSONPath: ".status.installationPhase",
-		},
-		{
 			Name:     "phase",
 			Type:     "string",
 			JSONPath: ".status.phase",
@@ -187,7 +182,7 @@ type InstallationSpec struct {
 // InstallationStatus contains the current status of a Installation.
 type InstallationStatus struct {
 	// Phase is the current phase of the installation.
-	Phase ComponentInstallationPhase `json:"phase,omitempty"`
+	Phase ComponentInstallationPhase `json:"-"`
 
 	// ObservedGeneration is the most recent generation observed for this ControllerInstallations.
 	// It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.
@@ -219,7 +214,7 @@ type InstallationStatus struct {
 	JobIDFinished string `json:"jobIDFinished,omitempty"`
 
 	// InstallationPhase is the current phase of the installation.
-	InstallationPhase InstallationPhase `json:"installationPhase,omitempty"`
+	InstallationPhase InstallationPhase `json:"phase,omitempty"`
 
 	// ImportsHash is the hash of the import data.
 	ImportsHash string `json:"importsHash,omitempty"`
