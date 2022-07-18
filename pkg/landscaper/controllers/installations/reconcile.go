@@ -160,7 +160,7 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 
 	err := c.checkForDuplicateExports(ctx, inst)
 	if err != nil {
-		return nil, lserrors.BuildLsError(err, currentOperation, "CheckForDuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem)
+		return lserrors.BuildLsError(err, currentOperation, "CheckForDuplicateExports", err.Error(), lsv1alpha1.ErrorConfigurationProblem), nil
 	}
 
 	instOp, imps, importsHash, predecessorMap, fatalError, normalError := c.init(ctx, inst)

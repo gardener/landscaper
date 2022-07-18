@@ -142,14 +142,6 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 
 	}
 
-	if inst.Status.ObservedGeneration != inst.Generation {
-		// spec has changed, make sure the exports don't conflict
-		err := c.checkForDuplicateExports(ctx, inst)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
 	// generate new jobID
 	isFirstDelete := !inst.DeletionTimestamp.IsZero() && !lsv1alpha1helper.IsDeletionInstallationPhase(inst.Status.InstallationPhase)
 	if installations.IsRootInstallation(inst) &&
