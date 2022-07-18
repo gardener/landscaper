@@ -72,7 +72,7 @@ type ExecutionSpec struct {
 // ExecutionStatus contains the current status of a execution.
 type ExecutionStatus struct {
 	// Phase is the current phase of the execution .
-	Phase ExecutionPhase `json:"phase,omitempty"`
+	Phase ExecutionPhase `json:"-"`
 
 	// ObservedGeneration is the most recent generation observed for this Execution.
 	// It corresponds to the Execution generation, which is updated on mutation by the landscaper.
@@ -103,7 +103,7 @@ type ExecutionStatus struct {
 	JobIDFinished string `json:"JobIDFinished,omitempty"`
 
 	// ExecutionPhase is the current phase of the execution.
-	ExecutionPhase ExecPhase `json:"executionPhase,omitempty"`
+	ExecutionPhase ExecPhase `json:"phase,omitempty"`
 }
 
 // ExecutionGeneration links a deployitem to the generation of the execution when it was applied.

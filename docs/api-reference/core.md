@@ -3417,7 +3417,7 @@ reconciliation should be triggered again.</p>
 <tbody>
 <tr>
 <td>
-<code>phase</code></br>
+<code>-</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecutionPhase">
 ExecutionPhase
@@ -3537,7 +3537,7 @@ string
 </tr>
 <tr>
 <td>
-<code>executionPhase</code></br>
+<code>phase</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ExecPhase">
 ExecPhase
@@ -4236,7 +4236,7 @@ Example: namespace: (( blueprint.exports.namespace ))</p>
 <tbody>
 <tr>
 <td>
-<code>phase</code></br>
+<code>-</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.ComponentInstallationPhase">
 ComponentInstallationPhase
@@ -4360,7 +4360,7 @@ string
 </tr>
 <tr>
 <td>
-<code>installationPhase</code></br>
+<code>phase</code></br>
 <em>
 <a href="#landscaper.gardener.cloud/v1alpha1.InstallationPhase">
 InstallationPhase

@@ -4940,13 +4940,6 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 				Description: "ExecutionStatus contains the current status of a execution.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Phase is the current phase of the execution.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"observedGeneration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ObservedGeneration is the most recent generation observed for this Execution. It corresponds to the Execution generation, which is updated on mutation by the landscaper.",
@@ -5023,7 +5016,7 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							Format:      "",
 						},
 					},
-					"executionPhase": {
+					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ExecutionPhase is the current phase of the execution.",
 							Type:        []string{"string"},
@@ -5621,13 +5614,6 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 				Description: "InstallationStatus contains the current status of a Installation.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Phase is the current phase of the installation.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"observedGeneration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ObservedGeneration is the most recent generation observed for this ControllerInstallations. It corresponds to the ControllerInstallations generation, which is updated on mutation by the landscaper.",
@@ -5712,7 +5698,7 @@ func schema_landscaper_apis_core_v1alpha1_InstallationStatus(ref common.Referenc
 							Format:      "",
 						},
 					},
-					"installationPhase": {
+					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "InstallationPhase is the current phase of the installation.",
 							Type:        []string{"string"},
