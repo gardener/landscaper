@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"time"
 
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -32,7 +34,6 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/apis/core/validation"
 )
 
@@ -89,7 +90,6 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 
 	_, err = dm.Writer().CreateOrUpdateCoreInstallation(ctx, read_write_layer.W000002, inst, func() error {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperDMFinalizer)
-		lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 		inst.Spec.ComponentDescriptor = registration.Spec.InstallationTemplate.ComponentDescriptor
 		inst.Spec.Blueprint = registration.Spec.InstallationTemplate.Blueprint
 		inst.Spec.Imports = registration.Spec.InstallationTemplate.Imports
@@ -122,6 +122,9 @@ func (dm *DeployerManagement) Reconcile(ctx context.Context, registration *lsv1a
 	if err := dm.createDeployerTarget(ctx, inst, registration, env); err != nil {
 		return err
 	}
+
+	lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
+	err = dm.Writer().UpdateInstallation(ctx, read_write_layer.W000106, inst)
 
 	return err
 }

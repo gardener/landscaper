@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -162,7 +163,7 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(state.Create(ctx, exec))
 
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
-			Expect(utils.UpdateJobIdForExecutionC(ctx, state.Client, exec)).To(Succeed())
+			Expect(utils.UpdateJobIdForExecutionC(ctx, f.Client, exec)).To(Succeed())
 
 			By("verify that deployitem has been created")
 			di := &lsv1alpha1.DeployItem{}
@@ -245,6 +246,9 @@ func GenerationHandlingTestsForNewReconcile(f *framework.Framework) {
 			Expect(di.Generation).To(BeNumerically(">", oldDIGen))
 			Expect(exec.Status.ExecutionGenerations[0].ObservedGeneration).To(Equal(exec.Generation))
 			Expect(exec.Status.DeployItemReferences[0].Reference.ObservedGeneration).To(Equal(di.Generation))
+
+			By("delete execution")
+			utils.ExpectNoError(utils.DeleteExecutionForNewReconcile(ctx, f.Client, exec, 2*time.Minute))
 		})
 
 	})
