@@ -185,10 +185,10 @@ func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, 
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has failed items")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseDeleting", "has pending items")
-			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err)
+			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseDeleteFailed, err)
 		}
 
 		// remain in deleting in all other cases,
