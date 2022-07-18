@@ -126,13 +126,20 @@
       "type": "object",
       "required": [
         "disable",
-        "worker"
+        "worker",
+        "requeueTimeSeconds"
       ],
       "properties": {
         "disable": {
           "description": "Disable disables the garbage collector and the resources clean-up.",
           "type": "boolean",
           "default": false
+        },
+        "requeueTimeSeconds": {
+          "description": "RequeueTime specifies the duration after which the object, which is not yet ready to be garbage collected, is requeued. Defaults to 60.",
+          "type": "integer",
+          "format": "int32",
+          "default": 0
         },
         "worker": {
           "description": "Worker defines the number of parallel garbage collection routines. Defaults to 5.",

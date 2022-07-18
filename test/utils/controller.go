@@ -6,6 +6,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/onsi/gomega"
@@ -220,6 +221,72 @@ func (c *MimicKCMServiceAccountController) Reconcile(ctx context.Context, req re
 // AddMimicKCMServiceAccountControllerToManager adds the mock kcm controller to a manager.
 func AddMimicKCMServiceAccountControllerToManager(mgr manager.Manager) error {
 	return controllerruntime.NewControllerManagedBy(mgr).For(&corev1.ServiceAccount{}).Complete(&MimicKCMServiceAccountController{
+		client: mgr.GetClient(),
+	})
+}
+
+// MimicKCMSecretController is a controller that mimics the service account token secret handling of the KCM.
+type MimicKCMSecretController struct {
+	client client.Client
+}
+
+func (c *MimicKCMSecretController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	secret := &corev1.Secret{}
+	if err := c.client.Get(ctx, req.NamespacedName, secret); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if secret.Type != corev1.SecretTypeServiceAccountToken {
+		return reconcile.Result{}, nil
+	}
+
+	saName, ok := secret.Annotations[corev1.ServiceAccountNameKey]
+	if !ok {
+		return reconcile.Result{}, fmt.Errorf("annotation %s missing for secret %s", corev1.ServiceAccountNameKey, client.ObjectKeyFromObject(secret).String())
+	}
+
+	serviceAccount := &corev1.ServiceAccount{}
+	if err := c.client.Get(ctx, types.NamespacedName{Name: saName, Namespace: secret.Namespace}, serviceAccount); err != nil {
+		return reconcile.Result{}, fmt.Errorf("service account %s not found for secret %s", saName, client.ObjectKeyFromObject(secret).String())
+	}
+
+	secretInSARefs := false
+	for _, ref := range serviceAccount.Secrets {
+		if ref.Name == secret.Name {
+			secretInSARefs = true
+			break
+		}
+	}
+
+	if !secretInSARefs {
+		serviceAccount.Secrets = append(serviceAccount.Secrets, corev1.ObjectReference{Name: secret.Name, Namespace: secret.Namespace})
+		if err := c.client.Update(ctx, serviceAccount); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to update service account %s", client.ObjectKeyFromObject(serviceAccount).String())
+		}
+	}
+
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+
+	if _, ok := secret.Data[corev1.ServiceAccountRootCAKey]; !ok {
+		secret.Data[corev1.ServiceAccountRootCAKey] = []byte("my-test-rootca")
+	}
+
+	if _, ok := secret.Data[corev1.ServiceAccountTokenKey]; !ok {
+		secret.Data[corev1.ServiceAccountTokenKey] = []byte("my-test-token")
+	}
+
+	if err := c.client.Update(ctx, secret); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+// AddMimicKCMSecretControllerToManager adds the mock kcm controller to a manager.
+func AddMimicKCMSecretControllerToManager(mgr manager.Manager) error {
+	return controllerruntime.NewControllerManagedBy(mgr).For(&corev1.Secret{}).Complete(&MimicKCMSecretController{
 		client: mgr.GetClient(),
 	})
 }

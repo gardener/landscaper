@@ -76,11 +76,12 @@ var _ = Describe("GarbageCollector", func() {
 		Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, lsState.Namespace)).To(Succeed())
 
 		gc = containerctlr.NewGarbageCollector(logger, testenv.Client, hostTestEnv.Client, "test", hostState.Namespace, containerv1alpha1.GarbageCollection{
-			Worker: 1,
+			Worker:             1,
+			RequeueTimeSeconds: 1,
 		})
 		Expect(gc.Add(hostMgr, false)).To(Succeed())
 
-		Expect(testutils.AddMimicKCMServiceAccountControllerToManager(hostMgr)).To(Succeed())
+		Expect(testutils.AddMimicKCMSecretControllerToManager(hostMgr)).To(Succeed())
 
 		go func() {
 			Expect(lsMgr.Start(ctx)).To(Succeed())
@@ -131,7 +132,7 @@ var _ = Describe("GarbageCollector", func() {
 
 			Expect(lsState.Create(ctx, di)).To(Succeed())
 
-			_, err := containerctlr.EnsureServiceAccounts(ctx, hostTestEnv.Client, di, hostState.Namespace, defaultLabels)
+			ensureSAResult, err := containerctlr.EnsureServiceAccounts(ctx, hostTestEnv.Client, di, hostState.Namespace, defaultLabels)
 			Expect(err).ToNot(HaveOccurred())
 
 			initSA := &corev1.ServiceAccount{}
@@ -143,6 +144,9 @@ var _ = Describe("GarbageCollector", func() {
 			initRolebinding := &rbacv1.RoleBinding{}
 			initRolebinding.Name = initSA.Name
 			initRolebinding.Namespace = initSA.Namespace
+			initSecret := &corev1.Secret{}
+			initSecret.Name = ensureSAResult.InitContainerServiceAccountSecret.Name
+			initSecret.Namespace = ensureSAResult.InitContainerServiceAccountSecret.Namespace
 
 			waitSA := &corev1.ServiceAccount{}
 			waitSA.Name = containerctlr.WaitContainerServiceAccountName(di)
@@ -153,17 +157,30 @@ var _ = Describe("GarbageCollector", func() {
 			waitRolebinding := &rbacv1.RoleBinding{}
 			waitRolebinding.Name = waitSA.Name
 			waitRolebinding.Namespace = waitSA.Namespace
+			waitSecret := &corev1.Secret{}
+			waitSecret.Name = ensureSAResult.WaitContainerServiceAccountSecret.Name
+			waitSecret.Namespace = ensureSAResult.WaitContainerServiceAccountSecret.Namespace
 
 			resources := map[string]client.Object{
 				"initServiceAccount": initSA,
 				"initRole":           initRole,
 				"initRoleBinding":    initRolebinding,
+				"initTokenSecret":    initSecret,
 				"waitServiceAccount": waitSA,
 				"waitRole":           waitRole,
 				"waitRoleBinding":    waitRolebinding,
+				"waitTokenSecret":    waitSecret,
 			}
 
 			Expect(testenv.Client.Delete(ctx, di)).To(Succeed())
+			Eventually(func() error {
+				if err := testenv.Client.Get(ctx, client.ObjectKeyFromObject(di), di); err != nil {
+					if apierrors.IsNotFound(err) {
+						return nil
+					}
+				}
+				return fmt.Errorf("deployitem %s still exits", client.ObjectKeyFromObject(di).String())
+			}, 10*time.Second, 2*time.Second).Should(Succeed())
 			Eventually(func() error {
 				var allErrs []error
 				for name, obj := range resources {
