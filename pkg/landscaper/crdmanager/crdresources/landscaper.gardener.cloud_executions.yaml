@@ -14,9 +14,6 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.executionPhase
-      name: ExecutionPhase
-      type: string
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -221,9 +218,6 @@ spec:
                   - observedGeneration
                   type: object
                 type: array
-              executionPhase:
-                description: ExecutionPhase is the current phase of the execution.
-                type: string
               exportRef:
                 description: ExportReference references the object that contains the
                   exported values. only used for operation purpose.
@@ -280,7 +274,7 @@ spec:
                 format: int64
                 type: integer
               phase:
-                description: Phase is the current phase of the execution.
+                description: ExecutionPhase is the current phase of the execution.
                 type: string
             type: object
         required:
