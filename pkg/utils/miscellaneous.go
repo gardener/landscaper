@@ -6,12 +6,22 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/pkg/api"
 
 	"github.com/mandelsoft/vfs/pkg/vfs"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 )
 
@@ -134,4 +144,69 @@ func YAMLReadFromFile(fs vfs.FileSystem, path string, obj interface{}) error {
 		return err
 	}
 	return yaml.Unmarshal(data, obj)
+}
+
+// CheckForDuplicateExports takes a current installation and a list of existing installations and returns an error,
+// if the current installation declares an export which is already declared by one of the existing installations.
+// The function will return after the first found conflicts, but it will return all conflicts with the same existing installation.
+func CheckForDuplicateExports(current *lsv1alpha1.Installation, existing []lsv1alpha1.Installation) error {
+	curDataExp, curTargetExp := extractExportNames(current)
+
+	if len(curDataExp) == 0 && len(curTargetExp) == 0 {
+		// current installation does not export anything, therefore conflicts are not possible
+		return nil
+	}
+
+	for _, inst := range existing {
+		if current.Name == inst.Name {
+			// make sure we don't compare the installation with itself, as this will always lead to conflicts if something is exported
+			continue
+		}
+		existDataExp, existTargetExp := extractExportNames(&inst)
+		commonDataExp := curDataExp.Intersection(existDataExp)
+		commonTargetExp := curTargetExp.Intersection(existTargetExp)
+
+		if len(commonDataExp) != 0 || len(commonTargetExp) != 0 {
+			return fmt.Errorf("installation '%s/%s' has conflicting exports with installation '%s/%s': data exports [%v], target exports [%v]", current.Namespace, current.Name, inst.Namespace, inst.Name, strings.Join(commonDataExp.List(), ", "), strings.Join(commonTargetExp.List(), ", "))
+		}
+	}
+
+	return nil
+}
+
+// extractExportNames returns two sets containing the names of the data and target exports of the given installation, respectively.
+func extractExportNames(inst *lsv1alpha1.Installation) (sets.String, sets.String) {
+	dataExports, targetExports := sets.NewString(), sets.NewString()
+
+	if inst == nil {
+		return dataExports, targetExports
+	}
+
+	for _, exp := range inst.Spec.Exports.Data {
+		dataExports.Insert(exp.DataRef)
+	}
+	for _, exp := range inst.Spec.Exports.Targets {
+		targetExports.Insert(exp.Target)
+	}
+	for exp := range inst.Spec.ExportDataMappings {
+		dataExports.Insert(exp)
+	}
+
+	return dataExports, targetExports
+}
+
+// SetExclusiveOwnerReference is a wrapper around controllerutil.SetOwnerReference
+// The first return value will contain an error if the object contains already an owner reference of the same kind but pointing to a different owner.
+// The second return value is meant for unexpected errors during the process.
+func SetExclusiveOwnerReference(owner client.Object, obj client.Object) (error, error) {
+	gvk, err := apiutil.GVKForObject(owner, api.LandscaperScheme)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine GroupVersionKind for object %s: %w", client.ObjectKeyFromObject(owner).String(), err)
+	}
+	for _, own := range obj.GetOwnerReferences() {
+		if own.Kind == gvk.Kind && own.UID != owner.GetUID() {
+			return fmt.Errorf("object '%s' is already owned by another object with kind '%s' (%s)", client.ObjectKeyFromObject(obj).String(), gvk.Kind, own.Name), nil
+		}
+	}
+	return nil, controllerutil.SetOwnerReference(owner, obj, api.LandscaperScheme)
 }
