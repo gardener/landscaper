@@ -11,13 +11,16 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
+	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -43,7 +46,7 @@ var _ = Describe("Operation", func() {
 		}
 	})
 
-	Context("CreateOrUpdateExports", func() {
+	Context("CreateOrUpdateImports", func() {
 
 		It("should sync a target", func() {
 			ctx := context.Background()
@@ -84,6 +87,93 @@ var _ = Describe("Operation", func() {
 			Expect(targetList.Items[0].Labels).To(HaveKeyWithValue("lab", "val2"))
 			Expect(targetList.Items[0].Spec.Type).To(Equal(lsv1alpha1.TargetType("test-type")))
 			Expect(targetList.Items[0].Spec.Configuration.RawMessage).To(Equal(json.RawMessage("true")))
+		})
+
+	})
+
+	Context("CreateOrUpdateExports", func() {
+
+		It("should detect if an to-be-exported dataobject is already owned by another installation", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			do := &lsv1alpha1.DataObject{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      lsv1alpha1helper.GenerateDataObjectName("", "myexport"),
+					Namespace: "default",
+					OwnerReferences: []v1.OwnerReference{
+						{
+							Name: "owninginst",
+							Kind: "Installation",
+							UID:  "owning-installation-uid",
+						},
+					},
+				},
+				Data: lsv1alpha1.NewAnyJSON([]byte(`"foo"`)),
+			}
+
+			testutils.ExpectNoError(kubeClient.Create(ctx, do))
+
+			op.Inst.Info.Name = "test"
+			op.Inst.Info.Namespace = "default"
+			op.Inst.Info.UID = "new-installation-uid"
+
+			err := op.CreateOrUpdateExports(ctx, []*dataobjects.DataObject{
+				{
+					Data: lsv1alpha1.NewAnyJSON([]byte(`"foo"`)),
+					Metadata: dataobjects.Metadata{
+						Namespace:  "default",
+						Context:    "",
+						Key:        "myexport",
+						SourceType: lsv1alpha1.ExportDataObjectSourceType,
+						Source:     "test",
+					},
+				},
+			}, nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("dataobject 'default/myexport' for export 'myexport' conflicts with existing dataobject owned by another installation: object 'default/myexport' is already owned by another object with kind 'Installation' (owninginst)"))
+		})
+
+		It("should detect if an to-be-exported target is already owned by another installation", func() {
+			ctx := context.Background()
+			defer ctx.Done()
+
+			target := &lsv1alpha1.Target{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      lsv1alpha1helper.GenerateDataObjectName("", "myexport"),
+					Namespace: "default",
+					OwnerReferences: []v1.OwnerReference{
+						{
+							Name: "owninginst",
+							Kind: "Installation",
+							UID:  "owning-installation-uid",
+						},
+					},
+				},
+				Spec: lsv1alpha1.TargetSpec{
+					Type: "target-type",
+				},
+			}
+
+			testutils.ExpectNoError(kubeClient.Create(ctx, target))
+
+			op.Inst.Info.Name = "test"
+			op.Inst.Info.Namespace = "default"
+			op.Inst.Info.UID = "new-installation-uid"
+
+			err := op.CreateOrUpdateExports(ctx, nil, []*dataobjects.Target{
+				{
+					Metadata: dataobjects.Metadata{
+						Namespace:  "default",
+						Context:    "",
+						Key:        "myexport",
+						SourceType: lsv1alpha1.ExportDataObjectSourceType,
+						Source:     "test",
+					},
+				},
+			})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("target object 'default/myexport' for export 'myexport' conflicts with existing target owned by another installation: object 'default/myexport' is already owned by another object with kind 'Installation' (owninginst)"))
 		})
 
 	})

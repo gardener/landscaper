@@ -18,7 +18,9 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -36,7 +38,6 @@ import (
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -116,7 +117,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	// default the installation as it not done by the Controller runtime
 	api.LandscaperScheme.Default(inst)
 
-	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000107, inst); err != nil {
 			return reconcile.Result{}, err
@@ -196,7 +197,7 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	oldInst := inst.DeepCopy()
 
-	if inst.DeletionTimestamp.IsZero() && !kubernetes.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
+	if inst.DeletionTimestamp.IsZero() && !kutil.HasFinalizer(inst, lsv1alpha1.LandscaperFinalizer) {
 		controllerutil.AddFinalizer(inst, lsv1alpha1.LandscaperFinalizer)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000010, inst); err != nil {
 			return reconcile.Result{}, err
@@ -479,4 +480,27 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 	}
 
 	return lsError
+}
+
+func (c *Controller) checkForDuplicateExports(ctx context.Context, inst *lsv1alpha1.Installation) error {
+	// fetch all installations in the same namespace with the same parent
+	var selector client.ListOption
+	if parent, ok := inst.Labels[lsv1alpha1.EncompassedByLabel]; ok {
+		selector = client.MatchingLabels(map[string]string{
+			lsv1alpha1.EncompassedByLabel: parent,
+		})
+	} else {
+		r, err := labels.NewRequirement(lsv1alpha1.EncompassedByLabel, selection.DoesNotExist, nil)
+		if err != nil {
+			return err
+		}
+		selector = client.MatchingLabelsSelector{Selector: labels.NewSelector().Add(*r)}
+	}
+	siblingList := &lsv1alpha1.InstallationList{}
+	err := read_write_layer.ListInstallations(ctx, c.Client(), siblingList, client.InNamespace(inst.Namespace), selector)
+	if err != nil {
+		return err
+	}
+
+	return utils.CheckForDuplicateExports(inst, siblingList.Items)
 }
