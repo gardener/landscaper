@@ -4,8 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set -e
-
 CURRENT_DIR=$(dirname $0)
 PROJECT_ROOT="${CURRENT_DIR}"/..
 
@@ -22,10 +20,18 @@ if [[ "${OSTYPE}" == "darwin"* ]]; then
   P_FLAG="-p=1"
 fi
 
-go test -mod=vendor -race ${P_FLAG} ${PROJECT_ROOT}/cmd/... \
+go test -mod=vendor -race -coverprofile=${PROJECT_ROOT}/coverage.main.out -covermode=atomic ${P_FLAG} \
+                    ${PROJECT_ROOT}/cmd/... \
                     ${PROJECT_ROOT}/pkg/... \
                     ${PROJECT_ROOT}/test/framework/... \
                     ${PROJECT_ROOT}/test/utils/... \
                     ${PROJECT_ROOT}/test/landscaper/...
+EXIT_STATUS_MAIN_TEST=$?
 
-cd ${PROJECT_ROOT}/apis && GO111MODULE=on go test ./...
+cd ${PROJECT_ROOT}/apis && GO111MODULE=on go test -coverprofile=${PROJECT_ROOT}/coverage.api.out -covermode=atomic ./...
+EXIT_STATUS_API_TEST=$?
+
+cd ${PROJECT_ROOT}/controller-utils && GO111MODULE=on go test -coverprofile=${PROJECT_ROOT}/coverage.controller-utils.out -covermode=atomic ./...
+EXIT_STATUS_CONTROLLER_UTILS_TEST=$?
+
+! (( EXIT_STATUS_MAIN_TEST || EXIT_STATUS_API_TEST || EXIT_STATUS_CONTROLLER_UTILS_TEST ))
