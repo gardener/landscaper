@@ -270,6 +270,7 @@ var _ = Describe("Reconcile", func() {
 			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
 			Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
 
+			Expect(state.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
 			di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 			di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 			di.Status.JobID = exec.Status.JobID
