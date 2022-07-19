@@ -16,3 +16,5 @@ tmp-int-test
 **/sha256
 
 **/gomock_reflect_*
+
+coverage.*
