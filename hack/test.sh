@@ -27,11 +27,14 @@ go test -mod=vendor -race -coverprofile=${PROJECT_ROOT}/coverage.main.out -cover
                     ${PROJECT_ROOT}/test/utils/... \
                     ${PROJECT_ROOT}/test/landscaper/...
 EXIT_STATUS_MAIN_TEST=$?
+go tool cover -html=${PROJECT_ROOT}/coverage.main.out -o ${PROJECT_ROOT}/coverage.main.html
 
 cd ${PROJECT_ROOT}/apis && GO111MODULE=on go test -coverprofile=${PROJECT_ROOT}/coverage.api.out -covermode=atomic ./...
 EXIT_STATUS_API_TEST=$?
+go tool cover -html=${PROJECT_ROOT}/coverage.api.out -o ${PROJECT_ROOT}/coverage.api.html
 
 cd ${PROJECT_ROOT}/controller-utils && GO111MODULE=on go test -coverprofile=${PROJECT_ROOT}/coverage.controller-utils.out -covermode=atomic ./...
 EXIT_STATUS_CONTROLLER_UTILS_TEST=$?
+go tool cover -html=${PROJECT_ROOT}/coverage.controller-utils.out -o ${PROJECT_ROOT}/coverage.controller-utils.html
 
 ! (( EXIT_STATUS_MAIN_TEST || EXIT_STATUS_API_TEST || EXIT_STATUS_CONTROLLER_UTILS_TEST ))
