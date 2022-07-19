@@ -50,8 +50,8 @@ Custom Resources (CR) defined by Landscaper. An installation references the Blue
 corresponding Component Descriptor. It specifies the import data and how to handle the export data. 
 
 An Installation is deployed to the cluster where Landscaper watches these CRs. If Landscaper recognizes an installation
-with all input data available, it starts the setup specified in the Blueprint. This executes the installation tasks 
-defined in the DeployItems.
+with the annotation `landscaper.gardener.cloud/operation: reconcile` with all input data available, it starts the setup 
+specified in the Blueprint. This executes the installation tasks defined in the DeployItems. 
 
 ## Aggregated Blueprint
 

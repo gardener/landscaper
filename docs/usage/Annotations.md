@@ -2,105 +2,62 @@
 
 There are a few annotations which can be set on landscaper objects to influence the reconciliation flow.
 
-Please note that the effects which an annotation has on a deployitem depend on the implementation of the deployer responsible for that deployitem. Depending on the functionality of the deployer, developers might decide to deviate from the expected behavior (e.g. if deployitems of that type cannot be aborted). The 'effects on deployitems' described below therefore describe the default case, as it is implemented by the deployer library (as far as possible). 
+Please note that the effects which an annotation has on a deploy item might depend on the implementation of the deployer 
+responsible for that deploy item. Depending on the functionality of the deployer, developers might decide to deviate from 
+the expected behavior. The 'effects on deployitems' described below therefore describe the default case, as it is 
+implemented by the deployer library (as far as possible). 
 
-## Operation Annotation
+## Reconcile Annotation
 
-**Annotation:** `landscaper.gardener.cloud/operation`
+**Annotation:** `landscaper.gardener.cloud/operation: reconcile`
 
-**Accepted values:**
-  - `reconcile`
-  - `force-reconcile`
-  - `abort`
+With this annotation the processing of installations are started.
 
-#### Effect on Installations
+This value has only an effect on root installations, i.e. installations with no parent installation. If set, it initiates 
+a new reconcile loop of the Landscaper for the installation. Without such an annotation the Landscaper does not process 
+a root installation. This allows you to deploy all of your root installations and their input data first and then start 
+the overall deployment by setting the reconcile annotation at the initial root installations (i.e. root installations 
+not depending on other root installations) afterwards. The Landscaper starts processing these annotated root installations 
+first. If a root installation was processed successfully the Landscaper triggers dependent root installations by setting 
+this annotation automatically. A dependent annotated root installation is processed if all predecessors have finished their work.
 
-**reconcile**
+This annotation also triggers another reconcile loop when the deletion of a root installation failed.
 
-The installation will be queued for reconciliation. This is the standard way of triggering an installation without changing its spec. Note that the landscaper checks whether the installation is up-to-date, so setting this annotation will not necessarily result in redeploying the executions and subinstallations. 
+If this annotation is set at a sub installation the annotation is removed without any consequences.
 
-The operation annotation is removed during the reconciliation.
+This annotation has no effect at executions and deploy items.
 
-**force-reconcile**
+## Interrupt Annotation
 
-This enforces a redeployment of executions and subinstallations. The only requirement is that all imports are fulfilled, the executions and subinstallations will even be updated if installations which is depended on are still running. Note that only the direct children of the installation are updated, this may not necessarily cause an update of their subinstallations and executions.
+**Annotation:** `landscaper.gardener.cloud/operation: interrupt`
 
-The operation annotation is removed during the reconciliation.
+With this annotation currently running deployments could be interrupted. As it is processed in parallel to a currently 
+running deployment, it might be that further deploy items might be created during propagating this annotation. 
+Therefore, it could be required to set this annotation more than once to really stop a deployment.
 
-**abort**
+If set at an installation, the Landscaper forwards it to all of its sub installations and execution. When forwarded 
+the annotation is removed.
 
-If the abort operation annotation is set, a reconcile will be stopped before checking whether the installation needs to be updated.
+If set at an execution the Landscaper sets all existing deploy items which have not been finished processing so far
+on failed and finished, i.e. it sets in their status as follows:
+- `deployItemPhase` and `Phase` are set on `Failed`, indicating the deployment failed
+- `jobIDFinished` and `jobId` are set on the job ID of the execution indicating that processing of the deploy item is 
+  finished.
 
-The abort operation annotation is not removed automatically.
+Afterwards the annotation is removed from the execution. 
 
-
-#### Effect on Executions
-
-**reconcile**
-
-When the landscaper finds a reconcile operation annotation on an execution, it will set its phase to `Init`. This will trigger a standard reconciliation.
-
-The operation annotation is removed during the reconciliation.
-
-**force-reconcile**
-
-The force-reconcile annotation will also set the phase to `Init`, but it causes the landscaper to skip the checks whether the deployitems are up-to-date and they will be redeployed in every case.
-This will not (re)deploy deployitems which depend on another deployitem that is not finished and up-to-date.
-
-The operation annotation is removed during the reconciliation.
-
-**abort**
-
-The abort operation is not implemented for executions. As executions are just an intermediate helper struct to deploy deployitems, there is no need for them to be aborted anyway.
-If any of the deployitems finishes with a non-`Succeeded` phase, deployitems which depend on it won't be deployed, so it is possible to interrupt the flow of the deployitems by aborting the one which is currently running.
-
-
-#### Effect on DeployItems
-
-**reconcile**
-
-The reconcile operation annotation causes the landscaper to set the deployitem's phase to `Init`, which will trigger a standard reconciliation.
-
-The operation annotation is removed during the reconciliation.
-
-**force-reconcile**
-
-The force-reconcile operation annotation behaves similarly to the reconcile operation annotation, but it will call the deployer's `ForceReconcile` method instead of the `Reconcile` one. How both methods differ depends on the deployer implementation.
-
-The operation annotation is removed during the reconciliation.
-
-**abort**
-
-The deployer's `Abort` method will be called. The effect depends on the deployer implementation.
-
-The abort operation annotation is not removed automatically.
-
-
-## Ignore Annotation
-
-**Annotation:** `landscaper.gardener.cloud/ignore`
-
-**Accepted values:**
-  - `true`
-
-#### Effect on Installations/Executions/DeployItems
-
-The effect of this annotation is the same for all landscaper resources: the respective resource will not be reconciled by the landscaper, even if its spec changed or the operation annotation says otherwise. Only resources in a non-final phase are affected, to interrupt a running installation/execution/deployitem, the `landscaper.gardener.cloud/operation: abort` annotation has to be used. The phases `Succeeded`, `Failed`, and `Aborted` are considered to be final.
-Please note that as long as an update of a resource is blocked from reconciliation by this annotation, all other landscaper resources which are waiting for the update (because they depend on the resource) won't be able to be reconciled either and will be stuck.
+Setting this annotation at a deploy item has no effect.
 
 ## Delete-Without-Uninstall Annotation
 
-**Annotation:** `landscaper.gardener.cloud/delete-without-uninstall`
-
-**Accepted values:**
-- `true`
-
-#### Effect on Installations/Executions/DeployItems
+**Annotation:** `landscaper.gardener.cloud/delete-without-uninstall: true`
 
 If the annotation `landscaper.gardener.cloud/delete-without-uninstall: "true"` has been added to an installation, then
 afterwards a deletion of the installation has the following effect:
 
-- the installation, its subinstallations, executions, and deployitems will be deleted,
-- the installed artifacts on the target clusters will not be deleted.
+- the installation, its sub installations, executions, and deploy items will be deleted,
+- the installed artifacts on the target clusters will not be deleted. Particular deployer might try to uninstall the
+  artefacts on the target cluster first but if this step fails, they must continue, i.e. remove the finalizer at the 
+  deploy item.
 
 Note that you have to add the annotation **before** you delete the installation.

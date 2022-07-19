@@ -24,6 +24,7 @@ The `landscaper-cli` can install the Landscaper together with an OCI registry. T
 
 First the helm values for the Landscaper configuration (`landscaper-values.yaml`) have to be created:
 
+
 ```yaml
 landscaper:
     landscaper:

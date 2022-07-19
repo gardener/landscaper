@@ -6,6 +6,10 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: my-echo-server
+  annotations:
+    # this annotation is required such that the installation is picked up by the Landscaper
+    # it will be removed when processing has started
+    landscaper.gardener.cloud/operation: reconcile
 spec:
   componentDescriptor:
     ref:

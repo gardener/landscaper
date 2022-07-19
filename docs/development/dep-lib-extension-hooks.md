@@ -1,5 +1,8 @@
 # Deployer Library Extension Hooks
 
+After switching to the new reconcile logic the extension hooks are currently deactivated. It is open if and when they
+are activated again.
+
 No matter what exactly a deployer is meant to do, the landscaper has some expectations regarding the handling of deploy items - the deployer is expected to remove certain annotations and react on them, reconcile only deploy items which it is responsible for, [and so on](../technical/deployer_contract.md). To avoid lots of duplicate code and reduce the risk of errors in the implementation of this contract, there is a deployer library which implements most of the boilerplate code and basically simplifies the process of writing a deployer to a little more than implementing an interface.
 
 However, in some cases, the default reconciliation flow implemented by the deployer library is too restrictive for what a deployer wants to do.
