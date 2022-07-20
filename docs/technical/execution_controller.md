@@ -1,147 +1,147 @@
 # Execution Controller
 
-An execution contains in its spec the templated deploy items. The task of the execution controller is to create the
-corresponding deploy item resources and to update them if necessary, so that the execution spec and the deploy items 
-resources remain in sync.  
-
-Moreover, the status of the managed deploy item resources must be collected, and if all are succeded also their exports.
-
-
-## Definitions
-
-##### Phases
-
-The status of executions and deploy items contains a phase. The possible values are divided into two classes:
-- **completed phases**: Succeeded, Failed,
-- **not completed phases**: Init, Progressing, Deleting.
-
-##### Generations: status-up-to-date
-
-Resources like executions or deploy items contain a `generation` in their metadata and an `observed generation` in
-their status. If generation and observed generation of a resource are equal, we say that its **status is up-to-date**.
-
-If the phase of an execution is succeeded, this might refers to an old generation of the execution spec. To be sure that 
-a succeeded phase refers to the current spec generation, one must check that the status is up-to date by comparing the 
-generation and observed generation.
+An execution is part of an object tree with a root installation at its top. It is created (resp. updated, deleted) 
+by the controller of its parent installation in this object tree. It contains in its spec the templated 
+deploy items. The task of the execution controller is to create (resp. update, delete) the deploy items accordingly,
+and to collect their status and export data.
 
 
-##### Generations: spec-up-to-date
+## Execution Phases
 
-The status of an execution contains information about the managed deploy items. Among others, the execution status 
-contains for every managed deploy item:
+Every reconciliation of an execution is part of a [reconcile job](installation_controller.md#reconcile-jobs) that starts
+at the root installation and propagates through the object tree.
 
-- the execution generation at the time of the last deploy item update,
-- the deploy item generation after the last deploy item update.
+The reconciliation of an execution is divided into phases. The diagram below shows the phases and transitions. 
+The phases on the left hand side constitute the **installation flow** of an execution: 
+`Init`, `Progressing`, `Completing`, `Succeeded`, resp. `Failed` in case of an error.
+The phases on the right hand side constitute the **deletion flow**: `InitDelete`, `Deleting`, and in case of an 
+error `DeleteFailed`.
 
-At a later time, the controller can compare these past generations with the corresponding present generations of 
-execution and deploy item. If both generations are unchanged, we say that the deploy item's **spec is up-to-date**.
-
-
-## Reconcile Algorithm
-
-### Initial Tasks
-
-In the begining of a reconcile run, the execution controller performs the following tasks:
-
-- If the execution has the ignore annotation `landscaper.gardener.cloud/ignore: true` and has a completed phase,
-  the reconcile is skipped.
-
-- A finalizer is added to the execution, except if it already has a finalizer, or if it is being deleted, i.e. if it
-  has a deletion timestamp.
+![execution-phases](images/execution-phases.drawio.png)
 
 
-### Main Operations
+#### Creation of an Execution
 
-During a reconcile run, the execution controller does the following.
+An execution is created by the installation controller in 
+[phase "Init" of its parent installation](installation_controller.md#phase-init).
+Immediately after the creation, an execution does not yet have a status and thus neither a job ID nor a phase.
+The reconcile does not start directly, rather it waits for a job ID. 
+In [phase "ObjectsCreated" of the parent installation](installation_controller.md#phase-objectscreated) 
+the installation controller copies the job ID of the parent installation into the status field `jobID` of the execution.
+When the job ID is set, the reconcile flow of the execution starts with phase `Init`.  
 
-If the execution has a deletion timestamp, a [**delete operation**](#delete-operation) is performed.
+#### Phase "Init"
 
-Otherwise, a [**reconcile operation**](#reconcile-operation) is performed provided that
-- the execution status is not up-to-date,
-- or its phase is not completed,
-- or the reconcile or force-reconcile annotation is set.
-
-Otherwise, i.e. if
-
-- the execution status is up-to-date,
-- and the phase is completed,
-- and there is no explicit trigger by a reconcile or force reconcile annotation,
-
-then a [**re-check of deploy items**](#re-check-of-deploy-items) is done. This check might lead to a reconcile operation.
-
-
-### Reconcile Operation
-
-The controller reads all deploy item resources that are managed by the execution.
-
+The controller reads all deploy item resources that are managed by the execution. It compares them with the deploy item 
+definitions in the spec of the execution.
 Deploy item resources which have no counterpart in the execution spec are **orphaned**. They will be cleaned up by the
-controller.
+controller. In all other cases the deploy item resource will be created or updated according to the definition in the 
+execution spec.
 
-We consider now the pairs consisting of
+#### Phase "Progressing" 
 
-- a deploy item as specified in the execution spec,
-- the corresponding deploy item resource, as far as it exists.
+The deploy items that were created or updated during the `Init` phase will not be processed by a deployer before the
+current job ID has been passed to them. As with installations and executions, the job ID serves as a trigger for 
+processing a deploy item. 
 
-We divide these pairs in the following classes:
+Since there might be dependencies between deploy items, we do not trigger them all at once. A deploy item is triggered 
+only when all its predecessors are finished. In more detail, this is done as follows. We divide the deploy items in the 
+following classes:
 
-- First, the class of all pairs whose deploy item resource exists and whose spec is up-to-date. These deploy items need
-  not be updated by the execution controller. We devide them in the following sub-classes:
+- First, the class of all deploy items that have already been triggered, i.e. have already received the current job ID. 
+  We check their status, and divide them in the following sub-classes:
 
-    - (1A) status is up-to-date and phase = Succeeded
-    - (1B) status is up-to-date and phase = Failed
-    - (1C) status is not up-to-date or phase is not completed (in work)
+  - (A) finished and phase = `Succeeded`
+  - (B) finished and phase = `Failed`
+  - (C) not finished
 
-- Second, the class of all pairs whose deploy item resource does not exist or whose spec is not up-to-date.
+- Second, the class of all deploy items that have not yet been triggered.
   These deploy items need to be updated by the execution controller. We devide them in the following sub-classes:
 
-    - (2A) no pending dependencies
-    - (2B) pending dependencies
-
-In case of a force-reconcile, we consider all pairs as belonging to the second class, i.e. we treat them as if the
-deploy item would need an update.
+  - (D) no pending predecessors
+  - (E) pending predecessors
 
 Based on this classification, the reconcile logic is as follows:
 
-- If all deploy items are in class (1A) (no update required and succeeded),
-  then the controller collects the export data, sets the execution phase = Succeeded, and returns.
+- If all deploy items are in class A (triggered, finished and succeeded), the controller continues with the next phase
+  `Completing`.
 
-- If there exists a deploy item in class (1B) (no update required and failed),
-  then the controller sets the execution phase = Failed and returns.
+- If there exists a deploy item in class B (triggered, finished and failed), the controller stops triggering any
+  further deploy items, but remains in phase `Progressing` until the currently running deploy items have 
+  finished, i.e. until there are no more items of class C. Then it changes the phase to `Failed`.
 
-- Otherwise, perform an update for all deploy items in class (2A) (update required and no pending dependencies).
-  Update also the [generations in the execution status](#generations-spec-up-to-date). 
-  Set the execution phase = Progressing and return.
+- Otherwise, all deploy items in class D (not yet triggered and no pending predecessors) are triggered.
 
+Remark: there is a check to detect if the algorithm is stuck. This would be the case if there are neither unfinished 
+items (class C) nor triggerable items (class D), but still items with pending predecessors (class E). 
+Cyclic dependencies between the deploy items would lead to this situation.
 
-### Re-Check of Deploy items
+#### Phase "Completing"
 
-The controller performs a re-check of the deploy items, if a normal reconcile seems unnecessary.
+The controller collects the export data and sets the phase `Succeeded`.
 
-The controller checks whether one of the deploy items is missing, or whether its spec was changed by someone else
-after the last update by the controller. Such a change can be detected by comparing the present generation of the 
-deploy item resource with the past generation of the deploy item that is stored in the execution status.
+#### Errors
 
-If such a change was detected, the execution controller start the normal [reconcile operation](#reconcile-operation).
+The error handling is similar to that of the installation controller, i.e. we distinguish normal and fatal errors. 
+Normal errors lead to a retry of the current phase. Fatal errors change the phase to `Failed` (resp. `DeleteFailed`), 
+so that the current flow is finished.
 
-Otherwise, it computes the "combined" phase of all the deploy items.
-If this differs from the current execution phase, it updates the execution phase.
+#### Starting Another Reconcile Flow
 
-Moreover, if the combined phase is Succeeded and differs from the current execution phase, the exports are collected 
-and updated.
+A new reconcile job can only be started at the root installation, and only when the root installation
+(and thus the complete object tree) is finished.
+During such a job, the execution spec can be updated by the controller of its parent installation. 
+Such a spec update alone does not trigger a reconcile of the execution.
+The execution controller waits until the execution has received the new job ID. Then the execution phase is changed to
+`Init` and the new reconcile flow of the execution starts.
 
+Note that a new job ID triggers a new reconcile regardless whether or not the execution spec was modified.
 
-### Delete Operation
+#### Deleting an Execution
 
-Set the execution phase = Deleting.
+The deletion of an execution is always part of a job that has started with the deletion of the root installation and 
+propagates through the object tree. During the job, the execution gets a deletion timestamp in
+[phase "InitDelete" of the parent installation](installation_controller.md#phase-initdelete). 
+When it also has received the job ID in 
+[phase "TriggerDelete" of the parent installation](installation_controller.md#phase-triggerdelete)), 
+the deletion flow of the execution starts with phase `InitDelete`.
 
-Read the deploy items that are managed by the execution. If all of them are gone, the controller removes the finalizer
-of the execution. 
+#### Phase "InitDelete"
 
-Otherwise, the controller deletes all remaining deploy items, except those that already have a deletion timestamp
-and those upon which another deploy item depends that still exists. 
+In phase `InitDelete`, the controller deletes all deploy items that are controlled by the execution.
 
-The controller checks the phase of the deploy items that already have a deletion timestamp. If one of them has phase 
-Failed, it means that the deletion has failed. Then the execution phase is also set to Failed.
+#### Phase "Deleting"
 
-At the end of the reconcile run, the deploy items are not necessarily all gone. But a new reconcile run will be 
-triggered when one of the deploy items disappears. Then the delete operation will be repeated.
+The deploy items that were deleted in the `InitDelete` phase get a deletion timestamp, but will not vanish immediately
+due to their finalizers. They must be processed by a deployer, which can perform uninstall operations and remove the 
+finalizer. As always, the processing by a deployer starts only if a trigger in form of the job ID is set.
+Since there might be dependencies between deploy items, we do not trigger them all at once. The procedure is analogous 
+to phase `Progressing`, but this time a deploy item is triggered only after all its successors are gone. 
+To do this, we divide the deploy items in the following classes:
+
+- First, the class of all deploy items that have already been triggered, i.e. have already received the current job ID.
+  We check their status, and divide them in the following sub-classes. Note that there is no phase `DeleteSucceeded`, 
+  because such deploy items are gone.
+
+  - (B) finished and phase = `DeleteFailed`
+  - (C) not finished
+
+- Second, the class of all deploy items that have not yet been triggered.
+  These deploy items need to be updated by the execution controller. According to the state of their successors, we 
+  devide them in the following sub-classes:
+
+  - (D) deploy items whose successors are all finished 
+  - (E) deploy items with unfinished successors
+
+Based on this classification, the reconcile logic is as follows:
+
+- If all deploy items are gone, the controller removes the finalizer of the execution, so that the execution will 
+  vanish.
+
+- If there exists a deploy item in class B (triggered, finished and failed), the controller stops triggering any
+  further deploy items, but remains in phase `Deleting` until the currently running deploy items have
+  finished, i.e. until there are no more items of class C. Then it changes the phase to `DeleteFailed`.
+
+- Otherwise, all deploy items in class D (all successors finished) are triggered.
+
+Remark: there is a similar check as in phase `Progressing` to detect if the algorithm is stuck.
