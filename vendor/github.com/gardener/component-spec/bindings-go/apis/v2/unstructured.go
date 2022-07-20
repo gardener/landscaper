@@ -84,7 +84,7 @@ func NewUnstructuredType(ttype string, data map[string]interface{}) *Unstructure
 type UnstructuredTypedObject struct {
 	ObjectType `json:",inline"`
 	Raw        []byte                 `json:"-"`
-	Object     map[string]interface{} `json:"object"`
+	Object     map[string]interface{} `json:"-"`
 }
 
 func (u *UnstructuredTypedObject) SetType(ttype string) {
@@ -164,3 +164,6 @@ func (u *UnstructuredTypedObject) MarshalJSON() ([]byte, error) {
 	}
 	return data, nil
 }
+
+func (_ UnstructuredTypedObject) OpenAPISchemaType() []string { return []string{"object"} }
+func (_ UnstructuredTypedObject) OpenAPISchemaFormat() string { return "" }

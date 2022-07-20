@@ -71,6 +71,9 @@ type ComponentDescriptor struct {
 	Metadata Metadata `json:"meta"`
 	// Spec contains the specification of the component.
 	ComponentSpec `json:"component"`
+
+	// Signatures contains a list of signatures for the ComponentDescriptor
+	Signatures []Signature `json:"signatures,omitempty"`
 }
 
 // ComponentSpec defines a virtual component with
@@ -351,6 +354,10 @@ type SourceRef struct {
 type Resource struct {
 	IdentityObjectMeta `json:",inline"`
 
+	// Digest is the optional digest of the referenced resource.
+	// +optional
+	Digest *DigestSpec `json:"digest,omitempty"`
+
 	// Relation describes the relation of the resource to the component.
 	// Can be a local or external resource
 	Relation ResourceRelation `json:"relation,omitempty"`
@@ -377,6 +384,9 @@ type ComponentReference struct {
 	// ExtraIdentity is the identity of an object.
 	// An additional label with key "name" ist not allowed
 	ExtraIdentity Identity `json:"extraIdentity,omitempty"`
+	// Digest is the optional digest of the referenced component.
+	// +optional
+	Digest *DigestSpec `json:"digest,omitempty"`
 	// Labels defines an optional set of additional labels
 	// describing the object.
 	// +optional
@@ -426,4 +436,74 @@ func (o *ComponentReference) GetIdentity() Identity {
 // GetIdentityDigest returns the digest of the object's identity.
 func (o *ComponentReference) GetIdentityDigest() []byte {
 	return o.GetIdentity().Digest()
+}
+
+// DigestSpec defines a digest.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
+type DigestSpec struct {
+	HashAlgorithm          string `json:"hashAlgorithm"`
+	NormalisationAlgorithm string `json:"normalisationAlgorithm"`
+	Value                  string `json:"value"`
+}
+
+// SignatureSpec defines a signature.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
+type SignatureSpec struct {
+	Algorithm string `json:"algorithm"`
+	Value     string `json:"value"`
+	MediaType string `json:"mediaType"`
+}
+
+const (
+	// SignaturePEMBlockType defines the type of a signature pem block.
+	SignaturePEMBlockType = "SIGNATURE"
+
+	// SignatureAlgorithmHeader defines a pem header where the signature algorithm is defined.
+	SignatureAlgorithmHeader = "Signature Algorithm"
+
+	// MediaTypePEM defines the media type for pem formatted data.
+	MediaTypePEM = "application/x-pem-file"
+
+	// MediaTypeRSASignature defines the media type for a plain RSA signature.
+	MediaTypeRSASignature = "application/vnd.ocm.signature.rsa"
+
+	// RSAPKCS1v15 defines the type for the RSA PKCS #1 v1.5 signature algorithm
+	RSAPKCS1v15 = "RSASSA-PKCS1-V1_5"
+
+	// ExcludeFromSignature used in digest field for normalisationAlgorithm (in combination with NoDigest for hashAlgorithm and value)
+	// to indicate the resource content should not be part of the signature
+	ExcludeFromSignature = "EXCLUDE-FROM-SIGNATURE"
+
+	// NoDigest used in digest field for hashAlgorithm and value (in combination with ExcludeFromSignature for normalisationAlgorithm)
+	// to indicate the resource content should not be part of the signature
+	NoDigest = "NO-DIGEST"
+)
+
+//NewExcludeFromSignatureDigest returns the special digest notation to indicate the resource content should not be part of the signature
+func NewExcludeFromSignatureDigest() *DigestSpec {
+	return &DigestSpec{
+		HashAlgorithm:          NoDigest,
+		NormalisationAlgorithm: ExcludeFromSignature,
+		Value:                  NoDigest,
+	}
+}
+
+// NormalisationAlgorithm types and versions the algorithm used for digest generation.
+type NormalisationAlgorithm string
+
+const (
+	JsonNormalisationV1 NormalisationAlgorithm = "jsonNormalisation/v1"
+	OciArtifactDigestV1 NormalisationAlgorithm = "ociArtifactDigest/v1"
+	GenericBlobDigestV1 NormalisationAlgorithm = "genericBlobDigest/v1"
+)
+
+// Signature defines a digest and corresponding signature, identifyable by name.
+// +k8s:deepcopy-gen=true
+// +k8s:openapi-gen=true
+type Signature struct {
+	Name      string        `json:"name"`
+	Digest    DigestSpec    `json:"digest"`
+	Signature SignatureSpec `json:"signature"`
 }

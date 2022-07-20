@@ -42,9 +42,9 @@ func AddContextValue(ctx context.Context, key string, value interface{}) context
 	return ctx
 }
 
-// ctxLogger defines a logger that injects the provided context values
+// ctxLogSink defines a logger that injects the provided context values
 // and delegates the actual logging to a delegate.
-type ctxLogger struct {
+type ctxLogSink struct {
 	l   logr.Logger
 	ctx *ContextValues
 }
@@ -53,25 +53,27 @@ type ctxLogger struct {
 // but injects the context log values.
 func New(ctx context.Context, delegate logr.Logger) logr.Logger {
 	val := FromContext(ctx)
-	return newWithContextValues(val, delegate)
+	return logr.New(newWithContextValues(val, delegate))
 }
 
-func newWithContextValues(ctx *ContextValues, del logr.Logger) *ctxLogger {
-	return &ctxLogger{
+func newWithContextValues(ctx *ContextValues, del logr.Logger) *ctxLogSink {
+	return &ctxLogSink{
 		l:   del,
 		ctx: ctx,
 	}
 }
 
-func (c ctxLogger) Enabled() bool {
-	return c.l.Enabled()
+func (c *ctxLogSink) Init(logr.RuntimeInfo) {}
+
+func (c *ctxLogSink) Enabled(level int) bool {
+	return c.l.GetSink().Enabled(level)
 }
 
-func (c ctxLogger) Info(msg string, keysAndValues ...interface{}) {
-	c.l.Info(msg, keysAndValues...)
+func (c *ctxLogSink) Info(level int, msg string, keysAndValues ...interface{}) {
+	c.l.GetSink().Info(level, msg, keysAndValues...)
 }
 
-func (c ctxLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+func (c *ctxLogSink) Error(err error, msg string, keysAndValues ...interface{}) {
 	// append log context values
 	if c.ctx == nil {
 		c.l.Info(msg, keysAndValues...)
@@ -83,14 +85,10 @@ func (c ctxLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	c.l.Error(err, msg, keysAndValues...)
 }
 
-func (c ctxLogger) V(level int) logr.Logger {
-	return newWithContextValues(c.ctx, c.l.V(level))
-}
-
-func (c ctxLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
+func (c *ctxLogSink) WithValues(keysAndValues ...interface{}) logr.LogSink {
 	return newWithContextValues(c.ctx, c.l.WithValues(keysAndValues...))
 }
 
-func (c ctxLogger) WithName(name string) logr.Logger {
+func (c *ctxLogSink) WithName(name string) logr.LogSink {
 	return newWithContextValues(c.ctx, c.l.WithName(name))
 }

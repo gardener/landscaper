@@ -21,10 +21,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
+	"github.com/gardener/component-spec/bindings-go/apis/v2/jsonscheme"
 )
 
 // Validate validates a parsed v2 component descriptor
 func Validate(component *v2.ComponentDescriptor) error {
+	if err := jsonscheme.ValidateComponentDescriptor(*component); err != nil {
+		return err
+	}
 	if err := validate(nil, component); err != nil {
 		return err.ToAggregate()
 	}

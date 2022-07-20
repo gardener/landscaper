@@ -312,10 +312,44 @@ func (ip *imageParser) Parse(ctx context.Context, image ImageEntry) error {
 	// add resource
 	id := ip.cd.GetResourceIndex(res)
 	if id != -1 {
+		if err := preventLossOfTargetVersionLabel(&ip.cd.Resources[id], &res); err != nil {
+			return err
+		}
+
 		ip.cd.Resources[id] = cdutils.MergeResources(ip.cd.Resources[id], res)
 	} else {
 		ip.cd.Resources = append(ip.cd.Resources, res)
 	}
+	return nil
+}
+
+// preventLossOfTargetVersionLabel throws an error if the provided resources both have a target version label
+// with different values. In this case, one of the labels would get lost if the resources are merged.
+func preventLossOfTargetVersionLabel(res1, res2 *cdv2.Resource) error {
+	var (
+		targetVersion1 string
+		targetVersion2 string
+	)
+
+	hasLabel1, err := getLabel(res1.Labels, TargetVersionLabel, &targetVersion1)
+	if err != nil {
+		return err
+	}
+
+	hasLabel2, err := getLabel(res2.Labels, TargetVersionLabel, &targetVersion2)
+	if err != nil {
+		return err
+	}
+
+	if hasLabel1 && hasLabel2 && targetVersion1 != targetVersion2 {
+		tag := res2.IdentityObjectMeta.GetIdentity()[TagExtraIdentity]
+
+		return fmt.Errorf(`there is more than one target version expression specified for name %q and tag %q. `+
+			`A solution might be to combine the target version expressions by using a range, for example: `+
+			`targetVersion: ">= 1.18, < 1.22"`,
+			res2.Name, tag)
+	}
+
 	return nil
 }
 

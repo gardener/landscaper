@@ -50,7 +50,7 @@ func MergeIdentityObjectMeta(a, b v2.IdentityObjectMeta) v2.IdentityObjectMeta {
 	}
 
 	for _, label := range b.Labels {
-		if idx := GetLabelIdx(b.Labels, label.Name); idx != -1 {
+		if idx := GetLabelIdx(a.Labels, label.Name); idx != -1 {
 			a.Labels[idx] = label
 		} else {
 			a.Labels = append(a.Labels, label)

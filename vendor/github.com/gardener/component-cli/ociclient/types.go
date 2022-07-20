@@ -19,19 +19,36 @@ import (
 
 type Client interface {
 	Resolver
-	// GetManifest returns the ocispec Manifest for a reference
-	GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error)
 
 	// Fetch fetches the blob for the given ocispec Descriptor.
 	Fetch(ctx context.Context, ref string, desc ocispecv1.Descriptor, writer io.Writer) error
 
+	// PushBlob uploads the blob for the given ocispec Descriptor to the given ref
+	PushBlob(ctx context.Context, ref string, desc ocispecv1.Descriptor, opts ...PushOption) error
+
+	// GetRawManifest returns the raw manifest for a reference.
+	// The returned manifest can either be single arch or multi arch (image index/manifest list)
+	GetRawManifest(ctx context.Context, ref string) (ocispecv1.Descriptor, []byte, error)
+
+	// PushRawManifest uploads the given raw manifest to the given reference.
+	// If the manifest is multi arch (image index/manifest list), only the multi arch manifest is pushed.
+	// The referenced single arch manifests must be pushed individiually before.
+	PushRawManifest(ctx context.Context, ref string, desc ocispecv1.Descriptor, rawManifest []byte, opts ...PushOption) error
+
+	// GetManifest returns the ocispec Manifest for a reference
+	// Deprecated: Please prefer GetRawManifest instead
+	GetManifest(ctx context.Context, ref string) (*ocispecv1.Manifest, error)
+
 	// PushManifest uploads the given Manifest to the given reference.
+	// Deprecated: Please prefer PushRawManifest instead
 	PushManifest(ctx context.Context, ref string, manifest *ocispecv1.Manifest, opts ...PushOption) error
 
 	// GetOCIArtifact returns an OCIArtifact for a reference.
+	// Deprecated: Please prefer GetRawManifest instead
 	GetOCIArtifact(ctx context.Context, ref string) (*oci.Artifact, error)
 
 	// PushOCIArtifact uploads the given OCIArtifact to the given ref.
+	// Deprecated: Please prefer PushRawManifest instead
 	PushOCIArtifact(ctx context.Context, ref string, artifact *oci.Artifact, opts ...PushOption) error
 }
 

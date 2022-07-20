@@ -83,6 +83,41 @@ func (mr *MockClientMockRecorder) GetOCIArtifact(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOCIArtifact", reflect.TypeOf((*MockClient)(nil).GetOCIArtifact), arg0, arg1)
 }
 
+// GetRawManifest mocks base method.
+func (m *MockClient) GetRawManifest(arg0 context.Context, arg1 string) (v1.Descriptor, []byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRawManifest", arg0, arg1)
+	ret0, _ := ret[0].(v1.Descriptor)
+	ret1, _ := ret[1].([]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetRawManifest indicates an expected call of GetRawManifest.
+func (mr *MockClientMockRecorder) GetRawManifest(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRawManifest", reflect.TypeOf((*MockClient)(nil).GetRawManifest), arg0, arg1)
+}
+
+// PushBlob mocks base method.
+func (m *MockClient) PushBlob(arg0 context.Context, arg1 string, arg2 v1.Descriptor, arg3 ...ociclient.PushOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PushBlob", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PushBlob indicates an expected call of PushBlob.
+func (mr *MockClientMockRecorder) PushBlob(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushBlob", reflect.TypeOf((*MockClient)(nil).PushBlob), varargs...)
+}
+
 // PushManifest mocks base method.
 func (m *MockClient) PushManifest(arg0 context.Context, arg1 string, arg2 *v1.Manifest, arg3 ...ociclient.PushOption) error {
 	m.ctrl.T.Helper()
@@ -119,6 +154,25 @@ func (mr *MockClientMockRecorder) PushOCIArtifact(arg0, arg1, arg2 interface{}, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushOCIArtifact", reflect.TypeOf((*MockClient)(nil).PushOCIArtifact), varargs...)
+}
+
+// PushRawManifest mocks base method.
+func (m *MockClient) PushRawManifest(arg0 context.Context, arg1 string, arg2 v1.Descriptor, arg3 []byte, arg4 ...ociclient.PushOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PushRawManifest", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PushRawManifest indicates an expected call of PushRawManifest.
+func (mr *MockClientMockRecorder) PushRawManifest(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushRawManifest", reflect.TypeOf((*MockClient)(nil).PushRawManifest), varargs...)
 }
 
 // Resolve mocks base method.
