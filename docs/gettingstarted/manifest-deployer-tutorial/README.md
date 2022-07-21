@@ -34,7 +34,9 @@ The demo is ordered into the following activities:
 
 Before you start, you need a working dev environment. If you do not have one, please refer to ["Prepare dev environment"](prepare-dev-environment.md).
 
-First, download [demo material from this repository]([/](https://download-directory.github.io/?url=https%3A%2F%2Fgithub.com%2Fgardener%2Flandscaper%2Ftree%2Fmaster%2Fdocs%2Fgettingstarted%2fmanifest-deployer-tutorial)). You will edit some of the downloaded files later.
+First clone or download this Git repository. You will need the files in `docs/getting-started` later.
+
+If you don't have access to a Gardener cluster, you can use a local Kubernetes environment like [Kind](https://kind.sigs.k8s.io). It is recommended to use the built-in [OCI registry](https://kind.sigs.k8s.io/docs/user/local-registry/) from kind in this case. Replace oci registry placeholders with `localhost:5001` in this case and set the environment variable `export OCI_REGISTRY=localhost:5001`. Use an explicit `--kubeconfig ...` in all calls.
 
 ### Structure of demo material
 
@@ -68,6 +70,10 @@ The folder component-archive contains all resources needed for building Landscap
 
 ### Install the Landscaper together with an OCI registry
 
+For this tutorial we need the landscaper-controller running in the Kubernetes cluster as well as the
+landscaper command line client (cli) to interact with the landscaper. In addition we need an OCI registry
+to store the artifacts created in this tutorial.
+
 The landscaper-cli provides a convenient quick start option for installing the Landscaper plus an OCI registry:
 
 ```bash
@@ -81,6 +87,17 @@ landscaper-cli quickstart install \
   --registry-username $OCI_USER \
   --registry-password $OCI_PASSWD
 ```
+
+This OCI registry is targeted only for development purposes and not for use in production.
+
+If you have access to an OCI registry or use the OCI registry coming with kind omit the last three parameters and only install the landscaper:
+
+```bash
+landscaper-cli quickstart install \
+  --kubeconfig ~/.kube/config-demo.yaml \
+  --install-oci-registry
+```
+
 
 A successful installation should look like this:
 
@@ -110,7 +127,7 @@ The installation should contain
 - Container deployer
 - Helm deployer
 - Manifest deployer
-- OCI Registry
+- (OCI Registry) optional
 
 ```text
 NAME                                                    READY   STATUS    RESTARTS   AGE
@@ -363,4 +380,14 @@ Now, we need to tell Landscaper to pick up the artifacts from the OCI registry a
         └── [✅ Succeeded] DeployItem manifest-demo-default-deploy-item-ncflh
     ```
 
+6. After some time the pod of your example should appear:
+
+     ```bash
+     kubectl get pods -n example
+     ```
+
+    ```text
+    NAME                     READY   STATUS    RESTARTS   AGE
+    hello-5c6as449f9-dz4x6   1/1     Running   0          5s
+    ```
 This is the end of this tutorial.
