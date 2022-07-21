@@ -443,7 +443,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 }
 
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
-	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError) lserrors.LsError {
+	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
 
 	if lsError != nil {
 		c.Log().Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
@@ -463,7 +463,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 		inst.Status.JobIDFinished = inst.Status.JobID
 	}
 
-	if err := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000114, inst); err != nil {
+	if err := c.Writer().UpdateInstallationStatus(ctx, writeID, inst); err != nil {
 		if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseDeleting {
 			// recheck if already deleted
 			instRecheck := &lsv1alpha1.Installation{}
