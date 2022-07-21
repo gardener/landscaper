@@ -17,10 +17,16 @@ This tutorial describes how to use the Landscaper manifest deployer for installi
 
 The demo is ordered into the following activities:
 
-  - [1. Push demo image content into OCI registry](#1-push-demo-image-content-into-oci-registry)
-  - [2. Develop Landscaper artifacts](#2-develop-landscaper-artifacts)
-  - [3. Push Component Archive to OCI Registry](#3-push-component-archive-to-oci-registry)
-  - [4. Deploy the application](#4-deploy-the-application)
+- [Deploy applications via Landscaper using manifest deployer](#deploy-applications-via-landscaper-using-manifest-deployer)
+  - [Introduction](#introduction)
+  - [Preparation of dev environment](#preparation-of-dev-environment)
+    - [Structure of demo material](#structure-of-demo-material)
+    - [Install the Landscaper together with an OCI registry](#install-the-landscaper-together-with-an-oci-registry)
+  - [Deploy applications via Landscaper](#deploy-applications-via-landscaper)
+    - [1. Push demo image content into OCI registry](#1-push-demo-image-content-into-oci-registry)
+    - [2. Develop Landscaper artifacts](#2-develop-landscaper-artifacts)
+    - [3. Push Component Archive to OCI Registry](#3-push-component-archive-to-oci-registry)
+    - [4. Deploy the application](#4-deploy-the-application)
 
 ![alt text](README-deployment-4-steps.svg "Deployment with Landscaper in four steps")
 
@@ -205,6 +211,8 @@ Let us go through the steps, to prepare our Landscaper manifest deployment:
 
     ``` bash
     cat ~/.docker/config.json | base64 --wrap=0
+    # in MacOS
+    cat ~/.docker/config.json | base64 --break 0
     ```
 
 4. Add the resources defined in resource.yaml to component-descriptor.yaml by executing
@@ -263,7 +271,7 @@ component-cli ctf push ./transport.tar
 Verify content of OCI registry:
 
 ``` bash
-curl --location --request GET https://$OCI_REGITRY/v2/_catalog -u "$OCI_USER:$OCI_PASSWD"
+curl --location --request GET https://$OCI_REGISTRY/v2/_catalog -u "$OCI_USER:$OCI_PASSWD"
 ```
 
 The curl should return the following:
@@ -298,10 +306,10 @@ Now, we need to tell Landscaper to pick up the artifacts from the OCI registry a
     Either replace the `<KUBECONFIG>` placeholder with your clusters kubeconfig, or use the landscaper-cli tool (recommended), to create the Target manifest:
 
     ```bash
-    landscaper-cli targets create kubernetes-cluster --name my-cluster --namespace example --target-kubeconfig ~/.kube/config-demo.yaml > ./my-target.yaml
+    landscaper-cli targets create kubernetes-cluster --name my-cluster --namespace example --target-kubeconfig ~/.kube/config-demo.yaml > manifests/my-target.yaml
     ```
 
-2. The Installation resource. While the Blueprint provided a specification of all import parameters, the Installation provides concrete values for the imports. Furthermore, the Installation makes a connection to the component-descriptor associated with the application we are going to deploy. The below Installation specifies the component-descriptor and the blueprint in that component descriptor it shall use (a component-descriptor can contain more than one blueprint). As for the imports, there is just one parameter which needs to be initialized. There is an import of type target with the name target. This is the same Target resource, we created in step 1. You find a sample Installation in /manifests/Installation.yaml. Replace the `<OCIURL>` placeholder with the OCI registry URL you created in section "Install the Landscaper together with an OCI registry" such that it is specified where the referenced component descriptor is located.
+2. The Installation resource. While the Blueprint provided a specification of all import parameters, the Installation provides concrete values for the imports. Furthermore, the Installation makes a connection to the component-descriptor associated with the application we are going to deploy. The below Installation specifies the component-descriptor and the blueprint in that component descriptor it shall use (a component-descriptor can contain more than one blueprint). As for the imports, there is just one parameter which needs to be initialized. There is an import of type target with the name target. This is the same Target resource, we created in step 1. You find a sample Installation in /manifests/installation.yaml. Replace the `<OCIURL>` placeholder with the OCI registry URL you created in section "Install the Landscaper together with an OCI registry" such that it is specified where the referenced component descriptor is located.
 
     ``` yaml
     apiVersion: landscaper.gardener.cloud/v1alpha1
@@ -331,14 +339,14 @@ Now, we need to tell Landscaper to pick up the artifacts from the OCI registry a
 3. Create **example** namespace
 
     ``` bash
-    kubectl create namespace example
+    kubectl create namespace example --kubeconfig ~/.kube/config-demo.yaml
     ```
 
 4. Apply the custom resources to your cluster:
 
     ``` bash
-    kubectl apply -f ./my-target.yaml
-    kubectl apply -f ./installation.yaml
+    kubectl apply -f manifests/my-target.yaml  --kubeconfig ~/.kube/config-demo.yaml
+    kubectl apply -f manifests/installation.yaml --kubeconfig ~/.kube/config-demo.yaml
     ```
 
 5. Verify the status of the deployment:
