@@ -126,14 +126,16 @@ landscaper:
     landscaper:
       deployers: [container, helm]
       deployersConfig:
-        # match the deployer name
-        container: 
-          # provide any helm charts values.
-          deployer:
-            oci:
-              allowPlainHttp: false
-        helm:
-          # ...
+        Deployers:
+          # match the deployer name
+          container:
+            deployer:
+              # provide any helm charts values.
+              oci:
+                allowPlainHttp: false
+          helm:
+            deployer:
+              # ...
 ```
 
 Additional external deployer can be either configured by applying the `DeployerRegistration` directly or providing the Registration in the helm chart.
