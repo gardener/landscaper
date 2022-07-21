@@ -52,22 +52,22 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		fatalError, normalError := c.handlePhaseInit(ctx, inst)
 
 		if fatalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000087)
 		} else if normalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000088)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseObjectsCreated, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseObjectsCreated, nil, read_write_layer.W000114); err != nil {
 			return err
 		}
 	}
 
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseObjectsCreated {
 		if err := c.handlePhaseObjectsCreated(ctx, inst); err != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000116)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseProgressing, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseProgressing, nil, read_write_layer.W000117); err != nil {
 			return err
 		}
 	}
@@ -76,7 +76,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		allSucceeded, err := c.handlePhaseProgressing(ctx, inst)
 		if err != nil {
 			// error or unfinished subobjects => phase remains progressing
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000118)
 		}
 
 		var nextPhase lsv1alpha1.InstallationPhase
@@ -86,7 +86,7 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 			nextPhase = lsv1alpha1.InstallationPhaseFailed
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, nextPhase, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, nextPhase, nil, read_write_layer.W000119); err != nil {
 			return err
 		}
 	}
@@ -95,12 +95,12 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		fatalError, normalError := c.handlePhaseCompleting(ctx, inst)
 
 		if fatalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseFailed, fatalError, read_write_layer.W000120)
 		} else if normalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000121)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseSucceeded, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseSucceeded, nil, read_write_layer.W000122); err != nil {
 			return err
 		}
 	}
@@ -112,12 +112,12 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		fatalError, normalError := c.handleDeletionPhaseInit(ctx, inst)
 
 		if fatalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, fatalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, fatalError, read_write_layer.W000123)
 		} else if normalError != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, normalError, read_write_layer.W000124)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseTriggerDelete, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseTriggerDelete, nil, read_write_layer.W000125); err != nil {
 			return err
 		}
 	}
@@ -125,10 +125,10 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 	if inst.Status.InstallationPhase == lsv1alpha1.InstallationPhaseTriggerDelete {
 
 		if err := c.handleDeletionPhaseTriggerDeleting(ctx, inst); err != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000126)
 		}
 
-		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleting, nil); err != nil {
+		if err := c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleting, nil, read_write_layer.W000127); err != nil {
 			return err
 		}
 	}
@@ -139,16 +139,16 @@ func (c *Controller) handleReconcilePhase(ctx context.Context, inst *lsv1alpha1.
 		allFinished, allDeleted, err := c.handleDeletionPhaseDeleting(ctx, inst)
 
 		if err != nil {
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000128)
 		} else if allDeleted {
 			return nil
 		} else if allFinished {
 			err = lserrors.NewError(op, "UndeletedSubobjects", "not all sub objects were deleted")
-			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, lsv1alpha1.InstallationPhaseDeleteFailed, err, read_write_layer.W000129)
 		} else {
 			// retry
 			err = lserrors.NewError(op, "PendingSubobjects", "deletion of some sub objects pending")
-			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err)
+			return c.setInstallationPhaseAndUpdate(ctx, inst, inst.Status.InstallationPhase, err, read_write_layer.W000130)
 		}
 	}
 
