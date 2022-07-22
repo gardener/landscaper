@@ -29,4 +29,7 @@ func SetDefaults_GarbageCollection(obj *GarbageCollection) {
 	if obj.Worker <= 0 {
 		obj.Worker = 5
 	}
+	if obj.RequeueTimeSeconds <= 0 {
+		obj.RequeueTimeSeconds = 60
+	}
 }

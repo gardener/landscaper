@@ -5002,14 +5002,14 @@ func schema_landscaper_apis_core_v1alpha1_ExecutionStatus(ref common.ReferenceCa
 							},
 						},
 					},
-					"JobID": {
+					"jobID": {
 						SchemaProps: spec.SchemaProps{
 							Description: "JobID is the ID of the current working request.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"JobIDFinished": {
+					"jobIDFinished": {
 						SchemaProps: spec.SchemaProps{
 							Description: "JobIDFinished is the ID of the finished working request.",
 							Type:        []string{"string"},
