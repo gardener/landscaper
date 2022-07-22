@@ -1,16 +1,5 @@
 # Deploy applications via Landscaper using manifest deployer
 
-- [Deploy applications via Landscaper using manifest deployer](#deploy-applications-via-landscaper-using-manifest-deployer)
-  - [Introduction](#introduction)
-  - [Preparation of dev environment](#preparation-of-dev-environment)
-    - [Structure of demo material](#structure-of-demo-material)
-    - [Install the Landscaper together with an OCI registry](#install-the-landscaper-together-with-an-oci-registry)
-  - [Deploy applications via Landscaper](#deploy-applications-via-landscaper)
-    - [1. Push demo image content into OCI registry](#1-push-demo-image-content-into-oci-registry)
-    - [2. Develop Landscaper artifacts](#2-develop-landscaper-artifacts)
-    - [3. Push Component Archive to OCI Registry](#3-push-component-archive-to-oci-registry)
-    - [4. Deploy the application](#4-deploy-the-application)
-
 ## Introduction
 
 This tutorial describes how to use the Landscaper manifest deployer for installing an application into a Kubernetes cluster.
@@ -25,7 +14,7 @@ The demo is ordered into the following activities:
   - [Deploy applications via Landscaper](#deploy-applications-via-landscaper)
     - [1. Push demo image content into OCI registry](#1-push-demo-image-content-into-oci-registry)
     - [2. Develop Landscaper artifacts](#2-develop-landscaper-artifacts)
-    - [3. Push Component Archive to OCI Registry](#3-push-component-archive-to-oci-registry)
+    - [3. Push Landscaper artifacts to OCI Registry](#3-push-landscaper-artifacts-to-oci-registry)
     - [4. Deploy the application](#4-deploy-the-application)
 
 ![alt text](README-deployment-4-steps.svg "Deployment with Landscaper in four steps")
@@ -65,7 +54,7 @@ The folder component-archive contains all resources needed for building Landscap
 
 | Demo environment | Productive environment |
 | ------------- |-------------|
-| For demo purposes we will use a simplified setup with one cluster, which contains all necessary parts. | In a productive environment could be separated. |
+| For demo purposes we will use a simplified setup with one cluster, which contains all necessary parts. | In a productive environment these could be separated. |
 | ![alt text](README-env-demo.svg "demo all-in-one cluster") | ![alt text](README-env-productice.svg "One demo cluster and other possible setup")|
 
 ### Install the Landscaper together with an OCI registry
@@ -97,7 +86,6 @@ landscaper-cli quickstart install \
   --kubeconfig ~/.kube/config-demo.yaml \
   --install-oci-registry
 ```
-
 
 A successful installation should look like this:
 
@@ -159,7 +147,7 @@ The curl should return this:
 For this tutorial an OCI image is provided. The image contains a dummy application just for demonstration purposes. It does nothing, just keeps the container running.
 
 The image is located at /manifest-deployer-tutorial/demo-content/hello.tar.
-For the next steps, dockerd must be up and running in dev environment.
+For the next steps, Docker must be up and running in dev environment.
 
 First, load the OCI image into local docker registry:
 
@@ -271,13 +259,13 @@ Let us go through the steps, to prepare our Landscaper manifest deployment:
       schemaVersion: v2
     ```
 
-6. Transform component-archive into Component Transport Format for our OCI registry:
+6. Convert the component located in ./component-archive/ into the Component Transport Format (CTF/ just a compressed tar of the folder structure) and add it to a component archive (just a tar of one or more components in CTF) located here ./transport.tar:
 
     ``` bash
     component-cli ctf add ./transport.tar --component-archive ./component-archive/ --format tar
     ```
 
-### 3. Push Component Archive to OCI Registry
+### 3. Push Landscaper artifacts to OCI Registry
 
 Upload component-archive into our OCI registry:
 
@@ -380,14 +368,19 @@ Now, we need to tell Landscaper to pick up the artifacts from the OCI registry a
         └── [✅ Succeeded] DeployItem manifest-demo-default-deploy-item-ncflh
     ```
 
-6. After some time the pod of your example should appear:
+6. Check the deployments:
 
-     ```bash
-     kubectl get pods -n example
-     ```
+    After some time the deployment and pod(s) of your example should appear:
 
-    ```text
-    NAME                     READY   STATUS    RESTARTS   AGE
-    hello-5c6as449f9-dz4x6   1/1     Running   0          5s
+    ```bash
+    kubectl get deployments --kubeconfig ~/.kube/config-demo.yaml -n example
+    NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+    hello-deployment   1/1     1            1           12m
+
+
+    kubectl get pods -n example --kubeconfig ~/.kube/config-demo.yaml
+    NAME                                READY   STATUS    RESTARTS   AGE
+    hello-deployment-6f8b8ff985-4gcr4   1/1     Running   0          8m
     ```
+
 This is the end of this tutorial.
