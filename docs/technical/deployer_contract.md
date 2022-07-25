@@ -177,8 +177,8 @@ should uninstall the artefacts from the target and if this was successfull remov
 
 There is the following important annotation that needs to be handled by the deployer in case of a deletion:
 - `landscaper.gardener.cloud/delete-without-uninstall: true`: If this annotation is set at the deploy item and the deploy
-  item is deleted by the Landscaper, the deployer should remove the finalizer also if uninstalling the deployed artefacts
-  failed or even skip this uninstallation step at all.
+  item is deleted by the Landscaper, the deployer should only remove the finalizer from the deploy item
+  without uninstalling the deployed artefacts.
 
 #### 5. Final State
 If the deployer successfully finished the task described by the deploy item, the deployer is required to set 
