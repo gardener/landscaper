@@ -57,6 +57,10 @@ The following example shows the configuration of the landscaper service installa
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
+  annotations:
+    # this annotation is required such that the installation is picked up by the Landscaper
+    # it will be removed when processing has started
+    landscaper.gardener.cloud/operation: reconcile
   name: landscaper-service
 spec:
   componentDescriptor:

@@ -493,7 +493,7 @@ componentDescriptor:
     version: v0.3.2
 ```
 
-__Blueprint__: Once the Component Descriptor is known to the iinstallation, the Blueprint artifact can be referenced by its unique name `ingress-nginx-blueprint`.
+__Blueprint__: Once the Component Descriptor is known to the installation, the Blueprint artifact can be referenced by its unique name `ingress-nginx-blueprint`.
 
 ```yaml
 blueprint:
@@ -539,6 +539,10 @@ The final _Installation_ resource will look like the following YAML snippet.
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
+  annotations:
+    # this annotation is required such that the installation is picked up by the Landscaper
+    # it will be removed when processing has started
+    landscaper.gardener.cloud/operation: reconcile
   name: my-ingress
 spec:
   componentDescriptor:

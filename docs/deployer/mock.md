@@ -2,7 +2,8 @@
 
 The mock deployer is a controller that reconciles DeployItems of type `landscaper.gardener.cloud/mock`. 
 
-This deployer is only ment for testing and demo purposes to simluate specific behavior of deploy item. Therefore, the Configuration part configures the state that should be reconciled by the mock.
+This deployer is only meant for testing and demo purposes to simulate specific behavior of deploy items. Therefore, the 
+configuration part configures the state that should be reconciled by the mock.
 
 **Index**:
 - [Provider Configuration](#provider-configuration)
@@ -34,14 +35,8 @@ spec:
     # Specifies the exported data that will be reconciled into the exportRef.
     export:
       key2: val2
-#    continuousReconcile: # configure continuous reconciliation
-#      every: "1h"
-#      cron: cron: "* */1 * * *"
 
 ```
-
-##### Continuous Reconciliation
-For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 
@@ -53,7 +48,9 @@ When deploying the mock deployer controller it can be configured using the `--co
 
 The structure of the provided configuration file is defined as follows.
 
-:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. See the [helm values file](../../charts/mock-deployer/values.yaml) for details when deploying with the helm chart.
+:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. 
+See the [helm values file](../../charts/mock-deployer/values.yaml) for details when deploying with the helm chart.
+
 ```yaml
 apiVersion: mock.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration

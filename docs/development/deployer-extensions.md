@@ -1,5 +1,8 @@
 # Deployer Extensions
 
+After switching to the new reconcile logic the continuous reconcile extension is currently deactivated. It is open if, how and
+when it is activated again.
+
 This article is meant to list already implemented extensions which can be integrated in deployers. For more information on how deployer extensions work, read about the [Deployer Library Extension Hooks](./dep-lib-extension-hooks.md).
 
 #### Index

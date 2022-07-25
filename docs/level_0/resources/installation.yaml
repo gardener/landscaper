@@ -1,6 +1,8 @@
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
   name: demo
   namespace: demo
 spec:

@@ -62,10 +62,6 @@ spec:
 
     updateStrategy: update | patch # optional; defaults to update
 
-#    continuousReconcile: # configure continuous reconciliation
-#      every: "1h"
-#      cron: cron: "* */1 * * *"
-
     # Configuration of the readiness checks for the resources.
     # optional
     readinessChecks:
@@ -74,7 +70,7 @@ spec:
       disableDefault: true
       # Defines the time to wait before giving up on a resource
       # to be ready. Should be changed with long startup time pods.
-      # optional; default to 180 seconds/3 minutes.
+      # optional; defaults to 180 seconds/3 minutes.
       timeout: 3m
       # Configuration of custom readiness checks which are used
       # to check on custom fields and their values
@@ -121,7 +117,7 @@ spec:
           - value: 3
 
     # Defines the time to wait before giving up on a resource to be deleted,
-    # for instance when deleting resources that are not anymore managed from this DeployItem.
+    # for instance when deleting resources that are not managed by this DeployItem anymore.
     # optional; default to 180 seconds/3 minutes.
     deleteTimeout: 2m
 
@@ -209,9 +205,6 @@ spec:
     helmDeployment: false
 ```
 
-##### Continuous Reconciliation
-For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
-
 ### Status
 
 This section describes the provider specific status of the resource.
@@ -234,7 +227,9 @@ When deploying the helm deployer controller it can be configured using the `--co
 
 The structure of the provided configuration file is defined as follows.
 
-:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. See the [helm values file](../../charts/helm-deployer/values.yaml) for details when deploying with the helm chart.
+:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. 
+See the [helm values file](../../charts/helm-deployer/values.yaml) for details when deploying with the helm chart.
+
 ```yaml
 apiVersion: helm.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration

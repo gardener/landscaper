@@ -1,6 +1,8 @@
 # First Example Installation
 
-In this example we describe how to deploy your first component with Landscaper. The component defines an nginx helm chart deployment. Note that this example uses an already existing Component Descriptor and its Blueprint, so it is meant to give you a way to quickly deploy something with the Landscaper and look at the deployed resources in your cluster.
+In this example we describe how to deploy your first component with Landscaper. The component defines an nginx helm chart 
+deployment. Note that this example uses an already existing Component Descriptor and its Blueprint, so it is meant to 
+give you a way to quickly deploy something with the Landscaper and look at the deployed resources in your cluster.
 
 To try out this example by yourself, you need to install Landscaper (see [here](../gettingstarted/install-landscaper-controller.md)) in a cluster.
 
@@ -51,12 +53,18 @@ kubectl create namespace first-example
 
 ## Step 3 - Create and apply the Installation custom resource
 
-To install the nginx ingress-controller with the Landscaper, we have to finally create a custom resource of kind `Installation`. Such Ìnstallation`custom resources are watched by the Landscaper controller and triggers the installation as described by the Blueprint, which is located within the specified Component Descriptor.
+To install the nginx ingress-controller with the Landscaper, we have to finally create a custom resource of kind `Installation`. 
+Such `Installation` custom resources are watched by the Landscaper controller and triggers the installation as described 
+by the Blueprint, which is located within the specified Component Descriptor. To be processed by the Landscaper, the 
+installation requires an annotation `landscaper.gardener.cloud/operation: reconcile` which is automatically removed when 
+the processing starts. This annotation has to be set by the operator/user.
 
 ```yaml
 apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
+  annotations:
+    landscaper.gardener.cloud/operation: reconcile
   name: demo
   namespace: demo
 spec:

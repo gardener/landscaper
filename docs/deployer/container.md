@@ -58,9 +58,6 @@ spec:
     command: ["my command"]
     args:  ["--flag1", "my arg"]
 
-#    continuousReconcile: # configure continuous reconciliation
-#      every: "1h"
-#      cron: cron: "* */1 * * *"
 ```
 
 ### Contract
@@ -108,8 +105,6 @@ When the image with your program is executed, it gets access to particular infor
 Again you will find a more detailed explanation of these env variables
 [here](https://github.com/gardener/landscapercli/blob/master/docs/commands/container_deployer/add_container_di.md).
 
-##### Continuous Reconciliation
-For information on the continuous reconciliation configuration, see [here](../development/deployer-extensions##continuous-reconcile-extension) under 'usage'.
 
 ### Status
 
@@ -135,8 +130,7 @@ status:
 
 ### Operations
 
-In addition to the annotations that are specified in the DeployItem contract (operation reconcile and force-reconcile), 
-the container deployer implements specific annotations that can be set to instruct the container deployer to 
+The container deployer reacts on specific annotations that can be set to instruct the container deployer to 
 perform specific actions.
 
 - _container.deployer.landscaper.gardener.cloud/force-cleanup=true_ : triggers the force deletion of the deploy item. 
@@ -148,7 +142,9 @@ When deploying the container deployer controller it can be configured using the 
 
 The structure of the provided configuration file is defined as follows.
 
-:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. See the [helm values file](../../charts/container-deployer/values.yaml) for details when deploying with the helm chart.
+:warning: Keep in mind that when deploying with the helm chart the configuration is abstracted using the helm values. 
+See the [helm values file](../../charts/container-deployer/values.yaml) for details when deploying with the helm chart.
+
 ```yaml
 apiVersion: container.deployer.landscaper.gardener.cloud/v1alpha1
 kind: Configuration
@@ -215,7 +211,7 @@ When a Container DeployItem is reconciled basically the following steps are perf
 2. When the DeployItem is ready to be executed (configuration has changed), the container deployer schedules a Pod.
 3. That pod contains a InitContainer that fetches the targets, import values, blueprint and the resolved component descriptor. The data is stored in a shared local volume.
 4. The actual application code is executed in a main container as soon as the initContainer has finished. The main container has access to the shared volume which make it possible for the application to access runtime data and configuration.
-5. When the main container has successfully finished, optionally data is exported. See [Container Eexport](#export) for detailed export architecture.
+5. When the main container has successfully finished, optionally data is exported. See [Container Export](#export) for detailed export architecture.
 
 ![Container Deployer Reconcile](../images/container-deployer_reconcile.png)
 

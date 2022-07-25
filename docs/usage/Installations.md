@@ -36,6 +36,10 @@ apiVersion: landscaper.gardener.cloud/v1alpha1
 kind: Installation
 metadata:
   name: my-installation
+  annotations:
+    # this annotation is required such that the installation is picked up by the Landscaper
+    # it will be removed when processing has started
+    landscaper.gardener.cloud/operation: reconcile
 spec:
   
   context: "" # defaults to "default"
@@ -114,7 +118,7 @@ spec:
       target: "" # reference a contextified target or a global taret with a '#' prefix.
 
 status:
-  phase: Progressing | Pending | Deleting | Completed | Failed
+  phase: Init | ObjectsCreated | Progressing | Completing | Succeeded | Failed | InitDelete | TriggerDelete | Deleting | DeleteFailed
 
   imports:
   - name: "" # logical internal name
@@ -984,16 +988,4 @@ spec:
 
 ## Operations
 
-The behavior of an installation is set by using operation annotations.
-These annotations are set automatically by the landscaper as part of the default reconciliation loop.
-An operator can also set annotations manually to enforce a specific behavior.
-
-- **`landscaper.gardener.cloud/operation`**:
-
-  - `reconcile`: start a default reconcile on the installation
-  - `force-reconcile`: skip the reconcile/pending check and directly start a new reconcilition flow. 
-    > **Warning:** Imports still have to be satisfied.
-  - `abort`: abort the current run which will abort all subinstallation but will wait until all current running components have finished.
- 
-- **`landscaper.gardener.cloud/skip`**: 
-  - `true`: skips the reconciliation of a component which means that it will not be triggered by configuration or import change.
+An operator can set annotations manually to enforce a specific behavior ([see](./Annotations.md)).
