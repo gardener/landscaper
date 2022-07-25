@@ -170,10 +170,10 @@ type ExecutionStatus struct {
 	ExecutionGenerations []ExecutionGeneration `json:"execGenerations,omitempty"`
 
 	// JobID is the ID of the current working request.
-	JobID string `json:"JobID,omitempty"`
+	JobID string `json:"jobID,omitempty"`
 
 	// JobIDFinished is the ID of the finished working request.
-	JobIDFinished string `json:"JobIDFinished,omitempty"`
+	JobIDFinished string `json:"jobIDFinished,omitempty"`
 
 	// ExecutionPhase is the current phase of the execution.
 	ExecutionPhase ExecPhase `json:"phase,omitempty"`

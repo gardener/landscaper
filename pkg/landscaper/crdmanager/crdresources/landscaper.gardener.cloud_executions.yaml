@@ -113,12 +113,6 @@ spec:
           status:
             description: Status contains the current status of the execution.
             properties:
-              JobID:
-                description: JobID is the ID of the current working request.
-                type: string
-              JobIDFinished:
-                description: JobIDFinished is the ID of the finished working request.
-                type: string
               conditions:
                 description: Conditions contains the actual condition of a execution
                 items:
@@ -231,6 +225,12 @@ spec:
                 required:
                 - name
                 type: object
+              jobID:
+                description: JobID is the ID of the current working request.
+                type: string
+              jobIDFinished:
+                description: JobIDFinished is the ID of the finished working request.
+                type: string
               lastError:
                 description: LastError describes the last error that occurred.
                 properties:

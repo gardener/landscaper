@@ -3515,7 +3515,7 @@ So in this case, the observedGeneration refers to the executions generation.</p>
 </tr>
 <tr>
 <td>
-<code>JobID</code></br>
+<code>jobID</code></br>
 <em>
 string
 </em>
@@ -3526,7 +3526,7 @@ string
 </tr>
 <tr>
 <td>
-<code>JobIDFinished</code></br>
+<code>jobIDFinished</code></br>
 <em>
 string
 </em>
