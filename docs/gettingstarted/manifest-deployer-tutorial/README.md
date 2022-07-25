@@ -83,7 +83,7 @@ If you have access to an OCI registry or use the OCI registry coming with kind o
 
 ```bash
 landscaper-cli quickstart install \
-  --kubeconfig ~/.kube/config-demo.yaml \
+  --kubeconfig ~/.kube/config \
   --install-oci-registry
 ```
 
