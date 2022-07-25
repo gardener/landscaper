@@ -71,7 +71,7 @@ func newDeployItemClassification(executionJobID string, items []*executionItem) 
 				c.failedItems = append(c.failedItems, item)
 			}
 		} else {
-			runnable, lsErr := isItemRunnable(item, items)
+			runnable, lsErr := isItemRunnable(executionJobID, item, items)
 			if lsErr != nil {
 				return nil, lsErr
 			}
@@ -87,7 +87,7 @@ func newDeployItemClassification(executionJobID string, items []*executionItem) 
 	return c, nil
 }
 
-func isItemRunnable(item *executionItem, items []*executionItem) (bool, lserrors.LsError) {
+func isItemRunnable(executionJobID string, item *executionItem, items []*executionItem) (bool, lserrors.LsError) {
 	if len(item.Info.DependsOn) == 0 {
 		return true, nil
 	}
@@ -99,8 +99,8 @@ func isItemRunnable(item *executionItem, items []*executionItem) (bool, lserrors
 				fmt.Sprintf("dependent deployitem %s of deployitem %s not found", dependentItemName, item.Info.Name))
 		}
 
-		// check that the dependentItem has finished the job that the item is going to start
-		if dependentItem.DeployItem == nil || dependentItem.DeployItem.Status.JobIDFinished != item.DeployItem.Status.JobID {
+		// check that the dependentItem has finished the current job
+		if dependentItem.DeployItem == nil || dependentItem.DeployItem.Status.JobIDFinished != executionJobID {
 			return false, nil
 		}
 	}
@@ -147,6 +147,19 @@ func newDeployItemClassificationForDelete(executionJobID string, items []*execut
 	}
 
 	return c, nil
+}
+
+func newDeployItemClassificationForOrphans(executionJobID string, deployitems []lsv1alpha1.DeployItem) (*DeployItemClassification, lserrors.LsError) {
+	items := make([]*executionItem, len(deployitems))
+
+	for i := range deployitems {
+		items[i] = &executionItem{
+			Info:       lsv1alpha1.DeployItemTemplate{},
+			DeployItem: &deployitems[i],
+		}
+	}
+
+	return newDeployItemClassificationForDelete(executionJobID, items)
 }
 
 func isItemDeletable(item *executionItem, items []*executionItem) bool {

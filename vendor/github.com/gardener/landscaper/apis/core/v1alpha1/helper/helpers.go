@@ -239,6 +239,16 @@ func SetVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectRef
 	return append(objects, obj)
 }
 
+// RemoveVersionedNamedObjectReference removes the first versioned object reference with the given name.
+func RemoveVersionedNamedObjectReference(objects []v1alpha1.VersionedNamedObjectReference, name string) []v1alpha1.VersionedNamedObjectReference {
+	for i, ref := range objects {
+		if ref.Name == name {
+			return append(objects[:i], objects[i+1:]...)
+		}
+	}
+	return objects
+}
+
 // IsCompletedInstallationPhase returns true if the phase indicates a final state.
 func IsCompletedInstallationPhase(phase v1alpha1.ComponentInstallationPhase) bool {
 	return phase == v1alpha1.ComponentPhaseFailed || phase == v1alpha1.ComponentPhaseAborted || phase == v1alpha1.ComponentPhaseSucceeded

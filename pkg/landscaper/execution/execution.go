@@ -46,7 +46,7 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 		return lsErr
 	}
 
-	if err := o.cleanupOrphanedDeployItems(ctx, orphaned); err != nil {
+	if err := o.cleanupOrphanedDeployItemsForNewReconcile(ctx, orphaned); err != nil {
 		return lserrors.NewWrappedError(err, op, "CleanupOrphanedDeployItems", err.Error())
 	}
 
@@ -63,11 +63,41 @@ func (o *Operation) UpdateDeployItems(ctx context.Context) lserrors.LsError {
 func (o *Operation) TriggerDeployItems(ctx context.Context) (*DeployItemClassification, lserrors.LsError) {
 	op := "TriggerDeployItems"
 
-	items, _, lsErr := o.getDeployItems(ctx)
+	items, orphaned, lsErr := o.getDeployItems(ctx)
 	if lsErr != nil {
 		return nil, lsErr
 	}
 
+	// Trigger orphaned deploy items
+	classificationOfOrphans, lsErr := newDeployItemClassificationForOrphans(o.exec.Status.JobID, orphaned)
+	if lsErr != nil {
+		return nil, lsErr
+	}
+
+	if !classificationOfOrphans.AllSucceeded() {
+		// Start the runnable items, provided there are no failed items
+		if !classificationOfOrphans.HasFailedItems() {
+			deletableItems := classificationOfOrphans.GetRunnableItems()
+			for _, item := range deletableItems {
+				key := kutil.ObjectKeyFromObject(item.DeployItem)
+				di := &lsv1alpha1.DeployItem{}
+				if err := read_write_layer.GetDeployItem(ctx, o.Client(), key, di); err != nil {
+					return nil, lserrors.NewWrappedError(err, op, "GetDeployItem", err.Error())
+				}
+
+				di.Status.JobID = o.exec.Status.JobID
+				now := metav1.Now()
+				di.Status.JobIDGenerationTime = &now
+				if err := o.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000090, di); err != nil {
+					return nil, lserrors.NewWrappedError(err, op, "UpdateDeployItemStatus", err.Error())
+				}
+			}
+		}
+
+		return classificationOfOrphans, nil
+	}
+
+	// Trigger new and updated deploy items
 	classification, lsErr := newDeployItemClassification(o.exec.Status.JobID, items)
 	if lsErr != nil {
 		return nil, lsErr
