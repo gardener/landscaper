@@ -70,7 +70,7 @@ export OCI_USER=oci-user
 export OCI_PASSWD='PSST!DONOTTELL!'
 
 landscaper-cli quickstart install \
-  --kubeconfig ~/.kube/config-demo.yaml \
+  --kubeconfig ~/.kube/config \
   --install-oci-registry \
   --install-registry-ingress \
   --registry-username $OCI_USER \
