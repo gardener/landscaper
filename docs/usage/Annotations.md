@@ -55,9 +55,8 @@ Setting this annotation at a deploy item has no effect.
 If the annotation `landscaper.gardener.cloud/delete-without-uninstall: "true"` has been added to an installation, then
 afterwards a deletion of the installation has the following effect:
 
-- the installation, its sub installations, executions, and deploy items will be deleted,
-- the installed artifacts on the target clusters will not be deleted. Particular deployer might try to uninstall the
-  artefacts on the target cluster first but if this step fails, they must continue, i.e. remove the finalizer at the 
-  deploy item.
+- The installation, its sub installations, executions, and deploy items will be deleted,
+- The installed artifacts on the target clusters will not be deleted. The deployers will only remove the finalizers at the 
+  deploy items such that they could be deleted.
 
 Note that you have to add the annotation **before** you delete the installation.
