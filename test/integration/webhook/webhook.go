@@ -108,11 +108,12 @@ func WebhookTest(f *framework.Framework) {
 			Expect(inst.Name).ToNot(BeEmpty()) // root installation should have been found
 
 			// apply root installation into cluster and wait for it to be succeeded
+			lsv1alpha1helper.SetOperation(&inst.ObjectMeta, lsv1alpha1.ReconcileOperation)
 			utils.ExpectNoError(state.Client.Create(ctx, inst))
-			Eventually(func() lsv1alpha1.ComponentInstallationPhase {
+			Eventually(func() lsv1alpha1.InstallationPhase {
 				utils.ExpectNoError(state.Client.Get(ctx, kutil.ObjectKeyFromObject(inst), inst))
-				return inst.Status.Phase
-			}, 30*time.Second, 1*time.Second).Should(Equal(lsv1alpha1.ComponentPhaseSucceeded))
+				return inst.Status.InstallationPhase
+			}, 30*time.Second, 1*time.Second).Should(Equal(lsv1alpha1.InstallationPhaseSucceeded))
 
 			// make installation invalid by duplicating the first export
 			invalidInst := inst.DeepCopy()
