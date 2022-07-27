@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +16,7 @@ import (
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -66,7 +66,7 @@ var _ = Describe("ObjectApplier", func() {
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
 
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -90,7 +90,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 		}
 		opts.ManagedResources = managedResources
-		_, err = resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		_, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res = &corev1.ConfigMap{}
@@ -123,7 +123,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -140,7 +140,7 @@ var _ = Describe("ObjectApplier", func() {
 
 		opts.Manifests = []managedresource.Manifest{}
 		opts.ManagedResources = managedResources
-		managedResources, err = resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res = &corev1.ConfigMap{}
@@ -185,7 +185,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}
@@ -203,7 +203,7 @@ var _ = Describe("ObjectApplier", func() {
 
 			opts.Manifests[0].Manifest = cmRaw
 			opts.ManagedResources = managedResources
-			managedResources, err = resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+			managedResources, err = resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(managedResources).To(HaveLen(2))
@@ -247,7 +247,7 @@ var _ = Describe("ObjectApplier", func() {
 			},
 			ManagedResources: managedresource.ManagedResourceStatusList{},
 		}
-		managedResources, err := resourcemanager.ApplyManifests(ctx, logr.Discard(), opts)
+		managedResources, err := resourcemanager.ApplyManifests(ctx, logging.Discard(), opts)
 		Expect(err).ToNot(HaveOccurred())
 
 		res := &corev1.ConfigMap{}

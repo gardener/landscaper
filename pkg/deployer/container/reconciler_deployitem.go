@@ -11,11 +11,11 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
@@ -31,7 +31,7 @@ const (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
-func NewDeployer(log logr.Logger,
+func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	directHostClient client.Client,
@@ -40,7 +40,7 @@ func NewDeployer(log logr.Logger,
 	var sharedCache cache.Cache
 	if config.OCI != nil && config.OCI.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log, utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
+		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func NewDeployer(log logr.Logger,
 }
 
 type deployer struct {
-	log              logr.Logger
+	log              logging.Logger
 	lsClient         client.Client
 	hostClient       client.Client
 	directHostClient client.Client

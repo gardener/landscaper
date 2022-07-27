@@ -11,13 +11,13 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
 
 	"github.com/gardener/landscaper/pkg/utils/simplelogger"
@@ -43,7 +43,7 @@ var _ = Describe("Store", func() {
 	It("should throw an error if a blueprint is not stored", func() {
 		ctx := context.Background()
 		memFs := memoryfs.New()
-		store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+		store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		cd := &cdv2.ComponentDescriptor{}
@@ -59,7 +59,7 @@ var _ = Describe("Store", func() {
 	It("should store and retrieve the stored blueprint", func() {
 		ctx := context.Background()
 		memFs := memoryfs.New()
-		store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+		store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -89,7 +89,7 @@ var _ = Describe("Store", func() {
 		It("should store and retrieve the stored blueprint", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -120,7 +120,7 @@ var _ = Describe("Store", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
 			defaultStoreConfig.IndexMethod = config.ComponentDescriptorIdentityMethod
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -159,7 +159,7 @@ var _ = Describe("Store", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
 			defaultStoreConfig.IndexMethod = config.BlueprintDigestIndex
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -201,7 +201,7 @@ var _ = Describe("Store", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
 			defaultStoreConfig.DisableCache = true
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -229,7 +229,7 @@ var _ = Describe("Store", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
 			defaultStoreConfig.DisableCache = false
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -269,7 +269,7 @@ var _ = Describe("Store", func() {
 			ctx := context.Background()
 			memFs := memoryfs.New()
 			defaultStoreConfig.DisableCache = true
-			store, err := blueprints.NewStore(logr.Discard(), memFs, defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memFs, defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			data, blobInfo, err := bputils.NewBuilder().Blueprint(&lsv1alpha1.Blueprint{
@@ -310,7 +310,7 @@ var _ = Describe("Store", func() {
 		It("should store and retrieve the stored blueprint", func() {
 			ctx := context.Background()
 			defaultStoreConfig.Size = "1Ki"
-			store, err := blueprints.NewStore(simplelogger.NewIOLogger(GinkgoWriter), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			bpFs := memoryfs.New()

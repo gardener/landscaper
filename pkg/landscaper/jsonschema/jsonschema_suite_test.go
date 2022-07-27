@@ -17,13 +17,13 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -472,9 +472,9 @@ var _ = Describe("jsonschema", func() {
 			}))
 
 			var err error
-			ociCache, err = cache.NewCache(logr.Discard())
+			ociCache, err = cache.NewCache(logging.Discard().Logr())
 			testutils.ExpectNoError(err)
-			ociClient, err = ociclient.NewClient(logr.Discard(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
+			ociClient, err = ociclient.NewClient(logging.Discard().Logr(), ociclient.WithKeyring(keyring), ociclient.WithCache(ociCache))
 			testutils.ExpectNoError(err)
 		}, 60)
 
@@ -765,7 +765,7 @@ var _ = Describe("jsonschema", func() {
 		BeforeEach(func() {
 			var err error
 
-			registry, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
+			registry, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
 			repository = componentsregistry.NewLocalRepository("./testdata/registry")

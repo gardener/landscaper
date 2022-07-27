@@ -20,7 +20,7 @@ The idea behind the extension hooks is to enable modification of the deployer li
 This custom code comes in form of a 'hook', which is basically just a function with a specific signature.
 ```golang
 // ReconcileExtensionHook represents a function which will be called when the hook is executed.
-type ReconcileExtensionHook func(context.Context, logr.Logger, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
+type ReconcileExtensionHook func(context.Context, logging.Logger, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
 ```
 
 The deployer library's `Reconcile` method offers several places where such hooks can be executed. In addition to the effects of the executed code, a hook may modify the reconciliation flow by returning a `HookResult`. It can abort the reconciliation as well as modify the result returned by it, the latter of which enables it to requeue the deploy item for another reconciliation, either immediately or after a given time.
@@ -106,7 +106,7 @@ type ReconcileExtensionHooks map[HookType][]ReconcileExtensionHook
 The easiest way of implementing this is just adding said map to the deployer struct and returning it in the `ExtensionHooks` method, see e.g. the mock deployer for an example:
 ```golang
 type deployer struct {
-	log        logr.Logger
+	log        logging.Logger
 	lsClient   client.Client
 	hostClient client.Client
 	config     mockv1alpha1.Configuration

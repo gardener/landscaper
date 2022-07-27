@@ -12,7 +12,6 @@ import (
 	continuousreconcileextension "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,6 +28,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
 	testutil "github.com/gardener/landscaper/test/utils"
@@ -55,7 +55,7 @@ var _ = Describe("Helm Deployer", func() {
 		defer ctx.Done()
 
 		deployer, err := helmctrl.NewDeployer(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			testenv.Client,
 			helmv1alpha1.Configuration{},
@@ -63,7 +63,7 @@ var _ = Describe("Helm Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl := deployerlib.NewController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),

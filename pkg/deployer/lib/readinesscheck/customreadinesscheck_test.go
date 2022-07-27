@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -18,6 +17,7 @@ import (
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +34,7 @@ var _ = Describe("Custom health checks", func() {
 		customHealthCheck = CustomReadinessCheck{
 			Context:   ctx,
 			Client:    testenv.Client,
-			Log:       logr.Discard(),
+			Log:       logging.Discard(),
 			CurrentOp: "custom health check test",
 			Timeout:   &lsv1alpha1.Duration{Duration: 180 * time.Second},
 		}
@@ -218,7 +218,7 @@ var _ = Describe("Custom health checks", func() {
 func loadSingleObjectFromFile(fileName string) ([]*unstructured.Unstructured, []lsv1alpha1.TypedObjectReference) {
 	testObjectsRaw, err := ioutil.ReadFile(filepath.Join(testdataDir, fileName))
 	Expect(err).ToNot(HaveOccurred())
-	testObjects, err := kutil.DecodeObjects(logr.Discard(), fileName, testObjectsRaw)
+	testObjects, err := kutil.DecodeObjects(logging.Discard(), fileName, testObjectsRaw)
 	Expect(err).ToNot(HaveOccurred())
 
 	objectRefs := make([]lsv1alpha1.TypedObjectReference, len(testObjects))

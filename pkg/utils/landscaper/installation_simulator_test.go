@@ -14,13 +14,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -84,7 +84,7 @@ var _ = Describe("Installation Simulator", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registry, err = componentsregistry.NewLocalClient(logr.Discard(), testDataDir)
+		registry, err = componentsregistry.NewLocalClient(logging.Discard(), testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 		repository = componentsregistry.NewLocalRepository(testDataDir)
 

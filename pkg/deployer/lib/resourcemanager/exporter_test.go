@@ -9,13 +9,13 @@ import (
 	"encoding/base64"
 	"time"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/utils/managedresource"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/lib/resourcemanager"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -67,7 +67,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
@@ -120,7 +120,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 			KubeClient: testenv.Client,
 			Objects: managedresource.ManagedResourceStatusList{
 				{
@@ -175,7 +175,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+		res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
 			Objects: managedresource.ManagedResourceStatusList{
@@ -221,7 +221,7 @@ var _ = Describe("Exporter", func() {
 				},
 			},
 		}
-		_, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+		_, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 			KubeClient:     testenv.Client,
 			DefaultTimeout: &timeout,
 			Objects:        managedresource.ManagedResourceStatusList{},
@@ -269,7 +269,7 @@ var _ = Describe("Exporter", func() {
 					},
 				},
 			}
-			res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+			res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{
@@ -331,7 +331,7 @@ var _ = Describe("Exporter", func() {
 					},
 				},
 			}
-			res, err := resourcemanager.NewExporter(logr.Discard(), resourcemanager.ExporterOptions{
+			res, err := resourcemanager.NewExporter(logging.Discard(), resourcemanager.ExporterOptions{
 				KubeClient:     testenv.Client,
 				DefaultTimeout: &timeout,
 				Objects: managedresource.ManagedResourceStatusList{

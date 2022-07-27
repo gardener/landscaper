@@ -8,10 +8,10 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
 	"github.com/onsi/gomega/gstruct"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -50,10 +50,10 @@ var _ = Describe("Context", func() {
 
 		fakeClient = testenv.Client
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
-		op = lsoperation.NewOperation(logr.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+		op = lsoperation.NewOperation(logging.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 	})
 
 	AfterEach(func() {

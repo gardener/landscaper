@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	flag "github.com/spf13/pflag"
@@ -21,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
 
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
@@ -32,7 +32,7 @@ type DefaultOptions struct {
 	configPath   string
 	LsKubeconfig string
 
-	Log     logger.Logger
+	Log     logging.Logger
 	LsMgr   manager.Manager
 	HostMgr manager.Manager
 
@@ -49,19 +49,19 @@ func NewDefaultOptions(deployerScheme *runtime.Scheme) *DefaultOptions {
 func (o *DefaultOptions) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.configPath, "config", "", "Specify the path to the configuration file")
 	fs.StringVar(&o.LsKubeconfig, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
-	logger.InitFlags(fs)
+	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *DefaultOptions) Complete() error {
-	log, err := logger.New(nil)
+	log, err := logging.New(nil)
 	if err != nil {
 		return err
 	}
 	o.Log = log.WithName("setup")
-	logger.SetLogger(log)
+	logging.SetLogger(log)
 	ctrl.SetLogger(log.Logr())
 
 	opts := manager.Options{
@@ -146,7 +146,7 @@ func (o *DefaultOptions) GetConfig(obj runtime.Object) error {
 		return err
 	}
 
-	if o.Log.Enabled(logger.INFO) {
+	if o.Log.Enabled(logging.INFO) {
 		// print configuration if enabled
 		configBytes, err := yaml.Marshal(obj)
 		if err != nil {

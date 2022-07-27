@@ -9,7 +9,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/controllers/execution"
 	testutils "github.com/gardener/landscaper/test/utils"
@@ -35,7 +35,7 @@ var _ = Describe("Reconcile", func() {
 	)
 	BeforeEach(func() {
 		var err error
-		ctrl, err = execution.NewController(logr.Discard(), testenv.Client, api.Scheme, record.NewFakeRecorder(1024))
+		ctrl, err = execution.NewController(logging.Discard(), testenv.Client, api.Scheme, record.NewFakeRecorder(1024))
 		Expect(err).ToNot(HaveOccurred())
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())

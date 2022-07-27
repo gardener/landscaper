@@ -9,17 +9,17 @@ import (
 	"errors"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 )
 
 // Builder implements the builder-pattern to craft the operation
 type Builder struct {
-	log               logr.Logger
+	log               logging.Logger
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
@@ -51,7 +51,7 @@ func (b *Builder) ComponentRegistry(resolver ctf.ComponentResolver) *Builder {
 
 // WithLogger sets a logger.
 // If no logger is given the logger from the context is used.
-func (b *Builder) WithLogger(log logr.Logger) *Builder {
+func (b *Builder) WithLogger(log logging.Logger) *Builder {
 	b.log = log
 	return b
 }
@@ -66,8 +66,8 @@ func (b *Builder) applyDefaults(ctx context.Context) {
 	if b.scheme == nil {
 		b.scheme = api.LandscaperScheme
 	}
-	if b.log.GetSink() == nil {
-		b.log = logr.FromContextOrDiscard(ctx)
+	if b.log.Logr().GetSink() == nil {
+		b.log = logging.FromContextOrDiscard(ctx)
 	}
 	if b.eventRecorder == nil {
 		b.eventRecorder = record.NewFakeRecorder(1024)

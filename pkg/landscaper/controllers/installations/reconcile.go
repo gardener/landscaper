@@ -12,11 +12,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/go-logr/logr"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/exports"
@@ -395,7 +394,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
 		currentOperation = "Validate"
-		log              = logr.FromContextOrDiscard(ctx)
+		log              = logging.FromContextOrDiscard(ctx)
 	)
 	log.Info("Reconcile installation", "name", inst.GetName(), "namespace", inst.GetNamespace())
 
@@ -405,7 +404,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 
 	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		log.V(2).Info("Waiting for all deploy items and nested installations to be completed")
+		log.Logr().V(2).Info("Waiting for all deploy items and nested installations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
 	}
@@ -638,7 +637,7 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 
 func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		logr.FromContextOrDiscard(ctx).V(7).Info("remove reconcile annotation")
+		logging.FromContextOrDiscard(ctx).Logr().V(7).Info("remove reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
@@ -649,7 +648,7 @@ func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1al
 
 func (c *Controller) removeForceReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		logr.FromContextOrDiscard(ctx).V(7).Info("remove force reconcile annotation")
+		logging.FromContextOrDiscard(ctx).Logr().V(7).Info("remove force reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000003, inst); err != nil {
 			return lserrors.NewWrappedError(err, "RemoveForceReconcileAnnotation", "UpdateInstallation", err.Error())

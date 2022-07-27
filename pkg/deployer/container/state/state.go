@@ -16,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -26,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -34,7 +34,7 @@ import (
 
 // State handles the backup and restore of state of container deploy item.
 type State struct {
-	log logr.Logger
+	log logging.Logger
 
 	deployItem lsv1alpha1.ObjectReference
 	// namespace is the namespace where the state secrets should be created.
@@ -45,7 +45,7 @@ type State struct {
 }
 
 // New creates a new state instance.
-func New(log logr.Logger, kubeClient client.Client, namespace string, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
+func New(log logging.Logger, kubeClient client.Client, namespace string, deployItemKey lsv1alpha1.ObjectReference, statePath string) *State {
 	return &State{
 		log:        log,
 		deployItem: deployItemKey,
@@ -261,7 +261,7 @@ func (s stateSecretsList) Less(i, j int) bool {
 }
 
 // CleanupState deletes all state secrets for a deployitem
-func CleanupState(ctx context.Context, log logr.Logger, kubeClient client.Client, namespace string, deployItem lsv1alpha1.ObjectReference) error {
+func CleanupState(ctx context.Context, log logging.Logger, kubeClient client.Client, namespace string, deployItem lsv1alpha1.ObjectReference) error {
 	secretList := &corev1.SecretList{}
 	if err := kubeClient.List(ctx, secretList, StateSecretListOptions(namespace, deployItem)...); err != nil {
 		return nil

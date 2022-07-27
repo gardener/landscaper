@@ -8,8 +8,8 @@ import (
 	"context"
 
 	lserror "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -28,7 +28,7 @@ import (
 // pod events as described by the PodEventHandler.
 // The reconciler basically calls the container reconcile.
 type PodReconciler struct {
-	log             logr.Logger
+	log             logging.Logger
 	lsClient        client.Client
 	lsEventRecorder record.EventRecorder
 	hostClient      client.Client
@@ -37,7 +37,7 @@ type PodReconciler struct {
 }
 
 func NewPodReconciler(
-	log logr.Logger,
+	log logging.Logger,
 	lsClient,
 	hostClient client.Client,
 	lsEventRecorder record.EventRecorder,

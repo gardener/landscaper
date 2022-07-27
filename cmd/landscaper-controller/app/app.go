@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
@@ -125,7 +126,7 @@ func (o *Options) run(ctx context.Context) error {
 
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
 
-	store, err := blueprints.NewStore(o.Log.Logr(), osfs.New(), o.Config.BlueprintStore)
+	store, err := blueprints.NewStore(o.Log, osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
@@ -143,7 +144,7 @@ func (o *Options) run(ctx context.Context) error {
 
 	install.Install(lsMgr.GetScheme())
 
-	ctrlLogger := o.Log.WithName("controllers").Logr()
+	ctrlLogger := o.Log.WithName("controllers")
 	componentOverwriteMgr := componentoverwrites.New()
 	if err := coctrl.AddControllerToManager(ctrlLogger, lsMgr, componentOverwriteMgr, o.Config.Controllers.ComponentOverwrites); err != nil {
 		return fmt.Errorf("unable to setup commponent overwrites controller: %w", err)
@@ -187,7 +188,7 @@ func (o *Options) run(ctx context.Context) error {
 					},
 				},
 			)
-			if err := agent.AddToManager(ctx, o.Log.Logr(), lsMgr, hostMgr, agentConfig); err != nil {
+			if err := agent.AddToManager(ctx, o.Log, lsMgr, hostMgr, agentConfig); err != nil {
 				return fmt.Errorf("unable to setup default agent: %w", err)
 			}
 		}
@@ -234,11 +235,11 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manag
 	if err != nil {
 		return fmt.Errorf("unable to create direct client: %q", err)
 	}
-	return o.Deployer.DeployInternalDeployers(ctx, o.Log.Logr(), directClient, o.Config)
+	return o.Deployer.DeployInternalDeployers(ctx, o.Log, directClient, o.Config)
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
-	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), mgr, o.Config)
+	crdmgr, err := crdmanager.NewCrdManager(logging.Wrap(ctrl.Log.WithName("setup").WithName("CRDManager")), mgr, o.Config)
 	if err != nil {
 		return fmt.Errorf("unable to setup CRD manager: %w", err)
 	}

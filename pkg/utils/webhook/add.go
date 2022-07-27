@@ -10,11 +10,12 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +57,7 @@ type Options struct {
 }
 
 // UpdateValidatingWebhookConfiguration will create or update a ValidatingWebhookConfiguration
-func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, o Options, webhookLogger logr.Logger) error {
+func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, o Options, webhookLogger logging.Logger) error {
 	// do not deploy or update the webhook if no service name or webhook url is given
 	if (len(o.ServiceName) == 0 || len(o.ServiceNamespace) == 0) && len(o.WebhookURL) == 0 {
 		return nil
@@ -127,7 +128,7 @@ func UpdateValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 }
 
 // DeleteValidatingWebhookConfiguration deletes a ValidatingWebhookConfiguration
-func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, name string, webhookLogger logr.Logger) error {
+func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client.Client, name string, webhookLogger logging.Logger) error {
 	vwc := admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -136,7 +137,7 @@ func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 	webhookLogger.Info("Removing ValidatingWebhookConfiguration, if it exists", "name", name, "kind", "ValidatingWebhookConfiguration")
 	if err := kubeClient.Delete(ctx, &vwc); err != nil {
 		if apierrors.IsNotFound(err) {
-			webhookLogger.V(5).Info("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
+			webhookLogger.Logr().V(5).Info("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
 		} else {
 			return fmt.Errorf("unable to delete ValidatingWebhookConfiguration %q: %w", name, err)
 		}
@@ -148,7 +149,7 @@ func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 
 // RegisterWebhooks generates certificates and registers the webhooks to the manager
 // no-op if WebhookedResources in the given options is either nil or empty
-func RegisterWebhooks(log logr.Logger, webhookServer *ctrlwebhook.Server, client client.Client, scheme *runtime.Scheme, o Options) error {
+func RegisterWebhooks(log logging.Logger, webhookServer *ctrlwebhook.Server, client client.Client, scheme *runtime.Scheme, o Options) error {
 	if o.WebhookedResources == nil || len(o.WebhookedResources) == 0 {
 		return nil
 	}
@@ -164,7 +165,7 @@ func RegisterWebhooks(log logr.Logger, webhookServer *ctrlwebhook.Server, client
 		webhookPath := o.WebhookBasePath + elem.ResourceName
 		rsLogger.Info("Registering webhook", "resource", elem.ResourceName, "path", webhookPath)
 		admission := &ctrlwebhook.Admission{Handler: val}
-		_ = admission.InjectLogger(rsLogger)
+		_ = admission.InjectLogger(rsLogger.Logr())
 		if err := admission.InjectScheme(scheme); err != nil {
 			return err
 		}

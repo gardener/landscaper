@@ -18,13 +18,13 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	commonutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
-	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -172,11 +172,11 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 			break
 		}
 
-		ociKeyring, err := credentials.NewBuilder(logr.Discard()).FromConfigFiles(cfg.DockerConfigPath).Build()
+		ociKeyring, err := credentials.NewBuilder(logging.Discard().Logr()).FromConfigFiles(cfg.DockerConfigPath).Build()
 		if err != nil {
 			return nil, fmt.Errorf("unable to build oci keyring: %w", err)
 		}
-		f.OCICache, err = cache.NewCache(logr.Discard())
+		f.OCICache, err = cache.NewCache(logging.Discard().Logr())
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +185,7 @@ func New(logger simplelogger.Logger, cfg *Options) (*Framework, error) {
 			InsecureSkipVerify: true,
 		}
 		httpClient := http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}
-		f.OCIClient, err = ociclient.NewClient(logr.Discard(),
+		f.OCIClient, err = ociclient.NewClient(logging.Discard().Logr(),
 			ociclient.WithKeyring(ociKeyring),
 			ociclient.WithCache(f.OCICache),
 			ociclient.WithHTTPClient(httpClient))

@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,7 +37,7 @@ import (
 )
 
 // NewController creates a new execution controller that reconcile Execution resources.
-func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) (reconcile.Reconciler, error) {
+func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime.Scheme, eventRecorder record.EventRecorder) (reconcile.Reconciler, error) {
 	return &controller{
 		log:           log,
 		client:        kubeClient,
@@ -47,7 +47,7 @@ func NewController(log logr.Logger, kubeClient client.Client, scheme *runtime.Sc
 }
 
 type controller struct {
-	log           logr.Logger
+	log           logging.Logger
 	client        client.Client
 	eventRecorder record.EventRecorder
 	scheme        *runtime.Scheme
@@ -63,12 +63,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.V(5).Info("reconcile")
+	logger.Logr().V(5).Info("reconcile")
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Logr().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -99,7 +99,7 @@ func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	}
 }
 
-func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) handleReconcilePhase(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 	op := "handleReconcilePhase"
 
 	// A final or empty execution phase means that the current job was not yet started.
@@ -201,14 +201,14 @@ func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, 
 	return nil
 }
 
-func (c *controller) handlePhaseInit(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) handlePhaseInit(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.UpdateDeployItems(ctx)
 }
 
-func (c *controller) handlePhaseProgressing(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) (
+func (c *controller) handlePhaseProgressing(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 
 	forceReconcile := false
@@ -217,14 +217,14 @@ func (c *controller) handlePhaseProgressing(ctx context.Context, log logr.Logger
 	return o.TriggerDeployItems(ctx)
 }
 
-func (c *controller) handlePhaseCompleting(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) handlePhaseCompleting(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 	forceReconcile := false
 	o := execution.NewOperation(operation.NewOperation(log, c.client, c.scheme, c.eventRecorder), exec, forceReconcile)
 
 	return o.CollectAndUpdateExportsNew(ctx)
 }
 
-func (c *controller) handlePhaseInitDelete(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) handlePhaseInitDelete(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 	op := "handlePhaseInitDelete"
 
 	forceReconcile := false
@@ -258,7 +258,7 @@ func (c *controller) handlePhaseInitDelete(ctx context.Context, log logr.Logger,
 	return nil
 }
 
-func (c *controller) handlePhaseDeleting(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) (
+func (c *controller) handlePhaseDeleting(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) (
 	*execution.DeployItemClassification, lserrors.LsError) {
 
 	forceReconcile := false
@@ -269,12 +269,12 @@ func (c *controller) handlePhaseDeleting(ctx context.Context, log logr.Logger, e
 
 func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.V(5).Info("reconcile")
+	logger.Logr().V(5).Info("reconcile")
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Logr().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -282,7 +282,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	// don't reconcile if ignore annotation is set and execution is not currently running
 	if lsv1alpha1helper.HasIgnoreAnnotation(exec.ObjectMeta) && lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-		logger.V(7).Info("skipping reconcile due to ignore annotation")
+		logger.Logr().V(7).Info("skipping reconcile due to ignore annotation")
 		return reconcile.Result{}, nil
 	}
 
@@ -300,7 +300,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	return reconcile.Result{}, handleError(ctx, lsError, logger, c.client, c.eventRecorder, oldExec, exec, isDelete)
 }
 
-func (c *controller) Ensure(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
+func (c *controller) Ensure(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) lserrors.LsError {
 	if err := HandleAnnotationsAndGeneration(ctx, log, c.client, exec); err != nil {
 		return err
 	}
@@ -350,7 +350,7 @@ func (c *controller) Writer() *read_write_layer.Writer {
 	return read_write_layer.NewWriter(c.log, c.client)
 }
 
-func (c *controller) handleInterruptOperation(ctx context.Context, log logr.Logger, exec *lsv1alpha1.Execution) error {
+func (c *controller) handleInterruptOperation(ctx context.Context, log logging.Logger, exec *lsv1alpha1.Execution) error {
 	delete(exec.Annotations, lsv1alpha1.OperationAnnotation)
 	if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000100, exec); err != nil {
 		return err
@@ -431,7 +431,7 @@ func (c *controller) setExecutionPhaseAndUpdate(ctx context.Context, exec *lsv1a
 // HandleAnnotationsAndGeneration is meant to be called at the beginning of the reconcile loop.
 // If a reconcile is needed due to the reconcile annotation or a change in the generation, it will set the phase to Init and remove the reconcile annotation.
 // Returns: an error, if updating the execution failed, nil otherwise
-func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c client.Client, exec *lsv1alpha1.Execution) lserrors.LsError {
+func HandleAnnotationsAndGeneration(ctx context.Context, log logging.Logger, c client.Client, exec *lsv1alpha1.Execution) lserrors.LsError {
 	operation := "HandleAnnotationsAndGeneration"
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(exec.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
@@ -441,32 +441,32 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logr.Logger, c clie
 		// - force-reconcile annotation
 		// - outdated generation
 		opAnn := lsv1alpha1helper.GetOperation(exec.ObjectMeta)
-		log.V(5).Info("reconcile required, setting observed generation and phase", "operationAnnotation", opAnn, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
+		log.Logr().V(5).Info("reconcile required, setting observed generation and phase", "operationAnnotation", opAnn, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
 		exec.Status.ObservedGeneration = exec.Generation
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
-		log.V(7).Info("updating status")
+		log.Logr().V(7).Info("updating status")
 		writer := read_write_layer.NewWriter(log, c)
 		if err := writer.UpdateExecutionStatus(ctx, read_write_layer.W000033, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution status", err.Error())
 		}
-		log.V(7).Info("successfully updated status")
+		log.Logr().V(7).Info("successfully updated status")
 	}
 	if hasReconcileAnnotation {
-		log.V(5).Info("removing reconcile annotation")
+		log.Logr().V(5).Info("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		log.V(7).Info("updating metadata")
+		log.Logr().V(7).Info("updating metadata")
 		writer := read_write_layer.NewWriter(log, c)
 		if err := writer.UpdateExecution(ctx, read_write_layer.W000027, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution", err.Error())
 		}
-		log.V(7).Info("successfully updated metadata")
+		log.Logr().V(7).Info("successfully updated metadata")
 	}
 
 	return nil
 }
 
-func handleError(ctx context.Context, err lserrors.LsError, log logr.Logger, c client.Client,
+func handleError(ctx context.Context, err lserrors.LsError, log logging.Logger, c client.Client,
 	eventRecorder record.EventRecorder, oldExec, exec *lsv1alpha1.Execution, isDelete bool) error {
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
@@ -502,7 +502,7 @@ func handleError(ctx context.Context, err lserrors.LsError, log logr.Logger, c c
 		writer := read_write_layer.NewWriter(log, c)
 		if updateErr := writer.UpdateExecutionStatus(ctx, read_write_layer.W000031, exec); updateErr != nil {
 			if apierrors.IsConflict(updateErr) { // reduce logging
-				log.V(5).Info(fmt.Sprintf("unable to update status: %s", updateErr.Error()))
+				log.Logr().V(5).Info(fmt.Sprintf("unable to update status: %s", updateErr.Error()))
 			} else {
 				log.Error(updateErr, "unable to update status")
 			}

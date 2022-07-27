@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/repo"
 
@@ -34,11 +34,11 @@ const (
 )
 
 type HelmChartRepoClient struct {
-	log   logr.Logger
+	log   logging.Logger
 	auths []helmv1alpha1.Auth
 }
 
-func NewHelmChartRepoClient(log logr.Logger, context *lsv1alpha1.Context) (*HelmChartRepoClient, error) {
+func NewHelmChartRepoClient(log logging.Logger, context *lsv1alpha1.Context) (*HelmChartRepoClient, error) {
 	currOp := "NewHelmChartRepoClient"
 	auths := []helmv1alpha1.Auth{}
 
@@ -245,7 +245,7 @@ func (c *HelmChartRepoClient) readResponseBody(res *http.Response) ([]byte, erro
 	if res.StatusCode != http.StatusOK {
 		err := fmt.Errorf("request failed with status code %v", res.StatusCode)
 
-		if c.log.V(logLevelDebug).Enabled() {
+		if c.log.Logr().V(logLevelDebug).Enabled() {
 			body, bodyReadErr := ioutil.ReadAll(res.Body)
 			if bodyReadErr != nil {
 				c.log.Error(err, err.Error(), "response status code without body", res.StatusCode)

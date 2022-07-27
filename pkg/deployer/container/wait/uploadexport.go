@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -19,12 +18,13 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	containeractuator "github.com/gardener/landscaper/pkg/deployer/container"
 )
 
 // UploadExport reads the export config from the given path and stores
 // the data as secret in the host cluster
-func UploadExport(ctx context.Context, log logr.Logger, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
+func UploadExport(ctx context.Context, log logging.Logger, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
 	pod := &corev1.Pod{}
 	if err := kubeClient.Get(ctx, podKey.NamespacedName(), pod); err != nil {
 		return err

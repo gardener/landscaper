@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +23,7 @@ import (
 	"github.com/gardener/landscaper/pkg/deployer/manifest"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -96,7 +96,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -142,7 +142,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -178,7 +178,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(state.Create(ctx, item)).To(Succeed())
 
-		m, err := manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err := manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 
 		Expect(m.Reconcile(ctx)).To(Succeed())
@@ -188,7 +188,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(cmRes.Data).To(HaveKeyWithValue("key", "val"))
 
 		Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(item), item)).To(Succeed())
-		m, err = manifest.New(logr.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
+		m, err = manifest.New(logging.Discard(), testenv.Client, testenv.Client, &manifestv1alpha2.Configuration{}, item, target)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(m.Delete(ctx)).To(HaveOccurred())
 		Expect(m.Delete(ctx)).To(Succeed())

@@ -45,7 +45,7 @@ func NewLandscaperAgentCommand(ctx context.Context) *cobra.Command {
 func (o *options) run(ctx context.Context) error {
 	o.log.Info(fmt.Sprintf("Start Landscaper Agent with version %q", version.Get().String()))
 
-	if err := agent.AddToManager(ctx, o.log.Logr(), o.LsMgr, o.HostMgr, o.config); err != nil {
+	if err := agent.AddToManager(ctx, o.log, o.LsMgr, o.HostMgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup default agent: %w", err)
 	}
 

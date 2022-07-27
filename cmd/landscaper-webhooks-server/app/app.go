@@ -25,6 +25,7 @@ import (
 
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	webhookcert "github.com/gardener/landscaper/controller-utils/pkg/webhook"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
@@ -98,7 +99,7 @@ func registerWebhooks(ctx context.Context,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	o *options) error {
-	webhookLogger := ctrl.Log.WithName("webhook").WithName("validation")
+	webhookLogger := logging.Wrap(ctrl.Log.WithName("webhook").WithName("validation"))
 	webhookConfigurationName := "landscaper-validation-webhook"
 	// noop if all webhooks are disabled
 	if len(o.webhook.enabledWebhooks) == 0 {

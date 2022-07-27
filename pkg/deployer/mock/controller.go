@@ -10,7 +10,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,6 +20,7 @@ import (
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	crval "github.com/gardener/landscaper/apis/deployer/utils/continuousreconcile/validation"
 	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	cr "github.com/gardener/landscaper/pkg/deployer/lib/continuousreconcile"
@@ -28,7 +28,7 @@ import (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type mock.
-func NewDeployer(log logr.Logger,
+func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	config mockv1alpha1.Configuration) (deployerlib.Deployer, error) {
@@ -45,7 +45,7 @@ func NewDeployer(log logr.Logger,
 }
 
 type deployer struct {
-	log        logr.Logger
+	log        logging.Logger
 	lsClient   client.Client
 	hostClient client.Client
 	config     mockv1alpha1.Configuration

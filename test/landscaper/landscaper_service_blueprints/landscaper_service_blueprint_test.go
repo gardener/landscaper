@@ -17,13 +17,13 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 
 	"github.com/gardener/landscaper/pkg/deployer/helm"
@@ -116,7 +116,7 @@ var _ = Describe("Landscaper Service Component", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registry, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
+		registry, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 		repository = componentsregistry.NewLocalRepository("./testdata/registry")
 

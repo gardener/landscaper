@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	flag "github.com/spf13/pflag"
@@ -20,12 +21,11 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
 )
 
 type options struct {
-	log                      logger.Logger
+	log                      logging.Logger
 	configPath               string
 	landscaperKubeconfigPath string
 
@@ -41,19 +41,19 @@ func NewOptions() *options {
 func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.configPath, "config", "", "Specify the path to the configuration file")
 	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
-	logger.InitFlags(fs)
+	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *options) Complete() error {
-	log, err := logger.New(nil)
+	log, err := logging.New(nil)
 	if err != nil {
 		return err
 	}
 	o.log = log.WithName("setup")
-	logger.SetLogger(log)
+	logging.SetLogger(log)
 	ctrl.SetLogger(log.Logr())
 
 	o.config, err = o.parseConfigurationFile()

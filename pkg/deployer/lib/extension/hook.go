@@ -9,8 +9,7 @@ import (
 	"fmt"
 
 	lserror "github.com/gardener/landscaper/apis/errors"
-
-	"github.com/go-logr/logr"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
@@ -64,7 +63,7 @@ const (
 )
 
 // ReconcileExtensionHook represents a function which will be called when the hook is executed.
-type ReconcileExtensionHook func(context.Context, logr.Logger, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
+type ReconcileExtensionHook func(context.Context, logging.Logger, *lsv1alpha1.DeployItem, *lsv1alpha1.Target, HookType) (*HookResult, error)
 
 // ReconcileExtensionHooks maps hook types to a list of hook functions.
 type ReconcileExtensionHooks map[HookType][]ReconcileExtensionHook
@@ -79,9 +78,9 @@ type ReconcileExtensionHookSetup struct {
 // The results of all executed hooks are aggregated using the AggregateHookResults function, except for
 //   DuringResponsibilityCheck and ShouldReconcile hooks, where AggregateHookResultsWithInvertedAbortPriority is used instead.
 // An error is returned if one of the hooks returns an error or if an unknown hook type is given.
-func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
+func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
 	logger := log.WithName(string(ht))
-	logger.V(7).Info("calling extension hooks")
+	logger.Logr().V(7).Info("calling extension hooks")
 	typedHooks, ok := hooks[ht]
 	if !ok {
 		switch ht {
@@ -95,7 +94,7 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logr.
 	}
 	hookRes := make([]*HookResult, len(typedHooks))
 	for i, hook := range typedHooks {
-		logger.WithValues("index", i).V(5).Info("calling extension hook")
+		logger.WithValues("index", i).Logr().V(5).Info("calling extension hook")
 		var err error
 		hookRes[i], err = hook(ctx, logger, di, target, ht)
 		if err != nil {

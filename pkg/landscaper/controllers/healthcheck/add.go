@@ -9,16 +9,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/apis/config"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // AddControllersToManager adds all deployer registration related deployers to the manager.
-func AddControllersToManager(ctx context.Context, log logr.Logger, hostMgr manager.Manager,
+func AddControllersToManager(ctx context.Context, log logging.Logger, hostMgr manager.Manager,
 	agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments, enabledDeployers []string) error {
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 	cl := hostMgr.GetClient()
@@ -46,7 +48,7 @@ func AddControllersToManager(ctx context.Context, log logr.Logger, hostMgr manag
 
 	err := builder.ControllerManagedBy(hostMgr).
 		For(&lsv1alpha1.LsHealthCheck{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("LsHealthCheck") }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("LsHealthCheck").Logr() }).
 		Complete(healthCheckController)
 	if err != nil {
 		return fmt.Errorf("unable to register health check controller: %w", err)

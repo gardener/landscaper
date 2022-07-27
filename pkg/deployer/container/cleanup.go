@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,7 +47,7 @@ func CleanupPod(ctx context.Context, hostClient client.Client, pod *corev1.Pod, 
 
 // CleanupRBAC removes all service accounts, roles and rolebindings that belong to the deploy item
 func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostClient client.Client, hostNamespace string) error {
-	log := logr.FromContextOrDiscard(ctx)
+	log := logging.FromContextOrDiscard(ctx)
 	sa := &corev1.ServiceAccount{}
 	sa.Name = InitContainerServiceAccountName(deployItem)
 	sa.Namespace = hostNamespace
@@ -69,7 +69,7 @@ func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostCli
 	if err := hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	log.V(3).Info("successfully removed init container rbac resources")
+	log.Logr().V(3).Info("successfully removed init container rbac resources")
 
 	sa = &corev1.ServiceAccount{}
 	sa.Name = WaitContainerServiceAccountName(deployItem)
@@ -93,14 +93,14 @@ func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostCli
 		return err
 	}
 
-	log.V(3).Info("successfully removed wait container rbac resources")
+	log.Logr().V(3).Info("successfully removed wait container rbac resources")
 
 	return nil
 }
 
 // CleanupDeployItem deletes all secrets from a host cluster which belong to a deploy item.
 func CleanupDeployItem(ctx context.Context, deployItem *lsv1alpha1.DeployItem, lsClient, hostClient client.Client, hostNamespace string) error {
-	log := logr.FromContextOrDiscard(ctx)
+	log := logging.FromContextOrDiscard(ctx)
 	secrets := []string{
 		ConfigurationSecretName(deployItem.Namespace, deployItem.Name),
 		ExportSecretName(deployItem.Namespace, deployItem.Name),

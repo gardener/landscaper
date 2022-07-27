@@ -8,7 +8,6 @@ import (
 	"context"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/api"
 	contextctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/context"
@@ -39,7 +39,7 @@ var _ = Describe("Reconcile", func() {
 
 		var err error
 		ctrl, err = contextctrl.NewDefaulterController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.Scheme,
 			record.NewFakeRecorder(1024),
@@ -94,7 +94,7 @@ var _ = Describe("Reconcile", func() {
 		ctx := context.Background()
 
 		ctrl, err := contextctrl.NewDefaulterController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.Scheme,
 			record.NewFakeRecorder(1024),

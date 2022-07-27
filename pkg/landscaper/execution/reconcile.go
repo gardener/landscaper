@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
@@ -22,6 +21,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // executionItem is the internal representation of a execution item with its deployitem and status
@@ -68,7 +68,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 				allSucceeded = false
 			} else {
 				// the deployitem is: up-to-date, in a final state, not failed => deployItem.spec.phase == succeeded => nothing to do with the deployitem
-				dlogger.V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
+				dlogger.Logr().V(7).Info("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
 			}
 		} else { // deploy item not up to date or force reconcile
 			allSucceeded = false
@@ -83,7 +83,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 					return err
 				}
 			} else {
-				o.Log().V(5).Info("deployitem not runnable", "name", item.Info.Name)
+				o.Log().Logr().V(5).Info("deployitem not runnable", "name", item.Info.Name)
 			}
 		}
 	}
@@ -118,7 +118,7 @@ func notCompletedPhaseOrNotStatusUpToDate(deployItem *lsv1alpha1.DeployItem) boo
 }
 
 func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfoName string,
-	deployItem *lsv1alpha1.DeployItem, forceReconcile bool, dlogger logr.Logger) bool {
+	deployItem *lsv1alpha1.DeployItem, forceReconcile bool, dlogger logging.Logger) bool {
 	if deployItem == nil {
 		return false
 	}
@@ -128,12 +128,12 @@ func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfo
 	deployItemUpToDate := gen.IsUpToDate()
 
 	if gen.HasExecutionBeenModified() {
-		dlogger.V(7).Info("execution has been changed since deployitem has last been applied",
+		dlogger.Logr().V(7).Info("execution has been changed since deployitem has last been applied",
 			"executionGenerationInExecution", gen.ExecutionGenerationInExecution, "executionGenerationInDeployItem",
 			gen.ExecutionGenerationInDeployItem)
 	}
 	if gen.HasDeployItemBeenModified() {
-		dlogger.V(7).Info("deployitem has been modified since the execution has last seen it", "deployItemGeneration",
+		dlogger.Logr().V(7).Info("deployitem has been modified since the execution has last seen it", "deployItemGeneration",
 			gen.DeployItemGenerationInDeployItem, "lastSeenGeneration", gen.DeployItemGenerationInExecution)
 	}
 
@@ -141,7 +141,7 @@ func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfo
 }
 
 func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
-	dlogger logr.Logger) {
+	dlogger logging.Logger) {
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -152,21 +152,21 @@ func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alp
 		"DeployItemFailed",
 		fmt.Sprintf("reconciliation of deployitem %q failed", deployItemName),
 	)
-	dlogger.V(7).Info("deployitem failed, aborting reconcile")
+	dlogger.Logr().V(7).Info("deployitem failed, aborting reconcile")
 }
 
 func setPhaseProgressingOfRunningDeployItem(exec *lsv1alpha1.Execution, itemInfoName string, eventRecorder record.EventRecorder,
-	dlogger logr.Logger) {
+	dlogger logging.Logger) {
 	eventRecorder.Eventf(exec, corev1.EventTypeNormal,
 		"DeployItemCompleted",
 		"deployitem %s not triggered because it already exists and is not completed", itemInfoName,
 	)
-	dlogger.V(7).Info("deployitem not triggered because already existing and not completed")
+	dlogger.Logr().V(7).Info("deployitem not triggered because already existing and not completed")
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 }
 
 func setPhaseFailedBecauseFailedDeployItem(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
-	dlogger logr.Logger) {
+	dlogger logging.Logger) {
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -177,7 +177,7 @@ func setPhaseFailedBecauseFailedDeployItem(exec *lsv1alpha1.Execution, cond lsv1
 		"DeployItemFailed",
 		fmt.Sprintf("reconciliation of deployitem %q failed", deployItemName),
 	)
-	dlogger.V(7).Info("deployitem failed, aborting reconcile")
+	dlogger.Logr().V(7).Info("deployitem failed, aborting reconcile")
 }
 
 // deployOrTrigger creates a new deployitem or triggers it if it already exists.

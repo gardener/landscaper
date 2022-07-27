@@ -4,21 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 type Writer struct {
-	log    logr.Logger
+	log    logging.Logger
 	client client.Client
 }
 
-func NewWriter(log logr.Logger, c client.Client) *Writer {
+func NewWriter(log logging.Logger, c client.Client) *Writer {
 	return &Writer{
 		log:    log,
 		client: c,

@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -31,7 +31,7 @@ import (
 
 // Agent is the internal landscaper agent that contains all landscaper specific code.
 type Agent struct {
-	log            logr.Logger
+	log            logging.Logger
 	config         config.AgentConfiguration
 	lsClient       client.Client
 	lsRestConfig   *rest.Config
@@ -42,7 +42,7 @@ type Agent struct {
 }
 
 // New creates a new agent.
-func New(log logr.Logger,
+func New(log logging.Logger,
 	lsClient client.Client,
 	lsRestConfig *rest.Config,
 	lsScheme *runtime.Scheme,

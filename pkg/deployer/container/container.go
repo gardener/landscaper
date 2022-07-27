@@ -6,12 +6,12 @@ package container
 
 import (
 	"github.com/gardener/component-cli/ociclient/cache"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -42,7 +42,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Container is the internal representation of a DeployItem of Type Container
 type Container struct {
-	log      logr.Logger
+	log      logging.Logger
 	lsClient client.Client
 	// hostClient is a cached client that is used to interact with the host cluster
 	// The host cluster is the cluster where the pods are executed.
@@ -65,7 +65,7 @@ type Container struct {
 }
 
 // New creates a new internal container item
-func New(log logr.Logger,
+func New(log logging.Logger,
 	lsClient,
 	hostClient,
 	directHostClient client.Client,

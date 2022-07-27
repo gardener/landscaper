@@ -49,7 +49,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if c.LsConfig.Registry.OCI != nil {
 		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.NewBuilder(c.Log()).DisableDefaultConfig().
+	ociKeyring, err := credentials.NewBuilder(c.Log().Logr()).DisableDefaultConfig().
 		WithFS(osfs.New()).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
@@ -57,7 +57,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if err != nil {
 		return err
 	}
-	ociClient, err := ociclient.NewClient(c.Log(),
+	ociClient, err := ociclient.NewClient(c.Log().Logr(),
 		utils.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(c.SharedCache),

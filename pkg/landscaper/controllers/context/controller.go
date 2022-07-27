@@ -7,9 +7,9 @@ package context
 import (
 	"context"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,7 +24,7 @@ import (
 )
 
 // NewDefaulterController creates a new context controller that reconciles the default context object in the namespaces.
-func NewDefaulterController(log logr.Logger,
+func NewDefaulterController(log logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
@@ -40,7 +40,7 @@ func NewDefaulterController(log logr.Logger,
 }
 
 type defaulterController struct {
-	log               logr.Logger
+	log               logging.Logger
 	client            client.Client
 	eventRecorder     record.EventRecorder
 	scheme            *runtime.Scheme
@@ -53,12 +53,12 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 		return reconcile.Result{}, nil
 	}
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.V(7).Info("reconcile")
+	logger.Logr().V(7).Info("reconcile")
 
 	ns := &corev1.Namespace{}
 	if err := c.client.Get(ctx, req.NamespacedName, ns); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Logr().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

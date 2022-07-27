@@ -14,7 +14,6 @@ import (
 	"github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
-	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo"
 	g "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1/health"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/pkg/agent"
@@ -120,7 +120,7 @@ func DeployerManagementTests(f *framework.Framework) {
 				})
 				testutil.ExpectNoError(err)
 
-				err = agent.AddToManager(ctx, logr.Discard(), mgr, mgr, config.AgentConfiguration{
+				err = agent.AddToManager(ctx, logging.Discard(), mgr, mgr, config.AgentConfiguration{
 					Name:      "testenv",
 					Namespace: state.Namespace,
 				})

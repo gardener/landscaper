@@ -10,7 +10,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -18,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
@@ -26,22 +26,22 @@ import (
 	lsversion "github.com/gardener/landscaper/pkg/version"
 )
 
-func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
+func GetAndCheckReconcile(log logging.Logger, lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
 	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
 		logger := log.WithValues("resource", req.NamespacedName)
-		logger.V(7).Info("Reconcile deploy item")
+		logger.Logr().V(7).Info("Reconcile deploy item")
 
 		deployItem := &lsv1alpha1.DeployItem{}
 		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
 			if apierrors.IsNotFound(err) {
-				logger.V(5).Info(err.Error())
+				logger.Logr().V(5).Info(err.Error())
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
 
 		if deployItem.Spec.Type != Type {
-			logger.V(7).Info("DeployItem is of wrong type", "type", deployItem.Spec.Type)
+			logger.Logr().V(7).Info("DeployItem is of wrong type", "type", deployItem.Spec.Type)
 			return nil, nil, nil
 		}
 
@@ -56,7 +56,7 @@ func GetAndCheckReconcile(log logr.Logger, lsClient client.Client, config contai
 					return nil, nil, fmt.Errorf("unable to match target selector: %w", err)
 				}
 				if !matched {
-					logger.V(5).Info("The deploy item's target does not match the given target selector")
+					logger.Logr().V(5).Info("The deploy item's target does not match the given target selector")
 					return nil, nil, nil
 				}
 			}

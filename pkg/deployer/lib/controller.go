@@ -12,13 +12,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/pkg/utils"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -33,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/pkg/version"
 
@@ -95,7 +97,7 @@ func (args DeployerArgs) Validate() error {
 }
 
 // Add adds a deployer to the given managers using the given args.
-func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
+func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) error {
 	args.Default()
 	if err := args.Validate(); err != nil {
 		return err
@@ -111,13 +113,13 @@ func Add(log logr.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) err
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
 		WithOptions(args.Options).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(con)
 }
 
 // controller reconciles deploy items and delegates the business logic to the configured Deployer.
 type controller struct {
-	log      logr.Logger
+	log      logging.Logger
 	deployer Deployer
 	info     lsv1alpha1.DeployerInformation
 	// deployerType defines the deployer type the deployer is responsible for.
@@ -132,7 +134,7 @@ type controller struct {
 }
 
 // NewController creates a new generic deployitem controller.
-func NewController(log logr.Logger,
+func NewController(log logging.Logger,
 	lsClient client.Client,
 	lsScheme *runtime.Scheme,
 	lsEventRecorder record.EventRecorder,
@@ -168,14 +170,14 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.V(7).Info("reconcile")
+	logger.Logr().V(7).Info("reconcile")
 
 	var err error
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Logr().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -264,7 +266,7 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 			}
 
 			if apierrors.IsConflict(err2) { // reduce logging
-				c.log.V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				c.log.Logr().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 			} else {
 				c.log.Error(err2, "unable to update status")
 			}
@@ -280,7 +282,7 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 // Reconcile implements the reconcile.Reconciler interface that reconciles DeployItems.
 func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.V(7).Info("reconcile")
+	logger.Logr().V(7).Info("reconcile")
 	extensionLogger := logger.WithName("extension")
 
 	var err error
@@ -298,7 +300,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, c.lsClient, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Logr().V(5).Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -306,7 +308,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	// don't reconcile if ignore annotation is set and installation is not currently running
 	if lsv1alpha1helper.HasIgnoreAnnotation(di.ObjectMeta) && lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
-		logger.V(7).Info("skipping reconcile due to ignore annotation")
+		logger.Logr().V(7).Info("skipping reconcile due to ignore annotation")
 		return reconcile.Result{}, nil
 	}
 
@@ -352,7 +354,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 		return reconcile.Result{}, fmt.Errorf("unable to get landscaper context: %w", err)
 	}
 
-	logger.V(3).Info("check deploy item reconciliation")
+	logger.Logr().V(3).Info("check deploy item reconciliation")
 	if err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, di, c.info); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -367,13 +369,13 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 		if tmpHookRes != nil && !tmpHookRes.AbortReconcile {
 			// if ShouldReconcile returned false but this was overwritten by the extension hooks, we need to call PrepareReconcile,
 			// as this has not yet been done by HandleAnnotationsAndGeneration
-			logger.V(5).Info("reconcile required by extension hook")
+			logger.Logr().V(5).Info("reconcile required by extension hook")
 			if err := PrepareReconcile(ctx, logger, c.lsClient, di, c.info); err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
 			// neither the default logic nor the extension hooks require a reconcile
-			c.log.V(5).Info("aborting reconcile", "phase", di.Status.Phase)
+			c.log.Logr().V(5).Info("aborting reconcile", "phase", di.Status.Phase)
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
 	}
@@ -391,7 +393,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	}
 
 	if !di.DeletionTimestamp.IsZero() {
-		logger.V(5).Info("handle deploy item deletion")
+		logger.Logr().V(5).Info("handle deploy item deletion")
 		tmpHookRes, lsErr = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeDeleteHook)
 		if lsErr != nil {
 			return reconcile.Result{}, HandleErrorFunc(ctx, lsErr, logger, c.lsClient, c.lsEventRecorder, old, di, false)
@@ -406,7 +408,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	} else {
 		switch lsv1alpha1.Operation(lsv1alpha1helper.GetOperation(di.ObjectMeta)) {
 		case lsv1alpha1.AbortOperation:
-			logger.V(5).Info("handle deploy item abort")
+			logger.Logr().V(5).Info("handle deploy item abort")
 			tmpHookRes, lsErr = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeAbortHook)
 			if lsErr != nil {
 				return reconcile.Result{}, HandleErrorFunc(ctx, lsErr, logger, c.lsClient, c.lsEventRecorder, old, di, false)
@@ -421,7 +423,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 				return reconcile.Result{}, err
 			}
 		case lsv1alpha1.ForceReconcileOperation:
-			logger.V(5).Info("handle deploy item force-reconcile")
+			logger.Logr().V(5).Info("handle deploy item force-reconcile")
 			tmpHookRes, lsErr = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeForceReconcileHook)
 			if lsErr != nil {
 				return reconcile.Result{}, HandleErrorFunc(ctx, lsErr, logger, c.lsClient, c.lsEventRecorder, old, di, false)
@@ -430,7 +432,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 			if hookRes.AbortReconcile {
 				return returnAndLogReconcileResult(logger, *hookRes), nil
 			}
-			logger.V(5).Info("removing reconcile annotation")
+			logger.Logr().V(5).Info("removing reconcile annotation")
 			delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 			if err := c.Writer().UpdateDeployItem(ctx, read_write_layer.W000040, di); err != nil {
 				return reconcile.Result{}, err
@@ -443,7 +445,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 			}
 		default:
 			// default reconcile
-			logger.V(7).Info("handle deploy item reconcile")
+			logger.Logr().V(7).Info("handle deploy item reconcile")
 			tmpHookRes, lsErr = c.deployer.ExtensionHooks().ExecuteHooks(ctx, extensionLogger, di, target, extension.BeforeReconcileHook)
 			if lsErr != nil {
 				return reconcile.Result{}, HandleErrorFunc(ctx, lsErr, logger, c.lsClient, c.lsEventRecorder, old, di, false)
@@ -467,19 +469,19 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	return returnAndLogReconcileResult(logger, *hookRes), nil
 }
 
-func (c *controller) checkTargetResponsibility(ctx context.Context, log logr.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
+func (c *controller) checkTargetResponsibility(ctx context.Context, log logging.Logger, deployItem *lsv1alpha1.DeployItem) (*lsv1alpha1.Target, bool, error) {
 	if deployItem.Spec.Target == nil {
-		log.V(9).Info("no target defined")
+		log.Logr().V(9).Info("no target defined")
 		return nil, true, nil
 	}
-	log.V(7).Info("Found target. Checking responsibility")
+	log.Logr().V(7).Info("Found target. Checking responsibility")
 	target := &lsv1alpha1.Target{}
 	deployItem.Spec.Target.Namespace = deployItem.Namespace
 	if err := c.lsClient.Get(ctx, deployItem.Spec.Target.NamespacedName(), target); err != nil {
 		return nil, false, fmt.Errorf("unable to get target for deploy item: %w", err)
 	}
 	if len(c.targetSelectors) == 0 {
-		log.V(9).Info("no target selectors defined")
+		log.Logr().V(9).Info("no target selectors defined")
 		return target, true, nil
 	}
 	matched, err := targetselector.MatchOne(target, c.targetSelectors)
@@ -487,23 +489,23 @@ func (c *controller) checkTargetResponsibility(ctx context.Context, log logr.Log
 		return nil, false, fmt.Errorf("unable to match target selector: %w", err)
 	}
 	if !matched {
-		log.V(5).Info("the deploy item's target has not matched the given target selector",
+		log.Logr().V(5).Info("the deploy item's target has not matched the given target selector",
 			"target", target.Name)
 		return nil, false, nil
 	}
 	return target, true, nil
 }
 
-func returnAndLogReconcileResult(logger logr.Logger, result extension.HookResult) reconcile.Result {
+func returnAndLogReconcileResult(logger logging.Logger, result extension.HookResult) reconcile.Result {
 	if result.AbortReconcile {
-		logger.V(7).Info("deploy item reconcile has been aborted")
+		logger.Logr().V(7).Info("deploy item reconcile has been aborted")
 	}
 	if result.ReconcileResult.RequeueAfter != 0 {
-		logger.V(5).Info("deploy item will be requeued", "duration", result.ReconcileResult.RequeueAfter.String())
+		logger.Logr().V(5).Info("deploy item will be requeued", "duration", result.ReconcileResult.RequeueAfter.String())
 	} else if result.ReconcileResult.Requeue {
-		logger.V(5).Info("deploy item will be requeued immediately")
+		logger.Logr().V(5).Info("deploy item will be requeued immediately")
 	} else {
-		logger.V(7).Info("deploy item will not be requeued")
+		logger.Logr().V(7).Info("deploy item will not be requeued")
 	}
 	return result.ReconcileResult
 }
@@ -562,7 +564,7 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	if di.Status.Deployer.Identity != c.info.Identity {
-		c.log.V(7).Info("updating deployer identity")
+		c.log.Logr().V(7).Info("updating deployer identity")
 		di.Status.Deployer = c.info
 	}
 

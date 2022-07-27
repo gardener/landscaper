@@ -5,12 +5,14 @@
 package context
 
 import (
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -18,7 +20,7 @@ import (
 
 // AddControllerToManager adds the context defaulterController to the defaulterController manager.
 // That defaulterController watches namespaces and creates the default context object in every namespace.
-func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
+func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
 	log := logger.WithName("Context")
 	if config.Controllers.Contexts.Config.Default.Disable {
 		log.Info("Default Context controller is disabled")
@@ -39,6 +41,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *con
 	return builder.ControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Contexts.CommonControllerConfig)).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)
 }

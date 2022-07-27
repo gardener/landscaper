@@ -11,7 +11,7 @@ import (
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
 
@@ -42,7 +42,7 @@ func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition 
 }
 
 type options struct {
-	log                         logger.Logger
+	log                         logging.Logger
 	port                        int    // port where the webhook server is running
 	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
 	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>
@@ -75,19 +75,19 @@ func (o *options) AddFlags(fs *flag.FlagSet) {
 	fs.Int32Var(&o.webhookServicePort, "webhook-service-port", 9443, "Specify the port of the webhook service")
 	fs.StringVar(&o.webhookURL, "webhook-url", "", "Specify the URL of the external webhook service (scheme://host:port")
 	fs.StringVar(&o.certificatesNamespace, "certificates-namespace", "", "Specify the namespace in which the certificates are being stored")
-	logger.InitFlags(fs)
+	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *options) Complete() error {
-	log, err := logger.New(nil)
+	log, err := logging.New(nil)
 	if err != nil {
 		return err
 	}
 	o.log = log.WithName("setup")
-	logger.SetLogger(log)
+	logging.SetLogger(log)
 
 	err = o.validate() // validate options
 	if err != nil {

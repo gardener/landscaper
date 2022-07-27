@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 const (
@@ -33,7 +33,7 @@ type checkObjectFunc func(*unstructured.Unstructured) error
 
 // WaitForObjectsReady waits for objects to be heatlhy and
 // returns an error if all the objects are not ready after the timeout.
-func WaitForObjectsReady(ctx context.Context, timeout time.Duration, log logr.Logger, kubeClient client.Client, objects []*unstructured.Unstructured, fn checkObjectFunc) error {
+func WaitForObjectsReady(ctx context.Context, timeout time.Duration, log logging.Logger, kubeClient client.Client, objects []*unstructured.Unstructured, fn checkObjectFunc) error {
 	var (
 		wg  sync.WaitGroup
 		try int32 = 1
@@ -45,7 +45,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, log logr.Lo
 	)
 
 	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
-		log.V(3).Info("wait resources ready", "try", try)
+		log.Logr().V(3).Info("wait resources ready", "try", try)
 		try++
 
 		allErrs = nil
@@ -106,23 +106,23 @@ func (e *ObjectNotReadyError) Error() string {
 }
 
 // IsObjectReady gets an updated version of an object and checks if it is ready.
-func IsObjectReady(ctx context.Context, log logr.Logger, kubeClient client.Client, obj *unstructured.Unstructured, checkObject checkObjectFunc) error {
+func IsObjectReady(ctx context.Context, log logging.Logger, kubeClient client.Client, obj *unstructured.Unstructured, checkObject checkObjectFunc) error {
 	objLog := log.WithValues(
 		"object", obj.GroupVersionKind().String(),
 		"resource", kutil.ObjectKey(obj.GetName(), obj.GetNamespace()))
 
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, obj); err != nil {
-		objLog.V(3).Info("resource status", "status", StatusUnknown)
+		objLog.Logr().V(3).Info("resource status", "status", StatusUnknown)
 		return fmt.Errorf("unable to get %s %s/%s: %w",
 			obj.GroupVersionKind().String(),
 			obj.GetName(), obj.GetNamespace(),
 			err)
 	}
 
-	objLog.V(3).Info("get resource status")
+	objLog.Logr().V(3).Info("get resource status")
 	if err := checkObject(obj); err != nil {
-		objLog.V(3).Info("resource status", "status", StatusNotReady)
+		objLog.Logr().V(3).Info("resource status", "status", StatusNotReady)
 		return &ObjectNotReadyError{
 			objectGVK:       obj.GroupVersionKind().String(),
 			objectName:      obj.GetName(),
@@ -131,7 +131,7 @@ func IsObjectReady(ctx context.Context, log logr.Logger, kubeClient client.Clien
 		}
 	}
 
-	objLog.V(3).Info("resource status", "status", StatusReady)
+	objLog.Logr().V(3).Info("resource status", "status", StatusReady)
 
 	return nil
 }

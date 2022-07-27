@@ -10,11 +10,11 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsoperation "github.com/gardener/landscaper/pkg/landscaper/operation"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/components/cdutils"
@@ -108,7 +108,7 @@ func (b *OperationBuilder) ComponentRegistry(resolver ctf.ComponentResolver) *Op
 
 // WithLogger sets a logger.
 // If no logger is given the logger from the context is used.
-func (b *OperationBuilder) WithLogger(log logr.Logger) *OperationBuilder {
+func (b *OperationBuilder) WithLogger(log logging.Logger) *OperationBuilder {
 	b.Builder.WithLogger(log)
 	return b
 }

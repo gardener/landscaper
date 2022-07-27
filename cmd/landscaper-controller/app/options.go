@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerconfig "github.com/gardener/landscaper/pkg/deployermanagement/config"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -23,7 +23,7 @@ import (
 
 // Options describes the options to configure the Landscaper controller.
 type Options struct {
-	Log                      logger.Logger
+	Log                      logging.Logger
 	ConfigPath               string
 	landscaperKubeconfigPath string
 
@@ -39,19 +39,18 @@ func (o *Options) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&o.ConfigPath, "config", "", "Specify the path to the configuration file")
 	fs.StringVar(&o.landscaperKubeconfigPath, "landscaper-kubeconfig", "", "Specify the path to the landscaper kubeconfig cluster")
 	o.Deployer.AddFlags(fs)
-	logger.InitFlags(fs)
+	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 // Complete parses all Options and flags and initializes the basic functions
 func (o *Options) Complete(ctx context.Context) error {
-	log, err := logger.New(nil)
+	log, err := logging.GetLogger()
 	if err != nil {
 		return err
 	}
-	o.Log = log.WithName("setup")
-	logger.SetLogger(log)
+	o.Log = log
 	ctrl.SetLogger(log.Logr())
 
 	o.Config, err = o.parseConfigurationFile(ctx)

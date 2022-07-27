@@ -26,7 +26,7 @@ func (w *Writer) logContextUpdate(writeID WriteID, msg string, context *lsv1alph
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(context)
-		w.log.V(historyLogLevel).Info(msg,
+		w.log.Logr().V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, context.Name,
 			keyNamespace, context.Namespace,
@@ -50,7 +50,7 @@ func (w *Writer) logTargetUpdate(writeID WriteID, msg string, target *lsv1alpha1
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(target)
-		w.log.V(historyLogLevel).Info(msg,
+		w.log.Logr().V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, target.Name,
 			keyNamespace, target.Namespace,
@@ -74,7 +74,7 @@ func (w *Writer) logDataObjectUpdate(writeID WriteID, msg string, do *lsv1alpha1
 	generationOld int64, resourceVersionOld string, err error) {
 	if err == nil {
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(do)
-		w.log.V(historyLogLevel).Info(msg,
+		w.log.Logr().V(historyLogLevel).Info(msg,
 			keyWriteID, writeID,
 			keyName, do.Name,
 			keyNamespace, do.Namespace,
@@ -100,7 +100,7 @@ func (w *Writer) logInstallationUpdate(writeID WriteID, msg string, installation
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(installation)
 		opNew := lsv1alpha1helper.GetOperation(installation.ObjectMeta)
 		if utils.IsNewReconcile() {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, installation.Name,
 				keyNamespace, installation.Namespace,
@@ -114,7 +114,7 @@ func (w *Writer) logInstallationUpdate(writeID WriteID, msg string, installation
 				keyResourceVersionNew, resourceVersionNew,
 			)
 		} else {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, installation.Name,
 				keyNamespace, installation.Namespace,
@@ -158,7 +158,7 @@ func (w *Writer) logExecutionUpdate(writeID WriteID, msg string, execution *lsv1
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(execution)
 		opNew := lsv1alpha1helper.GetOperation(execution.ObjectMeta)
 		if utils.IsNewReconcile() {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, execution.Name,
 				keyNamespace, execution.Namespace,
@@ -172,7 +172,7 @@ func (w *Writer) logExecutionUpdate(writeID WriteID, msg string, execution *lsv1
 				keyResourceVersionNew, resourceVersionNew,
 			)
 		} else {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, execution.Name,
 				keyNamespace, execution.Namespace,
@@ -215,7 +215,7 @@ func (w *Writer) logDeployItemUpdate(writeID WriteID, msg string, deployItem *ls
 		generationNew, resourceVersionNew := getGenerationAndResourceVersion(deployItem)
 		opNew := lsv1alpha1helper.GetOperation(deployItem.ObjectMeta)
 		if utils.IsNewReconcile() {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, deployItem.Name,
 				keyNamespace, deployItem.Namespace,
@@ -230,7 +230,7 @@ func (w *Writer) logDeployItemUpdate(writeID WriteID, msg string, deployItem *ls
 				keyResourceVersionNew, resourceVersionNew,
 			)
 		} else {
-			w.log.V(historyLogLevel).Info(msg,
+			w.log.Logr().V(historyLogLevel).Info(msg,
 				keyWriteID, writeID,
 				keyName, deployItem.Name,
 				keyNamespace, deployItem.Namespace,

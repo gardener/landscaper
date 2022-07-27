@@ -9,7 +9,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,13 +16,14 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 	kubernetesutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // WaitUntilMainContainerFinished waits until the main container of the pod has finished.
 // For a comparison of different possibilities to wait for a container to finish
 // see the argo doc: https://github.com/argoproj/argo/blob/master/docs/workflow-executors.md
 // This method currently uses the k8s api method for simplicity and stability reasons.
-func WaitUntilMainContainerFinished(ctx context.Context, log logr.Logger, kubeClient client.Client, podKey client.ObjectKey) error {
+func WaitUntilMainContainerFinished(ctx context.Context, log logging.Logger, kubeClient client.Client, podKey client.ObjectKey) error {
 	backoff := wait.Backoff{
 		Duration: 30 * time.Second,
 		Factor:   1.25,
@@ -51,7 +51,7 @@ func WaitUntilMainContainerFinished(ctx context.Context, log logr.Logger, kubeCl
 		}
 
 		if mainContainerStatus.State.Terminated == nil {
-			log.V(3).Info("main container is still running...")
+			log.Logr().V(3).Info("main container is still running...")
 			return false, nil
 		}
 		return true, nil

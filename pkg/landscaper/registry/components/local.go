@@ -18,12 +18,12 @@ import (
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/opencontainers/go-digest"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/tar"
 )
 
@@ -84,12 +84,12 @@ func (a *FilesystemBlobAccess) SetData(bytes []byte) error {
 // A ComponentDescriptor is resolved by traversing the given paths and decode every found file as component descriptor.
 // todo: build cache to not read every file with every resolve attempt.
 type localClient struct {
-	log logr.Logger
+	log logging.Logger
 	fs  vfs.FileSystem
 }
 
 // NewLocalClient creates a new local registry from a root.
-func NewLocalClient(log logr.Logger, rootPath string) (TypedRegistry, error) {
+func NewLocalClient(log logging.Logger, rootPath string) (TypedRegistry, error) {
 	fs, err := projectionfs.New(osfs.New(), rootPath)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (c *localClient) searchInFs(name, version string) (*cdv2.ComponentDescripto
 	err := vfs.Walk(c.fs, "/", func(path string, info os.FileInfo, err error) error {
 		// ignore errors
 		if err != nil {
-			c.log.V(3).Info(err.Error())
+			c.log.Logr().V(3).Info(err.Error())
 			return nil
 		}
 

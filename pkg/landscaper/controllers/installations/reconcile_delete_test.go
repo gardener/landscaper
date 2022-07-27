@@ -14,7 +14,6 @@ import (
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +27,7 @@ import (
 
 	"github.com/gardener/landscaper/apis/config"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	testutils "github.com/gardener/landscaper/test/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -52,10 +52,10 @@ var _ = Describe("Delete", func() {
 
 		BeforeEach(func() {
 			var err error
-			fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata")
+			fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
-			op = lsoperation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
+			op = lsoperation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
 
 			ctrl = installationsctl.NewTestActuator(*op, &config.LandscaperConfiguration{
 				Registry: config.RegistryConfiguration{
@@ -251,7 +251,7 @@ var _ = Describe("Delete", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
 
-			Expect(installationsctl.AddControllerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, nil, &config.LandscaperConfiguration{})).To(Succeed())
+			Expect(installationsctl.AddControllerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, nil, &config.LandscaperConfiguration{})).To(Succeed())
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())
 			}()

@@ -10,8 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-logr/logr"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -22,6 +20,7 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/subinstallations"
@@ -119,11 +118,11 @@ var _ = Describe("SubInstallation", func() {
 
 		Expect(utils.CreateExampleDefaultContext(ctx, testenv.Client, "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12")).To(Succeed())
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logr.Discard(), "./testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op, err = lsoperation.NewBuilder().
-			WithLogger(logr.Discard()).
+			WithLogger(logging.Discard()).
 			Client(fakeClient).Scheme(api.LandscaperScheme).
 			WithEventRecorder(record.NewFakeRecorder(1024)).
 			ComponentRegistry(fakeCompRepo).

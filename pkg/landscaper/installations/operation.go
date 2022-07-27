@@ -11,7 +11,6 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +27,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
@@ -60,7 +60,7 @@ type Operation struct {
 
 // NewInstallationOperation creates a new installation operation.
 // DEPRECATED: use the builder instead.
-func NewInstallationOperation(ctx context.Context, log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
+func NewInstallationOperation(ctx context.Context, log logging.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
 	return NewOperationBuilder(inst).
 		WithLogger(log).
 		Client(c).
@@ -113,7 +113,7 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 }
 
 // Log returns a modified logger for the installation.
-func (o *Operation) Log() logr.Logger {
+func (o *Operation) Log() logging.Logger {
 	return o.Operation.Log().WithValues("installation", types.NamespacedName{
 		Namespace: o.Inst.Info.Namespace,
 		Name:      o.Inst.Info.Name,

@@ -23,7 +23,7 @@ import (
 	lsinstall "github.com/gardener/landscaper/apis/core/install"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -92,7 +92,7 @@ var _ = Describe("Landscaper Controller", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			opts := app.NewOptions()
-			opts.Log = logger.Discard()
+			opts.Log = logging.Discard()
 			opts.Deployer.EnabledDeployers = []string{"container"}
 			opts.Config = &config.LandscaperConfiguration{}
 			opts.Config.DeployerManagement.Namespace = state.Namespace
@@ -111,7 +111,7 @@ var _ = Describe("Landscaper Controller", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			opts := app.NewOptions()
-			opts.Log = logger.Discard()
+			opts.Log = logging.Discard()
 			opts.Deployer.EnabledDeployers = []string{"helm"}
 			opts.Config = &config.LandscaperConfiguration{}
 			opts.Config.DeployerManagement.Namespace = state.Namespace
@@ -130,7 +130,7 @@ var _ = Describe("Landscaper Controller", func() {
 			ctx := context.Background()
 			defer ctx.Done()
 			opts := app.NewOptions()
-			opts.Log = logger.Discard()
+			opts.Log = logging.Discard()
 			opts.Deployer.EnabledDeployers = []string{"mock"}
 			opts.Config = &config.LandscaperConfiguration{}
 			opts.Config.DeployerManagement.Namespace = state.Namespace
@@ -165,7 +165,7 @@ somekey: someval
 			defer ctx.Done()
 			reg := &lsv1alpha1.DeployerRegistration{}
 			opts := app.NewOptions()
-			opts.Log = logger.Discard()
+			opts.Log = logging.Discard()
 			opts.Deployer.EnabledDeployers = []string{"mock"}
 			opts.Config = &config.LandscaperConfiguration{}
 			opts.Config.DeployerManagement.Namespace = state.Namespace

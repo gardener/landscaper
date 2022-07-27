@@ -10,11 +10,11 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 
 	"github.com/gardener/component-cli/ociclient/cache"
 
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -77,11 +77,11 @@ func (m *Manager) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repo
 }
 
 // SetupManagerFromConfig returns a new Manager instance initialized with the given OCI configuration
-func SetupManagerFromConfig(log logr.Logger, config *config.OCIConfiguration, cacheIdentifier string) (*Manager, error) {
+func SetupManagerFromConfig(log logging.Logger, config *config.OCIConfiguration, cacheIdentifier string) (*Manager, error) {
 	var sharedCache cache.Cache
 	if config != nil && config.Cache != nil {
 		var err error
-		sharedCache, err = cache.NewCache(log, utils.ToOCICacheOptions(config.Cache, cacheIdentifier)...)
+		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}

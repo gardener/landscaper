@@ -12,7 +12,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,12 +31,13 @@ import (
 
 	"github.com/gardener/landscaper/apis/deployer/container"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 type GarbageCollector struct {
-	log           logr.Logger
+	log           logging.Logger
 	deployerID    string
 	hostNamespace string
 	config        containerv1alpha1.GarbageCollection
@@ -47,7 +47,7 @@ type GarbageCollector struct {
 }
 
 // NewGarbageCollector creates a new Garbage collector that cleanups leaked service accounts, rbac rules and pods.
-func NewGarbageCollector(log logr.Logger,
+func NewGarbageCollector(log logging.Logger,
 	lsClient,
 	hostClient client.Client,
 	deployerID,
@@ -175,7 +175,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	logger := gc.log.WithValues("type", "Pod", "resource", kutil.ObjectKeyFromObject(obj).String())
 
 	if obj.Status.Phase == corev1.PodPending || obj.Status.Phase == corev1.PodRunning || obj.Status.Phase == corev1.PodUnknown {
-		logger.V(9).Info("not garbage collected", "reason", "pod is still running", "phase", obj.Status.Phase)
+		logger.Logr().V(9).Info("not garbage collected", "reason", "pod is still running", "phase", obj.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
@@ -185,7 +185,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
-		logger.V(10).Info("garbage collected", "reason", "deploy item does not exist anymore")
+		logger.Logr().V(10).Info("garbage collected", "reason", "deploy item does not exist anymore")
 		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
@@ -193,7 +193,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 
 	if !controllerutil.ContainsFinalizer(obj, container.ContainerDeployerFinalizer) {
-		logger.V(9).Info("garbage collected", "reason", "pod has no finalizer")
+		logger.Logr().V(9).Info("garbage collected", "reason", "pod has no finalizer")
 		err := gc.hostClient.Delete(ctx, obj)
 		return reconcile.Result{}, err
 	}
@@ -203,14 +203,14 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 		return reconcile.Result{}, err
 	}
 	if isLatest {
-		logger.V(9).Info("not garbage collected", "reason", "latest pod")
+		logger.Logr().V(9).Info("not garbage collected", "reason", "latest pod")
 		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
 	}
 
 	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
-	logger.V(9).Info("garbage collected")
+	logger.Logr().V(9).Info("garbage collected")
 	return reconcile.Result{}, nil
 }
 
@@ -247,7 +247,7 @@ func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (b
 		if p.CreationTimestamp.Equal(&latest.CreationTimestamp) {
 			// currently only for test debugging.
 			// remove as soon as the test is stable.
-			gc.log.V(12).Info("creation time equals", "currentPod", p.Name, "latest", latest.Name)
+			gc.log.Logr().V(12).Info("creation time equals", "currentPod", p.Name, "latest", latest.Name)
 		}
 		if p.CreationTimestamp.After(latest.CreationTimestamp.Time) {
 			latest = p.DeepCopy()
@@ -276,14 +276,14 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		// do not cleanup as we are unsure about the state of the deploy item.
 		return false, err
 	}
-	logger.V(9).Info("DeployItem still exists")
+	logger.Logr().V(9).Info("DeployItem still exists")
 	return false, nil
 }
 
 // ManagedResourcesPredicate implements the controller runtime handler interface
 // that reconciles resources managed by the deployer.
 type ManagedResourcesPredicate struct {
-	Log           logr.Logger
+	Log           logging.Logger
 	DeployerID    string
 	HostNamespace string
 }
@@ -293,25 +293,25 @@ var _ predicate.Predicate = &ManagedResourcesPredicate{}
 func (h *ManagedResourcesPredicate) shouldReconcile(object metav1.Object) bool {
 	logger := h.Log.WithValues("resource", kutil.ObjectKeyFromObject(object).String())
 	if object.GetNamespace() != h.HostNamespace {
-		logger.V(10).Info("not garbage collected", "reason", "namespace does not match", "hostNamespace", h.HostNamespace, "resourceNamespace", object.GetNamespace())
+		logger.Logr().V(10).Info("not garbage collected", "reason", "namespace does not match", "hostNamespace", h.HostNamespace, "resourceNamespace", object.GetNamespace())
 		return false
 	}
 	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]; !ok {
-		logger.V(9).Info("not garbage collected", "reason", "no deploy item name label")
+		logger.Logr().V(9).Info("not garbage collected", "reason", "no deploy item name label")
 		return false
 	}
 	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]; !ok {
-		logger.V(9).Info("not garbage collected", "reason", "no deploy item namespace label")
+		logger.Logr().V(9).Info("not garbage collected", "reason", "no deploy item namespace label")
 		return false
 	}
 
 	if len(h.DeployerID) != 0 {
 		if id, ok := object.GetLabels()[container.ContainerDeployerIDLabel]; !ok || id != h.DeployerID {
-			logger.V(9).Info("not garbage collected", "reason", "deployer ids do not match")
+			logger.Logr().V(9).Info("not garbage collected", "reason", "deployer ids do not match")
 			return false
 		}
 	}
-	logger.V(10).Info("enqueue for garbage collection")
+	logger.Logr().V(10).Info("enqueue for garbage collection")
 	return true
 }
 

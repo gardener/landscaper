@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -23,7 +23,7 @@ import (
 )
 
 // NewDeployer creates a new deployer that reconciles deploy items of type helm.
-func NewDeployer(log logr.Logger,
+func NewDeployer(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	config manifestv1alpha2.Configuration) (deployerlib.Deployer, error) {
@@ -40,7 +40,7 @@ func NewDeployer(log logr.Logger,
 }
 
 type deployer struct {
-	log        logr.Logger
+	log        logging.Logger
 	lsClient   client.Client
 	hostClient client.Client
 	config     manifestv1alpha2.Configuration
