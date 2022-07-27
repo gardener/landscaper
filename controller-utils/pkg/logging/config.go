@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package logger
+package logging
 
 import (
 	flag "github.com/spf13/pflag"

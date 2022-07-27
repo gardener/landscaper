@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package logger
+package logging
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logger/constants"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 type Logger struct {
