@@ -154,6 +154,12 @@ func Discard() Logger {
 	return Wrap(logr.Discard())
 }
 
+// NewContext is a wrapper for logr.NewContext.
+// It adds the logger to the context twice, in a wrapped as well as a logr version.
+func NewContext(ctx context.Context, log Logger) context.Context {
+	return context.WithValue(logr.NewContext(ctx, log.Logr()), loggerContextKey{}, log)
+}
+
 // ADDITIONAL FUNCTIONS
 
 // Wrap constructs a new Logger, using the provided logr.Logger internally.
