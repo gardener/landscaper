@@ -11,6 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -313,17 +317,17 @@ func (s *State) CleanupStateWithClient(ctx context.Context, c client.Client, opt
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, obj := range s.DeployItems {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForDeployItem(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Executions {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForExecution(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
 	for _, obj := range s.Installations {
-		if err := CleanupForObject(ctx, c, obj, *timeout); err != nil {
+		if err := CleanupForInstallation(ctx, c, obj, *timeout); err != nil {
 			return err
 		}
 	}
@@ -410,6 +414,167 @@ func CleanupForObject(ctx context.Context, c client.Client, obj client.Object, t
 			return err
 		}
 	}
+	return nil
+}
+
+// CleanupForInstallation cleans up an installation from a cluster
+func CleanupForInstallation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation, timeout time.Duration) error {
+	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	// try to do a graceful cleanup
+	if obj.GetDeletionTimestamp().IsZero() {
+		if err := c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	var innerErr error
+	if err := wait.PollImmediate(2*time.Second, 10*time.Second, func() (done bool, err error) {
+		innerErr = addReconcileAnnotation(ctx, c, obj)
+		return innerErr == nil, nil
+	}); err != nil {
+		if innerErr != nil {
+			return innerErr
+		}
+		return err
+	}
+
+	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+		if err := removeFinalizer(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CleanupForExecution cleans up an execution from a cluster
+func CleanupForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.Execution, timeout time.Duration) error {
+	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	// try to do a graceful cleanup
+	if obj.GetDeletionTimestamp().IsZero() {
+		if err := c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := updateJobIdForExecution(ctx, c, obj); err != nil {
+		return err
+	}
+
+	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+		if err := removeFinalizer(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CleanupForDeployItem cleans up a deploy item from a cluster
+func CleanupForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.DeployItem, timeout time.Duration) error {
+	if err := c.Get(ctx, client.ObjectKey{Name: obj.GetName(), Namespace: obj.GetNamespace()}, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	// try to do a graceful cleanup
+	if obj.GetDeletionTimestamp().IsZero() {
+		if err := c.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := updateJobIdForDeployItem(ctx, c, obj); err != nil {
+		return err
+	}
+
+	if err := WaitForObjectToBeDeleted(ctx, c, obj, timeout); err != nil {
+		if err := removeFinalizer(ctx, c, obj); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addReconcileAnnotation(ctx context.Context, c client.Client, obj *lsv1alpha1.Installation) error {
+	if err := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if obj != nil && !lsv1alpha1helper.HasOperation(obj.ObjectMeta, lsv1alpha1.ReconcileOperation) {
+		lsv1alpha1helper.SetOperation(&obj.ObjectMeta, lsv1alpha1.ReconcileOperation)
+		if err := c.Update(ctx, obj); err != nil {
+			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
+				return nil
+			}
+			err = errors.Wrap(err, "Failed to add reconcile annotation to installation during cleanup")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateJobIdForDeployItem(ctx context.Context, c client.Client, obj *lsv1alpha1.DeployItem) error {
+	if err := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if obj != nil && obj.Status.JobID == obj.Status.JobIDFinished {
+		time := v1.Now()
+		obj.Status.JobID = obj.Status.JobID + "-1"
+		obj.Status.JobIDGenerationTime = &time
+		if err := c.Status().Update(ctx, obj); err != nil {
+			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
+				return nil
+			}
+			err = errors.Wrap(err, "Failed to update job ID of deploy item during cleanup")
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateJobIdForExecution(ctx context.Context, c client.Client, obj *lsv1alpha1.Execution) error {
+	if err := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if obj != nil && obj.Status.JobID == obj.Status.JobIDFinished {
+		obj.Status.JobID = obj.Status.JobID + "-1"
+		if err := c.Status().Update(ctx, obj); err != nil {
+			if readError := c.Get(ctx, kutil.ObjectKeyFromObject(obj), obj); apierrors.IsNotFound(readError) {
+				return nil
+			}
+			err = errors.Wrap(err, "Failed to update job ID of execution during cleanup")
+			return err
+		}
+	}
+
 	return nil
 }
 
