@@ -9,22 +9,21 @@ import (
 	goflag "flag"
 	"io/ioutil"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	deployerconfig "github.com/gardener/landscaper/pkg/deployermanagement/config"
 
 	"github.com/gardener/landscaper/apis/config"
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
 	"github.com/gardener/landscaper/pkg/api"
 )
 
 // Options describes the options to configure the Landscaper controller.
 type Options struct {
-	Log                      logr.Logger
+	Log                      logger.Logger
 	ConfigPath               string
 	landscaperKubeconfigPath string
 
@@ -53,7 +52,7 @@ func (o *Options) Complete(ctx context.Context) error {
 	}
 	o.Log = log.WithName("setup")
 	logger.SetLogger(log)
-	ctrl.SetLogger(log)
+	ctrl.SetLogger(log.Logr())
 
 	o.Config, err = o.parseConfigurationFile(ctx)
 	if err != nil {

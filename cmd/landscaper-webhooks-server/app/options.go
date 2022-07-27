@@ -8,7 +8,6 @@ import (
 	goflag "flag"
 	"strings"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -43,7 +42,7 @@ func defaultWebhookedResources() map[string]webhook.WebhookedResourceDefinition 
 }
 
 type options struct {
-	log                         logr.Logger
+	log                         logger.Logger
 	port                        int    // port where the webhook server is running
 	disabledWebhooks            string // lists disabled webhooks as a comma-separated string
 	webhookServiceNamespaceName string // webhook service namespace and name in the format <namespace>/<name>

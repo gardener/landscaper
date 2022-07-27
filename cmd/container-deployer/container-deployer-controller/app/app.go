@@ -34,7 +34,7 @@ func NewContainerDeployerControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log,
+	if err := containerctlr.AddControllerToManager(o.DeployerOptions.Log.Logr(),
 		o.DeployerOptions.HostMgr,
 		o.DeployerOptions.LsMgr,
 		o.Config); err != nil {

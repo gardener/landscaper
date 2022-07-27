@@ -13,7 +13,6 @@ import (
 
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,7 +32,7 @@ type DefaultOptions struct {
 	configPath   string
 	LsKubeconfig string
 
-	Log     logr.Logger
+	Log     logger.Logger
 	LsMgr   manager.Manager
 	HostMgr manager.Manager
 
@@ -63,7 +62,7 @@ func (o *DefaultOptions) Complete() error {
 	}
 	o.Log = log.WithName("setup")
 	logger.SetLogger(log)
-	ctrl.SetLogger(log)
+	ctrl.SetLogger(log.Logr())
 
 	opts := manager.Options{
 		LeaderElection:     false,
@@ -147,7 +146,7 @@ func (o *DefaultOptions) GetConfig(obj runtime.Object) error {
 		return err
 	}
 
-	if o.Log.V(2).Enabled() {
+	if o.Log.Enabled(logger.INFO) {
 		// print configuration if enabled
 		configBytes, err := yaml.Marshal(obj)
 		if err != nil {

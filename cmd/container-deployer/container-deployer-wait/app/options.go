@@ -7,7 +7,6 @@ package app
 import (
 	goflag "flag"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -15,7 +14,7 @@ import (
 )
 
 type options struct {
-	log logr.Logger
+	log logger.Logger
 }
 
 func NewOptions() *options {
@@ -36,7 +35,7 @@ func (o *options) Complete() error {
 	}
 	o.log = log.WithName("setup")
 	logger.SetLogger(log)
-	ctrl.SetLogger(log)
+	ctrl.SetLogger(log.Logr())
 
 	return nil
 }

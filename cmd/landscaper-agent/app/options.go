@@ -12,7 +12,6 @@ import (
 
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/tools/clientcmd"
@@ -26,7 +25,7 @@ import (
 )
 
 type options struct {
-	log                      logr.Logger
+	log                      logger.Logger
 	configPath               string
 	landscaperKubeconfigPath string
 
@@ -55,7 +54,7 @@ func (o *options) Complete() error {
 	}
 	o.log = log.WithName("setup")
 	logger.SetLogger(log)
-	ctrl.SetLogger(log)
+	ctrl.SetLogger(log.Logr())
 
 	o.config, err = o.parseConfigurationFile()
 	if err != nil {

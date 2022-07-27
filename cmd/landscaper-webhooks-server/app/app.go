@@ -69,7 +69,7 @@ func (o *options) run(ctx context.Context) error {
 			o.log.Error(err, "unable to send health response")
 		}
 	}))
-	ctrl.SetLogger(o.log)
+	ctrl.SetLogger(o.log.Logr())
 
 	restConfig := ctrl.GetConfigOrDie()
 	scheme := runtime.NewScheme()

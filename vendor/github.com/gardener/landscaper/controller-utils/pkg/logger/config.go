@@ -14,10 +14,11 @@ type Config struct {
 
 	Development       bool
 	Cli               bool
-	Verbosity         int
 	DisableStacktrace bool
 	DisableCaller     bool
 	DisableTimestamp  bool
+	Level             logLevelValue
+	Format            logFormatValue
 }
 
 func InitFlags(flagset *flag.FlagSet) {
@@ -26,38 +27,119 @@ func InitFlags(flagset *flag.FlagSet) {
 	}
 	fs := flag.NewFlagSet("log", flag.ExitOnError)
 
-	fs.BoolVar(&configFromFlags.Development, "dev", false, "enable development logging which result in console encoding, enabled stacktrace and enabled caller")
-	fs.BoolVar(&configFromFlags.Cli, "cli", false, "logger runs as cli logger. enables cli logging")
-	fs.IntVarP(&configFromFlags.Verbosity, "verbosity", "v", 1, "number for the log level verbosity")
+	fs.BoolVar(&configFromFlags.Development, "dev", false, "enable development logging")
+	fs.BoolVar(&configFromFlags.Cli, "cli", false, "use CLI formatting for logs (color, no timestamps)")
+	f := fs.VarPF(&configFromFlags.Format, "format", "f", "logging format [text, json]")
+	f.DefValue = "text if either dev or cli flag is set, json otherwise"
+	f = fs.VarPF(&configFromFlags.Level, "verbosity", "v", "logging verbosity [error, info, debug]")
+	f.DefValue = "info, or debug if dev flag is set"
 	fs.BoolVar(&configFromFlags.DisableStacktrace, "disable-stacktrace", true, "disable the stacktrace of error logs")
 	fs.BoolVar(&configFromFlags.DisableCaller, "disable-caller", true, "disable the caller of logs")
-	fs.BoolVar(&configFromFlags.DisableTimestamp, "disable-timestamp", true, "disable timestamp output")
+	fs.BoolVar(&configFromFlags.DisableTimestamp, "disable-timestamp", false, "disable timestamp output")
 
 	configFromFlags.flagset = fs
 	flagset.AddFlagSet(configFromFlags.flagset)
 }
 
+// SetLogLevel sets the logging verbosity according to the provided flag if the flag was provided
+func (c *Config) SetLogLevel(zapCfg *zap.Config) {
+	if !c.Level.IsUnset() {
+		zapCfg.Level = zap.NewAtomicLevelAt(toZapLevel(c.Level.Value()))
+	}
+}
+
+// SetLogFormat sets the logging format according to the provided flag if the flag was provided
+func (c *Config) SetLogFormat(zapCfg *zap.Config) {
+	if !c.Format.IsUnset() {
+		zapCfg.Encoding = toZapFormat(c.Format.Value())
+	}
+}
+
 // SetDisableStacktrace dis- or enables the stackstrace according to the provided flag if the flag was provided
 func (c *Config) SetDisableStacktrace(zapCfg *zap.Config) {
-	if c.flagset == nil || c.flagset.Changed("disable-stacktrace") {
+	if c.flagset != nil && c.flagset.Changed("disable-stacktrace") {
 		zapCfg.DisableStacktrace = c.DisableStacktrace
 	}
 }
 
 // SetDisableCaller dis- or enables the caller according to the provided flag if the flag was provided
 func (c *Config) SetDisableCaller(zapCfg *zap.Config) {
-	if c.flagset == nil || c.flagset.Changed("disable-caller") {
+	if c.flagset != nil && c.flagset.Changed("disable-caller") {
 		zapCfg.DisableCaller = c.DisableCaller
 	}
 }
 
 // SetTimestamp dis- or enables the logging of timestamps according to the provided flag if the flag was provided
 func (c *Config) SetTimestamp(zapCfg *zap.Config) {
-	if c.flagset == nil || c.flagset.Changed("disable-timestamp") {
+	if c.flagset != nil && c.flagset.Changed("disable-timestamp") {
 		if c.DisableTimestamp {
 			zapCfg.EncoderConfig.TimeKey = ""
 		} else {
 			zapCfg.EncoderConfig.TimeKey = "ts"
 		}
 	}
+}
+
+// logLevelValue implements the Value interface for LogLevel
+type logLevelValue struct {
+	internal LogLevel
+}
+
+func (l *logLevelValue) String() string {
+	return l.internal.String()
+}
+func (l *logLevelValue) Set(raw string) error {
+	lvl, err := ParseLogLevel(raw)
+	if err != nil {
+		return err
+	}
+	l.internal = lvl
+	return nil
+}
+func (l *logLevelValue) Type() string {
+	return "LogLevel"
+}
+func (l *logLevelValue) Value() LogLevel {
+	return l.internal
+}
+func (l *logLevelValue) IsUnset() bool {
+	return l.internal == unknown_level
+}
+func (c *Config) WithLogLevel(l LogLevel) *Config {
+	c.Level = logLevelValue{
+		internal: l,
+	}
+	return c
+}
+
+// logFormatValue implements the Value interface for LogFormat
+type logFormatValue struct {
+	internal LogFormat
+}
+
+func (l *logFormatValue) String() string {
+	return l.internal.String()
+}
+func (l *logFormatValue) Set(raw string) error {
+	f, err := ParseLogFormat(raw)
+	if err != nil {
+		return err
+	}
+	l.internal = f
+	return nil
+}
+func (l *logFormatValue) Type() string {
+	return "LogFormat"
+}
+func (l *logFormatValue) Value() LogFormat {
+	return l.internal
+}
+func (l *logFormatValue) IsUnset() bool {
+	return l.internal == unknown_format
+}
+func (c *Config) WithLogFormat(f LogFormat) *Config {
+	c.Format = logFormatValue{
+		internal: f,
+	}
+	return c
 }

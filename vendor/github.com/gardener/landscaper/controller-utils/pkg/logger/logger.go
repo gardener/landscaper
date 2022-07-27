@@ -1,131 +1,184 @@
-// SPDX-FileCopyrightText: 2019 SAP SE or an SAP affiliate company and Gardener contributors.
+// SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors.
 //
 // SPDX-License-Identifier: Apache-2.0
 
 package logger
 
 import (
+	"context"
+	"fmt"
+	"strings"
+
 	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logger/constants"
 )
 
-var (
-	Log             logr.Logger
-	configFromFlags = Config{}
+type Logger struct {
+	internal logr.Logger
+}
+
+// loggerContextKey is a key for finding a logger in the context
+type loggerContextKey struct{}
+
+type LogLevel int
+
+const (
+	unknown_level LogLevel = iota // dummy value to detect if not set
+	ERROR
+	INFO
+	DEBUG
 )
 
-var encoderConfig = zapcore.EncoderConfig{
-	TimeKey:        "ts",
-	LevelKey:       "level",
-	NameKey:        "logger",
-	CallerKey:      "caller",
-	MessageKey:     "msg",
-	StacktraceKey:  "stacktrace",
-	LineEnding:     zapcore.DefaultLineEnding,
-	EncodeLevel:    zapcore.LowercaseLevelEncoder,
-	EncodeTime:     zapcore.ISO8601TimeEncoder,
-	EncodeDuration: zapcore.SecondsDurationEncoder,
-	EncodeCaller:   zapcore.ShortCallerEncoder,
-}
-
-var cliEncoderConfig = zapcore.EncoderConfig{
-	TimeKey:        "",
-	LevelKey:       "level",
-	NameKey:        "logger",
-	CallerKey:      "caller",
-	MessageKey:     "msg",
-	StacktraceKey:  "stacktrace",
-	LineEnding:     zapcore.DefaultLineEnding,
-	EncodeLevel:    zapcore.LowercaseColorLevelEncoder,
-	EncodeTime:     zapcore.ISO8601TimeEncoder,
-	EncodeDuration: zapcore.SecondsDurationEncoder,
-	EncodeCaller:   zapcore.ShortCallerEncoder,
-}
-
-var defaultConfig = zap.Config{
-	Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-	Development:       true,
-	Encoding:          "console",
-	DisableStacktrace: false,
-	DisableCaller:     false,
-	EncoderConfig:     encoderConfig,
-	OutputPaths:       []string{"stderr"},
-	ErrorOutputPaths:  []string{"stderr"},
-}
-
-var cliConfig = zap.Config{
-	Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-	Development:       false,
-	Encoding:          "console",
-	DisableStacktrace: false,
-	DisableCaller:     true,
-	EncoderConfig:     cliEncoderConfig,
-	OutputPaths:       []string{"stderr"},
-	ErrorOutputPaths:  []string{"stderr"},
-}
-
-var productionConfig = zap.Config{
-	Level:             zap.NewAtomicLevelAt(zap.InfoLevel),
-	Development:       false,
-	DisableStacktrace: true,
-	DisableCaller:     true,
-	Encoding:          "json",
-	EncoderConfig:     encoderConfig,
-	OutputPaths:       []string{"stderr"},
-	ErrorOutputPaths:  []string{"stderr"},
-}
-
-func New(config *Config) (logr.Logger, error) {
-	if config == nil {
-		config = &configFromFlags
+func (l LogLevel) String() string {
+	switch l {
+	case ERROR:
+		return "ERROR"
+	case INFO:
+		return "INFO"
+	case DEBUG:
+		return "DEBUG"
 	}
-	zapCfg := determineZapConfig(config)
+	return "UNKNOWN"
+}
 
-	level := int8(0 - config.Verbosity)
-	zapCfg.Level = zap.NewAtomicLevelAt(zapcore.Level(level))
+func ParseLogLevel(raw string) (LogLevel, error) {
+	upper := strings.ToUpper(raw)
+	switch upper {
+	case "ERROR":
+		return ERROR, nil
+	case "INFO":
+		return INFO, nil
+	case "DEBUG":
+		return DEBUG, nil
+	}
+	return INFO, fmt.Errorf("unknown log level '%s', valid values are: [%s] (case-insensitive)", raw, strings.Join([]string{ERROR.String(), INFO.String(), DEBUG.String()}, ", "))
+}
 
-	zapLog, err := zapCfg.Build(zap.AddCallerSkip(1))
+type LogFormat int
+
+const (
+	unknown_format LogFormat = iota
+	TEXT
+	JSON
+)
+
+func (f LogFormat) String() string {
+	switch f {
+	case TEXT:
+		return "TEXT"
+	case JSON:
+		return "JSON"
+	}
+	return "UNKNOWN"
+}
+
+func ParseLogFormat(raw string) (LogFormat, error) {
+	upper := strings.ToUpper(raw)
+	switch upper {
+	case "TEXT":
+		return TEXT, nil
+	case "JSON":
+		return JSON, nil
+	}
+	return TEXT, fmt.Errorf("unknown log format '%s', valid values are: [%s] (case-insensitive)", raw, strings.Join([]string{TEXT.String(), JSON.String()}, ", "))
+}
+
+// LOGR WRAPPER FUNCTIONS
+
+// Enabled tests whether logging at the provided level is enabled.
+// This deviates from the logr Enabled() function, which doesn't take an argument.
+func (l Logger) Enabled(lvl LogLevel) bool {
+	return l.internal.GetSink().Enabled(levelToVerbosity(lvl))
+}
+
+// Info logs a non-error message with the given key/value pairs as context.
+//
+// The msg argument should be used to add some constant description to
+// the log line.  The key/value pairs can then be used to add additional
+// variable information.  The key/value pairs should alternate string
+// keys and arbitrary values.
+func (l Logger) Info(msg string, keysAndValues ...interface{}) {
+	l.internal.V(levelToVerbosity(INFO)).Info(msg, keysAndValues...)
+}
+
+// Error logs an error, with the given message and key/value pairs as context.
+// It functions similarly to calling Info with the "error" named value, but may
+// have unique behavior, and should be preferred for logging errors (see the
+// package documentations for more information).
+//
+// The msg field should be used to add context to any underlying error,
+// while the err field should be used to attach the actual error that
+// triggered this log line, if present.
+func (l Logger) Error(err error, msg string, keysAndValues ...interface{}) {
+	l.internal.Error(err, msg, keysAndValues...)
+}
+
+// WithValues adds some key-value pairs of context to a logger.
+// See Info for documentation on how key/value pairs work.
+func (l Logger) WithValues(keysAndValues ...interface{}) Logger {
+	return Wrap(l.internal.WithValues(keysAndValues...))
+}
+
+// WithName adds a new element to the logger's name.
+// Successive calls with WithName continue to append
+// suffixes to the logger's name.  It's strongly recommended
+// that name segments contain only letters, digits, and hyphens
+// (see the package documentation for more information).
+func (l Logger) WithName(name string) Logger {
+	return Wrap(l.internal.WithName(name))
+}
+
+// FromContext tries to fetch a logger from the context.
+// If that fails, it returns the result of logr.FromContext,
+// with the logger being wrapped into our Logger struct.
+func FromContext(ctx context.Context) (Logger, error) {
+	if log, ok := ctx.Value(loggerContextKey{}).(Logger); ok {
+		return log, nil
+	}
+	log, err := logr.FromContext(ctx)
+	return Wrap(log), err
+}
+
+// FromContextOrDiscard works like FromContext, but it will return a discard logger if no logger is found in the context.
+func FromContextOrDiscard(ctx context.Context) Logger {
+	log, err := FromContext(ctx)
 	if err != nil {
-		return logr.Logger{}, err
+		return Discard()
 	}
-	return zapr.NewLogger(zapLog), nil
+	return log
 }
 
-func SetLogger(log logr.Logger) {
-	Log = log
+func Discard() Logger {
+	return Wrap(logr.Discard())
 }
 
-// NewCliLogger creates a new logger for cli usage.
-// CLI usage means that by default:
-// - the default dev config
-// - encoding is console
-// - timestamps are disabled (can be still activated by the cli flag)
-// - level are color encoded
-func NewCliLogger() (logr.Logger, error) {
-	config := &configFromFlags
-	config.Cli = true
-	return New(config)
+// ADDITIONAL FUNCTIONS
+
+// Wrap constructs a new Logger, using the provided logr.Logger internally.
+func Wrap(log logr.Logger) Logger {
+	return Logger{internal: log}
 }
 
-func determineZapConfig(loggerConfig *Config) zap.Config {
-	var zapConfig zap.Config
-	if loggerConfig.Development {
-		zapConfig = defaultConfig
-	} else if loggerConfig.Cli {
-		zapConfig = cliConfig
-		if loggerConfig.Development {
-			zapConfig.Development = true
-			loggerConfig.DisableCaller = false
-		}
-	} else {
-		zapConfig = productionConfig
+// Debug logs a message at DEBUG level.
+func (l Logger) Debug(msg string, keysAndValues ...interface{}) {
+	l.internal.V(levelToVerbosity(DEBUG)).Info(msg, keysAndValues...)
+}
+
+// Logr returns the internal logr.Logger.
+func (l Logger) Logr() logr.Logger {
+	return l.internal
+}
+
+// StartReconcile fetches the logger from the context and adds the reconciled resource.
+// It also logs a 'start reconcile' message.
+func StartReconcile(ctx context.Context, req reconcile.Request) (Logger, error) {
+	log, err := FromContext(ctx)
+	if err != nil {
+		return Logger{}, fmt.Errorf("unable to get logger from context: %w", err)
 	}
-
-	loggerConfig.SetDisableCaller(&zapConfig)
-	loggerConfig.SetDisableStacktrace(&zapConfig)
-	loggerConfig.SetTimestamp(&zapConfig)
-
-	return zapConfig
+	log = log.WithValues(lc.KeyReconciledResource, req.NamespacedName)
+	log.Info(lc.MsgStartReconcile)
+	return log, nil
 }
