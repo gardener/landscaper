@@ -131,13 +131,14 @@ func (o *Options) run(ctx context.Context) error {
 	}
 	blueprints.SetStore(store)
 
-	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), lsMgr, o.Config)
-	if err != nil {
-		return fmt.Errorf("unable to setup CRD manager: %w", err)
+	if err := o.ensureCRDs(ctx, lsMgr); err != nil {
+		return err
 	}
 
-	if err := crdmgr.EnsureCRDs(ctx); err != nil {
-		return fmt.Errorf("failed to handle CRDs: %w", err)
+	if lsMgr != hostMgr {
+		if err := o.ensureCRDs(ctx, hostMgr); err != nil {
+			return err
+		}
 	}
 
 	install.Install(lsMgr.GetScheme())
@@ -234,4 +235,17 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manag
 		return fmt.Errorf("unable to create direct client: %q", err)
 	}
 	return o.Deployer.DeployInternalDeployers(ctx, o.Log, directClient, o.Config)
+}
+
+func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
+	crdmgr, err := crdmanager.NewCrdManager(ctrl.Log.WithName("setup").WithName("CRDManager"), mgr, o.Config)
+	if err != nil {
+		return fmt.Errorf("unable to setup CRD manager: %w", err)
+	}
+
+	if err := crdmgr.EnsureCRDs(ctx); err != nil {
+		return fmt.Errorf("failed to handle CRDs: %w", err)
+	}
+
+	return nil
 }
