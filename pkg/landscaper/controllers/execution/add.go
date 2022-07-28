@@ -20,7 +20,7 @@ import (
 
 // AddControllerToManager adds the execution controller to the controller manager
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config config.ExecutionsController) error {
-	log := logger.Reconciles("executions", "Execution")
+	log := logger.Reconciles("execution", "Execution")
 	a, err := NewController(
 		log,
 		mgr.GetClient(),

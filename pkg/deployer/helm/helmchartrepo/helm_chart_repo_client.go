@@ -30,7 +30,6 @@ import (
 
 const (
 	defaultTimeoutSeconds = 180
-	logLevelDebug         = 1
 )
 
 type HelmChartRepoClient struct {
@@ -245,7 +244,7 @@ func (c *HelmChartRepoClient) readResponseBody(res *http.Response) ([]byte, erro
 	if res.StatusCode != http.StatusOK {
 		err := fmt.Errorf("request failed with status code %v", res.StatusCode)
 
-		if c.log.Logr().V(logLevelDebug).Enabled() {
+		if c.log.Enabled(logging.DEBUG) {
 			body, bodyReadErr := ioutil.ReadAll(res.Body)
 			if bodyReadErr != nil {
 				c.log.Error(err, err.Error(), "response status code without body", res.StatusCode)

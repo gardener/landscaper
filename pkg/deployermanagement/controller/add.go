@@ -20,9 +20,10 @@ import (
 )
 
 // AddControllersToManager adds all deployer registration related deployers to the manager.
-func AddControllersToManager(log logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
+func AddControllersToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
+	log := logger.Reconciles("environment", "Environment")
 	env := NewEnvironmentController(
-		log.WithName("Environment"),
+		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		config,
@@ -30,14 +31,15 @@ func AddControllersToManager(log logging.Logger, mgr manager.Manager, config *co
 
 	err := builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.Environment{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("Environment").Logr() }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(env)
 	if err != nil {
 		return fmt.Errorf("unable to register environment controller: %w", err)
 	}
 
+	log = logger.Reconciles("deployerRegistration", "DeployerRegistration")
 	deployerReg := NewDeployerRegistrationController(
-		log.WithName("DeployerRegistration"),
+		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		config,
@@ -45,14 +47,15 @@ func AddControllersToManager(log logging.Logger, mgr manager.Manager, config *co
 
 	err = builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.DeployerRegistration{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("DeployerRegistration").Logr() }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(deployerReg)
 	if err != nil {
 		return fmt.Errorf("unable to register deployer registration controller: %w", err)
 	}
 
+	log = logger.Reconciles("deployerRegistration", "Namespace")
 	inst := NewInstallationController(
-		log.WithName("DeployerRegistration"),
+		log,
 		mgr.GetClient(),
 		mgr.GetScheme(),
 		config,
@@ -60,7 +63,7 @@ func AddControllersToManager(log logging.Logger, mgr manager.Manager, config *co
 
 	err = builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.Installation{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("DeployerRegistration").Logr() }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(inst)
 	if err != nil {
 		return fmt.Errorf("unable to register installation controller: %w", err)

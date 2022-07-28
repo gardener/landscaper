@@ -12,7 +12,6 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -23,7 +22,7 @@ import (
 
 // AddControllerToManager register the installation Controller in a manager.
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, overwriter componentoverwrites.Overwriter, config *config.LandscaperConfiguration) error {
-	log := logger.WithName("Installations").WithValues(lc.KeyReconciledResourceKind, "Installation")
+	log := logger.Reconciles("installation", "Installation")
 	a, err := NewController(
 		log,
 		mgr.GetClient(),

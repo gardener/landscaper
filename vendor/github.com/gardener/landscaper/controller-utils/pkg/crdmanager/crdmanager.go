@@ -65,7 +65,7 @@ func NewCrdManager(log logging.Logger, mgr manager.Manager, config config.CrdMan
 // EnsureCRDs installs or updates CRDs based on the configuration
 func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 	if !*crdmgr.cfg.DeployCustomResourceDefinitions {
-		crdmgr.log.Logr().V(1).Info("Registering CRDs disabled by configuration")
+		crdmgr.log.Info("Registering CRDs disabled by configuration")
 		return nil
 	}
 
@@ -74,7 +74,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		return err
 	}
 
-	crdmgr.log.Logr().V(1).Info("Registering CRDs in cluster")
+	crdmgr.log.Info("Registering CRDs in cluster")
 	for _, crd := range crdList {
 
 		existingCrd := &v1.CustomResourceDefinition{}
@@ -134,7 +134,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 
 func (crdmgr *CRDManager) updateCrd(ctx context.Context, currentCrd, updatedCrd *v1.CustomResourceDefinition) error {
 	if !*crdmgr.cfg.ForceUpdate {
-		crdmgr.log.Logr().V(1).Info("Force update of CRDs disabled by configuration")
+		crdmgr.log.Info("Force update of CRDs disabled by configuration")
 		return nil
 	}
 

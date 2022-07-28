@@ -184,6 +184,12 @@ func (l Logger) Log(lvl LogLevel, msg string, keysAndValues ...interface{}) {
 	}
 }
 
+// IsInitialized returns true if the logger is ready to be used and
+// false if it is an 'empty' logger (e.g. created by Logger{}).
+func (l Logger) IsInitialized() bool {
+	return l.internal.GetSink() != nil
+}
+
 // Reconciles is meant to be used for the logger initialization for controllers.
 // It is a wrapper for WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource).
 func (l Logger) Reconciles(name, reconciledResource string) Logger {

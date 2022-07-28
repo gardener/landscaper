@@ -12,7 +12,6 @@ import (
 
 var (
 	Log             Logger
-	initialized     = false
 	configFromFlags = Config{}
 )
 
@@ -85,7 +84,7 @@ func New(config *Config) (Logger, error) {
 // GetLogger returns a singleton logger.
 // Will initialize a new logger, if it doesn't exist yet.
 func GetLogger() (Logger, error) {
-	if initialized {
+	if Log.IsInitialized() {
 		return Log, nil
 	}
 	log, err := New(nil)

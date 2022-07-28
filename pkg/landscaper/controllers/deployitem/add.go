@@ -25,7 +25,7 @@ func AddControllerToManager(logger logging.Logger,
 	deployItemPickupTimeout,
 	deployItemAbortingTimeout,
 	deployItemDefaultTimeout *lscore.Duration) error {
-	log := logger.Reconciles("deployItems", "DeployItem")
+	log := logger.Reconciles("deployItem", "DeployItem")
 	a, err := NewController(
 		log,
 		mgr.GetClient(),

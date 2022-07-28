@@ -66,7 +66,7 @@ func (b *Builder) applyDefaults(ctx context.Context) {
 	if b.scheme == nil {
 		b.scheme = api.LandscaperScheme
 	}
-	if b.log.Logr().GetSink() == nil {
+	if b.log.IsInitialized() {
 		b.log = logging.FromContextOrDiscard(ctx)
 	}
 	if b.eventRecorder == nil {

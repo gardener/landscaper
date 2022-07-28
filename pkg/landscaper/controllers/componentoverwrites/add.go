@@ -23,7 +23,7 @@ import (
 // AddControllerToManager adds the component overwrites controller to the controller manager.
 // It is responsible for detecting timeouts in deploy items.
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, cmgr *componentoverwrites.Manager, config config.ComponentOverwritesController) error {
-	log := logger.Reconciles("componentOverwrites", "ComponentOverwrite")
+	log := logger.Reconciles("componentOverwrite", "ComponentOverwrite")
 	c := NewController(
 		log,
 		mgr.GetClient(),
