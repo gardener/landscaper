@@ -48,12 +48,11 @@ func (o *options) AddFlags(fs *flag.FlagSet) {
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *options) Complete() error {
-	log, err := logging.New(nil)
+	log, err := logging.GetLogger()
 	if err != nil {
 		return err
 	}
-	o.log = log.WithName("setup")
-	logging.SetLogger(log)
+	o.log = log
 	ctrl.SetLogger(log.Logr())
 
 	o.config, err = o.parseConfigurationFile()

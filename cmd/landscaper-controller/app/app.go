@@ -75,7 +75,8 @@ func NewLandscaperControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *Options) run(ctx context.Context) error {
-	o.Log.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
+	setupLogger := o.Log.WithName("setup")
+	setupLogger.Info(fmt.Sprintf("Start Landscaper Controller with version %q", version.Get().String()))
 
 	configBytes, err := yaml.Marshal(o.Config)
 	if err != nil {
@@ -126,7 +127,7 @@ func (o *Options) run(ctx context.Context) error {
 
 	metrics.RegisterMetrics(controllerruntimeMetrics.Registry)
 
-	store, err := blueprints.NewStore(o.Log, osfs.New(), o.Config.BlueprintStore)
+	store, err := blueprints.NewStore(o.Log.WithName("blueprintStore"), osfs.New(), o.Config.BlueprintStore)
 	if err != nil {
 		return fmt.Errorf("unable to setup blueprint store: %w", err)
 	}
@@ -202,7 +203,7 @@ func (o *Options) run(ctx context.Context) error {
 		}
 	}
 
-	o.Log.Info("starting the controllers")
+	setupLogger.Info("starting the controllers")
 	eg, ctx := errgroup.WithContext(ctx)
 
 	if lsMgr != hostMgr {
@@ -212,11 +213,11 @@ func (o *Options) run(ctx context.Context) error {
 			}
 			return nil
 		})
-		o.Log.Info("Waiting for host cluster cache to sync")
+		setupLogger.Info("Waiting for host cluster cache to sync")
 		if !hostMgr.GetCache().WaitForCacheSync(ctx) {
 			return fmt.Errorf("unable to sync host cluster cache")
 		}
-		o.Log.Info("Cache of host cluster successfully synced")
+		setupLogger.Info("Cache of host cluster successfully synced")
 	}
 	eg.Go(func() error {
 		if err := lsMgr.Start(ctx); err != nil {
@@ -239,7 +240,7 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manag
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
-	crdmgr, err := crdmanager.NewCrdManager(logging.Wrap(ctrl.Log.WithName("setup").WithName("CRDManager")), mgr, o.Config)
+	crdmgr, err := crdmanager.NewCrdManager(logging.Wrap(ctrl.Log.WithName("CRDManager")), mgr, o.Config)
 	if err != nil {
 		return fmt.Errorf("unable to setup CRD manager: %w", err)
 	}

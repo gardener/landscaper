@@ -20,7 +20,6 @@ import (
 
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -185,7 +184,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
 		currentOperation = "handleDelete"
-		log              = logging.FromContextOrDiscard(ctx)
+		log              = c.Log()
 	)
 
 	inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
@@ -219,7 +218,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 	// before A is completed. This occurs if the process of adding the deletion timestamps was interrupted after A and
 	// before B.
 	if !allCompletedOrWithDeletionTimestamp(exec, subinst) {
-		log.Logr().V(2).Info("Waiting for execution and subinstallations to be completed")
+		log.Debug("Waiting for execution and subinstallations to be completed")
 		return nil
 	}
 

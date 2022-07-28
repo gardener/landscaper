@@ -56,12 +56,11 @@ func (o *DefaultOptions) AddFlags(fs *flag.FlagSet) {
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *DefaultOptions) Complete() error {
-	log, err := logging.New(nil)
+	log, err := logging.GetLogger()
 	if err != nil {
 		return err
 	}
-	o.Log = log.WithName("setup")
-	logging.SetLogger(log)
+	o.Log = log
 	ctrl.SetLogger(log.Logr())
 
 	opts := manager.Options{

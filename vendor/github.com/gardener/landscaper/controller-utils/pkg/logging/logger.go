@@ -172,6 +172,18 @@ func (l Logger) Debug(msg string, keysAndValues ...interface{}) {
 	l.internal.V(levelToVerbosity(DEBUG)).Info(msg, keysAndValues...)
 }
 
+// Log logs at the given log level. It can be used to log at dynamically determined levels.
+func (l Logger) Log(lvl LogLevel, msg string, keysAndValues ...interface{}) {
+	switch lvl {
+	case ERROR:
+		l.Error(nil, msg, keysAndValues...)
+	case DEBUG:
+		l.Debug(msg, keysAndValues...)
+	default:
+		l.Info(msg, keysAndValues...)
+	}
+}
+
 // Logr returns the internal logr.Logger.
 func (l Logger) Logr() logr.Logger {
 	return l.internal
@@ -184,7 +196,12 @@ func StartReconcile(ctx context.Context, req reconcile.Request) (Logger, error) 
 	if err != nil {
 		return Logger{}, fmt.Errorf("unable to get logger from context: %w", err)
 	}
+	return StartReconcileWithLogger(log, req), nil
+}
+
+// StartReconcileWithLogger works like StartReconcile, but takes an existing logger instead of fetching it from the context.
+func StartReconcileWithLogger(log Logger, req reconcile.Request) Logger {
 	log = log.WithValues(lc.KeyReconciledResource, req.NamespacedName)
 	log.Info(lc.MsgStartReconcile)
-	return log, nil
+	return log
 }

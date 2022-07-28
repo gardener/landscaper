@@ -15,6 +15,7 @@ import (
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -23,7 +24,7 @@ import (
 // AddControllerToManager adds the component overwrites controller to the controller manager.
 // It is responsible for detecting timeouts in deploy items.
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, cmgr *componentoverwrites.Manager, config config.ComponentOverwritesController) error {
-	log := logger.WithName("ComponentOverwrites")
+	log := logger.WithName("ComponentOverwrites").WithValues(lc.KeyReconciledResourceKind, "ComponentOverwrite")
 	c := NewController(
 		log,
 		mgr.GetClient(),

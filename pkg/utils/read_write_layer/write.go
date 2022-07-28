@@ -30,7 +30,7 @@ func (w *Writer) CreateOrPatchCoreContext(ctx context.Context, writeID WriteID, 
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(lsContext)
 	result, err := createOrPatchCore(ctx, w.client, lsContext, f)
-	w.logContextUpdate(writeID, opContextCreateOrUpdate, lsContext, generationOld, resourceVersionOld, err)
+	w.logContextUpdate(ctx, writeID, opContextCreateOrUpdate, lsContext, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -40,7 +40,7 @@ func (w *Writer) CreateOrUpdateCoreTarget(ctx context.Context, writeID WriteID, 
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(target)
 	result, err := createOrUpdateCore(ctx, w.client, target, f)
-	w.logTargetUpdate(writeID, opTargetCreateOrUpdate, target, generationOld, resourceVersionOld, err)
+	w.logTargetUpdate(ctx, writeID, opTargetCreateOrUpdate, target, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -50,7 +50,7 @@ func (w *Writer) CreateOrUpdateCoreDataObject(ctx context.Context, writeID Write
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
 	result, err := createOrUpdateCore(ctx, w.client, do, f)
-	w.logDataObjectUpdate(writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
+	w.logDataObjectUpdate(ctx, writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -58,7 +58,7 @@ func (w *Writer) CreateOrUpdateDataObject(ctx context.Context, writeID WriteID, 
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(do)
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, do, f)
-	w.logDataObjectUpdate(writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
+	w.logDataObjectUpdate(ctx, writeID, opDOCreateOrUpdate, do, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -68,7 +68,7 @@ func (w *Writer) CreateOrUpdateInstallation(ctx context.Context, writeID WriteID
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, installation, f)
-	w.logInstallationUpdate(writeID, opInstCreateOrUpdate, installation, generationOld, resourceVersionOld, err)
+	w.logInstallationUpdate(ctx, writeID, opInstCreateOrUpdate, installation, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
@@ -76,28 +76,28 @@ func (w *Writer) CreateOrUpdateCoreInstallation(ctx context.Context, writeID Wri
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	result, err := createOrUpdateCore(ctx, w.client, installation, f)
-	w.logInstallationUpdate(writeID, opInstSpec, installation, generationOld, resourceVersionOld, err)
+	w.logInstallationUpdate(ctx, writeID, opInstSpec, installation, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateInstallation(ctx context.Context, writeID WriteID, installation *lsv1alpha1.Installation) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	err := update(ctx, w.client, installation)
-	w.logInstallationUpdate(writeID, opInstSpec, installation, generationOld, resourceVersionOld, err)
+	w.logInstallationUpdate(ctx, writeID, opInstSpec, installation, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateInstallationStatus(ctx context.Context, writeID WriteID, installation *lsv1alpha1.Installation) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	err := updateStatus(ctx, w.client.Status(), installation)
-	w.logInstallationUpdate(writeID, opInstStatus, installation, generationOld, resourceVersionOld, err)
+	w.logInstallationUpdate(ctx, writeID, opInstStatus, installation, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) DeleteInstallation(ctx context.Context, writeID WriteID, installation *lsv1alpha1.Installation) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(installation)
 	err := delete(ctx, w.client, installation)
-	w.logInstallationUpdate(writeID, opInstDelete, installation, generationOld, resourceVersionOld, err)
+	w.logInstallationUpdate(ctx, writeID, opInstDelete, installation, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -107,14 +107,14 @@ func (w *Writer) CreateOrUpdateExecution(ctx context.Context, writeID WriteID, e
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, execution, f)
-	w.logExecutionUpdate(writeID, opExecCreateOrUpdate, execution, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecCreateOrUpdate, execution, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateExecution(ctx context.Context, writeID WriteID, execution *lsv1alpha1.Execution) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	err := update(ctx, w.client, execution)
-	w.logExecutionUpdate(writeID, opExecSpec, execution, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecSpec, execution, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -122,14 +122,14 @@ func (w *Writer) PatchExecution(ctx context.Context, writeID WriteID, new *lsv1a
 	opts ...client.PatchOption) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
 	err := patch(ctx, w.client, new, client.MergeFrom(old), opts...)
-	w.logExecutionUpdate(writeID, opExecSpec, new, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecSpec, new, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateExecutionStatus(ctx context.Context, writeID WriteID, execution *lsv1alpha1.Execution) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	err := updateStatus(ctx, w.client.Status(), execution)
-	w.logExecutionUpdate(writeID, opExecStatus, execution, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecStatus, execution, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -137,14 +137,14 @@ func (w *Writer) PatchExecutionStatus(ctx context.Context, writeID WriteID, new 
 	opts ...client.PatchOption) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
 	err := patchStatus(ctx, w.client.Status(), new, client.MergeFrom(old), opts...)
-	w.logExecutionUpdate(writeID, opExecStatus, new, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecStatus, new, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) DeleteExecution(ctx context.Context, writeID WriteID, execution *lsv1alpha1.Execution) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(execution)
 	err := delete(ctx, w.client, execution)
-	w.logExecutionUpdate(writeID, opExecDelete, execution, generationOld, resourceVersionOld, err)
+	w.logExecutionUpdate(ctx, writeID, opExecDelete, execution, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -154,21 +154,21 @@ func (w *Writer) CreateOrUpdateDeployItem(ctx context.Context, writeID WriteID, 
 	f controllerutil.MutateFn) (controllerutil.OperationResult, error) {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	result, err := kubernetes.CreateOrUpdate(ctx, w.client, deployItem, f)
-	w.logDeployItemUpdate(writeID, opDICreateOrUpdate, deployItem, generationOld, resourceVersionOld, err)
+	w.logDeployItemUpdate(ctx, writeID, opDICreateOrUpdate, deployItem, generationOld, resourceVersionOld, err)
 	return result, errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateDeployItem(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	err := update(ctx, w.client, deployItem)
-	w.logDeployItemUpdate(writeID, opDISpec, deployItem, generationOld, resourceVersionOld, err)
+	w.logDeployItemUpdate(ctx, writeID, opDISpec, deployItem, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) UpdateDeployItemStatus(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	err := updateStatus(ctx, w.client.Status(), deployItem)
-	w.logDeployItemUpdate(writeID, opDIStatus, deployItem, generationOld, resourceVersionOld, err)
+	w.logDeployItemUpdate(ctx, writeID, opDIStatus, deployItem, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
@@ -176,14 +176,14 @@ func (w *Writer) PatchDeployItemStatus(ctx context.Context, writeID WriteID, new
 	opts ...client.PatchOption) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(old)
 	err := patchStatus(ctx, w.client.Status(), new, client.MergeFrom(old), opts...)
-	w.logDeployItemUpdate(writeID, opDIStatus, new, generationOld, resourceVersionOld, err)
+	w.logDeployItemUpdate(ctx, writeID, opDIStatus, new, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 
 func (w *Writer) DeleteDeployItem(ctx context.Context, writeID WriteID, deployItem *lsv1alpha1.DeployItem) error {
 	generationOld, resourceVersionOld := getGenerationAndResourceVersion(deployItem)
 	err := delete(ctx, w.client, deployItem)
-	w.logDeployItemUpdate(writeID, opDIDelete, deployItem, generationOld, resourceVersionOld, err)
+	w.logDeployItemUpdate(ctx, writeID, opDIDelete, deployItem, generationOld, resourceVersionOld, err)
 	return errorWithWriteID(err, writeID)
 }
 

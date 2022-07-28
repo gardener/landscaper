@@ -67,7 +67,7 @@ func NewController(log logging.Logger,
 		if err != nil {
 			return nil, err
 		}
-		log.Logr().V(3).Info("setup shared components registry  cache")
+		log.Debug("setup shared components registry  cache")
 	}
 
 	op := operation.NewOperation(log, kubeClient, scheme, eventRecorder)
@@ -101,14 +101,13 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.Log().WithValues("installation", req.NamespacedName.String())
+	logger := logging.StartReconcileWithLogger(c.Log(), req)
 	ctx = logging.NewContext(ctx, logger)
-	logger.Logr().V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			c.Log().Logr().V(5).Info(err.Error())
+			c.Log().Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -173,14 +172,13 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.Log().WithValues("installation", req.NamespacedName.String())
+	logger := logging.StartReconcileWithLogger(c.Log(), req)
 	ctx = logging.NewContext(ctx, logger)
-	logger.Logr().V(5).Info("reconcile", "resource", req.NamespacedName)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			c.Log().Logr().V(5).Info(err.Error())
+			c.Log().Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -188,7 +186,7 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	// don't reconcile if ignore annotation is set and installation is not currently running
 	if lsv1alpha1helper.HasIgnoreAnnotation(inst.ObjectMeta) && lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-		logger.Logr().V(7).Info("skipping reconcile due to ignore annotation")
+		logger.Debug("skipping reconcile due to ignore annotation")
 		return reconcile.Result{}, nil
 	}
 
@@ -279,10 +277,6 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 func (c *Controller) handleSubComponentPhaseChanges(
 	ctx context.Context,
 	inst *lsv1alpha1.Installation) lserrors.LsError {
-	logger, err := logging.FromContext(ctx)
-	if err != nil {
-		return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "InitializeLogger", "internal error: unable to get logger")
-	}
 
 	execRef := inst.Status.ExecutionReference
 	phases := []lsv1alpha1.ComponentInstallationPhase{}
@@ -310,7 +304,7 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
 	if inst.Status.Phase != cp {
 		// Phase is completed but doesn't fit to the deploy items' phases
-		logger.Logr().V(5).Info("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
+		c.Log().Debug("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
 
 		// get operation
 		var err error
@@ -376,7 +370,7 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
 		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
 			if apierrors.IsConflict(err2) { // reduce logging
-				c.Log().Logr().V(5).Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				c.Log().Debug(fmt.Sprintf("unable to update status: %s", err2.Error()))
 			} else {
 				c.Log().Error(err2, "unable to update status")
 			}
