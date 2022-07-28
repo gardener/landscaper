@@ -62,13 +62,12 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Logr().V(5).Info("reconcile")
+	logger := c.log.StartReconcile(req)
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -268,13 +267,12 @@ func (c *controller) handlePhaseDeleting(ctx context.Context, log logging.Logger
 }
 
 func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Logr().V(5).Info("reconcile")
+	logger := c.log.StartReconcile(req)
 
 	exec := &lsv1alpha1.Execution{}
 	if err := read_write_layer.GetExecution(ctx, c.client, req.NamespacedName, exec); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -441,7 +439,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logging.Logger, c c
 		// - force-reconcile annotation
 		// - outdated generation
 		opAnn := lsv1alpha1helper.GetOperation(exec.ObjectMeta)
-		log.Logr().V(5).Info("reconcile required, setting observed generation and phase", "operationAnnotation", opAnn, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
+		log.Debug("reconcile required, setting observed generation and phase", "operationAnnotation", opAnn, "observedGeneration", exec.Status.ObservedGeneration, "generation", exec.Generation)
 		exec.Status.ObservedGeneration = exec.Generation
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
@@ -453,7 +451,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logging.Logger, c c
 		log.Logr().V(7).Info("successfully updated status")
 	}
 	if hasReconcileAnnotation {
-		log.Logr().V(5).Info("removing reconcile annotation")
+		log.Debug("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
 		log.Logr().V(7).Info("updating metadata")
 		writer := read_write_layer.NewWriter(log, c)
@@ -502,7 +500,7 @@ func handleError(ctx context.Context, err lserrors.LsError, log logging.Logger, 
 		writer := read_write_layer.NewWriter(log, c)
 		if updateErr := writer.UpdateExecutionStatus(ctx, read_write_layer.W000031, exec); updateErr != nil {
 			if apierrors.IsConflict(updateErr) { // reduce logging
-				log.Logr().V(5).Info(fmt.Sprintf("unable to update status: %s", updateErr.Error()))
+				log.Debug(fmt.Sprintf("unable to update status: %s", updateErr.Error()))
 			} else {
 				log.Error(updateErr, "unable to update status")
 			}

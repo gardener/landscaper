@@ -77,13 +77,12 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 }
 
 func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
-	logger.Logr().V(7).Info("reconcile")
+	logger := con.log.StartReconcile(req)
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -95,7 +94,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 
 	// detect pickup timeout
 	if con.pickupTimeout != 0 {
-		logger.Logr().V(7).Info("check for pickup timeout")
+		logger.Debug("check for pickup timeout")
 		requeue, err = con.detectPickupTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -112,7 +111,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 
 	// detect aborting timeout
 	if con.abortingTimeout != 0 {
-		logger.Logr().V(7).Info("check for aborting timeout")
+		logger.Debug("check for aborting timeout")
 		tmp, err := con.detectAbortingTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -142,7 +141,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	// detect progressing timeout
 	// only do something if progressing timeout detection is neither deactivated on the deploy item, nor defaulted by the deploy item and deactivated by default
 	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
-		logger.Logr().V(7).Info("check for progressing timeout")
+		logger.Debug("check for progressing timeout")
 		tmp, err := con.detectProgressingTimeouts(logger, di)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -175,12 +174,12 @@ func (con *controller) detectPickupTimeouts(log logging.Logger, di *lsv1alpha1.D
 		di.Status.LastError.Reason == lsv1alpha1.PickupTimeoutReason {
 		// don't do anything if phase is already failed due to a recent pickup timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
-		logger.Logr().V(7).Info("deploy item already failed due to pickup timeout, nothing to do")
+		logger.Debug("deploy item already failed due to pickup timeout, nothing to do")
 		return nil, nil
 	}
 
 	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.ReconcileTimestamp)) {
-		logger.Logr().V(7).Info("deploy item doesn't have reconcile timestamp annotation, nothing to do")
+		logger.Debug("deploy item doesn't have reconcile timestamp annotation, nothing to do")
 		return nil, nil
 	}
 
@@ -218,7 +217,7 @@ func (con *controller) detectAbortingTimeouts(log logging.Logger, di *lsv1alpha1
 		di.Status.LastError.Reason == lsv1alpha1.AbortingTimeoutReason {
 		// don't do anything if phase is already failed due to a recent aborting timeout
 		// to avoid multiple simultaneous reconciles which would cause further reconciles in the deployers
-		logger.Logr().V(7).Info("deploy item already failed due to aborting timeout, nothing to do")
+		logger.Debug("deploy item already failed due to aborting timeout, nothing to do")
 		// should do nothing if the annotations are already removed.
 		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		return nil, nil
@@ -226,7 +225,7 @@ func (con *controller) detectAbortingTimeouts(log logging.Logger, di *lsv1alpha1
 
 	// no aborting timeout if timestamp is missing or deploy item is in a final phase
 	if !metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) || lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
-		logger.Logr().V(7).Info("deploy item doesn't have abort timestamp annotation or is in a final phase, nothing to do")
+		logger.Debug("deploy item doesn't have abort timestamp annotation or is in a final phase, nothing to do")
 		return nil, nil
 	}
 
@@ -261,7 +260,7 @@ func (con *controller) detectProgressingTimeouts(log logging.Logger, di *lsv1alp
 	logger := log.WithValues("operation", "DetectProgressingTimeouts")
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
 	if di.Status.LastReconcileTime.IsZero() || lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
-		logger.Logr().V(7).Info("deploy item is reconciled for the first time or in a final phase, nothing to do")
+		logger.Debug("deploy item is reconciled for the first time or in a final phase, nothing to do")
 		return nil, nil
 	}
 

@@ -31,12 +31,12 @@ type controller struct {
 }
 
 func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
+	logger := con.log.StartReconcile(req)
 
 	co := &lsv1alpha1.ComponentOverwrites{}
 	if err := con.client.Get(ctx, req.NamespacedName, co); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

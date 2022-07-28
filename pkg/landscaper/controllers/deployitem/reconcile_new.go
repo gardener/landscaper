@@ -23,27 +23,26 @@ import (
 )
 
 func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.WithValues("resource", req.NamespacedName.String())
-	logger.Logr().V(7).Info("reconcile")
+	logger := con.log.StartReconcile(req)
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
 	if di.Status.JobID == di.Status.JobIDFinished {
-		logger.Logr().V(7).Info("deploy item is finished, nothing to do")
+		logger.Debug("deploy item is finished, nothing to do")
 		return reconcile.Result{}, nil
 	}
 
 	// check pickup timeout
 	if !HasBeenPickedUp(di) {
 		if con.pickupTimeout != 0 {
-			logger.Logr().V(7).Info("check for pickup timeout")
+			logger.Debug("check for pickup timeout")
 
 			exceeded, requeue := con.isPickupTimeoutExceeded(logger, di)
 			if exceeded {
@@ -63,7 +62,7 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 
 	// check aborting timeout
 	if con.abortingTimeout != 0 && metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) {
-		logger.Logr().V(7).Info("check for aborting timeout")
+		logger.Debug("check for aborting timeout")
 
 		exceeded, requeue, err := con.isAbortingTimeoutExceeded(logger, di)
 		if err != nil {
@@ -86,7 +85,7 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 	// only do something if progressing timeout detection is neither deactivated on the deploy item,
 	// nor defaulted by the deploy item and deactivated by default
 	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
-		logger.Logr().V(7).Info("check for progressing timeout")
+		logger.Debug("check for progressing timeout")
 
 		exceeded, requeue, err := con.isProgressingTimeoutExceeded(logger, di)
 		if err != nil {
@@ -123,7 +122,7 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, log loggi
 	// no deployer has picked up the deploy item within the timeframe
 	// => pickup timeout
 	logger := log.WithValues("operation", "PickupTimeoutExceeded")
-	logger.Logr().V(5).Info("pickup timeout occurred")
+	logger.Debug("pickup timeout occurred")
 
 	di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 	di.Status.JobIDFinished = di.Status.JobID
@@ -165,7 +164,7 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, log log
 	// deploy item has not been aborted within the timeframe
 	// => aborting timeout
 	logger := log.WithValues("operation", "AbortingTimeoutExceeded")
-	logger.Logr().V(5).Info("aborting timeout occurred")
+	logger.Debug("aborting timeout occurred")
 
 	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 
@@ -199,7 +198,7 @@ func (con *controller) isProgressingTimeoutExceeded(log logging.Logger, di *lsv1
 
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
 	if di.Status.LastReconcileTime.IsZero() {
-		logger.Logr().V(7).Info("deploy item is reconciled for the first time, nothing to do")
+		logger.Debug("deploy item is reconciled for the first time, nothing to do")
 		return false, nil, nil
 	}
 
@@ -225,7 +224,7 @@ func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, log 
 	// the deployer has not finished processing this deploy item within the timeframe
 	// => abort it
 	logger := log.WithValues("operation", "DetectProgressingTimeouts")
-	logger.Logr().V(5).Info("deploy item timed out, setting abort operation annotation")
+	logger.Debug("deploy item timed out, setting abort operation annotation")
 
 	lsv1alpha1helper.SetAbortOperationAndTimestamp(&di.ObjectMeta)
 

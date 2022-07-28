@@ -101,7 +101,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := logging.StartReconcileWithLogger(c.Log(), req)
+	logger := c.Log().StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
 
 	inst := &lsv1alpha1.Installation{}
@@ -172,7 +172,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := logging.StartReconcileWithLogger(c.Log(), req)
+	logger := c.Log().StartReconcile(req)
 	ctx = logging.NewContext(ctx, logger)
 
 	inst := &lsv1alpha1.Installation{}

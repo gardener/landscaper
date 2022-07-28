@@ -47,7 +47,7 @@ type lsHealthCheckController struct {
 }
 
 func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.initialLogger.WithValues("healthcheck", req.NamespacedName.String())
+	logger := c.initialLogger.StartReconcile(req)
 
 	if req.Namespace != c.agentConfig.Namespace || req.Name != c.agentConfig.Name {
 		return reconcile.Result{}, nil

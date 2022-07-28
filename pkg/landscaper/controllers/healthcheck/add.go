@@ -20,7 +20,7 @@ import (
 )
 
 // AddControllersToManager adds all deployer registration related deployers to the manager.
-func AddControllersToManager(ctx context.Context, log logging.Logger, hostMgr manager.Manager,
+func AddControllersToManager(ctx context.Context, logger logging.Logger, hostMgr manager.Manager,
 	agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments, enabledDeployers []string) error {
 	lsHealthCheck := &lsv1alpha1.LsHealthCheck{}
 	cl := hostMgr.GetClient()
@@ -43,12 +43,13 @@ func AddControllersToManager(ctx context.Context, log logging.Logger, hostMgr ma
 		}
 	}
 
-	healthCheckController := NewLsHealthCheckController(log.WithName("LsHealthCheck"), agentConfig, lsDeployments,
+	log := logger.Reconciles("lsHealthCheck", "LsHealthCheck")
+	healthCheckController := NewLsHealthCheckController(log, agentConfig, lsDeployments,
 		cl, hostMgr.GetScheme(), enabledDeployers)
 
 	err := builder.ControllerManagedBy(hostMgr).
 		For(&lsv1alpha1.LsHealthCheck{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.WithName("LsHealthCheck").Logr() }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(healthCheckController)
 	if err != nil {
 		return fmt.Errorf("unable to register health check controller: %w", err)

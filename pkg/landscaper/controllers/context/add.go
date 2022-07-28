@@ -21,7 +21,7 @@ import (
 // AddControllerToManager adds the context defaulterController to the defaulterController manager.
 // That defaulterController watches namespaces and creates the default context object in every namespace.
 func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config *config.LandscaperConfiguration) error {
-	log := logger.WithName("Context")
+	log := logger.Reconciles("context", "Namespace")
 	if config.Controllers.Contexts.Config.Default.Disable {
 		log.Info("Default Context controller is disabled")
 		return nil

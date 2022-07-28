@@ -52,13 +52,12 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 	if c.excludeNamespaces.Has(req.Name) {
 		return reconcile.Result{}, nil
 	}
-	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Logr().V(7).Info("reconcile")
+	logger := c.log.StartReconcile(req)
 
 	ns := &corev1.Namespace{}
 	if err := c.client.Get(ctx, req.NamespacedName, ns); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

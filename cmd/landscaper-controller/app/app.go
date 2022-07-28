@@ -240,7 +240,7 @@ func (o *Options) DeployInternalDeployers(ctx context.Context, mgr manager.Manag
 }
 
 func (o *Options) ensureCRDs(ctx context.Context, mgr manager.Manager) error {
-	crdmgr, err := crdmanager.NewCrdManager(logging.Wrap(ctrl.Log.WithName("CRDManager")), mgr, o.Config)
+	crdmgr, err := crdmanager.NewCrdManager(logging.Wrap(ctrl.Log.WithName("crdManager")), mgr, o.Config)
 	if err != nil {
 		return fmt.Errorf("unable to setup CRD manager: %w", err)
 	}

@@ -184,24 +184,30 @@ func (l Logger) Log(lvl LogLevel, msg string, keysAndValues ...interface{}) {
 	}
 }
 
+// Reconciles is meant to be used for the logger initialization for controllers.
+// It is a wrapper for WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource).
+func (l Logger) Reconciles(name, reconciledResource string) Logger {
+	return l.WithName(name).WithValues(lc.KeyReconciledResourceKind, reconciledResource)
+}
+
 // Logr returns the internal logr.Logger.
 func (l Logger) Logr() logr.Logger {
 	return l.internal
 }
 
-// StartReconcile fetches the logger from the context and adds the reconciled resource.
+// StartReconcileFromContext fetches the logger from the context and adds the reconciled resource.
 // It also logs a 'start reconcile' message.
-func StartReconcile(ctx context.Context, req reconcile.Request) (Logger, error) {
+func StartReconcileFromContext(ctx context.Context, req reconcile.Request) (Logger, error) {
 	log, err := FromContext(ctx)
 	if err != nil {
 		return Logger{}, fmt.Errorf("unable to get logger from context: %w", err)
 	}
-	return StartReconcileWithLogger(log, req), nil
+	return log.StartReconcile(req), nil
 }
 
-// StartReconcileWithLogger works like StartReconcile, but takes an existing logger instead of fetching it from the context.
-func StartReconcileWithLogger(log Logger, req reconcile.Request) Logger {
-	log = log.WithValues(lc.KeyReconciledResource, req.NamespacedName)
-	log.Info(lc.MsgStartReconcile)
-	return log
+// StartReconcile works like StartReconcile, but it is called on an existing logger instead of fetching one from the context.
+func (l Logger) StartReconcile(req reconcile.Request) Logger {
+	l = l.WithValues(lc.KeyReconciledResource, req.NamespacedName)
+	l.Info(lc.MsgStartReconcile)
+	return l
 }
