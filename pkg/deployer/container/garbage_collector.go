@@ -175,7 +175,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	logger := gc.log.WithValues("type", "Pod", "resource", kutil.ObjectKeyFromObject(obj).String())
 
 	if obj.Status.Phase == corev1.PodPending || obj.Status.Phase == corev1.PodRunning || obj.Status.Phase == corev1.PodUnknown {
-		logger.Logr().V(9).Info("not garbage collected", "reason", "pod is still running", "phase", obj.Status.Phase)
+		logger.Debug("not garbage collected", "reason", "pod is still running", "phase", obj.Status.Phase)
 		return reconcile.Result{}, nil
 	}
 
@@ -185,7 +185,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 	if shouldGC {
 		// always garbage collect pods that do not have a corresponding deployitem anymore
-		logger.Logr().V(10).Info("garbage collected", "reason", "deploy item does not exist anymore")
+		logger.Debug("garbage collected", "reason", "deploy item does not exist anymore")
 		if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 			return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 		}
@@ -193,7 +193,7 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 	}
 
 	if !controllerutil.ContainsFinalizer(obj, container.ContainerDeployerFinalizer) {
-		logger.Logr().V(9).Info("garbage collected", "reason", "pod has no finalizer")
+		logger.Debug("garbage collected", "reason", "pod has no finalizer")
 		err := gc.hostClient.Delete(ctx, obj)
 		return reconcile.Result{}, err
 	}
@@ -203,14 +203,14 @@ func (gc *GarbageCollector) cleanupPod(ctx context.Context, req reconcile.Reques
 		return reconcile.Result{}, err
 	}
 	if isLatest {
-		logger.Logr().V(9).Info("not garbage collected", "reason", "latest pod")
+		logger.Debug("not garbage collected", "reason", "latest pod")
 		return reconcile.Result{Requeue: true, RequeueAfter: gc.requeueAfter}, nil
 	}
 
 	if err := CleanupPod(ctx, gc.hostClient, obj, false); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to garbage collect pod %s: %w", kutil.ObjectKeyFromObject(obj).String(), err)
 	}
-	logger.Logr().V(9).Info("garbage collected")
+	logger.Debug("garbage collected")
 	return reconcile.Result{}, nil
 }
 
@@ -247,7 +247,7 @@ func (gc *GarbageCollector) isLatestPod(ctx context.Context, pod *corev1.Pod) (b
 		if p.CreationTimestamp.Equal(&latest.CreationTimestamp) {
 			// currently only for test debugging.
 			// remove as soon as the test is stable.
-			gc.log.Logr().V(12).Info("creation time equals", "currentPod", p.Name, "latest", latest.Name)
+			gc.log.Debug("creation time equals", "currentPod", p.Name, "latest", latest.Name)
 		}
 		if p.CreationTimestamp.After(latest.CreationTimestamp.Time) {
 			latest = p.DeepCopy()
@@ -276,7 +276,7 @@ func (gc *GarbageCollector) shouldGarbageCollect(ctx context.Context, obj client
 		// do not cleanup as we are unsure about the state of the deploy item.
 		return false, err
 	}
-	logger.Logr().V(9).Info("DeployItem still exists")
+	logger.Debug("DeployItem still exists")
 	return false, nil
 }
 
@@ -293,25 +293,25 @@ var _ predicate.Predicate = &ManagedResourcesPredicate{}
 func (h *ManagedResourcesPredicate) shouldReconcile(object metav1.Object) bool {
 	logger := h.Log.WithValues("resource", kutil.ObjectKeyFromObject(object).String())
 	if object.GetNamespace() != h.HostNamespace {
-		logger.Logr().V(10).Info("not garbage collected", "reason", "namespace does not match", "hostNamespace", h.HostNamespace, "resourceNamespace", object.GetNamespace())
+		logger.Debug("not garbage collected", "reason", "namespace does not match", "hostNamespace", h.HostNamespace, "resourceNamespace", object.GetNamespace())
 		return false
 	}
 	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNameLabel]; !ok {
-		logger.Logr().V(9).Info("not garbage collected", "reason", "no deploy item name label")
+		logger.Debug("not garbage collected", "reason", "no deploy item name label")
 		return false
 	}
 	if _, ok := object.GetLabels()[container.ContainerDeployerDeployItemNamespaceLabel]; !ok {
-		logger.Logr().V(9).Info("not garbage collected", "reason", "no deploy item namespace label")
+		logger.Debug("not garbage collected", "reason", "no deploy item namespace label")
 		return false
 	}
 
 	if len(h.DeployerID) != 0 {
 		if id, ok := object.GetLabels()[container.ContainerDeployerIDLabel]; !ok || id != h.DeployerID {
-			logger.Logr().V(9).Info("not garbage collected", "reason", "deployer ids do not match")
+			logger.Debug("not garbage collected", "reason", "deployer ids do not match")
 			return false
 		}
 	}
-	logger.Logr().V(10).Info("enqueue for garbage collection")
+	logger.Debug("enqueue for garbage collection")
 	return true
 }
 

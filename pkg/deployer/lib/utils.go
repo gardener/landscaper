@@ -49,21 +49,21 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		// - force-reconcile annotation
 		// - outdated generation
 		opAnn := lsv1alpha1helper.GetOperation(di.ObjectMeta)
-		log.Logr().V(5).Info("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "operationAnnotation", opAnn, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
+		log.Debug("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "operationAnnotation", opAnn, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
 		if err := PrepareReconcile(ctx, log, kubeClient, di, deployerInfo); err != nil {
 			return err
 		}
 	}
 
 	if hasReconcileAnnotation {
-		log.Logr().V(5).Info("removing reconcile annotation")
+		log.Debug("removing reconcile annotation")
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		log.Logr().V(7).Info("updating metadata")
+		log.Debug("updating metadata")
 		writer := read_write_layer.NewWriter(log, kubeClient)
 		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
 			return err
 		}
-		log.Logr().V(7).Info("successfully updated metadata")
+		log.Debug("successfully updated metadata")
 	}
 
 	return nil
@@ -77,16 +77,16 @@ func PrepareReconcile(ctx context.Context, log logging.Logger, kubeClient client
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	if di.Status.Deployer.Identity != deployerInfo.Identity {
-		log.Logr().V(7).Info("updating deployer identity")
+		log.Debug("updating deployer identity")
 		di.Status.Deployer = deployerInfo
 	}
 
-	log.Logr().V(7).Info("updating status")
+	log.Debug("updating status")
 	writer := read_write_layer.NewWriter(log, kubeClient)
 	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
 		return err
 	}
-	log.Logr().V(7).Info("successfully updated status")
+	log.Debug("successfully updated status")
 	return nil
 }
 

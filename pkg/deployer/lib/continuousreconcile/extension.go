@@ -30,14 +30,14 @@ const ContinuousReconcileActiveAnnotation = "continuousreconcile.extensions.land
 func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time, *lsv1alpha1.DeployItem) (*time.Time, error)) extension.ReconcileExtensionHook {
 	return func(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, hype extension.HookType) (*extension.HookResult, error) {
 		logger := log.WithName("continuousReconcileExtension")
-		logger.Logr().V(7).Info("execute")
+		logger.Debug("execute")
 		if di == nil {
 			panic("deploy item must not be nil")
 		}
 
 		// check for annotation
 		if active, ok := di.Annotations[ContinuousReconcileActiveAnnotation]; ok && active == "false" {
-			logger.Logr().V(5).Info("continuous reconciliation disabled by annotation", "annotation", ContinuousReconcileActiveAnnotation)
+			logger.Debug("continuous reconciliation disabled by annotation", "annotation", ContinuousReconcileActiveAnnotation)
 			return nil, nil
 		}
 
@@ -46,7 +46,7 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 			return nil, fmt.Errorf("unable to check whether reconciliation is due: %w", err)
 		}
 		if nextRaw == nil {
-			logger.Logr().V(7).Info("no continuous reconcile specified")
+			logger.Debug("no continuous reconcile specified")
 			return nil, nil
 		}
 		next := nextRaw.Truncate(time.Second) // when the next reconcile is scheduled to happen
@@ -59,7 +59,7 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 			res.AbortReconcile = true
 		} else {
 			// reconcile is (over-)due
-			logger.Logr().V(5).Info("reconcile deploy item")
+			logger.Debug("reconcile deploy item")
 
 			// compute next reconciliation time based on reconciliation which will happen now
 			nextRaw, err = nextReconcile(ctx, now, di)
@@ -67,7 +67,7 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 				return nil, fmt.Errorf("unable to compute next reconcile time: %w", err)
 			}
 			if nextRaw == nil {
-				logger.Logr().V(7).Info("no further reconcile specified")
+				logger.Debug("no further reconcile specified")
 				// return without setting RequeueAfter
 				return res, nil
 			}
@@ -75,7 +75,7 @@ func ContinuousReconcileExtension(nextReconcile func(context.Context, time.Time,
 		}
 
 		res.ReconcileResult.RequeueAfter = next.Sub(now)
-		logger.Logr().V(7).Info("requeue deploy item", "nextReconcileTime", next.Format(time.RFC3339), "nextReconcileAfter", res.ReconcileResult.RequeueAfter.String())
+		logger.Debug("requeue deploy item", "nextReconcileTime", next.Format(time.RFC3339), "nextReconcileAfter", res.ReconcileResult.RequeueAfter.String())
 
 		return res, nil
 	}

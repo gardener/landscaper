@@ -89,7 +89,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		def, err := c.Inst.GetExportDefinition(name)
 		if err != nil {
 			// ignore additional exports
-			c.Log().Logr().V(5).Info("key exported that is not defined by the blueprint", "name", name)
+			c.Log().Debug("key exported that is not defined by the blueprint", "name", name)
 			delete(exports, name)
 			continue
 		}

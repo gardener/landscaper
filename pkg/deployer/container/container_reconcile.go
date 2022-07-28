@@ -467,13 +467,13 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 		for _, secretFileName := range c.Configuration.OCI.ConfigFiles {
 			secretFileContent, err := ioutil.ReadFile(secretFileName)
 			if err != nil {
-				c.log.Logr().V(3).Info(fmt.Sprintf("Unable to read auth config from file %q, skipping", secretFileName), "error", err.Error())
+				c.log.Debug(fmt.Sprintf("Unable to read auth config from file %q, skipping", secretFileName), "error", err.Error())
 				continue
 			}
 
 			authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secretFileContent))
 			if err != nil {
-				c.log.Logr().V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretFileName), "error", err.Error())
+				c.log.Debug(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretFileName), "error", err.Error())
 				continue
 			}
 
@@ -490,11 +490,11 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)
 		if err != nil {
-			c.log.Logr().V(3).Info(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			c.log.Debug(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 		}
 		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secret.Data[corev1.DockerConfigJsonKey]))
 		if err != nil {
-			c.log.Logr().V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			c.log.Debug(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 			continue
 		}
 		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
@@ -508,11 +508,11 @@ func (c *Container) parseAndSyncSecrets(ctx context.Context, defaultLabels map[s
 
 		err := c.lsClient.Get(ctx, secretRef.NamespacedName(), secret)
 		if err != nil {
-			c.log.Logr().V(3).Info(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			c.log.Debug(fmt.Sprintf("Unable to get auth config from secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 		}
 		authConfig, err := dockerconfig.LoadFromReader(bytes.NewBuffer(secret.Data[corev1.DockerConfigJsonKey]))
 		if err != nil {
-			c.log.Logr().V(3).Info(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
+			c.log.Debug(fmt.Sprintf("Invalid auth config in secret %q, skipping", secretRef.NamespacedName().String()), "error", err.Error())
 			continue
 		}
 		if err := ociKeyring.Add(authConfig.GetCredentialsStore("")); err != nil {
@@ -618,7 +618,7 @@ func (c *Container) SyncConfiguration(ctx context.Context, defaultLabels map[str
 
 // SyncExport syncs the export secret from the wait container to the deploy item export.
 func (c *Container) SyncExport(ctx context.Context) error {
-	c.log.Logr().V(3).Info("Sync export to landscaper cluster", "deployitem", kutil.ObjectKey(c.DeployItem.Name, c.DeployItem.Namespace).String())
+	c.log.Debug("Sync export to landscaper cluster", "deployitem", kutil.ObjectKey(c.DeployItem.Name, c.DeployItem.Namespace).String())
 	secret := &corev1.Secret{}
 	key := kutil.ObjectKey(ExportSecretName(c.DeployItem.Namespace, c.DeployItem.Name), c.Configuration.Namespace)
 	if err := c.directHostClient.Get(ctx, key, secret); err != nil {

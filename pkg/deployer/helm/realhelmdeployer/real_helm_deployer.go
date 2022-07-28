@@ -117,7 +117,7 @@ func (c *RealHelmDeployer) getRelease(ctx context.Context) (*release.Release, er
 // installRelease creates a helm release
 func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string]interface{}) (*release.Release, error) {
 	currOp := "InstallHelmRelease"
-	c.log.Logr().V(1).Info(fmt.Sprintf("installing release %s into namespace %s", c.releaseName, c.defaultNamespace))
+	c.log.Info(fmt.Sprintf("installing release %s into namespace %s", c.releaseName, c.defaultNamespace))
 
 	actionConfig, err := c.initActionConfig(ctx)
 	if err != nil {
@@ -136,7 +136,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 	install.Atomic = installConfig.Atomic
 	install.Timeout = installConfig.Timeout.Duration
 
-	c.log.Logr().V(1).Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
+	c.log.Info(fmt.Sprintf("installing helm chart release %s", c.releaseName))
 
 	rel, err := install.Run(c.chart, values)
 	if err != nil {
@@ -144,7 +144,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 		return nil, lserror.NewWrappedError(err2, currOp, "Install", err2.Error())
 	}
 
-	c.log.Logr().V(1).Info(fmt.Sprintf("%s successfully installed in %s", c.releaseName, c.defaultNamespace))
+	c.log.Info(fmt.Sprintf("%s successfully installed in %s", c.releaseName, c.defaultNamespace))
 
 	return rel, nil
 }
@@ -152,7 +152,7 @@ func (c *RealHelmDeployer) installRelease(ctx context.Context, values map[string
 // upgradeRelease upgrades a helm release
 func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string]interface{}) (*release.Release, error) {
 	currOp := "UpgradeHelmRelease"
-	c.log.Logr().V(1).Info(fmt.Sprintf("upgrading release %s", c.releaseName))
+	c.log.Info(fmt.Sprintf("upgrading release %s", c.releaseName))
 
 	actionConfig, err := c.initActionConfig(ctx)
 	if err != nil {
@@ -170,7 +170,7 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 	upgrade.Atomic = upgradeConfig.Atomic
 	upgrade.Timeout = upgradeConfig.Timeout.Duration
 
-	c.log.Logr().V(1).Info(fmt.Sprintf("upgrading helm chart release %s", c.releaseName))
+	c.log.Info(fmt.Sprintf("upgrading helm chart release %s", c.releaseName))
 
 	rel, err := upgrade.Run(c.releaseName, c.chart, values)
 	if err != nil {
@@ -178,14 +178,14 @@ func (c *RealHelmDeployer) upgradeRelease(ctx context.Context, values map[string
 		return nil, lserror.NewWrappedError(err2, currOp, "Upgrade", err2.Error())
 	}
 
-	c.log.Logr().V(1).Info(fmt.Sprintf("%s successfully upgraded in %s", c.releaseName, c.defaultNamespace))
+	c.log.Info(fmt.Sprintf("%s successfully upgraded in %s", c.releaseName, c.defaultNamespace))
 
 	return rel, nil
 }
 
 func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 	currOp := "DeleteHelmRelease"
-	c.log.Logr().V(1).Info(fmt.Sprintf("deleting release %s in namespace %s", c.releaseName, c.defaultNamespace))
+	c.log.Info(fmt.Sprintf("deleting release %s in namespace %s", c.releaseName, c.defaultNamespace))
 
 	// Validate that the release actually belongs to the namespace
 	_, err := c.getRelease(ctx)
@@ -213,7 +213,7 @@ func (c *RealHelmDeployer) deleteRelease(ctx context.Context) error {
 		return lserror.NewWrappedError(err2, currOp, "Uninstall", err2.Error())
 	}
 
-	c.log.Logr().V(1).Info(fmt.Sprintf("%s successfully deleted in %s", c.releaseName, c.defaultNamespace))
+	c.log.Info(fmt.Sprintf("%s successfully deleted in %s", c.releaseName, c.defaultNamespace))
 
 	return nil
 }
@@ -269,7 +269,7 @@ func (c *RealHelmDeployer) getStorageType(ctx context.Context, clientset *kubern
 
 func (c *RealHelmDeployer) createLogFunc(_ context.Context) func(format string, v ...interface{}) {
 	return func(format string, v ...interface{}) {
-		c.log.Logr().V(1).Info(fmt.Sprintf(format, v))
+		c.log.Info(fmt.Sprintf(format, v))
 	}
 }
 

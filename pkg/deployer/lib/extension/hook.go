@@ -80,7 +80,7 @@ type ReconcileExtensionHookSetup struct {
 // An error is returned if one of the hooks returns an error or if an unknown hook type is given.
 func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem, target *lsv1alpha1.Target, ht HookType) (*HookResult, lserror.LsError) {
 	logger := log.WithName(string(ht))
-	logger.Logr().V(7).Info("calling extension hooks")
+	logger.Debug("calling extension hooks")
 	typedHooks, ok := hooks[ht]
 	if !ok {
 		switch ht {
@@ -94,7 +94,7 @@ func (hooks ReconcileExtensionHooks) ExecuteHooks(ctx context.Context, log loggi
 	}
 	hookRes := make([]*HookResult, len(typedHooks))
 	for i, hook := range typedHooks {
-		logger.WithValues("index", i).Logr().V(5).Info("calling extension hook")
+		logger.WithValues("index", i).Debug("calling extension hook")
 		var err error
 		hookRes[i], err = hook(ctx, logger, di, target, ht)
 		if err != nil {

@@ -84,17 +84,17 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 		}
 
 		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-			log.Logr().V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 
 		if inst.Generation != inst.Status.ObservedGeneration {
-			log.Logr().V(3).Info("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 
 		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-			log.Logr().V(3).Info("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 

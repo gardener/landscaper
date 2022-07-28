@@ -137,7 +137,7 @@ func DeleteValidatingWebhookConfiguration(ctx context.Context, kubeClient client
 	webhookLogger.Info("Removing ValidatingWebhookConfiguration, if it exists", "name", name, "kind", "ValidatingWebhookConfiguration")
 	if err := kubeClient.Delete(ctx, &vwc); err != nil {
 		if apierrors.IsNotFound(err) {
-			webhookLogger.Logr().V(5).Info("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
+			webhookLogger.Debug("ValidatingWebhookConfiguration not found", "name", name, "kind", "ValidatingWebhookConfiguration")
 		} else {
 			return fmt.Errorf("unable to delete ValidatingWebhookConfiguration %q: %w", name, err)
 		}

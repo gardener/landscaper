@@ -51,7 +51,7 @@ func WaitUntilMainContainerFinished(ctx context.Context, log logging.Logger, kub
 		}
 
 		if mainContainerStatus.State.Terminated == nil {
-			log.Logr().V(3).Info("main container is still running...")
+			log.Debug("main container is still running...")
 			return false, nil
 		}
 		return true, nil

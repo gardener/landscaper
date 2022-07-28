@@ -45,7 +45,7 @@ func WaitForObjectsReady(ctx context.Context, timeout time.Duration, log logging
 	)
 
 	_ = wait.PollImmediate(5*time.Second, timeout, func() (bool, error) {
-		log.Logr().V(3).Info("wait resources ready", "try", try)
+		log.Debug("wait resources ready", "try", try)
 		try++
 
 		allErrs = nil
@@ -113,16 +113,16 @@ func IsObjectReady(ctx context.Context, log logging.Logger, kubeClient client.Cl
 
 	key := kutil.ObjectKey(obj.GetName(), obj.GetNamespace())
 	if err := kubeClient.Get(ctx, key, obj); err != nil {
-		objLog.Logr().V(3).Info("resource status", "status", StatusUnknown)
+		objLog.Debug("resource status", "status", StatusUnknown)
 		return fmt.Errorf("unable to get %s %s/%s: %w",
 			obj.GroupVersionKind().String(),
 			obj.GetName(), obj.GetNamespace(),
 			err)
 	}
 
-	objLog.Logr().V(3).Info("get resource status")
+	objLog.Debug("get resource status")
 	if err := checkObject(obj); err != nil {
-		objLog.Logr().V(3).Info("resource status", "status", StatusNotReady)
+		objLog.Debug("resource status", "status", StatusNotReady)
 		return &ObjectNotReadyError{
 			objectGVK:       obj.GroupVersionKind().String(),
 			objectName:      obj.GetName(),
@@ -131,7 +131,7 @@ func IsObjectReady(ctx context.Context, log logging.Logger, kubeClient client.Cl
 		}
 	}
 
-	objLog.Logr().V(3).Info("resource status", "status", StatusReady)
+	objLog.Debug("resource status", "status", StatusReady)
 
 	return nil
 }

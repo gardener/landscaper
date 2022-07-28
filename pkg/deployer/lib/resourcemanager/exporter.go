@@ -112,7 +112,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
 				value, err := e.doExport(ctx, export)
 				if err != nil {
-					log.Logr().V(5).Info(err.Error())
+					log.Debug(err.Error())
 					lastErr = err
 					return false, nil
 				}

@@ -29,19 +29,19 @@ import (
 func GetAndCheckReconcile(log logging.Logger, lsClient client.Client, config containerv1alpha1.Configuration) func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
 	return func(ctx context.Context, req reconcile.Request) (*lsv1alpha1.DeployItem, *lsv1alpha1.Context, error) {
 		logger := log.WithValues("resource", req.NamespacedName)
-		logger.Logr().V(7).Info("Reconcile deploy item")
+		logger.Debug("Reconcile deploy item")
 
 		deployItem := &lsv1alpha1.DeployItem{}
 		if err := read_write_layer.GetDeployItem(ctx, lsClient, req.NamespacedName, deployItem); err != nil {
 			if apierrors.IsNotFound(err) {
-				logger.Logr().V(5).Info(err.Error())
+				logger.Debug(err.Error())
 				return nil, nil, nil
 			}
 			return nil, nil, err
 		}
 
 		if deployItem.Spec.Type != Type {
-			logger.Logr().V(7).Info("DeployItem is of wrong type", "type", deployItem.Spec.Type)
+			logger.Debug("DeployItem is of wrong type", "type", deployItem.Spec.Type)
 			return nil, nil, nil
 		}
 
@@ -56,7 +56,7 @@ func GetAndCheckReconcile(log logging.Logger, lsClient client.Client, config con
 					return nil, nil, fmt.Errorf("unable to match target selector: %w", err)
 				}
 				if !matched {
-					logger.Logr().V(5).Info("The deploy item's target does not match the given target selector")
+					logger.Debug("The deploy item's target does not match the given target selector")
 					return nil, nil, nil
 				}
 			}

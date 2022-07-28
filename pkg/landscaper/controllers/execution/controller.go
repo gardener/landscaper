@@ -280,7 +280,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	// don't reconcile if ignore annotation is set and execution is not currently running
 	if lsv1alpha1helper.HasIgnoreAnnotation(exec.ObjectMeta) && lsv1alpha1helper.IsCompletedExecutionPhase(exec.Status.Phase) {
-		logger.Logr().V(7).Info("skipping reconcile due to ignore annotation")
+		logger.Debug("skipping reconcile due to ignore annotation")
 		return reconcile.Result{}, nil
 	}
 
@@ -443,22 +443,22 @@ func HandleAnnotationsAndGeneration(ctx context.Context, log logging.Logger, c c
 		exec.Status.ObservedGeneration = exec.Generation
 		exec.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 
-		log.Logr().V(7).Info("updating status")
+		log.Debug("updating status")
 		writer := read_write_layer.NewWriter(log, c)
 		if err := writer.UpdateExecutionStatus(ctx, read_write_layer.W000033, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution status", err.Error())
 		}
-		log.Logr().V(7).Info("successfully updated status")
+		log.Debug("successfully updated status")
 	}
 	if hasReconcileAnnotation {
 		log.Debug("removing reconcile annotation")
 		delete(exec.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		log.Logr().V(7).Info("updating metadata")
+		log.Debug("updating metadata")
 		writer := read_write_layer.NewWriter(log, c)
 		if err := writer.UpdateExecution(ctx, read_write_layer.W000027, exec); err != nil {
 			return lserrors.NewWrappedError(err, operation, "update execution", err.Error())
 		}
-		log.Logr().V(7).Info("successfully updated metadata")
+		log.Debug("successfully updated metadata")
 	}
 
 	return nil

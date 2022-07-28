@@ -90,7 +90,7 @@ func (o *Operation) checkDeletable(item executionItem, items []*executionItem) b
 		// the reconcile loop.
 		// Therefore, it should not be necessary to check again against the api server.
 		if exec.DeployItem != nil {
-			o.Log().Logr().V(3).Info("deploy item %s depends on %s and is still present", exec.DeployItem.Name, item.Info.Name)
+			o.Log().Debug("deploy item %s depends on %s and is still present", exec.DeployItem.Name, item.Info.Name)
 			return false
 		}
 	}

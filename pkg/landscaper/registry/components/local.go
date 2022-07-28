@@ -142,7 +142,7 @@ func (c *localClient) searchInFs(name, version string) (*cdv2.ComponentDescripto
 	err := vfs.Walk(c.fs, "/", func(path string, info os.FileInfo, err error) error {
 		// ignore errors
 		if err != nil {
-			c.log.Logr().V(3).Info(err.Error())
+			c.log.Debug(err.Error())
 			return nil
 		}
 

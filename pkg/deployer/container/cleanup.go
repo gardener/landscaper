@@ -69,7 +69,7 @@ func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostCli
 	if err := hostClient.Delete(ctx, sa); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
-	log.Logr().V(3).Info("successfully removed init container rbac resources")
+	log.Debug("successfully removed init container rbac resources")
 
 	sa = &corev1.ServiceAccount{}
 	sa.Name = WaitContainerServiceAccountName(deployItem)
@@ -93,7 +93,7 @@ func CleanupRBAC(ctx context.Context, deployItem *lsv1alpha1.DeployItem, hostCli
 		return err
 	}
 
-	log.Logr().V(3).Info("successfully removed wait container rbac resources")
+	log.Debug("successfully removed wait container rbac resources")
 
 	return nil
 }

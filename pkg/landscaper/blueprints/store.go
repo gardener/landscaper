@@ -393,7 +393,7 @@ func (s *Store) RunGarbageCollection() {
 
 	// first check if we reached the threshold to start garbage collection
 	if s.usage < s.gcConfig.GCHighThreshold {
-		s.log.Logr().V(10).Info(fmt.Sprintf("run gc with %v%% usage", s.usage))
+		s.log.Debug(fmt.Sprintf("run gc with %v%% usage", s.usage))
 		return
 	}
 
@@ -410,7 +410,7 @@ func (s *Store) RunGarbageCollection() {
 		if err := s.fs.RemoveAll(blueprintPath(item.Name)); err != nil {
 			s.log.Error(err, "unable to delete blueprint directory", "file", item.Name)
 		}
-		s.log.Logr().V(7).Info("garbage collected", "item", item.Name)
+		s.log.Debug("garbage collected", "item", item.Name)
 		s.updateUsage(-item.Size)
 		StoredItems.Dec()
 		// remove currently garbage collected item

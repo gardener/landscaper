@@ -162,7 +162,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	if requeue == nil {
 		return reconcile.Result{}, nil
 	}
-	logger.Logr().V(5).Info("requeue deploy item", "after", requeue.String())
+	logger.Debug("requeue deploy item", "after", requeue.String())
 	return reconcile.Result{RequeueAfter: *requeue}, nil
 }
 
@@ -191,7 +191,7 @@ func (con *controller) detectPickupTimeouts(log logging.Logger, di *lsv1alpha1.D
 	if waitingForPickupDuration >= con.pickupTimeout {
 		// no deployer has picked up the deploy item within the timeframe
 		// => pickup timeout
-		logger.Logr().V(5).Info("pickup timeout occurred")
+		logger.Debug("pickup timeout occurred")
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.ObservedGeneration = di.Generation
 		di.Status.LastError = lserrors.UpdatedError(di.Status.LastError,
@@ -237,7 +237,7 @@ func (con *controller) detectAbortingTimeouts(log logging.Logger, di *lsv1alpha1
 	if waitingForAbortDuration >= con.abortingTimeout {
 		// deploy item has not been aborted within the timeframe
 		// => aborting timeout
-		logger.Logr().V(5).Info("aborting timeout occurred")
+		logger.Debug("aborting timeout occurred")
 		lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 		di.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 		di.Status.ObservedGeneration = di.Generation
@@ -274,7 +274,7 @@ func (con *controller) detectProgressingTimeouts(log logging.Logger, di *lsv1alp
 	if progressingDuration >= progressingTimeout {
 		// the deployer has not finished processing this deploy item within the timeframe
 		// => abort it
-		logger.Logr().V(5).Info("deploy item timed out, setting abort operation annotation")
+		logger.Debug("deploy item timed out, setting abort operation annotation")
 		lsv1alpha1helper.SetAbortOperationAndTimestamp(&di.ObjectMeta)
 		return nil, nil
 	}

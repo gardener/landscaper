@@ -67,7 +67,7 @@ type InstallationValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (iv *InstallationValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	iv.log.Logr().V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	iv.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	inst := &lscore.Installation{}
 	if _, _, err := iv.decoder.Decode(req.Object.Raw, nil, inst); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -101,7 +101,7 @@ type DeployItemValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (div *DeployItemValidator) Handle(_ context.Context, req admission.Request) admission.Response {
-	div.log.Logr().V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	div.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	di := &lscore.DeployItem{}
 	if _, _, err := div.decoder.Decode(req.Object.Raw, nil, di); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -118,7 +118,7 @@ func (div *DeployItemValidator) Handle(_ context.Context, req admission.Request)
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		if oldDi.Spec.Type != di.Spec.Type {
-			div.log.Logr().V(7).Info(fmt.Sprintf("deployitem type is immutable, got %q but expected %q", di.Spec.Type, oldDi.Spec.Type))
+			div.log.Debug(fmt.Sprintf("deployitem type is immutable, got %q but expected %q", di.Spec.Type, oldDi.Spec.Type))
 			return admission.Errored(http.StatusForbidden, field.Forbidden(field.NewPath(".spec.type"), "type is immutable"))
 		}
 	}
@@ -133,7 +133,7 @@ type ExecutionValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ExecutionValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	ev.log.Logr().V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	ev.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	exec := &lscore.Execution{}
 	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, exec); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -153,7 +153,7 @@ type ComponentOverwritesValidator struct{ abstractValidator }
 
 // Handle handles a request to the webhook
 func (ev *ComponentOverwritesValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	ev.log.Logr().V(5).Info("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
+	ev.log.Debug("Received request", "group", req.Kind.Group, "kind", req.Kind.Kind, "version", req.Kind.Version)
 	co := &lscore.ComponentOverwrites{}
 	if _, _, err := ev.decoder.Decode(req.Object.Raw, nil, co); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)

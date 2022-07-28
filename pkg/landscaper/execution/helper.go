@@ -103,7 +103,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 
 		if di == nil || managedDi.Reference.ObservedGeneration != di.Generation {
 			// at least one deploy item is outdated or got deleted, a reconcile is required
-			logger.Logr().V(7).Info("deploy item cannot be found or does not match last observed generation")
+			logger.Debug("deploy item cannot be found or does not match last observed generation")
 			o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 			err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000028, o.exec)
 			if err != nil {
@@ -118,7 +118,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 	cp := lsv1alpha1helper.CombinedExecutionPhase(phases...)
 	if o.exec.Status.Phase != cp {
 		// Phase is completed but doesn't fit to the deploy items' phases
-		logger.Logr().V(5).Info("execution phase mismatch", "phase", string(o.exec.Status.Phase), "combinedPhase", string(cp))
+		logger.Debug("execution phase mismatch", "phase", string(o.exec.Status.Phase), "combinedPhase", string(cp))
 		o.exec.Status.Phase = cp
 		err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000030, o.exec)
 		if err != nil {
@@ -127,7 +127,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 
 		if cp == lsv1alpha1.ExecutionPhaseSucceeded {
 			// phase changed to Succeeded, it might be necessary to generate the exports again
-			logger.Logr().V(5).Info("phase changed to %q, compute deploy item exports again", string(lsv1alpha1.ExecutionPhaseSucceeded))
+			logger.Debug("phase changed to %q, compute deploy item exports again", string(lsv1alpha1.ExecutionPhaseSucceeded))
 			execItems, _ := o.getExecutionItems(deployitems)
 			err = o.collectAndUpdateExports(ctx, execItems)
 			if err != nil {
@@ -137,7 +137,7 @@ func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Contex
 
 		return nil
 	}
-	logger.Logr().V(7).Info("execution is in a final state and deployitems are up-to-date")
+	logger.Debug("execution is in a final state and deployitems are up-to-date")
 
 	return nil
 }

@@ -60,7 +60,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	env := &lsv1alpha1.Environment{}
 	if err := con.client.Get(ctx, req.NamespacedName, env); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -161,7 +161,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 	registration := &lsv1alpha1.DeployerRegistration{}
 	if err := con.client.Get(ctx, req.NamespacedName, registration); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -251,7 +251,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Logr().V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
