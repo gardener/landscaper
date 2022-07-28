@@ -17,5 +17,8 @@ package v2
 // OCIImageType is the type of an oci image component.
 const OCIImageType = "ociImage"
 
+// CosignSignatureType is the type of a cosign signature.
+const CosignSignatureType = "cosignSignature"
+
 // GitType is the type a git repository resource.
 const GitType = "git"

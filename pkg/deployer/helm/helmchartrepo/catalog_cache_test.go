@@ -18,8 +18,8 @@ var _ = Describe("Catalog cache", func() {
 				repoURL = "test-catalog-url"
 				catalog = repo.IndexFile{
 					Entries: map[string]repo.ChartVersions{
-						"test-chart": repo.ChartVersions{
-							{
+						"test-chart": {
+							&repo.ChartVersion{
 								Metadata: &chart.Metadata{Name: "test-chart", Version: "test-version"},
 								URLs:     []string{"test-chart-url"},
 							},

@@ -279,7 +279,10 @@ func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Ins
 func (c *Controller) handleSubComponentPhaseChanges(
 	ctx context.Context,
 	inst *lsv1alpha1.Installation) lserrors.LsError {
-	logger := logr.FromContext(ctx)
+	logger, err := logr.FromContext(ctx)
+	if err != nil {
+		return lserrors.NewWrappedError(err, "handleSubComponentPhaseChanges", "InitializeLogger", "internal error: unable to get logger")
+	}
 
 	execRef := inst.Status.ExecutionReference
 	phases := []lsv1alpha1.ComponentInstallationPhase{}

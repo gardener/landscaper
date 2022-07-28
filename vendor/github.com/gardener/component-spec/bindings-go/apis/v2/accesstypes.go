@@ -219,3 +219,31 @@ func NewGitHubAccess(url, ref, commit string) *GitHubAccess {
 func (a GitHubAccess) GetType() string {
 	return GitHubAccessType
 }
+
+// S3AccessType is the type of a s3 access.
+const S3AccessType = "s3"
+
+// S3AccessType describes a s3 resource access.
+type S3Access struct {
+	ObjectType `json:",inline"`
+
+	// BucketName is the name of the s3 bucket.
+	BucketName string `json:"bucketName"`
+	// ObjectKey describes the referenced object.
+	ObjectKey string `json:"objectKey"`
+}
+
+// NewS3Access creates a new s3 accessor
+func NewS3Access(bucketName, objectKey string) *S3Access {
+	return &S3Access{
+		ObjectType: ObjectType{
+			Type: S3AccessType,
+		},
+		BucketName: bucketName,
+		ObjectKey:  objectKey,
+	}
+}
+
+func (a S3Access) GetType() string {
+	return S3AccessType
+}

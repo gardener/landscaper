@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/apis/config"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
@@ -57,7 +58,7 @@ func AddToManager(ctx context.Context, logger logr.Logger, lsMgr manager.Manager
 
 	err = builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Environment{}).
-		WithLogger(log).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
 		Complete(agent)
 	if err != nil {
 		return err

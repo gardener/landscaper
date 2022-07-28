@@ -102,7 +102,7 @@ type Store struct {
 //
 // The store should be initialized once as this is a global singleton.
 func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintStore) (*Store, error) {
-	if log == nil {
+	if log.GetSink() == nil {
 		log = logr.Discard()
 	}
 

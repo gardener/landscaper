@@ -13,18 +13,23 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/component-cli/ociclient/cache"
+	"github.com/gardener/component-cli/ociclient/oci"
 	"github.com/gardener/component-cli/pkg/commands/constants"
 )
 
@@ -174,18 +179,18 @@ func BytesString(bytes uint64, accuracy int) string {
 	return fmt.Sprintf("%s %s", stringValue, unit)
 }
 
-// WriteFileToTARArchive writes a new file with name=filename and content=contentReader to archiveWriter
-func WriteFileToTARArchive(filename string, contentReader io.Reader, archiveWriter *tar.Writer) error {
+// WriteFileToTARArchive writes a new file with name=filename and content=inputReader to outputWriter
+func WriteFileToTARArchive(filename string, inputReader io.Reader, outputWriter *tar.Writer) error {
 	if filename == "" {
 		return errors.New("filename must not be empty")
 	}
 
-	if contentReader == nil {
-		return errors.New("contentReader must not be nil")
+	if inputReader == nil {
+		return errors.New("inputReader must not be nil")
 	}
 
-	if archiveWriter == nil {
-		return errors.New("archiveWriter must not be nil")
+	if outputWriter == nil {
+		return errors.New("outputWriter must not be nil")
 	}
 
 	tempfile, err := ioutil.TempFile("", "")
@@ -194,7 +199,7 @@ func WriteFileToTARArchive(filename string, contentReader io.Reader, archiveWrit
 	}
 	defer tempfile.Close()
 
-	fsize, err := io.Copy(tempfile, contentReader)
+	fsize, err := io.Copy(tempfile, inputReader)
 	if err != nil {
 		return fmt.Errorf("unable to copy content to tempfile: %w", err)
 	}
@@ -210,13 +215,55 @@ func WriteFileToTARArchive(filename string, contentReader io.Reader, archiveWrit
 		ModTime: time.Now(),
 	}
 
-	if err := archiveWriter.WriteHeader(&header); err != nil {
+	if err := outputWriter.WriteHeader(&header); err != nil {
 		return fmt.Errorf("unable to write tar header: %w", err)
 	}
 
-	if _, err := io.Copy(archiveWriter, tempfile); err != nil {
+	if _, err := io.Copy(outputWriter, tempfile); err != nil {
 		return fmt.Errorf("unable to write file to tar archive: %w", err)
 	}
 
 	return nil
+}
+
+// TargetOCIArtifactRef calculates the target reference for
+func TargetOCIArtifactRef(targetRepo, ref string, keepOrigHost bool) (string, error) {
+	if !strings.Contains(targetRepo, "://") {
+		// add dummy protocol to correctly parse the url
+		targetRepo = "http://" + targetRepo
+	}
+	t, err := url.Parse(targetRepo)
+	if err != nil {
+		return "", err
+	}
+	parsedRef, err := oci.ParseRef(ref)
+	if err != nil {
+		return "", err
+	}
+
+	if !keepOrigHost {
+		parsedRef.Host = t.Host
+		parsedRef.Repository = path.Join(t.Path, parsedRef.Repository)
+		return parsedRef.String(), nil
+	}
+	replacedRef := strings.NewReplacer(".", "_", ":", "_").Replace(parsedRef.Name())
+	parsedRef.Repository = path.Join(t.Path, replacedRef)
+	parsedRef.Host = t.Host
+	return parsedRef.String(), nil
+}
+
+// CalculateBlobUploadRef calculates the OCI reference where blobs for a component should be uploaded
+func CalculateBlobUploadRef(repoCtx cdv2.OCIRegistryRepository, componentName string, componentVersion string) string {
+	uploadTag := componentVersion
+	if strings.Contains(componentVersion, ":") {
+		// if componentVersion is a digest, use "latest" tag for upload ref
+		uploadTag = "latest"
+	}
+
+	return fmt.Sprintf("%s/component-descriptors/%s:%s", repoCtx.BaseURL, componentName, uploadTag)
+}
+
+// ExponentialBackoff calculates an exponential backoff timeout
+func ExponentialBackoff(backoffFactor time.Duration, retries uint64) time.Duration {
+	return time.Duration(float64(backoffFactor.Nanoseconds()) * math.Pow(2, float64(retries)))
 }

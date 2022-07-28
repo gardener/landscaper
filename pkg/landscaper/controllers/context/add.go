@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -38,6 +39,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config *con
 	return builder.ControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.Controllers.Contexts.CommonControllerConfig)).
-		WithLogger(log).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
 		Complete(a)
 }

@@ -22,6 +22,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/xeipuuv/gojsonschema"
+
+	v2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 )
 
 var Schema *gojsonschema.Schema
@@ -65,4 +67,13 @@ func Validate(src []byte) error {
 	}
 
 	return nil
+}
+
+// ValidateComponentDescriptor validates the given component decriptor against the component descriptor v2 jsonscheme.
+func ValidateComponentDescriptor(cd v2.ComponentDescriptor) error {
+	marshaledCd, err := yaml.Marshal(cd)
+	if err != nil {
+		return fmt.Errorf("failed marshaling cd to yaml: %w", err)
+	}
+	return Validate(marshaledCd)
 }

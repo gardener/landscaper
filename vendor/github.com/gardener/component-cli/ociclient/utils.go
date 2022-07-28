@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/containerd/containerd/images"
 	"github.com/opencontainers/go-digest"
 	ocispecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -72,4 +73,14 @@ func ParseImageRef(ref string) (repository, version string, err error) {
 func TagIsDigest(tag string) bool {
 	_, err := digest.Parse(tag)
 	return err == nil
+}
+
+func IsMultiArchImage(mediaType string) bool {
+	return mediaType == ocispecv1.MediaTypeImageIndex ||
+		mediaType == images.MediaTypeDockerSchema2ManifestList
+}
+
+func IsSingleArchImage(mediaType string) bool {
+	return mediaType == ocispecv1.MediaTypeImageManifest ||
+		mediaType == images.MediaTypeDockerSchema2Manifest
 }
