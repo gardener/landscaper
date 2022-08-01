@@ -18,7 +18,7 @@ When you create the Gardener Kubernetes cluster, ensure the following:
 
 ## The tools
 
-Install the Landscaper CLI with the [installation instructions](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) which will include Component CLI as well or do a manual binary download like describes bewlow.
+Install the Landscaper CLI with the [installation instructions](https://github.com/gardener/landscapercli/blob/master/docs/installation.md) which will include Component CLI as well or do a manual binary download as described below.
 
 ### Getting and setting up the Landscaper CLI
 
@@ -50,27 +50,27 @@ Install the Landscaper CLI with the [installation instructions](https://github.c
 
 ### Getting and setting up the Component CLI
 
-1. Check, which is the latest version of Component CLI on <https://github.com/gardener/component-cli/releases/latest>
-
-2. Get latest release e.g.
+1. Check, which is the latest version of Component CLI on https://github.com/gardener/component-cli/releases/latest
+2. 
+3. Get latest release e.g.
 
     ```bash
-    curl -L -O <https://github.com/gardener/component-cli/releases/download/v0.40.0/componentcli-linux-amd64.gz>
+    curl -L -O https://github.com/gardener/component-cli/releases/download/v0.40.0/componentcli-linux-amd64.gz
     ```
 
-3. Unpack with
+4. Unpack with
 
     ```bash
     gzip -d ./componentcli-linux-amd64.gz
     ```
 
-4. Make it executable with
+5. Make it executable with
 
     ```bash
     chmod +x ./componentcli-linux-amd64
     ```
 
-5. (optional) Copy to bin with
+6. (optional) Copy to bin with
 
     ```bash
     sudo mv componentcli-linux-amd64 /usr/local/bin/component-cli
