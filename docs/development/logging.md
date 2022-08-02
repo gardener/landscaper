@@ -36,6 +36,22 @@ In `github.com/gardener/landscaper/controller-utils/pkg/logging/constants`, ther
 
 Log messages should start with a capital letter and not end with a punctuation mark.
 
+#### Verbosity Levels and what to log
+
+The logging framework supports three verbosity levels - _error_, _info_, and _debug_ (see below for the reasoning behind this decision). These are some hints for when to use which verbosity for printing a log message.
+
+##### Error
+
+The `error` verbosity should only be used for errors. Since most failures cause actual errors (rather than just logs), which don't need to be logged in this way, logs at `error` verbosity will mostly be used for unexpected failures which can be recovered from, and they should be relatively rare.
+
+##### Info
+
+Logs logged at `info` verbosity should try to provide sufficient information for a reader to find out what the component is doing, but at the same time, the logs should remain readable and not flooded with messages. The amount of `info` logs follows the principle 'as few as possible, but as much as necessary'. Since this is the verbosity at which the Landscaper prints by default, known problems (e.g. wrong configuration) should be identifyable easily with only these logs. 
+
+##### Debug
+
+`debug` is the most verbose log level. As such, everything which is not an error and too verbose for `info` should be logged as a `debug` message. A user who reads these logs wants to have precise knowledge about what happened and which code paths were used, with the price being having to read logs of log messages. The results of important conditional statements should be visible, preferrably with the value which caused this decision. To not flood the already verbose `debug` logs, try to avoid log statements which don't add new meaningful information.
+
 ## The Framework
 
 ### logging.Logger vs. logr.Logger
