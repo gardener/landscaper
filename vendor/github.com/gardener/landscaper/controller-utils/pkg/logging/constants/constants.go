@@ -6,8 +6,10 @@ package constants
 
 const (
 	// KeyReconciledResource is for 'namespace/name' of the resource which is currently being reconciled.
+	// Do not use this field directly, it is added automatically by logging.StartReconcileFromContext or log.StartReconcile.
 	KeyReconciledResource = "reconciledResource"
 	// KeyReconciledResourceKind is for the kind of the resource which is being reconciled by this controller.
+	// Do not use this field directly, it is added by log.Reconciles.
 	KeyReconciledResourceKind = "reconciledResourceKind"
 	// KeyOperation is for the current operation
 	KeyOperation = "operation"

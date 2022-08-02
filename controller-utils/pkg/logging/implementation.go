@@ -78,7 +78,7 @@ func New(config *Config) (Logger, error) {
 	if err != nil {
 		return Logger{}, err
 	}
-	return Wrap(zapr.NewLogger(zapLog)), nil
+	return Wrap(PreventKeyConflicts(zapr.NewLogger(zapLog))), nil
 }
 
 // GetLogger returns a singleton logger.
