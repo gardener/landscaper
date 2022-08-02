@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: landscaper.gardener.cloud/v1alpha1
+kind: DeployItem
+metadata:
+  name: di-b
+  namespace:  {{ .Namespace }}
+  finalizers:
+    - finalizer.landscaper.gardener.cloud
+  generation: 2
+  labels:
+    execution.landscaper.gardener.cloud/managed-by: exec-1
+    execution.landscaper.gardener.cloud/name: b
+spec:
+  type: landscaper.gardener.cloud/container
+  config:
+    apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+    kind: ProviderConfiguration
+    my-val: val1
+
+status:
+  phase: Succeeded

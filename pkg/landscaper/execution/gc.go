@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,6 +35,33 @@ func (o *Operation) cleanupOrphanedDeployItems(ctx context.Context, orphaned []l
 		}
 	}
 	return fmt.Errorf("waiting for %d orphaned deploy items to be deleted", len(orphaned))
+}
+
+// cleanupOrphanedDeployItemsForNewReconcile deletes all orphaned deploy items that are not defined by their execution anymore.
+func (o *Operation) cleanupOrphanedDeployItemsForNewReconcile(ctx context.Context, orphaned []lsv1alpha1.DeployItem) error {
+	if len(orphaned) == 0 {
+		return nil
+	}
+	for _, item := range orphaned {
+		if item.DeletionTimestamp.IsZero() {
+			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000064, &item); err != nil {
+				if !apierrors.IsNotFound(err) {
+					return fmt.Errorf("unable to delete deploy item %s", item.Name)
+				}
+			}
+		}
+
+		itemName, ok := item.Labels[lsv1alpha1.ExecutionManagedNameLabel]
+		if ok {
+			o.exec.Status.DeployItemReferences = helper.RemoveVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, itemName)
+			o.exec.Status.ExecutionGenerations = removeExecutionGeneration(o.exec.Status.ExecutionGenerations, itemName)
+			if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000146, o.exec); err != nil {
+				msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
+				return lserrors.NewWrappedError(err, "cleanupOrphanedDeployItemsForNewReconcile", msg, err.Error())
+			}
+		}
+	}
+	return nil
 }
 
 // checkGCDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.

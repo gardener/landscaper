@@ -317,4 +317,51 @@ var _ = Describe("Reconcile", func() {
 		}
 	})
 
+	Context("Cleanup deploy items", func() {
+
+		It("should cleanup orphaned deploy items", func() {
+			if !utils.IsNewReconcile() {
+				return
+			}
+
+			ctx := context.Background()
+
+			var err error
+			state, err = testenv.InitResources(ctx, "./testdata/test1")
+			testutils.ExpectNoError(err)
+			Expect(testutils.CreateExampleDefaultContext(ctx, testenv.Client, state.Namespace)).To(Succeed())
+
+			// Remove two deploy items di-b and di-c from the execution spec
+			exec := state.Executions[state.Namespace+"/exec-1"]
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+			Expect(exec.Spec.DeployItems).To(HaveLen(3))
+			exec.Spec.DeployItems = exec.Spec.DeployItems[:1]
+			Expect(testenv.Client.Update(ctx, exec)).To(Succeed())
+
+			// Reconcile the execution with two orphaned deploy items di-b and di-c
+			Expect(testutils.UpdateJobIdForExecution(ctx, testenv, exec)).To(Succeed())
+			_ = testutils.ShouldNotReconcile(ctx, ctrl, testutils.RequestFromObject(exec))
+
+			// Check execution state
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(exec), exec)).To(Succeed())
+			Expect(exec.Status.DeployItemReferences).To(HaveLen(1))
+			Expect(exec.Status.ExecutionGenerations).To(HaveLen(1))
+
+			// Check that the first deploy item di-a is not deleted
+			di := state.DeployItems[state.Namespace+"/di-a"]
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(di.DeletionTimestamp.IsZero()).To(BeTrue())
+
+			// Check that the deletion of the orphaned deploy items di-b and di-c was triggered
+			di = state.DeployItems[state.Namespace+"/di-b"]
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse())
+			Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+
+			di = state.DeployItems[state.Namespace+"/di-c"]
+			Expect(testenv.Client.Get(ctx, kutil.ObjectKeyFromObject(di), di)).To(Succeed())
+			Expect(di.DeletionTimestamp.IsZero()).To(BeFalse())
+			Expect(di.Status.JobID).To(Equal(exec.Status.JobID))
+		})
+	})
 })

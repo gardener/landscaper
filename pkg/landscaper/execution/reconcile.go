@@ -333,3 +333,12 @@ func setExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name strin
 	}
 	return append(objects, lsv1alpha1.ExecutionGeneration{Name: name, ObservedGeneration: gen})
 }
+
+func removeExecutionGeneration(objects []lsv1alpha1.ExecutionGeneration, name string) []lsv1alpha1.ExecutionGeneration {
+	for i, ref := range objects {
+		if ref.Name == name {
+			return append(objects[:i], objects[i+1:]...)
+		}
+	}
+	return objects
+}
