@@ -11,11 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func Logf(logFunc func(msg string, keysAndValues ...interface{}), format string, a ...interface{}) {
-	message := fmt.Sprintf(format, a...)
-	logFunc(message)
-}
-
 var _ logr.LogSink = KeyConflictPreventionLayer{}
 
 const conflictModifierFormatString = "%s_conflict(%d)"
