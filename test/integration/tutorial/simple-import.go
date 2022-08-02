@@ -9,13 +9,14 @@ import (
 	"path/filepath"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
@@ -88,18 +89,27 @@ func SimpleImport(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
 
-			// expect that the echo server deployment is already deleted or has an deletion timestamp
-			echoServerDeployment := &appsv1.Deployment{}
-			err = f.Client.Get(ctx, echoServerObjectKey, echoServerDeployment)
-			if err != nil && !apierrors.IsNotFound(err) {
-				utils.ExpectNoError(err)
-			} else if err == nil {
-				Expect(echoServerDeployment.DeletionTimestamp.IsZero()).To(BeTrue())
+			// expect that the echo server deployment will be deleted
+			echoServerDeployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      echoServerObjectKey.Name,
+					Namespace: echoServerObjectKey.Namespace,
+				},
 			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, echoServerDeployment, 2*time.Minute))
 
 			By("Delete nginx installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, nginxInst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxInst, 2*time.Minute))
+
+			// expect that the nginx deployment will be deleted
+			nginxDeployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-ingress-nginx-controller",
+					Namespace: state.Namespace,
+				},
+			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxDeployment, 2*time.Minute))
 		})
 	})
 
@@ -172,18 +182,27 @@ func SimpleImportForNewReconcile(f *framework.Framework) {
 			utils.ExpectNoError(f.Client.Delete(ctx, inst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, inst, 2*time.Minute))
 
-			// expect that the echo server deployment is already deleted or has an deletion timestamp
-			echoServerDeployment := &appsv1.Deployment{}
-			err = f.Client.Get(ctx, echoServerObjectKey, echoServerDeployment)
-			if err != nil && !apierrors.IsNotFound(err) {
-				utils.ExpectNoError(err)
-			} else if err == nil {
-				Expect(echoServerDeployment.DeletionTimestamp.IsZero()).To(BeTrue())
+			// expect that the echo server deployment will be deleted
+			echoServerDeployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      echoServerObjectKey.Name,
+					Namespace: echoServerObjectKey.Namespace,
+				},
 			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, echoServerDeployment, 2*time.Minute))
 
 			By("Delete nginx installation")
 			utils.ExpectNoError(f.Client.Delete(ctx, nginxInst))
 			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxInst, 2*time.Minute))
+
+			// expect that the nginx deployment will be deleted
+			nginxDeployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-ingress-nginx-controller",
+					Namespace: state.Namespace,
+				},
+			}
+			utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, nginxDeployment, 2*time.Minute))
 		})
 	})
 

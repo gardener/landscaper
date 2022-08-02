@@ -18,7 +18,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/selection"
 
@@ -161,13 +160,14 @@ func removeDeployItemAndWaitForSuccess(
 	utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, di, 2*time.Minute))
 
 	By("Waiting for the corresponding Deployment to get deleted")
-	deployerDeployment := &appsv1.Deployment{}
-	err := f.Client.Get(ctx, kutil.ObjectKey(di.Name, state.Namespace), deployerDeployment)
-	if err != nil && !apierrors.IsNotFound(err) {
-		utils.ExpectNoError(err)
-	} else if err == nil {
-		Expect(deployerDeployment.DeletionTimestamp.IsZero()).To(BeTrue())
+	// expect that the echo server deployment will be deleted
+	deployerDeployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      di.Name,
+			Namespace: state.Namespace,
+		},
 	}
+	utils.ExpectNoError(utils.WaitForObjectDeletion(ctx, f.Client, deployerDeployment, 2*time.Minute))
 }
 
 // TargetSelector for deployers deployed in these tests to make sure they do not pick up other DeployItems
