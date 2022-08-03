@@ -10,7 +10,7 @@ spec:
   args:
   - >-
     go test -timeout=60m -mod=vendor ./test/integration
-    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor
+    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor -ginkgo.seed=17 -ginkgo.failFast
     --kubeconfig $TM_KUBECONFIG_PATH/$CLUSTER_NAME.config
     --registry-config=$TM_SHARED_PATH/docker.config
     --ls-namespace=ls-system
