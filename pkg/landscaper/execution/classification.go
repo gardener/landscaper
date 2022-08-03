@@ -134,6 +134,9 @@ func newDeployItemClassificationForDelete(executionJobID string, items []*execut
 		} else if item.DeployItem.Status.JobID == executionJobID {
 			if item.DeployItem.Status.JobID != item.DeployItem.Status.JobIDFinished {
 				c.runningItems = append(c.runningItems, item)
+			} else if item.DeployItem.Status.JobID == item.DeployItem.Status.JobIDFinished &&
+				item.DeployItem.Status.DeployItemPhase != lsv1alpha1.DeployItemPhaseFailed {
+				c.runningItems = append(c.runningItems, item)
 			} else {
 				c.failedItems = append(c.failedItems, item)
 			}
