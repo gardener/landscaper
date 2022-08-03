@@ -43,14 +43,6 @@ func (o *Operation) cleanupOrphanedDeployItemsForNewReconcile(ctx context.Contex
 		return nil
 	}
 	for _, item := range orphaned {
-		if item.DeletionTimestamp.IsZero() {
-			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000064, &item); err != nil {
-				if !apierrors.IsNotFound(err) {
-					return fmt.Errorf("unable to delete deploy item %s", item.Name)
-				}
-			}
-		}
-
 		itemName, ok := item.Labels[lsv1alpha1.ExecutionManagedNameLabel]
 		if ok {
 			o.exec.Status.DeployItemReferences = helper.RemoveVersionedNamedObjectReference(o.exec.Status.DeployItemReferences, itemName)
@@ -58,6 +50,14 @@ func (o *Operation) cleanupOrphanedDeployItemsForNewReconcile(ctx context.Contex
 			if err := o.Writer().UpdateExecutionStatus(ctx, read_write_layer.W000146, o.exec); err != nil {
 				msg := fmt.Sprintf("unable to patch execution status %s", o.exec.Name)
 				return lserrors.NewWrappedError(err, "cleanupOrphanedDeployItemsForNewReconcile", msg, err.Error())
+			}
+		}
+
+		if item.DeletionTimestamp.IsZero() {
+			if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000064, &item); err != nil {
+				if !apierrors.IsNotFound(err) {
+					return fmt.Errorf("unable to delete deploy item %s", item.Name)
+				}
 			}
 		}
 	}
