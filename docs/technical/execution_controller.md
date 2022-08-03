@@ -74,6 +74,7 @@ Based on this classification, the reconcile logic is as follows:
 
 Remark: there is a check to detect if the algorithm is stuck. This would be the case if there are neither unfinished 
 items (class C) nor triggerable items (class D), but still items with pending predecessors (class E). 
+In this case the execution phase is set to `Failed`.
 Cyclic dependencies between the deploy items would lead to this situation.
 
 #### Phase "Completing"

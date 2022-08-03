@@ -83,6 +83,9 @@ current flow. Such a change might result in inconsistencies, because an export e
 of subobjects, but also the imports. Therefore, the phase becomes `Failed` if spec or imports have changed.
 A change of the spec can be detected by comparing generation and observed generation. A change of the imports can be
 detected by comparing their hashes. (During the `Init` phase, a hash of all imports was stored in the status.)
+If an installation has failed, because its spec or imports were changed, a reconcile annotation can be added to the
+root installation to start a new reconcile job. The new reconcile job will take the changed spec and imports into 
+account.
 
 A structure is created that contains the exports of all subobjects, as well as the imports.
 Based on these data, the export execution of the blueprint and afterwards the export data mapping of the installation 
@@ -187,6 +190,8 @@ The interrupt annotation is propagated through the tree of subobjects of the ann
   as usual, and will also finish.
 - **Deployer:** The interrupt annotation on a deploy item has no effect. It is the execution controller which interrupts
   deploy items.
+
+After an interruption, a new job can be started by adding a reconcile annotation at the root installation.
 
 ### Delete Without Uninstall
 

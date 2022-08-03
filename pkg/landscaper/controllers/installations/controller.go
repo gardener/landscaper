@@ -135,6 +135,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	if !installations.IsRootInstallation(inst) && lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
 		// only root installations could be triggered with operation annotation to prevent that end users interfere with overall
 		// algorithm
+		logger.Info("Removing reconcile annotation from non-root installation. A reconcile annotation at a non-root installation has no effect")
 		if err := c.removeReconcileAnnotation(ctx, inst); err != nil {
 			return reconcile.Result{}, err
 		}
