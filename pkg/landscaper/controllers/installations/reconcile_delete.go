@@ -49,12 +49,18 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(exec.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
+				if apierrors.IsConflict(err) {
+					return nil, lserrors.NewWrappedError(err, op, "UpdateExecutionConflict", err.Error())
+				}
 				return lserrors.NewWrappedError(err, op, "UpdateExecution", err.Error()), nil
 			}
 		}
 
 		if exec.DeletionTimestamp.IsZero() {
 			if err = c.Writer().DeleteExecution(ctx, read_write_layer.W000012, exec); err != nil {
+				if apierrors.IsConflict(err) {
+					return nil, lserrors.NewWrappedError(err, op, "DeleteExecutionConflict", err.Error())
+				}
 				return lserrors.NewWrappedError(err, op, "DeleteExecution", err.Error()), nil
 			}
 		}
@@ -70,6 +76,9 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 			!lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(subInst.ObjectMeta) {
 			metav1.SetMetaDataAnnotation(&subInst.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000103, subInst); err != nil {
+				if apierrors.IsConflict(err) {
+					return nil, lserrors.NewWrappedError(err, op, "UpdateInstallationConflict", err.Error())
+				}
 				return lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error()), nil
 			}
 		}
@@ -77,7 +86,7 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 		if subInst.DeletionTimestamp.IsZero() {
 			if err = c.Writer().DeleteInstallation(ctx, read_write_layer.W000091, subInst); err != nil {
 				if apierrors.IsConflict(err) {
-					return nil, lserrors.NewWrappedError(err, op, "IsConflict", err.Error())
+					return nil, lserrors.NewWrappedError(err, op, "DeleteInstallationConflict", err.Error())
 				}
 				return lserrors.NewWrappedError(err, op, "DeleteInstallation", err.Error()), nil
 			}
@@ -136,6 +145,23 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 		if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000095, inst); err != nil {
 			return false, false, lserrors.NewWrappedError(err, op, "UpdateInstallation", err.Error())
 		}
+
+		// touch siblings to speed up processing
+		// a potential improvement is to only touch siblings exporting data for the current installation but this would
+		// result in more complex coding and should only be done if the current approach results in performance problems
+		_, siblings, err := installations.GetParentAndSiblings(ctx, c.Client(), inst)
+		if err != nil {
+			return false, false, lserrors.NewWrappedError(err, op, "GetParentAndSiblings", err.Error())
+		}
+		for _, nextSibling := range siblings {
+			if !nextSibling.DeletionTimestamp.IsZero() {
+				lsv1alpha1helper.Touch(&nextSibling.ObjectMeta)
+				if err = c.Writer().UpdateInstallation(ctx, read_write_layer.W000147, nextSibling); err != nil {
+					return false, false, lserrors.NewWrappedError(err, op, "TouchSibling", err.Error())
+				}
+			}
+		}
+
 		return true, true, nil
 	}
 
