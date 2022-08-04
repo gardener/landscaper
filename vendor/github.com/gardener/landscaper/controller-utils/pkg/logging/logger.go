@@ -19,9 +19,6 @@ type Logger struct {
 	internal logr.Logger
 }
 
-// loggerContextKey is a key for finding a logger in the context
-type loggerContextKey struct{}
-
 type LogLevel int
 
 const (
@@ -130,13 +127,8 @@ func (l Logger) WithName(name string) Logger {
 	return Wrap(l.internal.WithName(name))
 }
 
-// FromContext tries to fetch a logger from the context.
-// If that fails, it returns the result of logr.FromContext,
-// with the logger being wrapped into our Logger struct.
+// FromContext wraps the result of logr.FromContext into a logging.Logger.
 func FromContext(ctx context.Context) (Logger, error) {
-	if log, ok := ctx.Value(loggerContextKey{}).(Logger); ok {
-		return log, nil
-	}
 	log, err := logr.FromContext(ctx)
 	return Wrap(log), err
 }
@@ -157,7 +149,7 @@ func Discard() Logger {
 // NewContext is a wrapper for logr.NewContext.
 // It adds the logger to the context twice, in a wrapped as well as a logr version.
 func NewContext(ctx context.Context, log Logger) context.Context {
-	return context.WithValue(logr.NewContext(ctx, log.Logr()), loggerContextKey{}, log)
+	return logr.NewContext(ctx, log.Logr())
 }
 
 // ADDITIONAL FUNCTIONS
