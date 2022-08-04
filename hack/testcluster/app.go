@@ -96,5 +96,6 @@ func NewTestClusterCommand(ctx context.Context) *cobra.Command {
 
 	cmd.AddCommand(NewClusterCommand(ctx))
 	cmd.AddCommand(NewRegistryCommand(ctx))
+	cmd.AddCommand(NewShootClusterCommand(ctx))
 	return cmd
 }

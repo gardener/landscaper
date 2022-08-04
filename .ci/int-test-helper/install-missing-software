@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+echo "Run install missing software"
+
+# install bash for the get version command
+if ! which bash 1>/dev/null; then
+  echo "Installing bash... "
+  apk add --no-cache bash
+fi
+
+if ! which openssl 1>/dev/null; then
+  echo "Installing openssl... "
+  apk add openssl
+fi
+
+if ! which curl 1>/dev/null; then
+  echo "Installing curl... "
+  apk add curl
+fi
+
+if ! which git 1>/dev/null; then
+  echo "Installing git... "
+  apk add --no-cache git
+fi
+
+if ! which kubectl 1>/dev/null; then
+  echo "Kubectl is not installed, trying to install it..."
+  curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
+  mv ./kubectl /usr/local/bin/kubectl
+  chmod +x /usr/local/bin/kubectl
+fi
+
+if ! which helm 1>/dev/null; then
+  echo "Helm 3 is not installed, trying to install it..."
+  export DESIRED_VERSION=v3.7.0
+  curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+fi

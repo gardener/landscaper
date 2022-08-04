@@ -15,12 +15,12 @@ VERSION=$3
 # to disable set on 1
 DISABLE_CLEANUP=0
 
-SOURCE_PATH="$(dirname $0)/.."
+SOURCE_PATH="$(dirname $0)/../.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 
+echo "Run integration tests in source path ${SOURCE_PATH}"
 
-echo "Run tests"
 go test -timeout=60m -mod=vendor ./test/integration \
     --v -ginkgo.v -ginkgo.progress -ginkgo.noColor -ginkgo.seed=17 -ginkgo.failFast \
     --kubeconfig $KUBECONFIG_PATH \
@@ -30,6 +30,3 @@ go test -timeout=60m -mod=vendor ./test/integration \
     --ls-run-on-shoot \
     --disable-cleanup=$DISABLE_CLEANUP
 
-# echo "Delete namespace with registry"
-# kubectl --kubeconfig=$KUBECONFIG_PATH delete ns $REGISTRY_NS
-# rm -r $TMP

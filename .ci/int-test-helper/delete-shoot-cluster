@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+GARDENER_KUBECONFIG_PATH=$1
+NAMESPACE=$2
+TMP=$3
+
+SOURCE_PATH="$(dirname $0)/../.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+echo "Run delete Gardener shoot cluster in ${SOURCE_PATH}"
+
+go run -mod=vendor ./hack/testcluster shootcluster delete \
+    --kubeconfig=$GARDENER_KUBECONFIG_PATH \
+    --namespace=$NAMESPACE \
+    --cluster-auth=$TMP
