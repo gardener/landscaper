@@ -50,9 +50,9 @@ func (c *Controller) handleDeletionPhaseInit(ctx context.Context, inst *lsv1alph
 			metav1.SetMetaDataAnnotation(&exec.ObjectMeta, lsv1alpha1.DeleteWithoutUninstallAnnotation, "true")
 			if err := c.Writer().UpdateExecution(ctx, read_write_layer.W000102, exec); err != nil {
 				if apierrors.IsConflict(err) {
-					return nil, lserrors.NewWrappedError(err, op, "UpdateExecution", err.Error())
+					return nil, lserrors.NewWrappedError(err, op, "UpdateExecutionConflict", err.Error())
 				}
-				return lserrors.NewWrappedError(err, op, "UpdateExecutionConflict", err.Error()), nil
+				return lserrors.NewWrappedError(err, op, "UpdateExecution", err.Error()), nil
 			}
 		}
 
