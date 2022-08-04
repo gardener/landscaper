@@ -22,7 +22,7 @@ SOURCE_PATH="$(pwd)"
 
 echo "Run tests"
 go test -timeout=60m -mod=vendor ./test/integration \
-    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor \
+    --v -ginkgo.v -ginkgo.progress -ginkgo.noColor -ginkgo.seed=17 -ginkgo.failFast \
     --kubeconfig $KUBECONFIG_PATH \
     --registry-config=$REGISTRY_CONFIG \
     --ls-namespace=ls-system \
