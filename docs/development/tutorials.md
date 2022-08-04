@@ -1,4 +1,4 @@
-# Adding new tutorials
+# Adding new Tutorials
 
 Most of the present tutorials provide additional resources that should be provided on Gardeners GCR repository - after all, following through the tutorials can be a lot easier if users can rely on already present component-descriptors and blueprints in GCR that they can simply reuse.
 

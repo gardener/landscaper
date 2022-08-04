@@ -9,11 +9,11 @@
 
 - [Concept](concepts/Concepts.md)
 - [Glossary](concepts/Glossary.md)
-- [Installation-Blueprint relationship](concepts/InstallationBlueprintRelationship.md)
+- [Installation-Blueprint Relationship](concepts/InstallationBlueprintRelationship.md)
 
 ## Deployers
 
-- [Deployer](deployer/README.md)
+- [What is an Deployer?](deployer/README.md)
 - [Container Deployer](deployer/container.md)
 - [Deployer Resource Health-/Readiness Checks](deployer/healthchecks.md)
 - [Helm Deployer](deployer/helm.md)
@@ -28,16 +28,16 @@
 - [Preparing the Setup](development/local-setup.md)
 - [Logging Guidelines](development/logging.md)
 - [Testing](development/testing.md)
-- [Adding new tutorials](development/tutorials.md)
+- [Adding new Tutorials](development/tutorials.md)
 
 ## Getting Started
 
-- [Installation and configuration of Landscaper](gettingstarted/install-landscaper-controller.md)
+- [Installation and Configuration of Landscaper](gettingstarted/install-landscaper-controller.md)
 - [Landscaper Service](gettingstarted/install-landscaper-service.md)
 
 ## Motivation
 
-- [What is Landscaper ?](motivation/motivation.md)
+- [What is Landscaper?](motivation/motivation.md)
 
 ## Technical
 
@@ -50,16 +50,16 @@
 
 ## Tutorials
 
-- [Install the Landscaper](tutorials/00-landscaper-installation.md)
-- [Tutorial 01: Developing a simple Blueprint](tutorials/01-create-simple-blueprint.md)
-- [Develop a simple Blueprint with local artifacts](tutorials/02-local-simple-blueprint.md)
-- [Simple data import](tutorials/03-simple-import.md)
+- [Installing the Landscaper](tutorials/00-landscaper-installation.md)
+- [Tutorial 01: Developing a Simple Blueprint](tutorials/01-create-simple-blueprint.md)
+- [Developing a Simple Blueprint with Local Artifacts](tutorials/02-local-simple-blueprint.md)
+- [Simple Data Imports](tutorials/03-simple-import.md)
 - [Aggregated Blueprints](tutorials/04-aggregated-blueprint.md)
 - [External JSON Scheme](tutorials/05-external-jsonschema.md)
 
 ## Usage
 
-- [Remote Access](usage/AccessingBlueprints.md)
+- [Accessing Blueprints](usage/AccessingBlueprints.md)
 - [Controlling the Landscaper via Annotations](usage/Annotations.md)
 - [Blueprints](usage/Blueprints.md)
 - [Component Overwrites](usage/ComponentOverwrites.md)

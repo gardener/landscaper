@@ -1,4 +1,4 @@
-# Installation and configuration of Landscaper
+# Installation and Configuration of Landscaper
 
 This document describes the installation of Landscaper.
 

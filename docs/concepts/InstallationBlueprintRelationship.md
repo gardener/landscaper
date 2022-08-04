@@ -1,4 +1,4 @@
-# Installation-Blueprint relationship
+# Installation-Blueprint Relationship
 
 This document describes the relationship between _Installations_, _Component-Descriptors_ and _Blueprints_.
 

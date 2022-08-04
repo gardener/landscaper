@@ -1,4 +1,4 @@
-# Simple data import
+# Simple Data Imports
 
 This tutorial is build upon the first simple blueprint, therefore the [first tutorial](01-create-simple-blueprint.md) 
 should be done before.
