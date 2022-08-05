@@ -62,7 +62,12 @@ func newDeployItemClassification(executionJobID string, items []*executionItem) 
 	for i := range items {
 		item := items[i]
 
-		if item.DeployItem != nil && item.DeployItem.Status.JobID == executionJobID {
+		if item.DeployItem == nil {
+			// The items that we are classifying here were all created in the previous phase and should exist.
+			// But a user could have deleted items with "kubectl delete" or "landscaper-cli installations force-delete".
+			// We treat missing items as failed.
+			c.failedItems = append(c.failedItems, item)
+		} else if item.DeployItem.Status.JobID == executionJobID {
 			if item.DeployItem.Status.JobID != item.DeployItem.Status.JobIDFinished {
 				c.runningItems = append(c.runningItems, item)
 			} else if item.DeployItem.Status.DeployItemPhase == lsv1alpha1.DeployItemPhaseSucceeded {
