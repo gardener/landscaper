@@ -78,7 +78,9 @@ func ResolveToComponentDescriptorList(ctx context.Context, client ctf.ComponentR
 			ComponentName:     compRef.ComponentName,
 			Version:           compRef.Version,
 		}
-		overwriter.Replace(cdRef)
+		if overwriter != nil {
+			overwriter.Replace(cdRef)
+		}
 		resolvedComponent, err := client.Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 		if err != nil {
 			return cdList, fmt.Errorf("unable to resolve component descriptor for %s with version %s: %w", compRef.Name, compRef.Version, err)

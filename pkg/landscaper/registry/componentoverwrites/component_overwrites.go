@@ -55,7 +55,6 @@ func NewClusterSubstitutions(subs []lsv1alpha1.ComponentOverwrite) *Substitution
 }
 
 // New creates a new component overwrite manager.
-// DEPRECATED, use NewSubstitutionManager instead.
 func New() *Manager {
 	return &Manager{
 		overwrites: map[string]*EvaluatedOverwrites{},

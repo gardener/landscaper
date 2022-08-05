@@ -70,9 +70,10 @@ func NewController(logger logging.Logger,
 // NewTestActuator creates a new Controller that is only meant for testing.
 func NewTestActuator(op operation.Operation, logger logging.Logger, configuration *config.LandscaperConfiguration) *Controller {
 	a := &Controller{
-		log:       logger,
-		Operation: op,
-		LsConfig:  configuration,
+		log:                 logger,
+		Operation:           op,
+		LsConfig:            configuration,
+		ComponentOverwriter: componentoverwrites.New(),
 	}
 	return a
 }
