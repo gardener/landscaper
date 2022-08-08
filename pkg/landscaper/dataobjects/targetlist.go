@@ -7,6 +7,8 @@ package dataobjects
 import (
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -130,7 +132,22 @@ func (tl *TargetList) GetInClusterObjects() []client.Object {
 }
 
 func (tl *TargetList) ComputeConfigGeneration() string {
-	return ""
+	if len(tl.Targets) == 0 {
+		return ""
+	}
+
+	hashList := make([]string, len(tl.Targets))
+	for k, v := range tl.Targets {
+		hashList[k] = v.ComputeConfigGeneration()
+	}
+
+	hashListJson, err := json.Marshal(hashList)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to marshal a list of strings during the computation "+
+			"of a target list hash; this should never happen"))
+	}
+
+	return string(hashListJson)
 }
 
 func (tl *TargetList) GetListItems() []ImportedBase {

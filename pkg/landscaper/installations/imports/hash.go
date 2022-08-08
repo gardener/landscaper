@@ -24,22 +24,22 @@ func ComputeImportsHash(imps *Imports) (string, error) {
 
 	impsHashes.Targets = make(map[string]string, len(imps.Targets))
 	for k, v := range imps.Targets {
-		impsHashes.DataObjects[k] = v.ComputeConfigGeneration()
+		impsHashes.Targets[k] = v.ComputeConfigGeneration()
 	}
 
 	impsHashes.TargetLists = make(map[string]string, len(imps.TargetLists))
 	for k, v := range imps.TargetLists {
-		impsHashes.DataObjects[k] = v.ComputeConfigGeneration()
+		impsHashes.TargetLists[k] = v.ComputeConfigGeneration()
 	}
 
 	impsHashes.ComponentDescriptors = make(map[string]string, len(imps.ComponentDescriptors))
 	for k, v := range imps.ComponentDescriptors {
-		impsHashes.DataObjects[k] = v.ComputeConfigGeneration()
+		impsHashes.ComponentDescriptors[k] = v.ComputeConfigGeneration()
 	}
 
 	impsHashes.ComponentDescriptorLists = make(map[string]string, len(imps.ComponentDescriptorLists))
 	for k, v := range imps.ComponentDescriptorLists {
-		impsHashes.DataObjects[k] = v.ComputeConfigGeneration()
+		impsHashes.ComponentDescriptorLists[k] = v.ComputeConfigGeneration()
 	}
 
 	impsHashesJson, err := json.Marshal(impsHashes)
