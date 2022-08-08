@@ -7,7 +7,7 @@
 # Declare variables to be passed into your templates.
 
 landscaper:
-  verbosity: 2
+  verbosity: info
 
   controllers:
     # syncPeriod: 10h

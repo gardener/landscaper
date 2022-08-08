@@ -32,7 +32,7 @@ deployer:
     insecureSkipVerify: false
     secrets: {}
 #     <name>: <docker config json>
-#  verbosityLevel: 9
+#  verbosityLevel: info
 
 #  targetSelector:
 #  - annotations:
