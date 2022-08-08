@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	historyLogLevel          logging.LogLevel = logging.DEBUG
+	historyLogLevel          logging.LogLevel = logging.INFO
 	keySecondDeployItemPhase                  = "landscaperDeployItemPhase"
 )
 
