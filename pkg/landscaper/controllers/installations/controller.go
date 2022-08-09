@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/gardener/landscaper/pkg/landscaper/installations/executions"
 
 	"github.com/google/uuid"
@@ -49,7 +51,7 @@ const (
 )
 
 // NewController creates a new Controller that reconciles Installation resources.
-func NewController(log logging.Logger,
+func NewController(logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
@@ -63,14 +65,14 @@ func NewController(log logging.Logger,
 
 	if lsConfig != nil && lsConfig.Registry.OCI != nil {
 		var err error
-		ctrl.SharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
+		ctrl.SharedCache, err = cache.NewCache(logger.Logr(), utils.ToOCICacheOptions(lsConfig.Registry.OCI.Cache, cacheIdentifier)...)
 		if err != nil {
 			return nil, err
 		}
-		log.Debug("setup shared components registry  cache")
+		logger.Debug("setup shared components registry  cache")
 	}
 
-	op := operation.NewOperation(log, kubeClient, scheme, eventRecorder)
+	op := operation.NewOperation(logger, kubeClient, scheme, eventRecorder)
 	ctrl.Operation = *op
 	return ctrl, nil
 }
@@ -237,8 +239,6 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
-	logger := logging.FromContext(ctx)
-
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
@@ -281,6 +281,8 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	ctx context.Context,
 	inst *lsv1alpha1.Installation) lserrors.LsError {
 
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	execRef := inst.Status.ExecutionReference
 	phases := []lsv1alpha1.ComponentInstallationPhase{}
 	if execRef != nil {
@@ -307,7 +309,7 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	cp := lsv1alpha1helper.CombinedInstallationPhase(phases...)
 	if inst.Status.Phase != cp {
 		// Phase is completed but doesn't fit to the deploy items' phases
-		c.Log().Debug("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
+		logger.Debug("execution phase mismatch", "phase", string(inst.Status.Phase), "combinedPhase", string(cp))
 
 		// get operation
 		var err error
@@ -349,6 +351,8 @@ func (c *Controller) handleSubComponentPhaseChanges(
 }
 
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
 	if isDelete && err == nil {
@@ -373,9 +377,9 @@ func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldI
 	if !reflect.DeepEqual(oldInst.Status, inst.Status) {
 		if err2 := c.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000015, inst); err2 != nil {
 			if apierrors.IsConflict(err2) { // reduce logging
-				c.Log().Debug(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				logger.Info(fmt.Sprintf("unable to update status: %s", err2.Error()))
 			} else {
-				c.Log().Error(err2, "unable to update status")
+				logger.Error(err2, "unable to update status")
 			}
 			if err == nil {
 				return err2
@@ -445,8 +449,10 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
 
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	if lsError != nil {
-		c.Log().Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
+		logger.Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())
 	}
 
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, lsError)
@@ -473,7 +479,7 @@ func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *ls
 			}
 		}
 
-		c.Log().Error(err, "unable to update installation status")
+		logger.Error(err, "unable to update installation status")
 		if lsError == nil {
 			return lserrors.NewWrappedError(err, "setInstallationPhaseAndUpdate", "UpdateInstallationStatus", err.Error())
 		}
