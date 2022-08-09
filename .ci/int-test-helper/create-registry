@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+KUBECONFIG_PATH=$1
+TMP=$2
+
+REGISTRY_NS=registry
+
+SOURCE_PATH="$(dirname $0)/../.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+echo "Run create registry in source path ${SOURCE_PATH}"
+
+ID="12"
+
+echo "Create registry namespace"
+
+kubectl --kubeconfig=$KUBECONFIG_PATH apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $REGISTRY_NS
+EOF
+
+echo "Cleanup registry"
+go run -mod=vendor ./hack/testcluster registry delete \
+    --kubeconfig=$KUBECONFIG_PATH \
+    --namespace=$REGISTRY_NS \
+    --id=$ID \
+    --timeout=10m
+
+echo "Create registry"
+go run -mod=vendor ./hack/testcluster registry create \
+    --kubeconfig=$KUBECONFIG_PATH \
+    --namespace=$REGISTRY_NS \
+    --id=$ID \
+    --registry-auth=$TMP/docker.config \
+    --address-format=ip \
+    --timeout=10m \
+    --ls-run-on-shoot
+
+

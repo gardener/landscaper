@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SPDX-FileCopyrightText: 2020 SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,116 +14,17 @@ SOURCE_PATH="$(dirname $0)/.."
 cd "${SOURCE_PATH}"
 SOURCE_PATH="$(pwd)"
 
-echo "Source path ${SOURCE_PATH}"
-
-REGISTRY_NS=clusters
-ID="12"
-
-echo "Starting integration tests for landscaper version ${VERSION} and kubeconfig $KUBECONFIG_PATH"
+echo "Run integration tests with registry creation"
+echo "Source path: ${SOURCE_PATH}"
+echo "Landscaper version: ${VERSION}"
+echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
 
 TMP="${SOURCE_PATH}/tmp-int-test"
-TMP_GEN="$TMP/gen"
-
 rm -f -r $TMP
-mkdir -p $TMP_GEN
+mkdir -p $TMP
+echo "Config directory: ${TMP}"
 
-echo "Create registry namespace"
-
-kubectl --kubeconfig=$KUBECONFIG_PATH apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: $REGISTRY_NS
-EOF
-
-echo "Cleanup registry"
-go run -mod=vendor ./hack/testcluster registry delete \
-    --kubeconfig=$KUBECONFIG_PATH \
-    --namespace=$REGISTRY_NS \
-    --id=$ID \
-    --timeout=10m
-
-echo "Create registry"
-go run -mod=vendor ./hack/testcluster registry create \
-    --kubeconfig=$KUBECONFIG_PATH \
-    --namespace=$REGISTRY_NS \
-    --id=$ID \
-    --registry-auth=$TMP/docker.config \
-    --address-format=ip \
-    --timeout=10m \
-    --ls-run-on-shoot
-
-# install bash for the get version command
-if ! which bash 1>/dev/null; then
-  echo "Installing bash... "
-  apk add --no-cache bash
-fi
-
-if ! which openssl 1>/dev/null; then
-  echo "Installing openssl... "
-  apk add openssl
-fi
-
-if ! which curl 1>/dev/null; then
-  echo "Installing curl... "
-  apk add curl
-fi
-
-if ! which git 1>/dev/null; then
-  echo "Installing git... "
-  apk add --no-cache git
-fi
-
-if ! which kubectl 1>/dev/null; then
-  echo "Kubectl is not installed, trying to install it..."
-  curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
-  mv ./kubectl /usr/local/bin/kubectl
-  chmod +x /usr/local/bin/kubectl
-fi
-
-if ! which helm 1>/dev/null; then
-  echo "Helm 3 is not installed, trying to install it..."
-  export DESIRED_VERSION=v3.7.0
-  curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-fi
-
-echo "> Installing Landscaper version ${VERSION}"
-
-printf "
-landscaper:
-  landscaper:
-    deployers:
-    - container
-    - helm
-    - manifest
-    - mock
-    deployItemTimeouts:
-      pickup: 10s
-      abort: 10s
-" > $TMP/values.yaml
-
-touch $TMP/registry-values.yaml
-if [[ -f "$TMP/docker.config" ]]; then
-  printf "
-landscaper:
-  landscaper:
-    registryConfig:
-      allowPlainHttpRegistries: false
-      insecureSkipVerify: true
-      secrets:
-        default: $(cat "$TMP/docker.config")
-  " > $TMP/registry-values.yaml
-fi
-
-echo "Pull landscaper helm chart"
-helm pull oci://eu.gcr.io/gardener-project/landscaper/charts/landscaper --version $VERSION --untar --destination $TMP_GEN
-
-echo "Upgrade landscaper"
-helm upgrade --kubeconfig=$KUBECONFIG_PATH --install --wait --create-namespace -n ls-system \
-  -f $TMP/values.yaml -f $TMP/registry-values.yaml landscaper $TMP_GEN/landscaper
-
-./.ci/new-run-tests $KUBECONFIG_PATH $TMP/docker.config $VERSION
-
-# echo "Delete namespace with registry"
-# kubectl --kubeconfig=$KUBECONFIG_PATH delete ns $REGISTRY_NS
-# rm -r $TMP
+./.ci/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
+./.ci/int-test-helper/install-missing-software
+./.ci/int-test-helper/install-landscaper $KUBECONFIG_PATH $VERSION $TMP
+./.ci/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config $VERSION

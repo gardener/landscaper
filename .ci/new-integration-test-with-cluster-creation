@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: 2022 SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+GARDENER_KUBECONFIG_PATH=$1  # path to the kubeconfig of the gardener cluster for the garden project
+NAMESPACE=$2  # the namespace (= "garden-" + project) of the shoot cluster, e.g. "garden-hubtest"
+VERSION=$3   # version of the landscaper to be tested
+
+SOURCE_PATH="$(dirname $0)/.."
+cd "${SOURCE_PATH}"
+SOURCE_PATH="$(pwd)"
+
+echo "Run integration tests with cluster creation and registry creation"
+echo "Source path: ${SOURCE_PATH}"
+echo "Gardener kubeconfig path: ${GARDENER_KUBECONFIG_PATH}"
+echo "Shoot cluster namespace: ${NAMESPACE}"
+echo "Landscaper version: ${VERSION}"
+
+TMP="${SOURCE_PATH}/tmp-int-test"
+rm -f -r $TMP
+mkdir -p $TMP
+echo "Config directory: ${TMP}"
+
+./.ci/int-test-helper/create-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
+
+KUBECONFIG_PATH=$TMP/kubeconfig.yaml
+echo "Test cluster kubeconfig path: ${KUBECONFIG_PATH}"
+
+./.ci/int-test-helper/create-registry $KUBECONFIG_PATH $TMP
+./.ci/int-test-helper/install-missing-software
+./.ci/int-test-helper/install-landscaper $KUBECONFIG_PATH $VERSION $TMP
+./.ci/int-test-helper/run-tests $KUBECONFIG_PATH $TMP/docker.config $VERSION
+./.ci/int-test-helper/delete-shoot-cluster $GARDENER_KUBECONFIG_PATH $NAMESPACE $TMP
