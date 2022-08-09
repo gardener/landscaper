@@ -17,7 +17,7 @@ func FromContextOrNew(ctx context.Context, keysAndValuesForNewLogger ...interfac
 			panic(err)
 		}
 
-		newLogger = newLogger.WithValues(keysAndValuesForNewLogger)
+		newLogger = newLogger.WithValues("CreatedBy", "FromContextOrNew", keysAndValuesForNewLogger)
 		ctx = logging.NewContext(ctx, newLogger)
 		return newLogger, ctx
 	} else {

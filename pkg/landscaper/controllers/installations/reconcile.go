@@ -10,6 +10,8 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
@@ -201,6 +203,9 @@ func (c *Controller) handlePhaseInit(ctx context.Context, inst *lsv1alpha1.Insta
 
 func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation,
 	*imports.Imports, string, map[string]*installations.InstallationBase, lserrors.LsError, lserrors.LsError) {
+
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	currentOperation := "init"
 
 	instOp, fatalError := c.initPrerequisites(ctx, inst)
@@ -255,7 +260,7 @@ func (c *Controller) init(ctx context.Context, inst *lsv1alpha1.Installation) (*
 		return nil, nil, "", nil, fatalError, nil
 	}
 
-	c.Log().Debug("imports hash computation", "hash", hash)
+	logger.Debug("imports hash computation", "hash", hash)
 
 	return instOp, imps, hash, predecessorMap, nil, nil
 }
@@ -344,6 +349,9 @@ func (c *Controller) handlePhaseProgressing(ctx context.Context, inst *lsv1alpha
 }
 
 func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1.Installation) (lserrors.LsError, lserrors.LsError) {
+
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	currentOperation := "handlePhaseCompleting"
 
 	instOp, imps, importsHash, _, fatalError, fatalError2 := c.init(ctx, inst)
@@ -355,8 +363,7 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 	}
 
 	if importsHash != inst.Status.ImportsHash {
-		c.Log().WithValues("oldHash", inst.Status.ImportsHash, "newHash", importsHash).Info("changed hash")
-
+		logger.Info("changed hash", "oldHash", inst.Status.ImportsHash, "newHash", importsHash)
 		return lserrors.NewError(currentOperation, "CheckImportsHash", "imports have changed"), nil
 	}
 
@@ -392,11 +399,12 @@ func (c *Controller) handlePhaseCompleting(ctx context.Context, inst *lsv1alpha1
 }
 
 func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
-	var (
-		currentOperation = "Validate"
-		log              = c.Log()
-	)
-	log.WithValues(lc.KeyMethod, "reconcile").Debug(lc.MsgStartMethod)
+
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
+	currentOperation := "Validate"
+
+	logger.Debug(lc.MsgStartMethod, lc.KeyMethod, "reconcile")
 
 	combinedState, lsErr := c.combinedPhaseOfSubobjects(ctx, inst, currentOperation)
 	if lsErr != nil {
@@ -404,7 +412,7 @@ func (c *Controller) reconcile(ctx context.Context, inst *lsv1alpha1.Installatio
 	}
 
 	if !lsv1alpha1helper.IsCompletedInstallationPhase(combinedState) {
-		log.Info("Waiting for all deploy items and nested installations to be completed")
+		logger.Info("Waiting for all deploy items and nested installations to be completed")
 		inst.Status.Phase = lsv1alpha1.ComponentPhaseProgressing
 		return nil
 	}
@@ -528,8 +536,12 @@ func (c *Controller) combinedPhaseOfSubobjects(ctx context.Context, inst *lsv1al
 }
 
 func (c *Controller) forceReconcile(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	currentOperation := "ForceReconcile"
-	c.Log().WithValues(lc.KeyMethod, "forceReconcile").Debug(lc.MsgStartMethod)
+
+	logger.Debug(lc.MsgStartMethod, lc.KeyMethod, "forceReconcile")
+
 	instOp, lsErr := c.initPrerequisites(ctx, inst)
 	if lsErr != nil {
 		return lsErr
@@ -636,8 +648,10 @@ func (c *Controller) Update(ctx context.Context, op *installations.Operation, im
 }
 
 func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
-		c.Log().Debug("remove reconcile annotation")
+		logger.Debug("remove reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000009, inst); client.IgnoreNotFound(err) != nil {
 			return lserrors.NewWrappedError(err, "RemoveReconcileAnnotation", "UpdateInstallation", err.Error())
@@ -647,8 +661,9 @@ func (c *Controller) removeReconcileAnnotation(ctx context.Context, inst *lsv1al
 }
 
 func (c *Controller) removeForceReconcileAnnotation(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-		c.Log().Debug("remove force reconcile annotation")
+		logger.Debug("remove force reconcile annotation")
 		delete(inst.Annotations, lsv1alpha1.OperationAnnotation)
 		if err := c.Writer().UpdateInstallation(ctx, read_write_layer.W000003, inst); err != nil {
 			return lserrors.NewWrappedError(err, "RemoveForceReconcileAnnotation", "UpdateInstallation", err.Error())
