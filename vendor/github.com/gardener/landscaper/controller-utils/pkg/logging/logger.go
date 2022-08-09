@@ -133,6 +133,19 @@ func FromContext(ctx context.Context) (Logger, error) {
 	return Wrap(log), err
 }
 
+// FromContext wraps the result of logr.FromContext into a logging.Logger. If no logger exists a new one is created.
+func FromContextOrNew(ctx context.Context) Logger {
+	log, err := logr.FromContext(ctx)
+	if err != nil {
+		log, err := GetLogger()
+		if err != nil {
+			panic(err)
+		}
+		return log
+	}
+	return Wrap(log)
+}
+
 // FromContextOrDiscard works like FromContext, but it will return a discard logger if no logger is found in the context.
 func FromContextOrDiscard(ctx context.Context) Logger {
 	log, err := FromContext(ctx)
