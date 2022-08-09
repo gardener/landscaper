@@ -24,6 +24,7 @@
 
 - [Deployer Library Extension Hooks](development/dep-lib-extension-hooks.md)
 - [Deployer Extensions](development/deployer-extensions.md)
+- [Generation of the Documentation Index](development/doc-index-generation.md)
 - [Extending the API](development/extend-the-api.md)
 - [Preparing the Setup](development/local-setup.md)
 - [Logging Guidelines](development/logging.md)
