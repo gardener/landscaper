@@ -138,7 +138,7 @@ func (c *controller) handleReconcilePhase(ctx context.Context, log logr.Logger, 
 		}
 
 		if !deployItemClassification.HasRunningItems() && deployItemClassification.HasFailedItems() {
-			err = lserrors.NewError(op, "handlePhaseProgressing", "failed sub objects")
+			err = lserrors.NewError(op, "handlePhaseProgressing", "has failed or missing deploy items")
 			return c.setExecutionPhaseAndUpdate(ctx, exec, lsv1alpha1.ExecPhaseFailed, err, read_write_layer.W000134)
 		} else if !deployItemClassification.HasRunningItems() && !deployItemClassification.HasRunnableItems() && deployItemClassification.HasPendingItems() {
 			err = lserrors.NewError(op, "handlePhaseProgressing", "items could not be started")
