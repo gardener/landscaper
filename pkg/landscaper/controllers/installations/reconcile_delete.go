@@ -15,7 +15,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -185,7 +184,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
 	var (
 		currentOperation = "handleDelete"
-		log              = logr.FromContextOrDiscard(ctx)
+		log              = c.Log()
 	)
 
 	inst.Status.Phase = lsv1alpha1.ComponentPhaseDeleting
@@ -219,7 +218,7 @@ func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installa
 	// before A is completed. This occurs if the process of adding the deletion timestamps was interrupted after A and
 	// before B.
 	if !allCompletedOrWithDeletionTimestamp(exec, subinst) {
-		log.V(2).Info("Waiting for execution and subinstallations to be completed")
+		log.Debug("Waiting for execution and subinstallations to be completed")
 		return nil
 	}
 

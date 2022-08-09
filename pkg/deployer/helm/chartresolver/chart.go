@@ -12,12 +12,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/helm/helmchartrepo"
 
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"helm.sh/helm/v3/pkg/chart"
 	chartloader "helm.sh/helm/v3/pkg/chart/loader"
 
@@ -30,7 +30,7 @@ import (
 var NoChartDefinedError = errors.New("no chart was provided")
 
 // GetChart resolves the chart based on a chart access configuration.
-func GetChart(ctx context.Context, log logr.Logger, ociClient ociclient.Client,
+func GetChart(ctx context.Context, log logging.Logger, ociClient ociclient.Client,
 	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, chartConfig *helmv1alpha1.Chart) (*chart.Chart, error) {
 	if chartConfig.Archive != nil {
 		return getChartFromArchive(chartConfig.Archive)
@@ -111,7 +111,7 @@ func getChartFromOCIRef(ctx context.Context, ociClient ociclient.Client, ref str
 	return ch, err
 }
 
-func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ociclient.Client,
+func getChartFromResource(ctx context.Context, log logging.Logger, ociClient ociclient.Client,
 	helmChartRepoClient *helmchartrepo.HelmChartRepoClient, ref *helmv1alpha1.RemoteChartReference) (*chart.Chart, error) {
 	// we also have to add a custom resolver for the "ociImage" resolver as we have to implement the
 	// helm specific ociClient manifest structure
@@ -163,7 +163,7 @@ func getChartFromResource(ctx context.Context, log logr.Logger, ociClient ocicli
 	return ch, err
 }
 
-func getChartFromHelmChartRepo(ctx context.Context, log logr.Logger, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
+func getChartFromHelmChartRepo(ctx context.Context, log logging.Logger, helmChartRepoClient *helmchartrepo.HelmChartRepoClient,
 	ref *helmv1alpha1.HelmChartRepo) (*chart.Chart, error) {
 
 	resolver := helmchartrepo.NewHelmChartRepoResolverAsHelmChartRepoResolver(helmChartRepoClient)

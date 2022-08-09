@@ -11,7 +11,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,6 +26,7 @@ import (
 	health "github.com/gardener/landscaper/apis/deployer/utils/readinesschecks"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 )
 
@@ -34,7 +34,7 @@ import (
 type CustomReadinessCheck struct {
 	Context          context.Context
 	Client           client.Client
-	Log              logr.Logger
+	Log              logging.Logger
 	CurrentOp        string
 	Timeout          *lsv1alpha1.Duration
 	ManagedResources []lsv1alpha1.TypedObjectReference

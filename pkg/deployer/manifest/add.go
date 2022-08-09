@@ -5,10 +5,10 @@
 package manifest
 
 import (
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/version"
 
@@ -16,7 +16,7 @@ import (
 )
 
 // AddDeployerToManager adds a new helm deployers to a controller manager.
-func AddDeployerToManager(logger logr.Logger, lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration) error {
+func AddDeployerToManager(logger logging.Logger, lsMgr, hostMgr manager.Manager, config manifestv1alpha2.Configuration) error {
 	log := logger.WithName("ManifestDeployer")
 	d, err := NewDeployer(
 		log,

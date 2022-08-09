@@ -8,10 +8,10 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -43,10 +43,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeComponentRegistry, err = componentsregistry.NewLocalClient(logr.Discard(), filepath.Join(projectRoot, "examples", "02-inline-cd"))
+		fakeComponentRegistry, err = componentsregistry.NewLocalClient(logging.Discard(), filepath.Join(projectRoot, "examples", "02-inline-cd"))
 		Expect(err).ToNot(HaveOccurred())
 
-		op := operation.NewOperation(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).
+		op := operation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).
 			SetComponentsRegistry(fakeComponentRegistry)
 
 		instActuator = instctlr.NewTestActuator(*op, &config.LandscaperConfiguration{
@@ -55,10 +55,10 @@ var _ = Describe("Inline Component Descriptor", func() {
 			},
 		})
 
-		execActuator, err = execctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		execActuator, err = execctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		Expect(err).ToNot(HaveOccurred())
 
-		mockActuator, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
+		mockActuator, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

@@ -12,7 +12,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +26,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	manifestctlr "github.com/gardener/landscaper/pkg/deployer/manifest"
 	testutil "github.com/gardener/landscaper/test/utils"
@@ -46,7 +46,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		deployer, err := manifestctlr.NewDeployer(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			testenv.Client,
 			manifestv1alpha2.Configuration{},
@@ -54,7 +54,7 @@ var _ = Describe("Manifest Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl = deployerlib.NewController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),

@@ -8,7 +8,6 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/selection"
@@ -17,6 +16,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	mockv1alpha1 "github.com/gardener/landscaper/apis/deployer/mock/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/mock"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -87,7 +87,7 @@ var _ = Describe("E2E", func() {
 		defaultContext.Namespace = state.Namespace
 		testutils.ExpectNoError(state.Create(ctx, defaultContext))
 
-		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{
@@ -138,7 +138,7 @@ var _ = Describe("E2E", func() {
 		testutils.ExpectNoError(err)
 		testutils.ExpectNoError(state.Create(ctx, di))
 
-		ctrl, err := mock.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
+		ctrl, err := mock.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{
 			TargetSelector: []lsv1alpha1.TargetSelector{
 				{
 					Annotations: []lsv1alpha1.Requirement{

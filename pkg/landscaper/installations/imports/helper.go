@@ -10,10 +10,10 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
@@ -56,7 +56,7 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 		return true, nil
 	}
 
-	log := logr.FromContextOrDiscard(ctx)
+	log := logging.FromContextOrDiscard(ctx)
 
 	checkSource := func(sourceRef *lsv1alpha1.ObjectReference) (isCompleted bool, ignore bool, err error) {
 		if sourceRef == nil {
@@ -84,17 +84,17 @@ func CheckCompletedSiblingDependents(ctx context.Context,
 		}
 
 		if !lsv1alpha1helper.IsCompletedInstallationPhase(inst.Status.Phase) {
-			log.V(3).Info("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation not completed", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 
 		if inst.Generation != inst.Status.ObservedGeneration {
-			log.V(3).Info("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation completed but not up-to-date", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 
 		if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) || lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ForceReconcileOperation) {
-			log.V(3).Info("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
+			log.Debug("dependent installation completed but has (force-)reconcile annotation", "inst", sourceRef.NamespacedName().String())
 			return false, false, nil
 		}
 

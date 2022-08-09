@@ -12,9 +12,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/go-logr/logr"
-
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	apiextinstall "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -36,13 +35,13 @@ const (
 type CRDManager struct {
 	cfg          config.CrdManagementConfiguration
 	client       client.Client
-	log          logr.Logger
+	log          logging.Logger
 	crdRawDataFS *embed.FS
 	crdRootDir   string
 }
 
 // NewCrdManager returns a new instance of the CRDManager
-func NewCrdManager(log logr.Logger, mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
+func NewCrdManager(log logging.Logger, mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
 	apiExtensionsScheme := runtime.NewScheme()
 	apiextinstall.Install(apiExtensionsScheme)
 	kubeClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: apiExtensionsScheme})
@@ -66,7 +65,7 @@ func NewCrdManager(log logr.Logger, mgr manager.Manager, config config.CrdManage
 // EnsureCRDs installs or updates CRDs based on the configuration
 func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 	if !*crdmgr.cfg.DeployCustomResourceDefinitions {
-		crdmgr.log.V(1).Info("Registering CRDs disabled by configuration")
+		crdmgr.log.Info("Registering CRDs disabled by configuration")
 		return nil
 	}
 
@@ -75,7 +74,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		return err
 	}
 
-	crdmgr.log.V(1).Info("Registering CRDs in cluster")
+	crdmgr.log.Info("Registering CRDs in cluster")
 	for _, crd := range crdList {
 
 		existingCrd := &v1.CustomResourceDefinition{}
@@ -135,7 +134,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 
 func (crdmgr *CRDManager) updateCrd(ctx context.Context, currentCrd, updatedCrd *v1.CustomResourceDefinition) error {
 	if !*crdmgr.cfg.ForceUpdate {
-		crdmgr.log.V(1).Info("Force update of CRDs disabled by configuration")
+		crdmgr.log.Info("Force update of CRDs disabled by configuration")
 		return nil
 	}
 

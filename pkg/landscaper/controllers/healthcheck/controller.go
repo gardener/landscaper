@@ -14,8 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-
-	"github.com/go-logr/logr"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -24,7 +23,7 @@ import (
 )
 
 // NewLsHealthCheckController creates a new health check controller that reconciles the health  object in the namespaces.
-func NewLsHealthCheckController(initialLogger logr.Logger, agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments,
+func NewLsHealthCheckController(initialLogger logging.Logger, agentConfig *config.AgentConfiguration, lsDeployments *config.LsDeployments,
 	cl client.Client, scheme *runtime.Scheme, enabledDeployers []string) reconcile.Reconciler {
 	return &lsHealthCheckController{
 		initialLogger:    initialLogger,
@@ -38,7 +37,7 @@ func NewLsHealthCheckController(initialLogger logr.Logger, agentConfig *config.A
 }
 
 type lsHealthCheckController struct {
-	initialLogger    logr.Logger
+	initialLogger    logging.Logger
 	agentConfig      *config.AgentConfiguration
 	lsDeployments    *config.LsDeployments
 	client           client.Client
@@ -48,7 +47,7 @@ type lsHealthCheckController struct {
 }
 
 func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.initialLogger.WithValues("healthcheck", req.NamespacedName.String())
+	logger := c.initialLogger.StartReconcile(req)
 
 	if req.Namespace != c.agentConfig.Namespace || req.Name != c.agentConfig.Name {
 		return reconcile.Result{}, nil
@@ -91,7 +90,7 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 	}
 }
 
-func (c *lsHealthCheckController) check(ctx context.Context, log logr.Logger) (lsv1alpha1.LsHealthCheckStatus, string) {
+func (c *lsHealthCheckController) check(ctx context.Context, log logging.Logger) (lsv1alpha1.LsHealthCheckStatus, string) {
 	if c.lsDeployments != nil {
 		isOk, description := c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.LsController, log)
 		if !isOk {
@@ -115,7 +114,7 @@ func (c *lsHealthCheckController) check(ctx context.Context, log logr.Logger) (l
 	return lsv1alpha1.LsHealthCheckStatusOk, "ok"
 }
 
-func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace string, name string, log logr.Logger) (bool, string) {
+func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace string, name string, log logging.Logger) (bool, string) {
 	key := client.ObjectKey{Namespace: namespace, Name: name}
 	deployment := &v1.Deployment{}
 	if err := c.client.Get(ctx, key, deployment); err != nil {

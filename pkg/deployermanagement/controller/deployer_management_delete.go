@@ -45,7 +45,7 @@ func (dm *DeployerManagement) Delete(ctx context.Context, registration *lsv1alph
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
-			dm.log.V(5).Info("unable to get installation while waiting for deletion", "err", err.Error())
+			dm.log.Debug("unable to get installation while waiting for deletion", "err", err.Error())
 		}
 		return false, nil
 	})

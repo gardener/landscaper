@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects/jsonpath"
 	"github.com/gardener/landscaper/pkg/utils"
 
@@ -34,7 +34,7 @@ type ExporterOptions struct {
 
 // Exporter defines the export of data from manifests.
 type Exporter struct {
-	log            logr.Logger
+	log            logging.Logger
 	kubeClient     client.Client
 	defaultTimeout time.Duration
 
@@ -42,7 +42,7 @@ type Exporter struct {
 }
 
 // NewExporter creates a new exporter.
-func NewExporter(log logr.Logger, opts ExporterOptions) *Exporter {
+func NewExporter(log logging.Logger, opts ExporterOptions) *Exporter {
 	exporter := &Exporter{
 		log:            log,
 		kubeClient:     opts.KubeClient,
@@ -112,7 +112,7 @@ func (e *Exporter) Export(ctx context.Context, exports *managedresource.Exports)
 			if err := wait.ExponentialBackoffWithContext(ctx, backoff, func() (done bool, err error) {
 				value, err := e.doExport(ctx, export)
 				if err != nil {
-					log.V(5).Info(err.Error())
+					log.Debug(err.Error())
 					lastErr = err
 					return false, nil
 				}

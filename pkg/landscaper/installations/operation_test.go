@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +17,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
@@ -36,7 +36,7 @@ var _ = Describe("Operation", func() {
 
 	BeforeEach(func() {
 		kubeClient = fake.NewClientBuilder().WithScheme(api.LandscaperScheme).Build()
-		commonOp := operation.NewOperation(logr.Discard(), kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
+		commonOp := operation.NewOperation(logging.Discard(), kubeClient, api.LandscaperScheme, record.NewFakeRecorder(1024))
 		op = &installations.Operation{
 			Inst: &installations.Installation{
 				InstallationBase: installations.InstallationBase{Info: &lsv1alpha1.Installation{}},

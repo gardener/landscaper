@@ -209,7 +209,8 @@ github.com/gardener/landscaper/apis/schema
 github.com/gardener/landscaper/controller-utils/pkg/crdmanager
 github.com/gardener/landscaper/controller-utils/pkg/kubernetes
 github.com/gardener/landscaper/controller-utils/pkg/kubernetes/mock
-github.com/gardener/landscaper/controller-utils/pkg/logger
+github.com/gardener/landscaper/controller-utils/pkg/logging
+github.com/gardener/landscaper/controller-utils/pkg/logging/constants
 github.com/gardener/landscaper/controller-utils/pkg/webhook
 github.com/gardener/landscaper/controller-utils/pkg/webhook/certificates
 # github.com/ghodss/yaml v1.0.0

@@ -5,20 +5,22 @@
 package execution
 
 import (
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // AddControllerToManager adds the execution controller to the controller manager
-func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config config.ExecutionsController) error {
-	log := logger.WithName("Executions")
+func AddControllerToManager(logger logging.Logger, mgr manager.Manager, config config.ExecutionsController) error {
+	log := logger.Reconciles("execution", "Execution")
 	a, err := NewController(
 		log,
 		mgr.GetClient(),
@@ -33,6 +35,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, config conf
 		For(&lsv1alpha1.Execution{}).
 		Owns(&lsv1alpha1.DeployItem{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(a)
 }

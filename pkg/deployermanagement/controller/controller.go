@@ -11,7 +11,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
-	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -20,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config"
 
@@ -27,7 +27,7 @@ import (
 )
 
 // NewEnvironmentController creates a new landscaper agent EnvironmentController.
-func NewEnvironmentController(log logr.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewEnvironmentController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &EnvironmentController{
 		log:    log,
 		client: c,
@@ -43,7 +43,7 @@ func NewEnvironmentController(log logr.Logger, c client.Client, scheme *runtime.
 }
 
 type EnvironmentController struct {
-	log    logr.Logger
+	log    logging.Logger
 	config *config.LandscaperConfiguration
 	client client.Client
 	scheme *runtime.Scheme
@@ -60,7 +60,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 	env := &lsv1alpha1.Environment{}
 	if err := con.client.Get(ctx, req.NamespacedName, env); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -136,7 +136,7 @@ func (con *EnvironmentController) Reconcile(ctx context.Context, req reconcile.R
 }
 
 // NewDeployerRegistrationController creates a new landscaper agent DeployerRegistrationController.
-func NewDeployerRegistrationController(log logr.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewDeployerRegistrationController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &DeployerRegistrationController{
 		log:    log,
 		client: c,
@@ -150,7 +150,7 @@ func NewDeployerRegistrationController(log logr.Logger, c client.Client, scheme 
 }
 
 type DeployerRegistrationController struct {
-	log    logr.Logger
+	log    logging.Logger
 	client client.Client
 	dm     *DeployerManagement
 }
@@ -161,7 +161,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 	registration := &lsv1alpha1.DeployerRegistration{}
 	if err := con.client.Get(ctx, req.NamespacedName, registration); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -219,7 +219,7 @@ func (con *DeployerRegistrationController) Reconcile(ctx context.Context, req re
 }
 
 type InstallationController struct {
-	log    logr.Logger
+	log    logging.Logger
 	config *config.LandscaperConfiguration
 	client client.Client
 	dm     *DeployerManagement
@@ -227,7 +227,7 @@ type InstallationController struct {
 
 // NewInstallationController creates a new landscaper agent InstallationController.
 // This controller only reconciles deployer installations and its main purpose is cleanup.
-func NewInstallationController(log logr.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
+func NewInstallationController(log logging.Logger, c client.Client, scheme *runtime.Scheme, config *config.LandscaperConfiguration) reconcile.Reconciler {
 	return &InstallationController{
 		log:    log,
 		config: config,
@@ -251,7 +251,7 @@ func (con *InstallationController) Reconcile(ctx context.Context, req reconcile.
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, con.client, req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(5).Info(err.Error())
+			logger.Debug(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

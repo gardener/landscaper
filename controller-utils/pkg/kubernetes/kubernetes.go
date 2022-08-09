@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -36,6 +35,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // image err reasons
@@ -488,7 +488,7 @@ func GenerateKubeconfig(restConfig *rest.Config) (clientcmdapi.Config, error) {
 }
 
 // ParseFiles parses a map of filename->data into unstructured yaml objects.
-func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstructured, error) {
+func ParseFiles(log logging.Logger, files map[string]string) ([]*unstructured.Unstructured, error) {
 	objects := make([]*unstructured.Unstructured, 0)
 	for name, content := range files {
 		if _, file := filepath.Split(name); file == "NOTES.txt" {
@@ -503,8 +503,8 @@ func ParseFiles(log logr.Logger, files map[string]string) ([]*unstructured.Unstr
 	return objects, nil
 }
 
-// ParseFilesToRawExtension parses a map of filename->data into unstructured yaml objects.
-func ParseFilesToRawExtension(log logr.Logger, files map[string]string) ([]*runtime.RawExtension, error) {
+// ParseFilesToRawExtension parseslogging.Loggerilename->data into unstructured yaml objects.
+func ParseFilesToRawExtension(log logging.Logger, files map[string]string) ([]*runtime.RawExtension, error) {
 	objects := make([]*runtime.RawExtension, 0)
 	for name, content := range files {
 		if _, file := filepath.Split(name); file == "NOTES.txt" {
@@ -520,7 +520,7 @@ func ParseFilesToRawExtension(log logr.Logger, files map[string]string) ([]*runt
 }
 
 // DecodeObjects decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
-func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
+func DecodeObjects(log logging.Logger, name string, data []byte) ([]*unstructured.Unstructured, error) {
 	var (
 		decoder    = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
 		decodedObj map[string]interface{}
@@ -549,7 +549,7 @@ func DecodeObjects(log logr.Logger, name string, data []byte) ([]*unstructured.U
 }
 
 // DecodeObjectsToRawExtension decodes raw data that can be a multiyaml file into unstructured kubernetes objects.
-func DecodeObjectsToRawExtension(log logr.Logger, name string, data []byte) ([]*runtime.RawExtension, error) {
+func DecodeObjectsToRawExtension(log logging.Logger, name string, data []byte) ([]*runtime.RawExtension, error) {
 	var (
 		decoder = yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(data), 1024)
 		objects = make([]*runtime.RawExtension, 0)

@@ -12,7 +12,8 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
+
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 type HelmChartResolver struct {
@@ -77,7 +78,7 @@ func (h HelmChartResolver) resolve(ctx context.Context, res cdv2.Resource, write
 		}, nil
 	}
 	if legacyChartLayers := ociclient.GetLayerByMediaType(manifest.Layers, LegacyChartLayerMediaType); len(legacyChartLayers) != 0 {
-		logr.FromContextOrDiscard(ctx).Info("LEGACY Helm Chart used", "ref", ociArtifactAccess.ImageReference)
+		logging.FromContextOrDiscard(ctx).Info("LEGACY Helm Chart used", "ref", ociArtifactAccess.ImageReference)
 		chartLayer := legacyChartLayers[0]
 		if writer != nil {
 			if err := h.ociClient.Fetch(ctx, ociArtifactAccess.ImageReference, chartLayer, writer); err != nil {

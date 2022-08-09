@@ -10,7 +10,6 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/tools/record"
@@ -22,6 +21,7 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 	testutil "github.com/gardener/landscaper/test/utils"
@@ -44,7 +44,7 @@ var _ = Describe("Container Deployer", func() {
 		Expect(testutil.CreateExampleDefaultContext(context.TODO(), testenv.Client, state.Namespace)).To(Succeed())
 
 		deployer, err := containerctlr.NewDeployer(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			testenv.Client,
 			testenv.Client,
@@ -53,7 +53,7 @@ var _ = Describe("Container Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl = deployerlib.NewController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),

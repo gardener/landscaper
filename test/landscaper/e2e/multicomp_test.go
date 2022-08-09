@@ -19,7 +19,7 @@ var _ = Describe("Multi Component Test", func() {
 	//
 	//BeforeEach(func() {
 	//	var err error
-	//	fakeRegistry, err = blueprintsregistry.NewLocalRegistry(logr.Discard(), []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
+	//	fakeRegistry, err = blueprintsregistry.NewLocalRegistry(logging.Discard().Logr(), []string{filepath.Join(projectRoot, "examples", "02-multi-comp", "definitions")})
 	//	Expect(err).ToNot(HaveOccurred())
 	//
 	//	instActuator, err = instctlr.NewActuator(fakeRegistry)
@@ -28,7 +28,7 @@ var _ = Describe("Multi Component Test", func() {
 	//	Expect(err).ToNot(HaveOccurred())
 	//	_, err = inject.SchemeInto(kubernetes.LandscaperScheme, instActuator)
 	//	Expect(err).ToNot(HaveOccurred())
-	//	_, err = inject.LoggerInto(logr.Discard(), instActuator)
+	//	_, err = inject.LoggerInto(logging.Discard().Logr(), instActuator)
 	//	Expect(err).ToNot(HaveOccurred())
 	//
 	//	execActuator, err = execctlr.NewActuator(fakeRegistry)
@@ -37,7 +37,7 @@ var _ = Describe("Multi Component Test", func() {
 	//	Expect(err).ToNot(HaveOccurred())
 	//	_, err = inject.SchemeInto(kubernetes.LandscaperScheme, execActuator)
 	//	Expect(err).ToNot(HaveOccurred())
-	//	_, err = inject.LoggerInto(logr.Discard(), execActuator)
+	//	_, err = inject.LoggerInto(logging.Discard().Logr(), execActuator)
 	//	Expect(err).ToNot(HaveOccurred())
 	//
 	//	mockActuator, err = mockctlr.NewActuator()
@@ -46,7 +46,7 @@ var _ = Describe("Multi Component Test", func() {
 	//	Expect(err).ToNot(HaveOccurred())
 	//	_, err = inject.SchemeInto(kubernetes.LandscaperScheme, mockActuator)
 	//	Expect(err).ToNot(HaveOccurred())
-	//	_, err = inject.LoggerInto(logr.Discard(), mockActuator)
+	//	_, err = inject.LoggerInto(logging.Discard().Logr(), mockActuator)
 	//	Expect(err).ToNot(HaveOccurred())
 	//})
 	//

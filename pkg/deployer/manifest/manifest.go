@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -30,6 +29,7 @@ import (
 
 	manifestvalidation "github.com/gardener/landscaper/apis/deployer/manifest/validation"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 )
 
@@ -46,7 +46,7 @@ func init() {
 
 // Manifest is the internal representation of a DeployItem of Type Manifest
 type Manifest struct {
-	log            logr.Logger
+	log            logging.Logger
 	lsKubeClient   client.Client
 	hostKubeClient client.Client
 	Configuration  *manifestv1alpha2.Configuration
@@ -67,7 +67,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 }
 
 // New creates a new internal manifest item
-func New(log logr.Logger,
+func New(log logging.Logger,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
 	configuration *manifestv1alpha2.Configuration,

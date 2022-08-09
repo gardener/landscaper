@@ -7,7 +7,6 @@ package deployers_test
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config"
 	deployers "github.com/gardener/landscaper/pkg/deployermanagement/controller"
@@ -41,13 +41,13 @@ var _ = Describe("EnvironmentController Reconcile Test", func() {
 		ctx = context.Background()
 		lsConfig = &config.LandscaperConfiguration{}
 		envController = deployers.NewEnvironmentController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,
 		)
 		regController = deployers.NewDeployerRegistrationController(
-			logr.Discard(),
+			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			lsConfig,

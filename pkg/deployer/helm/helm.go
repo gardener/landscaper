@@ -18,7 +18,6 @@ import (
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-cli/ociclient/cache"
 	"github.com/gardener/component-cli/ociclient/credentials"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
@@ -42,6 +41,7 @@ import (
 	"github.com/gardener/landscaper/pkg/utils"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 const (
@@ -62,7 +62,7 @@ func NewDeployItemBuilder() *utils.DeployItemBuilder {
 
 // Helm is the internal representation of a DeployItem of Type Helm
 type Helm struct {
-	log            logr.Logger
+	log            logging.Logger
 	lsKubeClient   client.Client
 	hostKubeClient client.Client
 	Configuration  helmv1alpha1.Configuration
@@ -80,7 +80,7 @@ type Helm struct {
 }
 
 // New creates a new internal helm item
-func New(log logr.Logger,
+func New(log logging.Logger,
 	helmconfig helmv1alpha1.Configuration,
 	lsKubeClient client.Client,
 	hostKubeClient client.Client,
@@ -262,7 +262,7 @@ func (h *Helm) TargetClient(ctx context.Context) (*rest.Config, client.Client, k
 	return nil, nil, nil, errors.New("neither a target nor kubeconfig are defined")
 }
 
-func createOCIClient(ctx context.Context, log logr.Logger, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
+func createOCIClient(ctx context.Context, log logging.Logger, client client.Client, registryPullSecrets []lsv1alpha1.ObjectReference, config helmv1alpha1.Configuration, sharedCache cache.Cache) (ociclient.Client, error) {
 	// resolve all pull secrets
 	secrets, err := kutil.ResolveSecrets(ctx, client, registryPullSecrets)
 	if err != nil {
@@ -274,7 +274,7 @@ func createOCIClient(ctx context.Context, log logr.Logger, client client.Client,
 	if config.OCI != nil {
 		ociConfigFiles = config.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.NewBuilder(log.WithName("ociKeyring")).
+	ociKeyring, err := credentials.NewBuilder(log.WithName("ociKeyring").Logr()).
 		WithFS(osfs.New()).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
@@ -282,7 +282,7 @@ func createOCIClient(ctx context.Context, log logr.Logger, client client.Client,
 	if err != nil {
 		return nil, err
 	}
-	ociClient, err := ociclient.NewClient(log,
+	ociClient, err := ociclient.NewClient(log.Logr(),
 		utils.WithConfiguration(config.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(sharedCache),

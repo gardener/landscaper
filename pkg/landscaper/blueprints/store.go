@@ -20,7 +20,6 @@ import (
 	"github.com/gardener/component-cli/ociclient/cache"
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/readonlyfs"
@@ -30,6 +29,7 @@ import (
 	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
 
@@ -78,7 +78,7 @@ var StoreClosedError = errors.New("STORE_CLOSED")
 //
 // The hash is calculated using the component descriptor and the name of the blueprint.
 type Store struct {
-	log         logr.Logger
+	log         logging.Logger
 	disabled    bool
 	mux         sync.RWMutex
 	indexMethod config.IndexMethod
@@ -101,11 +101,7 @@ type Store struct {
 // The caller should always close the cache for a graceful termination.
 //
 // The store should be initialized once as this is a global singleton.
-func NewStore(log logr.Logger, baseFs vfs.FileSystem, config config.BlueprintStore) (*Store, error) {
-	if log.GetSink() == nil {
-		log = logr.Discard()
-	}
-
+func NewStore(log logging.Logger, baseFs vfs.FileSystem, config config.BlueprintStore) (*Store, error) {
 	if len(config.Path) == 0 {
 		var err error
 		config.Path, err = vfs.TempDir(baseFs, baseFs.FSTempDir(), "bsStore")
@@ -152,7 +148,7 @@ func DefaultStore(fs vfs.FileSystem) (*Store, error) {
 	if err := v1alpha1.Convert_v1alpha1_BlueprintStore_To_config_BlueprintStore(&cs, &defaultStoreConfig, nil); err != nil {
 		return nil, err
 	}
-	return NewStore(logr.Discard(), fs, defaultStoreConfig)
+	return NewStore(logging.Discard(), fs, defaultStoreConfig)
 }
 
 func (s *Store) Close() error {
@@ -397,7 +393,7 @@ func (s *Store) RunGarbageCollection() {
 
 	// first check if we reached the threshold to start garbage collection
 	if s.usage < s.gcConfig.GCHighThreshold {
-		s.log.V(10).Info(fmt.Sprintf("run gc with %v%% usage", s.usage))
+		s.log.Debug(fmt.Sprintf("run gc with %v%% usage", s.usage))
 		return
 	}
 
@@ -414,7 +410,7 @@ func (s *Store) RunGarbageCollection() {
 		if err := s.fs.RemoveAll(blueprintPath(item.Name)); err != nil {
 			s.log.Error(err, "unable to delete blueprint directory", "file", item.Name)
 		}
-		s.log.V(7).Info("garbage collected", "item", item.Name)
+		s.log.Debug("garbage collected", "item", item.Name)
 		s.updateUsage(-item.Size)
 		StoredItems.Dec()
 		// remove currently garbage collected item

@@ -19,7 +19,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/selection"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -42,14 +42,14 @@ import (
 const DeployerClusterRoleName = "landscaper:deployer"
 
 type DeployerManagement struct {
-	log    logr.Logger
+	log    logging.Logger
 	client client.Client
 	scheme *runtime.Scheme
 	config config.DeployerManagementConfiguration
 }
 
 // NewDeployerManagement creates a new deployer manager.
-func NewDeployerManagement(log logr.Logger, client client.Client, scheme *runtime.Scheme, config config.DeployerManagementConfiguration) *DeployerManagement {
+func NewDeployerManagement(log logging.Logger, client client.Client, scheme *runtime.Scheme, config config.DeployerManagementConfiguration) *DeployerManagement {
 	return &DeployerManagement{
 		log:    log,
 		client: client,

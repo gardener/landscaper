@@ -18,7 +18,7 @@ deployer:
 
 #  identity: ""
   namespace: ""
-#  verbosityLevel: 9
+#  verbosityLevel: info
 
 #  targetSelector:
 #  - annotations:

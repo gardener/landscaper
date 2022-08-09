@@ -6,11 +6,11 @@ package operation
 
 import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -22,7 +22,7 @@ type RegistriesAccessor interface {
 
 // Operation is the type that is used to share common operational data across the landscaper reconciler
 type Operation struct {
-	log               logr.Logger
+	log               logging.Logger
 	client            client.Client
 	scheme            *runtime.Scheme
 	eventRecorder     record.EventRecorder
@@ -31,7 +31,7 @@ type Operation struct {
 
 // NewOperation creates a new internal installation Operation object.
 // DEPRECATED: use the Builder instead.
-func NewOperation(log logr.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
+func NewOperation(log logging.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) *Operation {
 	return &Operation{
 		log:           log,
 		client:        c,
@@ -51,7 +51,7 @@ func (o *Operation) Copy() *Operation {
 }
 
 // Log returns a logging instance
-func (o *Operation) Log() logr.Logger {
+func (o *Operation) Log() logging.Logger {
 	return o.log
 }
 

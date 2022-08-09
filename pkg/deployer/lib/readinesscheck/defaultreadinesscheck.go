@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,13 +18,14 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
 type DefaultReadinessCheck struct {
 	Context          context.Context
 	Client           client.Client
-	Log              logr.Logger
+	Log              logging.Logger
 	CurrentOp        string
 	Timeout          *lsv1alpha1.Duration
 	ManagedResources []lsv1alpha1.TypedObjectReference

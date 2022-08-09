@@ -13,7 +13,6 @@ import (
 
 	"github.com/gardener/component-cli/ociclient"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/projectionfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
@@ -24,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/landscaper/installations"
@@ -43,7 +43,7 @@ import (
 // Run downloads the import config, the component descriptor and the blob content
 // to the paths defined by the env vars.
 // It also creates all needed directories.
-func Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
+func Run(ctx context.Context, log logging.Logger, fs vfs.FileSystem) error {
 	opts := &options{}
 	opts.Complete(ctx)
 	if err := opts.Validate(); err != nil {
@@ -72,7 +72,7 @@ func Run(ctx context.Context, log logr.Logger, fs vfs.FileSystem) error {
 	return run(ctx, log, opts, kubeClient, fs)
 }
 
-func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
+func run(ctx context.Context, log logging.Logger, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
 	providerConfigBytes, err := vfs.ReadFile(fs, opts.ConfigurationFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to read provider configuration: %w", err)
@@ -168,7 +168,7 @@ func run(ctx context.Context, log logr.Logger, opts *options, kubeClient client.
 
 func fetchComponentDescriptor(
 	ctx context.Context,
-	log logr.Logger,
+	log logging.Logger,
 	resolver ctf.ComponentResolver,
 	opts *options,
 	fs vfs.FileSystem,
@@ -201,7 +201,7 @@ func fetchComponentDescriptor(
 }
 
 // todo: add retries
-func createOciClientFromDockerAuthConfig(_ context.Context, log logr.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
+func createOciClientFromDockerAuthConfig(_ context.Context, log logging.Logger, fs vfs.FileSystem, registryPullSecretsDir string) (ociclient.Client, error) {
 	var secrets []string
 	err := vfs.Walk(fs, registryPullSecretsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -224,7 +224,7 @@ func createOciClientFromDockerAuthConfig(_ context.Context, log logr.Logger, fs 
 		return nil, err
 	}
 
-	ociClient, err := ociclient.NewClient(log, ociclient.WithKeyring(keyring))
+	ociClient, err := ociclient.NewClient(log.Logr(), ociclient.WithKeyring(keyring))
 	if err != nil {
 		return nil, err
 	}

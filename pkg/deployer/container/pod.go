@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,6 +25,7 @@ import (
 	"github.com/gardener/landscaper/apis/deployer/container"
 	containerv1alpha1 "github.com/gardener/landscaper/apis/deployer/container/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // PodTokenPath is the path in the pod that contains the service account token.
@@ -386,7 +386,7 @@ type EnsureServiceAccountsResult struct {
 func EnsureServiceAccounts(ctx context.Context, hostClient client.Client, deployItem *lsv1alpha1.DeployItem, hostNamespace string, labels map[string]string) (*EnsureServiceAccountsResult, error) {
 	var (
 		res = &EnsureServiceAccountsResult{}
-		log = logr.FromContextOrDiscard(ctx)
+		log = logging.FromContextOrDiscard(ctx)
 	)
 	initSA := &corev1.ServiceAccount{}
 	initSA.Name = InitContainerServiceAccountName(deployItem)
@@ -519,7 +519,7 @@ func EnsureServiceAccounts(ctx context.Context, hostClient client.Client, deploy
 }
 
 // WaitAndGetServiceAccountSecret waits until a service accounts secret is available and returns the secrets name.
-func WaitAndGetServiceAccountSecret(ctx context.Context, log logr.Logger, c client.Client, serviceAccount *corev1.ServiceAccount, labels map[string]string) (types.NamespacedName, error) {
+func WaitAndGetServiceAccountSecret(ctx context.Context, log logging.Logger, c client.Client, serviceAccount *corev1.ServiceAccount, labels map[string]string) (types.NamespacedName, error) {
 	secretKey := types.NamespacedName{}
 	config := &rest.Config{}
 	if err := kutil.AddServiceAccountToken(ctx, c, serviceAccount, config); err != nil {

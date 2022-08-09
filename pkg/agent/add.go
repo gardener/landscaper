@@ -10,21 +10,23 @@ import (
 
 	"k8s.io/apimachinery/pkg/selection"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/apis/config"
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	helmctlr "github.com/gardener/landscaper/pkg/deployer/helm"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 )
 
 // AddToManager adds the agent to the provided manager.
-func AddToManager(ctx context.Context, logger logr.Logger, lsMgr manager.Manager, hostMgr manager.Manager, config config.AgentConfiguration) error {
+func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager, config config.AgentConfiguration) error {
 	log := logger.WithName("agent")
 	// create direct client for the agent to ensure the landscaper resources
 	lsClient, err := client.New(lsMgr.GetConfig(), client.Options{
@@ -58,7 +60,7 @@ func AddToManager(ctx context.Context, logger logr.Logger, lsMgr manager.Manager
 
 	err = builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.Environment{}).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(agent)
 	if err != nil {
 		return err

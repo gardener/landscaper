@@ -13,7 +13,6 @@ import (
 
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +25,7 @@ import (
 	helmv1alpha1 "github.com/gardener/landscaper/apis/deployer/helm/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/helm/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/helm"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -78,7 +78,7 @@ var _ = Describe("Template", func() {
 		lsCtx := &lsv1alpha1.Context{}
 		lsCtx.Name = lsv1alpha1.DefaultContextName
 		lsCtx.Namespace = item.Namespace
-		h, err := helm.New(logr.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
+		h, err := helm.New(logging.Discard(), helmv1alpha1.Configuration{}, testenv.Client, testenv.Client, item, nil, lsCtx, nil)
 		Expect(err).ToNot(HaveOccurred())
 		files, crds, _, _, err := h.Template(ctx)
 		Expect(err).ToNot(HaveOccurred())
@@ -86,7 +86,7 @@ var _ = Describe("Template", func() {
 		Expect(files).To(HaveKey("testchart/templates/secret.yaml"))
 		Expect(files).To(HaveKey("testchart/templates/note.txt"))
 
-		objects, err := kutil.ParseFiles(logr.Discard(), files)
+		objects, err := kutil.ParseFiles(logging.Discard(), files)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(objects).To(HaveLen(1))
 	})
@@ -112,7 +112,7 @@ var _ = Describe("Template", func() {
 				NewClient:          lsutils.NewUncachedClient,
 			})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(helm.AddDeployerToManager(simplelogger.NewIOLogger(GinkgoWriter), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
+			Expect(helm.AddDeployerToManager(logging.Wrap(simplelogger.NewIOLogger(GinkgoWriter)), mgr, mgr, helmv1alpha1.Configuration{})).To(Succeed())
 
 			go func() {
 				Expect(mgr.Start(ctx)).To(Succeed())

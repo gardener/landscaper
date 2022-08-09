@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	coctrl "github.com/gardener/landscaper/pkg/landscaper/controllers/componentoverwrites"
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -64,7 +64,7 @@ var _ = Describe("Reconcile", func() {
 
 	It("should add a component overwrite to the manager", func() {
 		mgr := componentoverwrites.New()
-		c := coctrl.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, mgr)
+		c := coctrl.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, mgr)
 		var err error
 		state, err = testenv.InitState(context.TODO())
 		Expect(err).ToNot(HaveOccurred())

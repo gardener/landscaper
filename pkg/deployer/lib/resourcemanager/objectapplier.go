@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,10 +28,11 @@ import (
 	manifestv1alpha2 "github.com/gardener/landscaper/apis/deployer/manifest/v1alpha2"
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // ApplyManifests creates or updates all configured manifests.
-func ApplyManifests(ctx context.Context, log logr.Logger, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
+func ApplyManifests(ctx context.Context, log logging.Logger, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
 	applier := NewManifestApplier(log, opts)
 	if err := applier.Apply(ctx); err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ type ManifestApplierOptions struct {
 
 // ManifestApplier creates or updated manifest based on their definition.
 type ManifestApplier struct {
-	log              logr.Logger
+	log              logging.Logger
 	decoder          runtime.Decoder
 	kubeClient       client.Client
 	defaultNamespace string
@@ -97,7 +97,7 @@ type Manifest struct {
 }
 
 // NewManifestApplier creates a new manifest deployer
-func NewManifestApplier(log logr.Logger, opts ManifestApplierOptions) *ManifestApplier {
+func NewManifestApplier(log logging.Logger, opts ManifestApplierOptions) *ManifestApplier {
 	return &ManifestApplier{
 		log:                log,
 		decoder:            opts.Decoder,

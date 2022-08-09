@@ -12,9 +12,9 @@ import (
 	"github.com/gardener/component-spec/bindings-go/codec"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	cdoci "github.com/gardener/component-spec/bindings-go/oci"
-	"github.com/go-logr/logr"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/apis/config"
@@ -24,8 +24,8 @@ import (
 )
 
 // NewOCIRegistry creates a new oci registry from a oci config.
-func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration, cache cache.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
-	client, err := ociclient.NewClient(log, utils.WithConfiguration(config), ociclient.WithCache(cache))
+func NewOCIRegistry(log logging.Logger, config *config.OCIConfiguration, cache cache.Cache, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
+	client, err := ociclient.NewClient(log.Logr(), utils.WithConfiguration(config), ociclient.WithCache(cache))
 	if err != nil {
 		return nil, err
 	}
@@ -35,12 +35,12 @@ func NewOCIRegistry(log logr.Logger, config *config.OCIConfiguration, cache cach
 
 // NewOCIRegistryWithOCIClient creates a new oci registry with a oci ociClient
 // If supplied, it parses and stores predefined component descriptors.
-func NewOCIRegistryWithOCIClient(log logr.Logger, client ociclient.Client, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
+func NewOCIRegistryWithOCIClient(log logging.Logger, client ociclient.Client, predefinedComponentDescriptors ...*cdv2.ComponentDescriptor) (TypedRegistry, error) {
 	cache, err := newPredefinedComponentCache(predefinedComponentDescriptors...)
 	if err != nil {
 		return nil, err
 	}
-	res := cdoci.NewResolver(client).WithCache(cache).WithLog(log)
+	res := cdoci.NewResolver(client).WithCache(cache).WithLog(log.Logr())
 	return &ociClient{
 		cache:     cache,
 		ociClient: client,

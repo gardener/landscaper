@@ -5,12 +5,14 @@
 package componentoverwrites
 
 import (
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+
 	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/landscaper/registry/componentoverwrites"
@@ -20,8 +22,8 @@ import (
 
 // AddControllerToManager adds the component overwrites controller to the controller manager.
 // It is responsible for detecting timeouts in deploy items.
-func AddControllerToManager(logger logr.Logger, mgr manager.Manager, cmgr *componentoverwrites.Manager, config config.ComponentOverwritesController) error {
-	log := logger.WithName("ComponentOverwrites")
+func AddControllerToManager(logger logging.Logger, mgr manager.Manager, cmgr *componentoverwrites.Manager, config config.ComponentOverwritesController) error {
+	log := logger.Reconciles("componentOverwrite", "ComponentOverwrite")
 	c := NewController(
 		log,
 		mgr.GetClient(),
@@ -30,6 +32,6 @@ func AddControllerToManager(logger logr.Logger, mgr manager.Manager, cmgr *compo
 	return builder.ControllerManagedBy(mgr).
 		For(&lsv1alpha1.ComponentOverwrites{}).
 		WithOptions(utils.ConvertCommonControllerConfigToControllerOptions(config.CommonControllerConfig)).
-		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log }).
+		WithLogConstructor(func(r *reconcile.Request) logr.Logger { return log.Logr() }).
 		Complete(c)
 }

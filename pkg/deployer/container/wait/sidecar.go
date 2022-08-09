@@ -9,17 +9,17 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 )
 
 // Run runs the container deployer sidecar.
-func Run(ctx context.Context, log logr.Logger) error {
+func Run(ctx context.Context, log logging.Logger) error {
 	opts := &options{}
 	opts.Setup()
 
@@ -65,7 +65,7 @@ func Run(ctx context.Context, log logr.Logger) error {
 	return nil
 }
 
-func withTerminationLog(log logr.Logger, err error) error {
+func withTerminationLog(log logging.Logger, err error) error {
 	if err == nil {
 		return nil
 	}

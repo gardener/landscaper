@@ -33,6 +33,7 @@ import (
 	containerctlr "github.com/gardener/landscaper/pkg/deployer/container"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
 
@@ -50,12 +51,12 @@ var _ = Describe("GarbageCollector", func() {
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
-		logger := simplelogger.WithTimestamps(simplelogger.NewIOLogger(GinkgoWriter))
+		logger := logging.Wrap(simplelogger.WithTimestamps(simplelogger.NewIOLogger(GinkgoWriter)))
 		var err error
 		lsMgr, err = manager.New(testenv.Env.Config, manager.Options{
 			Scheme:             api.LandscaperScheme,
 			MetricsBindAddress: "0",
-			Logger:             logger.WithName("lsManager"),
+			Logger:             logger.WithName("lsManager").Logr(),
 			NewClient:          lsutils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())
@@ -63,7 +64,7 @@ var _ = Describe("GarbageCollector", func() {
 		hostMgr, err = manager.New(hostTestEnv.Env.Config, manager.Options{
 			Scheme:             scheme.Scheme,
 			MetricsBindAddress: "0",
-			Logger:             logger.WithName("hostManager"),
+			Logger:             logger.WithName("hostManager").Logr(),
 			NewClient:          lsutils.NewUncachedClient,
 		})
 		Expect(err).ToNot(HaveOccurred())

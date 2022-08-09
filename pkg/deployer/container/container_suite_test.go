@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -24,6 +23,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lsutils "github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
 )
@@ -78,7 +78,7 @@ var _ = Describe("Template", func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		Expect(containerctlr.AddControllerToManager(logr.Discard(), mgr, mgr, containerv1alpha1.Configuration{})).To(Succeed())
+		Expect(containerctlr.AddControllerToManager(logging.Discard(), mgr, mgr, containerv1alpha1.Configuration{})).To(Succeed())
 
 		state, err = testenv.InitState(ctx)
 		Expect(err).ToNot(HaveOccurred())

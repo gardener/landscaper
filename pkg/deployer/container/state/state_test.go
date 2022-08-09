@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -18,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -51,7 +51,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -78,7 +78,7 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
@@ -121,14 +121,14 @@ var _ = Describe("Container Deployer State", func() {
 		utils.ExpectNoError(fs.MkdirAll(testDir, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		}, testDir).WithFs(fs)
 
 		utils.ExpectNoError(s.Backup(ctx))
 
-		err := state.CleanupState(ctx, logr.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
+		err := state.CleanupState(ctx, logging.Discard(), testenv.Client, testState.Namespace, lsv1alpha1.ObjectReference{
 			Name:      "testname",
 			Namespace: "testns",
 		})

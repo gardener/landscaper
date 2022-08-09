@@ -8,9 +8,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	utils2 "github.com/gardener/landscaper/pkg/utils"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -41,10 +41,10 @@ var _ = Describe("Deploy Item Controller Reconcile Test", func() {
 	BeforeEach(func() {
 		var err error
 
-		deployItemController, err = dictrl.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testAbortingTimeoutDuration, &testProgressingTimeoutDuration)
+		deployItemController, err = dictrl.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, &testPickupTimeoutDuration, &testAbortingTimeoutDuration, &testProgressingTimeoutDuration)
 		Expect(err).ToNot(HaveOccurred())
 
-		mockController, err = mockctlr.NewController(logr.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
+		mockController, err = mockctlr.NewController(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024), mockv1alpha1.Configuration{})
 		Expect(err).ToNot(HaveOccurred())
 	})
 

@@ -9,7 +9,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -17,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	deployerlib "github.com/gardener/landscaper/pkg/deployer/lib"
 	"github.com/gardener/landscaper/pkg/version"
 
@@ -25,7 +25,7 @@ import (
 )
 
 // AddControllerToManager adds all necessary deployer controllers to a controller manager.
-func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
+func AddControllerToManager(logger logging.Logger, hostMgr, lsMgr manager.Manager, config containerv1alpha1.Configuration) error {
 	ctrlLogger := logger.WithName("ContainerDeployer")
 
 	directHostClient, err := client.New(hostMgr.GetConfig(), client.Options{
@@ -60,7 +60,7 @@ func AddControllerToManager(logger logr.Logger, hostMgr, lsMgr manager.Manager, 
 		options.CacheSyncTimeout = config.Controller.CacheSyncTimeout.Duration
 	}
 
-	err = deployerlib.Add(ctrl.Log, lsMgr, hostMgr, deployerlib.DeployerArgs{
+	err = deployerlib.Add(logging.Wrap(ctrl.Log), lsMgr, hostMgr, deployerlib.DeployerArgs{
 		Name:            Name,
 		Version:         version.Get().String(),
 		Identity:        config.Identity,

@@ -11,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	"github.com/mandelsoft/vfs/pkg/vfs"
 	. "github.com/onsi/ginkgo"
@@ -19,6 +18,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	"github.com/gardener/landscaper/apis/deployer/container"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/container/state"
 	"github.com/gardener/landscaper/test/utils"
 	"github.com/gardener/landscaper/test/utils/envtest"
@@ -84,7 +84,7 @@ var _ = Describe("Init e2e", func() {
 		utils.ExpectNoError(fs.MkdirAll(container.StatePath, os.ModePerm))
 		utils.ExpectNoError(vfs.WriteFile(fs, testFilePath, testData, os.ModePerm))
 
-		s := state.New(logr.Discard(), testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
+		s := state.New(logging.Discard(), testenv.Client, testState.Namespace, di, container.StatePath).WithFs(fs)
 
 		utils.ExpectNoError(s.Backup(ctx))
 
@@ -95,7 +95,7 @@ var _ = Describe("Init e2e", func() {
 
 		opts := &options{}
 		opts.Complete(ctx)
-		Expect(run(ctx, logr.Discard(), opts, testenv.Client, resFs)).To(Succeed())
+		Expect(run(ctx, logging.Discard(), opts, testenv.Client, resFs)).To(Succeed())
 
 		resData, err := vfs.ReadFile(resFs, testFilePath)
 		utils.ExpectNoError(err)

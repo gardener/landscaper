@@ -11,12 +11,12 @@ import (
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
-	"github.com/go-logr/logr"
 	"github.com/mandelsoft/vfs/pkg/memoryfs"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/gardener/landscaper/apis/mediatype"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 
 	"github.com/gardener/landscaper/apis/config/v1alpha1"
@@ -70,7 +70,7 @@ var _ = Describe("Resolve", func() {
 		It("should resolve a blueprint from a blobresolver", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 
@@ -106,7 +106,7 @@ var _ = Describe("Resolve", func() {
 		It("should resolve a blueprint from a blobresolver with a gzipped blueprint", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 
@@ -143,7 +143,7 @@ var _ = Describe("Resolve", func() {
 		It("should throw an error if a gzipped blueprint is expected but a tar is given", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 
@@ -179,7 +179,7 @@ var _ = Describe("Resolve", func() {
 		It("should throw an error if a blueprint is received corrupted", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 
@@ -208,7 +208,7 @@ var _ = Describe("Resolve", func() {
 		It("should throw an error if a blueprint is received corrupted with gzipped media type", func() {
 			ctx := context.Background()
 
-			store, err := blueprints.NewStore(logr.Discard(), memoryfs.New(), defaultStoreConfig)
+			store, err := blueprints.NewStore(logging.Discard(), memoryfs.New(), defaultStoreConfig)
 			Expect(err).ToNot(HaveOccurred())
 			blueprints.SetStore(store)
 

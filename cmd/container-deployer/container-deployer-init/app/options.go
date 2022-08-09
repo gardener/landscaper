@@ -7,15 +7,14 @@ package app
 import (
 	goflag "flag"
 
-	"github.com/go-logr/logr"
 	flag "github.com/spf13/pflag"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logger"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 type options struct {
-	log logr.Logger
+	log logging.Logger
 }
 
 func NewOptions() *options {
@@ -23,20 +22,19 @@ func NewOptions() *options {
 }
 
 func (o *options) AddFlags(fs *flag.FlagSet) {
-	logger.InitFlags(fs)
+	logging.InitFlags(fs)
 
 	flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 // Complete parses all options and flags and initializes the basic functions
 func (o *options) Complete() error {
-	log, err := logger.New(nil)
+	log, err := logging.GetLogger()
 	if err != nil {
 		return err
 	}
-	o.log = log.WithName("setup")
-	logger.SetLogger(log)
-	ctrl.SetLogger(log)
+	o.log = log
+	ctrl.SetLogger(log.Logr())
 
 	return nil
 }

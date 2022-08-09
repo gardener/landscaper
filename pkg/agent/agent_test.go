@@ -7,7 +7,6 @@ package agent_test
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -20,6 +19,7 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
 )
@@ -41,7 +41,7 @@ var _ = Describe("Agent", func() {
 		agConfig = &config.AgentConfiguration{}
 		agConfig.Name = "testenv"
 		agConfig.Namespace = state.Namespace
-		ag = agent.New(logr.Discard(),
+		ag = agent.New(logging.Discard(),
 			testenv.Client,
 			testenv.Env.Config,
 			api.LandscaperScheme,
