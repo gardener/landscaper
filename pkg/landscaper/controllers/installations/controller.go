@@ -107,7 +107,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			c.Log().Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -179,7 +179,7 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
 		if apierrors.IsNotFound(err) {
-			c.Log().Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -216,7 +216,7 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.AbortOperation) {
 		// todo: handle abort..
-		c.Log().Info("do abort")
+		logger.Info("do abort")
 	}
 
 	if lsv1alpha1helper.HasOperation(inst.ObjectMeta, lsv1alpha1.ReconcileOperation) {
@@ -237,6 +237,8 @@ func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 // initPrerequisites prepares installation operations by fetching context and registries, resolving the blueprint and creating an internal installation.
 // It does not modify the installation resource in the cluster in any way.
 func (c *Controller) initPrerequisites(ctx context.Context, inst *lsv1alpha1.Installation) (*installations.Operation, lserrors.LsError) {
+	logger := logging.FromContext(ctx)
+
 	currOp := "InitPrerequisites"
 	op := c.Operation.Copy()
 
