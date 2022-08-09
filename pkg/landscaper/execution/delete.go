@@ -8,21 +8,17 @@ import (
 	"context"
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
+	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // Delete handles the delete flow for a execution
@@ -76,7 +72,9 @@ func (o *Operation) Delete(ctx context.Context) lserrors.LsError {
 }
 
 // checkDeletable checks whether all deploy items depending on a given deploy item have been successfully deleted.
-func (o *Operation) checkDeletable(item executionItem, items []*executionItem) bool {
+func (o *Operation) checkDeletable(ctx context.Context, item executionItem, items []*executionItem) bool {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+
 	for _, exec := range items {
 		if exec.Info.Name == item.Info.Name {
 			continue
@@ -90,7 +88,7 @@ func (o *Operation) checkDeletable(item executionItem, items []*executionItem) b
 		// the reconcile loop.
 		// Therefore, it should not be necessary to check again against the api server.
 		if exec.DeployItem != nil {
-			o.Log().Debug("deploy item %s depends on %s and is still present", exec.DeployItem.Name, item.Info.Name)
+			logger.Debug("deploy item still has a successor", "predecessor", item.Info.Name, "successor", exec.DeployItem.Name)
 			return false
 		}
 	}
@@ -103,7 +101,7 @@ func (o *Operation) DeleteItemOld(ctx context.Context, item *executionItem, exec
 		return true, false, nil
 	}
 
-	if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(*item, executionItems) {
+	if item.DeployItem.DeletionTimestamp.IsZero() && o.checkDeletable(ctx, *item, executionItems) {
 		if err := o.Writer().DeleteDeployItem(ctx, read_write_layer.W000065, item.DeployItem); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return false, false, lserrors.NewWrappedError(err,
@@ -155,13 +153,13 @@ func (o *Operation) deleteItem(ctx context.Context, item *executionItem, executi
 	return false, false, nil
 }
 
-func (o *Operation) triggerDeletionIsRequired(_ context.Context, item *executionItem, executionItems []*executionItem) bool {
+func (o *Operation) triggerDeletionIsRequired(ctx context.Context, item *executionItem, executionItems []*executionItem) bool {
 	lastAppliedGeneration, ok := getExecutionGeneration(o.exec.Status.ExecutionGenerations, item.Info.Name)
 	if ok && lastAppliedGeneration.ObservedGeneration == o.exec.Generation {
 		return false
 	}
 
-	return o.checkDeletable(*item, executionItems)
+	return o.checkDeletable(ctx, *item, executionItems)
 }
 
 func (o *Operation) triggerDeletion(ctx context.Context, item *executionItem) lserrors.LsError {

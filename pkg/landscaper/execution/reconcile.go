@@ -8,20 +8,18 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/client-go/tools/record"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/yaml"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // executionItem is the internal representation of a execution item with its deployitem and status
@@ -32,11 +30,12 @@ type executionItem struct {
 
 // Reconcile contains the reconcile logic for a execution item that schedules multiple DeployItems.
 func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger.Debug(lc.MsgStartMethod, lc.KeyMethod, "Reconcile")
+
 	op := "Reconcile"
 	cond := lsv1alpha1helper.GetOrInitCondition(o.exec.Status.Conditions, lsv1alpha1.ReconcileDeployItemsCondition)
 	o.exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
-
-	logger := o.Log().WithValues("operation", "reconcile", "resource", kutil.ObjectKeyFromObject(o.exec).String())
 
 	managedItems, err := o.ListManagedDeployItems(ctx)
 	if err != nil {
@@ -49,26 +48,28 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 
 	allSucceeded := true
 	for _, item := range executionItems {
-		dlogger := logger.WithValues("deployitem", item.Info.Name)
-		if deployItemUpToDateAndNotForceReconcile(o.exec, item.Info.Name, item.DeployItem, o.forceReconcile, dlogger) {
+		diLogger := logger.WithValues("deployitem", item.Info.Name)
+		diCtx := logging.NewContext(ctx, diLogger)
+
+		if deployItemUpToDateAndNotForceReconcile(diCtx, o.exec, item.Info.Name, item.DeployItem, o.forceReconcile) {
 			if failedBecausePickupTimeout(item.DeployItem) {
 				// we need to check if the deploy item is failed due to that it is not picked up by a deployer.
 				// This is an error scenario that needs special handling as other detections in this code will not work.
 				// Mostly due to outdated observed generation
-				setPhaseFailedBecausePickupTimeout(o.exec, cond, item.Info.Name, item.DeployItem.Name, dlogger)
+				setPhaseFailedBecausePickupTimeout(diCtx, o.exec, cond, item.Info.Name, item.DeployItem.Name)
 				return nil
 			} else if failedAndStatusUpToDate(item.DeployItem) {
 				// the deployitem up-to-date
 				// deployitem is failed => set execution to failed
-				setPhaseFailedBecauseFailedDeployItem(o.exec, cond, item.Info.Name, item.DeployItem.Name, dlogger)
+				setPhaseFailedBecauseFailedDeployItem(diCtx, o.exec, cond, item.Info.Name, item.DeployItem.Name)
 				return nil
 			} else if notCompletedPhaseOrNotStatusUpToDate(item.DeployItem) {
 				// deployitem is running - either in a non-final phase, or its observedGeneration doesn't match its generation
-				setPhaseProgressingOfRunningDeployItem(o.exec, item.Info.Name, o.EventRecorder(), dlogger)
+				setPhaseProgressingOfRunningDeployItem(diCtx, o.exec, item.Info.Name, o.EventRecorder())
 				allSucceeded = false
 			} else {
 				// the deployitem is: up-to-date, in a final state, not failed => deployItem.spec.phase == succeeded => nothing to do with the deployitem
-				dlogger.Debug("deployitem not triggered because up-to-date", "deployItemPhase", string(item.DeployItem.Status.Phase))
+				diLogger.Debug("deployitem not triggered because up-to-date", lc.KeyDeployItemPhase, string(item.DeployItem.Status.Phase))
 			}
 		} else { // deploy item not up to date or force reconcile
 			allSucceeded = false
@@ -83,7 +84,7 @@ func (o *Operation) Reconcile(ctx context.Context) lserrors.LsError {
 					return err
 				}
 			} else {
-				o.Log().Debug("deployitem not runnable", "name", item.Info.Name)
+				diLogger.Debug("deployitem not runnable")
 			}
 		}
 	}
@@ -117,8 +118,10 @@ func notCompletedPhaseOrNotStatusUpToDate(deployItem *lsv1alpha1.DeployItem) boo
 	return !lsv1alpha1helper.IsCompletedExecutionPhase(deployItem.Status.Phase) || !deployItemStatusUpToDate
 }
 
-func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfoName string,
-	deployItem *lsv1alpha1.DeployItem, forceReconcile bool, dlogger logging.Logger) bool {
+func deployItemUpToDateAndNotForceReconcile(ctx context.Context, exec *lsv1alpha1.Execution, itemInfoName string,
+	deployItem *lsv1alpha1.DeployItem, forceReconcile bool) bool {
+	dlogger, _ := logging.FromContextOrNew(ctx, nil)
+
 	if deployItem == nil {
 		return false
 	}
@@ -140,8 +143,10 @@ func deployItemUpToDateAndNotForceReconcile(exec *lsv1alpha1.Execution, itemInfo
 	return deployItemUpToDate && !forceReconcile
 }
 
-func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
-	dlogger logging.Logger) {
+func setPhaseFailedBecausePickupTimeout(ctx context.Context, exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition,
+	infoName, deployItemName string) {
+	dlogger, _ := logging.FromContextOrNew(ctx, nil)
+
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -155,8 +160,10 @@ func setPhaseFailedBecausePickupTimeout(exec *lsv1alpha1.Execution, cond lsv1alp
 	dlogger.Debug("deployitem failed, aborting reconcile")
 }
 
-func setPhaseProgressingOfRunningDeployItem(exec *lsv1alpha1.Execution, itemInfoName string, eventRecorder record.EventRecorder,
-	dlogger logging.Logger) {
+func setPhaseProgressingOfRunningDeployItem(ctx context.Context, exec *lsv1alpha1.Execution, itemInfoName string,
+	eventRecorder record.EventRecorder) {
+	dlogger, _ := logging.FromContextOrNew(ctx, nil)
+
 	eventRecorder.Eventf(exec, corev1.EventTypeNormal,
 		"DeployItemCompleted",
 		"deployitem %s not triggered because it already exists and is not completed", itemInfoName,
@@ -165,8 +172,10 @@ func setPhaseProgressingOfRunningDeployItem(exec *lsv1alpha1.Execution, itemInfo
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseProgressing
 }
 
-func setPhaseFailedBecauseFailedDeployItem(exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition, infoName, deployItemName string,
-	dlogger logging.Logger) {
+func setPhaseFailedBecauseFailedDeployItem(ctx context.Context, exec *lsv1alpha1.Execution, cond lsv1alpha1.Condition,
+	infoName, deployItemName string) {
+	dlogger, _ := logging.FromContextOrNew(ctx, nil)
+
 	exec.Status.Phase = lsv1alpha1.ExecutionPhaseFailed
 	exec.Status.Conditions = lsv1alpha1helper.MergeConditions(exec.Status.Conditions,
 		lsv1alpha1helper.UpdatedCondition(cond, lsv1alpha1.ConditionFalse,
@@ -280,7 +289,7 @@ func (o *Operation) addExports(ctx context.Context, item *lsv1alpha1.DeployItem)
 }
 
 // checkRunnable checks whether all deployitems a given deployitem depends on have been successfully executed.
-func (o *Operation) checkRunnable(ctx context.Context, item *executionItem, items []*executionItem) (bool, lserrors.LsError) {
+func (o *Operation) checkRunnable(_ context.Context, item *executionItem, items []*executionItem) (bool, lserrors.LsError) {
 	if len(item.Info.DependsOn) == 0 {
 		return true, nil
 	}
