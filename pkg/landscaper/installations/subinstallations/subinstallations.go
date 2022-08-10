@@ -11,8 +11,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
@@ -221,7 +221,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
 	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
 
-	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.Info).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.Info).String()})
 
 	var (
 		inst    = o.Inst.Info

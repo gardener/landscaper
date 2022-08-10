@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
@@ -178,7 +179,7 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
 
-	logger, ctx := lsutil.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
