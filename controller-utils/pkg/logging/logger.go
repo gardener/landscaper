@@ -142,6 +142,30 @@ func FromContextOrDiscard(ctx context.Context) Logger {
 	return log
 }
 
+// FromContext wraps the result of logr.FromContext into a logging.Logger.
+// It is expected that a logger is contained in the context. If retrieving it fails, a new logger will be created and an error is logged.
+// keysAndValuesFallback contains keys and values which will only be added if the logger could not be retrieved and a new one had to be created.
+// The key-value-pairs from keysAndValues will always be added.
+// A new context, containing the created logger, will be returned.
+// The function panics if the logger cannot be fetched from the context and creating a new one fails.
+func FromContextOrNew(ctx context.Context, keysAndValuesFallback []interface{}, keysAndValues ...interface{}) (Logger, context.Context) {
+	log, err := FromContext(ctx)
+	if err != nil {
+		newLogger, err2 := GetLogger()
+		if err2 != nil {
+			panic(err2)
+		}
+
+		newLogger = newLogger.WithValues(keysAndValuesFallback...).WithValues(keysAndValues...)
+		newLogger.Error(err2, "unable to fetch logger from context")
+		ctx = NewContext(ctx, newLogger)
+		return newLogger, ctx
+	}
+	log = log.WithValues(keysAndValues...)
+	ctx = NewContext(ctx, log)
+	return log, ctx
+}
+
 func Discard() Logger {
 	return Wrap(logr.Discard())
 }
