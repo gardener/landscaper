@@ -235,7 +235,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 		}
 
 		// delete installation
-		logger.Debug("delete orphaned installation", "name", subInst.Name)
+		logger.Info("delete orphaned installation", "name", subInst.Name)
 		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
