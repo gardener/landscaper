@@ -9,16 +9,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	cdv2 "github.com/gardener/component-spec/bindings-go/apis/v2"
 	"github.com/gardener/component-spec/bindings-go/ctf"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -27,7 +26,6 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/api"
 	"github.com/gardener/landscaper/pkg/landscaper/dataobjects"
 	"github.com/gardener/landscaper/pkg/landscaper/jsonschema"
@@ -56,18 +54,6 @@ type Operation struct {
 
 	// CurrentOperation is the name of the current operation that is used for the error erporting
 	CurrentOperation string
-}
-
-// NewInstallationOperation creates a new installation operation.
-// DEPRECATED: use the builder instead.
-func NewInstallationOperation(ctx context.Context, log logging.Logger, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder, cRegistry ctf.ComponentResolver, inst *Installation) (*Operation, error) {
-	return NewOperationBuilder(inst).
-		WithLogger(log).
-		Client(c).
-		Scheme(scheme).
-		WithEventRecorder(recorder).
-		ComponentRegistry(cRegistry).
-		Build(ctx)
 }
 
 // NewInstallationOperationFromOperation creates a new installation operation from an existing common operation.
@@ -110,14 +96,6 @@ func (o *Operation) ResolveComponentDescriptors(ctx context.Context) error {
 	o.BlobResolver = blobResolver
 	o.ResolvedComponentDescriptorList = &resolvedCD
 	return nil
-}
-
-// Log returns a modified logger for the installation.
-func (o *Operation) Log() logging.Logger {
-	return o.Operation.Log().WithValues("installation", types.NamespacedName{
-		Namespace: o.Inst.Info.Namespace,
-		Name:      o.Inst.Info.Name,
-	})
 }
 
 // Context returns the context of the operated installation
@@ -197,11 +175,15 @@ func ListSubinstallations(ctx context.Context, kubeClient client.Client, inst *l
 }
 
 // UpdateInstallationStatus updates the status of a installation
-func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation, phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+func (o *Operation) UpdateInstallationStatus(ctx context.Context, inst *lsv1alpha1.Installation,
+	phase lsv1alpha1.ComponentInstallationPhase, updatedConditions ...lsv1alpha1.Condition) error {
+
+	logger, ctx := lsutil.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+
 	inst.Status.Phase = phase
 	inst.Status.Conditions = lsv1alpha1helper.MergeConditions(inst.Status.Conditions, updatedConditions...)
 	if err := o.Writer().UpdateInstallationStatus(ctx, read_write_layer.W000018, inst); err != nil {
-		o.Log().Error(err, "unable to set installation status")
+		logger.Error(err, "unable to set installation status")
 		return err
 	}
 	return nil

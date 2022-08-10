@@ -9,6 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,6 +47,8 @@ func NewConstructor(op *installations.Operation) *Constructor {
 
 // Construct loads the exported data from the execution and the subinstallations.
 func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject, []*dataobjects.Target, error) {
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(c.Inst.Info).String())
+
 	var (
 		fldPath         = field.NewPath(fmt.Sprintf("(inst: %s)", c.Inst.Info.Name)).Child("internalExports")
 		internalExports = map[string]interface{}{
@@ -89,7 +94,7 @@ func (c *Constructor) Construct(ctx context.Context) ([]*dataobjects.DataObject,
 		def, err := c.Inst.GetExportDefinition(name)
 		if err != nil {
 			// ignore additional exports
-			c.Log().Debug("key exported that is not defined by the blueprint", "name", name)
+			logger.Info("key exported that is not defined by the blueprint", "name", name)
 			delete(exports, name)
 			continue
 		}

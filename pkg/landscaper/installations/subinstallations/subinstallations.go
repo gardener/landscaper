@@ -9,6 +9,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/utils"
+
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -215,6 +220,9 @@ func (o *Operation) GetSubInstallations(ctx context.Context, inst *lsv1alpha1.In
 func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 	subInstallations map[string]*lsv1alpha1.Installation,
 	installationTmpl []*lsv1alpha1.InstallationTemplate) (bool, error) {
+
+	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(o.Inst.Info).String())
+
 	var (
 		inst    = o.Inst.Info
 		cond    = lsv1alpha1helper.GetOrInitCondition(inst.Status.Conditions, lsv1alpha1.EnsureSubInstallationsCondition)
@@ -227,7 +235,7 @@ func (o *Operation) cleanupOrphanedSubInstallations(ctx context.Context,
 		}
 
 		// delete installation
-		o.Log().Debug("delete orphaned installation", "name", subInst.Name)
+		logger.Debug("delete orphaned installation", "name", subInst.Name)
 		if err := o.Writer().DeleteInstallation(ctx, read_write_layer.W000021, subInst); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
