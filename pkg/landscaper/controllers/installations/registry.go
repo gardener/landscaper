@@ -24,6 +24,8 @@ import (
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
 func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
+	logger, ctx := utils.FromContextOrNew(ctx)
+
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)
 	if err != nil {
@@ -35,7 +37,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return fmt.Errorf("unable to create component registry manager: %w", err)
 	}
 	if c.LsConfig.Registry.Local != nil {
-		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.Log(), c.LsConfig.Registry.Local.RootPath)
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(logger, c.LsConfig.Registry.Local.RootPath)
 		if err != nil {
 			return err
 		}
@@ -49,7 +51,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if c.LsConfig.Registry.OCI != nil {
 		ociConfigFiles = c.LsConfig.Registry.OCI.ConfigFiles
 	}
-	ociKeyring, err := credentials.NewBuilder(c.Log().Logr()).DisableDefaultConfig().
+	ociKeyring, err := credentials.NewBuilder(logger.Logr()).DisableDefaultConfig().
 		WithFS(osfs.New()).
 		FromConfigFiles(ociConfigFiles...).
 		FromPullSecrets(secrets...).
@@ -57,7 +59,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 	if err != nil {
 		return err
 	}
-	ociClient, err := ociclient.NewClient(c.Log().Logr(),
+	ociClient, err := ociclient.NewClient(logger.Logr(),
 		utils.WithConfiguration(c.LsConfig.Registry.OCI),
 		ociclient.WithKeyring(ociKeyring),
 		ociclient.WithCache(c.SharedCache),
@@ -71,7 +73,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		inlineCd = installation.Spec.ComponentDescriptor.Inline
 	}
 
-	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(c.Log(), ociClient, inlineCd)
+	componentsOCIRegistry, err := componentsregistry.NewOCIRegistryWithOCIClient(logger, ociClient, inlineCd)
 	if err != nil {
 		return err
 	}
