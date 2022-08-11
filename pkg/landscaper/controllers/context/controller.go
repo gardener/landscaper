@@ -24,13 +24,13 @@ import (
 )
 
 // NewDefaulterController creates a new context controller that reconciles the default context object in the namespaces.
-func NewDefaulterController(log logging.Logger,
+func NewDefaulterController(logger logging.Logger,
 	kubeClient client.Client,
 	scheme *runtime.Scheme,
 	eventRecorder record.EventRecorder,
 	config config.ContextControllerConfig) (reconcile.Reconciler, error) {
 	return &defaulterController{
-		log:               log,
+		log:               logger,
 		client:            kubeClient,
 		scheme:            scheme,
 		eventRecorder:     eventRecorder,
@@ -52,12 +52,14 @@ func (c *defaulterController) Reconcile(ctx context.Context, req reconcile.Reque
 	if c.excludeNamespaces.Has(req.Name) {
 		return reconcile.Result{}, nil
 	}
+
 	logger := c.log.StartReconcile(req)
+	ctx = logging.NewContext(ctx, logger)
 
 	ns := &corev1.Namespace{}
 	if err := c.client.Get(ctx, req.NamespacedName, ns); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

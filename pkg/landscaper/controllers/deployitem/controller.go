@@ -10,21 +10,19 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	lserrors "github.com/gardener/landscaper/apis/errors"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	lscore "github.com/gardener/landscaper/apis/core"
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+	"github.com/gardener/landscaper/pkg/utils"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
@@ -33,8 +31,8 @@ import (
 // It is expected that deployers remove the timestamp annotation from deploy items during reconciliation. If the timestamp annotation exists and is older than a specified duration,
 // the controller marks the deploy item as failed.
 // pickupTimeout is a string containing the pickup timeout duration, either as 'none' or as a duration that can be parsed by time.ParseDuration.
-func NewController(log logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
-	con := controller{log: log, c: c, scheme: scheme}
+func NewController(logger logging.Logger, c client.Client, scheme *runtime.Scheme, pickupTimeout, abortingTimeout, defaultTimeout *lscore.Duration) (reconcile.Reconciler, error) {
+	con := controller{log: logger, c: c, scheme: scheme}
 	if pickupTimeout != nil {
 		con.pickupTimeout = pickupTimeout.Duration
 	} else {
@@ -52,9 +50,9 @@ func NewController(log logging.Logger, c client.Client, scheme *runtime.Scheme, 
 	}
 
 	// log pickup timeout
-	log.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != 0, "timeout", con.pickupTimeout.String())
-	log.Info("deploy item aborting timeout detection", "active", con.abortingTimeout != 0, "timeout", con.abortingTimeout.String())
-	log.Info("deploy item default timeout", "active", con.defaultTimeout != 0, "timeout", con.defaultTimeout.String())
+	logger.Info("deploy item pickup timeout detection", "active", con.pickupTimeout != 0, "timeout", con.pickupTimeout.String())
+	logger.Info("deploy item aborting timeout detection", "active", con.abortingTimeout != 0, "timeout", con.abortingTimeout.String())
+	logger.Info("deploy item default timeout", "active", con.defaultTimeout != 0, "timeout", con.defaultTimeout.String())
 
 	return &con, nil
 }
@@ -78,11 +76,12 @@ func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (re
 
 func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.StartReconcile(req)
+	ctx = logging.NewContext(ctx, logger)
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -95,7 +94,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	// detect pickup timeout
 	if con.pickupTimeout != 0 {
 		logger.Debug("check for pickup timeout")
-		requeue, err = con.detectPickupTimeouts(logger, di)
+		requeue, err = con.detectPickupTimeouts(ctx, di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -112,7 +111,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	// detect aborting timeout
 	if con.abortingTimeout != 0 {
 		logger.Debug("check for aborting timeout")
-		tmp, err := con.detectAbortingTimeouts(logger, di)
+		tmp, err := con.detectAbortingTimeouts(ctx, di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -142,7 +141,7 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	// only do something if progressing timeout detection is neither deactivated on the deploy item, nor defaulted by the deploy item and deactivated by default
 	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
 		logger.Debug("check for progressing timeout")
-		tmp, err := con.detectProgressingTimeouts(logger, di)
+		tmp, err := con.detectProgressingTimeouts(ctx, di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -166,8 +165,10 @@ func (con *controller) reconcileOld(ctx context.Context, req reconcile.Request) 
 	return reconcile.Result{RequeueAfter: *requeue}, nil
 }
 
-func (con *controller) detectPickupTimeouts(log logging.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
-	logger := log.WithValues("operation", "DetectPickupTimeouts")
+func (con *controller) detectPickupTimeouts(ctx context.Context, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "detectPickupTimeouts")
+
 	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
 		di.Status.ObservedGeneration == di.Generation &&
 		di.Status.LastError != nil &&
@@ -209,8 +210,10 @@ func (con *controller) detectPickupTimeouts(log logging.Logger, di *lsv1alpha1.D
 	return &requeue, nil
 }
 
-func (con *controller) detectAbortingTimeouts(log logging.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
-	logger := log.WithValues("operation", "DetectAbortingTimeouts")
+func (con *controller) detectAbortingTimeouts(ctx context.Context, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "detectAbortingTimeouts")
+
 	if di.Status.Phase == lsv1alpha1.ExecutionPhaseFailed &&
 		di.Status.ObservedGeneration == di.Generation &&
 		di.Status.LastError != nil &&
@@ -256,8 +259,10 @@ func (con *controller) detectAbortingTimeouts(log logging.Logger, di *lsv1alpha1
 	return &requeue, nil
 }
 
-func (con *controller) detectProgressingTimeouts(log logging.Logger, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
-	logger := log.WithValues("operation", "DetectProgressingTimeouts")
+func (con *controller) detectProgressingTimeouts(ctx context.Context, di *lsv1alpha1.DeployItem) (*time.Duration, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "detectProgressingTimeouts")
+
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
 	if di.Status.LastReconcileTime.IsZero() || lsv1alpha1helper.IsCompletedExecutionPhase(di.Status.Phase) {
 		logger.Debug("deploy item is reconciled for the first time or in a final phase, nothing to do")

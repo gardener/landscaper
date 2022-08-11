@@ -10,25 +10,25 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	lserrors "github.com/gardener/landscaper/apis/errors"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
+	lserrors "github.com/gardener/landscaper/apis/errors"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger := con.log.StartReconcile(req)
+	ctx = logging.NewContext(ctx, logger)
 
 	di := &lsv1alpha1.DeployItem{}
 	if err := read_write_layer.GetDeployItem(ctx, con.c, req.NamespacedName, di); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Debug(err.Error())
+			logger.Info(err.Error())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
@@ -44,9 +44,9 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 		if con.pickupTimeout != 0 {
 			logger.Debug("check for pickup timeout")
 
-			exceeded, requeue := con.isPickupTimeoutExceeded(logger, di)
+			exceeded, requeue := con.isPickupTimeoutExceeded(di)
 			if exceeded {
-				err := con.writePickupTimeoutExceeded(ctx, logger, di)
+				err := con.writePickupTimeoutExceeded(ctx, di)
 				// if there was a pickup timeout, no need to check for anything else
 				return reconcile.Result{}, err
 			}
@@ -64,13 +64,13 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 	if con.abortingTimeout != 0 && metav1.HasAnnotation(di.ObjectMeta, string(lsv1alpha1helper.AbortTimestamp)) {
 		logger.Debug("check for aborting timeout")
 
-		exceeded, requeue, err := con.isAbortingTimeoutExceeded(logger, di)
+		exceeded, requeue, err := con.isAbortingTimeoutExceeded(di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
 		if exceeded {
-			err = con.writeAbortingTimeoutExceeded(ctx, logger, di)
+			err = con.writeAbortingTimeoutExceeded(ctx, di)
 			// if there was an aborting timeout, no need to check for anything else
 			return reconcile.Result{}, err
 		}
@@ -87,13 +87,13 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 	if !((di.Spec.Timeout != nil && di.Spec.Timeout.Duration == 0) || (di.Spec.Timeout == nil && con.defaultTimeout == 0)) {
 		logger.Debug("check for progressing timeout")
 
-		exceeded, requeue, err := con.isProgressingTimeoutExceeded(logger, di)
+		exceeded, requeue, err := con.isProgressingTimeoutExceeded(ctx, di)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
 		if exceeded {
-			err = con.writeProgressingTimeoutExceeded(ctx, logger, di)
+			err = con.writeProgressingTimeoutExceeded(ctx, di)
 			return reconcile.Result{}, err
 		}
 
@@ -106,7 +106,7 @@ func (con *controller) reconcileNew(ctx context.Context, req reconcile.Request) 
 	return reconcile.Result{}, nil
 }
 
-func (con *controller) isPickupTimeoutExceeded(log logging.Logger, di *lsv1alpha1.DeployItem) (bool, *time.Duration) {
+func (con *controller) isPickupTimeoutExceeded(di *lsv1alpha1.DeployItem) (bool, *time.Duration) {
 	waitingForPickupDuration := time.Since(di.Status.JobIDGenerationTime.Time)
 	if waitingForPickupDuration >= con.pickupTimeout {
 		return true, nil
@@ -118,11 +118,12 @@ func (con *controller) isPickupTimeoutExceeded(log logging.Logger, di *lsv1alpha
 	return false, &requeue
 }
 
-func (con *controller) writePickupTimeoutExceeded(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem) error {
+func (con *controller) writePickupTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem) error {
 	// no deployer has picked up the deploy item within the timeframe
 	// => pickup timeout
-	logger := log.WithValues("operation", "PickupTimeoutExceeded")
-	logger.Debug("pickup timeout occurred")
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "writePickupTimeoutExceeded")
+	logger.Info("pickup timeout occurred")
 
 	di.Status.DeployItemPhase = lsv1alpha1.DeployItemPhaseFailed
 	di.Status.JobIDFinished = di.Status.JobID
@@ -143,7 +144,7 @@ func (con *controller) writePickupTimeoutExceeded(ctx context.Context, log loggi
 	return nil
 }
 
-func (con *controller) isAbortingTimeoutExceeded(log logging.Logger, di *lsv1alpha1.DeployItem) (bool, *time.Duration, error) {
+func (con *controller) isAbortingTimeoutExceeded(di *lsv1alpha1.DeployItem) (bool, *time.Duration, error) {
 	ts, err := lsv1alpha1helper.GetTimestampAnnotation(di.ObjectMeta, lsv1alpha1helper.AbortTimestamp)
 	if err != nil {
 		return false, nil, fmt.Errorf("unable to parse abort timestamp annotation: %w", err)
@@ -160,11 +161,12 @@ func (con *controller) isAbortingTimeoutExceeded(log logging.Logger, di *lsv1alp
 	return false, &requeue, nil
 }
 
-func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem) error {
+func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem) error {
 	// deploy item has not been aborted within the timeframe
 	// => aborting timeout
-	logger := log.WithValues("operation", "AbortingTimeoutExceeded")
-	logger.Debug("aborting timeout occurred")
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "writeAbortingTimeoutExceeded")
+	logger.Info("aborting timeout occurred")
 
 	lsv1alpha1helper.RemoveAbortOperationAndTimestamp(&di.ObjectMeta)
 
@@ -193,8 +195,9 @@ func (con *controller) writeAbortingTimeoutExceeded(ctx context.Context, log log
 	return nil
 }
 
-func (con *controller) isProgressingTimeoutExceeded(log logging.Logger, di *lsv1alpha1.DeployItem) (bool, *time.Duration, error) {
-	logger := log.WithValues("operation", "DetectProgressingTimeouts")
+func (con *controller) isProgressingTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem) (bool, *time.Duration, error) {
+	logger, _ := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "isProgressingTimeoutExceeded")
 
 	// no progressing timeout if timestamp is zero or deploy item is in a final phase
 	if di.Status.LastReconcileTime.IsZero() {
@@ -220,11 +223,12 @@ func (con *controller) isProgressingTimeoutExceeded(log logging.Logger, di *lsv1
 	return false, &requeue, nil
 }
 
-func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, log logging.Logger, di *lsv1alpha1.DeployItem) error {
+func (con *controller) writeProgressingTimeoutExceeded(ctx context.Context, di *lsv1alpha1.DeployItem) error {
 	// the deployer has not finished processing this deploy item within the timeframe
 	// => abort it
-	logger := log.WithValues("operation", "DetectProgressingTimeouts")
-	logger.Debug("deploy item timed out, setting abort operation annotation")
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+	logger = logger.WithValues(lc.KeyMethod, "writeProgressingTimeoutExceeded")
+	logger.Info("deploy item timed out, setting abort operation annotation")
 
 	lsv1alpha1helper.SetAbortOperationAndTimestamp(&di.ObjectMeta)
 
