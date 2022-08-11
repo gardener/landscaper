@@ -26,6 +26,7 @@ import (
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	webhookcert "github.com/gardener/landscaper/controller-utils/pkg/webhook"
 	webhook "github.com/gardener/landscaper/pkg/utils/webhook"
 )
@@ -57,7 +58,7 @@ func NewLandscaperWebhooksCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	o.log.Info(fmt.Sprintf("Start Landscaper Webhooks Server with version %q", version.Get().String()))
+	o.log.Info("Starting Landscaper Webhooks Server", lc.KeyVersion, version.Get().String())
 
 	webhookServer := &ctrlwebhook.Server{
 		Port:       o.port,
@@ -88,8 +89,7 @@ func (o *options) run(ctx context.Context) error {
 	}
 
 	if err := webhookServer.Start(ctx); err != nil {
-		o.log.Error(err, "error while starting webhook server")
-		os.Exit(1)
+		panic(fmt.Errorf("error while starting webhook server: %w", err))
 	}
 	return nil
 }

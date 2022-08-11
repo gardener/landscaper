@@ -19,7 +19,6 @@ import (
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/agent"
 	"github.com/gardener/landscaper/pkg/api"
 )
@@ -41,8 +40,7 @@ var _ = Describe("Agent", func() {
 		agConfig = &config.AgentConfiguration{}
 		agConfig.Name = "testenv"
 		agConfig.Namespace = state.Namespace
-		ag = agent.New(logging.Discard(),
-			testenv.Client,
+		ag = agent.New(testenv.Client,
 			testenv.Env.Config,
 			api.LandscaperScheme,
 			testenv.Client,

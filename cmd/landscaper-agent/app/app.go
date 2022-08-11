@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -27,12 +26,10 @@ func NewLandscaperAgentCommand(ctx context.Context) *cobra.Command {
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := options.Complete(); err != nil {
-				fmt.Print(err)
-				os.Exit(1)
+				panic(err)
 			}
 			if err := options.run(ctx); err != nil {
-				options.log.Error(err, "unable to run landscaper controller")
-				os.Exit(1)
+				panic(fmt.Errorf("unable to run landscaper controller: %w", err))
 			}
 		},
 	}
@@ -43,7 +40,7 @@ func NewLandscaperAgentCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	o.log.Info(fmt.Sprintf("Start Landscaper Agent with version %q", version.Get().String()))
+	o.log.Info("Starting Landscaper Agent", "version", version.Get().String())
 
 	if err := agent.AddToManager(ctx, o.log, o.LsMgr, o.HostMgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup default agent: %w", err)

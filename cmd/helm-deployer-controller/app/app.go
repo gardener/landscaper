@@ -8,9 +8,12 @@ import (
 	"context"
 	"fmt"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	"github.com/spf13/cobra"
 
 	helmctrl "github.com/gardener/landscaper/pkg/deployer/helm"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 func NewHelmDeployerControllerCommand(ctx context.Context) *cobra.Command {
@@ -33,7 +36,8 @@ func NewHelmDeployerControllerCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	if err := helmctrl.AddDeployerToManager(o.DeployerOptions.Log.WithName("deployer"), o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
+	o.DeployerOptions.Log.Info("Starting helm deployer", lc.KeyVersion, version.Get().GitVersion)
+	if err := helmctrl.AddDeployerToManager(o.DeployerOptions.Log.WithName("helm"), o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup helm controller")
 	}
 	return o.DeployerOptions.StartManagers(ctx)

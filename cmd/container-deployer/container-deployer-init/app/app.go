@@ -12,6 +12,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	"github.com/spf13/cobra"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	initpkg "github.com/gardener/landscaper/pkg/deployer/container/init"
 	"github.com/gardener/landscaper/pkg/version"
 )
@@ -38,7 +39,7 @@ func NewContainerDeployerInitCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) {
-	o.log.Info(fmt.Sprintf("starting init executor with version %s", version.Get().GitVersion))
+	o.log.Info("Starting init executor for container deployer", lc.KeyVersion, version.Get().GitVersion)
 	if err := initpkg.Run(ctx, o.log, osfs.New()); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
