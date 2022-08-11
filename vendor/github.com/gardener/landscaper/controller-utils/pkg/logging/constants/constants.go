@@ -29,6 +29,10 @@ const (
 	KeyDeployItemPhase = "deployitemPhase"
 	// KeyWriteID is for a writer ID.
 	KeyWriteID = "writeID"
+	// KeyGeneration is for the generation of a resource.
+	KeyGeneration = "generation"
+	// KeyObservedGeneration is for the observed generation of a resource.
+	KeyObservedGeneration = "observedGeneration"
 	// KeyGenerationOld is for the old generation of a resource.
 	KeyGenerationOld = "oldGeneration"
 	// KeyGenerationNew is for the new generation of a resource.

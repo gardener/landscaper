@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -20,6 +18,7 @@ import (
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 )
 
 // ApplyDeployItemTemplate sets and updates the values defined by deploy item template on a deploy item.
@@ -86,7 +85,9 @@ func (o *Operation) getExecutionItems(items []lsv1alpha1.DeployItem) ([]*executi
 // HandleDeployItemPhaseAndGenerationChanges updates the phase of the given execution, if its phase doesn't match the combined phase of its deploy items anymore.
 // If a deploy item's generation differs from the observed one or a deploy item doesn't exist, the phase is set to 'Progressing'.
 // If the phase is changed to 'Succeeded', the exports of the deploy items are updated.
-func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Context, logger logging.Logger) error {
+func (o *Operation) HandleDeployItemPhaseAndGenerationChanges(ctx context.Context) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
+
 	deployitems := []lsv1alpha1.DeployItem{}
 	phases := []lsv1alpha1.ExecutionPhase{}
 	// fetch all managed deploy items and check their phase and generation
