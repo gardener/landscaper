@@ -103,8 +103,7 @@ func (c *Controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.Log().StartReconcile(req)
-	ctx = logging.NewContext(ctx, logger)
+	logger, ctx := c.Log().StartReconcileAndAddToContext(ctx, req)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {
@@ -175,8 +174,7 @@ func (c *Controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *Controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.Log().StartReconcile(req)
-	ctx = logging.NewContext(ctx, logger)
+	logger, ctx := c.Log().StartReconcileAndAddToContext(ctx, req)
 
 	inst := &lsv1alpha1.Installation{}
 	if err := read_write_layer.GetInstallation(ctx, c.Client(), req.NamespacedName, inst); err != nil {

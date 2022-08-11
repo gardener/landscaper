@@ -26,7 +26,12 @@ Most often, k8s controllers watch a specific resource kind and react on changes 
 
 When setting up a logger for a controller, it is adviced to use the `log.Reconciles(name, kind)` method. This is basically a wrapper for `log.WithName(name).WithValues("reconciledResourceKind", kind)`. Use the singular form for both name and kind, with name being lower camel case and kind being upper camel case.
 
-At the beginning of a controller's `Reconcile` function, call either `logging.StartReconcileFromContext(ctx, req)` (if you don't have a logger available, this will try to fetch one from the context) or `log.StartReconcile(req)` (if you already have a logger), with `req` being the `reconcile.Request` object. The returned logger will then contain a key-value-pair with the namespaced name of the reconciled object. In addition, the function will print a log message that a new reconciliation has begun.
+At the beginning of a controller's `Reconcile` function, call either `logging.StartReconcileFromContext(ctx, req)` (if 
+you don't have a logger available, this will try to fetch one from the context) or `log.StartReconcile(req)` (if you 
+already have a logger), with `req` being the `reconcile.Request` object. The returned logger will then contain a 
+key-value-pair with the namespaced name of the reconciled object. In addition, the function will print a log message 
+that a new reconciliation has begun. Use `log.StartReconcileAndAddToContext(ctx, req,...)` if you need a new context 
+containing the new logger.
 
 #### Conventions for Names, Keys, and Messages
 
