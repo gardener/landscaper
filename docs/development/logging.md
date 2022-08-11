@@ -31,7 +31,7 @@ you don't have a logger available, this will try to fetch one from the context) 
 already have a logger), with `req` being the `reconcile.Request` object. The returned logger will then contain a 
 key-value-pair with the namespaced name of the reconciled object. In addition, the function will print a log message 
 that a new reconciliation has begun. Use `log.StartReconcileAndAddToContext(ctx, req,...)` if you need a new context 
-containing the new logger.
+containing the new logger. `logging.MustStartReconcileFromContext` combines this method with `FromContextOrNew`, making the task of getting the logger from the context (or creating a new one, if that fails), adding a key-value-pair for the reconciled resource as well as further configurable pairs, and logging the beginning of a new reconciliation a one-liner.
 
 #### Conventions for Names, Keys, and Messages
 
