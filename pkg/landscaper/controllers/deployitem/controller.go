@@ -291,7 +291,7 @@ func (con *controller) detectProgressingTimeouts(ctx context.Context, di *lsv1al
 }
 
 func (con *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(con.log, con.c)
+	return read_write_layer.NewWriter(con.c)
 }
 
 func HasBeenPickedUp(di *lsv1alpha1.DeployItem) bool {

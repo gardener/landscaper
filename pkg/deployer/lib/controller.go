@@ -549,7 +549,7 @@ func (c *controller) removeReconcileTimestampAnnotation(ctx context.Context, dep
 }
 
 func (c *controller) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(c.log, c.lsClient)
+	return read_write_layer.NewWriter(c.lsClient)
 }
 
 func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1.DeployItem) error {

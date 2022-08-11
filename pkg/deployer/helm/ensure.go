@@ -371,5 +371,5 @@ func (h *Helm) constructExportsFromValues(values map[string]interface{}) (map[st
 }
 
 func (h *Helm) Writer() *read_write_layer.Writer {
-	return read_write_layer.NewWriter(h.log, h.lsKubeClient)
+	return read_write_layer.NewWriter(h.lsKubeClient)
 }
