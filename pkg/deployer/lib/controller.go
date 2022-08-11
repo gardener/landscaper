@@ -10,17 +10,10 @@ import (
 	"reflect"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/go-logr/logr"
-
-	"github.com/gardener/landscaper/pkg/utils"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
-
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
@@ -33,16 +26,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
-	"github.com/gardener/landscaper/pkg/version"
-
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lsv1alpha1helper "github.com/gardener/landscaper/apis/core/v1alpha1/helper"
 	lserrors "github.com/gardener/landscaper/apis/errors"
+	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
+	"github.com/gardener/landscaper/pkg/utils"
+	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
+	"github.com/gardener/landscaper/pkg/version"
 )
 
 // Deployer defines a controller that acts upon deploy items.
@@ -563,10 +556,7 @@ func (c *controller) updateDiForNewReconcile(ctx context.Context, di *lsv1alpha1
 	di.Status.ObservedGeneration = di.Generation
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
-	if di.Status.Deployer.Identity != c.info.Identity {
-		c.log.Debug("updating deployer identity")
-		di.Status.Deployer = c.info
-	}
+	di.Status.Deployer = c.info
 
 	if err := c.Writer().UpdateDeployItemStatus(ctx, read_write_layer.W000004, di); err != nil {
 		return err
