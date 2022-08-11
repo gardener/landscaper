@@ -253,3 +253,11 @@ func (l Logger) StartReconcileAndAddToContext(ctx context.Context, req reconcile
 	ctx = NewContext(ctx, newLogger)
 	return newLogger, ctx
 }
+
+// MustStartReconcileFromContext is a helper function for easily getting a logger at the beginning of a reconciliation.
+// It is basically a combination of FromContextOrNew, which tries to fetch the logger from the context, or creates a new one, if that fails,
+// and StartReconcileAndAddToContext, which logs the beginning of the reconciliation and returns a new context containing the configured logger.
+func MustStartReconcileFromContext(ctx context.Context, req reconcile.Request, keysAndValuesFallback []interface{}, keysAndValues ...interface{}) (Logger, context.Context) {
+	log, ctx := FromContextOrNew(ctx, keysAndValuesFallback, keysAndValues...)
+	return log.StartReconcileAndAddToContext(ctx, req)
+}
