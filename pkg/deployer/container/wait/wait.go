@@ -23,7 +23,8 @@ import (
 // For a comparison of different possibilities to wait for a container to finish
 // see the argo doc: https://github.com/argoproj/argo/blob/master/docs/workflow-executors.md
 // This method currently uses the k8s api method for simplicity and stability reasons.
-func WaitUntilMainContainerFinished(ctx context.Context, log logging.Logger, kubeClient client.Client, podKey client.ObjectKey) error {
+func WaitUntilMainContainerFinished(ctx context.Context, kubeClient client.Client, podKey client.ObjectKey) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	backoff := wait.Backoff{
 		Duration: 30 * time.Second,
 		Factor:   1.25,

@@ -19,7 +19,8 @@ import (
 )
 
 // Run runs the container deployer sidecar.
-func Run(ctx context.Context, log logging.Logger) error {
+func Run(ctx context.Context) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	opts := &options{}
 	opts.Setup()
 
@@ -49,7 +50,7 @@ func Run(ctx context.Context, log logging.Logger) error {
 
 	// wait for the main container to finish.
 	// event if the exitcode != 0, the state is still backed up.
-	if err := WaitUntilMainContainerFinished(ctx, log, kubeClient, opts.PodKey.NamespacedName()); err != nil {
+	if err := WaitUntilMainContainerFinished(ctx, kubeClient, opts.PodKey.NamespacedName()); err != nil {
 		return withTerminationLog(log, err)
 	}
 
@@ -59,7 +60,7 @@ func Run(ctx context.Context, log logging.Logger) error {
 	}
 
 	// upload exports
-	if err := UploadExport(ctx, log, kubeClient, opts.DeployItemKey, opts.PodKey, opts.ExportFilePath); err != nil {
+	if err := UploadExport(ctx, kubeClient, opts.DeployItemKey, opts.PodKey, opts.ExportFilePath); err != nil {
 		return withTerminationLog(log, err)
 	}
 	return nil

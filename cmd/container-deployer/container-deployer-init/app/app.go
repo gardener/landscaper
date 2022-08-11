@@ -40,7 +40,7 @@ func NewContainerDeployerInitCommand(ctx context.Context) *cobra.Command {
 
 func (o *options) run(ctx context.Context) {
 	o.log.Info("Starting init executor for container deployer", lc.KeyVersion, version.Get().GitVersion)
-	if err := initpkg.Run(ctx, o.log, osfs.New()); err != nil {
+	if err := initpkg.Run(ctx, osfs.New()); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

@@ -43,7 +43,8 @@ import (
 // Run downloads the import config, the component descriptor and the blob content
 // to the paths defined by the env vars.
 // It also creates all needed directories.
-func Run(ctx context.Context, log logging.Logger, fs vfs.FileSystem) error {
+func Run(ctx context.Context, fs vfs.FileSystem) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	opts := &options{}
 	opts.Complete(ctx)
 	if err := opts.Validate(); err != nil {
@@ -69,10 +70,11 @@ func Run(ctx context.Context, log logging.Logger, fs vfs.FileSystem) error {
 	}); err != nil {
 		return err
 	}
-	return run(ctx, log, opts, kubeClient, fs)
+	return run(ctx, opts, kubeClient, fs)
 }
 
-func run(ctx context.Context, log logging.Logger, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
+func run(ctx context.Context, opts *options, kubeClient client.Client, fs vfs.FileSystem) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	providerConfigBytes, err := vfs.ReadFile(fs, opts.ConfigurationFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to read provider configuration: %w", err)
@@ -84,7 +86,7 @@ func run(ctx context.Context, log logging.Logger, opts *options, kubeClient clie
 	}
 
 	// create all directories
-	log.Info("create directories")
+	log.Info("Creating directories")
 	if err := fs.MkdirAll(path.Dir(opts.ImportsFilePath), os.ModePerm); err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func run(ctx context.Context, log logging.Logger, opts *options, kubeClient clie
 	if err := fs.MkdirAll(opts.StateDirPath, os.ModePerm); err != nil {
 		return err
 	}
-	log.Info("all directories have been successfully created")
+	log.Info("All directories have been successfully created")
 
 	var (
 		cdReference *lsv1alpha1.ComponentDescriptorReference
@@ -123,17 +125,17 @@ func run(ctx context.Context, log logging.Logger, opts *options, kubeClient clie
 			return errors.Wrap(err, "unable to setup components registry")
 		}
 
-		if err := fetchComponentDescriptor(ctx, log, cdResolver, opts, fs, providerConfig); err != nil {
+		if err := fetchComponentDescriptor(ctx, cdResolver, opts, fs, providerConfig); err != nil {
 			return fmt.Errorf("unable to fetch component descriptor: %w", err)
 		}
 	}
 
 	if providerConfig.Blueprint != nil {
-		log.Info("get blueprint content")
+		log.Info("Getting blueprint content")
 		// setup a temporary blueprint store
 		store, err := blueprints.DefaultStore(memoryfs.New())
 		if err != nil {
-			return fmt.Errorf("unablke to setup default blueprint store: %w", err)
+			return fmt.Errorf("unable to setup default blueprint store: %w", err)
 		}
 		blueprints.SetStore(store)
 		contentFS, err := projectionfs.New(fs, opts.ContentDirPath)
@@ -151,35 +153,35 @@ func run(ctx context.Context, log logging.Logger, opts *options, kubeClient clie
 	}
 
 	if providerConfig.ImportValues != nil {
-		log.Info("write import values")
+		log.Info("Writing import values")
 		if err := vfs.WriteFile(fs, opts.ImportsFilePath, providerConfig.ImportValues, os.ModePerm); err != nil {
 			return fmt.Errorf("unable to write imported values: %w", err)
 		}
 	}
 
-	log.Info("restore state")
+	log.Info("Restoring state")
 	if err := state.New(log, kubeClient, opts.podNamespace, opts.DeployItemKey, opts.StateDirPath).WithFs(fs).Restore(ctx); err != nil {
 		return err
 	}
-	log.Info("state has been successfully restored")
+	log.Info("State has been successfully restored")
 
 	return nil
 }
 
 func fetchComponentDescriptor(
 	ctx context.Context,
-	log logging.Logger,
 	resolver ctf.ComponentResolver,
 	opts *options,
 	fs vfs.FileSystem,
 	providerConfig *containerv1alpha1.ProviderConfiguration) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 
 	cdRef := installations.GetReferenceFromComponentDescriptorDefinition(providerConfig.ComponentDescriptor)
 	if cdRef == nil || cdRef.RepositoryContext == nil {
 		return nil
 	}
 
-	log.Info("get component descriptor")
+	log.Info("Resolving component descriptor")
 	cd, err := resolver.Resolve(ctx, cdRef.RepositoryContext, cdRef.ComponentName, cdRef.Version)
 	if err != nil {
 		return fmt.Errorf("unable to resolve component descriptor for ref %v %s:%s: %w", string(cdRef.RepositoryContext.Raw), cdRef.ComponentName, cdRef.Version, err)

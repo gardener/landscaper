@@ -95,7 +95,7 @@ var _ = Describe("Init e2e", func() {
 
 		opts := &options{}
 		opts.Complete(ctx)
-		Expect(run(ctx, logging.Discard(), opts, testenv.Client, resFs)).To(Succeed())
+		Expect(run(ctx, opts, testenv.Client, resFs)).To(Succeed())
 
 		resData, err := vfs.ReadFile(resFs, testFilePath)
 		utils.ExpectNoError(err)

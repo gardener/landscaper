@@ -24,7 +24,8 @@ import (
 
 // UploadExport reads the export config from the given path and stores
 // the data as secret in the host cluster
-func UploadExport(ctx context.Context, log logging.Logger, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
+func UploadExport(ctx context.Context, kubeClient client.Client, deployItemKey lsv1alpha1.ObjectReference, podKey lsv1alpha1.ObjectReference, exportFilePath string) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	pod := &corev1.Pod{}
 	if err := kubeClient.Get(ctx, podKey.NamespacedName(), pod); err != nil {
 		return err
@@ -44,7 +45,7 @@ func UploadExport(ctx context.Context, log logging.Logger, kubeClient client.Cli
 	exportData, err := ioutil.ReadFile(exportFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Info("no export config found. Skip upload.")
+			log.Info("No export config found. Skip upload.")
 			return nil
 		}
 		return err
