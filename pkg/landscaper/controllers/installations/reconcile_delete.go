@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-	"github.com/gardener/landscaper/pkg/utils"
 
 	"github.com/google/uuid"
 
@@ -185,7 +185,7 @@ func (c *Controller) handleDeletionPhaseDeleting(ctx context.Context, inst *lsv1
 }
 
 func (c *Controller) handleDelete(ctx context.Context, inst *lsv1alpha1.Installation) lserrors.LsError {
-	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	currentOperation := "handleDelete"
 

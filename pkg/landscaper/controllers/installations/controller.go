@@ -281,7 +281,7 @@ func (c *Controller) handleSubComponentPhaseChanges(
 	ctx context.Context,
 	inst *lsv1alpha1.Installation) lserrors.LsError {
 
-	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	execRef := inst.Status.ExecutionReference
 	phases := []lsv1alpha1.ComponentInstallationPhase{}
@@ -351,7 +351,7 @@ func (c *Controller) handleSubComponentPhaseChanges(
 }
 
 func (c *Controller) handleError(ctx context.Context, err lserrors.LsError, oldInst, inst *lsv1alpha1.Installation, isDelete bool) error {
-	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	inst.Status.LastError = lserrors.TryUpdateLsError(inst.Status.LastError, err)
 	// if successfully deleted we could not update the object
@@ -449,7 +449,7 @@ func (c *Controller) handleInterruptOperation(ctx context.Context, inst *lsv1alp
 func (c *Controller) setInstallationPhaseAndUpdate(ctx context.Context, inst *lsv1alpha1.Installation,
 	phase lsv1alpha1.InstallationPhase, lsError lserrors.LsError, writeID read_write_layer.WriteID) lserrors.LsError {
 
-	logger, ctx := utils.FromContextOrNew(ctx, lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String())
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyReconciledResource, client.ObjectKeyFromObject(inst).String()})
 
 	if lsError != nil {
 		logger.Error(lsError, "setInstallationPhaseAndUpdate:"+lsError.Error())

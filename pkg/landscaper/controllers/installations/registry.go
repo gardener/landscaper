@@ -13,6 +13,7 @@ import (
 	"github.com/mandelsoft/vfs/pkg/osfs"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/operation"
 
 	"github.com/gardener/component-cli/ociclient/credentials"
@@ -24,7 +25,7 @@ import (
 
 // SetupRegistries sets up components and blueprints registries for the current reconcile
 func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operation, pullSecrets []lsv1alpha1.ObjectReference, installation *lsv1alpha1.Installation) error {
-	logger, ctx := utils.FromContextOrNew(ctx)
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 
 	// resolve all pull secrets
 	secrets, err := c.resolveSecrets(ctx, pullSecrets)
