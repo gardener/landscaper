@@ -51,7 +51,7 @@ var _ = Describe("Constructor", func() {
 		fakeInstallations = state.Installations
 		Expect(testutils.CreateExampleDefaultContext(context.TODO(), fakeClient, "test1", "test2", "test3", "test4", "test5", "test6"))
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{

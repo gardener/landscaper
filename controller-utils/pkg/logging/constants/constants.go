@@ -45,6 +45,8 @@ const (
 	KeyJobID = "jobID"
 	// KeyJobIDFinished is for the ID of the finished job.
 	KeyJobIDFinished = "jobIDFinished"
+	// KeyCDName is the name of a component descriptor.
+	KeyCDName = "cdName"
 	// KeyVersion is for referencing a version
 	KeyVersion = "version"
 	// KeyDeletionTimestamp is for referencing a deletion timestamp. The value should be of type time.Time.

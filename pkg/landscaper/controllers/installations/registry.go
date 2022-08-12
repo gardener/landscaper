@@ -38,7 +38,7 @@ func (c *Controller) SetupRegistries(ctx context.Context, op *operation.Operatio
 		return fmt.Errorf("unable to create component registry manager: %w", err)
 	}
 	if c.LsConfig.Registry.Local != nil {
-		componentsOCIRegistry, err := componentsregistry.NewLocalClient(logger, c.LsConfig.Registry.Local.RootPath)
+		componentsOCIRegistry, err := componentsregistry.NewLocalClient(c.LsConfig.Registry.Local.RootPath)
 		if err != nil {
 			return err
 		}

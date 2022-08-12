@@ -50,7 +50,7 @@ var _ = Describe("Context", func() {
 
 		fakeClient = testenv.Client
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = lsoperation.NewOperation(logging.Discard(), fakeClient, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)
