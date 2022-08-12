@@ -27,7 +27,7 @@ import (
 
 // AddToManager adds the agent to the provided manager.
 func AddToManager(ctx context.Context, logger logging.Logger, lsMgr manager.Manager, hostMgr manager.Manager, config config.AgentConfiguration) error {
-	log := logger.WithName("agent").WithValues("responsibleForEnvironment", config.Name)
+	log := logger.WithName("agent").WithValues("targetEnvironment", config.Name)
 	ctx = logging.NewContext(ctx, log)
 	// create direct client for the agent to ensure the landscaper resources
 	lsClient, err := client.New(lsMgr.GetConfig(), client.Options{

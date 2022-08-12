@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/agent"
 
 	"github.com/gardener/landscaper/pkg/version"
@@ -40,7 +41,7 @@ func NewLandscaperAgentCommand(ctx context.Context) *cobra.Command {
 }
 
 func (o *options) run(ctx context.Context) error {
-	o.log.Info("Starting Landscaper Agent", "version", version.Get().String())
+	o.log.Info("Starting Landscaper Agent", lc.KeyVersion, version.Get().String())
 
 	if err := agent.AddToManager(ctx, o.log, o.LsMgr, o.HostMgr, o.config); err != nil {
 		return fmt.Errorf("unable to setup default agent: %w", err)

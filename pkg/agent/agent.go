@@ -254,7 +254,7 @@ func (a *Agent) RemoveHostResources(ctx context.Context, kubeClient client.Clien
 func (a *Agent) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 	if req.Name != a.config.Name {
-		logger.Info("Not responsible for this environment", "targetEnvironment", a.config.Name)
+		logger.Info("Not responsible for this environment")
 		return reconcile.Result{}, nil
 	}
 	logger.Info("Ensuring Landscaper resources")
