@@ -52,7 +52,7 @@
 ## Tutorials
 
 - [Installing the Landscaper](tutorials/00-landscaper-installation.md)
-- [Tutorial 01: Developing a Simple Blueprint](tutorials/01-create-simple-blueprint.md)
+- [Developing a Simple Blueprint](tutorials/01-create-simple-blueprint.md)
 - [Developing a Simple Blueprint with Local Artifacts](tutorials/02-local-simple-blueprint.md)
 - [Simple Data Imports](tutorials/03-simple-import.md)
 - [Aggregated Blueprints](tutorials/04-aggregated-blueprint.md)
