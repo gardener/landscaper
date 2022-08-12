@@ -122,9 +122,8 @@ func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace
 	key := client.ObjectKey{Namespace: namespace, Name: name}
 	deployment := &v1.Deployment{}
 	if err := c.client.Get(ctx, key, deployment); err != nil {
-		message := fmt.Sprintf("deployment %s/%s could not be be fetched", namespace, name)
-		logger.Error(err, message)
-		return false, message
+		logger.Error(err, "deployment could not be be fetched", lc.KeyResource, client.ObjectKey{Namespace: namespace, Name: name}.String())
+		return false, fmt.Sprintf("deployment %s/%s could not be be fetched", namespace, name)
 	}
 
 	if deployment.Generation != deployment.Status.ObservedGeneration ||
