@@ -1,4 +1,3 @@
-
 # Deployer Contract
 
 Deployers need to follow some rules in order to work together with the landscaper. The purpose of this documentation is 

@@ -1,4 +1,4 @@
-# Deployer
+# What is an Deployer?
 
 The landscaper offloads most work to so called Deployers.
 These deployers are meant to have specific deploy, install and update logic.

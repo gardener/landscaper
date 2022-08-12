@@ -1,4 +1,4 @@
-# What is Landscaper ?
+# What is Landscaper?
 
 The Landscaper provides means to describe, install and maintain cloud-native landscapes. It allows to express an order of building blocks, connect output with input data and ultimately, bring your landscape to life.
 

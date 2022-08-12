@@ -1,4 +1,4 @@
-# Tutorial 01: Developing a simple Blueprint
+# Developing a Simple Blueprint
 
 This tutorial describes the basics of developing Blueprints. It covers the whole manual workflow from writing the Blueprint together with a Component Descriptor and storing them in a remote OCI repository.
 

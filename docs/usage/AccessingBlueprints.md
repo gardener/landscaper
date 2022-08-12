@@ -1,4 +1,4 @@
-# Remote Access
+# Accessing Blueprints
 
 Blueprints are referenced in installations or installation templates via the component descriptors access.
 

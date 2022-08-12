@@ -1,4 +1,4 @@
-# Develop a simple Blueprint with local artifacts
+# Developing a Simple Blueprint with Local Artifacts
 
 In the first tutorial a nginx helm chart has been deployed using a blueprint and a helm chart that have been uploaded as separate artifacts to the remote repository.
 

@@ -1,4 +1,4 @@
-# Install the Landscaper
+# Installing the Landscaper
 
 This tutorial describes how to install the Landscaper on a Kubernetes cluster and optionally how to install an OCI registry
 on a Gardener Shoot cluster.
