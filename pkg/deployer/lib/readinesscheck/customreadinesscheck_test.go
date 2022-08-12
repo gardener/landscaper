@@ -32,9 +32,8 @@ var _ = Describe("Custom health checks", func() {
 
 	BeforeEach(func() {
 		customHealthCheck = CustomReadinessCheck{
-			Context:   ctx,
+			Context:   logging.NewContext(ctx, logging.Discard()),
 			Client:    testenv.Client,
-			Log:       logging.Discard(),
 			CurrentOp: "custom health check test",
 			Timeout:   &lsv1alpha1.Duration{Duration: 180 * time.Second},
 		}

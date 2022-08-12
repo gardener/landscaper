@@ -18,14 +18,12 @@ import (
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
 	lserror "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 )
 
 // DefaultReadinessCheck contains all the data and methods required to kick off a default readiness check
 type DefaultReadinessCheck struct {
 	Context          context.Context
 	Client           client.Client
-	Log              logging.Logger
 	CurrentOp        string
 	Timeout          *lsv1alpha1.Duration
 	ManagedResources []lsv1alpha1.TypedObjectReference
@@ -45,7 +43,7 @@ func (d *DefaultReadinessCheck) CheckResourcesReady() error {
 	}
 
 	timeout := d.Timeout.Duration
-	if err := WaitForObjectsReady(d.Context, timeout, d.Log, d.Client, objects, d.CheckObject); err != nil {
+	if err := WaitForObjectsReady(d.Context, timeout, d.Client, objects, d.CheckObject); err != nil {
 		return lserror.NewWrappedError(err,
 			d.CurrentOp, "CheckResourceReadiness", err.Error(), lsv1alpha1.ErrorReadinessCheckTimeout)
 	}

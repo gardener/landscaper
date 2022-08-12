@@ -37,7 +37,7 @@ func NewMockDeployerControllerCommand(ctx context.Context) *cobra.Command {
 
 func (o *options) run(ctx context.Context) error {
 	o.DeployerOptions.Log.Info("Starting Mock Deployer", lc.KeyVersion, version.Get().GitVersion)
-	if err := mockctrl.AddDeployerToManager(o.DeployerOptions.Log, o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
+	if err := mockctrl.AddDeployerToManager(o.DeployerOptions.Log.WithName("mock"), o.DeployerOptions.LsMgr, o.DeployerOptions.HostMgr, o.Config); err != nil {
 		return fmt.Errorf("unable to setup mock controller")
 	}
 	return o.DeployerOptions.StartManagers(ctx)

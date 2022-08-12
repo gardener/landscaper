@@ -12,6 +12,7 @@ import (
 
 	"github.com/gardener/landscaper/pkg/utils/read_write_layer"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,21 +50,21 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		// - force-reconcile annotation
 		// - outdated generation
 		opAnn := lsv1alpha1helper.GetOperation(di.ObjectMeta)
-		log.Debug("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "operationAnnotation", opAnn, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
+		log.Info("Reconcile required, setting observed generation, phase, and last change reconcile timestamp", lc.KeyOperationAnnotation, opAnn, lc.KeyObservedGeneration, di.Status.ObservedGeneration, lc.KeyGeneration, di.Generation)
 		if err := PrepareReconcile(ctx, kubeClient, di, deployerInfo); err != nil {
 			return err
 		}
 	}
 
 	if hasReconcileAnnotation {
-		log.Debug("removing reconcile annotation")
+		log.Debug("Removing reconcile annotation")
 		delete(di.ObjectMeta.Annotations, lsv1alpha1.OperationAnnotation)
-		log.Debug("updating metadata")
+		log.Debug("Updating metadata")
 		writer := read_write_layer.NewWriter(kubeClient)
 		if err := writer.UpdateDeployItem(ctx, read_write_layer.W000046, di); err != nil {
 			return err
 		}
-		log.Debug("successfully updated metadata")
+		log.Debug("Successfully updated metadata")
 	}
 
 	return nil
@@ -78,16 +79,16 @@ func PrepareReconcile(ctx context.Context, kubeClient client.Client, di *lsv1alp
 	now := metav1.Now()
 	di.Status.LastReconcileTime = &now
 	if di.Status.Deployer.Identity != deployerInfo.Identity {
-		log.Debug("updating deployer identity")
+		log.Debug("Updating deployer identity")
 		di.Status.Deployer = deployerInfo
 	}
 
-	log.Debug("updating status")
+	log.Debug("Updating status")
 	writer := read_write_layer.NewWriter(kubeClient)
 	if err := writer.UpdateDeployItemStatus(ctx, read_write_layer.W000058, di); err != nil {
 		return err
 	}
-	log.Debug("successfully updated status")
+	log.Debug("Successfully updated status")
 	return nil
 }
 

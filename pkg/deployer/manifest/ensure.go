@@ -49,7 +49,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		}
 	}
 
-	applier := resourcemanager.NewManifestApplier(m.log, resourcemanager.ManifestApplierOptions{
+	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
 		Clientset:        targetClientSet,
@@ -96,7 +96,7 @@ func (m *Manifest) Reconcile(ctx context.Context) error {
 		if m.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &m.Configuration.Export.DefaultTimeout.Duration
 		}
-		exporter := resourcemanager.NewExporter(m.log, opts)
+		exporter := resourcemanager.NewExporter(opts)
 		exports, err := exporter.Export(ctx, m.ProviderConfiguration.Exports)
 		if err != nil {
 			return lserrors.NewWrappedError(err, currOp, "ReadExportValues", err.Error())
@@ -122,7 +122,6 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			Context:          ctx,
 			Client:           client,
 			CurrentOp:        "DefaultCheckResourcesReadinessManifest",
-			Log:              m.log,
 			Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources: managedresources,
 		}
@@ -137,7 +136,6 @@ func (m *Manifest) CheckResourcesReady(ctx context.Context, client client.Client
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:          ctx,
 				Client:           client,
-				Log:              m.log,
 				CurrentOp:        "CustomCheckResourcesReadinessManifest",
 				Timeout:          m.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: managedresources,

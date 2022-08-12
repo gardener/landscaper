@@ -67,6 +67,12 @@ const (
 	KeyDeployItemType = "deployItemType"
 	// KeyError is for logging an error message without using 'logger.Error' for whatever reason.
 	KeyError = "error"
+	// KeyGroupVersionKind is for listing group, version, and kind of a resource.
+	KeyGroupVersionKind = "groupVersionKind"
+	// KeyStatus is for a status of whatever kind.
+	KeyStatus = "status"
+	// KeyOperationAnnotation is for logging the value of the current operation annotation
+	KeyOperationAnnotation = "operationAnnotation"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

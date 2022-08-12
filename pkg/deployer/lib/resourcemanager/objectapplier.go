@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
-
 	corev1 "k8s.io/api/core/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	apischema "k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,11 +30,12 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 // ApplyManifests creates or updates all configured manifests.
-func ApplyManifests(ctx context.Context, log logging.Logger, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
-	applier := NewManifestApplier(log, opts)
+func ApplyManifests(ctx context.Context, opts ManifestApplierOptions) (managedresource.ManagedResourceStatusList, error) {
+	applier := NewManifestApplier(opts)
 	if err := applier.Apply(ctx); err != nil {
 		return nil, err
 	}
@@ -60,7 +60,6 @@ type ManifestApplierOptions struct {
 
 // ManifestApplier creates or updated manifest based on their definition.
 type ManifestApplier struct {
-	log              logging.Logger
 	decoder          runtime.Decoder
 	kubeClient       client.Client
 	defaultNamespace string
@@ -99,9 +98,8 @@ type Manifest struct {
 }
 
 // NewManifestApplier creates a new manifest deployer
-func NewManifestApplier(log logging.Logger, opts ManifestApplierOptions) *ManifestApplier {
+func NewManifestApplier(opts ManifestApplierOptions) *ManifestApplier {
 	return &ManifestApplier{
-		log:                log,
 		decoder:            opts.Decoder,
 		kubeClient:         opts.KubeClient,
 		defaultNamespace:   opts.DefaultNamespace,
@@ -179,6 +177,7 @@ func (a *ManifestApplier) Apply(ctx context.Context) error {
 
 // applyObject applies a managed resource to the target cluster.
 func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (*managedresource.ManagedResourceStatus, error) {
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "applyObject")
 	if manifest.Policy == managedresource.IgnorePolicy {
 		return nil, nil
 	}
@@ -201,6 +200,8 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 			obj.SetNamespace(a.defaultNamespace)
 		}
 	}
+
+	logger.Debug("Applying manifest", lc.KeyResource, kutil.ObjectKeyFromObject(obj).String(), lc.KeyGroupVersionKind, gvk)
 
 	currObj := unstructured.Unstructured{} // can't use obj.NewEmptyInstance() as this returns a runtime.Unstructured object which doesn't implement client.Object
 	currObj.GetObjectKind().SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
@@ -228,12 +229,12 @@ func (a *ManifestApplier) applyObject(ctx context.Context, manifest *Manifest) (
 	// if fallback policy is set and the resource is already managed by another deployer
 	// we are not allowed to manage that resource
 	if manifest.Policy == managedresource.FallbackPolicy && !kutil.HasLabelWithValue(obj, manifestv1alpha2.ManagedDeployItemLabel, a.deployItemName) {
-		a.log.Info("resource is already managed, skip update", lc.KeyResource, key.String())
+		logger.Info("Resource is already managed, skip update", lc.KeyResource, key.String())
 		return nil, nil
 	}
 
 	if manifest.Policy == managedresource.ImmutablePolicy {
-		a.log.Info("resource is immutable, skip update", lc.KeyResource, key.String())
+		logger.Info("Resource is immutable, skip update", lc.KeyResource, key.String())
 		return mr, nil
 	}
 
@@ -282,21 +283,27 @@ func (a *ManifestApplier) cleanupOrphanedResources(ctx context.Context, managedR
 		allErrs []error
 		wg      sync.WaitGroup
 	)
+	logger, ctx := logging.FromContextOrNew(ctx, nil, lc.KeyMethod, "cleanupOrphanedResources")
 
 	for _, mr := range managedResources {
+		logger2 := logger.WithValues(lc.KeyResource, types.NamespacedName{Namespace: mr.Resource.Namespace, Name: mr.Resource.Name}.String(), lc.KeyResourceKind, mr.Resource.Kind)
+		logger2.Debug("Checking resource")
 		if mr.Policy == managedresource.IgnorePolicy || mr.Policy == managedresource.KeepPolicy {
+			logger2.Debug("Ignoring resource due to policy", "policy", string(mr.Policy))
 			continue
 		}
 		ref := mr.Resource
 		obj := kutil.ObjectFromCoreObjectReference(&ref)
 		if err := a.kubeClient.Get(ctx, kutil.ObjectKey(ref.Name, ref.Namespace), obj); err != nil {
 			if apierrors.IsNotFound(err) {
+				logger2.Debug("Object not found")
 				continue
 			}
 			return fmt.Errorf("unable to get object %s %s: %w", obj.GroupVersionKind().String(), obj.GetName(), err)
 		}
 
 		if !containsObjectRef(ref, a.managedResources) {
+			logger2.Debug("Object is orphaned and will be deleted")
 			wg.Add(1)
 			go func(obj *unstructured.Unstructured) {
 				defer wg.Done()

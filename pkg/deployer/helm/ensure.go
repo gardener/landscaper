@@ -126,7 +126,7 @@ func (h *Helm) ApplyFiles(ctx context.Context, files, crds map[string]string, ex
 
 func (h *Helm) applyManifests(ctx context.Context, targetClient client.Client, targetClientSet kubernetes.Interface,
 	manifests []managedresource.Manifest) (*resourcemanager.ManifestApplier, error) {
-	applier := resourcemanager.NewManifestApplier(h.log, resourcemanager.ManifestApplierOptions{
+	applier := resourcemanager.NewManifestApplier(resourcemanager.ManifestApplierOptions{
 		Decoder:          serializer.NewCodecFactory(scheme.Scheme).UniversalDecoder(),
 		KubeClient:       targetClient,
 		Clientset:        targetClientSet,
@@ -202,7 +202,6 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client) er
 			Context:          ctx,
 			Client:           client,
 			CurrentOp:        "DefaultCheckResourcesReadinessHelm",
-			Log:              h.log,
 			Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
 			ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
 		}
@@ -217,7 +216,6 @@ func (h *Helm) checkResourcesReady(ctx context.Context, client client.Client) er
 			customReadinessCheck := health.CustomReadinessCheck{
 				Context:          ctx,
 				Client:           client,
-				Log:              h.log,
 				CurrentOp:        "CustomCheckResourcesReadinessHelm",
 				Timeout:          h.ProviderConfiguration.ReadinessChecks.Timeout,
 				ManagedResources: h.ProviderStatus.ManagedResources.TypedObjectReferenceList(),
@@ -251,7 +249,7 @@ func (h *Helm) readExportValues(ctx context.Context, currOp string, targetClient
 		if h.Configuration.Export.DefaultTimeout != nil {
 			opts.DefaultTimeout = &h.Configuration.Export.DefaultTimeout.Duration
 		}
-		resourceExports, err := resourcemanager.NewExporter(h.log, opts).
+		resourceExports, err := resourcemanager.NewExporter(opts).
 			Export(ctx, exportDefinition)
 		if err != nil {
 			return lserrors.NewWrappedError(err,

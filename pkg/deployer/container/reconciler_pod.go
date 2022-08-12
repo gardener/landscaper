@@ -64,7 +64,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req reconcile.Request) (r
 	old := deployItem.DeepCopy()
 	err = r.diRec.Reconcile(ctx, lsCtx, deployItem, nil)
 	lsErr := lserror.BuildLsErrorOrNil(err, "Reconcile", "Reconcile")
-	return reconcile.Result{}, deployerlib.HandleErrorFunc(ctx, lsErr, r.log, r.lsClient, r.lsEventRecorder, old, deployItem, false)
+	return reconcile.Result{}, deployerlib.HandleErrorFunc(ctx, lsErr, r.lsClient, r.lsEventRecorder, old, deployItem, false)
 }
 
 // PodEventHandler implements the controller runtime handler interface
