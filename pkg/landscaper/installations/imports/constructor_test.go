@@ -55,7 +55,7 @@ var _ = Describe("Constructor", func() {
 		createDefaultContextsForNamespace(fakeClient)
 		fakeInstallations = state.Installations
 
-		fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "../testdata/registry")
+		fakeCompRepo, err = componentsregistry.NewLocalClient("../testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 
 		op = &installations.Operation{

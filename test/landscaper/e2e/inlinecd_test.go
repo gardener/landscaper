@@ -43,7 +43,7 @@ var _ = Describe("Inline Component Descriptor", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeComponentRegistry, err = componentsregistry.NewLocalClient(logging.Discard(), filepath.Join(projectRoot, "examples", "02-inline-cd"))
+		fakeComponentRegistry, err = componentsregistry.NewLocalClient(filepath.Join(projectRoot, "examples", "02-inline-cd"))
 		Expect(err).ToNot(HaveOccurred())
 
 		op := operation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).

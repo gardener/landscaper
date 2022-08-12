@@ -45,6 +45,8 @@ const (
 	KeyJobID = "jobID"
 	// KeyJobIDFinished is for the ID of the finished job.
 	KeyJobIDFinished = "jobIDFinished"
+	// KeyCDName is the name of a component descriptor.
+	KeyCDName = "cdName"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

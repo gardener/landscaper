@@ -43,7 +43,7 @@ var _ = Describe("Reconcile", func() {
 
 		BeforeEach(func() {
 			var err error
-			fakeCompRepo, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata")
+			fakeCompRepo, err = componentsregistry.NewLocalClient("./testdata")
 			Expect(err).ToNot(HaveOccurred())
 
 			op = lsoperation.NewOperation(logging.Discard(), testenv.Client, api.LandscaperScheme, record.NewFakeRecorder(1024)).SetComponentsRegistry(fakeCompRepo)

@@ -12,10 +12,6 @@ import (
 	"github.com/gardener/component-spec/bindings-go/ctf"
 
 	"github.com/gardener/component-cli/ociclient/cache"
-
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-	"github.com/gardener/landscaper/pkg/utils"
 )
 
 // TypedRegistry describes a registry that can handle the given type.
@@ -74,17 +70,4 @@ func (m *Manager) ResolveWithBlobResolver(ctx context.Context, repoCtx cdv2.Repo
 		return nil, nil, fmt.Errorf("unknown repository type %s", repoCtx.GetType())
 	}
 	return client.ResolveWithBlobResolver(ctx, repoCtx, name, version)
-}
-
-// SetupManagerFromConfig returns a new Manager instance initialized with the given OCI configuration
-func SetupManagerFromConfig(log logging.Logger, config *config.OCIConfiguration, cacheIdentifier string) (*Manager, error) {
-	var sharedCache cache.Cache
-	if config != nil && config.Cache != nil {
-		var err error
-		sharedCache, err = cache.NewCache(log.Logr(), utils.ToOCICacheOptions(config.Cache, cacheIdentifier)...)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return New(sharedCache)
 }

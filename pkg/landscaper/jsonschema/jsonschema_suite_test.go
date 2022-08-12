@@ -765,7 +765,7 @@ var _ = Describe("jsonschema", func() {
 		BeforeEach(func() {
 			var err error
 
-			registry, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
+			registry, err = componentsregistry.NewLocalClient("./testdata/registry")
 			Expect(err).ToNot(HaveOccurred())
 
 			repository = componentsregistry.NewLocalRepository("./testdata/registry")

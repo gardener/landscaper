@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	lsv1alpha1 "github.com/gardener/landscaper/apis/core/v1alpha1"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
 	"github.com/gardener/landscaper/pkg/landscaper/blueprints"
 	componentsregistry "github.com/gardener/landscaper/pkg/landscaper/registry/components"
 	lsutils "github.com/gardener/landscaper/pkg/utils/landscaper"
@@ -84,7 +83,7 @@ var _ = Describe("Installation Simulator", func() {
 		ctx := context.Background()
 		defer ctx.Done()
 
-		registry, err = componentsregistry.NewLocalClient(logging.Discard(), testDataDir)
+		registry, err = componentsregistry.NewLocalClient(testDataDir)
 		Expect(err).ToNot(HaveOccurred())
 		repository = componentsregistry.NewLocalRepository(testDataDir)
 

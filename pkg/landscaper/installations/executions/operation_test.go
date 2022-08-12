@@ -45,7 +45,7 @@ var _ = Describe("Execution Operation", func() {
 		kClient = testenv.Client
 		testInstallations = state.Installations
 
-		componentResolver, err = componentsregistry.NewLocalClient(logging.Discard(), "./testdata/registry")
+		componentResolver, err = componentsregistry.NewLocalClient("./testdata/registry")
 		Expect(err).ToNot(HaveOccurred())
 		repository := componentsregistry.NewLocalRepository("./testdata/registry")
 
