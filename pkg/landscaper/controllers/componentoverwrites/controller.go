@@ -31,7 +31,7 @@ type controller struct {
 }
 
 func (con *controller) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := con.log.StartReconcile(req)
+	logger, ctx := con.log.StartReconcileAndAddToContext(ctx, req)
 
 	co := &lsv1alpha1.ComponentOverwrites{}
 	if err := con.client.Get(ctx, req.NamespacedName, co); err != nil {
