@@ -12,19 +12,18 @@ import (
 	"path"
 	"time"
 
-	"github.com/gardener/landscaper/apis/config"
-	"github.com/gardener/landscaper/controller-utils/pkg/logging"
-
 	apiextinstall "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/install"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/util/yaml"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/gardener/landscaper/apis/config"
+	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 )
 
 const (
@@ -35,13 +34,12 @@ const (
 type CRDManager struct {
 	cfg          config.CrdManagementConfiguration
 	client       client.Client
-	log          logging.Logger
 	crdRawDataFS *embed.FS
 	crdRootDir   string
 }
 
 // NewCrdManager returns a new instance of the CRDManager
-func NewCrdManager(log logging.Logger, mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
+func NewCrdManager(mgr manager.Manager, config config.CrdManagementConfiguration, crdRawDataFS *embed.FS, crdRootDir string) (*CRDManager, error) {
 	apiExtensionsScheme := runtime.NewScheme()
 	apiextinstall.Install(apiExtensionsScheme)
 	kubeClient, err := client.New(mgr.GetConfig(), client.Options{Scheme: apiExtensionsScheme})
@@ -56,7 +54,6 @@ func NewCrdManager(log logging.Logger, mgr manager.Manager, config config.CrdMan
 	return &CRDManager{
 		cfg:          config,
 		client:       kubeClient,
-		log:          log,
 		crdRawDataFS: crdRawDataFS,
 		crdRootDir:   crdRootDir,
 	}, nil
@@ -64,8 +61,10 @@ func NewCrdManager(log logging.Logger, mgr manager.Manager, config config.CrdMan
 
 // EnsureCRDs installs or updates CRDs based on the configuration
 func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "EnsureCRDs"})
+
 	if !*crdmgr.cfg.DeployCustomResourceDefinitions {
-		crdmgr.log.Info("Registering CRDs disabled by configuration")
+		logger.Info("Registering CRDs disabled by configuration")
 		return nil
 	}
 
@@ -74,7 +73,7 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 		return err
 	}
 
-	crdmgr.log.Info("Registering CRDs in cluster")
+	logger.Info("Registering CRDs in cluster")
 	for _, crd := range crdList {
 
 		existingCrd := &v1.CustomResourceDefinition{}
@@ -133,8 +132,10 @@ func (crdmgr *CRDManager) EnsureCRDs(ctx context.Context) error {
 }
 
 func (crdmgr *CRDManager) updateCrd(ctx context.Context, currentCrd, updatedCrd *v1.CustomResourceDefinition) error {
+	logger, _ := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "updateCrd"})
+
 	if !*crdmgr.cfg.ForceUpdate {
-		crdmgr.log.Info("Force update of CRDs disabled by configuration")
+		logger.Info("Force update of CRDs disabled by configuration")
 		return nil
 	}
 

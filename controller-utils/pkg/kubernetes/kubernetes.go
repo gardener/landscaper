@@ -532,7 +532,7 @@ func DecodeObjects(log logging.Logger, name string, data []byte) ([]*unstructure
 			if err == io.EOF {
 				break
 			}
-			log.Error(err, fmt.Sprintf("unable to decode resource %d of file %q", i, name))
+			log.Error(err, "unable to decode resource", "resourceIndex", i, "resourceName", name)
 			continue
 		}
 		if decodedObj == nil {
@@ -561,7 +561,8 @@ func DecodeObjectsToRawExtension(log logging.Logger, name string, data []byte) (
 			if err == io.EOF {
 				break
 			}
-			log.Error(err, fmt.Sprintf("unable to decode resource %d of file %q", i, name))
+			log.Error(err, "unable to decode resource", "resourceIndex", i, "resourceName", name)
+
 			continue
 		}
 		if obj == nil || obj.Raw == nil {
@@ -570,7 +571,7 @@ func DecodeObjectsToRawExtension(log logging.Logger, name string, data []byte) (
 		// ignore the obj if no group version is defined
 		var typeMeta runtime.TypeMeta
 		if err := json.Unmarshal(obj.Raw, &typeMeta); err != nil {
-			log.Error(err, fmt.Sprintf("unable to parse type meta %d of file %q to runtime object", i, name))
+			log.Error(err, "unable to parse type meta", "resourceIndex", i, "resourceName", name)
 			continue
 		}
 		if typeMeta.GetObjectKind().GroupVersionKind().Empty() {
