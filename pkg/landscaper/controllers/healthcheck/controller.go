@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	v1 "k8s.io/api/apps/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +70,7 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 			RequeueAfter: durationBorder - time.Since(lsHealthCheck.LastUpdateTime.Time) + time.Second,
 		}, nil
 	} else {
-		newStatus, description := c.check(ctx, logger)
+		newStatus, description := c.check(ctx)
 
 		if newStatus == lsv1alpha1.LsHealthCheckStatusOk {
 			lsHealthCheck.Status = newStatus
@@ -90,21 +92,21 @@ func (c *lsHealthCheckController) Reconcile(ctx context.Context, req reconcile.R
 	}
 }
 
-func (c *lsHealthCheckController) check(ctx context.Context, log logging.Logger) (lsv1alpha1.LsHealthCheckStatus, string) {
+func (c *lsHealthCheckController) check(ctx context.Context) (lsv1alpha1.LsHealthCheckStatus, string) {
 	if c.lsDeployments != nil {
-		isOk, description := c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.LsController, log)
+		isOk, description := c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.LsController)
 		if !isOk {
 			return lsv1alpha1.LsHealthCheckStatusFailed, description
 		}
 
-		isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.WebHook, log)
+		isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, c.lsDeployments.WebHook)
 		if !isOk {
 			return lsv1alpha1.LsHealthCheckStatusFailed, description
 		}
 
 		for _, deployer := range c.enabledDeployers {
 			deploymentName := deployer + "-" + c.agentConfig.Name + "-" + deployer + "-deployer"
-			isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, deploymentName, log)
+			isOk, description = c.checkDeployment(ctx, c.agentConfig.Namespace, deploymentName)
 			if !isOk {
 				return lsv1alpha1.LsHealthCheckStatusFailed, description
 			}
@@ -114,12 +116,14 @@ func (c *lsHealthCheckController) check(ctx context.Context, log logging.Logger)
 	return lsv1alpha1.LsHealthCheckStatusOk, "ok"
 }
 
-func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace string, name string, log logging.Logger) (bool, string) {
+func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace string, name string) (bool, string) {
+	logger, ctx := logging.FromContextOrNew(ctx, []interface{}{lc.KeyMethod, "checkDeployment"})
+
 	key := client.ObjectKey{Namespace: namespace, Name: name}
 	deployment := &v1.Deployment{}
 	if err := c.client.Get(ctx, key, deployment); err != nil {
 		message := fmt.Sprintf("deployment %s/%s could not be be fetched", namespace, name)
-		log.Error(err, message)
+		logger.Error(err, message)
 		return false, message
 	}
 
@@ -127,6 +131,7 @@ func (c *lsHealthCheckController) checkDeployment(ctx context.Context, namespace
 		deployment.Status.UpdatedReplicas != 1 ||
 		deployment.Status.AvailableReplicas != 1 {
 		message := fmt.Sprintf("not all pods are running or at the latest state for deployment %s/%s ", namespace, name)
+		logger.Info(message)
 		return false, message
 	}
 
