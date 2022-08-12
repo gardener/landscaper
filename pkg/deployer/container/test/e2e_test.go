@@ -53,7 +53,6 @@ var _ = Describe("Container Deployer", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		ctrl = deployerlib.NewController(
-			logging.Discard(),
 			testenv.Client,
 			api.LandscaperScheme,
 			record.NewFakeRecorder(1024),

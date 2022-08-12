@@ -53,8 +53,8 @@ func NewController(log logging.Logger, kubeClient client.Client, scheme *runtime
 		return nil, err
 	}
 
-	return deployerlib.NewController(log,
-		kubeClient, scheme, eventRecorder,
+	return deployerlib.NewController(kubeClient,
+		scheme, eventRecorder,
 		kubeClient, scheme,
 		deployerlib.DeployerArgs{
 			Type:            Type,

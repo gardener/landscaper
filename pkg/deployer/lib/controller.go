@@ -31,6 +31,7 @@ import (
 	lserrors "github.com/gardener/landscaper/apis/errors"
 	kutil "github.com/gardener/landscaper/controller-utils/pkg/kubernetes"
 	"github.com/gardener/landscaper/controller-utils/pkg/logging"
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
 	"github.com/gardener/landscaper/pkg/deployer/lib/extension"
 	"github.com/gardener/landscaper/pkg/deployer/lib/targetselector"
 	"github.com/gardener/landscaper/pkg/utils"
@@ -95,13 +96,14 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 	if err := args.Validate(); err != nil {
 		return err
 	}
-	con := NewController(log,
-		lsMgr.GetClient(),
+	con := NewController(lsMgr.GetClient(),
 		lsMgr.GetScheme(),
 		lsMgr.GetEventRecorderFor(args.Name),
 		hostMgr.GetClient(),
 		hostMgr.GetScheme(),
 		args)
+
+	log = log.Reconciles("deployItem", "DeployItem").WithValues(lc.KeyDeployItemType, string(args.Type))
 
 	return builder.ControllerManagedBy(lsMgr).
 		For(&lsv1alpha1.DeployItem{}, builder.WithPredicates(NewTypePredicate(args.Type))).
@@ -112,7 +114,6 @@ func Add(log logging.Logger, lsMgr, hostMgr manager.Manager, args DeployerArgs) 
 
 // controller reconciles deploy items and delegates the business logic to the configured Deployer.
 type controller struct {
-	log      logging.Logger
 	deployer Deployer
 	info     lsv1alpha1.DeployerInformation
 	// deployerType defines the deployer type the deployer is responsible for.
@@ -127,15 +128,13 @@ type controller struct {
 }
 
 // NewController creates a new generic deployitem controller.
-func NewController(log logging.Logger,
-	lsClient client.Client,
+func NewController(lsClient client.Client,
 	lsScheme *runtime.Scheme,
 	lsEventRecorder record.EventRecorder,
 	hostClient client.Client,
 	hostScheme *runtime.Scheme,
 	args DeployerArgs) *controller {
 	return &controller{
-		log:          log,
 		deployerType: args.Type,
 		deployer:     args.Deployer,
 		info: lsv1alpha1.DeployerInformation{
@@ -162,8 +161,7 @@ func (c *controller) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Debug("reconcile")
+	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 
 	var err error
 
@@ -225,6 +223,7 @@ func (c *controller) reconcileNew(ctx context.Context, req reconcile.Request) (r
 }
 
 func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsError, oldDeployItem, deployItem *lsv1alpha1.DeployItem) error {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	deployItem.Status.LastError = lserrors.TryUpdateLsError(deployItem.Status.LastError, err)
 
 	if deployItem.Status.LastError != nil {
@@ -259,9 +258,9 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 			}
 
 			if apierrors.IsConflict(err2) { // reduce logging
-				c.log.Debug(fmt.Sprintf("unable to update status: %s", err2.Error()))
+				logger.Debug("Unable to update status", lc.KeyError, err2.Error())
 			} else {
-				c.log.Error(err2, "unable to update status")
+				logger.Error(err2, "Unable to update status")
 			}
 			if err == nil {
 				return err2
@@ -274,8 +273,7 @@ func (c *controller) handleReconcileResult(ctx context.Context, err lserrors.LsE
 
 // Reconcile implements the reconcile.Reconciler interface that reconciles DeployItems.
 func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := c.log.WithValues("resource", req.NamespacedName)
-	logger.Debug("reconcile")
+	logger, ctx := logging.MustStartReconcileFromContext(ctx, req, nil)
 	extensionLogger := logger.WithName("extension")
 
 	var err error
@@ -348,7 +346,7 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 	}
 
 	logger.Debug("check deploy item reconciliation")
-	if err := HandleAnnotationsAndGeneration(ctx, logger, c.lsClient, di, c.info); err != nil {
+	if err := HandleAnnotationsAndGeneration(ctx, c.lsClient, di, c.info); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -363,12 +361,12 @@ func (c *controller) reconcileOld(ctx context.Context, req reconcile.Request) (r
 			// if ShouldReconcile returned false but this was overwritten by the extension hooks, we need to call PrepareReconcile,
 			// as this has not yet been done by HandleAnnotationsAndGeneration
 			logger.Debug("reconcile required by extension hook")
-			if err := PrepareReconcile(ctx, logger, c.lsClient, di, c.info); err != nil {
+			if err := PrepareReconcile(ctx, c.lsClient, di, c.info); err != nil {
 				return reconcile.Result{}, err
 			}
 		} else {
 			// neither the default logic nor the extension hooks require a reconcile
-			c.log.Debug("aborting reconcile", "phase", di.Status.Phase)
+			logger.Debug("aborting reconcile", "phase", di.Status.Phase)
 			return returnAndLogReconcileResult(logger, *hookRes), nil
 		}
 	}
@@ -518,8 +516,9 @@ func (c *controller) reconcile(ctx context.Context, lsCtx *lsv1alpha1.Context, d
 
 func (c *controller) delete(ctx context.Context, lsCtx *lsv1alpha1.Context, deployItem *lsv1alpha1.DeployItem,
 	target *lsv1alpha1.Target) lserrors.LsError {
+	logger, ctx := logging.FromContextOrNew(ctx, nil)
 	if lsv1alpha1helper.HasDeleteWithoutUninstallAnnotation(deployItem.ObjectMeta) {
-		c.log.Info("Deleting deploy item %s without uninstall", deployItem.Name)
+		logger.Info("Deleting deploy item %s without uninstall", deployItem.Name)
 	} else {
 		if err := c.deployer.Delete(ctx, lsCtx, deployItem, target); err != nil {
 			return lserrors.BuildLsError(err, "delete", "DeleteWithUninstall", err.Error())

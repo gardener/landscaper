@@ -63,6 +63,10 @@ const (
 	KeyFileName = "fileName"
 	// KeyServiceAccount is for a kubernetes service account.
 	KeyServiceAccount = "serviceAccount"
+	// KeyDeployItemType is for the type of deployitem which is handled by the controller.
+	KeyDeployItemType = "deployItemType"
+	// KeyError is for logging an error message without using 'logger.Error' for whatever reason.
+	KeyError = "error"
 
 	// MsgStartReconcile is the message which is displayed at the beginning of a new reconcile loop.
 	MsgStartReconcile = "Starting reconcile"

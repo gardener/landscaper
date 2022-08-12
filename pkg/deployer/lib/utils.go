@@ -37,10 +37,10 @@ import (
 // It will also remove the timeout annotation if it is set.
 // Returns: an error, if updating the deployitem failed, nil otherwise
 func HandleAnnotationsAndGeneration(ctx context.Context,
-	log logging.Logger,
 	kubeClient client.Client,
 	di *lsv1alpha1.DeployItem,
 	deployerInfo lsv1alpha1.DeployerInformation) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	hasReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ReconcileOperation)
 	hasForceReconcileAnnotation := lsv1alpha1helper.HasOperation(di.ObjectMeta, lsv1alpha1.ForceReconcileOperation)
 	if hasReconcileAnnotation || hasForceReconcileAnnotation || di.Status.ObservedGeneration != di.Generation {
@@ -50,7 +50,7 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 		// - outdated generation
 		opAnn := lsv1alpha1helper.GetOperation(di.ObjectMeta)
 		log.Debug("reconcile required, setting observed generation, phase, and last change reconcile timestamp", "operationAnnotation", opAnn, "observedGeneration", di.Status.ObservedGeneration, "generation", di.Generation)
-		if err := PrepareReconcile(ctx, log, kubeClient, di, deployerInfo); err != nil {
+		if err := PrepareReconcile(ctx, kubeClient, di, deployerInfo); err != nil {
 			return err
 		}
 	}
@@ -71,7 +71,8 @@ func HandleAnnotationsAndGeneration(ctx context.Context,
 
 // PrepareReconcile prepares a reconcile by setting the status of the deploy item accordingly.
 // It updates ObservedGeneration, LastReconcileTime, and sets the Phase to 'Init'.
-func PrepareReconcile(ctx context.Context, log logging.Logger, kubeClient client.Client, di *lsv1alpha1.DeployItem, deployerInfo lsv1alpha1.DeployerInformation) error {
+func PrepareReconcile(ctx context.Context, kubeClient client.Client, di *lsv1alpha1.DeployItem, deployerInfo lsv1alpha1.DeployerInformation) error {
+	log, ctx := logging.FromContextOrNew(ctx, nil)
 	di.Status.ObservedGeneration = di.Generation
 	di.Status.Phase = lsv1alpha1.ExecutionPhaseInit
 	now := metav1.Now()

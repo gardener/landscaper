@@ -161,8 +161,10 @@ func FromContextOrNew(ctx context.Context, keysAndValuesFallback []interface{}, 
 		ctx = NewContext(ctx, newLogger)
 		return newLogger, ctx
 	}
-	log = log.WithValues(keysAndValues...)
-	ctx = NewContext(ctx, log)
+	if len(keysAndValues) > 0 {
+		log = log.WithValues(keysAndValues...)
+		ctx = NewContext(ctx, log)
+	}
 	return log, ctx
 }
 
