@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"time"
 
+	lc "github.com/gardener/landscaper/controller-utils/pkg/logging/constants"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -532,7 +534,7 @@ func DecodeObjects(log logging.Logger, name string, data []byte) ([]*unstructure
 			if err == io.EOF {
 				break
 			}
-			log.Error(err, "unable to decode resource", "resourceIndex", i, "fileName", name)
+			log.Error(err, "unable to decode resource", lc.KeyIndex, i, lc.KeyFileName, name)
 			continue
 		}
 		if decodedObj == nil {
@@ -561,7 +563,7 @@ func DecodeObjectsToRawExtension(log logging.Logger, name string, data []byte) (
 			if err == io.EOF {
 				break
 			}
-			log.Error(err, "unable to decode resource", "resourceIndex", i, "fileName", name)
+			log.Error(err, "unable to decode resource", lc.KeyIndex, i, lc.KeyFileName, name)
 
 			continue
 		}
@@ -571,7 +573,7 @@ func DecodeObjectsToRawExtension(log logging.Logger, name string, data []byte) (
 		// ignore the obj if no group version is defined
 		var typeMeta runtime.TypeMeta
 		if err := json.Unmarshal(obj.Raw, &typeMeta); err != nil {
-			log.Error(err, "unable to parse type meta", "resourceIndex", i, "fileName", name)
+			log.Error(err, "unable to parse type meta", lc.KeyIndex, i, lc.KeyFileName, name)
 			continue
 		}
 		if typeMeta.GetObjectKind().GroupVersionKind().Empty() {
